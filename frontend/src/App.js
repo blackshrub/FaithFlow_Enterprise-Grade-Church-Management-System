@@ -1,8 +1,12 @@
 import React from "react";
 import "@/App.css";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { QueryClientProvider } from '@tanstack/react-query';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { AuthProvider } from "./context/AuthContext";
 import { Toaster } from "./components/ui/sonner";
+import { queryClient } from './lib/react-query';
+import './i18n';
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Members from "./pages/Members";
@@ -11,42 +15,45 @@ import ProtectedRoute from "./components/Layout/ProtectedRoute";
 
 function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          {/* Public Routes */}
-          <Route path="/login" element={<Login />} />
-          
-          {/* Protected Routes */}
-          <Route
-            path="/"
-            element={
-              <ProtectedRoute>
-                <Layout />
-              </ProtectedRoute>
-            }
-          >
-            <Route index element={<Navigate to="/dashboard" replace />} />
-            <Route path="dashboard" element={<Dashboard />} />
-            <Route path="members" element={<Members />} />
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <BrowserRouter>
+          <Routes>
+            {/* Public Routes */}
+            <Route path="/login" element={<Login />} />
             
-            {/* Placeholder routes - will be implemented in next phases */}
-            <Route path="groups" element={<PlaceholderPage title="Groups" />} />
-            <Route path="events" element={<PlaceholderPage title="Events" />} />
-            <Route path="donations" element={<PlaceholderPage title="Donations" />} />
-            <Route path="prayers" element={<PlaceholderPage title="Prayer Requests" />} />
-            <Route path="content" element={<PlaceholderPage title="Content Management" />} />
-            <Route path="spiritual-journey" element={<PlaceholderPage title="Spiritual Journey" />} />
-            <Route path="churches" element={<PlaceholderPage title="Churches" />} />
-            <Route path="settings" element={<PlaceholderPage title="Settings" />} />
-          </Route>
+            {/* Protected Routes */}
+            <Route
+              path="/"
+              element={
+                <ProtectedRoute>
+                  <Layout />
+                </ProtectedRoute>
+              }
+            >
+              <Route index element={<Navigate to="/dashboard" replace />} />
+              <Route path="dashboard" element={<Dashboard />} />
+              <Route path="members" element={<Members />} />
+              
+              {/* Placeholder routes - will be implemented in next phases */}
+              <Route path="groups" element={<PlaceholderPage title="Groups" />} />
+              <Route path="events" element={<PlaceholderPage title="Events" />} />
+              <Route path="donations" element={<PlaceholderPage title="Donations" />} />
+              <Route path="prayers" element={<PlaceholderPage title="Prayer Requests" />} />
+              <Route path="content" element={<PlaceholderPage title="Content Management" />} />
+              <Route path="spiritual-journey" element={<PlaceholderPage title="Spiritual Journey" />} />
+              <Route path="churches" element={<PlaceholderPage title="Churches" />} />
+              <Route path="settings" element={<PlaceholderPage title="Settings" />} />
+            </Route>
 
-          {/* Catch all */}
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
-        </Routes>
-      </BrowserRouter>
-      <Toaster />
-    </AuthProvider>
+            {/* Catch all */}
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          </Routes>
+        </BrowserRouter>
+        <Toaster />
+      </AuthProvider>
+      <ReactQueryDevtools initialIsOpen={false} />
+    </QueryClientProvider>
   );
 }
 
