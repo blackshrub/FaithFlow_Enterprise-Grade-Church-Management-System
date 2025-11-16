@@ -79,5 +79,6 @@ export const queryKeys = {
   settings: {
     memberStatuses: (churchId) => ['settings', 'memberStatuses', { churchId }],
     demographics: (churchId) => ['settings', 'demographics', { churchId }],
+    churchSettings: (churchId) => ['settings', 'churchSettings', { churchId }],
   },
 };
