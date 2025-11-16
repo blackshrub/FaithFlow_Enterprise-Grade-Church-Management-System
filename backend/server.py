@@ -46,6 +46,7 @@ async def health_check():
 # Include all routers
 api_router.include_router(auth.router)
 api_router.include_router(churches.router)
+api_router.include_router(members.router)
 
 # Include the API router in the main app
 app.include_router(api_router)
