@@ -319,6 +319,197 @@ test_plan:
   tests_passed: 13
   tests_failed: 0
 
+  - task: "Settings API - Create Member Status"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/settings.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "POST /settings/member-statuses endpoint works correctly. Admin can create member statuses. Returns 201 status with complete status object including id, name, description, order, is_active, church_id, created_at, updated_at. UUID generation working properly."
+
+  - task: "Settings API - Duplicate Member Status Prevention"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/settings.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "Duplicate member status names per church are correctly prevented. Returns 400 status with error message 'Member status with this name already exists'. Validation working at lines 31-39."
+
+  - task: "Settings API - List Member Statuses"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/settings.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "GET /settings/member-statuses endpoint works correctly. Super admin sees all member statuses across all churches. Non-super admin would see only their church's statuses (church scoping at lines 58-59). Data sorted by order field. Datetime conversion working properly."
+
+  - task: "Settings API - Get Member Status by ID"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/settings.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "GET /settings/member-statuses/{status_id} endpoint works correctly. Returns complete member status details. Church scoping verified at lines 89-93. Returns 404 for non-existent status. Returns 403 for unauthorized access to other church's status."
+
+  - task: "Settings API - Update Member Status"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/settings.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "PATCH /settings/member-statuses/{status_id} endpoint works correctly. Partial updates supported. Church scoping enforced at lines 121-125. Updated_at timestamp automatically updated. Returns complete updated status object."
+
+  - task: "Settings API - Delete Member Status"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/settings.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "DELETE /settings/member-statuses/{status_id} endpoint works correctly. Returns 204 status on success. Church scoping enforced at lines 163-168. Returns 404 for non-existent status. Returns 403 for unauthorized access."
+
+  - task: "Settings API - Create Demographic Preset"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/settings.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "POST /settings/demographics endpoint works correctly. Admin can create demographic presets with age ranges. Returns 201 status with complete preset object. Age range validation working (min_age <= max_age) at lines 192-196. UUID generation working."
+
+  - task: "Settings API - Demographic Age Range Validation"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/settings.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "Age range validation working correctly. Returns 400 status when min_age > max_age with error message 'Minimum age cannot be greater than maximum age'. Validation also works on updates at lines 299-306."
+
+  - task: "Settings API - Duplicate Demographic Prevention"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/settings.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "Duplicate demographic preset names per church are correctly prevented. Returns 400 status with error message 'Demographic preset with this name already exists'. Validation working at lines 199-207."
+
+  - task: "Settings API - List Demographics"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/settings.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "GET /settings/demographics endpoint works correctly. Super admin sees all demographics across all churches. Non-super admin would see only their church's demographics (church scoping at lines 226-227). Data sorted by order field. Datetime conversion working properly."
+
+  - task: "Settings API - Get Demographic by ID"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/settings.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "GET /settings/demographics/{preset_id} endpoint works correctly. Returns complete demographic preset details including age range. Church scoping verified at lines 257-261. Returns 404 for non-existent preset. Returns 403 for unauthorized access."
+
+  - task: "Settings API - Update Demographic"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/settings.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "PATCH /settings/demographics/{preset_id} endpoint works correctly. Partial updates supported including age range updates. Age range validation enforced on updates. Church scoping enforced at lines 289-293. Updated_at timestamp automatically updated."
+
+  - task: "Settings API - Delete Demographic"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/settings.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "DELETE /settings/demographics/{preset_id} endpoint works correctly. Returns 204 status on success. Church scoping enforced at lines 343-347. Returns 404 for non-existent preset. Returns 403 for unauthorized access."
+
+  - task: "Settings API - Admin-Only Access Control"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/settings.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "All settings endpoints require admin role via require_admin dependency. Both admin and staff roles have access (require_admin includes staff as per dependencies.py). Super admin has access to all churches' data. Non-super admin restricted to their own church."
+
+metadata:
+  created_by: "testing_agent"
+  version: "1.0"
+  test_sequence: 2
+  run_ui: false
+  test_date: "2025-01-10"
+  api_base_url: "https://parish-command.preview.emergentagent.com/api"
+
+test_plan:
+  current_focus:
+    - "All backend authentication and authorization tests completed"
+    - "All church management API tests completed"
+    - "All user management API tests completed"
+    - "All settings/configuration API tests completed"
+  stuck_tasks: []
+  test_all: true
+  test_priority: "high_first"
+  tests_completed: 26
+  tests_passed: 26
+  tests_failed: 0
+
 agent_communication:
   - agent: "testing"
     message: "Comprehensive backend API testing completed. All 13 tests passed successfully. Authentication, authorization, church management, and user management APIs are working correctly. JWT tokens valid for 24 hours. Church scoping and role-based access control properly implemented. No critical issues found. System is production-ready from backend perspective."
+  - agent: "testing"
+    message: "Settings/Configuration API testing completed successfully. All 13 settings API tests passed. Member Status CRUD operations working correctly with duplicate prevention and church scoping. Demographics CRUD operations working correctly with age range validation, duplicate prevention, and church scoping. Admin-only access control properly enforced. All endpoints return proper status codes and error messages. Data sorted by order field as expected. No critical issues found."
