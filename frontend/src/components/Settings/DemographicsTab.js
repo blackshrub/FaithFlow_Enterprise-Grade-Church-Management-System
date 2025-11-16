@@ -208,7 +208,14 @@ export default function DemographicsTab() {
             <DialogTitle>{t('settings.editDemographic')}</DialogTitle>
             <DialogDescription>{t('settings.updateDemographic')}</DialogDescription>
           </DialogHeader>
-          <DemographicForm onSubmit={handleUpdateDemographic} isPending={updateDemographic.isPending} />
+          <DemographicForm 
+            formData={formData}
+            setFormData={setFormData}
+            onSubmit={handleUpdateDemographic}
+            isPending={updateDemographic.isPending}
+            onCancel={() => setIsEditDialogOpen(false)}
+            isEdit={true}
+          />
         </DialogContent>
       </Dialog>
     </div>
