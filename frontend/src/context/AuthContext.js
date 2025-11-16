@@ -40,7 +40,7 @@ export const AuthProvider = ({ children }) => {
       setUser(user);
       setChurch(church);
 
-      return { success: true };
+      return { success: true, user };
     } catch (err) {
       const errorMessage = err.response?.data?.detail || 'Login failed. Please check your credentials.';
       setError(errorMessage);
