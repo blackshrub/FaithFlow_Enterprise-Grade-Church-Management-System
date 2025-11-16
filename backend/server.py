@@ -48,6 +48,7 @@ api_router.include_router(auth.router)
 api_router.include_router(churches.router)
 api_router.include_router(members.router)
 api_router.include_router(settings.router)
+api_router.include_router(import_export.router)
 
 # Include the API router in the main app
 app.include_router(api_router)
