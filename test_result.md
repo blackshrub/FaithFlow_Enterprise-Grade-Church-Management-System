@@ -101,3 +101,224 @@
 #====================================================================================================
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
+
+
+user_problem_statement: "Test the Church Management System backend APIs for authentication, authorization, churches management, and user management"
+
+backend:
+  - task: "Authentication - Login with valid credentials"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/auth.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "Login endpoint tested successfully. Returns access_token, token_type (bearer), user object, and church object. Token is valid JWT. Test credentials (admin@demochurch.com/admin123) work correctly."
+
+  - task: "Authentication - Login with invalid credentials"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/auth.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "Invalid credentials correctly rejected with 401 status code. Proper error handling in place."
+
+  - task: "Authentication - Get current user with valid token"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/auth.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "GET /auth/me endpoint works correctly with valid JWT token. Returns complete user information including id, email, role, church_id, is_active, created_at, updated_at."
+
+  - task: "Authentication - Get current user without token"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/auth.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "Correctly rejects requests without authentication token with 403 status code. Security working as expected."
+
+  - task: "Authorization - Access protected endpoints without authentication"
+    implemented: true
+    working: true
+    file: "/app/backend/utils/dependencies.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "All protected endpoints (/auth/users, /churches/) correctly reject unauthenticated requests with 403 status. HTTPBearer security scheme working properly."
+
+  - task: "Churches API - List churches"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/churches.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "GET /churches/ endpoint works correctly. Super admin can see all churches. Returns proper church data with datetime conversion. Retrieved Demo Church successfully."
+
+  - task: "Churches API - Get specific church details"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/churches.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "GET /churches/{church_id} endpoint works correctly. Returns complete church details including name, id, city, pastor_name, etc. Datetime fields properly converted."
+
+  - task: "Churches API - Create new church"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/churches.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "POST /churches/ endpoint works correctly. Super admin can create new churches. Returns 201 status with complete church object. Test church created successfully with UUID."
+
+  - task: "Churches API - Update church details"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/churches.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "PATCH /churches/{church_id} endpoint works correctly. Super admin can update church details. Partial updates work properly. Phone number updated successfully."
+
+  - task: "Authorization - Church scoping for non-super admin"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/churches.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "Church scoping implemented correctly. Non-super admin users can only access their own church data. Super admin has access to all churches. Authorization checks in place at lines 38-44 and 67-71."
+
+  - task: "User Management - List users in current church"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/auth.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "GET /auth/users endpoint works correctly. Returns users filtered by church_id for non-super admins. Super admin sees all users. Retrieved 1 user successfully with proper data."
+
+  - task: "User Management - Register new staff user"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/auth.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "POST /auth/register endpoint works for staff users. Admin can create staff users. Returns 201 status with complete user object. Password hashing working. Church_id validation in place."
+
+  - task: "User Management - Register new admin user"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/auth.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "POST /auth/register endpoint works for admin users. Only super_admin can create admin users (enforced at lines 21-25). Returns 201 status. Role-based access control working correctly."
+
+  - task: "JWT Token Management"
+    implemented: true
+    working: true
+    file: "/app/backend/utils/security.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "JWT token creation and validation working correctly. Tokens expire in 24 hours (1440 minutes) as configured. Token includes sub (user_id), email, and role. Decode function properly validates tokens."
+
+  - task: "API Health Check"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "GET /api/health endpoint works correctly. Returns status: healthy and database: connected. API is running and accessible at https://parish-command.preview.emergentagent.com/api"
+
+frontend:
+  - task: "Frontend Testing"
+    implemented: false
+    working: "NA"
+    file: "N/A"
+    stuck_count: 0
+    priority: "low"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "testing"
+        comment: "Frontend testing not performed as per testing agent instructions. Only backend APIs tested."
+
+metadata:
+  created_by: "testing_agent"
+  version: "1.0"
+  test_sequence: 1
+  run_ui: false
+  test_date: "2025-01-10"
+  api_base_url: "https://parish-command.preview.emergentagent.com/api"
+
+test_plan:
+  current_focus:
+    - "All backend authentication and authorization tests completed"
+    - "All church management API tests completed"
+    - "All user management API tests completed"
+  stuck_tasks: []
+  test_all: true
+  test_priority: "high_first"
+  tests_completed: 13
+  tests_passed: 13
+  tests_failed: 0
+
+agent_communication:
+  - agent: "testing"
+    message: "Comprehensive backend API testing completed. All 13 tests passed successfully. Authentication, authorization, church management, and user management APIs are working correctly. JWT tokens valid for 24 hours. Church scoping and role-based access control properly implemented. No critical issues found. System is production-ready from backend perspective."
