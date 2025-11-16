@@ -8,6 +8,8 @@ from .donation import Donation, DonationCreate, DonationUpdate
 from .prayer_request import PrayerRequest, PrayerRequestCreate, PrayerRequestUpdate
 from .content import Content, ContentCreate, ContentUpdate
 from .spiritual_journey import SpiritualJourney, SpiritualJourneyCreate, SpiritualJourneyUpdate
+from .member_status import MemberStatus, MemberStatusCreate, MemberStatusUpdate
+from .demographic_preset import DemographicPreset, DemographicPresetCreate, DemographicPresetUpdate
 
 __all__ = [
     'Church', 'ChurchCreate', 'ChurchUpdate',
@@ -18,5 +20,7 @@ __all__ = [
     'Donation', 'DonationCreate', 'DonationUpdate',
     'PrayerRequest', 'PrayerRequestCreate', 'PrayerRequestUpdate',
     'Content', 'ContentCreate', 'ContentUpdate',
-    'SpiritualJourney', 'SpiritualJourneyCreate', 'SpiritualJourneyUpdate'
+    'SpiritualJourney', 'SpiritualJourneyCreate', 'SpiritualJourneyUpdate',
+    'MemberStatus', 'MemberStatusCreate', 'MemberStatusUpdate',
+    'DemographicPreset', 'DemographicPresetCreate', 'DemographicPresetUpdate',
 ]
