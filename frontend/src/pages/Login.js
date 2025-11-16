@@ -1,29 +1,73 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { churchesAPI } from '../services/api';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '../components/ui/card';
 import { Alert, AlertDescription } from '../components/ui/alert';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Loader2 } from 'lucide-react';
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [selectedChurch, setSelectedChurch] = useState('');
+  const [churches, setChurches] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [loadingChurches, setLoadingChurches] = useState(true);
   const [error, setError] = useState('');
   const { login } = useAuth();
   const navigate = useNavigate();
 
+  useEffect(() => {
+    // Fetch available churches
+    const fetchChurches = async () => {
+      try {
+        const response = await churchesAPI.listPublic();
+        const churchList = response.data;
+        setChurches(churchList);
+        
+        // Set default church to GKBJ Taman Kencana if available
+        const defaultChurch = churchList.find(c => c.name === 'GKBJ Taman Kencana');
+        if (defaultChurch) {
+          setSelectedChurch(defaultChurch.id);
+        } else if (churchList.length > 0) {
+          setSelectedChurch(churchList[0].id);
+        }
+      } catch (err) {
+        console.error('Error fetching churches:', err);
+        setError('Failed to load churches. Please refresh the page.');
+      } finally {
+        setLoadingChurches(false);
+      }
+    };
+
+    fetchChurches();
+  }, []);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+
+    if (!selectedChurch) {
+      setError('Please select a church');
+      return;
+    }
+
     setLoading(true);
 
     const result = await login(email, password);
     
     if (result.success) {
+      // Verify user belongs to selected church
+      const userChurchId = result.user?.church_id;
+      if (userChurchId !== selectedChurch && result.user?.role !== 'super_admin') {
+        setError('You do not have access to the selected church');
+        setLoading(false);
+        return;
+      }
       navigate('/dashboard');
     } else {
       setError(result.error);
@@ -31,6 +75,17 @@ export default function Login() {
     
     setLoading(false);
   };
+
+  if (loadingChurches) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+        <div className="text-center">
+          <Loader2 className="h-12 w-12 animate-spin text-blue-600 mx-auto mb-4" />
+          <p className="text-gray-600">Loading churches...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
@@ -49,11 +104,30 @@ export default function Login() {
               </Alert>
             )}
             <div className="space-y-2">
+              <Label htmlFor="church">Church</Label>
+              <Select
+                value={selectedChurch}
+                onValueChange={setSelectedChurch}
+                disabled={loading || churches.length === 0}
+              >
+                <SelectTrigger id="church">
+                  <SelectValue placeholder="Select a church" />
+                </SelectTrigger>
+                <SelectContent>
+                  {churches.map((church) => (
+                    <SelectItem key={church.id} value={church.id}>
+                      {church.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
                 type="email"
-                placeholder="admin@demochurch.com"
+                placeholder="admin@gkbjtamankencana.org"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -77,7 +151,7 @@ export default function Login() {
             <Button
               type="submit"
               className="w-full"
-              disabled={loading}
+              disabled={loading || !selectedChurch}
             >
               {loading ? (
                 <>
@@ -89,7 +163,7 @@ export default function Login() {
               )}
             </Button>
             <p className="text-sm text-center text-gray-600">
-              Demo credentials: admin@demochurch.com / admin123
+              Demo credentials: admin@gkbjtamankencana.org / admin123
             </p>
           </CardFooter>
         </form>
