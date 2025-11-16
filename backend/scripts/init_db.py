@@ -94,8 +94,124 @@ async def init_database():
     await db.content.create_index("church_id")
     await db.spiritual_journeys.create_index("church_id")
     await db.spiritual_journeys.create_index("member_id")
+    await db.member_statuses.create_index([("church_id", 1), ("name", 1)], unique=True)
+    await db.member_statuses.create_index([("church_id", 1), ("order", 1)])
+    await db.demographic_presets.create_index([("church_id", 1), ("name", 1)], unique=True)
+    await db.demographic_presets.create_index([("church_id", 1), ("order", 1)])
     
     print("✓ Created database indexes")
+    
+    # Create default member statuses
+    default_statuses = [
+        {
+            "id": str(uuid.uuid4()),
+            "church_id": church_id,
+            "name": "Active Member",
+            "description": "Official member, regularly participates in church activities.",
+            "order": 1,
+            "is_active": True,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        },
+        {
+            "id": str(uuid.uuid4()),
+            "church_id": church_id,
+            "name": "Inactive Member",
+            "description": "Former member, no longer active due to relocation, long absence, or death.",
+            "order": 2,
+            "is_active": True,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        },
+        {
+            "id": str(uuid.uuid4()),
+            "church_id": church_id,
+            "name": "Visitor",
+            "description": "Attends church but not yet an official member.",
+            "order": 3,
+            "is_active": True,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }
+    ]
+    
+    existing_statuses = await db.member_statuses.count_documents({"church_id": church_id})
+    if existing_statuses == 0:
+        await db.member_statuses.insert_many(default_statuses)
+        print(f"✓ Created {len(default_statuses)} default member statuses")
+    else:
+        print(f"✓ Member statuses already exist ({existing_statuses} statuses)")
+    
+    # Create default demographics
+    default_demographics = [
+        {
+            "id": str(uuid.uuid4()),
+            "church_id": church_id,
+            "name": "Kid",
+            "min_age": 0,
+            "max_age": 12,
+            "description": "Children aged 0-12 years",
+            "order": 1,
+            "is_active": True,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        },
+        {
+            "id": str(uuid.uuid4()),
+            "church_id": church_id,
+            "name": "Teen",
+            "min_age": 13,
+            "max_age": 17,
+            "description": "Teenagers aged 13-17 years",
+            "order": 2,
+            "is_active": True,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        },
+        {
+            "id": str(uuid.uuid4()),
+            "church_id": church_id,
+            "name": "Youth",
+            "min_age": 18,
+            "max_age": 35,
+            "description": "Young adults aged 18-35 years",
+            "order": 3,
+            "is_active": True,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        },
+        {
+            "id": str(uuid.uuid4()),
+            "church_id": church_id,
+            "name": "Adult",
+            "min_age": 36,
+            "max_age": 59,
+            "description": "Adults aged 36-59 years",
+            "order": 4,
+            "is_active": True,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        },
+        {
+            "id": str(uuid.uuid4()),
+            "church_id": church_id,
+            "name": "Senior",
+            "min_age": 60,
+            "max_age": 150,
+            "description": "Seniors aged 60+ years",
+            "order": 5,
+            "is_active": True,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }
+    ]
+    
+    existing_demographics = await db.demographic_presets.count_documents({"church_id": church_id})
+    if existing_demographics == 0:
+        await db.demographic_presets.insert_many(default_demographics)
+        print(f"✓ Created {len(default_demographics)} default demographics")
+    else:
+        print(f"✓ Demographics already exist ({existing_demographics} demographics)")
     
     print("\n" + "="*50)
     print("Database initialization complete!")
