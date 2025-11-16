@@ -10,6 +10,7 @@ from .content import Content, ContentCreate, ContentUpdate
 from .spiritual_journey import SpiritualJourney, SpiritualJourneyCreate, SpiritualJourneyUpdate
 from .member_status import MemberStatus, MemberStatusCreate, MemberStatusUpdate
 from .demographic_preset import DemographicPreset, DemographicPresetCreate, DemographicPresetUpdate
+from .church_settings import ChurchSettings, ChurchSettingsCreate, ChurchSettingsUpdate
 
 __all__ = [
     'Church', 'ChurchCreate', 'ChurchUpdate',
