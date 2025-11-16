@@ -507,10 +507,13 @@ def test_create_member_status():
     
     headers = {"Authorization": f"Bearer {auth_token}"}
     
+    import time
+    unique_suffix = str(int(time.time()))[-6:]
+    
     new_status = {
-        "name": "Active Member",
-        "description": "Actively participating member",
-        "order": 1,
+        "name": f"Test Status {unique_suffix}",
+        "description": "Test member status for API testing",
+        "order": 10,
         "is_active": True,
         "church_id": church_id
     }
