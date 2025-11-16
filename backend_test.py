@@ -12,7 +12,7 @@ BASE_URL = "https://parish-command.preview.emergentagent.com/api"
 
 # Test credentials
 TEST_CREDENTIALS = {
-    "email": "admin@demochurch.com",
+    "email": "admin@gkbjtamankencana.org",
     "password": "admin123"
 }
 
