@@ -10,6 +10,7 @@ import './i18n';
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Members from "./pages/Members";
+import Settings from "./pages/Settings";
 import Layout from "./components/Layout/Layout";
 import ProtectedRoute from "./components/Layout/ProtectedRoute";
 
@@ -34,6 +35,7 @@ function App() {
               <Route index element={<Navigate to="/dashboard" replace />} />
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="members" element={<Members />} />
+              <Route path="settings" element={<Settings />} />
               
               {/* Placeholder routes - will be implemented in next phases */}
               <Route path="groups" element={<PlaceholderPage title="Groups" />} />
@@ -43,7 +45,6 @@ function App() {
               <Route path="content" element={<PlaceholderPage title="Content Management" />} />
               <Route path="spiritual-journey" element={<PlaceholderPage title="Spiritual Journey" />} />
               <Route path="churches" element={<PlaceholderPage title="Churches" />} />
-              <Route path="settings" element={<PlaceholderPage title="Settings" />} />
             </Route>
 
             {/* Catch all */}
