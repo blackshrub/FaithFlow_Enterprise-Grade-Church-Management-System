@@ -51,6 +51,9 @@ class MemberUpdate(BaseModel):
     household_id: Optional[str] = None
     notes: Optional[str] = None
     demographic_category: Optional[str] = None  # Auto-assigned based on age
+    blood_type: Optional[Literal['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']] = None
+    photo_base64: Optional[str] = None  # Profile photo in base64
+    documents: Optional[List[str]] = None  # List of document URLs or base64
 
 
 class Member(MemberBase):
