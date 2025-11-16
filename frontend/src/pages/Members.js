@@ -259,7 +259,7 @@ export default function Members() {
                         ) : t('common.na')}
                       </TableCell>
                       <TableCell>
-                        {member.membership_date ? format(new Date(member.membership_date), 'PP') : t('common.na')}
+                        {member.membership_date ? new Date(member.membership_date).toLocaleDateString() : t('common.na')}
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
