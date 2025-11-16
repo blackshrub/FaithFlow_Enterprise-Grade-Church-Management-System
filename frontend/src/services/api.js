@@ -81,6 +81,10 @@ export const settingsAPI = {
   createDemographic: (data) => api.post('/settings/demographics', data),
   updateDemographic: (id, data) => api.patch(`/settings/demographics/${id}`, data),
   deleteDemographic: (id) => api.delete(`/settings/demographics/${id}`),
+  
+  // Church Settings
+  getChurchSettings: () => api.get('/settings/church-settings'),
+  updateChurchSettings: (data) => api.patch('/settings/church-settings', data),
 };
 
 export default api;
