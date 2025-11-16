@@ -495,6 +495,408 @@ def test_access_without_authentication():
     return all_passed
 
 
+def test_create_member_status():
+    """Test creating a new member status"""
+    global test_member_status_id
+    
+    print_test_header("Create Member Status")
+    
+    if not auth_token or not church_id:
+        print_error("No auth token or church_id available")
+        return False
+    
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    
+    new_status = {
+        "name": "Active Member",
+        "description": "Actively participating member",
+        "order": 1,
+        "is_active": True,
+        "church_id": church_id
+    }
+    
+    success, response, error = make_request(
+        "POST",
+        "/settings/member-statuses",
+        headers=headers,
+        json_data=new_status,
+        expected_status=201
+    )
+    
+    if success:
+        status = response.json()
+        test_member_status_id = status.get('id')
+        print_success("Member status created successfully")
+        print_info(f"Status ID: {status.get('id')}")
+        print_info(f"Name: {status.get('name')}")
+        print_info(f"Church ID: {status.get('church_id')}")
+        return True
+    else:
+        print_error(f"Failed to create member status: {error}")
+        return False
+
+
+def test_create_duplicate_member_status():
+    """Test creating a duplicate member status (should fail)"""
+    print_test_header("Create Duplicate Member Status (Should Fail)")
+    
+    if not auth_token or not church_id:
+        print_error("No auth token or church_id available")
+        return False
+    
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    
+    duplicate_status = {
+        "name": "Active Member",  # Same name as previous test
+        "description": "Duplicate test",
+        "order": 2,
+        "is_active": True,
+        "church_id": church_id
+    }
+    
+    success, response, error = make_request(
+        "POST",
+        "/settings/member-statuses",
+        headers=headers,
+        json_data=duplicate_status,
+        expected_status=400
+    )
+    
+    if success:
+        print_success("Correctly rejected duplicate member status (400)")
+        return True
+    else:
+        print_error(f"Should have returned 400: {error}")
+        return False
+
+
+def test_list_member_statuses():
+    """Test listing member statuses"""
+    print_test_header("List Member Statuses")
+    
+    if not auth_token:
+        print_error("No auth token available")
+        return False
+    
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    
+    success, response, error = make_request(
+        "GET",
+        "/settings/member-statuses",
+        headers=headers
+    )
+    
+    if success:
+        statuses = response.json()
+        print_success(f"Retrieved {len(statuses)} member status(es)")
+        
+        for status in statuses:
+            print_info(f"Status: {status.get('name')} (ID: {status.get('id')}, Order: {status.get('order')})")
+        
+        # Verify church scoping
+        for status in statuses:
+            if status.get('church_id') != church_id:
+                print_error(f"Found status from different church: {status.get('church_id')}")
+                return False
+        
+        print_success("Church scoping verified - all statuses belong to current church")
+        return True
+    else:
+        print_error(f"Failed to list member statuses: {error}")
+        return False
+
+
+def test_get_member_status():
+    """Test getting specific member status by ID"""
+    print_test_header("Get Specific Member Status")
+    
+    if not auth_token or not test_member_status_id:
+        print_error("No auth token or test_member_status_id available")
+        return False
+    
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    
+    success, response, error = make_request(
+        "GET",
+        f"/settings/member-statuses/{test_member_status_id}",
+        headers=headers
+    )
+    
+    if success:
+        status = response.json()
+        print_success("Retrieved member status details")
+        print_info(f"Name: {status.get('name')}")
+        print_info(f"ID: {status.get('id')}")
+        print_info(f"Description: {status.get('description')}")
+        print_info(f"Order: {status.get('order')}")
+        return True
+    else:
+        print_error(f"Failed to get member status: {error}")
+        return False
+
+
+def test_update_member_status():
+    """Test updating member status"""
+    print_test_header("Update Member Status")
+    
+    if not auth_token or not test_member_status_id:
+        print_error("No auth token or test_member_status_id available")
+        return False
+    
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    
+    update_data = {
+        "description": "Updated description for active member",
+        "order": 5
+    }
+    
+    success, response, error = make_request(
+        "PATCH",
+        f"/settings/member-statuses/{test_member_status_id}",
+        headers=headers,
+        json_data=update_data
+    )
+    
+    if success:
+        status = response.json()
+        print_success("Member status updated successfully")
+        print_info(f"Updated description: {status.get('description')}")
+        print_info(f"Updated order: {status.get('order')}")
+        return True
+    else:
+        print_error(f"Failed to update member status: {error}")
+        return False
+
+
+def test_create_demographic():
+    """Test creating a new demographic preset"""
+    global test_demographic_id
+    
+    print_test_header("Create Demographic Preset")
+    
+    if not auth_token or not church_id:
+        print_error("No auth token or church_id available")
+        return False
+    
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    
+    new_demographic = {
+        "name": "Youth",
+        "min_age": 18,
+        "max_age": 35,
+        "description": "Young adults and youth members",
+        "order": 1,
+        "is_active": True,
+        "church_id": church_id
+    }
+    
+    success, response, error = make_request(
+        "POST",
+        "/settings/demographics",
+        headers=headers,
+        json_data=new_demographic,
+        expected_status=201
+    )
+    
+    if success:
+        demographic = response.json()
+        test_demographic_id = demographic.get('id')
+        print_success("Demographic preset created successfully")
+        print_info(f"Demographic ID: {demographic.get('id')}")
+        print_info(f"Name: {demographic.get('name')}")
+        print_info(f"Age Range: {demographic.get('min_age')}-{demographic.get('max_age')}")
+        print_info(f"Church ID: {demographic.get('church_id')}")
+        return True
+    else:
+        print_error(f"Failed to create demographic preset: {error}")
+        return False
+
+
+def test_create_demographic_invalid_age_range():
+    """Test creating demographic with invalid age range (should fail)"""
+    print_test_header("Create Demographic with Invalid Age Range (Should Fail)")
+    
+    if not auth_token or not church_id:
+        print_error("No auth token or church_id available")
+        return False
+    
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    
+    invalid_demographic = {
+        "name": "Invalid Age Range",
+        "min_age": 50,  # min > max
+        "max_age": 30,
+        "description": "This should fail",
+        "order": 2,
+        "is_active": True,
+        "church_id": church_id
+    }
+    
+    success, response, error = make_request(
+        "POST",
+        "/settings/demographics",
+        headers=headers,
+        json_data=invalid_demographic,
+        expected_status=400
+    )
+    
+    if success:
+        print_success("Correctly rejected invalid age range (400)")
+        return True
+    else:
+        print_error(f"Should have returned 400: {error}")
+        return False
+
+
+def test_list_demographics():
+    """Test listing demographic presets"""
+    print_test_header("List Demographic Presets")
+    
+    if not auth_token:
+        print_error("No auth token available")
+        return False
+    
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    
+    success, response, error = make_request(
+        "GET",
+        "/settings/demographics",
+        headers=headers
+    )
+    
+    if success:
+        demographics = response.json()
+        print_success(f"Retrieved {len(demographics)} demographic preset(s)")
+        
+        for demo in demographics:
+            print_info(f"Demographic: {demo.get('name')} (Age: {demo.get('min_age')}-{demo.get('max_age')}, Order: {demo.get('order')})")
+        
+        # Verify church scoping
+        for demo in demographics:
+            if demo.get('church_id') != church_id:
+                print_error(f"Found demographic from different church: {demo.get('church_id')}")
+                return False
+        
+        print_success("Church scoping verified - all demographics belong to current church")
+        return True
+    else:
+        print_error(f"Failed to list demographics: {error}")
+        return False
+
+
+def test_get_demographic():
+    """Test getting specific demographic preset by ID"""
+    print_test_header("Get Specific Demographic Preset")
+    
+    if not auth_token or not test_demographic_id:
+        print_error("No auth token or test_demographic_id available")
+        return False
+    
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    
+    success, response, error = make_request(
+        "GET",
+        f"/settings/demographics/{test_demographic_id}",
+        headers=headers
+    )
+    
+    if success:
+        demographic = response.json()
+        print_success("Retrieved demographic preset details")
+        print_info(f"Name: {demographic.get('name')}")
+        print_info(f"ID: {demographic.get('id')}")
+        print_info(f"Age Range: {demographic.get('min_age')}-{demographic.get('max_age')}")
+        print_info(f"Description: {demographic.get('description')}")
+        return True
+    else:
+        print_error(f"Failed to get demographic preset: {error}")
+        return False
+
+
+def test_update_demographic():
+    """Test updating demographic preset"""
+    print_test_header("Update Demographic Preset")
+    
+    if not auth_token or not test_demographic_id:
+        print_error("No auth token or test_demographic_id available")
+        return False
+    
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    
+    update_data = {
+        "min_age": 16,
+        "max_age": 40,
+        "description": "Updated youth demographic range"
+    }
+    
+    success, response, error = make_request(
+        "PATCH",
+        f"/settings/demographics/{test_demographic_id}",
+        headers=headers,
+        json_data=update_data
+    )
+    
+    if success:
+        demographic = response.json()
+        print_success("Demographic preset updated successfully")
+        print_info(f"Updated age range: {demographic.get('min_age')}-{demographic.get('max_age')}")
+        print_info(f"Updated description: {demographic.get('description')}")
+        return True
+    else:
+        print_error(f"Failed to update demographic preset: {error}")
+        return False
+
+
+def test_delete_member_status():
+    """Test deleting member status"""
+    print_test_header("Delete Member Status")
+    
+    if not auth_token or not test_member_status_id:
+        print_error("No auth token or test_member_status_id available")
+        return False
+    
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    
+    success, response, error = make_request(
+        "DELETE",
+        f"/settings/member-statuses/{test_member_status_id}",
+        headers=headers,
+        expected_status=204
+    )
+    
+    if success:
+        print_success("Member status deleted successfully")
+        return True
+    else:
+        print_error(f"Failed to delete member status: {error}")
+        return False
+
+
+def test_delete_demographic():
+    """Test deleting demographic preset"""
+    print_test_header("Delete Demographic Preset")
+    
+    if not auth_token or not test_demographic_id:
+        print_error("No auth token or test_demographic_id available")
+        return False
+    
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    
+    success, response, error = make_request(
+        "DELETE",
+        f"/settings/demographics/{test_demographic_id}",
+        headers=headers,
+        expected_status=204
+    )
+    
+    if success:
+        print_success("Demographic preset deleted successfully")
+        return True
+    else:
+        print_error(f"Failed to delete demographic preset: {error}")
+        return False
+
+
 def run_all_tests():
     """Run all backend tests"""
     print(f"\n{Colors.BOLD}{'='*80}{Colors.RESET}")
