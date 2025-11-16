@@ -24,4 +24,5 @@ __all__ = [
     'SpiritualJourney', 'SpiritualJourneyCreate', 'SpiritualJourneyUpdate',
     'MemberStatus', 'MemberStatusCreate', 'MemberStatusUpdate',
     'DemographicPreset', 'DemographicPresetCreate', 'DemographicPresetUpdate',
+    'ChurchSettings', 'ChurchSettingsCreate', 'ChurchSettingsUpdate',
 ]
