@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { membersAPI } from '../services/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Users, Calendar, Heart, DollarSign, BookOpen, Award } from 'lucide-react';
 
@@ -13,19 +14,26 @@ export default function Dashboard() {
     activeGroups: 0,
     publishedContent: 0,
   });
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // TODO: Fetch actual stats from API
-    // For now, using placeholder data
-    setStats({
-      totalMembers: 0,
-      upcomingEvents: 0,
-      prayerRequests: 0,
-      totalDonations: 0,
-      activeGroups: 0,
-      publishedContent: 0,
-    });
+    fetchStats();
   }, []);
+
+  const fetchStats = async () => {
+    try {
+      // Fetch member stats
+      const memberResponse = await membersAPI.getStats();
+      setStats(prev => ({
+        ...prev,
+        totalMembers: memberResponse.data.total_members || 0
+      }));
+    } catch (error) {
+      console.error('Error fetching stats:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const statCards = [
     {
