@@ -9,6 +9,18 @@ from utils.dependencies import get_db, get_current_user, require_super_admin
 router = APIRouter(prefix="/churches", tags=["Churches"])
 
 
+@router.get("/public/list")
+async def list_public_churches(
+    db: AsyncIOMotorDatabase = Depends(get_db)
+):
+    """List all active churches (public endpoint for login page)"""
+    churches = await db.churches.find(
+        {"is_active": True},
+        {"_id": 0, "id": 1, "name": 1}
+    ).to_list(100)
+    return churches
+
+
 @router.post("/", response_model=Church, status_code=status.HTTP_201_CREATED)
 async def create_church(
     church_data: ChurchCreate,
