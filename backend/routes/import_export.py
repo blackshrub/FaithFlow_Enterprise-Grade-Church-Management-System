@@ -5,6 +5,7 @@ from typing import List, Dict, Optional
 from datetime import datetime
 import json
 import io
+import logging
 
 from models.import_export import ImportTemplate, ImportTemplateCreate, ImportTemplateUpdate, ImportLog, ImportLogCreate
 from models.member import Member
@@ -12,6 +13,7 @@ from utils.dependencies import get_db, require_admin, get_current_user
 from services.import_export_service import import_export_service
 from utils.demographics import auto_assign_demographic
 
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/import-export", tags=["Import/Export"])
 
 
