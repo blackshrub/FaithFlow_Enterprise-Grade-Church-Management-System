@@ -11,9 +11,11 @@ import uuid
 sys.path.append(str(Path(__file__).parent.parent))
 
 from dotenv import load_dotenv
-from utils.security import hash_password
 
+# Load env first before importing any modules
 load_dotenv(Path(__file__).parent.parent / '.env')
+
+from utils.security import hash_password
 
 
 async def init_database():
