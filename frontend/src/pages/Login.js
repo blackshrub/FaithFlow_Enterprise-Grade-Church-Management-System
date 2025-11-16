@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
-import { churchesAPI } from '../services/api';
+import { usePublicChurches } from '../hooks/useChurches';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
@@ -11,41 +12,29 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Loader2 } from 'lucide-react';
 
 export default function Login() {
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [selectedChurch, setSelectedChurch] = useState('');
-  const [churches, setChurches] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [loadingChurches, setLoadingChurches] = useState(true);
   const [error, setError] = useState('');
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    // Fetch available churches
-    const fetchChurches = async () => {
-      try {
-        const response = await churchesAPI.listPublic();
-        const churchList = response.data;
-        setChurches(churchList);
-        
-        // Set default church to GKBJ Taman Kencana if available
-        const defaultChurch = churchList.find(c => c.name === 'GKBJ Taman Kencana');
-        if (defaultChurch) {
-          setSelectedChurch(defaultChurch.id);
-        } else if (churchList.length > 0) {
-          setSelectedChurch(churchList[0].id);
-        }
-      } catch (err) {
-        console.error('Error fetching churches:', err);
-        setError('Failed to load churches. Please refresh the page.');
-      } finally {
-        setLoadingChurches(false);
-      }
-    };
+  // Use React Query to fetch churches
+  const { data: churches = [], isLoading: loadingChurches } = usePublicChurches();
 
-    fetchChurches();
-  }, []);
+  // Set default church when data loads
+  React.useEffect(() => {
+    if (churches.length > 0 && !selectedChurch) {
+      const defaultChurch = churches.find(c => c.name === 'GKBJ Taman Kencana');
+      if (defaultChurch) {
+        setSelectedChurch(defaultChurch.id);
+      } else {
+        setSelectedChurch(churches[0].id);
+      }
+    }
+  }, [churches, selectedChurch]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -81,7 +70,7 @@ export default function Login() {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
         <div className="text-center">
           <Loader2 className="h-12 w-12 animate-spin text-blue-600 mx-auto mb-4" />
-          <p className="text-gray-600">Loading churches...</p>
+          <p className="text-gray-600">{t('common.loading')}</p>
         </div>
       </div>
     );
@@ -91,9 +80,9 @@ export default function Login() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
       <Card className="w-full max-w-md shadow-xl">
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold text-center">Church Management</CardTitle>
+          <CardTitle className="text-2xl font-bold text-center">{t('app.name')}</CardTitle>
           <CardDescription className="text-center">
-            Sign in to your account to continue
+            {t('app.tagline')}
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
@@ -104,14 +93,14 @@ export default function Login() {
               </Alert>
             )}
             <div className="space-y-2">
-              <Label htmlFor="church">Church</Label>
+              <Label htmlFor="church">{t('auth.church')}</Label>
               <Select
                 value={selectedChurch}
                 onValueChange={setSelectedChurch}
                 disabled={loading || churches.length === 0}
               >
                 <SelectTrigger id="church">
-                  <SelectValue placeholder="Select a church" />
+                  <SelectValue placeholder={t('auth.selectChurch')} />
                 </SelectTrigger>
                 <SelectContent>
                   {churches.map((church) => (
@@ -123,7 +112,7 @@ export default function Login() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{t('auth.email')}</Label>
               <Input
                 id="email"
                 type="email"
@@ -135,7 +124,7 @@ export default function Login() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">{t('auth.password')}</Label>
               <Input
                 id="password"
                 type="password"
@@ -156,14 +145,14 @@ export default function Login() {
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Signing in...
+                  {t('auth.signingIn')}
                 </>
               ) : (
-                'Sign In'
+                t('auth.login')
               )}
             </Button>
             <p className="text-sm text-center text-gray-600">
-              Demo credentials: admin@gkbjtamankencana.org / admin123
+              {t('auth.demoCredentials')}
             </p>
           </CardFooter>
         </form>
