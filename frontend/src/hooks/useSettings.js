@@ -135,3 +135,33 @@ export const useDeleteDemographic = () => {
     },
   });
 };
+
+// ============= Church Settings Hooks =============
+
+export const useChurchSettings = () => {
+  const { church } = useAuth();
+  
+  return useQuery({
+    queryKey: queryKeys.settings.churchSettings(church?.id),
+    queryFn: () => settingsAPI.getChurchSettings().then(res => res.data),
+    enabled: !!church?.id,
+  });
+};
+
+export const useUpdateChurchSettings = () => {
+  const queryClient = useQueryClient();
+  const { church } = useAuth();
+  
+  return useMutation({
+    mutationFn: (settingsData) => settingsAPI.updateChurchSettings(settingsData).then(res => res.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ 
+        queryKey: queryKeys.settings.churchSettings(church?.id) 
+      });
+      toast.success('Church settings updated successfully');
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.detail || 'Failed to update church settings');
+    },
+  });
+};
