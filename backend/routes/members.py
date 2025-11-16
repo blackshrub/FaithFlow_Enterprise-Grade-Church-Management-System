@@ -39,6 +39,12 @@ async def create_member(
     member = Member(**member_data.model_dump())
     member_doc = member.model_dump()
     
+    # Auto-assign demographic category based on age
+    if member_data.date_of_birth:
+        demographic = await auto_assign_demographic(member_doc, db)
+        if demographic:
+            member_doc['demographic_category'] = demographic
+    
     # Convert datetime and date fields to ISO strings
     member_doc['created_at'] = member_doc['created_at'].isoformat()
     member_doc['updated_at'] = member_doc['updated_at'].isoformat()
