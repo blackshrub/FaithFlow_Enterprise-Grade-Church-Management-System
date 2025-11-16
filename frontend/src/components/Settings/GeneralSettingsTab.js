@@ -101,10 +101,21 @@ export default function GeneralSettingsTab() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="USD">USD ($)</SelectItem>
-                <SelectItem value="IDR">IDR (Rp)</SelectItem>
-                <SelectItem value="EUR">EUR (€)</SelectItem>
-                <SelectItem value="GBP">GBP (£)</SelectItem>
+                <SelectItem value="USD">USD ($) - US Dollar</SelectItem>
+                <SelectItem value="IDR">IDR (Rp) - Indonesian Rupiah</SelectItem>
+                <SelectItem value="EUR">EUR (€) - Euro</SelectItem>
+                <SelectItem value="GBP">GBP (£) - British Pound</SelectItem>
+                <SelectItem value="JPY">JPY (¥) - Japanese Yen</SelectItem>
+                <SelectItem value="CNY">CNY (¥) - Chinese Yuan</SelectItem>
+                <SelectItem value="KRW">KRW (₩) - South Korean Won</SelectItem>
+                <SelectItem value="SGD">SGD (S$) - Singapore Dollar</SelectItem>
+                <SelectItem value="MYR">MYR (RM) - Malaysian Ringgit</SelectItem>
+                <SelectItem value="THB">THB (฿) - Thai Baht</SelectItem>
+                <SelectItem value="PHP">PHP (₱) - Philippine Peso</SelectItem>
+                <SelectItem value="INR">INR (₹) - Indian Rupee</SelectItem>
+                <SelectItem value="AUD">AUD (A$) - Australian Dollar</SelectItem>
+                <SelectItem value="CAD">CAD (C$) - Canadian Dollar</SelectItem>
+                <SelectItem value="NZD">NZD (NZ$) - New Zealand Dollar</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -118,11 +129,36 @@ export default function GeneralSettingsTab() {
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="UTC">UTC</SelectItem>
-                <SelectItem value="Asia/Jakarta">Asia/Jakarta (WIB)</SelectItem>
-                <SelectItem value="America/New_York">America/New York (EST)</SelectItem>
-                <SelectItem value="Europe/London">Europe/London (GMT)</SelectItem>
+              <SelectContent className="max-h-[300px]">
+                <SelectItem value="UTC">UTC - Coordinated Universal Time</SelectItem>
+                <SelectItem value="Asia/Jakarta">Asia/Jakarta (WIB) - UTC+7</SelectItem>
+                <SelectItem value="Asia/Makassar">Asia/Makassar (WITA) - UTC+8</SelectItem>
+                <SelectItem value="Asia/Jayapura">Asia/Jayapura (WIT) - UTC+9</SelectItem>
+                <SelectItem value="Asia/Singapore">Asia/Singapore (SGT) - UTC+8</SelectItem>
+                <SelectItem value="Asia/Kuala_Lumpur">Asia/Kuala Lumpur (MYT) - UTC+8</SelectItem>
+                <SelectItem value="Asia/Bangkok">Asia/Bangkok (ICT) - UTC+7</SelectItem>
+                <SelectItem value="Asia/Manila">Asia/Manila (PHT) - UTC+8</SelectItem>
+                <SelectItem value="Asia/Seoul">Asia/Seoul (KST) - UTC+9</SelectItem>
+                <SelectItem value="Asia/Tokyo">Asia/Tokyo (JST) - UTC+9</SelectItem>
+                <SelectItem value="Asia/Hong_Kong">Asia/Hong Kong (HKT) - UTC+8</SelectItem>
+                <SelectItem value="Asia/Shanghai">Asia/Shanghai (CST) - UTC+8</SelectItem>
+                <SelectItem value="Asia/Dubai">Asia/Dubai (GST) - UTC+4</SelectItem>
+                <SelectItem value="Asia/Kolkata">Asia/Kolkata (IST) - UTC+5:30</SelectItem>
+                <SelectItem value="Australia/Sydney">Australia/Sydney (AEDT) - UTC+11</SelectItem>
+                <SelectItem value="Pacific/Auckland">Pacific/Auckland (NZDT) - UTC+13</SelectItem>
+                <SelectItem value="America/New_York">America/New York (EST) - UTC-5</SelectItem>
+                <SelectItem value="America/Chicago">America/Chicago (CST) - UTC-6</SelectItem>
+                <SelectItem value="America/Denver">America/Denver (MST) - UTC-7</SelectItem>
+                <SelectItem value="America/Los_Angeles">America/Los Angeles (PST) - UTC-8</SelectItem>
+                <SelectItem value="America/Toronto">America/Toronto (EST) - UTC-5</SelectItem>
+                <SelectItem value="America/Sao_Paulo">America/Sao Paulo (BRT) - UTC-3</SelectItem>
+                <SelectItem value="Europe/London">Europe/London (GMT) - UTC+0</SelectItem>
+                <SelectItem value="Europe/Paris">Europe/Paris (CET) - UTC+1</SelectItem>
+                <SelectItem value="Europe/Berlin">Europe/Berlin (CET) - UTC+1</SelectItem>
+                <SelectItem value="Europe/Rome">Europe/Rome (CET) - UTC+1</SelectItem>
+                <SelectItem value="Europe/Moscow">Europe/Moscow (MSK) - UTC+3</SelectItem>
+                <SelectItem value="Africa/Cairo">Africa/Cairo (EET) - UTC+2</SelectItem>
+                <SelectItem value="Africa/Johannesburg">Africa/Johannesburg (SAST) - UTC+2</SelectItem>
               </SelectContent>
             </Select>
           </div>
