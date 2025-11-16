@@ -349,3 +349,102 @@ async def delete_demographic_preset(
     
     await db.demographic_presets.delete_one({"id": preset_id})
     return None
+
+
+# ============= Church Settings Routes =============
+
+@router.get("/church-settings", response_model=ChurchSettings)
+async def get_church_settings(
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    """Get church settings for current user's church"""
+    
+    church_id = current_user.get('church_id')
+    settings = await db.church_settings.find_one({"church_id": church_id}, {"_id": 0})
+    
+    if not settings:
+        # Return default settings if not found
+        default_settings = ChurchSettings(church_id=church_id)
+        return default_settings
+    
+    # Convert ISO strings
+    if isinstance(settings.get('created_at'), str):
+        settings['created_at'] = datetime.fromisoformat(settings['created_at'])
+    if isinstance(settings.get('updated_at'), str):
+        settings['updated_at'] = datetime.fromisoformat(settings['updated_at'])
+    
+    return settings
+
+
+@router.post("/church-settings", response_model=ChurchSettings, status_code=status.HTTP_201_CREATED)
+async def create_church_settings(
+    settings_data: ChurchSettingsCreate,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current_user: dict = Depends(require_admin)
+):
+    """Create church settings (admin only)"""
+    
+    # Verify user has access to this church
+    if current_user.get('role') != 'super_admin' and current_user.get('church_id') != settings_data.church_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied"
+        )
+    
+    # Check if settings already exist
+    existing = await db.church_settings.find_one({"church_id": settings_data.church_id})
+    if existing:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Church settings already exist. Use update endpoint instead."
+        )
+    
+    church_settings = ChurchSettings(**settings_data.model_dump())
+    settings_doc = church_settings.model_dump()
+    settings_doc['created_at'] = settings_doc['created_at'].isoformat()
+    settings_doc['updated_at'] = settings_doc['updated_at'].isoformat()
+    
+    await db.church_settings.insert_one(settings_doc)
+    return church_settings
+
+
+@router.patch("/church-settings", response_model=ChurchSettings)
+async def update_church_settings(
+    settings_data: ChurchSettingsUpdate,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current_user: dict = Depends(require_admin)
+):
+    """Update church settings for current user's church"""
+    
+    church_id = current_user.get('church_id')
+    settings = await db.church_settings.find_one({"church_id": church_id})
+    
+    # Create settings if they don't exist
+    if not settings:
+        default_settings = ChurchSettings(church_id=church_id)
+        settings_doc = default_settings.model_dump()
+        settings_doc['created_at'] = settings_doc['created_at'].isoformat()
+        settings_doc['updated_at'] = settings_doc['updated_at'].isoformat()
+        await db.church_settings.insert_one(settings_doc)
+        settings = settings_doc
+    
+    # Update only provided fields
+    update_data = settings_data.model_dump(exclude_unset=True)
+    if update_data:
+        update_data['updated_at'] = datetime.now().isoformat()
+        await db.church_settings.update_one(
+            {"church_id": church_id},
+            {"$set": update_data}
+        )
+    
+    # Get updated settings
+    updated_settings = await db.church_settings.find_one({"church_id": church_id}, {"_id": 0})
+    
+    # Convert ISO strings
+    if isinstance(updated_settings.get('created_at'), str):
+        updated_settings['created_at'] = datetime.fromisoformat(updated_settings['created_at'])
+    if isinstance(updated_settings.get('updated_at'), str):
+        updated_settings['updated_at'] = datetime.fromisoformat(updated_settings['updated_at'])
+    
+    return updated_settings
