@@ -695,12 +695,15 @@ def test_create_demographic():
     
     headers = {"Authorization": f"Bearer {auth_token}"}
     
+    import time
+    unique_suffix = str(int(time.time()))[-6:]
+    
     new_demographic = {
-        "name": "Youth",
+        "name": f"Test Demo {unique_suffix}",
         "min_age": 18,
         "max_age": 35,
-        "description": "Young adults and youth members",
-        "order": 1,
+        "description": "Test demographic for API testing",
+        "order": 10,
         "is_active": True,
         "church_id": church_id
     }
