@@ -922,6 +922,19 @@ def run_all_tests():
         ("List Users", test_list_users),
         ("Register Staff User", test_register_staff_user),
         ("Register Admin User", test_register_admin_user),
+        # Settings API Tests
+        ("Create Member Status", test_create_member_status),
+        ("Create Duplicate Member Status", test_create_duplicate_member_status),
+        ("List Member Statuses", test_list_member_statuses),
+        ("Get Member Status", test_get_member_status),
+        ("Update Member Status", test_update_member_status),
+        ("Create Demographic Preset", test_create_demographic),
+        ("Create Demographic Invalid Age Range", test_create_demographic_invalid_age_range),
+        ("List Demographics", test_list_demographics),
+        ("Get Demographic Preset", test_get_demographic),
+        ("Update Demographic Preset", test_update_demographic),
+        ("Delete Member Status", test_delete_member_status),
+        ("Delete Demographic Preset", test_delete_demographic),
     ]
     
     for test_name, test_func in tests:
