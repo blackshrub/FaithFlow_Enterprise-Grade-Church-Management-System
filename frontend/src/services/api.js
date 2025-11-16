@@ -56,4 +56,14 @@ export const churchesAPI = {
   delete: (id) => api.delete(`/churches/${id}`),
 };
 
+// Members API
+export const membersAPI = {
+  list: (params) => api.get('/members', { params }),
+  get: (id) => api.get(`/members/${id}`),
+  create: (data) => api.post('/members', data),
+  update: (id, data) => api.patch(`/members/${id}`, data),
+  delete: (id) => api.delete(`/members/${id}`),
+  getStats: () => api.get('/members/stats/summary'),
+};
+
 export default api;
