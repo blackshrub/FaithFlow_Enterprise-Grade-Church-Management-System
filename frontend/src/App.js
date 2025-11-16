@@ -2,7 +2,6 @@ import React from "react";
 import "@/App.css";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { QueryClientProvider } from '@tanstack/react-query';
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { AuthProvider } from "./context/AuthContext";
 import { Toaster } from "./components/ui/sonner";
 import { queryClient } from './lib/react-query';
@@ -53,7 +52,6 @@ function App() {
         </BrowserRouter>
         <Toaster />
       </AuthProvider>
-      <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>
   );
 }
