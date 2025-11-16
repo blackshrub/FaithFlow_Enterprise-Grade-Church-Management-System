@@ -87,4 +87,47 @@ export const settingsAPI = {
   updateChurchSettings: (data) => api.patch('/settings/church-settings', data),
 };
 
+// Import/Export API
+export const importExportAPI = {
+  // Templates
+  listTemplates: () => api.get('/import-export/templates'),
+  createTemplate: (data) => api.post('/import-export/templates', data),
+  
+  // Import
+  parseFile: (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post('/import-export/parse-file', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
+  simulateImport: (data) => {
+    const formData = new FormData();
+    Object.keys(data).forEach(key => {
+      formData.append(key, data[key]);
+    });
+    return api.post('/import-export/simulate', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
+  importMembers: (data) => {
+    const formData = new FormData();
+    Object.keys(data).forEach(key => {
+      formData.append(key, data[key]);
+    });
+    return api.post('/import-export/import-members', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
+  
+  // Export
+  exportMembers: (params) => api.get('/import-export/export-members', { 
+    params,
+    responseType: 'blob' 
+  }),
+  
+  // Logs
+  listLogs: () => api.get('/import-export/logs'),
+};
+
 export default api;
