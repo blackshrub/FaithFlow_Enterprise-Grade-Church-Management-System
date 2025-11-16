@@ -48,6 +48,7 @@ export const authAPI = {
 
 // Churches API
 export const churchesAPI = {
+  listPublic: () => api.get('/churches/public/list'),
   list: () => api.get('/churches'),
   get: (id) => api.get(`/churches/${id}`),
   create: (data) => api.post('/churches', data),
