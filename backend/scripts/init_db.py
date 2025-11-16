@@ -55,7 +55,7 @@ async def init_database():
         print(f"✓ Default church already exists: {existing_church['name']} (ID: {church_id})")
     
     # Create super admin user
-    super_admin_email = "admin@demochurch.com"
+    super_admin_email = "admin@gkbjtamankencana.org"
     existing_admin = await db.users.find_one({"email": super_admin_email})
     
     if not existing_admin:
