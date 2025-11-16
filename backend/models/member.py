@@ -22,6 +22,7 @@ class MemberBase(BaseModel):
     is_active: bool = True
     household_id: Optional[str] = None
     notes: Optional[str] = None
+    demographic_category: Optional[str] = None  # Auto-assigned based on age
 
 
 class MemberCreate(MemberBase):
