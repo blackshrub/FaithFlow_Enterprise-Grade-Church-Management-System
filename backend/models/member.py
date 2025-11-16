@@ -47,6 +47,7 @@ class MemberUpdate(BaseModel):
     is_active: Optional[bool] = None
     household_id: Optional[str] = None
     notes: Optional[str] = None
+    demographic_category: Optional[str] = None  # Auto-assigned based on age
 
 
 class Member(MemberBase):
