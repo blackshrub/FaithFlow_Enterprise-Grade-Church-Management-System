@@ -2,8 +2,10 @@ import React from "react";
 import "@/App.css";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
+import { Toaster } from "./components/ui/sonner";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
+import Members from "./pages/Members";
 import Layout from "./components/Layout/Layout";
 import ProtectedRoute from "./components/Layout/ProtectedRoute";
 
@@ -26,9 +28,9 @@ function App() {
           >
             <Route index element={<Navigate to="/dashboard" replace />} />
             <Route path="dashboard" element={<Dashboard />} />
+            <Route path="members" element={<Members />} />
             
             {/* Placeholder routes - will be implemented in next phases */}
-            <Route path="members" element={<PlaceholderPage title="Members" />} />
             <Route path="groups" element={<PlaceholderPage title="Groups" />} />
             <Route path="events" element={<PlaceholderPage title="Events" />} />
             <Route path="donations" element={<PlaceholderPage title="Donations" />} />
@@ -43,6 +45,7 @@ function App() {
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </BrowserRouter>
+      <Toaster />
     </AuthProvider>
   );
 }
