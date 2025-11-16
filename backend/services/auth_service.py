@@ -1,0 +1,116 @@
+import logging
+from typing import Optional
+from motor.motor_asyncio import AsyncIOMotorDatabase
+from datetime import timedelta
+
+from utils.security import hash_password, verify_password, create_access_token
+from models.user import User, UserCreate, UserLogin
+
+logger = logging.getLogger(__name__)
+
+
+class AuthService:
+    """Service for authentication and user management"""
+    
+    @staticmethod
+    async def register_user(user_data: UserCreate, db: AsyncIOMotorDatabase) -> Optional[User]:
+        """Register a new user
+        
+        Args:
+            user_data: User registration data
+            db: Database instance
+            
+        Returns:
+            User object if successful, None otherwise
+        """
+        try:
+            # Check if user already exists
+            existing_user = await db.users.find_one({"email": user_data.email})
+            if existing_user:
+                logger.warning(f"User registration failed: Email {user_data.email} already exists")
+                return None
+            
+            # Verify church exists
+            church = await db.churches.find_one({"id": user_data.church_id})
+            if not church:
+                logger.warning(f"User registration failed: Church {user_data.church_id} not found")
+                return None
+            
+            # Create user object
+            user_dict = user_data.model_dump()
+            hashed_password = hash_password(user_dict.pop('password'))
+            
+            user = User(**user_dict)
+            user_doc = user.model_dump()
+            user_doc['hashed_password'] = hashed_password
+            user_doc['created_at'] = user_doc['created_at'].isoformat()
+            user_doc['updated_at'] = user_doc['updated_at'].isoformat()
+            
+            # Insert into database
+            await db.users.insert_one(user_doc)
+            
+            logger.info(f"User {user.email} registered successfully")
+            return user
+            
+        except Exception as e:
+            logger.error(f"Error registering user: {str(e)}")
+            return None
+    
+    @staticmethod
+    async def authenticate_user(login_data: UserLogin, db: AsyncIOMotorDatabase) -> Optional[dict]:
+        """Authenticate user and return access token
+        
+        Args:
+            login_data: Login credentials
+            db: Database instance
+            
+        Returns:
+            Dict with access_token and user data if successful, None otherwise
+        """
+        try:
+            # Find user by email
+            user = await db.users.find_one({"email": login_data.email}, {"_id": 0})
+            if not user:
+                logger.warning(f"Login failed: User {login_data.email} not found")
+                return None
+            
+            # Verify password
+            if not verify_password(login_data.password, user.get('hashed_password', '')):
+                logger.warning(f"Login failed: Invalid password for {login_data.email}")
+                return None
+            
+            # Check if user is active
+            if not user.get('is_active', False):
+                logger.warning(f"Login failed: User {login_data.email} is inactive")
+                return None
+            
+            # Get church info
+            church = await db.churches.find_one({"id": user.get('church_id')}, {"_id": 0})
+            if not church:
+                logger.warning(f"Login failed: Church not found for user {login_data.email}")
+                return None
+            
+            # Create access token
+            access_token = create_access_token(
+                data={"sub": user['id'], "email": user['email'], "role": user['role']}
+            )
+            
+            # Remove sensitive data
+            user.pop('hashed_password', None)
+            
+            logger.info(f"User {login_data.email} logged in successfully")
+            
+            return {
+                "access_token": access_token,
+                "token_type": "bearer",
+                "user": user,
+                "church": church
+            }
+            
+        except Exception as e:
+            logger.error(f"Error authenticating user: {str(e)}")
+            return None
+
+
+# Create singleton instance
+auth_service = AuthService()
