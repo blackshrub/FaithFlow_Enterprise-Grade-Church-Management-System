@@ -177,6 +177,14 @@ async def update_member(
     if update_data:
         update_data['updated_at'] = datetime.now().isoformat()
         
+        # Re-calculate demographic if date_of_birth is being updated
+        if 'date_of_birth' in update_data:
+            # Get current member data and merge with update
+            temp_member = {**member, **update_data}
+            demographic = await auto_assign_demographic(temp_member, db)
+            if demographic:
+                update_data['demographic_category'] = demographic
+        
         # Convert date fields to ISO strings
         if update_data.get('date_of_birth'):
             update_data['date_of_birth'] = update_data['date_of_birth'].isoformat()
