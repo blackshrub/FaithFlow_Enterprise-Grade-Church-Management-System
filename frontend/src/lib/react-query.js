@@ -74,4 +74,10 @@ export const queryKeys = {
     all: (churchId, params = {}) => ['spiritualJourney', { churchId, ...params }],
     detail: (churchId, memberId) => ['spiritualJourney', churchId, memberId],
   },
+  
+  // Settings keys
+  settings: {
+    memberStatuses: (churchId) => ['settings', 'memberStatuses', { churchId }],
+    demographics: (churchId) => ['settings', 'demographics', { churchId }],
+  },
 };
