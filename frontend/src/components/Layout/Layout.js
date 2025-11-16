@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import {
   Menu,
@@ -15,10 +16,13 @@ import {
   LogOut,
   Church,
   Settings,
+  Globe,
 } from 'lucide-react';
 import { Button } from '../ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
 export default function Layout() {
+  const { t, i18n } = useTranslation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { user, church, logout, isSuperAdmin } = useAuth();
   const navigate = useNavigate();
@@ -28,22 +32,26 @@ export default function Layout() {
     navigate('/login');
   };
 
+  const changeLanguage = (lng) => {
+    i18n.changeLanguage(lng);
+  };
+
   const menuItems = [
-    { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
-    { icon: Users, label: 'Members', path: '/members' },
-    { icon: UsersRound, label: 'Groups', path: '/groups' },
-    { icon: Calendar, label: 'Events', path: '/events' },
-    { icon: DollarSign, label: 'Donations', path: '/donations' },
-    { icon: Heart, label: 'Prayer Requests', path: '/prayers' },
-    { icon: BookOpen, label: 'Content', path: '/content' },
-    { icon: Award, label: 'Spiritual Journey', path: '/spiritual-journey' },
+    { icon: LayoutDashboard, label: t('nav.dashboard'), path: '/dashboard' },
+    { icon: Users, label: t('nav.members'), path: '/members' },
+    { icon: UsersRound, label: t('nav.groups'), path: '/groups' },
+    { icon: Calendar, label: t('nav.events'), path: '/events' },
+    { icon: DollarSign, label: t('nav.donations'), path: '/donations' },
+    { icon: Heart, label: t('nav.prayers'), path: '/prayers' },
+    { icon: BookOpen, label: t('nav.content'), path: '/content' },
+    { icon: Award, label: t('nav.spiritualJourney'), path: '/spiritual-journey' },
   ];
 
   if (isSuperAdmin) {
-    menuItems.push({ icon: Church, label: 'Churches', path: '/churches' });
+    menuItems.push({ icon: Church, label: t('nav.churches'), path: '/churches' });
   }
 
-  menuItems.push({ icon: Settings, label: 'Settings', path: '/settings' });
+  menuItems.push({ icon: Settings, label: t('nav.settings'), path: '/settings' });
 
   return (
     <div className="flex h-screen bg-gray-100">
