@@ -1,24 +1,26 @@
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from typing import Optional
-from motor.motor_asyncio import AsyncIOMotorDatabase
+from motor.motor_asyncio import AsyncIOMotorDatabase, AsyncIOMotorClient
 import os
-from motor.motor_asyncio import AsyncIOMotorClient
 
 from .security import decode_access_token
 
 # Security scheme
 security = HTTPBearer()
 
-# MongoDB connection
-mongo_url = os.environ['MONGO_URL']
-client = AsyncIOMotorClient(mongo_url)
-db = client[os.environ['DB_NAME']]
+# MongoDB connection will be lazy-loaded
+_db_instance = None
 
 
 async def get_db() -> AsyncIOMotorDatabase:
-    """Get database instance"""
-    return db
+    """Get database instance (lazy-loaded)"""
+    global _db_instance
+    if _db_instance is None:
+        mongo_url = os.environ.get('MONGO_URL', 'mongodb://localhost:27017')
+        client = AsyncIOMotorClient(mongo_url)
+        _db_instance = client[os.environ.get('DB_NAME', 'church_management')]
+    return _db_instance
 
 
 async def get_current_user(
