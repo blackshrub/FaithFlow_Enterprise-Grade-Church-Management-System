@@ -543,14 +543,27 @@ def test_create_duplicate_member_status():
     """Test creating a duplicate member status (should fail)"""
     print_test_header("Create Duplicate Member Status (Should Fail)")
     
-    if not auth_token or not church_id:
-        print_error("No auth token or church_id available")
+    if not auth_token or not church_id or not test_member_status_id:
+        print_error("No auth token, church_id, or test_member_status_id available")
         return False
     
     headers = {"Authorization": f"Bearer {auth_token}"}
     
+    # Get the name of the status we just created
+    success_get, response_get, _ = make_request(
+        "GET",
+        f"/settings/member-statuses/{test_member_status_id}",
+        headers=headers
+    )
+    
+    if not success_get:
+        print_error("Could not retrieve created status to get its name")
+        return False
+    
+    existing_name = response_get.json().get('name')
+    
     duplicate_status = {
-        "name": "Active Member",  # Same name as previous test
+        "name": existing_name,  # Same name as previous test
         "description": "Duplicate test",
         "order": 2,
         "is_active": True,
