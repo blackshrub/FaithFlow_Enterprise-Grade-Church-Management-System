@@ -20,6 +20,8 @@ TEST_CREDENTIALS = {
 auth_token: Optional[str] = None
 church_id: Optional[str] = None
 test_user_id: Optional[str] = None
+test_member_status_id: Optional[str] = None
+test_demographic_id: Optional[str] = None
 
 
 class Colors:
