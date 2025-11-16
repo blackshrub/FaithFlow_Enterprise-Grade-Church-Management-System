@@ -112,14 +112,27 @@ export default function Layout() {
           </nav>
 
           {/* Logout Button */}
-          <div className="p-4 border-t">
+          <div className="p-4 border-t space-y-3">
+            {/* Language Selector */}
+            <div className="flex items-center gap-2">
+              <Globe className="h-4 w-4 text-gray-500" />
+              <Select value={i18n.language} onValueChange={changeLanguage}>
+                <SelectTrigger className="h-8 text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="en">English</SelectItem>
+                  <SelectItem value="id">Bahasa Indonesia</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <Button
               onClick={handleLogout}
               variant="outline"
               className="w-full"
             >
               <LogOut className="h-4 w-4 mr-2" />
-              Logout
+              {t('auth.logout')}
             </Button>
           </div>
         </div>
