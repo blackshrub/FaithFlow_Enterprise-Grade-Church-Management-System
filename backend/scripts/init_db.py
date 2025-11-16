@@ -28,25 +28,25 @@ async def init_database():
     
     print("Initializing database...")
     
-    # Create default church
+    # Create default church - GKBJ Taman Kencana
     church_id = str(uuid.uuid4())
     default_church = {
         "id": church_id,
-        "name": "Demo Church",
-        "address": "123 Main Street",
-        "city": "Demo City",
-        "state": "Demo State",
-        "country": "Demo Country",
-        "phone": "+1234567890",
-        "email": "contact@demochurch.com",
-        "pastor_name": "Pastor John Doe",
+        "name": "GKBJ Taman Kencana",
+        "address": "Jl. Taman Kencana No. 123",
+        "city": "Jakarta",
+        "state": "DKI Jakarta",
+        "country": "Indonesia",
+        "phone": "+62812345678",
+        "email": "info@gkbjtamankencana.org",
+        "pastor_name": "Pdt. John Doe",
         "is_active": True,
         "created_at": datetime.now(timezone.utc).isoformat(),
         "updated_at": datetime.now(timezone.utc).isoformat()
     }
     
     # Check if church already exists
-    existing_church = await db.churches.find_one({"name": "Demo Church"})
+    existing_church = await db.churches.find_one({"name": "GKBJ Taman Kencana"})
     if not existing_church:
         await db.churches.insert_one(default_church)
         print(f"✓ Created default church: {default_church['name']} (ID: {church_id})")
