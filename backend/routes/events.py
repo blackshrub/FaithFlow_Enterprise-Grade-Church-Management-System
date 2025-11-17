@@ -6,6 +6,8 @@ import logging
 
 from models.event import Event, EventCreate, EventUpdate
 from utils.dependencies import get_db, require_admin, get_current_user
+from services.qr_service import generate_confirmation_code, generate_rsvp_qr_data
+from services.whatsapp_service import send_whatsapp_message, format_rsvp_confirmation_message
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/events", tags=["Events"])
