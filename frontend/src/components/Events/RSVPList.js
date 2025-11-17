@@ -94,7 +94,19 @@ function RSVPList({ event, rsvpData, isLoading, selectedSession }) {
               key={index}
               className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
             >
-              <div className="flex items-start justify-between">
+              <div className="flex items-start gap-4">
+                {/* QR Code */}
+                {rsvp.qr_code && (
+                  <div className="flex-shrink-0">
+                    <img 
+                      src={rsvp.qr_code} 
+                      alt="QR Code" 
+                      className="w-24 h-24 border border-gray-300 rounded"
+                    />
+                  </div>
+                )}
+                
+                {/* RSVP Details */}
                 <div className="flex-1 space-y-2">
                   {/* Member Info */}
                   <div className="flex items-center gap-2">
@@ -108,6 +120,16 @@ function RSVPList({ event, rsvpData, isLoading, selectedSession }) {
                       )}
                     </div>
                   </div>
+
+                  {/* Confirmation Code */}
+                  {rsvp.confirmation_code && (
+                    <div className="flex items-center gap-2">
+                      <QrCode className="h-4 w-4 text-blue-500" />
+                      <span className="font-mono text-sm font-medium text-blue-600">
+                        {rsvp.confirmation_code}
+                      </span>
+                    </div>
+                  )}
 
                 {/* Session Info */}
                 {rsvp.session_id && (
