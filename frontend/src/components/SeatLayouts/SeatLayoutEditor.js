@@ -242,25 +242,25 @@ function SeatLayoutEditor({ layout, onClose }) {
 
               <div className="bg-gray-50 p-6 rounded-lg overflow-x-auto">
                 <div className="w-fit mx-auto">
-                  {/* Stage - aligned with seat columns */}
-                  <div className="mb-4" style={{ marginLeft: '40px' }}>
-                    <div className="bg-gradient-to-b from-gray-800 to-gray-700 text-white text-center py-3 rounded-lg" style={{ width: `${formData.columns * 36 + (formData.columns - 1) * 4}px` }}>
+                  {/* Stage - centered independently */}
+                  <div className="mb-4 mx-auto" style={{ width: `${formData.columns * 36 + (formData.columns - 1) * 4}px` }}>
+                    <div className="bg-gradient-to-b from-gray-800 to-gray-700 text-white text-center py-3 rounded-lg">
                       <p className="font-bold text-lg">{t('events.seatLayout.stage')}</p>
                     </div>
                   </div>
 
-                  {/* Seat Grid with row labels */}
-                  <div>
+                  {/* Seat Grid - centered independently, row labels positioned outside */}
+                  <div className="mx-auto" style={{ width: `${formData.columns * 36 + (formData.columns - 1) * 4}px` }}>
                     {Array.from({ length: formData.rows }, (_, rowIdx) => {
                       const rowLetter = String.fromCharCode(65 + rowIdx);
                       return (
-                        <div key={rowLetter} className="flex items-center gap-2 mb-2">
-                          {/* Row Label */}
-                          <div className="w-8 text-center font-semibold text-gray-700">
+                        <div key={rowLetter} className="relative mb-2">
+                          {/* Row Label - positioned outside left using absolute */}
+                          <div className="absolute right-full pr-2 w-8 text-center font-semibold text-gray-700 flex items-center justify-center h-8">
                             {rowLetter}
                           </div>
 
-                          {/* Seats */}
+                          {/* Seats - full width of container */}
                           <div className="flex gap-1">
                             {Array.from({ length: formData.columns }, (_, colIdx) => {
                               const seatId = `${rowLetter}${colIdx + 1}`;
