@@ -33,6 +33,7 @@
     "@radix-ui/react-tooltip": "^1.2.4",
     "@tanstack/react-query": "^5.90.10",
     "@tanstack/react-query-devtools": "^5.90.2",
+    "@tiptap/extension-image": "^2.8.0",
     "@tiptap/extension-link": "^2.8.0",
     "@tiptap/react": "^2.8.0",
     "@tiptap/starter-kit": "^2.8.0",
