@@ -34,6 +34,28 @@ function KioskMode() {
   const [successData, setSuccessData] = useState(null);
   const [onsiteRSVPData, setOnsiteRSVPData] = useState(null);
   const [showQuickAdd, setShowQuickAdd] = useState(false);
+  const [kioskTheme, setKioskTheme] = useState(() => {
+    return localStorage.getItem('kioskTheme') || 'ocean';
+  });
+
+  // Theme configurations with colorful patterns
+  const themes = {
+    ocean: 'bg-gradient-to-br from-blue-400 via-blue-500 to-cyan-600',
+    sunset: 'bg-gradient-to-br from-orange-400 via-pink-500 to-red-600',
+    forest: 'bg-gradient-to-br from-green-400 via-emerald-500 to-teal-600',
+    lavender: 'bg-gradient-to-br from-purple-400 via-violet-500 to-indigo-600',
+    rose: 'bg-gradient-to-br from-pink-400 via-rose-500 to-fuchsia-600',
+    midnight: 'bg-gradient-to-br from-indigo-900 via-blue-900 to-slate-900',
+    autumn: 'bg-gradient-to-br from-amber-400 via-orange-500 to-yellow-600',
+    mint: 'bg-gradient-to-br from-teal-300 via-green-400 to-emerald-500',
+    coral: 'bg-gradient-to-br from-coral-400 via-orange-400 to-pink-500',
+    galaxy: 'bg-gradient-to-br from-purple-900 via-violet-800 to-fuchsia-900',
+  };
+
+  const handleThemeChange = (theme) => {
+    setKioskTheme(theme);
+    localStorage.setItem('kioskTheme', theme);
+  };
 
   const webcamRef = useRef(null);
   const codeReader = useRef(null);
