@@ -140,7 +140,9 @@ export default function StepFieldMapping({ wizardData, updateWizardData, nextSte
         <div className="flex justify-between items-center">
           <div>
             <CardTitle>{t('importExport.mapFields')}</CardTitle>
-            <CardDescription>{t('importExport.mapFieldsDesc')}</CardDescription>
+            <CardDescription>
+              {t('importExport.mapFieldsDesc')} • {t('importExport.totalRecordsToImport', { count: wizardData.totalRecords })}
+            </CardDescription>
           </div>
           <div className="flex gap-2">
             <Button onClick={autoMap} variant="outline" size="sm">
