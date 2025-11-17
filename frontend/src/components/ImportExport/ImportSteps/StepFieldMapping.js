@@ -32,6 +32,14 @@ const TARGET_FIELDS = [
 export default function StepFieldMapping({ wizardData, updateWizardData, nextStep, prevStep }) {
   const { t } = useTranslation();
   const [defaultValues, setDefaultValues] = useState({});
+  const [customFields, setCustomFields] = useState(wizardData.customFields || []);
+  const [isAddCustomFieldOpen, setIsAddCustomFieldOpen] = useState(false);
+  const [newCustomField, setNewCustomField] = useState({
+    name: '',
+    type: 'string',
+    required: false,
+    description: ''
+  });
 
   const handleMappingChange = (targetField, sourceField) => {
     // Store reversed mapping: sourceField -> targetField for backend
