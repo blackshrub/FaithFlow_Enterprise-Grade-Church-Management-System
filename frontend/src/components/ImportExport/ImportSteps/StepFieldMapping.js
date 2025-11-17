@@ -294,6 +294,78 @@ export default function StepFieldMapping({ wizardData, updateWizardData, nextSte
                   </TableRow>
                 );
               })}
+              
+              {/* Custom Fields */}
+              {customFields.map((customField, index) => {
+                const sourceField = getSourceFieldForTarget(customField.name);
+                const hasDefault = defaultValues[customField.name];
+                
+                return (
+                  <TableRow key={`custom-${index}`} className="bg-blue-50">
+                    <TableCell className="font-medium">
+                      <div className="flex items-center gap-2">
+                        {customField.name}
+                        <Badge variant="outline" className="text-xs">{t('importExport.custom')}</Badge>
+                        {customField.required && <Badge variant="destructive">Required</Badge>}
+                      </div>
+                      {customField.description && (
+                        <p className="text-xs text-gray-500 mt-1">{customField.description}</p>
+                      )}
+                      <p className="text-xs text-blue-600 mt-1">
+                        {t('importExport.type')}: {customField.type}
+                      </p>
+                    </TableCell>
+                    <TableCell>
+                      {customField.required ? (
+                        <Badge variant="destructive">Yes</Badge>
+                      ) : (
+                        <Badge variant="secondary">No</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-2">
+                        <Select
+                          value={sourceField || ''}
+                          onValueChange={(value) => handleMappingChange(customField.name, value)}
+                        >
+                          <SelectTrigger className="flex-1">
+                            <SelectValue placeholder={t('importExport.selectColumn')} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {!customField.required && (
+                              <>
+                                <SelectItem value="_skip_">{t('importExport.skipField')}</SelectItem>
+                                <SelectItem value="_default_">{t('importExport.useDefault')}</SelectItem>
+                              </>
+                            )}
+                            {wizardData.headers.map((header) => (
+                              <SelectItem key={header} value={header}>
+                                {header}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeCustomField(index)}
+                        >
+                          <Trash2 className="h-4 w-4 text-red-500" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Input
+                        placeholder={t('importExport.enterDefault')}
+                        value={defaultValues[customField.name] || ''}
+                        onChange={(e) => handleDefaultValueChange(customField.name, e.target.value)}
+                        disabled={!!sourceField && sourceField !== '_default_'}
+                        className="max-w-xs"
+                      />
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </div>
