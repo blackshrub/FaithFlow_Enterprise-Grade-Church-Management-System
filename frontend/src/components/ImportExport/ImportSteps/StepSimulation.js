@@ -176,9 +176,11 @@ export default function StepSimulation({ wizardData, updateWizardData, simulateI
             </Button>
             <Button 
               onClick={nextStep} 
-              disabled={hasErrors}
+              disabled={!simulationResults.ready_to_import && !hasDuplicates}
             >
-              {t('importExport.proceedToImport')}
+              {hasDuplicates 
+                ? t('importExport.resolveDuplicates')
+                : t('importExport.proceedToImport')}
               <ChevronRight className="h-4 w-4 ml-2" />
             </Button>
           </div>
