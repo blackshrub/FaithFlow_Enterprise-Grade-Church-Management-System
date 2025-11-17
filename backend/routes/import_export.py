@@ -164,6 +164,7 @@ async def import_members(
     field_mappings: str = Form(...),
     value_mappings: str = Form(default='{}'),
     default_values: str = Form(default='{}'),
+    duplicate_resolutions: str = Form(default='{}'),  # JSON: {phone: row_index_to_keep}
     date_format: str = Form(default='DD-MM-YYYY'),
     db: AsyncIOMotorDatabase = Depends(get_db),
     current_user: dict = Depends(require_admin)
@@ -175,6 +176,7 @@ async def import_members(
         field_map = json.loads(field_mappings)
         value_map = json.loads(value_mappings)
         defaults = json.loads(default_values)
+        resolutions = json.loads(duplicate_resolutions)
         
         # Parse file
         if file_type == 'csv':
@@ -186,9 +188,17 @@ async def import_members(
         mapped_data = import_export_service.apply_field_mapping(data, field_map, defaults)
         transformed_data = import_export_service.apply_value_mapping(mapped_data, value_map)
         
+        # Apply duplicate resolutions: set phone to blank for non-selected records
+        for idx, row in enumerate(transformed_data, start=1):
+            if row.get('phone_whatsapp'):
+                phone = normalize_phone_number(row['phone_whatsapp'])
+                # If this phone has a resolution and this row wasn't selected, blank the phone
+                if phone in resolutions and resolutions[phone] != idx:
+                    row['phone_whatsapp'] = None
+        
         # Validate data
         church_id = current_user.get('church_id')
-        valid_data, errors = await import_export_service.validate_member_data(
+        valid_data, errors, duplicate_conflicts = await import_export_service.validate_member_data(
             transformed_data, 
             church_id, 
             date_format,
