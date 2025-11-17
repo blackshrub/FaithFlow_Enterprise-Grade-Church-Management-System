@@ -26,10 +26,30 @@ async def create_member(
             detail="Access denied"
         )
     
+    # Create member object
+    member_dict = member_data.model_dump()
+    
+    # Combine first_name and last_name into full_name if not provided
+    if not member_dict.get('full_name') and (member_dict.get('first_name') or member_dict.get('last_name')):
+        member_dict['full_name'] = combine_full_name(
+            member_dict.get('first_name', ''),
+            member_dict.get('last_name', '')
+        )
+    
+    # Split full_name for backward compatibility
+    if member_dict.get('full_name') and not member_dict.get('first_name'):
+        parts = member_dict['full_name'].strip().split(maxsplit=1)
+        member_dict['first_name'] = parts[0] if len(parts) > 0 else member_dict['full_name']
+        member_dict['last_name'] = parts[1] if len(parts) > 1 else parts[0] if len(parts) > 0 else member_dict['full_name']
+    
+    # Normalize phone number
+    if member_dict.get('phone_whatsapp'):
+        member_dict['phone_whatsapp'] = normalize_phone_number(member_dict['phone_whatsapp'])
+    
     # Check if member with same WhatsApp number already exists in this church
     existing = await db.members.find_one({
         "church_id": member_data.church_id,
-        "phone_whatsapp": member_data.phone_whatsapp
+        "phone_whatsapp": member_dict['phone_whatsapp']
     })
     if existing:
         raise HTTPException(
@@ -37,7 +57,7 @@ async def create_member(
             detail="Member with this WhatsApp number already exists"
         )
     
-    member = Member(**member_data.model_dump())
+    member = Member(**member_dict)
     member_doc = member.model_dump()
     
     # Auto-assign demographic category based on age
