@@ -194,6 +194,60 @@ function EventCard({ event, onEdit }) {
           )}
         </div>
 
+        {/* Capacity Progress Bar */}
+        {event.requires_rsvp && capacityInfo && (
+          <div className="mt-4 pt-4 border-t border-gray-200">
+            <div className="space-y-2">
+              {/* Capacity Label and Numbers */}
+              <div className="flex items-center justify-between text-sm">
+                <span className="font-medium text-gray-700">{t('events.event.capacity')}</span>
+                <span className="text-gray-600">
+                  {t('events.event.capacityProgress', { 
+                    count: capacityInfo.current, 
+                    total: capacityInfo.total 
+                  })}
+                </span>
+              </div>
+
+              {/* Progress Bar */}
+              <div className="relative w-full h-3 bg-gray-200 rounded-full overflow-hidden">
+                <div
+                  className={`absolute top-0 left-0 h-full transition-all duration-300 ${
+                    capacityInfo.percentage >= 100
+                      ? 'bg-red-500'
+                      : capacityInfo.percentage >= 80
+                      ? 'bg-yellow-500'
+                      : 'bg-green-500'
+                  }`}
+                  style={{ width: `${Math.min(capacityInfo.percentage, 100)}%` }}
+                />
+              </div>
+
+              {/* Percentage and Status */}
+              <div className="flex items-center justify-between text-xs">
+                <span className={`font-medium ${
+                  capacityInfo.percentage >= 100
+                    ? 'text-red-600'
+                    : capacityInfo.percentage >= 80
+                    ? 'text-yellow-600'
+                    : 'text-green-600'
+                }`}>
+                  {t('events.event.capacityPercentage', { percentage: capacityInfo.percentage })}
+                </span>
+                {capacityInfo.remaining > 0 ? (
+                  <span className="text-gray-500">
+                    {t('events.event.capacityRemaining', { remaining: capacityInfo.remaining })}
+                  </span>
+                ) : (
+                  <span className="text-red-600 font-medium">
+                    {t('events.event.capacityFull')}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Footer Actions - Always at bottom */}
         <div className="mt-4 pt-4 border-t border-gray-200 flex gap-2 flex-shrink-0">
           {event.event_type === 'series' && event.sessions?.length > 0 && (
