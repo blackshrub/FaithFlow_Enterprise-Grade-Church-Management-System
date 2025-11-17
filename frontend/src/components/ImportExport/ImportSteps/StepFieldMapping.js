@@ -15,7 +15,7 @@ const TARGET_FIELDS = [
   { value: 'gender', label: 'Gender', required: true, info: 'Must be: Male or Female' },
   { value: 'date_of_birth', label: 'Birth Date', required: true, info: 'Format must match church setting (default: DD-MM-YYYY)' },
   { value: 'address', label: 'Address', required: true },
-  { value: 'phone_whatsapp', label: 'Phone Number (WhatsApp)', required: true, info: 'Must be unique, international format: +628123456789' },
+  { value: 'phone_whatsapp', label: 'Phone Number (WhatsApp)', required: false, info: 'Optional - Kids may not have phones. Will be normalized to 62XXXXXXXXX if provided' },
   { value: 'blood_type', label: 'Blood Type', required: false, info: 'Must be: A, B, AB, or O' },
   { value: 'marital_status', label: 'Marital Status', required: false, info: 'Must be: Married, Not Married, Widower, or Widow' },
   { value: 'baptism_date', label: 'Baptism Date', required: false, info: 'Format must match church setting (default: DD-MM-YYYY)' },
