@@ -21,6 +21,7 @@ class MemberStatusUpdate(BaseModel):
     description: Optional[str] = None
     order: Optional[int] = None
     is_active: Optional[bool] = None
+    is_default_for_new: Optional[bool] = None
 
 
 class MemberStatus(MemberStatusBase):
