@@ -293,7 +293,19 @@
       "upcoming": "Mendatang",
       "rsvpCount": "{{count}} RSVP",
       "attendanceCount": "{{count}} hadir",
-      "seatsAvailable": "{{available}}/{{total}} kursi tersedia"
+      "seatsAvailable": "{{available}}/{{total}} kursi tersedia",
+      "eventsTotal": "Total: {{count}} acara",
+      "eventsTotal_one": "Total: {{count}} acara",
+      "eventsTotal_other": "Total: {{count}} acara",
+      "createSuccess": "Acara berhasil dibuat",
+      "updateSuccess": "Acara berhasil diperbarui",
+      "deleteSuccess": "Acara berhasil dihapus",
+      "createError": "Gagal membuat acara",
+      "updateError": "Gagal memperbarui acara",
+      "deleteError": "Gagal menghapus acara",
+      "loadError": "Gagal memuat acara",
+      "confirmDelete": "Apakah Anda yakin ingin menghapus acara ini?",
+      "eventDateRequired": "Tanggal acara diperlukan untuk acara tunggal"
     }
   },
   "importExport": {
