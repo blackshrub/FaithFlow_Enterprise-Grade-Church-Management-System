@@ -270,6 +270,7 @@
       "seatSelectionDesc": "Jemaat dapat memilih kursi tertentu saat pendaftaran",
       "seatCapacity": "Kapasitas Kursi",
       "seatCapacityDesc": "Jumlah maksimal peserta (opsional, kosongkan untuk tidak terbatas)",
+      "seatCapacityDescSeries": "Kapasitas maksimal per sesi (berlaku untuk semua sesi)",
       "seatCapacityPlaceholder": "contoh: 100",
       "capacityFull": "Acara sudah penuh",
       "capacityRemaining": "{{remaining}} kursi tersisa",
