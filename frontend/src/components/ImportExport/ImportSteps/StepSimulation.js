@@ -141,24 +141,6 @@ export default function StepSimulation({ wizardData, updateWizardData, simulateI
             </div>
           )}
 
-          {/* Warnings */}
-          {hasWarnings && (
-            <div>
-              <h3 className="font-semibold mb-3 text-yellow-600">
-                {t('importExport.warnings')} ({simulationResults.warnings.length})
-              </h3>
-              <div className="border border-yellow-200 rounded-lg p-4 max-h-64 overflow-y-auto bg-yellow-50">
-                <ul className="space-y-1">
-                  {simulationResults.warnings.map((warning, idx) => (
-                    <li key={idx} className="text-sm text-yellow-700">
-                      • {warning}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          )}
-
           {/* Navigation Buttons */}
           <div className="flex justify-between pt-4">
             <Button variant="outline" onClick={prevStep}>
