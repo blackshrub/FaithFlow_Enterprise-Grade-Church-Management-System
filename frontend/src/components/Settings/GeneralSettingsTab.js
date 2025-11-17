@@ -185,6 +185,57 @@ export default function GeneralSettingsTab() {
             </Select>
             <p className="text-sm text-gray-500">{t('settings.defaultLanguageDesc')}</p>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* WhatsApp Notifications */}
+      <Card>
+        <CardHeader>
+          <CardTitle>{t('settings.whatsappNotifications')}</CardTitle>
+          <CardDescription>
+            {t('settings.whatsappNotificationsDesc')}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+            <div className="flex-1">
+              <Label htmlFor="enable_whatsapp" className="text-base font-medium">
+                {t('settings.enableWhatsappNotifications')}
+              </Label>
+              <p className="text-sm text-gray-500 mt-1">
+                {t('settings.enableWhatsappDesc')}
+              </p>
+            </div>
+            <input
+              type="checkbox"
+              id="enable_whatsapp"
+              checked={formData.enable_whatsapp_notifications}
+              onChange={(e) => setFormData({ ...formData, enable_whatsapp_notifications: e.target.checked })}
+              className="w-5 h-5"
+            />
+          </div>
+
+          {formData.enable_whatsapp_notifications && (
+            <div className="pl-6 border-l-2 border-gray-300 space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <Label htmlFor="send_rsvp_confirmation" className="font-medium">
+                    {t('settings.sendRSVPConfirmation')}
+                  </Label>
+                  <p className="text-sm text-gray-500 mt-1">
+                    {t('settings.sendRSVPConfirmationDesc')}
+                  </p>
+                </div>
+                <input
+                  type="checkbox"
+                  id="send_rsvp_confirmation"
+                  checked={formData.whatsapp_send_rsvp_confirmation}
+                  onChange={(e) => setFormData({ ...formData, whatsapp_send_rsvp_confirmation: e.target.checked })}
+                  className="w-5 h-5"
+                />
+              </div>
+            </div>
+          )}
 
           <div className="pt-4">
             <Button 
