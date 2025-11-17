@@ -14,6 +14,7 @@ export default function StepPhotoUpload({ wizardData, updateWizardData, nextStep
   const [uploadResults, setUploadResults] = useState(wizardData.photoSimulation || null);
   const [processing, setProcessing] = useState(false);
   const [uploadProgress, setUploadProgress] = useState('');
+  const [progressPercent, setProgressPercent] = useState(0);
 
   const handleFileSelect = async (e) => {
     const file = e.target.files?.[0];
@@ -21,7 +22,18 @@ export default function StepPhotoUpload({ wizardData, updateWizardData, nextStep
 
     try {
       setProcessing(true);
+      setProgressPercent(10);
       setUploadProgress(t('importExport.uploading'));
+      
+      // Animate progress during upload
+      const progressInterval = setInterval(() => {
+        setProgressPercent(prev => {
+          if (prev < 25) return prev + 3;
+          if (prev < 50) return prev + 2;
+          if (prev < 75) return prev + 1;
+          return prev;
+        });
+      }, 200);
       
       // Find which field contains photo filename
       const photoFieldMapping = Object.entries(wizardData.fieldMappings).find(
@@ -29,6 +41,7 @@ export default function StepPhotoUpload({ wizardData, updateWizardData, nextStep
       );
       const photoSourceField = photoFieldMapping ? photoFieldMapping[0] : 'photo_filename';
       
+      setProgressPercent(30);
       setUploadProgress(t('importExport.extracting'));
       
       // Simulate matching against ALL CSV/SQL data (not just sample!)
@@ -38,11 +51,19 @@ export default function StepPhotoUpload({ wizardData, updateWizardData, nextStep
         photoSourceField
       );
       
+      clearInterval(progressInterval);
+      setProgressPercent(80);
       setUploadProgress(t('importExport.matching'));
+      
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      setProgressPercent(95);
+      setUploadProgress(t('importExport.almostReady'));
       
       setUploadResults(result.data);
       
-      setUploadProgress(t('importExport.almostReady'));
+      await new Promise(resolve => setTimeout(resolve, 300));
+      setProgressPercent(100);
       
       // Store file and results in wizard (not uploaded to DB yet!)
       updateWizardData({ 
@@ -57,6 +78,7 @@ export default function StepPhotoUpload({ wizardData, updateWizardData, nextStep
       setUploadProgress(t('importExport.error'));
     } finally {
       setProcessing(false);
+      setProgressPercent(0);
     }
   };
 
