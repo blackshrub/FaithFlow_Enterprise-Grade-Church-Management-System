@@ -67,10 +67,10 @@ api.interceptors.response.use(
 
 // Auth API
 export const authAPI = {
-  login: (email, password) => api.post('/auth/login/', { email, password }),
-  register: (userData) => api.post('/auth/register/', userData),
-  getCurrentUser: () => api.get('/auth/me/'),
-  listUsers: () => api.get('/auth/users/'),
+  login: (email, password) => api.post('/auth/login', { email, password }),
+  register: (userData) => api.post('/auth/register', userData),
+  getCurrentUser: () => api.get('/auth/me'),
+  listUsers: () => api.get('/auth/users'),
 };
 
 // Churches API
