@@ -322,7 +322,7 @@ class ImportExportService:
                         )
                         
                         if not is_valid:
-                            row_errors.append(f\"Row {idx}: {error_msg}\")
+                            row_errors.append(f"Row {idx}: {error_msg}")
                         else:
                             if validated_value is not None:
                                 custom_data[field_name] = validated_value
@@ -330,7 +330,7 @@ class ImportExportService:
                         # Remove from row (will be stored in custom_fields)
                         row.pop(field_name, None)
                     elif is_required:
-                        row_errors.append(f\"Row {idx}: Missing required custom field '{field_name}'\")
+                        row_errors.append(f"Row {idx}: Missing required custom field '{field_name}'")
                 
                 # Store validated custom fields
                 if custom_data:
