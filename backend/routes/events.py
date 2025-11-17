@@ -293,13 +293,21 @@ async def register_rsvp(
         if now > res_end:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Reservation period has ended")
     
-    # Add RSVP
+    # Generate QR code and confirmation code
+    confirmation_code = generate_confirmation_code()
+    qr_data = generate_rsvp_qr_data(event_id, member_id, session_id or '', confirmation_code)
+    
+    # Add RSVP with QR code data
     rsvp_entry = {
         'member_id': member_id,
+        'member_name': member.get('full_name'),
         'session_id': session_id,
         'seat': seat,
         'timestamp': datetime.now(timezone.utc).isoformat(),
-        'status': 'confirmed'
+        'status': 'confirmed',
+        'confirmation_code': qr_data['confirmation_code'],
+        'qr_code': qr_data['qr_code'],
+        'qr_data': qr_data['qr_data']
     }
     
     await db.events.update_one(
@@ -307,7 +315,54 @@ async def register_rsvp(
         {"$push": {"rsvp_list": rsvp_entry}}
     )
     
-    logger.info(f"RSVP registered: Event {event_id}, Member {member_id}, Session {session_id}, Seat {seat}")
+    logger.info(f"RSVP registered: Event {event_id}, Member {member_id}, Session {session_id}, Seat {seat}, Code: {confirmation_code}")
+    
+    # Send WhatsApp notification if enabled
+    church_settings = await db.church_settings.find_one({"church_id": event.get('church_id')})
+    if church_settings and church_settings.get('enable_whatsapp_notifications') and church_settings.get('whatsapp_send_rsvp_confirmation'):
+        if member.get('phone'):
+            try:
+                # Format event date
+                event_date_str = "TBD"
+                if event.get('event_type') == 'single' and event.get('event_date'):
+                    event_date = event.get('event_date')
+                    if isinstance(event_date, str):
+                        event_date = datetime.fromisoformat(event_date)
+                    event_date_str = event_date.strftime('%B %d, %Y at %H:%M')
+                elif event.get('event_type') == 'series' and session_id:
+                    # Find session date
+                    session = next((s for s in event.get('sessions', []) if s.get('name') == session_id), None)
+                    if session and session.get('date'):
+                        sess_date = session.get('date')
+                        if isinstance(sess_date, str):
+                            sess_date = datetime.fromisoformat(sess_date)
+                        event_date_str = sess_date.strftime('%B %d, %Y at %H:%M')
+                
+                # Format message
+                message = format_rsvp_confirmation_message(
+                    member_name=member.get('full_name'),
+                    event_name=event.get('name'),
+                    session_name=session_id,
+                    event_date=event_date_str,
+                    seat=seat,
+                    confirmation_code=confirmation_code,
+                    location=event.get('location')
+                )
+                
+                # Send WhatsApp with QR code
+                result = await send_whatsapp_message(
+                    phone_number=member.get('phone'),
+                    message=message,
+                    image_base64=qr_data['qr_code']
+                )
+                
+                if result.get('success'):
+                    logger.info(f"WhatsApp confirmation sent to {member.get('phone')}")
+                else:
+                    logger.warning(f"WhatsApp send failed: {result.get('message')}")
+            except Exception as e:
+                logger.error(f"Error sending WhatsApp: {str(e)}")
+    
     return {"success": True, "message": "RSVP registered successfully", "rsvp": rsvp_entry}
 
 
