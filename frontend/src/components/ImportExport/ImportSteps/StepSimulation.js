@@ -81,21 +81,6 @@ export default function StepSimulation({ wizardData, updateWizardData, simulateI
 
   if (simulationComplete && simulationResults) {
     const needsDuplicateResolution = hasDuplicates && (!wizardData.duplicateResolutions || Object.keys(wizardData.duplicateResolutions).length === 0);
-    const [localResolutions, setLocalResolutions] = useState({});
-
-    const handleResolution = (phone, rowIndex) => {
-      setLocalResolutions({
-        ...localResolutions,
-        [phone]: rowIndex
-      });
-    };
-
-    const proceedWithResolutions = () => {
-      updateWizardData({ duplicateResolutions: localResolutions });
-      setShowDuplicateResolution(false);
-    };
-
-    const allResolved = simulationResults.duplicate_conflicts?.every(c => localResolutions[c.phone]) || false;
 
     // Render duplicate resolution OR validation results
     return (
