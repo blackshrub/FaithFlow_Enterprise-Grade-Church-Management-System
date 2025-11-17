@@ -7,12 +7,14 @@ import { toast } from 'sonner';
 import { format } from 'date-fns';
 import RSVPManager from './RSVPManager';
 import SessionsModal from './SessionsModal';
+import AttendanceModal from './AttendanceModal';
 
 function EventCard({ event, onEdit }) {
   const { t } = useTranslation();
   const deleteMutation = useDeleteEvent();
   const [showRSVPManager, setShowRSVPManager] = useState(false);
   const [showSessionsModal, setShowSessionsModal] = useState(false);
+  const [showAttendanceModal, setShowAttendanceModal] = useState(false);
 
   const handleDelete = async () => {
     if (window.confirm(t('events.event.confirmDelete'))) {
