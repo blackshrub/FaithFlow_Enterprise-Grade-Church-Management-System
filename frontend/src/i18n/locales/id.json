@@ -334,6 +334,10 @@
     "row": "Baris",
     "removePhoneFromBoth": "Hapus telepon dari keduanya",
     "blankPhoneOption": "Kedua catatan akan diimpor tanpa nomor telepon",
-    "continueWithResolutions": "Lanjutkan dengan Penyelesaian"
+    "continueWithResolutions": "Lanjutkan dengan Penyelesaian",
+    "readyToImport": "Siap mengimpor {{count}} catatan valid",
+    "simulationFoundErrors": "Validasi menemukan kesalahan",
+    "simulationSuccessful": "Validasi berhasil",
+    "validationErrors": "Kesalahan Validasi"
   }
 }
