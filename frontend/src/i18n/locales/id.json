@@ -182,7 +182,13 @@
     "createError": "Gagal membuat",
     "updateError": "Gagal memperbarui",
     "deleteError": "Gagal menghapus",
-    "loadError": "Gagal memuat pengaturan"
+    "loadError": "Gagal memuat pengaturan",
+    "whatsappNotifications": "Notifikasi WhatsApp",
+    "whatsappNotificationsDesc": "Konfigurasi notifikasi pesan WhatsApp",
+    "enableWhatsappNotifications": "Aktifkan Notifikasi WhatsApp",
+    "enableWhatsappDesc": "Kirim pesan WhatsApp otomatis ke jemaat",
+    "sendRSVPConfirmation": "Kirim Konfirmasi RSVP",
+    "sendRSVPConfirmationDesc": "Kirim pesan konfirmasi dengan kode QR saat jemaat mendaftar acara"
   },
   "events": {
     "title": "Acara",
