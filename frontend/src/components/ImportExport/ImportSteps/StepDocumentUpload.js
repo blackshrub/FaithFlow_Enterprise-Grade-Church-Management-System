@@ -190,7 +190,7 @@ export default function StepDocumentUpload({ wizardData, updateWizardData, nextS
             <ChevronLeft className="h-4 w-4 mr-2" />
             {t('importExport.previous')}
           </Button>
-          <Button onClick={nextStep} disabled={uploadDocuments.isPending}>
+          <Button onClick={nextStep} disabled={processing}>
             {uploadResults 
               ? t('importExport.continueWithDocuments') 
               : t('importExport.skipDocuments')}
