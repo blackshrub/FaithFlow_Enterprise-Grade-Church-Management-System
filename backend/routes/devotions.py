@@ -52,6 +52,29 @@ async def list_devotions(
     return devotions
 
 
+@router.get("/by-date")
+async def get_devotion_by_date(
+    date: str = Query(..., description="Date in YYYY-MM-DD format"),
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    """Get devotion by specific date (for mobile app)"""
+    
+    devotion = await db.devotions.find_one(
+        {
+            'church_id': current_user.get('church_id'),
+            'date': {'$gte': f"{date}T00:00:00", '$lt': f"{date}T23:59:59"},
+            'status': 'published'
+        },
+        {"_id": 0}
+    )
+    
+    if not devotion:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"No devotion found for {date}")
+    
+    return devotion
+
+
 @router.get("/today")
 async def get_today_devotion(
     db: AsyncIOMotorDatabase = Depends(get_db),
