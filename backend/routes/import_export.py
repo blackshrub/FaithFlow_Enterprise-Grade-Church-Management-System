@@ -133,7 +133,7 @@ async def simulate_import(
         
         # Validate data
         church_id = current_user.get('church_id')
-        valid_data, errors = await import_export_service.validate_member_data(
+        valid_data, errors, duplicate_conflicts = await import_export_service.validate_member_data(
             transformed_data, 
             church_id, 
             date_format,
@@ -145,8 +145,9 @@ async def simulate_import(
             "valid_records": len(valid_data),
             "invalid_records": len(errors),
             "errors": errors,
+            "duplicate_conflicts": duplicate_conflicts,
             "sample_valid": valid_data[:5] if valid_data else [],
-            "ready_to_import": len(errors) == 0
+            "ready_to_import": len(errors) == 0 and len(duplicate_conflicts) == 0
         }
     except Exception as e:
         logger.error(f"Error simulating import: {str(e)}")
