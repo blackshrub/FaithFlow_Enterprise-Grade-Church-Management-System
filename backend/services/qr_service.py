@@ -72,3 +72,25 @@ def generate_rsvp_qr_data(event_id: str, member_id: str, session_id: str, confir
         'qr_code': qr_code,
         'qr_data': qr_data
     }
+
+
+def generate_member_qr_data(member_id: str, member_code: str) -> dict:
+    """
+    Generate personal QR code for member (universal ID)
+    
+    Returns dict with:
+        - member_code: Unique 6-digit code
+        - qr_code: Base64 QR code image
+        - qr_data: Raw data encoded in QR
+    """
+    # Create QR data string: MEMBER|member_id|unique_code
+    qr_data = f"MEMBER|{member_id}|{member_code}"
+    
+    # Generate QR code
+    qr_code = generate_qr_code(qr_data)
+    
+    return {
+        'member_code': member_code,
+        'qr_code': qr_code,
+        'qr_data': qr_data
+    }
