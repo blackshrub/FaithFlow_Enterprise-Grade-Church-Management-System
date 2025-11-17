@@ -186,6 +186,7 @@
   "importExport": {
     "title": "Impor/Ekspor",
     "subtitle": "Impor dan ekspor data jemaat secara massal",
+    "subtitleUnified": "Impor jemaat dengan data, foto, dan dokumen dalam satu proses terpadu",
     "import": "Impor",
     "export": "Ekspor",
     "history": "Riwayat",
