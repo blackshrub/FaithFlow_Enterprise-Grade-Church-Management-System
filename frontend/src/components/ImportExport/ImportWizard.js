@@ -39,7 +39,8 @@ export default function ImportWizard() {
     fileContent: '',
     fileType: '',
     headers: [],
-    sampleData: [],
+    sampleData: [],  // First 5 rows for preview
+    allData: [],  // ALL rows for matching
     totalRecords: 0,
     photoArchive: null,
     photoSimulation: null,
