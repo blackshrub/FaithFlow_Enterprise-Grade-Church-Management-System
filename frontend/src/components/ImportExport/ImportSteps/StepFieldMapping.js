@@ -116,6 +116,15 @@ export default function StepFieldMapping({ wizardData, updateWizardData, nextSte
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
+        {/* Date Format Info */}
+        <Alert>
+          <AlertDescription>
+            <strong>{t('importExport.dateFormatRequired')}</strong> {wizardData.dateFormat}
+            <br />
+            <span className="text-sm">Example: {wizardData.dateFormat === 'DD-MM-YYYY' ? '31-12-2025' : wizardData.dateFormat === 'MM-DD-YYYY' ? '12-31-2025' : '2025-12-31'}</span>
+          </AlertDescription>
+        </Alert>
+        
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
