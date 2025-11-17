@@ -345,7 +345,9 @@
       "seatUnavailable": "Tidak Tersedia",
       "noSeatsAvailable": "Tidak ada kursi tersedia",
       "filterBySession": "Filter berdasarkan Sesi",
-      "allSessions": "Semua Sesi"
+      "allSessions": "Semua Sesi",
+      "noRSVPsForSession": "Tidak ada RSVP untuk sesi ini",
+      "registerFirst": "Jadilah yang pertama mendaftar!"
     }
   },
   "importExport": {
