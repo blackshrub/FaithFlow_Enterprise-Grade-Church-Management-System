@@ -156,6 +156,8 @@ class ImportExportService:
         Returns:
             tuple: (valid_data, errors)
         """
+        from utils.helpers import parse_full_name
+        
         valid_data = []
         errors = []
         seen_phones = set()  # Track phone numbers within this batch
@@ -163,11 +165,17 @@ class ImportExportService:
         for idx, row in enumerate(data, start=1):
             row_errors = []
             
+            # Handle full_name if provided (parse into first_name and last_name)
+            if row.get('full_name') and not (row.get('first_name') and row.get('last_name')):
+                first, last = parse_full_name(row['full_name'])
+                row['first_name'] = first
+                row['last_name'] = last
+            
             # Required fields validation
             if not row.get('first_name'):
-                row_errors.append(f"Row {idx}: Missing first_name")
+                row_errors.append(f"Row {idx}: Missing first_name or full_name")
             if not row.get('last_name'):
-                row_errors.append(f"Row {idx}: Missing last_name")
+                row_errors.append(f"Row {idx}: Missing last_name or full_name")
             if not row.get('phone_whatsapp'):
                 row_errors.append(f"Row {idx}: Missing phone_whatsapp")
             
@@ -196,17 +204,18 @@ class ImportExportService:
                     else:
                         row_errors.append(f"Row {idx}: Invalid {field} format (expected {date_format})")
             
-            # Validate gender
-            if row.get('gender') and row['gender'] not in ['male', 'female', 'other']:
-                row_errors.append(f"Row {idx}: Invalid gender value '{row['gender']}'")
+            # Validate gender (Male/Female only)
+            if row.get('gender') and row['gender'] not in ['Male', 'Female']:
+                row_errors.append(f"Row {idx}: Invalid gender value '{row['gender']}' (must be 'Male' or 'Female')")
             
             # Validate marital status
-            if row.get('marital_status') and row['marital_status'] not in ['single', 'married', 'divorced', 'widowed']:
-                row_errors.append(f"Row {idx}: Invalid marital_status value '{row['marital_status']}'")
+            valid_marital = ['Married', 'Not Married', 'Widower', 'Widow']
+            if row.get('marital_status') and row['marital_status'] not in valid_marital:
+                row_errors.append(f"Row {idx}: Invalid marital_status '{row['marital_status']}' (must be one of: {', '.join(valid_marital)})")
             
-            # Validate blood type
-            if row.get('blood_type') and row['blood_type'] not in ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']:
-                row_errors.append(f"Row {idx}: Invalid blood_type value '{row['blood_type']}'")
+            # Validate blood type (A/B/AB/O only)
+            if row.get('blood_type') and row['blood_type'] not in ['A', 'B', 'AB', 'O']:
+                row_errors.append(f"Row {idx}: Invalid blood_type '{row['blood_type']}' (must be A, B, AB, or O)")
             
             if row_errors:
                 errors.extend(row_errors)
