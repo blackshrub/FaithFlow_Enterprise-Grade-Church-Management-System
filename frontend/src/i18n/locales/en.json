@@ -355,6 +355,26 @@
     "readyToImport": "Ready to import {{count}} valid records",
     "simulationFoundErrors": "Validation found errors",
     "simulationSuccessful": "Validation successful",
-    "validationErrors": "Validation Errors"
+    "validationErrors": "Validation Errors",
+    "addCustomField": "Add Custom Field",
+    "createCustomField": "Create Custom Field",
+    "createCustomFieldDesc": "Define a custom field to import church-specific data",
+    "fieldName": "Field Name",
+    "fieldNamePlaceholder": "e.g., School Name, Ministry Interest, Emergency Contact",
+    "fieldType": "Field Type",
+    "description": "Description",
+    "descriptionPlaceholder": "Optional description for this field",
+    "requiredField": "Required Field",
+    "typeString": "Text (String)",
+    "typeNumber": "Number",
+    "typeDate": "Date",
+    "typeEmail": "Email",
+    "typeBoolean": "Yes/No (Boolean)",
+    "typeUrl": "URL/Link",
+    "typePhone": "Phone Number",
+    "custom": "Custom",
+    "type": "Type",
+    "customFieldsAdded": "Custom fields added: {{count}}",
+    "customFieldExample": "Example: School Name, Ministry Interest, Emergency Contact"
   }
 }
