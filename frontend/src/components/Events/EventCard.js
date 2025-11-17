@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pencil, Users, Calendar, MapPin, Trash2, List } from 'lucide-react';
+import { Pencil, Users, Calendar, MapPin, Trash2, List, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useDeleteEvent } from '@/hooks/useEvents';
 import { toast } from 'sonner';
