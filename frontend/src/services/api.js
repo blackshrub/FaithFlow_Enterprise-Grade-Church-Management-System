@@ -75,12 +75,12 @@ export const authAPI = {
 
 // Churches API
 export const churchesAPI = {
-  listPublic: () => api.get('/churches/public/list/'),
+  listPublic: () => api.get('/churches/public/list'),
   list: () => api.get('/churches/'),
-  get: (id) => api.get(`/churches/${id}/`),
+  get: (id) => api.get(`/churches/${id}`),
   create: (data) => api.post('/churches/', data),
-  update: (id, data) => api.patch(`/churches/${id}/`, data),
-  delete: (id) => api.delete(`/churches/${id}/`),
+  update: (id, data) => api.patch(`/churches/${id}`, data),
+  delete: (id) => api.delete(`/churches/${id}`),
 };
 
 // Members API
