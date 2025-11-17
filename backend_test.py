@@ -2345,23 +2345,15 @@ def test_rsvp_single_event_with_seats():
         print_error("No auth token or test_event_with_seats_id available")
         return False
     
+    if not test_members_created:
+        print_error("No test members available")
+        return False
+    
     headers = {"Authorization": f"Bearer {auth_token}"}
     
-    # First, get a member ID from the database
+    member_id = test_members_created[0]
+    
     try:
-        members_response = requests.get(
-            f"{BASE_URL}/members/?limit=1",
-            headers=headers,
-            timeout=10
-        )
-        
-        if members_response.status_code != 200 or not members_response.json():
-            print_error("No members found in database - cannot test RSVP")
-            return False
-        
-        member_id = members_response.json()[0].get('id')
-        print_info(f"Using member ID: {member_id}")
-        
         # Register RSVP with seat A1
         response = requests.post(
             f"{BASE_URL}/events/{test_event_with_seats_id}/rsvp?member_id={member_id}&seat=A1",
@@ -2392,27 +2384,15 @@ def test_rsvp_duplicate_seat():
         print_error("No auth token or test_event_with_seats_id available")
         return False
     
+    if len(test_members_created) < 2:
+        print_error("Need at least 2 test members")
+        return False
+    
     headers = {"Authorization": f"Bearer {auth_token}"}
     
-    # Get another member
+    member_id = test_members_created[1]
+    
     try:
-        members_response = requests.get(
-            f"{BASE_URL}/members/?limit=2",
-            headers=headers,
-            timeout=10
-        )
-        
-        if members_response.status_code != 200:
-            print_error("Failed to get members")
-            return False
-        
-        members = members_response.json()
-        if len(members) < 2:
-            print_error("Need at least 2 members to test duplicate seat")
-            return False
-        
-        member_id = members[1].get('id')
-        
         # Try to register for seat A1 (already taken)
         response = requests.post(
             f"{BASE_URL}/events/{test_event_with_seats_id}/rsvp?member_id={member_id}&seat=A1",
