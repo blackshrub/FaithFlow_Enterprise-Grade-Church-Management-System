@@ -74,11 +74,21 @@ export default function StepSimulation({ wizardData, updateWizardData, simulateI
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Success Alert */}
-          {!hasErrors && (
+          {!hasErrors && !hasDuplicates && (
             <Alert className="border-green-500 bg-green-50">
               <CheckCircle className="h-4 w-4 text-green-600" />
               <AlertDescription className="text-green-800">
                 {t('importExport.readyToImport', { count: simulationResults.valid_records })}
+              </AlertDescription>
+            </Alert>
+          )}
+          
+          {/* Duplicate Alert */}
+          {hasDuplicates && !hasErrors && (
+            <Alert className="border-orange-500 bg-orange-50">
+              <AlertTriangle className="h-4 w-4 text-orange-600" />
+              <AlertDescription className="text-orange-800">
+                {t('importExport.duplicatePhoneWarning', { count: simulationResults.duplicate_conflicts.length })}
               </AlertDescription>
             </Alert>
           )}
