@@ -13,6 +13,7 @@ import Settings from "./pages/Settings";
 import ImportExport from "./pages/ImportExport";
 import SeatLayouts from "./pages/SeatLayouts";
 import Events from "./pages/Events";
+import KioskMode from "./pages/KioskMode";
 import Layout from "./components/Layout/Layout";
 import ProtectedRoute from "./components/Layout/ProtectedRoute";
 
