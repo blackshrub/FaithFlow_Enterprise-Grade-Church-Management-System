@@ -377,6 +377,40 @@
       "allSessions": "All Sessions",
       "noRSVPsForSession": "No RSVPs for this session",
       "registerFirst": "Be the first to register!"
+    },
+    
+    "attendance": {
+      "noAttendance": "No attendance yet",
+      "noOneCheckedIn": "No one has checked in yet",
+      "checkedInAt": "Checked in at"
+    },
+    
+    "kiosk": {
+      "title": "Kiosk Mode - Check-in",
+      "subtitle": "Scan QR codes or search members to check in",
+      "selectEvent": "Select Event",
+      "selectSession": "Select Session",
+      "scanMode": "Scan Mode",
+      "cameraMode": "Camera",
+      "cameraModeDesc": "Use device camera to scan QR codes",
+      "hardwareMode": "Hardware Scanner",
+      "hardwareModeDesc": "Use external barcode/QR scanner",
+      "scanQRCode": "Scan QR Code",
+      "waitingForScan": "Waiting for scan...",
+      "pointCamera": "Point camera at QR code",
+      "scanSuccess": "Scan successful!",
+      "scanError": "Scan failed",
+      "invalidQRCode": "Invalid QR code",
+      "alreadyCheckedIn": "Already checked in",
+      "manualSearch": "Manual Search",
+      "searchMemberPlaceholder": "Search member by name or phone...",
+      "quickCheckIn": "Quick Check-in",
+      "checkInSuccess": "Checked in successfully!",
+      "checkInError": "Check-in failed",
+      "recentCheckIns": "Recent Check-ins",
+      "todayCheckIns": "Today: {{count}}",
+      "startScanning": "Start Scanning",
+      "stopScanning": "Stop Scanning"
     }
   },
   "importExport": {
