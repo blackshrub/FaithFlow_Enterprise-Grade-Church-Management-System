@@ -61,6 +61,13 @@ async def create_member(
     member = Member(**member_dict)
     member_doc = member.model_dump()
     
+    # Generate personal QR code for member
+    member_code = generate_member_id_code()
+    qr_data = generate_member_qr_data(member.id, member_code)
+    member_doc['personal_id_code'] = qr_data['member_code']
+    member_doc['personal_qr_code'] = qr_data['qr_code']
+    member_doc['personal_qr_data'] = qr_data['qr_data']
+    
     # Auto-assign demographic category based on age
     if member_data.date_of_birth:
         demographic = await auto_assign_demographic(member_doc, db)
