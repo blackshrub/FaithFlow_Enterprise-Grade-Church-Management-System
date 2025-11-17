@@ -20,6 +20,7 @@ export default function StepSimulation({ wizardData, updateWizardData, simulateI
         field_mappings: JSON.stringify(wizardData.fieldMappings),
         value_mappings: JSON.stringify(wizardData.valueMappings),
         default_values: JSON.stringify(wizardData.defaultValues || {}),
+        custom_fields: JSON.stringify(wizardData.customFields || []),
         date_format: wizardData.dateFormat,
       });
       
