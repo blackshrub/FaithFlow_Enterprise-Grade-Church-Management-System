@@ -554,7 +554,8 @@
       "versionCHS": "CHS - Chinese Union Simplified",
       "versionNIV": "NIV - New International Version",
       "versionNKJV": "NKJV - New King James Version",
-      "versionNLT": "NLT - New Living Translation"
+      "versionNLT": "NLT - New Living Translation",
+      "versionESV": "ESV - English Standard Version"
     }
   },
   "importExport": {
