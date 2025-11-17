@@ -2989,6 +2989,42 @@ def run_all_tests():
         ("Create Import Template", test_create_import_template),
         ("List Import Templates", test_list_import_templates),
         ("List Import Logs", test_list_import_logs),
+        # Seat Layout Tests
+        ("Create Seat Layout", test_create_seat_layout),
+        ("List Seat Layouts", test_list_seat_layouts),
+        ("Get Seat Layout", test_get_seat_layout),
+        ("Update Seat Layout", test_update_seat_layout),
+        # Event Tests
+        ("Create Single Event", test_create_single_event),
+        ("Create Single Event Without Date", test_create_single_event_without_date),
+        ("Create Series Event", test_create_series_event),
+        ("Create Series Event Without Sessions", test_create_series_event_without_sessions),
+        ("Create Event with Seat Selection", test_create_event_with_seat_selection),
+        ("Create Event Seat Selection Without Layout", test_create_event_seat_selection_without_layout),
+        ("List Events", test_list_events),
+        ("List Events Filtered", test_list_events_filtered),
+        ("Get Event", test_get_event),
+        ("Update Event", test_update_event),
+        # RSVP Tests
+        ("RSVP Single Event with Seats", test_rsvp_single_event_with_seats),
+        ("RSVP Duplicate Seat", test_rsvp_duplicate_seat),
+        ("Get Available Seats", test_get_available_seats),
+        ("RSVP Series Event", test_rsvp_series_event),
+        ("RSVP Duplicate Session", test_rsvp_duplicate_session),
+        ("RSVP Different Session", test_rsvp_different_session),
+        ("Get Event RSVPs", test_get_event_rsvps),
+        ("Get Event RSVPs Filtered", test_get_event_rsvps_filtered),
+        ("Cancel RSVP", test_cancel_rsvp),
+        # Check-in Tests
+        ("Check-in Without RSVP Requirement", test_checkin_without_rsvp_requirement),
+        ("Check-in Duplicate", test_checkin_duplicate),
+        ("Check-in With RSVP Requirement", test_checkin_with_rsvp_requirement),
+        ("Check-in Without RSVP", test_checkin_without_rsvp),
+        ("Get Event Attendance", test_get_event_attendance),
+        ("Get Event Attendance Filtered", test_get_event_attendance_filtered),
+        # Cleanup Tests
+        ("Delete Event", test_delete_event),
+        ("Delete Seat Layout", test_delete_seat_layout),
     ]
     
     for test_name, test_func in tests:
