@@ -204,7 +204,23 @@ function KioskMode() {
         </div>
         
         {/* Event Selection */}
-        <div className="flex gap-4">
+        <div className="flex gap-4 items-center">
+          {/* Theme Selector */}
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-gray-700">{t('events.kiosk.theme')}:</span>
+            <select
+              value={kioskTheme}
+              onChange={(e) => handleThemeChange(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium"
+            >
+              {Object.keys(themes).map(theme => (
+                <option key={theme} value={theme}>
+                  {t(`events.kiosk.themes.${theme}`)}
+                </option>
+              ))}
+            </select>
+          </div>
+
           <select
             value={selectedEvent?.id || ''}
             onChange={(e) => {
