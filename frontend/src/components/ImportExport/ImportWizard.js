@@ -48,6 +48,7 @@ export default function ImportWizard() {
     fieldMappings: {},
     valueMappings: {},
     defaultValues: {},
+    customFields: [],
     dateFormat: 'DD-MM-YYYY',
     simulationResults: null,
     duplicateResolutions: {},
