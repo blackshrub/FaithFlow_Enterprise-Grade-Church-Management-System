@@ -70,6 +70,7 @@ export default function Layout() {
       submenu: [
         { label: t('events.event.eventsList'), path: '/events' },
         { label: t('events.seatLayouts'), path: '/seat-layouts' },
+        { label: t('events.kioskMode'), path: '/kiosk' },
       ]
     },
     { icon: DollarSign, label: t('nav.donations'), path: '/donations' },
