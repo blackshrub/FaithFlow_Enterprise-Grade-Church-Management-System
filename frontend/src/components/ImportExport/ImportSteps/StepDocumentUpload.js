@@ -49,13 +49,29 @@ export default function StepDocumentUpload({ wizardData, updateWizardData, nextS
             className="hidden"
           />
           
-          {wizardData.documentArchive ? (
+          {uploadDocuments.isPending ? (
+            <div>
+              <Loader2 className="h-12 w-12 animate-spin text-blue-600 mx-auto mb-4" />
+              <p className="text-gray-600">{t('importExport.processingDocuments')}</p>
+              <p className="text-sm text-gray-500">{t('importExport.pleaseWait')}</p>
+            </div>
+          ) : uploadResults ? (
             <div>
               <CheckCircle className="h-12 w-12 text-green-600 mx-auto mb-4" />
-              <p className="font-semibold text-gray-900">{wizardData.documentArchive.name}</p>
-              <p className="text-sm text-gray-500 mt-1">{t('importExport.documentsWillBeMatched')}</p>
+              <p className="font-semibold text-gray-900">{wizardData.documentArchive?.name}</p>
+              <p className="text-sm text-green-600 mt-1">
+                {t('importExport.documentsMatched', { count: uploadResults.summary?.matched_count || 0 })}
+              </p>
+              {uploadResults.summary?.unmatched_files_count > 0 && (
+                <p className="text-sm text-orange-600">
+                  {t('importExport.unmatchedFiles')}: {uploadResults.summary.unmatched_files_count}
+                </p>
+              )}
               <Button
-                onClick={() => fileInputRef.current?.click()}
+                onClick={() => {
+                  fileInputRef.current?.click();
+                  setUploadResults(null);
+                }}
                 variant="outline"
                 className="mt-4"
               >
@@ -74,6 +90,49 @@ export default function StepDocumentUpload({ wizardData, updateWizardData, nextS
             </div>
           )}
         </div>
+
+        {/* Results Summary */}
+        {uploadResults && (
+          <div className="grid grid-cols-3 gap-4">
+            <Card>
+              <CardContent className="pt-6 text-center">
+                <p className="text-sm text-gray-600">{t('importExport.totalFiles')}</p>
+                <p className="text-2xl font-bold">{uploadResults.summary?.total_files || 0}</p>
+              </CardContent>
+            </Card>
+            <Card className="border-green-500">
+              <CardContent className="pt-6 text-center">
+                <p className="text-sm text-gray-600">{t('importExport.matched')}</p>
+                <p className="text-2xl font-bold text-green-600">{uploadResults.summary?.matched_count || 0}</p>
+              </CardContent>
+            </Card>
+            <Card className="border-orange-500">
+              <CardContent className="pt-6 text-center">
+                <p className="text-sm text-gray-600">{t('importExport.unmatchedFiles')}</p>
+                <p className="text-2xl font-bold text-orange-600">{uploadResults.summary?.unmatched_files_count || 0}</p>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Matched/Unmatched Details */}
+        {uploadResults && uploadResults.summary?.matched_count > 0 && (
+          <Alert className="border-green-500 bg-green-50">
+            <CheckCircle className="h-4 w-4 text-green-600" />
+            <AlertDescription className="text-green-800">
+              {t('importExport.documentsUploadedSuccess', { count: uploadResults.summary.matched_count })}
+            </AlertDescription>
+          </Alert>
+        )}
+        
+        {uploadResults && uploadResults.summary?.unmatched_files_count > 0 && (
+          <Alert variant="warning">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              {t('importExport.someFilesUnmatched', { count: uploadResults.summary.unmatched_files_count })}
+            </AlertDescription>
+          </Alert>
+        )}
 
         <Alert>
           <AlertDescription>
