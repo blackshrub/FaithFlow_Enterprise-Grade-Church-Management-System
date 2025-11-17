@@ -6,6 +6,7 @@ import { Label } from '../../ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../ui/table';
 import { Badge } from '../../ui/badge';
+import { Alert, AlertDescription } from '../../ui/alert';
 import { ChevronRight, ChevronLeft } from 'lucide-react';
 
 const TARGET_FIELDS = [
