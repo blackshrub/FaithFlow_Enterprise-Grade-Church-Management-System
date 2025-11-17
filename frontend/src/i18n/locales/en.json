@@ -197,6 +197,7 @@
     "startOver": "Start Over",
     "uploadFile": "Upload File",
     "uploadFileDesc": "Select a CSV or JSON file to import",
+    "uploadFileDescSQL": "Select a CSV, JSON, or SQL file to import",
     "dragDrop": "Drag and drop a file here, or click to browse",
     "supportedFormats": "Supported formats: CSV, JSON, SQL",
     "chooseFile": "Choose File",
