@@ -30,6 +30,11 @@ class MemberBase(BaseModel):
     personal_document: Optional[str] = None  # Personal document filename or base64
     documents: List[str] = Field(default_factory=list)  # List of document URLs or base64
     custom_fields: Dict[str, Any] = Field(default_factory=dict)  # Custom fields defined by church
+    
+    # Personal QR Code (Universal Member ID)
+    personal_qr_code: Optional[str] = None  # Base64 QR code image
+    personal_qr_data: Optional[str] = None  # QR data string: MEMBER|member_id|unique_code
+    personal_id_code: Optional[str] = None  # Unique 6-digit code for member
 
 
 class MemberCreate(MemberBase):
