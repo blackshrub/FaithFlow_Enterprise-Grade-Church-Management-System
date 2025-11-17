@@ -138,11 +138,33 @@ export const importExportAPI = {
     });
   },
   
+  // Simulate photo matching (against CSV, not database)
+  simulatePhotoMatching: (file, csvData, photoField) => {
+    const formData = new FormData();
+    formData.append('photo_archive', file);
+    formData.append('csv_data', csvData);
+    formData.append('photo_filename_field', photoField);
+    return api.post('/photo-document-sim/simulate-photo-matching', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
+  
   // Bulk Document Upload
   uploadDocuments: (file) => {
     const formData = new FormData();
     formData.append('archive', file);
     return api.post('/import-export/upload-documents', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
+  
+  // Simulate document matching (against CSV, not database)
+  simulateDocumentMatching: (file, csvData, documentField) => {
+    const formData = new FormData();
+    formData.append('document_archive', file);
+    formData.append('csv_data', csvData);
+    formData.append('document_filename_field', documentField);
+    return api.post('/photo-document-sim/simulate-document-matching', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
   },
