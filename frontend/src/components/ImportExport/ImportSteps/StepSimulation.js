@@ -127,7 +127,91 @@ export default function StepSimulation({ wizardData, updateWizardData, simulateI
             </Card>
           </div>
 
-          {/* Errors */}
+          {/* Sample Valid Data Preview */}
+          {simulationResults.sample_valid && simulationResults.sample_valid.length > 0 && (
+            <div>
+              <h3 className="font-semibold mb-3">{t('importExport.sampleValidData')}</h3>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Full Name</TableHead>
+                      <TableHead>Phone</TableHead>
+                      <TableHead>Gender</TableHead>
+                      <TableHead>Demographic</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {simulationResults.sample_valid.slice(0, 5).map((row, idx) => (
+                      <TableRow key={idx}>
+                        <TableCell>{row.full_name}</TableCell>
+                        <TableCell>{row.phone_whatsapp || '-'}</TableCell>
+                        <TableCell>
+                          {row.gender && <Badge>{row.gender}</Badge>}
+                        </TableCell>
+                        <TableCell>
+                          {row.demographic_category && (
+                            <Badge variant="secondary">{row.demographic_category}</Badge>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+          )}
+
+          {/* Photo/Document Matching Summary */}
+          {(wizardData.photoSimulation || wizardData.documentSimulation) && (
+            <div className="grid grid-cols-2 gap-4">
+              {wizardData.photoSimulation && (
+                <Card className="border-blue-500">
+                  <CardHeader>
+                    <CardTitle className="text-base">{t('importExport.photoMatching')}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span>{t('importExport.totalFiles')}:</span>
+                      <span className="font-semibold">{wizardData.photoSimulation.summary?.total_files || 0}</span>
+                    </div>
+                    <div className="flex justify-between text-sm text-green-600">
+                      <span>{t('importExport.willMatch')}:</span>
+                      <span className="font-semibold">{wizardData.photoSimulation.summary?.matched_count || 0}</span>
+                    </div>
+                    <div className="flex justify-between text-sm text-orange-600">
+                      <span>{t('importExport.unmatchedFiles')}:</span>
+                      <span className="font-semibold">{wizardData.photoSimulation.summary?.unmatched_files_count || 0}</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+              
+              {wizardData.documentSimulation && (
+                <Card className="border-purple-500">
+                  <CardHeader>
+                    <CardTitle className="text-base">{t('importExport.documentMatching')}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span>{t('importExport.totalFiles')}:</span>
+                      <span className="font-semibold">{wizardData.documentSimulation.summary?.total_files || 0}</span>
+                    </div>
+                    <div className="flex justify-between text-sm text-green-600">
+                      <span>{t('importExport.willMatch')}:</span>
+                      <span className="font-semibold">{wizardData.documentSimulation.summary?.matched_count || 0}</span>
+                    </div>
+                    <div className="flex justify-between text-sm text-orange-600">
+                      <span>{t('importExport.unmatchedFiles')}:</span>
+                      <span className="font-semibold">{wizardData.documentSimulation.summary?.unmatched_files_count || 0}</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          )}
+
+          {/* Errors List */}
           {hasErrors && (
             <div>
               <h3 className="font-semibold mb-3 text-red-600">
