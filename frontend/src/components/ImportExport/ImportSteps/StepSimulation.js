@@ -5,8 +5,9 @@ import { Button } from '../../ui/button';
 import { Alert, AlertDescription } from '../../ui/alert';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../ui/table';
 import { Badge } from '../../ui/badge';
+import { RadioGroup, RadioGroupItem } from '../../ui/radio-group';
+import { Label } from '../../ui/label';
 import { CheckCircle, AlertCircle, Loader2, ChevronLeft, ChevronRight, AlertTriangle } from 'lucide-react';
-import StepDuplicateResolution from './StepDuplicateResolution';
 
 export default function StepSimulation({ wizardData, updateWizardData, simulateImport, nextStep, prevStep }) {
   const { t } = useTranslation();
