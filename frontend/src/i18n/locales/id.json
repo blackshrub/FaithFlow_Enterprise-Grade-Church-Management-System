@@ -110,7 +110,8 @@
     "success": "Berhasil",
     "confirm": "Konfirmasi",
     "na": "T/A",
-    "close": "Tutup"
+    "close": "Tutup",
+    "add": "Tambah"
   },
   "nav": {
     "dashboard": "Dasbor",
