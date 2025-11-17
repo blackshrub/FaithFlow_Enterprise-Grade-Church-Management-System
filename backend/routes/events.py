@@ -307,7 +307,9 @@ async def register_rsvp(
         'status': 'confirmed',
         'confirmation_code': qr_data['confirmation_code'],
         'qr_code': qr_data['qr_code'],
-        'qr_data': qr_data['qr_data']
+        'qr_data': qr_data['qr_data'],
+        'whatsapp_status': 'pending',
+        'whatsapp_message_id': None
     }
     
     await db.events.update_one(
@@ -319,6 +321,7 @@ async def register_rsvp(
     
     # Send WhatsApp notification if enabled
     church_settings = await db.church_settings.find_one({"church_id": event.get('church_id')})
+    whatsapp_result = None
     if church_settings and church_settings.get('enable_whatsapp_notifications') and church_settings.get('whatsapp_send_rsvp_confirmation'):
         if member.get('phone'):
             try:
@@ -350,18 +353,33 @@ async def register_rsvp(
                 )
                 
                 # Send WhatsApp with QR code
-                result = await send_whatsapp_message(
+                whatsapp_result = await send_whatsapp_message(
                     phone_number=member.get('phone'),
                     message=message,
                     image_base64=qr_data['qr_code']
                 )
                 
-                if result.get('success'):
-                    logger.info(f"WhatsApp confirmation sent to {member.get('phone')}")
+                # Update RSVP with WhatsApp status
+                await db.events.update_one(
+                    {"id": event_id, "rsvp_list.member_id": member_id, "rsvp_list.session_id": session_id},
+                    {"$set": {
+                        "rsvp_list.$.whatsapp_status": whatsapp_result.get('delivery_status', 'failed'),
+                        "rsvp_list.$.whatsapp_message_id": whatsapp_result.get('message_id')
+                    }}
+                )
+                
+                if whatsapp_result.get('success'):
+                    logger.info(f"WhatsApp confirmation sent to {member.get('phone')}, status: {whatsapp_result.get('delivery_status')}")
                 else:
-                    logger.warning(f"WhatsApp send failed: {result.get('message')}")
+                    logger.warning(f"WhatsApp send failed: {whatsapp_result.get('message')}")
             except Exception as e:
                 logger.error(f"Error sending WhatsApp: {str(e)}")
+                whatsapp_result = {'success': False, 'message': str(e), 'delivery_status': 'error'}
+    
+    # Update rsvp_entry with WhatsApp result if sent
+    if whatsapp_result:
+        rsvp_entry['whatsapp_status'] = whatsapp_result.get('delivery_status', 'failed')
+        rsvp_entry['whatsapp_message_id'] = whatsapp_result.get('message_id')
     
     return {"success": True, "message": "RSVP registered successfully", "rsvp": rsvp_entry}
 
