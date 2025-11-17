@@ -92,11 +92,11 @@ export default function StepFieldMapping({ wizardData, updateWizardData, nextSte
   };
 
   const canProceed = () => {
-    const requiredFields = ['full_name', 'gender', 'date_of_birth', 'address'];
+    const requiredFields = ['full_name'];  // Only full_name is required now
     const mappedTargets = Object.values(wizardData.fieldMappings);
     const hasDefaults = wizardData.defaultValues || {};
     
-    // Check if all required fields are either mapped or have default values
+    // Check if full_name is either mapped or has a default value
     return requiredFields.every(rf => 
       mappedTargets.includes(rf) || (hasDefaults[rf] && hasDefaults[rf].trim() !== '')
     );
