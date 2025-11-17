@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useUploadDocuments } from '../../../hooks/useImportExport';
+import { importExportAPI } from '../../../services/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../ui/card';
 import { Button } from '../../ui/button';
 import { Alert, AlertDescription } from '../../ui/alert';
@@ -11,29 +11,41 @@ import { Upload, FileText, ChevronRight, ChevronLeft, CheckCircle, AlertCircle, 
 export default function StepDocumentUpload({ wizardData, updateWizardData, nextStep, prevStep }) {
   const { t } = useTranslation();
   const fileInputRef = useRef(null);
-  const [uploadResults, setUploadResults] = useState(wizardData.documentMatchResults || null);
-  const uploadDocuments = useUploadDocuments();
+  const [uploadResults, setUploadResults] = useState(wizardData.documentSimulation || null);
+  const [processing, setProcessing] = useState(false);
 
   const handleFileSelect = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     try {
-      // Upload and process documents immediately
-      const result = await uploadDocuments.mutateAsync(file);
-      setUploadResults(result);
+      setProcessing(true);
       
-      // Track uploaded member IDs for cleanup
-      const uploadedIds = result.matched?.map(m => m.member_id) || [];
+      // Find which field contains document filename
+      const documentFieldMapping = Object.entries(wizardData.fieldMappings).find(
+        ([source, target]) => target === 'personal_document'
+      );
+      const documentSourceField = documentFieldMapping ? documentFieldMapping[0] : 'personal_document';
       
-      // Store results in wizard data
+      // Simulate matching against CSV data (not database)
+      const result = await importExportAPI.simulateDocumentMatching(
+        file,
+        JSON.stringify(wizardData.sampleData),
+        documentSourceField
+      );
+      
+      setUploadResults(result.data);
+      
+      // Store file and results in wizard (not uploaded to DB yet!)
       updateWizardData({ 
         documentArchive: file,
-        documentMatchResults: result,
-        uploadedMemberIds: [...(wizardData.uploadedMemberIds || []), ...uploadedIds]
+        documentSimulation: result.data,
+        documentExtractedFiles: result.data.matched || []  // Store for later import
       });
     } catch (error) {
-      console.error('Upload error:', error);
+      console.error('Document simulation error:', error);
+    } finally {
+      setProcessing(false);
     }
   };
 
