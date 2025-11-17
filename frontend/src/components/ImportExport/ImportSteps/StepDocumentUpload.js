@@ -25,10 +25,10 @@ export default function StepDocumentUpload({ wizardData, updateWizardData, nextS
       );
       const documentSourceField = documentFieldMapping ? documentFieldMapping[0] : 'personal_document';
       
-      // Simulate matching against CSV data (not database)
+      // Simulate matching against ALL CSV/SQL data (not just sample!)
       const result = await importExportAPI.simulateDocumentMatching(
         file,
-        JSON.stringify(wizardData.sampleData),
+        JSON.stringify(wizardData.allData || wizardData.sampleData),  // Use ALL data
         documentSourceField
       );
       
