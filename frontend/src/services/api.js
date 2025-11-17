@@ -2,6 +2,12 @@ import axios from 'axios';
 
 const API_BASE_URL = process.env.REACT_APP_BACKEND_URL;
 
+// Debug logging
+console.log('🔍 API Configuration Debug:');
+console.log('  REACT_APP_BACKEND_URL:', process.env.REACT_APP_BACKEND_URL);
+console.log('  API_BASE_URL:', API_BASE_URL);
+console.log('  Full baseURL:', `${API_BASE_URL}/api`);
+
 const api = axios.create({
   baseURL: `${API_BASE_URL}/api`,
   headers: {
@@ -12,11 +18,17 @@ const api = axios.create({
 // Add request interceptor to ensure HTTPS
 api.interceptors.request.use(
   (config) => {
+    // Log the actual URL being requested
+    const fullURL = config.baseURL + (config.url || '');
+    console.log('📡 API Request:', config.method?.toUpperCase(), fullURL);
+    
     // Ensure HTTPS is used
     if (config.url && config.url.startsWith('http://')) {
+      console.warn('⚠️ Converting URL from HTTP to HTTPS:', config.url);
       config.url = config.url.replace('http://', 'https://');
     }
     if (config.baseURL && config.baseURL.startsWith('http://')) {
+      console.warn('⚠️ Converting baseURL from HTTP to HTTPS:', config.baseURL);
       config.baseURL = config.baseURL.replace('http://', 'https://');
     }
     
@@ -24,9 +36,15 @@ api.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    
+    // Log final URL after transformation
+    const finalURL = config.baseURL + (config.url || '');
+    console.log('📤 Final URL:', finalURL);
+    
     return config;
   },
   (error) => {
+    console.error('❌ Request interceptor error:', error);
     return Promise.reject(error);
   }
 );
