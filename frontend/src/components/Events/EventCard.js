@@ -110,7 +110,7 @@ function EventCard({ event, onEdit }) {
       </div>
 
       {/* Content */}
-      <div className="p-4">
+      <div className="p-4 flex-1 flex flex-col">
         {/* Header */}
         <div className="flex items-start justify-between mb-3">
           <div className="flex-1">
