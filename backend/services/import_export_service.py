@@ -179,10 +179,16 @@ class ImportExportService:
                 row['last_name'] = parts[1] if len(parts) > 1 else parts[0] if len(parts) > 0 else row['full_name']
             
             # Required fields validation
-            if not row.get('full_name'):
+            if not row.get('full_name') or row['full_name'] in ['', None, 'NULL', 'null']:
                 row_errors.append(f"Row {idx}: Missing full_name")
-            if not row.get('phone_whatsapp'):
+            if not row.get('phone_whatsapp') or row['phone_whatsapp'] in ['', None, 'NULL', 'null']:
                 row_errors.append(f"Row {idx}: Missing phone_whatsapp")
+            if not row.get('gender') or row['gender'] in ['', None, 'NULL', 'null']:
+                row_errors.append(f"Row {idx}: Missing gender (required field)")
+            if not row.get('date_of_birth') or row['date_of_birth'] in ['', None, 'NULL', 'null']:
+                row_errors.append(f"Row {idx}: Missing date_of_birth (required field)")
+            if not row.get('address') or row['address'] in ['', None, 'NULL', 'null']:
+                row_errors.append(f"Row {idx}: Missing address (required field)")
             
             # Normalize phone number to 62 format
             if row.get('phone_whatsapp'):
