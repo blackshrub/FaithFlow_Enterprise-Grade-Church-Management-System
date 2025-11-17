@@ -116,15 +116,17 @@ export default function Layout() {
           {/* Logout Button */}
           <div className="p-4 border-t space-y-3">
             {/* Language Selector */}
-            <div className="flex items-center gap-2">
-              <Globe className="h-4 w-4 text-gray-500" />
+            <div className="space-y-1">
+              <Label className="text-xs text-gray-500">{t('settings.language')}</Label>
               <Select value={i18n.language} onValueChange={changeLanguage}>
-                <SelectTrigger className="h-8 text-sm">
-                  <SelectValue />
+                <SelectTrigger className="h-9">
+                  <SelectValue>
+                    {i18n.language === 'en' ? 'English' : 'Bahasa Indonesia'}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="en">English</SelectItem>
-                  <SelectItem value="id">Bahasa Indonesia</SelectItem>
+                  <SelectItem value="en">🇬🇧 English</SelectItem>
+                  <SelectItem value="id">🇮🇩 Bahasa Indonesia</SelectItem>
                 </SelectContent>
               </Select>
             </div>
