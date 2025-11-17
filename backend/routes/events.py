@@ -22,11 +22,23 @@ async def create_event(
     if current_user.get('role') != 'super_admin' and current_user.get('church_id') != event_data.church_id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
     
+    # Validate event type requirements
+    if event_data.event_type == 'single':
+        if not event_data.event_date:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Single events must have an event_date")
+    elif event_data.event_type == 'series':
+        if not event_data.sessions or len(event_data.sessions) == 0:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Series events must have at least one session")
+    
     # Validate seat layout if provided
     if event_data.seat_layout_id:
-        layout = await db.seat_layouts.find_one({"id": event_data.seat_layout_id})
+        layout = await db.seat_layouts.find_one({"id": event_data.seat_layout_id, "church_id": event_data.church_id})
         if not layout:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Seat layout not found")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Seat layout not found or doesn't belong to this church")
+    
+    # Validate seat selection requires seat layout
+    if event_data.enable_seat_selection and not event_data.seat_layout_id:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Seat selection requires a seat layout")
     
     event = Event(**event_data.model_dump())
     event_doc = event.model_dump()
