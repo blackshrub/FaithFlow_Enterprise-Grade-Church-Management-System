@@ -1,0 +1,154 @@
+import React from 'react';
+import { useTranslation } from 'react-i18next';
+import { Pencil, Users, Calendar, MapPin, Trash2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useDeleteEvent } from '@/hooks/useEvents';
+import { toast } from 'sonner';
+import { format } from 'date-fns';
+
+function EventCard({ event, onEdit }) {
+  const { t } = useTranslation();
+  const deleteMutation = useDeleteEvent();
+
+  const handleDelete = async () => {
+    if (window.confirm(t('events.event.confirmDelete'))) {
+      try {
+        await deleteMutation.mutateAsync(event.id);
+        toast.success(t('events.event.deleteSuccess'));
+      } catch (error) {
+        toast.error(t('events.event.deleteError'));
+      }
+    }
+  };
+
+  const formatEventDate = (dateStr) => {
+    if (!dateStr) return '';
+    try {
+      return format(new Date(dateStr), 'MMM dd, yyyy');
+    } catch {
+      return dateStr;
+    }
+  };
+
+  const getEventStatus = () => {
+    if (!event.is_active) return 'ended';
+    const now = new Date();
+    const eventDate = event.event_date ? new Date(event.event_date) : null;
+    if (eventDate && eventDate > now) return 'upcoming';
+    return 'active';
+  };
+
+  const status = getEventStatus();
+  const statusColors = {
+    active: 'bg-green-100 text-green-800',
+    upcoming: 'bg-blue-100 text-blue-800',
+    ended: 'bg-gray-100 text-gray-800',
+  };
+
+  const rsvpCount = event.rsvp_list?.length || 0;
+  const attendanceCount = event.attendance_list?.length || 0;
+
+  return (
+    <div className="bg-white border border-gray-200 rounded-lg hover:shadow-md transition-shadow overflow-hidden">
+      {/* Event Photo */}
+      {event.event_photo && (
+        <div className="h-40 bg-gray-200 overflow-hidden">
+          <img
+            src={event.event_photo}
+            alt={event.name}
+            className="w-full h-full object-cover"
+          />
+        </div>
+      )}
+
+      {/* Content */}
+      <div className="p-4">
+        {/* Header */}
+        <div className="flex items-start justify-between mb-3">
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-1">
+              <h3 className="font-semibold text-gray-900 line-clamp-2">{event.name}</h3>
+            </div>
+            <div className="flex items-center gap-2">
+              <span
+                className={`px-2 py-1 rounded text-xs font-medium ${statusColors[status]}`}
+              >
+                {t(`events.event.${status}`)}
+              </span>
+              <span className="px-2 py-1 rounded text-xs font-medium bg-purple-100 text-purple-800">
+                {t(`events.event.${event.event_type}Event`)}
+              </span>
+            </div>
+          </div>
+          <div className="flex gap-1 ml-2">
+            <Button variant="ghost" size="sm" onClick={() => onEdit(event)}>
+              <Pencil className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="sm" onClick={handleDelete}>
+              <Trash2 className="h-4 w-4 text-red-500" />
+            </Button>
+          </div>
+        </div>
+
+        {/* Description */}
+        {event.description && (
+          <p className="text-sm text-gray-600 line-clamp-2 mb-3">{event.description}</p>
+        )}
+
+        {/* Details */}
+        <div className="space-y-2 text-sm">
+          {event.event_type === 'single' && event.event_date && (
+            <div className="flex items-center gap-2 text-gray-600">
+              <Calendar className="h-4 w-4" />
+              <span>{formatEventDate(event.event_date)}</span>
+            </div>
+          )}
+
+          {event.event_type === 'series' && (
+            <div className="flex items-center gap-2 text-gray-600">
+              <Calendar className="h-4 w-4" />
+              <span>
+                {event.sessions?.length || 0} {t('events.event.sessions')}
+              </span>
+            </div>
+          )}
+
+          {event.location && (
+            <div className="flex items-center gap-2 text-gray-600">
+              <MapPin className="h-4 w-4" />
+              <span className="line-clamp-1">{event.location}</span>
+            </div>
+          )}
+
+          {event.requires_rsvp && (
+            <div className="flex items-center gap-2 text-gray-600">
+              <Users className="h-4 w-4" />
+              <span>{t('events.event.rsvpCount', { count: rsvpCount })}</span>
+            </div>
+          )}
+
+          {attendanceCount > 0 && (
+            <div className="flex items-center gap-2 text-gray-600">
+              <Users className="h-4 w-4" />
+              <span>{t('events.event.attendanceCount', { count: attendanceCount })}</span>
+            </div>
+          )}
+        </div>
+
+        {/* Footer Actions */}
+        <div className="mt-4 pt-4 border-t border-gray-200 flex gap-2">
+          {event.requires_rsvp && (
+            <Button variant="outline" size="sm" className="flex-1">
+              {t('events.event.viewRSVPs')}
+            </Button>
+          )}
+          <Button variant="outline" size="sm" className="flex-1">
+            {t('events.event.viewAttendance')}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default EventCard;
