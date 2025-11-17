@@ -42,20 +42,20 @@ async def create_member(
         member_dict['first_name'] = parts[0] if len(parts) > 0 else member_dict['full_name']
         member_dict['last_name'] = parts[1] if len(parts) > 1 else parts[0] if len(parts) > 0 else member_dict['full_name']
     
-    # Normalize phone number
+    # Normalize phone number (only if provided)
     if member_dict.get('phone_whatsapp'):
         member_dict['phone_whatsapp'] = normalize_phone_number(member_dict['phone_whatsapp'])
-    
-    # Check if member with same WhatsApp number already exists in this church
-    existing = await db.members.find_one({
-        "church_id": member_data.church_id,
-        "phone_whatsapp": member_dict['phone_whatsapp']
-    })
-    if existing:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Member with this WhatsApp number already exists"
-        )
+        
+        # Check for duplicate only if phone is provided
+        existing = await db.members.find_one({
+            "church_id": member_data.church_id,
+            "phone_whatsapp": member_dict['phone_whatsapp']
+        })
+        if existing:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Member with this WhatsApp number already exists"
+            )
     
     member = Member(**member_dict)
     member_doc = member.model_dump()
