@@ -118,7 +118,7 @@ export default function StepSimulation({ wizardData, updateWizardData, simulateI
                             <div>
                               <p className="font-semibold">{conflict.existing_member.full_name}</p>
                               <p className="text-sm text-gray-600">
-                                <Badge variant="secondary">{t('importExport.existingInDatabase')}</Badge>
+                                <Badge variant="outline">{t('importExport.row')} {conflict.existing_member.row_index}</Badge>
                               </p>
                             </div>
                           </Label>
