@@ -538,10 +538,11 @@ test_plan:
 metadata:
   created_by: "testing_agent"
   version: "1.0"
-  test_sequence: 3
-  run_ui: false
+  test_sequence: 4
+  run_ui: true
   test_date: "2025-01-17"
   api_base_url: "https://parish-command.preview.emergentagent.com/api"
+  last_ui_test: "2025-01-17"
 
 test_plan:
   current_focus:
