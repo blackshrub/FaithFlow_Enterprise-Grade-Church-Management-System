@@ -278,6 +278,40 @@ async def duplicate_devotion(
     return new_devotion
 
 
+@router.post("/bulk-action")
+async def bulk_devotion_action(
+    action: str = Query(..., description="publish, unpublish, delete"),
+    devotion_ids: List[str] = Query(...),
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current_user: dict = Depends(require_admin)
+):
+    """Perform bulk action on multiple devotions"""
+    
+    if action == "delete":
+        result = await db.devotions.delete_many({
+            "id": {"$in": devotion_ids},
+            "church_id": current_user.get('church_id')
+        })
+        return {"success": True, "deleted": result.deleted_count}
+    
+    elif action == "publish":
+        result = await db.devotions.update_many(
+            {"id": {"$in": devotion_ids}, "church_id": current_user.get('church_id')},
+            {"$set": {"status": "published", "updated_at": datetime.now(timezone.utc).isoformat()}}
+        )
+        return {"success": True, "updated": result.modified_count}
+    
+    elif action == "unpublish":
+        result = await db.devotions.update_many(
+            {"id": {"$in": devotion_ids}, "church_id": current_user.get('church_id')},
+            {"$set": {"status": "draft", "updated_at": datetime.now(timezone.utc).isoformat()}}
+        )
+        return {"success": True, "updated": result.modified_count}
+    
+    else:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid action")
+
+
 @router.post("/{devotion_id}/generate-audio")
 async def generate_audio(
     devotion_id: str,
