@@ -116,6 +116,7 @@ function QuickAddForm({ eventId, sessionId, onSuccess, onClose }) {
                 <Webcam
                   ref={webcamRef}
                   screenshotFormat="image/jpeg"
+                  mirrored={facingMode === 'user'}
                   className="w-full rounded-lg"
                   videoConstraints={{ facingMode }}
                 />
