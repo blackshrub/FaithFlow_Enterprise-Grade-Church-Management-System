@@ -174,6 +174,34 @@ function RSVPList({ event, rsvpData, isLoading, selectedSession }) {
                     </div>
                   )}
 
+                  {/* WhatsApp Status */}
+                  {rsvp.whatsapp_status && (
+                    <div className="flex items-center gap-2">
+                      {getWhatsAppStatusIcon(rsvp.whatsapp_status)}
+                      <span className={`text-xs ${
+                        rsvp.whatsapp_status === 'sent' || rsvp.whatsapp_status === 'delivered'
+                          ? 'text-green-600'
+                          : rsvp.whatsapp_status === 'failed' || rsvp.whatsapp_status === 'error'
+                          ? 'text-red-600'
+                          : 'text-yellow-600'
+                      }`}>
+                        WhatsApp: {rsvp.whatsapp_status}
+                      </span>
+                      {(rsvp.whatsapp_status === 'failed' || rsvp.whatsapp_status === 'error' || rsvp.whatsapp_status === 'timeout') && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleRetryWhatsApp(rsvp)}
+                          disabled={retrying[`${rsvp.member_id}-${rsvp.session_id}`]}
+                          className="h-6 px-2 text-xs"
+                        >
+                          <RefreshCw className={`h-3 w-3 mr-1 ${retrying[`${rsvp.member_id}-${rsvp.session_id}`] ? 'animate-spin' : ''}`} />
+                          Retry
+                        </Button>
+                      )}
+                    </div>
+                  )}
+
                 {/* Session Info */}
                 {rsvp.session_id && (
                   <div className="flex items-center gap-2 text-sm text-gray-600">
