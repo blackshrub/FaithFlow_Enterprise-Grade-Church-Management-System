@@ -65,26 +65,25 @@ export default function StepSimulation({ wizardData, updateWizardData, simulateI
     // Check if we need to show duplicate resolution
     const needsDuplicateResolution = hasDuplicates && (!wizardData.duplicateResolutions || Object.keys(wizardData.duplicateResolutions).length === 0);
     
-    // If showing duplicate resolution screen
-    if (needsDuplicateResolution && showDuplicateResolution) {
-      // Render duplicate resolution inline (not as early return to avoid hooks violation)
-      const resolutionContent = <StepDuplicateResolution wizardData={wizardData} updateWizardData={updateWizardData} nextStep={nextStep} prevStep={prevStep} />;
-      
-      // Reset the flag and show resolution
-      return (
-        <div>
-          {resolutionContent}
-          <div className="mt-4">
-            <Button variant="outline" onClick={() => setShowDuplicateResolution(false)}>
-              ← {t('importExport.backToValidation')}
-            </Button>
-          </div>
-        </div>
-      );
-    }
+    // Show duplicate resolution screen OR main validation screen (no early returns)
+    const showingResolution = needsDuplicateResolution && showDuplicateResolution;
 
     return (
-      <Card>
+      <div>
+        {showingResolution ? (
+          <div>
+            <StepDuplicateResolution 
+              wizardData={wizardData} 
+              updateWizardData={updateWizardData} 
+              nextStep={() => {
+                setShowDuplicateResolution(false);
+                nextStep();
+              }} 
+              prevStep={prevStep} 
+            />
+          </div>
+        ) : (
+          <Card>
         <CardHeader>
           <CardTitle>{t('importExport.simulationComplete')}</CardTitle>
           <CardDescription>
