@@ -303,6 +303,7 @@ function EventForm({ event, onClose }) {
                       {t('events.event.enableSeatSelection')}
                     </Label>
                   </div>
+                  <p className="text-xs text-gray-500">{t('events.event.seatSelectionDesc')}</p>
 
                   {formData.enable_seat_selection && (
                     <div className="space-y-2">
@@ -323,6 +324,23 @@ function EventForm({ event, onClose }) {
                           </option>
                         ))}
                       </select>
+                    </div>
+                  )}
+
+                  {!formData.enable_seat_selection && (
+                    <div className="space-y-2">
+                      <Label htmlFor="seat_capacity">
+                        {t('events.event.seatCapacity')}
+                      </Label>
+                      <Input
+                        id="seat_capacity"
+                        type="number"
+                        min="1"
+                        value={formData.seat_capacity}
+                        onChange={(e) => handleChange('seat_capacity', e.target.value)}
+                        placeholder={t('events.event.seatCapacityPlaceholder')}
+                      />
+                      <p className="text-xs text-gray-500">{t('events.event.seatCapacityDesc')}</p>
                     </div>
                   )}
                 </div>
