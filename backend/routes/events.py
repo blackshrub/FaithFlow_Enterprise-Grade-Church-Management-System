@@ -422,11 +422,24 @@ async def mark_attendance(
     if not event:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
     
+    # Check if member exists
+    member = await db.members.find_one({"id": member_id, "church_id": event.get('church_id')})
+    if not member:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Member not found in this church")
+    
+    # Validate session for series events
+    if event.get('event_type') == 'series':
+        if not session_id:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="session_id is required for series events")
+    
     # Check if RSVP required and member has RSVP
     if event.get('requires_rsvp'):
-        has_rsvp = any(r.get('member_id') == member_id for r in event.get('rsvp_list', []))
+        has_rsvp = any(
+            r.get('member_id') == member_id and r.get('session_id') == session_id 
+            for r in event.get('rsvp_list', [])
+        )
         if not has_rsvp:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="RSVP required but not found for this member")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="RSVP required but not found for this member and session")
     
     # Check if already checked in
     already_checked = any(
@@ -434,11 +447,12 @@ async def mark_attendance(
         for a in event.get('attendance_list', [])
     )
     if already_checked:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Member already checked in")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Member already checked in for this session")
     
     # Add attendance
     attendance_entry = {
         'member_id': member_id,
+        'member_name': member.get('full_name'),
         'session_id': session_id,
         'check_in_time': datetime.now(timezone.utc).isoformat()
     }
@@ -448,8 +462,8 @@ async def mark_attendance(
         {"$push": {"attendance_list": attendance_entry}}
     )
     
-    logger.info(f"Attendance marked: Event {event_id}, Member {member_id}")
-    return {"success": True, "message": "Check-in successful"}
+    logger.info(f"Attendance marked: Event {event_id}, Member {member_id}, Session {session_id}")
+    return {"success": True, "message": "Check-in successful", "attendance": attendance_entry}
 
 
 @router.get("/{event_id}/attendance")
