@@ -300,6 +300,7 @@
       "rsvpCount": "{{count}} RSVP",
       "attendanceCount": "{{count}} hadir",
       "seatsAvailable": "{{available}}/{{total}} kursi tersedia",
+      "attended": "hadir",
       "eventsTotal": "Total: {{count}} acara",
       "eventsTotal_one": "Total: {{count}} acara",
       "eventsTotal_other": "Total: {{count}} acara",
