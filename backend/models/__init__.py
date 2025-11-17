@@ -11,6 +11,8 @@ from .spiritual_journey import SpiritualJourney, SpiritualJourneyCreate, Spiritu
 from .member_status import MemberStatus, MemberStatusCreate, MemberStatusUpdate
 from .demographic_preset import DemographicPreset, DemographicPresetCreate, DemographicPresetUpdate
 from .church_settings import ChurchSettings, ChurchSettingsCreate, ChurchSettingsUpdate
+from .seat_layout import SeatLayout, SeatLayoutCreate, SeatLayoutUpdate
+from .event import Event, EventCreate, EventUpdate, SessionBase
 
 __all__ = [
     'Church', 'ChurchCreate', 'ChurchUpdate',
