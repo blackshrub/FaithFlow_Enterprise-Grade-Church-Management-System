@@ -87,7 +87,8 @@ async def list_members(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
     search: Optional[str] = None,
-    is_active: Optional[bool] = None
+    is_active: Optional[bool] = None,
+    incomplete_data: Optional[bool] = None
 ):
     """List all members in current church with pagination and search"""
     
@@ -101,6 +102,7 @@ async def list_members(
         query['$or'] = [
             {'first_name': {'$regex': search, '$options': 'i'}},
             {'last_name': {'$regex': search, '$options': 'i'}},
+            {'full_name': {'$regex': search, '$options': 'i'}},
             {'email': {'$regex': search, '$options': 'i'}},
             {'phone_whatsapp': {'$regex': search, '$options': 'i'}}
         ]
@@ -108,6 +110,15 @@ async def list_members(
     # Add active filter
     if is_active is not None:
         query['is_active'] = is_active
+    
+    # Add incomplete data filter
+    if incomplete_data is True:
+        query['$or'] = query.get('$or', []) + [
+            {'gender': {'$in': [None, '']}},
+            {'date_of_birth': {'$in': [None, '']}},
+            {'address': {'$in': [None, '']}},
+            {'phone_whatsapp': {'$in': [None, '']}}
+        ]
     
     members = await db.members.find(query, {"_id": 0}).skip(skip).limit(limit).to_list(limit)
     
