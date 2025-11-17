@@ -289,6 +289,7 @@ function EventForm({ event, onClose }) {
                 </Label>
               </div>
 
+              {/* Seat Selection - Only for Single Events */}
               {formData.requires_rsvp && formData.event_type === 'single' && (
                 <div className="space-y-4 pl-6 border-l-2 border-gray-300">
                   <div className="flex items-center gap-2">
@@ -343,6 +344,26 @@ function EventForm({ event, onClose }) {
                       <p className="text-xs text-gray-500">{t('events.event.seatCapacityDesc')}</p>
                     </div>
                   )}
+                </div>
+              )}
+
+              {/* Seat Capacity - For Series Events */}
+              {formData.requires_rsvp && formData.event_type === 'series' && (
+                <div className="space-y-2 pl-6 border-l-2 border-gray-300">
+                  <Label htmlFor="seat_capacity_series">
+                    {t('events.event.seatCapacity')}
+                  </Label>
+                  <Input
+                    id="seat_capacity_series"
+                    type="number"
+                    min="1"
+                    value={formData.seat_capacity}
+                    onChange={(e) => handleChange('seat_capacity', e.target.value)}
+                    placeholder={t('events.event.seatCapacityPlaceholder')}
+                  />
+                  <p className="text-xs text-gray-500">
+                    {t('events.event.seatCapacityDescSeries')}
+                  </p>
                 </div>
               )}
             </div>
