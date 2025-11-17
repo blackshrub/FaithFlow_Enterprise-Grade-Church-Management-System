@@ -11,19 +11,19 @@ import { Alert, AlertDescription } from '../../ui/alert';
 import { ChevronRight, ChevronLeft } from 'lucide-react';
 
 const TARGET_FIELDS = [
-  { value: 'first_name', label: 'First Name', required: true },
-  { value: 'last_name', label: 'Last Name', required: true },
-  { value: 'phone_whatsapp', label: 'WhatsApp Number', required: true },
+  { value: 'full_name', label: 'Full Name', required: true, info: 'Will be split into first and last name' },
+  { value: 'gender', label: 'Gender', required: true, info: 'Must be: Male or Female' },
+  { value: 'date_of_birth', label: 'Birth Date', required: true, info: 'Format must match church setting (default: DD-MM-YYYY)' },
+  { value: 'address', label: 'Address', required: true },
+  { value: 'phone_whatsapp', label: 'Phone Number (WhatsApp)', required: true, info: 'Must be unique, international format: +628123456789' },
+  { value: 'blood_type', label: 'Blood Type', required: false, info: 'Must be: A, B, AB, or O' },
+  { value: 'marital_status', label: 'Marital Status', required: false, info: 'Must be: Married, Not Married, Widower, or Widow' },
+  { value: 'baptism_date', label: 'Baptism Date', required: false, info: 'Format must match church setting (default: DD-MM-YYYY)' },
+  { value: 'photo_filename', label: 'Photo Filename', required: false, info: 'Filename to match with bulk uploaded photos' },
+  { value: 'personal_document', label: 'Personal Document', required: false, info: 'Filename to match with bulk uploaded documents' },
   { value: 'email', label: 'Email', required: false },
-  { value: 'date_of_birth', label: 'Date of Birth', required: false },
-  { value: 'gender', label: 'Gender', required: false },
-  { value: 'blood_type', label: 'Blood Type', required: false },
-  { value: 'address', label: 'Address', required: false },
   { value: 'city', label: 'City', required: false },
-  { value: 'marital_status', label: 'Marital Status', required: false },
   { value: 'occupation', label: 'Occupation', required: false },
-  { value: 'baptism_date', label: 'Baptism Date', required: false },
-  { value: 'membership_date', label: 'Membership Date', required: false },
   { value: 'notes', label: 'Notes', required: false },
 ];
 
