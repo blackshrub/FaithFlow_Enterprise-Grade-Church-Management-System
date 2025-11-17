@@ -211,6 +211,7 @@
     "requiredFields": "Required Fields",
     "mapFields": "Map Fields",
     "mapFieldsDesc": "Match your file columns to member fields",
+    "totalRecordsToImport": "Total records: {{count}}",
     "autoMap": "Auto-Map",
     "appField": "App Field (Required)",
     "required": "Required",
