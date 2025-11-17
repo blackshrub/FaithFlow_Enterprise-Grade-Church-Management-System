@@ -52,6 +52,8 @@ api_router.include_router(import_export.router)
 api_router.include_router(photo_document_sim.router)
 api_router.include_router(seat_layouts.router)
 api_router.include_router(events.router)
+api_router.include_router(bible.router)
+api_router.include_router(devotions.router)
 
 # Include the API router in the main app
 app.include_router(api_router)
