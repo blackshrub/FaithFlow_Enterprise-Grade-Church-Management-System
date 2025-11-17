@@ -115,12 +115,12 @@ class FileUploadService:
                             # Avoid duplicates - if multiple files normalize to same name, keep first
                             if normalized_name not in extracted_files:
                                 extracted_files[normalized_name] = file_data
-                                logger.debug(f"Added: {clean_name} → {normalized_name}")
+                                logger.debug(f"Added: {clean_name} → {normalized_name} (size: {len(file_data)} bytes)")
                             else:
-                                logger.warning(f"Duplicate normalized filename: {normalized_name} (original: {clean_name})")
+                                logger.warning(f"Duplicate after normalization: {clean_name} → {normalized_name} (SKIPPED, keeping first occurrence)")
                                 skipped_count += 1
                         else:
-                            logger.debug(f"Skipped after normalization: {clean_name}")
+                            logger.info(f"File skipped by normalization (not a valid photo/document): {clean_name}")
                             skipped_count += 1
             
             elif filename.lower().endswith('.rar'):
