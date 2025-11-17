@@ -258,7 +258,7 @@ function KioskMode() {
       {/* Main Split Screen */}
       <div className="flex-1 flex overflow-hidden">
         {/* Left: Camera Scanner */}
-        <div className="w-1/2 bg-gray-900 flex flex-col relative">
+        <div className={`w-1/2 flex flex-col relative ${themes[kioskTheme]}`}>
           <div className="absolute top-4 right-4 z-10 flex gap-2">
             <Button
               onClick={toggleCamera}
