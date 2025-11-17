@@ -110,7 +110,8 @@
     "success": "Success",
     "confirm": "Confirm",
     "na": "N/A",
-    "close": "Close"
+    "close": "Close",
+    "add": "Add"
   },
   "nav": {
     "dashboard": "Dashboard",
