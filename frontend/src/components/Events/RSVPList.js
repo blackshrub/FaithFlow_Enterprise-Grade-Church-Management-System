@@ -237,17 +237,18 @@ function RSVPList({ event, rsvpData, isLoading, selectedSession }) {
                     {rsvp.status}
                   </span>
                 )}
-              </div>
+                </div>
 
-              {/* Actions */}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => handleCancel(rsvp)}
-                disabled={cancelMutation.isPending}
-              >
-                <Trash2 className="h-4 w-4 text-red-500" />
-              </Button>
+                {/* Actions */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleCancel(rsvp)}
+                  disabled={cancelMutation.isPending}
+                >
+                  <Trash2 className="h-4 w-4 text-red-500" />
+                </Button>
+              </div>
             </div>
           );
         })}
