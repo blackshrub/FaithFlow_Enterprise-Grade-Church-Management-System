@@ -5,18 +5,18 @@ import uuid
 
 
 class MemberBase(BaseModel):
-    first_name: str = Field(..., min_length=1, max_length=100)
-    last_name: str = Field(..., min_length=1, max_length=100)
-    full_name: Optional[str] = None  # Can be provided instead of first/last, will be parsed
+    full_name: str = Field(..., min_length=1, max_length=200, description="Full name of member")
+    first_name: Optional[str] = Field(None, max_length=100, description="Auto-generated from full_name if not provided")
+    last_name: Optional[str] = Field(None, max_length=100, description="Auto-generated from full_name if not provided")
     email: Optional[EmailStr] = None
-    phone_whatsapp: str = Field(..., description="WhatsApp number in international format")
+    phone_whatsapp: str = Field(..., description="WhatsApp number, will be normalized to 62XXXXXXXXX format")
     date_of_birth: Optional[date] = None
-    gender: Optional[Literal['Male', 'Female']] = None  # Simplified to Male/Female only
+    gender: Optional[Literal['Male', 'Female']] = None
     address: Optional[str] = None
     city: Optional[str] = None
     state: Optional[str] = None
     country: Optional[str] = None
-    marital_status: Optional[Literal['Married', 'Not Married', 'Widower', 'Widow']] = None  # Simplified options
+    marital_status: Optional[Literal['Married', 'Not Married', 'Widower', 'Widow']] = None
     occupation: Optional[str] = None
     baptism_date: Optional[date] = None
     membership_date: Optional[date] = None
@@ -24,7 +24,7 @@ class MemberBase(BaseModel):
     household_id: Optional[str] = None
     notes: Optional[str] = None
     demographic_category: Optional[str] = None  # Auto-assigned based on age
-    blood_type: Optional[Literal['A', 'B', 'AB', 'O']] = None  # Simplified blood types
+    blood_type: Optional[Literal['A', 'B', 'AB', 'O']] = None
     photo_filename: Optional[str] = None  # Profile photo filename for matching
     photo_base64: Optional[str] = None  # Profile photo in base64
     personal_document: Optional[str] = None  # Personal document filename or base64
