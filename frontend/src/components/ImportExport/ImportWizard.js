@@ -53,6 +53,7 @@ export default function ImportWizard() {
     simulationResults: null,
     duplicateResolutions: {},
     importResults: null,
+    uploadedMemberIds: [], // Track members with uploaded photos/documents
   });
 
   // Update date format when church settings load
@@ -62,9 +63,20 @@ export default function ImportWizard() {
     }
   }, [churchSettings]);
 
+  // Cleanup on unmount or navigation away
+  useEffect(() => {
+    return () => {
+      // Cleanup if import not completed
+      if (wizardData.uploadedMemberIds.length > 0 && !wizardData.importResults) {
+        cleanupUploads.mutate(wizardData.uploadedMemberIds);
+      }
+    };
+  }, [wizardData.uploadedMemberIds, wizardData.importResults]);
+
   const parseFile = useParseFile();
   const simulateImport = useSimulateImport();
   const importMembers = useImportMembers();
+  const cleanupUploads = useCleanupUploads();
 
   const updateWizardData = (updates) => {
     setWizardData(prev => ({ ...prev, ...updates }));
