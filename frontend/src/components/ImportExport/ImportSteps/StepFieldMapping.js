@@ -129,8 +129,13 @@ export default function StepFieldMapping({ wizardData, updateWizardData, nextSte
                 return (
                   <TableRow key={field.value}>
                     <TableCell className="font-medium">
-                      {field.label}
-                      {field.required && <Badge className="ml-2" variant="destructive">Required</Badge>}
+                      <div>
+                        {field.label}
+                        {field.required && <Badge className="ml-2" variant="destructive">Required</Badge>}
+                        {field.info && (
+                          <p className="text-xs text-gray-500 mt-1">{field.info}</p>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell>
                       {field.required ? (
