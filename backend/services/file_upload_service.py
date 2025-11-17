@@ -203,11 +203,14 @@ class FileUploadService:
         unmatched_files = []
         unmatched_members = []
         
-        # Create lookup by filename
+        # Create lookup by normalized filename
         member_lookup = {}
         for member in members:
             if member.get(field_name):
-                member_lookup[member[field_name]] = member
+                # Normalize the filename from member data
+                normalized_member_filename = FileUploadService.normalize_filename(member[field_name])
+                if normalized_member_filename:
+                    member_lookup[normalized_member_filename] = member
         
         # Match files to members
         for filename, file_data in files.items():
