@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
-import { useMembers, useCreateMember, useUpdateMember, useDeleteMember } from '../hooks/useMembers';
+import { useMembers, useMemberStats, useCreateMember, useUpdateMember, useDeleteMember } from '../hooks/useMembers';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
