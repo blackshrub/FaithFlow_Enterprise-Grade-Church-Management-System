@@ -21,6 +21,7 @@ class ChurchSettingsUpdate(BaseModel):
     time_format: Optional[Literal['12h', '24h']] = None
     currency: Optional[str] = Field(None, max_length=10)
     timezone: Optional[str] = Field(None, max_length=50)
+    default_language: Optional[Literal['en', 'id']] = None
 
 
 class ChurchSettings(ChurchSettingsBase):
