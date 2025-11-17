@@ -11,6 +11,7 @@ from models.import_export import ImportTemplate, ImportTemplateCreate, ImportTem
 from models.member import Member
 from utils.dependencies import get_db, require_admin, get_current_user
 from services.import_export_service import import_export_service
+from services.file_upload_service import file_upload_service
 from utils.demographics import auto_assign_demographic
 
 logger = logging.getLogger(__name__)
