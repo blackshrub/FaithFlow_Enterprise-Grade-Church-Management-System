@@ -317,10 +317,11 @@ async def cancel_rsvp(
 @router.get("/{event_id}/rsvps")
 async def get_event_rsvps(
     event_id: str,
+    session_id: Optional[str] = Query(None),
     db: AsyncIOMotorDatabase = Depends(get_db),
     current_user: dict = Depends(get_current_user)
 ):
-    """Get all RSVPs for an event"""
+    """Get all RSVPs for an event or specific session"""
     
     event = await db.events.find_one({"id": event_id}, {"_id": 0})
     if not event:
@@ -329,11 +330,79 @@ async def get_event_rsvps(
     if current_user.get('role') != 'super_admin' and current_user.get('church_id') != event.get('church_id'):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
     
+    all_rsvps = event.get('rsvp_list', [])
+    
+    # Filter by session if provided
+    if session_id:
+        all_rsvps = [r for r in all_rsvps if r.get('session_id') == session_id]
+    
     return {
         "event_id": event_id,
         "event_name": event.get('name'),
-        "total_rsvps": len(event.get('rsvp_list', [])),
-        "rsvps": event.get('rsvp_list', [])
+        "session_id": session_id,
+        "total_rsvps": len(all_rsvps),
+        "rsvps": all_rsvps
+    }
+
+
+@router.get("/{event_id}/available-seats")
+async def get_available_seats(
+    event_id: str,
+    session_id: Optional[str] = Query(None),
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    """Get available seats for an event session"""
+    
+    event = await db.events.find_one({"id": event_id}, {"_id": 0})
+    if not event:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
+    
+    if not event.get('enable_seat_selection'):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Seat selection is not enabled for this event")
+    
+    if not event.get('seat_layout_id'):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No seat layout configured for this event")
+    
+    # Get seat layout
+    layout = await db.seat_layouts.find_one({"id": event.get('seat_layout_id')}, {"_id": 0})
+    if not layout:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Seat layout not found")
+    
+    seat_map = layout.get('seat_map', {})
+    
+    # Get taken seats for this session
+    rsvps = event.get('rsvp_list', [])
+    if session_id:
+        rsvps = [r for r in rsvps if r.get('session_id') == session_id]
+    
+    taken_seats = {r.get('seat') for r in rsvps if r.get('seat')}
+    
+    # Build available seats list
+    available_seats = []
+    unavailable_seats = []
+    taken_seat_list = []
+    
+    for seat_id, seat_status in seat_map.items():
+        if seat_status == 'available' and seat_id not in taken_seats:
+            available_seats.append(seat_id)
+        elif seat_id in taken_seats:
+            taken_seat_list.append(seat_id)
+        elif seat_status in ['unavailable', 'no_seat']:
+            unavailable_seats.append(seat_id)
+    
+    return {
+        "event_id": event_id,
+        "session_id": session_id,
+        "layout_id": event.get('seat_layout_id'),
+        "layout_name": layout.get('name'),
+        "total_seats": len(seat_map),
+        "available": len(available_seats),
+        "taken": len(taken_seat_list),
+        "unavailable": len(unavailable_seats),
+        "available_seats": sorted(available_seats),
+        "taken_seats": sorted(taken_seat_list),
+        "seat_map": seat_map
     }
 
 
