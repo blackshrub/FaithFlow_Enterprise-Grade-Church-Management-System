@@ -355,6 +355,26 @@
     "readyToImport": "Siap mengimpor {{count}} catatan valid",
     "simulationFoundErrors": "Validasi menemukan kesalahan",
     "simulationSuccessful": "Validasi berhasil",
-    "validationErrors": "Kesalahan Validasi"
+    "validationErrors": "Kesalahan Validasi",
+    "addCustomField": "Tambah Field Kustom",
+    "createCustomField": "Buat Field Kustom",
+    "createCustomFieldDesc": "Tentukan field kustom untuk mengimpor data spesifik gereja",
+    "fieldName": "Nama Field",
+    "fieldNamePlaceholder": "contoh: Nama Sekolah, Minat Pelayanan, Kontak Darurat",
+    "fieldType": "Tipe Field",
+    "description": "Deskripsi",
+    "descriptionPlaceholder": "Deskripsi opsional untuk field ini",
+    "requiredField": "Field Wajib",
+    "typeString": "Teks (String)",
+    "typeNumber": "Angka",
+    "typeDate": "Tanggal",
+    "typeEmail": "Email",
+    "typeBoolean": "Ya/Tidak (Boolean)",
+    "typeUrl": "URL/Tautan",
+    "typePhone": "Nomor Telepon",
+    "custom": "Kustom",
+    "type": "Tipe",
+    "customFieldsAdded": "Field kustom ditambahkan: {{count}}",
+    "customFieldExample": "Contoh: Nama Sekolah, Minat Pelayanan, Kontak Darurat"
   }
 }
