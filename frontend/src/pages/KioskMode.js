@@ -190,9 +190,9 @@ function KioskMode() {
   );
 
   return (
-    <div className="h-screen w-screen overflow-hidden bg-gray-50 flex flex-col">
+    <div className={`h-screen w-screen overflow-hidden flex flex-col ${themes[kioskTheme]}`}>
       {/* Top Bar */}
-      <div className="bg-white shadow-sm px-6 py-4 flex items-center justify-between flex-shrink-0">
+      <div className="bg-white/95 backdrop-blur-sm shadow-sm px-6 py-4 flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-4">
           <a href="/events" className="text-gray-600 hover:text-gray-900">
             <ArrowLeft className="h-6 w-6" />
