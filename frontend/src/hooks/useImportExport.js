@@ -1,0 +1,99 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { importExportAPI } from '../services/api';
+import { queryKeys } from '../lib/react-query';
+import { toast } from 'sonner';
+import { useAuth } from '../context/AuthContext';
+
+// Templates
+export const useImportTemplates = () => {
+  const { church } = useAuth();
+  
+  return useQuery({
+    queryKey: ['import-templates', church?.id],
+    queryFn: () => importExportAPI.listTemplates().then(res => res.data),
+    enabled: !!church?.id,
+  });
+};
+
+export const useCreateTemplate = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: (templateData) => importExportAPI.createTemplate(templateData).then(res => res.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['import-templates'] });
+      toast.success('Template saved successfully');
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.detail || 'Failed to save template');
+    },
+  });
+};
+
+// Import operations
+export const useParseFile = () => {
+  return useMutation({
+    mutationFn: (file) => importExportAPI.parseFile(file).then(res => res.data),
+    onError: (error) => {
+      toast.error(error.response?.data?.detail || 'Failed to parse file');
+    },
+  });
+};
+
+export const useSimulateImport = () => {
+  return useMutation({
+    mutationFn: (data) => importExportAPI.simulateImport(data).then(res => res.data),
+    onError: (error) => {
+      toast.error(error.response?.data?.detail || 'Simulation failed');
+    },
+  });
+};
+
+export const useImportMembers = () => {
+  const queryClient = useQueryClient();
+  const { church } = useAuth();
+  
+  return useMutation({
+    mutationFn: (data) => importExportAPI.importMembers(data).then(res => res.data),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.members.all(church?.id) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.members.stats(church?.id) });
+      toast.success(`Successfully imported ${data.imported} members`);
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.detail?.message || 'Import failed');
+    },
+  });
+};
+
+// Export
+export const useExportMembers = () => {
+  return useMutation({
+    mutationFn: (params) => importExportAPI.exportMembers(params),
+    onSuccess: (response, variables) => {
+      // Create download link
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `members_export_${Date.now()}.${variables.format || 'csv'}`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      toast.success('Export completed successfully');
+    },
+    onError: (error) => {
+      toast.error('Export failed');
+    },
+  });
+};
+
+// Import logs
+export const useImportLogs = () => {
+  const { church } = useAuth();
+  
+  return useQuery({
+    queryKey: ['import-logs', church?.id],
+    queryFn: () => importExportAPI.listLogs().then(res => res.data),
+    enabled: !!church?.id,
+  });
+};
