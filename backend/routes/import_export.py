@@ -95,7 +95,8 @@ async def parse_import_file(
             "file_type": file_ext,
             "headers": headers,
             "total_records": len(data),
-            "sample_data": data[:5] if data else []  # Return first 5 rows for preview
+            "sample_data": data[:5] if data else [],  # First 5 for preview
+            "all_data": data  # ALL data for photo/document matching
         }
     except Exception as e:
         logger.error(f"Error parsing file: {str(e)}")
