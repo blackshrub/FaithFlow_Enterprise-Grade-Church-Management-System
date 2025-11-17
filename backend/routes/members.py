@@ -6,6 +6,7 @@ from datetime import datetime
 from models.member import Member, MemberCreate, MemberUpdate
 from utils.dependencies import get_db, get_current_user
 from utils.demographics import auto_assign_demographic
+from utils.helpers import combine_full_name, normalize_phone_number
 
 router = APIRouter(prefix="/members", tags=["Members"])
 
