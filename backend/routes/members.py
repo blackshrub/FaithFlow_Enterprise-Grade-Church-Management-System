@@ -292,11 +292,24 @@ async def get_member_stats(
     married_count = await db.members.count_documents({**query, 'marital_status': 'married', 'is_active': True})
     single_count = await db.members.count_documents({**query, 'marital_status': 'single', 'is_active': True})
     
+    # Count incomplete data (missing key fields)
+    incomplete_count = await db.members.count_documents({
+        **query,
+        'is_active': True,
+        '$or': [
+            {'gender': {'$in': [None, '']}},
+            {'date_of_birth': {'$in': [None, '']}},
+            {'address': {'$in': [None, '']}},
+            {'phone_whatsapp': {'$in': [None, '']}}
+        ]
+    })
+    
     return {
         "total_members": total_members,
         "total_inactive": total_inactive,
         "male_count": male_count,
         "female_count": female_count,
         "married_count": married_count,
-        "single_count": single_count
+        "single_count": single_count,
+        "incomplete_data_count": incomplete_count
     }
