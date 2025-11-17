@@ -143,6 +143,14 @@ export default function MemberStatusesTab() {
                 />
                 <Label htmlFor="status-active">{t('settings.isActive')}</Label>
               </div>
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="status-default"
+                  checked={formData.is_default_for_new}
+                  onCheckedChange={(checked) => setFormData({ ...formData, is_default_for_new: checked })}
+                />
+                <Label htmlFor="status-default">{t('settings.defaultForNewVisitors')}</Label>
+              </div>
               <DialogFooter>
                 <Button 
                   type="button" 
