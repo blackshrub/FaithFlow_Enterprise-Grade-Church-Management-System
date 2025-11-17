@@ -1,9 +1,11 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { authAPI } from '../services/api';
+import { authAPI, settingsAPI } from '../services/api';
+import { useTranslation } from 'react-i18next';
 
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
+  const { i18n } = useTranslation();
   const [user, setUser] = useState(null);
   const [church, setChurch] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -19,6 +21,9 @@ export const AuthProvider = ({ children }) => {
       try {
         setUser(JSON.parse(savedUser));
         setChurch(JSON.parse(savedChurch));
+        
+        // Load church settings to get default language
+        loadChurchSettings();
       } catch (e) {
         console.error('Error parsing saved user data:', e);
         logout();
@@ -26,6 +31,20 @@ export const AuthProvider = ({ children }) => {
     }
     setLoading(false);
   }, []);
+
+  const loadChurchSettings = async () => {
+    try {
+      const response = await settingsAPI.getChurchSettings();
+      const settings = response.data;
+      if (settings.default_language) {
+        i18n.changeLanguage(settings.default_language);
+      }
+    } catch (error) {
+      console.error('Error loading church settings:', error);
+      // Default to English if settings can't be loaded
+      i18n.changeLanguage('en');
+    }
+  };
 
   const login = async (email, password) => {
     try {
@@ -39,6 +58,9 @@ export const AuthProvider = ({ children }) => {
 
       setUser(user);
       setChurch(church);
+      
+      // Load church settings to apply default language
+      await loadChurchSettings();
 
       return { success: true, user };
     } catch (err) {
