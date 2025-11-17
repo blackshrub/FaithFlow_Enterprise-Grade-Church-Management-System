@@ -130,8 +130,6 @@ async def simulate_import(
             _, data = import_export_service.parse_csv(file_content)
         elif file_type == 'json':
             _, data = import_export_service.parse_json(file_content)
-        elif file_type == 'sql':
-            _, data = import_export_service.parse_sql(file_content)
         else:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
