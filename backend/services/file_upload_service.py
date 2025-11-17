@@ -80,15 +80,15 @@ class FileUploadService:
                         # Skip if it's just a folder marker, empty, or hidden file
                         if not clean_name or clean_name.startswith('.') or clean_name.startswith('__MACOSX'):
                             continue
-                            
-                            # Normalize filename: lowercase, standardize extensions
-                            normalized_name = FileUploadService.normalize_filename(clean_name)
-                            if normalized_name:  # Only add if valid after normalization
-                                # Avoid duplicates - if multiple files normalize to same name, keep first
-                                if normalized_name not in extracted_files:
-                                    extracted_files[normalized_name] = file_data
-                                else:
-                                    logger.warning(f"Duplicate normalized filename: {normalized_name} (original: {clean_name})")
+                        
+                        # Normalize filename: lowercase, standardize extensions
+                        normalized_name = FileUploadService.normalize_filename(clean_name)
+                        if normalized_name:  # Only add if valid after normalization
+                            # Avoid duplicates - if multiple files normalize to same name, keep first
+                            if normalized_name not in extracted_files:
+                                extracted_files[normalized_name] = file_data
+                            else:
+                                logger.warning(f"Duplicate normalized filename: {normalized_name} (original: {clean_name})")
             
             elif filename.lower().endswith('.rar'):
                 with rarfile.RarFile(io.BytesIO(file_content)) as rf:
