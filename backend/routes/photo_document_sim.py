@@ -30,6 +30,12 @@ async def simulate_photo_matching(
         archive_content = await photo_archive.read()
         extracted_files = file_upload_service.extract_archive(archive_content, photo_archive.filename)
         
+        logger.info(f"Extracted {len(extracted_files)} files from archive")
+        if len(extracted_files) > 0:
+            # Log first 3 for debugging
+            sample_files = list(extracted_files.keys())[:3]
+            logger.info(f"Sample ZIP filenames (normalized): {sample_files}")
+        
         # Simulate matching against CSV data
         matched = []
         unmatched_files = []
