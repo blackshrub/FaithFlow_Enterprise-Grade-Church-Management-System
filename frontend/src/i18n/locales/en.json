@@ -183,6 +183,8 @@
     "updateError": "Failed to update",
     "deleteError": "Failed to delete",
     "loadError": "Failed to load settings",
+    "defaultForNewVisitors": "Default for new visitors",
+    "defaultForNewVisitorsDesc": "Automatically assign this status to new visitors added at kiosk",
     "whatsappNotifications": "WhatsApp Notifications",
     "whatsappNotificationsDesc": "Configure WhatsApp message notifications",
     "enableWhatsappNotifications": "Enable WhatsApp Notifications",
