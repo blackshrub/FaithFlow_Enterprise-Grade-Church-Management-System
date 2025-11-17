@@ -59,7 +59,6 @@ export default function StepSimulation({ wizardData, updateWizardData, simulateI
     const hasErrors = simulationResults.errors && simulationResults.errors.length > 0;
     const hasDuplicates = simulationResults.duplicate_conflicts && simulationResults.duplicate_conflicts.length > 0;
     const hasWarnings = simulationResults.warnings && simulationResults.warnings.length > 0;
-    const [showDuplicateResolution, setShowDuplicateResolution] = useState(false);
 
     // Check if we need to show duplicate resolution
     const needsDuplicateResolution = hasDuplicates && !wizardData.duplicateResolutions;
