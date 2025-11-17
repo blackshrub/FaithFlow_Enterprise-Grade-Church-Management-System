@@ -2637,22 +2637,15 @@ def test_cancel_rsvp():
         print_error("No auth token or test_event_series_id available")
         return False
     
+    if not test_members_created:
+        print_error("No test members available")
+        return False
+    
     headers = {"Authorization": f"Bearer {auth_token}"}
     
-    # Get member ID
+    member_id = test_members_created[0]
+    
     try:
-        members_response = requests.get(
-            f"{BASE_URL}/members/?limit=1",
-            headers=headers,
-            timeout=10
-        )
-        
-        if members_response.status_code != 200 or not members_response.json():
-            print_error("No members found")
-            return False
-        
-        member_id = members_response.json()[0].get('id')
-        
         # Cancel RSVP for Session 2
         response = requests.delete(
             f"{BASE_URL}/events/{test_event_series_id}/rsvp/{member_id}?session_id=Session 2",
@@ -2681,22 +2674,15 @@ def test_checkin_without_rsvp_requirement():
         print_error("No auth token or test_event_single_id available")
         return False
     
+    if not test_members_created:
+        print_error("No test members available")
+        return False
+    
     headers = {"Authorization": f"Bearer {auth_token}"}
     
-    # Get a member
+    member_id = test_members_created[0]
+    
     try:
-        members_response = requests.get(
-            f"{BASE_URL}/members/?limit=1",
-            headers=headers,
-            timeout=10
-        )
-        
-        if members_response.status_code != 200 or not members_response.json():
-            print_error("No members found")
-            return False
-        
-        member_id = members_response.json()[0].get('id')
-        
         # Check-in member
         response = requests.post(
             f"{BASE_URL}/events/{test_event_single_id}/check-in?member_id={member_id}",
@@ -2726,22 +2712,15 @@ def test_checkin_duplicate():
         print_error("No auth token or test_event_single_id available")
         return False
     
+    if not test_members_created:
+        print_error("No test members available")
+        return False
+    
     headers = {"Authorization": f"Bearer {auth_token}"}
     
-    # Get same member
+    member_id = test_members_created[0]
+    
     try:
-        members_response = requests.get(
-            f"{BASE_URL}/members/?limit=1",
-            headers=headers,
-            timeout=10
-        )
-        
-        if members_response.status_code != 200 or not members_response.json():
-            print_error("No members found")
-            return False
-        
-        member_id = members_response.json()[0].get('id')
-        
         # Try to check-in again
         response = requests.post(
             f"{BASE_URL}/events/{test_event_single_id}/check-in?member_id={member_id}",
@@ -2768,22 +2747,15 @@ def test_checkin_with_rsvp_requirement():
         print_error("No auth token or test_event_series_id available")
         return False
     
+    if not test_members_created:
+        print_error("No test members available")
+        return False
+    
     headers = {"Authorization": f"Bearer {auth_token}"}
     
-    # Get member who has RSVP for Session 1
+    member_id = test_members_created[0]
+    
     try:
-        members_response = requests.get(
-            f"{BASE_URL}/members/?limit=1",
-            headers=headers,
-            timeout=10
-        )
-        
-        if members_response.status_code != 200 or not members_response.json():
-            print_error("No members found")
-            return False
-        
-        member_id = members_response.json()[0].get('id')
-        
         # Check-in for Session 1 (has RSVP)
         response = requests.post(
             f"{BASE_URL}/events/{test_event_series_id}/check-in?member_id={member_id}&session_id=Session 1",
@@ -2812,27 +2784,15 @@ def test_checkin_without_rsvp():
         print_error("No auth token or test_event_series_id available")
         return False
     
+    if len(test_members_created) < 2:
+        print_error("Need at least 2 test members")
+        return False
+    
     headers = {"Authorization": f"Bearer {auth_token}"}
     
-    # Get a different member
+    member_id = test_members_created[1]
+    
     try:
-        members_response = requests.get(
-            f"{BASE_URL}/members/?limit=2",
-            headers=headers,
-            timeout=10
-        )
-        
-        if members_response.status_code != 200:
-            print_error("Failed to get members")
-            return False
-        
-        members = members_response.json()
-        if len(members) < 2:
-            print_error("Need at least 2 members")
-            return False
-        
-        member_id = members[1].get('id')
-        
         # Try to check-in for Session 3 (no RSVP)
         response = requests.post(
             f"{BASE_URL}/events/{test_event_series_id}/check-in?member_id={member_id}&session_id=Session 3",
