@@ -165,6 +165,23 @@ export default function GeneralSettingsTab() {
             </Select>
           </div>
 
+          <div className="space-y-2">
+            <Label>{t('settings.defaultLanguage')}</Label>
+            <Select 
+              value={formData.default_language} 
+              onValueChange={(value) => setFormData({ ...formData, default_language: value })}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="en">English</SelectItem>
+                <SelectItem value="id">Bahasa Indonesia</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-sm text-gray-500">{t('settings.defaultLanguageDesc')}</p>
+          </div>
+
           <div className="pt-4">
             <Button 
               onClick={handleSave} 
