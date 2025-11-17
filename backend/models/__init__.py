@@ -27,4 +27,6 @@ __all__ = [
     'MemberStatus', 'MemberStatusCreate', 'MemberStatusUpdate',
     'DemographicPreset', 'DemographicPresetCreate', 'DemographicPresetUpdate',
     'ChurchSettings', 'ChurchSettingsCreate', 'ChurchSettingsUpdate',
+    'SeatLayout', 'SeatLayoutCreate', 'SeatLayoutUpdate',
+    'Event', 'EventCreate', 'EventUpdate', 'SessionBase',
 ]
