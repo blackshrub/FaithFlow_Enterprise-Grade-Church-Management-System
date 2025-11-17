@@ -75,6 +75,28 @@ export default function StepFieldMapping({ wizardData, updateWizardData, nextSte
     });
   };
 
+  const addCustomField = () => {
+    if (!newCustomField.name) return;
+    
+    const updatedCustomFields = [...customFields, newCustomField];
+    setCustomFields(updatedCustomFields);
+    updateWizardData({ customFields: updatedCustomFields });
+    
+    setIsAddCustomFieldOpen(false);
+    setNewCustomField({
+      name: '',
+      type: 'string',
+      required: false,
+      description: ''
+    });
+  };
+
+  const removeCustomField = (index) => {
+    const updatedCustomFields = customFields.filter((_, i) => i !== index);
+    setCustomFields(updatedCustomFields);
+    updateWizardData({ customFields: updatedCustomFields });
+  };
+
   const autoMap = () => {
     const mappings = {};
     TARGET_FIELDS.forEach(targetField => {
