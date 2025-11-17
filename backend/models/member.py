@@ -36,9 +36,9 @@ class MemberCreate(MemberBase):
 
 
 class MemberUpdate(BaseModel):
-    first_name: Optional[str] = Field(None, min_length=1, max_length=100)
-    last_name: Optional[str] = Field(None, min_length=1, max_length=100)
-    full_name: Optional[str] = None
+    full_name: Optional[str] = Field(None, min_length=1, max_length=200)
+    first_name: Optional[str] = Field(None, max_length=100)
+    last_name: Optional[str] = Field(None, max_length=100)
     email: Optional[EmailStr] = None
     phone_whatsapp: Optional[str] = None
     date_of_birth: Optional[date] = None
@@ -54,12 +54,12 @@ class MemberUpdate(BaseModel):
     is_active: Optional[bool] = None
     household_id: Optional[str] = None
     notes: Optional[str] = None
-    demographic_category: Optional[str] = None  # Auto-assigned based on age
+    demographic_category: Optional[str] = None
     blood_type: Optional[Literal['A', 'B', 'AB', 'O']] = None
     photo_filename: Optional[str] = None
-    photo_base64: Optional[str] = None  # Profile photo in base64
+    photo_base64: Optional[str] = None
     personal_document: Optional[str] = None
-    documents: Optional[List[str]] = None  # List of document URLs or base64
+    documents: Optional[List[str]] = None
 
 
 class Member(MemberBase):
