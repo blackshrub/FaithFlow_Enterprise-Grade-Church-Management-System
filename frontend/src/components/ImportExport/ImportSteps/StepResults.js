@@ -19,6 +19,7 @@ export default function StepResults({ wizardData, updateWizardData, importMember
         field_mappings: JSON.stringify(wizardData.fieldMappings),
         value_mappings: JSON.stringify(wizardData.valueMappings),
         default_values: JSON.stringify(wizardData.defaultValues || {}),
+        duplicate_resolutions: JSON.stringify(wizardData.duplicateResolutions || {}),
         date_format: wizardData.dateFormat,
       });
       
