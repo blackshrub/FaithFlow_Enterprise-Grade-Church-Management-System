@@ -4,12 +4,74 @@ from typing import List, Optional
 from datetime import datetime
 
 from models.member import Member, MemberCreate, MemberUpdate
+from models.quick_member import QuickAddMember
 from utils.dependencies import get_db, get_current_user
 from utils.demographics import auto_assign_demographic
 from utils.helpers import combine_full_name, normalize_phone_number
 from services.qr_service import generate_member_id_code, generate_member_qr_data
 
 router = APIRouter(prefix="/members", tags=["Members"])
+
+
+@router.post("/quick-add", response_model=Member, status_code=status.HTTP_201_CREATED)
+async def quick_add_member(
+    member_data: QuickAddMember,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    """Quick add member for kiosk check-in (minimal fields)"""
+    
+    if current_user.get('role') != 'super_admin' and current_user.get('church_id') != member_data.church_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
+    
+    # Get default member status for new visitors
+    default_status = await db.member_statuses.find_one({
+        "church_id": member_data.church_id,
+        "is_default_for_new": True
+    })
+    
+    # Create member with minimal data
+    member_dict = {
+        "church_id": member_data.church_id,
+        "full_name": member_data.full_name,
+        "phone_whatsapp": normalize_phone_number(member_data.phone_whatsapp) if member_data.phone_whatsapp else None,
+        "gender": member_data.gender,
+        "date_of_birth": member_data.date_of_birth,
+        "photo_base64": member_data.photo_base64,
+        "member_status": default_status.get('name') if default_status else "Visitor",
+        "is_active": True,
+    }
+    
+    # Split full_name for first/last
+    parts = member_data.full_name.strip().split(maxsplit=1)
+    member_dict['first_name'] = parts[0] if len(parts) > 0 else member_data.full_name
+    member_dict['last_name'] = parts[1] if len(parts) > 1 else ''
+    
+    member = Member(**member_dict)
+    member_doc = member.model_dump()
+    
+    # Generate personal QR code
+    member_code = generate_member_id_code()
+    qr_data = generate_member_qr_data(member.id, member_code)
+    member_doc['personal_id_code'] = qr_data['member_code']
+    member_doc['personal_qr_code'] = qr_data['qr_code']
+    member_doc['personal_qr_data'] = qr_data['qr_data']
+    
+    # Auto-assign demographic
+    if member_data.date_of_birth:
+        demographic = await auto_assign_demographic(member_doc, db)
+        if demographic:
+            member_doc['demographic_category'] = demographic
+    
+    # Convert dates
+    member_doc['created_at'] = member_doc['created_at'].isoformat()
+    member_doc['updated_at'] = member_doc['updated_at'].isoformat()
+    if member_doc.get('date_of_birth'):
+        member_doc['date_of_birth'] = member_doc['date_of_birth'].isoformat()
+    
+    await db.members.insert_one(member_doc)
+    
+    return member
 
 
 @router.post("/", response_model=Member, status_code=status.HTTP_201_CREATED)
