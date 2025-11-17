@@ -330,6 +330,7 @@
     "simulatingImport": "Mensimulasikan impor...",
     "simulationComplete": "Simulasi Selesai",
     "preparingImport": "Mempersiapkan impor...",
+    "rerunSimulation": "Jalankan Ulang Validasi",
     "resolveDuplicates": "Selesaikan Nomor Telepon Duplikat",
     "resolveDuplicatesDesc": "Pilih catatan mana yang harus menyimpan nomor telepon",
     "duplicatePhoneWarning": "Ditemukan {{count}} nomor telepon duplikat. Harap selesaikan konflik.",
