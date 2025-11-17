@@ -610,19 +610,42 @@ async def get_available_seats(
 @router.post("/{event_id}/check-in")
 async def mark_attendance(
     event_id: str,
-    member_id: str = Query(...),
+    member_id: str = Query(None),
     session_id: Optional[str] = None,
+    qr_code: Optional[str] = Query(None),
     db: AsyncIOMotorDatabase = Depends(get_db),
     current_user: dict = Depends(get_current_user)
 ):
-    """Mark member as checked-in for event"""
+    """Mark member as checked-in for event - accepts member_id OR qr_code"""
+    
+    # Parse QR code if provided
+    parsed_member_id = member_id
+    if qr_code:
+        parts = qr_code.split('|')
+        if len(parts) >= 3:
+            qr_type = parts[0]
+            if qr_type == 'RSVP':
+                # RSVP QR: RSVP|event_id|member_id|session|code
+                parsed_member_id = parts[2] if len(parts) > 2 else None
+                # Validate event matches
+                qr_event_id = parts[1] if len(parts) > 1 else None
+                if qr_event_id != event_id:
+                    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="QR code is for a different event")
+            elif qr_type == 'MEMBER':
+                # Personal QR: MEMBER|member_id|unique_code
+                parsed_member_id = parts[1] if len(parts) > 1 else None
+            else:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid QR code format")
+    
+    if not parsed_member_id:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="member_id or qr_code required")
     
     event = await db.events.find_one({"id": event_id})
     if not event:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
     
     # Check if member exists
-    member = await db.members.find_one({"id": member_id, "church_id": event.get('church_id')})
+    member = await db.members.find_one({"id": parsed_member_id, "church_id": event.get('church_id')})
     if not member:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Member not found in this church")
     
@@ -632,17 +655,25 @@ async def mark_attendance(
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="session_id is required for series events")
     
     # Check if RSVP required and member has RSVP
+    has_rsvp = False
     if event.get('requires_rsvp'):
         has_rsvp = any(
-            r.get('member_id') == member_id and r.get('session_id') == session_id 
+            r.get('member_id') == parsed_member_id and r.get('session_id') == session_id 
             for r in event.get('rsvp_list', [])
         )
         if not has_rsvp:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="RSVP required but not found for this member and session")
+            # Return special status for kiosk to handle onsite RSVP
+            return {
+                "success": False,
+                "requires_onsite_rsvp": True,
+                "member_id": parsed_member_id,
+                "member_name": member.get('full_name'),
+                "message": "Member has not registered for this event. Onsite RSVP required."
+            }
     
     # Check if already checked in
     already_checked = any(
-        a.get('member_id') == member_id and a.get('session_id') == session_id 
+        a.get('member_id') == parsed_member_id and a.get('session_id') == session_id 
         for a in event.get('attendance_list', [])
     )
     if already_checked:
@@ -650,7 +681,7 @@ async def mark_attendance(
     
     # Add attendance
     attendance_entry = {
-        'member_id': member_id,
+        'member_id': parsed_member_id,
         'member_name': member.get('full_name'),
         'session_id': session_id,
         'check_in_time': datetime.now(timezone.utc).isoformat()
@@ -661,8 +692,14 @@ async def mark_attendance(
         {"$push": {"attendance_list": attendance_entry}}
     )
     
-    logger.info(f"Attendance marked: Event {event_id}, Member {member_id}, Session {session_id}")
-    return {"success": True, "message": "Check-in successful", "attendance": attendance_entry}
+    logger.info(f"Attendance marked: Event {event_id}, Member {parsed_member_id}, Session {session_id}")
+    return {
+        "success": True, 
+        "message": "Check-in successful", 
+        "attendance": attendance_entry,
+        "member_name": member.get('full_name'),
+        "member_photo": member.get('photo_base64')
+    }
 
 
 @router.get("/{event_id}/attendance")
