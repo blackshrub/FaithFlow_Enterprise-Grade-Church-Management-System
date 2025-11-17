@@ -26,7 +26,8 @@ export default function StepFileUpload({ wizardData, updateWizardData, parseFile
           fileContent,
           fileType: result.file_type,
           headers: result.headers,
-          sampleData: result.sample_data,
+          sampleData: result.sample_data,  // First 5 for preview
+          allData: result.all_data || result.sample_data,  // ALL data for matching
           totalRecords: result.total_records,
         });
         
