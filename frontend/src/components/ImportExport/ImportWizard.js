@@ -9,6 +9,8 @@ import { Progress } from '../ui/progress';
 import { Alert, AlertDescription } from '../ui/alert';
 import { Upload, ChevronRight, ChevronLeft, Check, AlertCircle, Loader2 } from 'lucide-react';
 import StepFileUpload from './ImportSteps/StepFileUpload';
+import StepPhotoUpload from './ImportSteps/StepPhotoUpload';
+import StepDocumentUpload from './ImportSteps/StepDocumentUpload';
 import StepFieldMapping from './ImportSteps/StepFieldMapping';
 import StepValueMapping from './ImportSteps/StepValueMapping';
 import StepSimulation from './ImportSteps/StepSimulation';
