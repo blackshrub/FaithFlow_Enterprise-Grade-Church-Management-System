@@ -146,6 +146,9 @@ export const importExportAPI = {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
   },
+  
+  // Cleanup temporary uploads
+  cleanupTempUploads: (memberIds) => api.post('/import-export/cleanup-temp-uploads', memberIds),
 };
 
 export default api;
