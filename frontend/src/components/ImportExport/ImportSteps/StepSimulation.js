@@ -14,6 +14,7 @@ export default function StepSimulation({ wizardData, updateWizardData, simulateI
   const [simulating, setSimulating] = useState(false);
   const [simulationComplete, setSimulationComplete] = useState(false);
   const [showDuplicateResolution, setShowDuplicateResolution] = useState(false);
+  const [localResolutions, setLocalResolutions] = useState({});  // MOVED TO TOP LEVEL!
 
   const runSimulation = async () => {
     setSimulating(true);
@@ -47,6 +48,21 @@ export default function StepSimulation({ wizardData, updateWizardData, simulateI
   const simulationResults = wizardData.simulationResults;
   const hasErrors = simulationResults?.errors && simulationResults.errors.length > 0;
   const hasDuplicates = simulationResults?.duplicate_conflicts && simulationResults.duplicate_conflicts.length > 0;
+  
+  // Handler functions (defined at top level)
+  const handleResolution = (phone, rowIndex) => {
+    setLocalResolutions({
+      ...localResolutions,
+      [phone]: rowIndex
+    });
+  };
+
+  const proceedWithResolutions = () => {
+    updateWizardData({ duplicateResolutions: localResolutions });
+    setShowDuplicateResolution(false);
+  };
+
+  const allResolved = simulationResults?.duplicate_conflicts?.every(c => localResolutions[c.phone]) || false;
 
   // Render different content based on state (but always same structure)
   if (simulating) {
