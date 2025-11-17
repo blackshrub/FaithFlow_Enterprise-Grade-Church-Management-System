@@ -42,9 +42,11 @@ export default function ImportWizard() {
     sampleData: [],
     totalRecords: 0,
     photoArchive: null,
-    photoMatchResults: null,
+    photoSimulation: null,
+    photoExtractedFiles: [],
     documentArchive: null,
-    documentMatchResults: null,
+    documentSimulation: null,
+    documentExtractedFiles: [],
     fieldMappings: {},
     valueMappings: {},
     defaultValues: {},
@@ -53,7 +55,6 @@ export default function ImportWizard() {
     simulationResults: null,
     duplicateResolutions: {},
     importResults: null,
-    uploadedMemberIds: [], // Track members with uploaded photos/documents
   });
 
   // Update date format when church settings load
