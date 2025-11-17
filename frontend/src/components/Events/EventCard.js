@@ -71,9 +71,9 @@ function EventCard({ event, onEdit }) {
   const capacityInfo = getCapacityInfo();
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg hover:shadow-md transition-shadow overflow-hidden">
+    <div className="bg-white border border-gray-200 rounded-lg hover:shadow-md transition-shadow overflow-hidden flex flex-col h-full">
       {/* Event Photo */}
-      <div className="h-48 bg-gradient-to-br from-blue-500 to-purple-600 overflow-hidden relative">
+      <div className="h-48 bg-gradient-to-br from-blue-500 to-purple-600 overflow-hidden relative flex-shrink-0">
         {event.event_photo ? (
           <img
             src={event.event_photo}
