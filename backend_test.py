@@ -2985,6 +2985,8 @@ def run_all_tests():
         ("Create Import Template", test_create_import_template),
         ("List Import Templates", test_list_import_templates),
         ("List Import Logs", test_list_import_logs),
+        # Create test members for event testing
+        ("Create Test Members", test_create_test_members),
         # Seat Layout Tests
         ("Create Seat Layout", test_create_seat_layout),
         ("List Seat Layouts", test_list_seat_layouts),
