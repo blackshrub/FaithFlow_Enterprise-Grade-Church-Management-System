@@ -300,7 +300,7 @@ function KioskMode() {
         {/* Right: Manual Search */}
         <div className="w-1/2 flex flex-col">
           {/* Search Bar - Fixed at Top */}
-          <div className="p-6 border-b border-gray-200/50 flex-shrink-0">
+          <div className="p-6 border-b border-white/20 flex-shrink-0 bg-white/95 backdrop-blur-sm">
             <div className="flex gap-3">
               <div className="flex-1 relative">
                 <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-6 w-6 text-gray-400" />
