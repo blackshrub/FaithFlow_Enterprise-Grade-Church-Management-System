@@ -42,6 +42,12 @@ export default function StepSimulation({ wizardData, updateWizardData, simulateI
     }
   }, []);
 
+  // Always define these at top level (before any conditionals)
+  const simulationResults = wizardData.simulationResults;
+  const hasErrors = simulationResults?.errors && simulationResults.errors.length > 0;
+  const hasDuplicates = simulationResults?.duplicate_conflicts && simulationResults.duplicate_conflicts.length > 0;
+
+  // Render different content based on state (but always same structure)
   if (simulating) {
     return (
       <Card>
