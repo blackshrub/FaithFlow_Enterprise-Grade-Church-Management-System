@@ -9,7 +9,7 @@ class MemberBase(BaseModel):
     first_name: Optional[str] = Field(None, max_length=100, description="Auto-generated from full_name if not provided")
     last_name: Optional[str] = Field(None, max_length=100, description="Auto-generated from full_name if not provided")
     email: Optional[EmailStr] = None
-    phone_whatsapp: str = Field(..., description="WhatsApp number, will be normalized to 62XXXXXXXXX format")
+    phone_whatsapp: Optional[str] = Field(None, description="WhatsApp number, will be normalized to 62XXXXXXXXX format if provided")
     date_of_birth: Optional[date] = None
     gender: Optional[Literal['Male', 'Female']] = None
     address: Optional[str] = None
