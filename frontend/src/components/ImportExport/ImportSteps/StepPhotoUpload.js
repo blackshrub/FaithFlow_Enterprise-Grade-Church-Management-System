@@ -121,7 +121,13 @@ export default function StepPhotoUpload({ wizardData, updateWizardData, nextStep
 
         <Alert>
           <AlertDescription>
-            <strong>{t('importExport.optional')}:</strong> {t('importExport.skipPhotoUpload')}
+            <strong>{t('importExport.howItWorks')}:</strong>
+            <ol className="list-decimal list-inside mt-2 space-y-1">
+              <li>{t('importExport.photoStepNew1')}</li>
+              <li>{t('importExport.photoStepNew2')}</li>
+              <li>{t('importExport.photoStepNew3')}</li>
+              <li>{t('importExport.photoStepNew4')}</li>
+            </ol>
           </AlertDescription>
         </Alert>
 
