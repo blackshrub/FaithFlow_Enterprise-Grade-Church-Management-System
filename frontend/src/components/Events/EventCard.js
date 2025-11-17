@@ -1,17 +1,18 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pencil, Users, Calendar, MapPin, Trash2, ChevronDown, ChevronUp, Clock } from 'lucide-react';
+import { Pencil, Users, Calendar, MapPin, Trash2, List } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useDeleteEvent } from '@/hooks/useEvents';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import RSVPManager from './RSVPManager';
+import SessionsModal from './SessionsModal';
 
 function EventCard({ event, onEdit }) {
   const { t } = useTranslation();
   const deleteMutation = useDeleteEvent();
   const [showRSVPManager, setShowRSVPManager] = useState(false);
-  const [showSessions, setShowSessions] = useState(false);
+  const [showSessionsModal, setShowSessionsModal] = useState(false);
 
   const handleDelete = async () => {
     if (window.confirm(t('events.event.confirmDelete'))) {
