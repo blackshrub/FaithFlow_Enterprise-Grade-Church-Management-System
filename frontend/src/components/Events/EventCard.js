@@ -240,6 +240,54 @@ function EventCard({ event, onEdit }) {
           </div>
         )}
 
+        {/* Attendance Progress Bar */}
+        {event.requires_rsvp && rsvpCount > 0 && (
+          <div className="mt-4 pt-4 border-t border-gray-200">
+            <div className="space-y-2">
+              {/* Attendance Label and Numbers */}
+              <div className="flex items-center justify-between text-sm">
+                <span className="font-medium text-gray-700">{t('events.event.attendance')}</span>
+                <span className="text-gray-600">
+                  {t('events.event.attendanceProgress', { 
+                    attended: attendanceCount, 
+                    total: rsvpCount 
+                  })}
+                </span>
+              </div>
+
+              {/* Progress Bar */}
+              <div className="relative w-full h-3 bg-gray-200 rounded-full overflow-hidden">
+                <div
+                  className="absolute top-0 left-0 h-full bg-blue-500 transition-all duration-300"
+                  style={{ width: `${Math.min((attendanceCount / rsvpCount) * 100, 100)}%` }}
+                />
+              </div>
+
+              {/* Percentage */}
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-medium text-blue-600">
+                  {Math.round((attendanceCount / rsvpCount) * 100)}% {t('events.event.attended')}
+                </span>
+                <span className="text-gray-500">
+                  {rsvpCount - attendanceCount} {t('events.event.notYetCheckedIn')}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Attendance Count (No RSVP Events) */}
+        {!event.requires_rsvp && attendanceCount > 0 && (
+          <div className="mt-4 pt-4 border-t border-gray-200">
+            <div className="flex items-center justify-between text-sm">
+              <span className="font-medium text-gray-700">{t('events.event.attendance')}</span>
+              <span className="text-blue-600 font-medium">
+                {t('events.event.totalAttended', { count: attendanceCount })}
+              </span>
+            </div>
+          </div>
+        )}
+
         {/* Footer Actions - Always at bottom */}
         <div className="mt-4 pt-4 border-t border-gray-200 flex gap-2 flex-shrink-0">
           {event.event_type === 'series' && event.sessions?.length > 0 && (
