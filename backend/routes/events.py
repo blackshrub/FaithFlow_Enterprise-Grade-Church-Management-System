@@ -209,17 +209,61 @@ async def register_rsvp(
     if not event:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
     
-    # Check if member exists
-    member = await db.members.find_one({"id": member_id})
+    # Check if member exists and belongs to same church
+    member = await db.members.find_one({"id": member_id, "church_id": event.get('church_id')})
     if not member:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Member not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Member not found in this church")
+    
+    # Validate session for series events
+    if event.get('event_type') == 'series':
+        if not session_id:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="session_id is required for series events")
+        # Validate session exists
+        session_exists = any(s.get('name') == session_id for s in event.get('sessions', []))
+        if not session_exists:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Session not found in this event")
+    
+    # Check for duplicate RSVP
+    duplicate_rsvp = any(
+        r.get('member_id') == member_id and r.get('session_id') == session_id
+        for r in event.get('rsvp_list', [])
+    )
+    if duplicate_rsvp:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Member already has RSVP for this session")
     
     # Check if seat is available if seat selection enabled
-    if event.get('enable_seat_selection') and seat:
-        # Check if seat already taken
-        existing_rsvp = next((r for r in event.get('rsvp_list', []) if r.get('seat') == seat), None)
-        if existing_rsvp:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Seat already taken")
+    if event.get('enable_seat_selection'):
+        if not seat:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Seat selection is required for this event")
+        
+        # For series events, check seat availability per session
+        seat_taken = any(
+            r.get('seat') == seat and r.get('session_id') == session_id
+            for r in event.get('rsvp_list', [])
+        )
+        if seat_taken:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Seat already taken for this session")
+        
+        # Validate seat exists in layout
+        if event.get('seat_layout_id'):
+            layout = await db.seat_layouts.find_one({"id": event.get('seat_layout_id')})
+            if layout:
+                seat_map = layout.get('seat_map', {})
+                if seat not in seat_map:
+                    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid seat number")
+                if seat_map[seat] != 'available':
+                    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Seat is not available")
+    
+    # Check reservation window
+    if event.get('reservation_start') and event.get('reservation_end'):
+        now = datetime.now(timezone.utc)
+        res_start = datetime.fromisoformat(event['reservation_start']) if isinstance(event['reservation_start'], str) else event['reservation_start']
+        res_end = datetime.fromisoformat(event['reservation_end']) if isinstance(event['reservation_end'], str) else event['reservation_end']
+        
+        if now < res_start:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Reservation period has not started yet")
+        if now > res_end:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Reservation period has ended")
     
     # Add RSVP
     rsvp_entry = {
@@ -235,8 +279,8 @@ async def register_rsvp(
         {"$push": {"rsvp_list": rsvp_entry}}
     )
     
-    logger.info(f"RSVP registered: Event {event_id}, Member {member_id}, Seat {seat}")
-    return {"success": True, "message": "RSVP registered successfully"}
+    logger.info(f"RSVP registered: Event {event_id}, Member {member_id}, Session {session_id}, Seat {seat}")
+    return {"success": True, "message": "RSVP registered successfully", "rsvp": rsvp_entry}
 
 
 @router.delete("/{event_id}/rsvp/{member_id}")
