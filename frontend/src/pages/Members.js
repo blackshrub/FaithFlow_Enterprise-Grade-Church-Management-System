@@ -257,9 +257,14 @@ export default function Members() {
                   {filteredMembers.map((member) => (
                     <TableRow key={member.id}>
                       <TableCell>
-                        <div>
-                          <div className="font-medium">{member.first_name} {member.last_name}</div>
-                          <div className="text-sm text-gray-500">{member.occupation || t('common.na')}</div>
+                        <div className="flex items-center gap-3">
+                          <MemberAvatar member={member} size="md" />
+                          <div>
+                            <div className="font-medium">
+                              {member.full_name || `${member.first_name || ''} ${member.last_name || ''}`.trim() || t('common.na')}
+                            </div>
+                            <div className="text-sm text-gray-500">{member.occupation || t('common.na')}</div>
+                          </div>
                         </div>
                       </TableCell>
                       <TableCell>
