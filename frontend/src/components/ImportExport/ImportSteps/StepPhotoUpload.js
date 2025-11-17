@@ -148,7 +148,7 @@ export default function StepPhotoUpload({ wizardData, updateWizardData, nextStep
             <ChevronLeft className="h-4 w-4 mr-2" />
             {t('importExport.previous')}
           </Button>
-          <Button onClick={nextStep} disabled={uploadPhotos.isPending}>
+          <Button onClick={nextStep} disabled={processing}>
             {uploadResults 
               ? t('importExport.continueWithPhotos') 
               : t('importExport.skipPhotos')}
