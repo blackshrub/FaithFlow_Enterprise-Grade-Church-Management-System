@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Outlet, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import {
@@ -19,6 +19,8 @@ import {
   Globe,
   Upload,
   Grid3x3,
+  ChevronDown,
+  ChevronRight,
 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
@@ -27,8 +29,10 @@ import { Label } from '../ui/label';
 export default function Layout() {
   const { t, i18n } = useTranslation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [expandedMenus, setExpandedMenus] = useState({});
   const { user, church, logout, isSuperAdmin } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleLogout = () => {
     logout();
@@ -39,12 +43,34 @@ export default function Layout() {
     i18n.changeLanguage(lng);
   };
 
+  const toggleSubmenu = (key) => {
+    setExpandedMenus(prev => ({
+      ...prev,
+      [key]: !prev[key]
+    }));
+  };
+
+  // Auto-expand submenu if child route is active
+  useEffect(() => {
+    const path = location.pathname;
+    if (path.includes('/events') || path.includes('/seat-layouts')) {
+      setExpandedMenus(prev => ({ ...prev, events: true }));
+    }
+  }, [location.pathname]);
+
   const menuItems = [
     { icon: LayoutDashboard, label: t('nav.dashboard'), path: '/dashboard' },
     { icon: Users, label: t('nav.members'), path: '/members' },
     { icon: UsersRound, label: t('nav.groups'), path: '/groups' },
-    { icon: Calendar, label: t('nav.events'), path: '/events' },
-    { icon: Grid3x3, label: t('events.seatLayouts'), path: '/seat-layouts' },
+    {
+      icon: Calendar,
+      label: t('nav.events'),
+      key: 'events',
+      submenu: [
+        { label: t('events.event.eventsList'), path: '/events' },
+        { label: t('events.seatLayouts'), path: '/seat-layouts' },
+      ]
+    },
     { icon: DollarSign, label: t('nav.donations'), path: '/donations' },
     { icon: Heart, label: t('nav.prayers'), path: '/prayers' },
     { icon: BookOpen, label: t('nav.content'), path: '/content' },
