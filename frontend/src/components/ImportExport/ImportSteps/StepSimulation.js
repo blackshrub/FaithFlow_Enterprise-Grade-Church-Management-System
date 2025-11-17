@@ -62,32 +62,22 @@ export default function StepSimulation({ wizardData, updateWizardData, simulateI
     );
   }
 
-  if (simulationComplete && wizardData.simulationResults) {
-    const { simulationResults } = wizardData;
-    const hasErrors = simulationResults.errors && simulationResults.errors.length > 0;
-    const hasDuplicates = simulationResults.duplicate_conflicts && simulationResults.duplicate_conflicts.length > 0;
-    const hasWarnings = simulationResults.warnings && simulationResults.warnings.length > 0;
-
-    // Check if we need to show duplicate resolution
+  if (simulationComplete && simulationResults) {
     const needsDuplicateResolution = hasDuplicates && (!wizardData.duplicateResolutions || Object.keys(wizardData.duplicateResolutions).length === 0);
-    
-    // Show duplicate resolution screen OR main validation screen (no early returns)
-    const showingResolution = needsDuplicateResolution && showDuplicateResolution;
 
+    // Render duplicate resolution OR validation results (single return path)
     return (
       <div>
-        {showingResolution ? (
-          <div>
-            <StepDuplicateResolution 
-              wizardData={wizardData} 
-              updateWizardData={updateWizardData} 
-              nextStep={() => {
-                setShowDuplicateResolution(false);
-                nextStep();
-              }} 
-              prevStep={prevStep} 
-            />
-          </div>
+        {showDuplicateResolution && needsDuplicateResolution ? (
+          <StepDuplicateResolution 
+            wizardData={wizardData} 
+            updateWizardData={updateWizardData} 
+            nextStep={() => {
+              setShowDuplicateResolution(false);
+              nextStep();
+            }} 
+            prevStep={() => setShowDuplicateResolution(false)} 
+          />
         ) : (
           <Card>
         <CardHeader>
