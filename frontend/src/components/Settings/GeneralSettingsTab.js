@@ -18,6 +18,8 @@ export default function GeneralSettingsTab() {
     currency: 'USD',
     timezone: 'UTC',
     default_language: 'en',
+    enable_whatsapp_notifications: false,
+    whatsapp_send_rsvp_confirmation: true,
   });
 
   useEffect(() => {
@@ -28,6 +30,8 @@ export default function GeneralSettingsTab() {
         currency: settings.currency || 'USD',
         timezone: settings.timezone || 'UTC',
         default_language: settings.default_language || 'en',
+        enable_whatsapp_notifications: settings.enable_whatsapp_notifications || false,
+        whatsapp_send_rsvp_confirmation: settings.whatsapp_send_rsvp_confirmation !== false,
       });
     }
   }, [settings]);
