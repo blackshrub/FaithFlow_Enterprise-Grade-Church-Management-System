@@ -65,7 +65,36 @@ export default function StepDocumentUpload({ wizardData, updateWizardData, nextS
             className="hidden"
           />
           
-          {uploadDocuments.isPending ? (
+          {processing ? (
+            <div>
+              <Loader2 className="h-12 w-12 animate-spin text-blue-600 mx-auto mb-4" />
+              <p className="text-gray-600">{t('importExport.processingDocuments')}</p>
+              <p className="text-sm text-gray-500">{t('importExport.pleaseWait')}</p>
+            </div>
+          ) : uploadResults ? (
+            <div>
+              <CheckCircle className="h-12 w-12 text-green-600 mx-auto mb-4" />
+              <p className="font-semibold text-gray-900">{wizardData.documentArchive?.name}</p>
+              <p className="text-sm text-green-600 mt-1">
+                {t('importExport.documentsMatched', { count: uploadResults.summary?.matched_count || 0 })}
+              </p>
+              {uploadResults.summary?.unmatched_files_count > 0 && (
+                <p className="text-sm text-orange-600">
+                  {t('importExport.unmatchedFiles')}: {uploadResults.summary.unmatched_files_count}
+                </p>
+              )}
+              <Button
+                onClick={() => {
+                  fileInputRef.current?.click();
+                  setUploadResults(null);
+                }}
+                variant="outline"
+                className="mt-4"
+              >
+                {t('importExport.chooseAnother')}
+              </Button>
+            </div>
+          ) : (
             <div>
               <Loader2 className="h-12 w-12 animate-spin text-blue-600 mx-auto mb-4" />
               <p className="text-gray-600">{t('importExport.processingDocuments')}</p>
