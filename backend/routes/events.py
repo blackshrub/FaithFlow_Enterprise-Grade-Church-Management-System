@@ -297,6 +297,14 @@ async def register_rsvp(
     confirmation_code = generate_confirmation_code()
     qr_data = generate_rsvp_qr_data(event_id, member_id, session_id or '', confirmation_code)
     
+    # Check if WhatsApp is enabled
+    church_settings = await db.church_settings.find_one({"church_id": event.get('church_id')})
+    whatsapp_enabled = (
+        church_settings and 
+        church_settings.get('enable_whatsapp_notifications') and 
+        church_settings.get('whatsapp_send_rsvp_confirmation')
+    )
+    
     # Add RSVP with QR code data
     rsvp_entry = {
         'member_id': member_id,
@@ -308,7 +316,7 @@ async def register_rsvp(
         'confirmation_code': qr_data['confirmation_code'],
         'qr_code': qr_data['qr_code'],
         'qr_data': qr_data['qr_data'],
-        'whatsapp_status': 'pending',
+        'whatsapp_status': 'pending' if whatsapp_enabled else 'disabled',
         'whatsapp_message_id': None
     }
     
@@ -320,9 +328,8 @@ async def register_rsvp(
     logger.info(f"RSVP registered: Event {event_id}, Member {member_id}, Session {session_id}, Seat {seat}, Code: {confirmation_code}")
     
     # Send WhatsApp notification if enabled
-    church_settings = await db.church_settings.find_one({"church_id": event.get('church_id')})
     whatsapp_result = None
-    if church_settings and church_settings.get('enable_whatsapp_notifications') and church_settings.get('whatsapp_send_rsvp_confirmation'):
+    if whatsapp_enabled:
         if member.get('phone'):
             try:
                 # Format event date
