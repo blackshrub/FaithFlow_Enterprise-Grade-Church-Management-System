@@ -131,3 +131,13 @@ export const useUploadDocuments = () => {
     },
   });
 };
+
+// Cleanup hook
+export const useCleanupUploads = () => {
+  return useMutation({
+    mutationFn: (memberIds) => importExportAPI.cleanupTempUploads(memberIds),
+    onError: (error) => {
+      console.error('Cleanup failed:', error);
+    },
+  });
+};
