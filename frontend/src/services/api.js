@@ -192,12 +192,13 @@ export const eventsAPI = {
   
   // RSVP
   registerRSVP: (eventId, params) => api.post(`/events/${eventId}/rsvp`, null, { params }),
-  cancelRSVP: (eventId, memberId) => api.delete(`/events/${eventId}/rsvp/${memberId}`),
-  getRSVPs: (eventId) => api.get(`/events/${eventId}/rsvps`),
+  cancelRSVP: (eventId, memberId, params = {}) => api.delete(`/events/${eventId}/rsvp/${memberId}`, { params }),
+  getRSVPs: (eventId, params = {}) => api.get(`/events/${eventId}/rsvps`, { params }),
+  getAvailableSeats: (eventId, params = {}) => api.get(`/events/${eventId}/available-seats`, { params }),
   
   // Check-in
   checkIn: (eventId, params) => api.post(`/events/${eventId}/check-in`, null, { params }),
-  getAttendance: (eventId) => api.get(`/events/${eventId}/attendance`),
+  getAttendance: (eventId, params = {}) => api.get(`/events/${eventId}/attendance`, { params }),
 };
 
 export default api;
