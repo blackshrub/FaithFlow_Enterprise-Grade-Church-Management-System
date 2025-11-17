@@ -1,20 +1,36 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useUploadDocuments } from '../../../hooks/useImportExport';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../ui/card';
 import { Button } from '../../ui/button';
 import { Alert, AlertDescription } from '../../ui/alert';
-import { Upload, FileText, ChevronRight, ChevronLeft, CheckCircle } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../ui/table';
+import { Badge } from '../../ui/badge';
+import { Upload, FileText, ChevronRight, ChevronLeft, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 
 export default function StepDocumentUpload({ wizardData, updateWizardData, nextStep, prevStep }) {
   const { t } = useTranslation();
   const fileInputRef = useRef(null);
+  const [uploadResults, setUploadResults] = useState(wizardData.documentMatchResults || null);
+  const uploadDocuments = useUploadDocuments();
 
   const handleFileSelect = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Store the archive file for later processing
-    updateWizardData({ documentArchive: file });
+    try {
+      // Upload and process documents immediately
+      const result = await uploadDocuments.mutateAsync(file);
+      setUploadResults(result);
+      
+      // Store results in wizard data
+      updateWizardData({ 
+        documentArchive: file,
+        documentMatchResults: result
+      });
+    } catch (error) {
+      console.error('Upload error:', error);
+    }
   };
 
   return (
