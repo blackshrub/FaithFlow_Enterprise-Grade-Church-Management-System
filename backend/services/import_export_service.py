@@ -58,13 +58,15 @@ class ImportExportService:
     @staticmethod
     def apply_field_mapping(
         data: List[Dict[str, Any]], 
-        field_mappings: Dict[str, str]
+        field_mappings: Dict[str, str],
+        default_values: Dict[str, str] = None
     ) -> List[Dict[str, Any]]:
         """Apply field mappings to data
         
         Args:
             data: List of data dictionaries
             field_mappings: Dictionary mapping source fields to target fields
+            default_values: Dictionary of default values for fields not in source
             
         Returns:
             List of mapped data dictionaries
@@ -72,9 +74,18 @@ class ImportExportService:
         mapped_data = []
         for row in data:
             mapped_row = {}
+            
+            # Apply field mappings
             for source_field, target_field in field_mappings.items():
                 if source_field in row:
                     mapped_row[target_field] = row[source_field]
+            
+            # Apply default values for unmapped fields
+            if default_values:
+                for target_field, default_value in default_values.items():
+                    if target_field not in mapped_row and default_value:
+                        mapped_row[target_field] = default_value
+            
             mapped_data.append(mapped_row)
         return mapped_data
     
