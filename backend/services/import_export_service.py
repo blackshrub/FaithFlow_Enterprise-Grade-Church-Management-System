@@ -56,6 +56,87 @@ class ImportExportService:
             raise ValueError(f"Invalid JSON format: {str(e)}")
     
     @staticmethod
+    def parse_sql(file_content: str) -> tuple[List[str], List[Dict[str, Any]]]:
+        """Parse SQL INSERT statements and return headers and data
+        
+        Args:
+            file_content: SQL file content as string
+            
+        Returns:
+            tuple: (headers, data_rows)
+        """
+        try:
+            import re
+            
+            data = []
+            headers = []
+            
+            # Find all INSERT INTO statements
+            # Pattern: INSERT INTO table_name (col1, col2, ...) VALUES (val1, val2, ...);
+            insert_pattern = r"INSERT\s+INTO\s+\w+\s*\(([^)]+)\)\s*VALUES\s*\(([^)]+)\)"
+            
+            matches = re.finditer(insert_pattern, file_content, re.IGNORECASE | re.MULTILINE)
+            
+            for match in matches:
+                columns = match.group(1)
+                values = match.group(2)
+                
+                # Parse column names
+                if not headers:
+                    headers = [col.strip().strip('`"[]\'') for col in columns.split(',')]
+                
+                # Parse values
+                value_list = []
+                # Handle quoted strings and values
+                current_value = ''
+                in_quotes = False
+                quote_char = None
+                
+                for char in values + ',':
+                    if char in ['"', "'"]:
+                        if not in_quotes:
+                            in_quotes = True
+                            quote_char = char
+                        elif char == quote_char:
+                            in_quotes = False
+                            quote_char = None
+                        else:
+                            current_value += char
+                    elif char == ',' and not in_quotes:
+                        value_list.append(current_value.strip())
+                        current_value = ''
+                    else:
+                        current_value += char
+                
+                # Clean values (remove quotes, handle NULL)
+                cleaned_values = []
+                for val in value_list:
+                    val = val.strip()
+                    if val.upper() == 'NULL':
+                        cleaned_values.append(None)
+                    elif val.startswith('"') and val.endswith('"'):
+                        cleaned_values.append(val[1:-1])
+                    elif val.startswith("'") and val.endswith("'"):
+                        cleaned_values.append(val[1:-1])
+                    else:
+                        cleaned_values.append(val)
+                
+                # Create row dictionary
+                if len(cleaned_values) == len(headers):
+                    row = dict(zip(headers, cleaned_values))
+                    data.append(row)
+            
+            if len(data) == 0:
+                raise ValueError("No valid INSERT statements found in SQL file")
+            
+            logger.info(f"Parsed {len(data)} rows from SQL file")
+            return headers, data
+            
+        except Exception as e:
+            logger.error(f"Error parsing SQL: {str(e)}")
+            raise ValueError(f"Invalid SQL format: {str(e)}")
+    
+    @staticmethod
     def apply_field_mapping(
         data: List[Dict[str, Any]], 
         field_mappings: Dict[str, str],
