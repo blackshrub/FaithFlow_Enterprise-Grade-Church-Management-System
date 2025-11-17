@@ -15,17 +15,23 @@ const api = axios.create({
   },
 });
 
-// Add request interceptor to ensure HTTPS
+// Add request interceptor to ensure HTTPS and prevent HTTP redirects
 api.interceptors.request.use(
   (config) => {
-    // Normalize URL to always use trailing slash for base paths
-    if (config.url === '' || config.url === '/') {
-      config.url = '/';
-    } else if (config.url && !config.url.includes('?') && !config.url.endsWith('/')) {
-      // Add trailing slash to prevent redirects (unless it has query params or already has slash)
-      const hasExtension = /\.\w+$/.test(config.url);
-      if (!hasExtension && !config.url.match(/\/\w+$/)) {
-        config.url = config.url + '/';
+    // Add trailing slash to prevent server redirects that change HTTPS to HTTP
+    // This is needed for Kubernetes ingress that redirects /api/events to /api/events/
+    if (config.url && config.url !== '' && config.url !== '/') {
+      // Only add trailing slash if:
+      // 1. URL doesn't have query params
+      // 2. URL doesn't already end with /
+      // 3. URL doesn't have a file extension
+      if (!config.url.includes('?') && !config.url.endsWith('/')) {
+        const hasPathParam = config.url.match(/\/[^\/]+$/); // matches /{id} style params
+        const hasExtension = /\.\w+$/.test(config.url);
+        if (!hasExtension && !hasPathParam) {
+          config.url = config.url + '/';
+          console.log('✓ Added trailing slash to prevent redirect');
+        }
       }
     }
     
@@ -33,7 +39,7 @@ api.interceptors.request.use(
     const fullURL = config.baseURL + (config.url || '');
     console.log('📡 API Request:', config.method?.toUpperCase(), fullURL);
     
-    // Ensure HTTPS is used
+    // Ensure HTTPS is used - force replace any HTTP
     if (config.url && config.url.startsWith('http://')) {
       console.warn('⚠️ Converting URL from HTTP to HTTPS:', config.url);
       config.url = config.url.replace('http://', 'https://');
