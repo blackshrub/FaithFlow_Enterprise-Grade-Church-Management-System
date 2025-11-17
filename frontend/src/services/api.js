@@ -147,14 +147,14 @@ export const settingsAPI = {
 // Import/Export API
 export const importExportAPI = {
   // Templates
-  listTemplates: () => api.get('/import-export/templates'),
-  createTemplate: (data) => api.post('/import-export/templates', data),
+  listTemplates: () => api.get('/import-export/templates/'),
+  createTemplate: (data) => api.post('/import-export/templates/', data),
   
   // Import
   parseFile: (file) => {
     const formData = new FormData();
     formData.append('file', file);
-    return api.post('/import-export/parse-file', formData, {
+    return api.post('/import-export/parse-file/', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
   },
@@ -163,7 +163,7 @@ export const importExportAPI = {
     Object.keys(data).forEach(key => {
       formData.append(key, data[key]);
     });
-    return api.post('/import-export/simulate', formData, {
+    return api.post('/import-export/simulate/', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
   },
@@ -172,25 +172,25 @@ export const importExportAPI = {
     Object.keys(data).forEach(key => {
       formData.append(key, data[key]);
     });
-    return api.post('/import-export/import-members', formData, {
+    return api.post('/import-export/import-members/', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
   },
   
   // Export
-  exportMembers: (params) => api.get('/import-export/export-members', { 
+  exportMembers: (params) => api.get('/import-export/export-members/', { 
     params,
     responseType: 'blob' 
   }),
   
   // Logs
-  listLogs: () => api.get('/import-export/logs'),
+  listLogs: () => api.get('/import-export/logs/'),
   
   // Bulk Photo Upload
   uploadPhotos: (file) => {
     const formData = new FormData();
     formData.append('archive', file);
-    return api.post('/import-export/upload-photos', formData, {
+    return api.post('/import-export/upload-photos/', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
   },
@@ -201,7 +201,7 @@ export const importExportAPI = {
     formData.append('photo_archive', file);
     formData.append('csv_data', csvData);
     formData.append('photo_filename_field', photoField);
-    return api.post('/photo-document-sim/simulate-photo-matching', formData, {
+    return api.post('/photo-document-sim/simulate-photo-matching/', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
   },
@@ -210,7 +210,7 @@ export const importExportAPI = {
   uploadDocuments: (file) => {
     const formData = new FormData();
     formData.append('archive', file);
-    return api.post('/import-export/upload-documents', formData, {
+    return api.post('/import-export/upload-documents/', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
   },
@@ -221,13 +221,13 @@ export const importExportAPI = {
     formData.append('document_archive', file);
     formData.append('csv_data', csvData);
     formData.append('document_filename_field', documentField);
-    return api.post('/photo-document-sim/simulate-document-matching', formData, {
+    return api.post('/photo-document-sim/simulate-document-matching/', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
   },
   
   // Cleanup temporary uploads
-  cleanupTempUploads: (memberIds) => api.post('/import-export/cleanup-temp-uploads', memberIds),
+  cleanupTempUploads: (memberIds) => api.post('/import-export/cleanup-temp-uploads/', memberIds),
 };
 
 // Seat Layouts API
