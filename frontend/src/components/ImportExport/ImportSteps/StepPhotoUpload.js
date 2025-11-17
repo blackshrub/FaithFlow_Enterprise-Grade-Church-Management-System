@@ -23,10 +23,14 @@ export default function StepPhotoUpload({ wizardData, updateWizardData, nextStep
       const result = await uploadPhotos.mutateAsync(file);
       setUploadResults(result);
       
+      // Track uploaded member IDs for cleanup
+      const uploadedIds = result.matched?.map(m => m.member_id) || [];
+      
       // Store results in wizard data
       updateWizardData({ 
         photoArchive: file,
-        photoMatchResults: result
+        photoMatchResults: result,
+        uploadedMemberIds: [...(wizardData.uploadedMemberIds || []), ...uploadedIds]
       });
     } catch (error) {
       console.error('Upload error:', error);
