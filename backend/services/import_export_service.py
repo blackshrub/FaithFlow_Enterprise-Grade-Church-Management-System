@@ -206,28 +206,46 @@ class ImportExportService:
                     else:
                         seen_phones.add(normalized_phone)
             
-            # Validate date fields
+            # Validate date fields (only if provided)
             date_fields = ['date_of_birth', 'baptism_date', 'membership_date']
             for field in date_fields:
-                if row.get(field):
+                if row.get(field) and row[field] not in ['', None, 'NULL', 'null']:
                     parsed_date = ImportExportService.validate_date_format(row[field], date_format)
                     if parsed_date:
                         row[field] = parsed_date.isoformat()
                     else:
                         row_errors.append(f"Row {idx}: Invalid {field} format (expected {date_format})")
+                else:
+                    # Remove empty/null values
+                    row.pop(field, None)
             
-            # Validate gender (Male/Female only)
-            if row.get('gender') and row['gender'] not in ['Male', 'Female']:
-                row_errors.append(f"Row {idx}: Invalid gender value '{row['gender']}' (must be 'Male' or 'Female')")
+            # Validate gender (only if provided)
+            if row.get('gender') and row['gender'] not in ['', None, 'NULL', 'null']:
+                if row['gender'] not in ['Male', 'Female']:
+                    row_errors.append(f"Row {idx}: Invalid gender value '{row['gender']}' (must be 'Male' or 'Female')")
+            else:
+                row.pop('gender', None)
             
-            # Validate marital status
+            # Validate marital status (only if provided)
             valid_marital = ['Married', 'Not Married', 'Widower', 'Widow']
-            if row.get('marital_status') and row['marital_status'] not in valid_marital:
-                row_errors.append(f"Row {idx}: Invalid marital_status '{row['marital_status']}' (must be one of: {', '.join(valid_marital)})")
+            if row.get('marital_status') and row['marital_status'] not in ['', None, 'NULL', 'null']:
+                if row['marital_status'] not in valid_marital:
+                    row_errors.append(f"Row {idx}: Invalid marital_status '{row['marital_status']}' (must be one of: {', '.join(valid_marital)})")
+            else:
+                row.pop('marital_status', None)
             
-            # Validate blood type (A/B/AB/O only)
-            if row.get('blood_type') and row['blood_type'] not in ['A', 'B', 'AB', 'O']:
-                row_errors.append(f"Row {idx}: Invalid blood_type '{row['blood_type']}' (must be A, B, AB, or O)")
+            # Validate blood type (only if provided)
+            if row.get('blood_type') and row['blood_type'] not in ['', None, 'NULL', 'null']:
+                if row['blood_type'] not in ['A', 'B', 'AB', 'O']:
+                    row_errors.append(f"Row {idx}: Invalid blood_type '{row['blood_type']}' (must be A, B, AB, or O)")
+            else:
+                row.pop('blood_type', None)
+            
+            # Clean up other optional fields that are empty/null
+            optional_fields = ['email', 'city', 'state', 'country', 'occupation', 'household_id', 'notes', 'photo_filename', 'personal_document']
+            for field in optional_fields:
+                if row.get(field) in ['', None, 'NULL', 'null']:
+                    row.pop(field, None)
             
             if row_errors:
                 errors.extend(row_errors)
