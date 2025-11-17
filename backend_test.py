@@ -1678,6 +1678,1264 @@ def test_list_import_logs():
         return False
 
 
+def test_create_seat_layout():
+    """Test creating a seat layout"""
+    global test_seat_layout_id
+    
+    print_test_header("Create Seat Layout")
+    
+    if not auth_token or not church_id:
+        print_error("No auth token or church_id available")
+        return False
+    
+    headers = {
+        "Authorization": f"Bearer {auth_token}",
+        "Content-Type": "application/json"
+    }
+    
+    import time
+    unique_suffix = str(int(time.time()))[-6:]
+    
+    layout_data = {
+        "name": f"Test Auditorium {unique_suffix}",
+        "description": "Test seat layout for API testing",
+        "rows": 10,
+        "columns": 15,
+        "church_id": church_id,
+        "is_active": True
+    }
+    
+    try:
+        response = requests.post(
+            f"{BASE_URL}/seat-layouts/",
+            headers=headers,
+            json=layout_data,
+            timeout=10
+        )
+        
+        if response.status_code == 201:
+            layout = response.json()
+            test_seat_layout_id = layout.get('id')
+            print_success("Seat layout created successfully")
+            print_info(f"Layout ID: {layout.get('id')}")
+            print_info(f"Name: {layout.get('name')}")
+            print_info(f"Rows: {layout.get('rows')}, Columns: {layout.get('columns')}")
+            print_info(f"Total seats in map: {len(layout.get('seat_map', {}))}")
+            
+            # Verify auto-generated seat map
+            expected_seats = layout_data['rows'] * layout_data['columns']
+            actual_seats = len(layout.get('seat_map', {}))
+            if actual_seats != expected_seats:
+                print_error(f"Expected {expected_seats} seats, got {actual_seats}")
+                return False
+            
+            # Verify seat format (A1, A2, B1, etc.)
+            seat_map = layout.get('seat_map', {})
+            if 'A1' not in seat_map or 'A15' not in seat_map:
+                print_error("Seat map format incorrect - expected A1, A15, etc.")
+                return False
+            
+            print_success("Seat map auto-generated correctly")
+            return True
+        else:
+            print_error(f"Failed to create seat layout: Status {response.status_code} - {response.text}")
+            return False
+    except Exception as e:
+        print_error(f"Request failed: {str(e)}")
+        return False
+
+
+def test_list_seat_layouts():
+    """Test listing seat layouts"""
+    print_test_header("List Seat Layouts")
+    
+    if not auth_token:
+        print_error("No auth token available")
+        return False
+    
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    
+    success, response, error = make_request(
+        "GET",
+        "/seat-layouts/",
+        headers=headers
+    )
+    
+    if success:
+        layouts = response.json()
+        print_success(f"Retrieved {len(layouts)} seat layout(s)")
+        
+        for layout in layouts[:3]:
+            print_info(f"Layout: {layout.get('name')} (ID: {layout.get('id')}, {layout.get('rows')}x{layout.get('columns')})")
+        
+        return True
+    else:
+        print_error(f"Failed to list seat layouts: {error}")
+        return False
+
+
+def test_get_seat_layout():
+    """Test getting specific seat layout"""
+    print_test_header("Get Specific Seat Layout")
+    
+    if not auth_token or not test_seat_layout_id:
+        print_error("No auth token or test_seat_layout_id available")
+        return False
+    
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    
+    success, response, error = make_request(
+        "GET",
+        f"/seat-layouts/{test_seat_layout_id}",
+        headers=headers
+    )
+    
+    if success:
+        layout = response.json()
+        print_success("Retrieved seat layout details")
+        print_info(f"Name: {layout.get('name')}")
+        print_info(f"Dimensions: {layout.get('rows')}x{layout.get('columns')}")
+        print_info(f"Total seats: {len(layout.get('seat_map', {}))}")
+        return True
+    else:
+        print_error(f"Failed to get seat layout: {error}")
+        return False
+
+
+def test_update_seat_layout():
+    """Test updating seat layout"""
+    print_test_header("Update Seat Layout")
+    
+    if not auth_token or not test_seat_layout_id:
+        print_error("No auth token or test_seat_layout_id available")
+        return False
+    
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    
+    update_data = {
+        "description": "Updated test auditorium layout"
+    }
+    
+    success, response, error = make_request(
+        "PATCH",
+        f"/seat-layouts/{test_seat_layout_id}",
+        headers=headers,
+        json_data=update_data
+    )
+    
+    if success:
+        layout = response.json()
+        print_success("Seat layout updated successfully")
+        print_info(f"Updated description: {layout.get('description')}")
+        return True
+    else:
+        print_error(f"Failed to update seat layout: {error}")
+        return False
+
+
+def test_create_single_event():
+    """Test creating a single event"""
+    global test_event_single_id
+    
+    print_test_header("Create Single Event")
+    
+    if not auth_token or not church_id:
+        print_error("No auth token or church_id available")
+        return False
+    
+    headers = {
+        "Authorization": f"Bearer {auth_token}",
+        "Content-Type": "application/json"
+    }
+    
+    import time
+    unique_suffix = str(int(time.time()))[-6:]
+    
+    from datetime import datetime, timedelta
+    event_date = (datetime.now() + timedelta(days=7)).isoformat()
+    
+    event_data = {
+        "name": f"Sunday Service {unique_suffix}",
+        "description": "Weekly Sunday worship service",
+        "event_type": "single",
+        "event_date": event_date,
+        "location": "Main Sanctuary",
+        "requires_rsvp": False,
+        "enable_seat_selection": False,
+        "church_id": church_id,
+        "is_active": True
+    }
+    
+    try:
+        response = requests.post(
+            f"{BASE_URL}/events/",
+            headers=headers,
+            json=event_data,
+            timeout=10
+        )
+        
+        if response.status_code == 201:
+            event = response.json()
+            test_event_single_id = event.get('id')
+            print_success("Single event created successfully")
+            print_info(f"Event ID: {event.get('id')}")
+            print_info(f"Name: {event.get('name')}")
+            print_info(f"Type: {event.get('event_type')}")
+            print_info(f"Date: {event.get('event_date')}")
+            return True
+        else:
+            print_error(f"Failed to create event: Status {response.status_code} - {response.text}")
+            return False
+    except Exception as e:
+        print_error(f"Request failed: {str(e)}")
+        return False
+
+
+def test_create_single_event_without_date():
+    """Test creating single event without date (should fail)"""
+    print_test_header("Create Single Event Without Date (Should Fail)")
+    
+    if not auth_token or not church_id:
+        print_error("No auth token or church_id available")
+        return False
+    
+    headers = {
+        "Authorization": f"Bearer {auth_token}",
+        "Content-Type": "application/json"
+    }
+    
+    event_data = {
+        "name": "Invalid Event",
+        "event_type": "single",
+        "church_id": church_id
+    }
+    
+    try:
+        response = requests.post(
+            f"{BASE_URL}/events/",
+            headers=headers,
+            json=event_data,
+            timeout=10
+        )
+        
+        if response.status_code == 400:
+            print_success("Correctly rejected single event without date (400)")
+            return True
+        else:
+            print_error(f"Should have returned 400, got {response.status_code}")
+            return False
+    except Exception as e:
+        print_error(f"Request failed: {str(e)}")
+        return False
+
+
+def test_create_series_event():
+    """Test creating a series event"""
+    global test_event_series_id
+    
+    print_test_header("Create Series Event")
+    
+    if not auth_token or not church_id:
+        print_error("No auth token or church_id available")
+        return False
+    
+    headers = {
+        "Authorization": f"Bearer {auth_token}",
+        "Content-Type": "application/json"
+    }
+    
+    import time
+    unique_suffix = str(int(time.time()))[-6:]
+    
+    from datetime import datetime, timedelta
+    session1_date = (datetime.now() + timedelta(days=7)).isoformat()
+    session2_date = (datetime.now() + timedelta(days=14)).isoformat()
+    session3_date = (datetime.now() + timedelta(days=21)).isoformat()
+    
+    event_data = {
+        "name": f"Bible Study Series {unique_suffix}",
+        "description": "3-week Bible study series",
+        "event_type": "series",
+        "location": "Fellowship Hall",
+        "requires_rsvp": True,
+        "enable_seat_selection": False,
+        "church_id": church_id,
+        "is_active": True,
+        "sessions": [
+            {"name": "Session 1", "date": session1_date},
+            {"name": "Session 2", "date": session2_date},
+            {"name": "Session 3", "date": session3_date}
+        ]
+    }
+    
+    try:
+        response = requests.post(
+            f"{BASE_URL}/events/",
+            headers=headers,
+            json=event_data,
+            timeout=10
+        )
+        
+        if response.status_code == 201:
+            event = response.json()
+            test_event_series_id = event.get('id')
+            print_success("Series event created successfully")
+            print_info(f"Event ID: {event.get('id')}")
+            print_info(f"Name: {event.get('name')}")
+            print_info(f"Type: {event.get('event_type')}")
+            print_info(f"Sessions: {len(event.get('sessions', []))}")
+            return True
+        else:
+            print_error(f"Failed to create series event: Status {response.status_code} - {response.text}")
+            return False
+    except Exception as e:
+        print_error(f"Request failed: {str(e)}")
+        return False
+
+
+def test_create_series_event_without_sessions():
+    """Test creating series event without sessions (should fail)"""
+    print_test_header("Create Series Event Without Sessions (Should Fail)")
+    
+    if not auth_token or not church_id:
+        print_error("No auth token or church_id available")
+        return False
+    
+    headers = {
+        "Authorization": f"Bearer {auth_token}",
+        "Content-Type": "application/json"
+    }
+    
+    event_data = {
+        "name": "Invalid Series Event",
+        "event_type": "series",
+        "church_id": church_id,
+        "sessions": []
+    }
+    
+    try:
+        response = requests.post(
+            f"{BASE_URL}/events/",
+            headers=headers,
+            json=event_data,
+            timeout=10
+        )
+        
+        if response.status_code == 400:
+            print_success("Correctly rejected series event without sessions (400)")
+            return True
+        else:
+            print_error(f"Should have returned 400, got {response.status_code}")
+            return False
+    except Exception as e:
+        print_error(f"Request failed: {str(e)}")
+        return False
+
+
+def test_create_event_with_seat_selection():
+    """Test creating event with seat selection enabled"""
+    global test_event_with_seats_id
+    
+    print_test_header("Create Event with Seat Selection")
+    
+    if not auth_token or not church_id or not test_seat_layout_id:
+        print_error("No auth token, church_id, or test_seat_layout_id available")
+        return False
+    
+    headers = {
+        "Authorization": f"Bearer {auth_token}",
+        "Content-Type": "application/json"
+    }
+    
+    import time
+    unique_suffix = str(int(time.time()))[-6:]
+    
+    from datetime import datetime, timedelta
+    event_date = (datetime.now() + timedelta(days=10)).isoformat()
+    
+    event_data = {
+        "name": f"Concert Event {unique_suffix}",
+        "description": "Special concert with reserved seating",
+        "event_type": "single",
+        "event_date": event_date,
+        "location": "Main Auditorium",
+        "requires_rsvp": True,
+        "enable_seat_selection": True,
+        "seat_layout_id": test_seat_layout_id,
+        "church_id": church_id,
+        "is_active": True
+    }
+    
+    try:
+        response = requests.post(
+            f"{BASE_URL}/events/",
+            headers=headers,
+            json=event_data,
+            timeout=10
+        )
+        
+        if response.status_code == 201:
+            event = response.json()
+            test_event_with_seats_id = event.get('id')
+            print_success("Event with seat selection created successfully")
+            print_info(f"Event ID: {event.get('id')}")
+            print_info(f"Seat Layout ID: {event.get('seat_layout_id')}")
+            print_info(f"Seat Selection Enabled: {event.get('enable_seat_selection')}")
+            return True
+        else:
+            print_error(f"Failed to create event: Status {response.status_code} - {response.text}")
+            return False
+    except Exception as e:
+        print_error(f"Request failed: {str(e)}")
+        return False
+
+
+def test_create_event_seat_selection_without_layout():
+    """Test creating event with seat selection but no layout (should fail)"""
+    print_test_header("Create Event with Seat Selection but No Layout (Should Fail)")
+    
+    if not auth_token or not church_id:
+        print_error("No auth token or church_id available")
+        return False
+    
+    headers = {
+        "Authorization": f"Bearer {auth_token}",
+        "Content-Type": "application/json"
+    }
+    
+    from datetime import datetime, timedelta
+    event_date = (datetime.now() + timedelta(days=10)).isoformat()
+    
+    event_data = {
+        "name": "Invalid Event",
+        "event_type": "single",
+        "event_date": event_date,
+        "enable_seat_selection": True,
+        "church_id": church_id
+    }
+    
+    try:
+        response = requests.post(
+            f"{BASE_URL}/events/",
+            headers=headers,
+            json=event_data,
+            timeout=10
+        )
+        
+        if response.status_code == 400:
+            print_success("Correctly rejected seat selection without layout (400)")
+            return True
+        else:
+            print_error(f"Should have returned 400, got {response.status_code}")
+            return False
+    except Exception as e:
+        print_error(f"Request failed: {str(e)}")
+        return False
+
+
+def test_list_events():
+    """Test listing events"""
+    print_test_header("List Events")
+    
+    if not auth_token:
+        print_error("No auth token available")
+        return False
+    
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    
+    success, response, error = make_request(
+        "GET",
+        "/events/",
+        headers=headers
+    )
+    
+    if success:
+        events = response.json()
+        print_success(f"Retrieved {len(events)} event(s)")
+        
+        for event in events[:3]:
+            print_info(f"Event: {event.get('name')} (Type: {event.get('event_type')}, ID: {event.get('id')})")
+        
+        return True
+    else:
+        print_error(f"Failed to list events: {error}")
+        return False
+
+
+def test_list_events_filtered():
+    """Test listing events with filters"""
+    print_test_header("List Events with Filters")
+    
+    if not auth_token:
+        print_error("No auth token available")
+        return False
+    
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    
+    # Test filter by event_type
+    try:
+        response = requests.get(
+            f"{BASE_URL}/events/?event_type=single",
+            headers=headers,
+            timeout=10
+        )
+        
+        if response.status_code == 200:
+            events = response.json()
+            print_success(f"Retrieved {len(events)} single event(s)")
+            
+            # Verify all are single events
+            for event in events:
+                if event.get('event_type') != 'single':
+                    print_error(f"Filter failed: got {event.get('event_type')} event")
+                    return False
+            
+            return True
+        else:
+            print_error(f"Failed to filter events: Status {response.status_code}")
+            return False
+    except Exception as e:
+        print_error(f"Request failed: {str(e)}")
+        return False
+
+
+def test_get_event():
+    """Test getting specific event"""
+    print_test_header("Get Specific Event")
+    
+    if not auth_token or not test_event_single_id:
+        print_error("No auth token or test_event_single_id available")
+        return False
+    
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    
+    success, response, error = make_request(
+        "GET",
+        f"/events/{test_event_single_id}",
+        headers=headers
+    )
+    
+    if success:
+        event = response.json()
+        print_success("Retrieved event details")
+        print_info(f"Name: {event.get('name')}")
+        print_info(f"Type: {event.get('event_type')}")
+        print_info(f"Location: {event.get('location')}")
+        return True
+    else:
+        print_error(f"Failed to get event: {error}")
+        return False
+
+
+def test_update_event():
+    """Test updating event"""
+    print_test_header("Update Event")
+    
+    if not auth_token or not test_event_single_id:
+        print_error("No auth token or test_event_single_id available")
+        return False
+    
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    
+    update_data = {
+        "description": "Updated event description",
+        "location": "Updated Location"
+    }
+    
+    success, response, error = make_request(
+        "PATCH",
+        f"/events/{test_event_single_id}",
+        headers=headers,
+        json_data=update_data
+    )
+    
+    if success:
+        event = response.json()
+        print_success("Event updated successfully")
+        print_info(f"Updated description: {event.get('description')}")
+        print_info(f"Updated location: {event.get('location')}")
+        return True
+    else:
+        print_error(f"Failed to update event: {error}")
+        return False
+
+
+def test_rsvp_single_event_with_seats():
+    """Test RSVP for single event with seat selection"""
+    print_test_header("RSVP for Single Event with Seat Selection")
+    
+    if not auth_token or not test_event_with_seats_id:
+        print_error("No auth token or test_event_with_seats_id available")
+        return False
+    
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    
+    # First, get a member ID from the database
+    try:
+        members_response = requests.get(
+            f"{BASE_URL}/members/?limit=1",
+            headers=headers,
+            timeout=10
+        )
+        
+        if members_response.status_code != 200 or not members_response.json():
+            print_error("No members found in database - cannot test RSVP")
+            return False
+        
+        member_id = members_response.json()[0].get('id')
+        print_info(f"Using member ID: {member_id}")
+        
+        # Register RSVP with seat A1
+        response = requests.post(
+            f"{BASE_URL}/events/{test_event_with_seats_id}/rsvp?member_id={member_id}&seat=A1",
+            headers=headers,
+            timeout=10
+        )
+        
+        if response.status_code == 200:
+            result = response.json()
+            print_success("RSVP registered successfully")
+            print_info(f"Member ID: {result.get('rsvp', {}).get('member_id')}")
+            print_info(f"Seat: {result.get('rsvp', {}).get('seat')}")
+            print_info(f"Status: {result.get('rsvp', {}).get('status')}")
+            return True
+        else:
+            print_error(f"Failed to register RSVP: Status {response.status_code} - {response.text}")
+            return False
+    except Exception as e:
+        print_error(f"Request failed: {str(e)}")
+        return False
+
+
+def test_rsvp_duplicate_seat():
+    """Test RSVP for already taken seat (should fail)"""
+    print_test_header("RSVP for Already Taken Seat (Should Fail)")
+    
+    if not auth_token or not test_event_with_seats_id:
+        print_error("No auth token or test_event_with_seats_id available")
+        return False
+    
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    
+    # Get another member
+    try:
+        members_response = requests.get(
+            f"{BASE_URL}/members/?limit=2",
+            headers=headers,
+            timeout=10
+        )
+        
+        if members_response.status_code != 200:
+            print_error("Failed to get members")
+            return False
+        
+        members = members_response.json()
+        if len(members) < 2:
+            print_error("Need at least 2 members to test duplicate seat")
+            return False
+        
+        member_id = members[1].get('id')
+        
+        # Try to register for seat A1 (already taken)
+        response = requests.post(
+            f"{BASE_URL}/events/{test_event_with_seats_id}/rsvp?member_id={member_id}&seat=A1",
+            headers=headers,
+            timeout=10
+        )
+        
+        if response.status_code == 400:
+            print_success("Correctly rejected duplicate seat RSVP (400)")
+            return True
+        else:
+            print_error(f"Should have returned 400, got {response.status_code}")
+            return False
+    except Exception as e:
+        print_error(f"Request failed: {str(e)}")
+        return False
+
+
+def test_get_available_seats():
+    """Test getting available seats"""
+    print_test_header("Get Available Seats")
+    
+    if not auth_token or not test_event_with_seats_id:
+        print_error("No auth token or test_event_with_seats_id available")
+        return False
+    
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    
+    try:
+        response = requests.get(
+            f"{BASE_URL}/events/{test_event_with_seats_id}/available-seats",
+            headers=headers,
+            timeout=10
+        )
+        
+        if response.status_code == 200:
+            result = response.json()
+            print_success("Retrieved available seats")
+            print_info(f"Total seats: {result.get('total_seats')}")
+            print_info(f"Available: {result.get('available')}")
+            print_info(f"Taken: {result.get('taken')}")
+            print_info(f"Taken seats: {result.get('taken_seats')}")
+            
+            # Verify A1 is in taken seats
+            if 'A1' not in result.get('taken_seats', []):
+                print_error("Seat A1 should be marked as taken")
+                return False
+            
+            print_success("Seat availability tracking working correctly")
+            return True
+        else:
+            print_error(f"Failed to get available seats: Status {response.status_code} - {response.text}")
+            return False
+    except Exception as e:
+        print_error(f"Request failed: {str(e)}")
+        return False
+
+
+def test_rsvp_series_event():
+    """Test RSVP for series event"""
+    print_test_header("RSVP for Series Event")
+    
+    if not auth_token or not test_event_series_id:
+        print_error("No auth token or test_event_series_id available")
+        return False
+    
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    
+    # Get a member
+    try:
+        members_response = requests.get(
+            f"{BASE_URL}/members/?limit=1",
+            headers=headers,
+            timeout=10
+        )
+        
+        if members_response.status_code != 200 or not members_response.json():
+            print_error("No members found")
+            return False
+        
+        member_id = members_response.json()[0].get('id')
+        
+        # Register RSVP for Session 1
+        response = requests.post(
+            f"{BASE_URL}/events/{test_event_series_id}/rsvp?member_id={member_id}&session_id=Session 1",
+            headers=headers,
+            timeout=10
+        )
+        
+        if response.status_code == 200:
+            result = response.json()
+            print_success("RSVP for Session 1 registered successfully")
+            print_info(f"Session ID: {result.get('rsvp', {}).get('session_id')}")
+            return True
+        else:
+            print_error(f"Failed to register RSVP: Status {response.status_code} - {response.text}")
+            return False
+    except Exception as e:
+        print_error(f"Request failed: {str(e)}")
+        return False
+
+
+def test_rsvp_duplicate_session():
+    """Test duplicate RSVP for same session (should fail)"""
+    print_test_header("Duplicate RSVP for Same Session (Should Fail)")
+    
+    if not auth_token or not test_event_series_id:
+        print_error("No auth token or test_event_series_id available")
+        return False
+    
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    
+    # Get same member
+    try:
+        members_response = requests.get(
+            f"{BASE_URL}/members/?limit=1",
+            headers=headers,
+            timeout=10
+        )
+        
+        if members_response.status_code != 200 or not members_response.json():
+            print_error("No members found")
+            return False
+        
+        member_id = members_response.json()[0].get('id')
+        
+        # Try to register again for Session 1
+        response = requests.post(
+            f"{BASE_URL}/events/{test_event_series_id}/rsvp?member_id={member_id}&session_id=Session 1",
+            headers=headers,
+            timeout=10
+        )
+        
+        if response.status_code == 400:
+            print_success("Correctly rejected duplicate RSVP (400)")
+            return True
+        else:
+            print_error(f"Should have returned 400, got {response.status_code}")
+            return False
+    except Exception as e:
+        print_error(f"Request failed: {str(e)}")
+        return False
+
+
+def test_rsvp_different_session():
+    """Test RSVP for different session (should succeed)"""
+    print_test_header("RSVP for Different Session (Should Succeed)")
+    
+    if not auth_token or not test_event_series_id:
+        print_error("No auth token or test_event_series_id available")
+        return False
+    
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    
+    # Get same member
+    try:
+        members_response = requests.get(
+            f"{BASE_URL}/members/?limit=1",
+            headers=headers,
+            timeout=10
+        )
+        
+        if members_response.status_code != 200 or not members_response.json():
+            print_error("No members found")
+            return False
+        
+        member_id = members_response.json()[0].get('id')
+        
+        # Register for Session 2
+        response = requests.post(
+            f"{BASE_URL}/events/{test_event_series_id}/rsvp?member_id={member_id}&session_id=Session 2",
+            headers=headers,
+            timeout=10
+        )
+        
+        if response.status_code == 200:
+            result = response.json()
+            print_success("RSVP for Session 2 registered successfully")
+            print_info(f"Session ID: {result.get('rsvp', {}).get('session_id')}")
+            return True
+        else:
+            print_error(f"Failed to register RSVP: Status {response.status_code} - {response.text}")
+            return False
+    except Exception as e:
+        print_error(f"Request failed: {str(e)}")
+        return False
+
+
+def test_get_event_rsvps():
+    """Test getting event RSVPs"""
+    print_test_header("Get Event RSVPs")
+    
+    if not auth_token or not test_event_series_id:
+        print_error("No auth token or test_event_series_id available")
+        return False
+    
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    
+    try:
+        response = requests.get(
+            f"{BASE_URL}/events/{test_event_series_id}/rsvps",
+            headers=headers,
+            timeout=10
+        )
+        
+        if response.status_code == 200:
+            result = response.json()
+            print_success("Retrieved event RSVPs")
+            print_info(f"Total RSVPs: {result.get('total_rsvps')}")
+            print_info(f"Event: {result.get('event_name')}")
+            return True
+        else:
+            print_error(f"Failed to get RSVPs: Status {response.status_code} - {response.text}")
+            return False
+    except Exception as e:
+        print_error(f"Request failed: {str(e)}")
+        return False
+
+
+def test_get_event_rsvps_filtered():
+    """Test getting event RSVPs filtered by session"""
+    print_test_header("Get Event RSVPs Filtered by Session")
+    
+    if not auth_token or not test_event_series_id:
+        print_error("No auth token or test_event_series_id available")
+        return False
+    
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    
+    try:
+        response = requests.get(
+            f"{BASE_URL}/events/{test_event_series_id}/rsvps?session_id=Session 1",
+            headers=headers,
+            timeout=10
+        )
+        
+        if response.status_code == 200:
+            result = response.json()
+            print_success("Retrieved filtered RSVPs")
+            print_info(f"Session: {result.get('session_id')}")
+            print_info(f"Total RSVPs for session: {result.get('total_rsvps')}")
+            
+            # Verify all RSVPs are for Session 1
+            for rsvp in result.get('rsvps', []):
+                if rsvp.get('session_id') != 'Session 1':
+                    print_error(f"Filter failed: got RSVP for {rsvp.get('session_id')}")
+                    return False
+            
+            return True
+        else:
+            print_error(f"Failed to get filtered RSVPs: Status {response.status_code} - {response.text}")
+            return False
+    except Exception as e:
+        print_error(f"Request failed: {str(e)}")
+        return False
+
+
+def test_cancel_rsvp():
+    """Test cancelling RSVP"""
+    print_test_header("Cancel RSVP")
+    
+    if not auth_token or not test_event_series_id:
+        print_error("No auth token or test_event_series_id available")
+        return False
+    
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    
+    # Get member ID
+    try:
+        members_response = requests.get(
+            f"{BASE_URL}/members/?limit=1",
+            headers=headers,
+            timeout=10
+        )
+        
+        if members_response.status_code != 200 or not members_response.json():
+            print_error("No members found")
+            return False
+        
+        member_id = members_response.json()[0].get('id')
+        
+        # Cancel RSVP for Session 2
+        response = requests.delete(
+            f"{BASE_URL}/events/{test_event_series_id}/rsvp/{member_id}?session_id=Session 2",
+            headers=headers,
+            timeout=10
+        )
+        
+        if response.status_code == 200:
+            result = response.json()
+            print_success("RSVP cancelled successfully")
+            print_info(f"Message: {result.get('message')}")
+            return True
+        else:
+            print_error(f"Failed to cancel RSVP: Status {response.status_code} - {response.text}")
+            return False
+    except Exception as e:
+        print_error(f"Request failed: {str(e)}")
+        return False
+
+
+def test_checkin_without_rsvp_requirement():
+    """Test check-in for event without RSVP requirement"""
+    print_test_header("Check-in Without RSVP Requirement")
+    
+    if not auth_token or not test_event_single_id:
+        print_error("No auth token or test_event_single_id available")
+        return False
+    
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    
+    # Get a member
+    try:
+        members_response = requests.get(
+            f"{BASE_URL}/members/?limit=1",
+            headers=headers,
+            timeout=10
+        )
+        
+        if members_response.status_code != 200 or not members_response.json():
+            print_error("No members found")
+            return False
+        
+        member_id = members_response.json()[0].get('id')
+        
+        # Check-in member
+        response = requests.post(
+            f"{BASE_URL}/events/{test_event_single_id}/check-in?member_id={member_id}",
+            headers=headers,
+            timeout=10
+        )
+        
+        if response.status_code == 200:
+            result = response.json()
+            print_success("Check-in successful")
+            print_info(f"Member ID: {result.get('attendance', {}).get('member_id')}")
+            print_info(f"Check-in time: {result.get('attendance', {}).get('check_in_time')}")
+            return True
+        else:
+            print_error(f"Failed to check-in: Status {response.status_code} - {response.text}")
+            return False
+    except Exception as e:
+        print_error(f"Request failed: {str(e)}")
+        return False
+
+
+def test_checkin_duplicate():
+    """Test duplicate check-in (should fail)"""
+    print_test_header("Duplicate Check-in (Should Fail)")
+    
+    if not auth_token or not test_event_single_id:
+        print_error("No auth token or test_event_single_id available")
+        return False
+    
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    
+    # Get same member
+    try:
+        members_response = requests.get(
+            f"{BASE_URL}/members/?limit=1",
+            headers=headers,
+            timeout=10
+        )
+        
+        if members_response.status_code != 200 or not members_response.json():
+            print_error("No members found")
+            return False
+        
+        member_id = members_response.json()[0].get('id')
+        
+        # Try to check-in again
+        response = requests.post(
+            f"{BASE_URL}/events/{test_event_single_id}/check-in?member_id={member_id}",
+            headers=headers,
+            timeout=10
+        )
+        
+        if response.status_code == 400:
+            print_success("Correctly rejected duplicate check-in (400)")
+            return True
+        else:
+            print_error(f"Should have returned 400, got {response.status_code}")
+            return False
+    except Exception as e:
+        print_error(f"Request failed: {str(e)}")
+        return False
+
+
+def test_checkin_with_rsvp_requirement():
+    """Test check-in for event with RSVP requirement"""
+    print_test_header("Check-in With RSVP Requirement")
+    
+    if not auth_token or not test_event_series_id:
+        print_error("No auth token or test_event_series_id available")
+        return False
+    
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    
+    # Get member who has RSVP for Session 1
+    try:
+        members_response = requests.get(
+            f"{BASE_URL}/members/?limit=1",
+            headers=headers,
+            timeout=10
+        )
+        
+        if members_response.status_code != 200 or not members_response.json():
+            print_error("No members found")
+            return False
+        
+        member_id = members_response.json()[0].get('id')
+        
+        # Check-in for Session 1 (has RSVP)
+        response = requests.post(
+            f"{BASE_URL}/events/{test_event_series_id}/check-in?member_id={member_id}&session_id=Session 1",
+            headers=headers,
+            timeout=10
+        )
+        
+        if response.status_code == 200:
+            result = response.json()
+            print_success("Check-in with RSVP successful")
+            print_info(f"Session: {result.get('attendance', {}).get('session_id')}")
+            return True
+        else:
+            print_error(f"Failed to check-in: Status {response.status_code} - {response.text}")
+            return False
+    except Exception as e:
+        print_error(f"Request failed: {str(e)}")
+        return False
+
+
+def test_checkin_without_rsvp():
+    """Test check-in without RSVP when required (should fail)"""
+    print_test_header("Check-in Without RSVP When Required (Should Fail)")
+    
+    if not auth_token or not test_event_series_id:
+        print_error("No auth token or test_event_series_id available")
+        return False
+    
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    
+    # Get a different member
+    try:
+        members_response = requests.get(
+            f"{BASE_URL}/members/?limit=2",
+            headers=headers,
+            timeout=10
+        )
+        
+        if members_response.status_code != 200:
+            print_error("Failed to get members")
+            return False
+        
+        members = members_response.json()
+        if len(members) < 2:
+            print_error("Need at least 2 members")
+            return False
+        
+        member_id = members[1].get('id')
+        
+        # Try to check-in for Session 3 (no RSVP)
+        response = requests.post(
+            f"{BASE_URL}/events/{test_event_series_id}/check-in?member_id={member_id}&session_id=Session 3",
+            headers=headers,
+            timeout=10
+        )
+        
+        if response.status_code == 400:
+            print_success("Correctly rejected check-in without RSVP (400)")
+            return True
+        else:
+            print_error(f"Should have returned 400, got {response.status_code}")
+            return False
+    except Exception as e:
+        print_error(f"Request failed: {str(e)}")
+        return False
+
+
+def test_get_event_attendance():
+    """Test getting event attendance"""
+    print_test_header("Get Event Attendance")
+    
+    if not auth_token or not test_event_series_id:
+        print_error("No auth token or test_event_series_id available")
+        return False
+    
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    
+    try:
+        response = requests.get(
+            f"{BASE_URL}/events/{test_event_series_id}/attendance",
+            headers=headers,
+            timeout=10
+        )
+        
+        if response.status_code == 200:
+            result = response.json()
+            print_success("Retrieved event attendance")
+            print_info(f"Total attendance: {result.get('total_attendance')}")
+            print_info(f"Total RSVPs: {result.get('total_rsvps')}")
+            print_info(f"Attendance rate: {result.get('attendance_rate')}")
+            return True
+        else:
+            print_error(f"Failed to get attendance: Status {response.status_code} - {response.text}")
+            return False
+    except Exception as e:
+        print_error(f"Request failed: {str(e)}")
+        return False
+
+
+def test_get_event_attendance_filtered():
+    """Test getting event attendance filtered by session"""
+    print_test_header("Get Event Attendance Filtered by Session")
+    
+    if not auth_token or not test_event_series_id:
+        print_error("No auth token or test_event_series_id available")
+        return False
+    
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    
+    try:
+        response = requests.get(
+            f"{BASE_URL}/events/{test_event_series_id}/attendance?session_id=Session 1",
+            headers=headers,
+            timeout=10
+        )
+        
+        if response.status_code == 200:
+            result = response.json()
+            print_success("Retrieved filtered attendance")
+            print_info(f"Session: {result.get('session_id')}")
+            print_info(f"Total attendance for session: {result.get('total_attendance')}")
+            print_info(f"Attendance rate: {result.get('attendance_rate')}")
+            
+            # Verify all attendance is for Session 1
+            for attendance in result.get('attendance', []):
+                if attendance.get('session_id') != 'Session 1':
+                    print_error(f"Filter failed: got attendance for {attendance.get('session_id')}")
+                    return False
+            
+            return True
+        else:
+            print_error(f"Failed to get filtered attendance: Status {response.status_code} - {response.text}")
+            return False
+    except Exception as e:
+        print_error(f"Request failed: {str(e)}")
+        return False
+
+
+def test_delete_event():
+    """Test deleting event"""
+    print_test_header("Delete Event")
+    
+    if not auth_token or not test_event_single_id:
+        print_error("No auth token or test_event_single_id available")
+        return False
+    
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    
+    success, response, error = make_request(
+        "DELETE",
+        f"/events/{test_event_single_id}",
+        headers=headers,
+        expected_status=204
+    )
+    
+    if success:
+        print_success("Event deleted successfully")
+        return True
+    else:
+        print_error(f"Failed to delete event: {error}")
+        return False
+
+
+def test_delete_seat_layout():
+    """Test deleting seat layout"""
+    print_test_header("Delete Seat Layout")
+    
+    if not auth_token or not test_seat_layout_id:
+        print_error("No auth token or test_seat_layout_id available")
+        return False
+    
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    
+    success, response, error = make_request(
+        "DELETE",
+        f"/seat-layouts/{test_seat_layout_id}",
+        headers=headers,
+        expected_status=204
+    )
+    
+    if success:
+        print_success("Seat layout deleted successfully")
+        return True
+    else:
+        print_error(f"Failed to delete seat layout: {error}")
+        return False
+
+
 def run_all_tests():
     """Run all backend tests"""
     print(f"\n{Colors.BOLD}{'='*80}{Colors.RESET}")
