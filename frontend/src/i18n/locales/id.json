@@ -183,6 +183,8 @@
     "updateError": "Gagal memperbarui",
     "deleteError": "Gagal menghapus",
     "loadError": "Gagal memuat pengaturan",
+    "defaultForNewVisitors": "Default untuk pengunjung baru",
+    "defaultForNewVisitorsDesc": "Otomatis tetapkan status ini ke pengunjung baru yang ditambahkan di kiosk",
     "whatsappNotifications": "Notifikasi WhatsApp",
     "whatsappNotificationsDesc": "Konfigurasi notifikasi pesan WhatsApp",
     "enableWhatsappNotifications": "Aktifkan Notifikasi WhatsApp",
