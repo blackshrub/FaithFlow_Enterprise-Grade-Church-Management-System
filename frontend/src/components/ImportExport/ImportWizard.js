@@ -26,6 +26,10 @@ export default function ImportWizard() {
   const { t } = useTranslation();
   const { church } = useAuth();
   const [currentStep, setCurrentStep] = useState(1);
+  
+  // Fetch church settings to get date format
+  const { data: churchSettings, isLoading: loadingSettings } = useChurchSettings();
+  
   const [wizardData, setWizardData] = useState({
     file: null,
     fileContent: '',
@@ -40,6 +44,13 @@ export default function ImportWizard() {
     simulationResults: null,
     importResults: null,
   });
+
+  // Update date format when church settings load
+  useEffect(() => {
+    if (churchSettings?.date_format) {
+      setWizardData(prev => ({ ...prev, dateFormat: churchSettings.date_format }));
+    }
+  }, [churchSettings]);
 
   const parseFile = useParseFile();
   const simulateImport = useSimulateImport();
