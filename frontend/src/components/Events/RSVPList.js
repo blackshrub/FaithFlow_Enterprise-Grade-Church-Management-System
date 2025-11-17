@@ -1,16 +1,18 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Trash2, User, Calendar, Armchair, QrCode } from 'lucide-react';
+import { Trash2, User, Calendar, Armchair, QrCode, MessageCircle, RefreshCw, CheckCircle, XCircle, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useCancelRSVP } from '@/hooks/useRSVP';
-import { useQuery } from '@tanstack/react-query';
-import { membersAPI } from '@/services/api';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { membersAPI, eventsAPI } from '@/services/api';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 
 function RSVPList({ event, rsvpData, isLoading, selectedSession }) {
   const { t } = useTranslation();
   const cancelMutation = useCancelRSVP();
+  const queryClient = useQueryClient();
+  const [retrying, setRetrying] = useState({});
 
   // Fetch all members to display names
   const { data: members = [] } = useQuery({
