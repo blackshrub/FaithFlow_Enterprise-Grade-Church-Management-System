@@ -30,6 +30,7 @@ function EventForm({ event, onClose }) {
     requires_rsvp: event?.requires_rsvp ?? false,
     enable_seat_selection: event?.enable_seat_selection ?? false,
     seat_layout_id: event?.seat_layout_id || '',
+    seat_capacity: event?.seat_capacity || '',
     event_date: event?.event_date ? event.event_date.split('T')[0] : '',
     event_time: event?.event_date ? event.event_date.split('T')[1]?.substring(0, 5) : '',
     event_end_date: event?.event_end_date ? event.event_end_date.split('T')[0] : '',
