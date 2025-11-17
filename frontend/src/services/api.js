@@ -33,7 +33,16 @@ api.interceptors.request.use(
 
 // Add response interceptor to handle auth errors
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // If response URL was redirected to HTTP, log warning
+    if (response.request && response.request.responseURL) {
+      const responseURL = response.request.responseURL;
+      if (responseURL.startsWith('http://')) {
+        console.warn('⚠️ Response was served over HTTP instead of HTTPS:', responseURL);
+      }
+    }
+    return response;
+  },
   (error) => {
     if (error.response?.status === 401) {
       // Token expired or invalid
