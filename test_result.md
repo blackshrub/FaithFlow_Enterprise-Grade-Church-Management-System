@@ -337,15 +337,30 @@ frontend:
   
   - task: "Import/Export Wizard - Duplicate Resolution"
     implemented: true
-    working: true
+    working: false
     file: "/app/frontend/src/components/ImportExport/ImportSteps/StepSimulation.js"
-    stuck_count: 0
+    stuck_count: 1
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
       - working: true
         agent: "testing"
         comment: "Duplicate resolution functionality working correctly. When duplicates detected, 'Resolve Duplicate Phone Numbers' button appears. Clicking button shows duplicate resolution UI with radio button options for each conflict. NO HOOKS ERRORS when transitioning to/from duplicate resolution view. State management (localResolutions) working correctly at top level. Resolution selection and continuation working as expected."
+      - working: false
+        agent: "testing"
+        comment: "CRITICAL BUG FOUND: Field mapping is not transmitting phone_whatsapp data to backend. When testing with CSV containing duplicate phones (081234567890 x2), the simulate API response shows 'Phone: NONE' for all records and 'duplicate_conflicts: 0'. The phone field appears to be mapped in the UI (dropdown shows phone_whatsapp selected), but the data is not included in the API request payload. Backend duplicate detection logic is verified to work correctly when phone data is present. The issue is in the field mapping data transmission between frontend and backend. This prevents duplicate phone detection from working. NO HOOKS ERRORS detected - the hooks fix is working correctly."
+  
+  - task: "Import/Export Wizard - Field Mapping Data Transmission"
+    implemented: true
+    working: false
+    file: "/app/frontend/src/components/ImportExport/ImportSteps/StepFieldMapping.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "testing"
+        comment: "Field mapping UI appears to work (dropdowns can be selected), but mapped field data is NOT being transmitted to backend correctly. Test case: CSV with columns 'full_name,gender,phone_whatsapp' - when phone_whatsapp is mapped to Phone Number field, the simulate API receives empty/null phone values. API response shows sample data with 'Phone: NONE' for all records. The field_mappings object may not be constructed correctly, or the data is being lost during the simulate API call. This is a critical bug that breaks duplicate detection and any other phone-related validation."
 
 metadata:
   created_by: "testing_agent"
