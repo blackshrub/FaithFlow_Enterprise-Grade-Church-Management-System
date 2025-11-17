@@ -90,12 +90,19 @@ class FileUploadService:
                             continue
                         
                         file_data = zf.read(original_name)
+                        
+                        # Skip __MACOSX folders (check in full path)
+                        if '__MACOSX' in original_name or '__macosx' in original_name.lower():
+                            logger.debug(f"Skipping __MACOSX file: {original_name}")
+                            skipped_count += 1
+                            continue
+                        
                         # Get just the filename without path
                         clean_name = original_name.split('/')[-1]
                         
                         # Skip if it's just a folder marker, empty, or hidden file
-                        if not clean_name or clean_name.startswith('.') or clean_name.startswith('__MACOSX'):
-                            logger.debug(f"Skipping hidden/system file: {original_name}")
+                        if not clean_name or clean_name.startswith('.'):
+                            logger.debug(f"Skipping hidden/empty file: {original_name}")
                             skipped_count += 1
                             continue
                         
