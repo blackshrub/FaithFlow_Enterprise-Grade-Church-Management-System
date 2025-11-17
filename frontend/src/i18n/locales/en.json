@@ -215,6 +215,7 @@
     "enterDefault": "Enter default value for all records...",
     "mapRequiredFields": "Please map all required fields: First Name, Last Name, WhatsApp Number",
     "mapBasicRequiredFields": "Please map all required fields: Full Name, Gender, Birth Date, Address",
+    "mapOnlyFullName": "Please map the required field: Full Name",
     "dateFormatRequired": "Date format required (as per church setting):",
     "mapValues": "Map Values",
     "mapValuesDesc": "Transform values to match system format",
