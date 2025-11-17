@@ -110,6 +110,7 @@ async def simulate_import(
     field_mappings: str = Form(...),  # JSON string
     value_mappings: str = Form(default='{}'),  # JSON string
     default_values: str = Form(default='{}'),  # JSON string
+    custom_fields: str = Form(default='[]'),  # JSON array of custom field definitions
     date_format: str = Form(default='DD-MM-YYYY'),
     db: AsyncIOMotorDatabase = Depends(get_db),
     current_user: dict = Depends(require_admin)
@@ -121,6 +122,7 @@ async def simulate_import(
         field_map = json.loads(field_mappings)
         value_map = json.loads(value_mappings)
         defaults = json.loads(default_values)
+        custom_field_defs = json.loads(custom_fields)
         
         # Parse file
         if file_type == 'csv':
@@ -138,7 +140,8 @@ async def simulate_import(
             transformed_data, 
             church_id, 
             date_format,
-            db
+            db,
+            custom_field_defs
         )
         
         return {
