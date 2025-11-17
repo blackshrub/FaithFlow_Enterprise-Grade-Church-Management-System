@@ -23,6 +23,7 @@ const initialFormData = {
   description: '',
   order: 0,
   is_active: true,
+  is_default_for_new: false,
 };
 
 export default function MemberStatusesTab() {
