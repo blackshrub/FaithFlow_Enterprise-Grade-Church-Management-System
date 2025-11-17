@@ -107,14 +107,13 @@ class FileUploadService:
         
         Args:
             file_data: Photo file content
-            filename: Filename to check extension
+            filename: Normalized filename to check extension
             
         Returns:
             bool: True if valid photo
         """
-        # Check extension
-        ext = '.' + filename.lower().split('.')[-1] if '.' in filename else ''
-        if ext not in PHOTO_FORMATS:
+        # After normalization, photos should be .jpg
+        if not filename.endswith('.jpg'):
             return False
         
         # Try to open as image to validate
