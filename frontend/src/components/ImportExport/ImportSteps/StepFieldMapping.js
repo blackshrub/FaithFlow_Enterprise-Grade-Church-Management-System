@@ -142,9 +142,78 @@ export default function StepFieldMapping({ wizardData, updateWizardData, nextSte
             <CardTitle>{t('importExport.mapFields')}</CardTitle>
             <CardDescription>{t('importExport.mapFieldsDesc')}</CardDescription>
           </div>
-          <Button onClick={autoMap} variant="outline" size="sm">
-            {t('importExport.autoMap')}
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={autoMap} variant="outline" size="sm">
+              {t('importExport.autoMap')}
+            </Button>
+            <Dialog open={isAddCustomFieldOpen} onOpenChange={setIsAddCustomFieldOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Plus className="h-4 w-4 mr-2" />
+                  {t('importExport.addCustomField')}
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>{t('importExport.createCustomField')}</DialogTitle>
+                  <DialogDescription>{t('importExport.createCustomFieldDesc')}</DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>{t('importExport.fieldName')} *</Label>
+                    <Input
+                      placeholder={t('importExport.fieldNamePlaceholder')}
+                      value={newCustomField.name}
+                      onChange={(e) => setNewCustomField({ ...newCustomField, name: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>{t('importExport.fieldType')}</Label>
+                    <Select
+                      value={newCustomField.type}
+                      onValueChange={(value) => setNewCustomField({ ...newCustomField, type: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="string">{t('importExport.typeString')}</SelectItem>
+                        <SelectItem value="number">{t('importExport.typeNumber')}</SelectItem>
+                        <SelectItem value="date">{t('importExport.typeDate')}</SelectItem>
+                        <SelectItem value="email">{t('importExport.typeEmail')}</SelectItem>
+                        <SelectItem value="boolean">{t('importExport.typeBoolean')}</SelectItem>
+                        <SelectItem value="url">{t('importExport.typeUrl')}</SelectItem>
+                        <SelectItem value="phone">{t('importExport.typePhone')}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>{t('importExport.description')}</Label>
+                    <Input
+                      placeholder={t('importExport.descriptionPlaceholder')}
+                      value={newCustomField.description}
+                      onChange={(e) => setNewCustomField({ ...newCustomField, description: e.target.value })}
+                    />
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      checked={newCustomField.required}
+                      onCheckedChange={(checked) => setNewCustomField({ ...newCustomField, required: checked })}
+                    />
+                    <Label>{t('importExport.requiredField')}</Label>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setIsAddCustomFieldOpen(false)}>
+                    {t('common.cancel')}
+                  </Button>
+                  <Button onClick={addCustomField} disabled={!newCustomField.name}>
+                    {t('common.add')}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
