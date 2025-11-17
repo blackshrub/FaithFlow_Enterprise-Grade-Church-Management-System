@@ -258,7 +258,7 @@ function KioskMode() {
       {/* Main Split Screen */}
       <div className="flex-1 flex overflow-hidden">
         {/* Left: Camera Scanner */}
-        <div className="w-1/2 flex flex-col relative bg-black/10">
+        <div className="w-1/2 flex flex-col relative">
           <div className="absolute top-4 right-4 z-10 flex gap-2">
             <Button
               onClick={toggleCamera}
@@ -277,6 +277,7 @@ function KioskMode() {
                 <Webcam
                   ref={webcamRef}
                   screenshotFormat="image/jpeg"
+                  mirrored={facingMode === 'user'}
                   className="w-full rounded-lg shadow-2xl"
                   videoConstraints={{ facingMode }}
                 />
@@ -297,7 +298,7 @@ function KioskMode() {
         </div>
 
         {/* Right: Manual Search */}
-        <div className="w-1/2 bg-white/95 backdrop-blur-sm flex flex-col">
+        <div className="w-1/2 flex flex-col">
           {/* Search Bar - Fixed at Top */}
           <div className="p-6 border-b border-gray-200/50 flex-shrink-0">
             <div className="flex gap-3">
