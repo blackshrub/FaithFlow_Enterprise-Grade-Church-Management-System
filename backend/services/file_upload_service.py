@@ -74,11 +74,18 @@ class FileUploadService:
                             # Get just the filename without path
                             clean_name = file_info.filename.split('/')[-1]
                             
+                            # Skip if it's just a folder marker or empty
+                            if not clean_name or clean_name.startswith('.'):
+                                continue
+                            
                             # Normalize filename: lowercase, standardize extensions
-                            if clean_name:
-                                clean_name = FileUploadService.normalize_filename(clean_name)
-                                if clean_name:  # Only add if still valid after normalization
-                                    extracted_files[clean_name] = file_data
+                            normalized_name = FileUploadService.normalize_filename(clean_name)
+                            if normalized_name:  # Only add if valid after normalization
+                                # Avoid duplicates - if multiple files normalize to same name, keep first
+                                if normalized_name not in extracted_files:
+                                    extracted_files[normalized_name] = file_data
+                                else:
+                                    logger.warning(f"Duplicate normalized filename: {normalized_name} (original: {clean_name})")
             
             elif filename.lower().endswith('.rar'):
                 with rarfile.RarFile(io.BytesIO(file_content)) as rf:
@@ -88,11 +95,18 @@ class FileUploadService:
                             # Get just the filename without path
                             clean_name = file_info.filename.split('/')[-1].split('\\')[-1]
                             
+                            # Skip if it's just a folder marker or empty
+                            if not clean_name or clean_name.startswith('.'):
+                                continue
+                            
                             # Normalize filename: lowercase, standardize extensions
-                            if clean_name:
-                                clean_name = FileUploadService.normalize_filename(clean_name)
-                                if clean_name:  # Only add if still valid after normalization
-                                    extracted_files[clean_name] = file_data
+                            normalized_name = FileUploadService.normalize_filename(clean_name)
+                            if normalized_name:  # Only add if valid after normalization
+                                # Avoid duplicates
+                                if normalized_name not in extracted_files:
+                                    extracted_files[normalized_name] = file_data
+                                else:
+                                    logger.warning(f"Duplicate normalized filename: {normalized_name} (original: {clean_name})")
             
             logger.info(f"Extracted {len(extracted_files)} files from {filename}")
             return extracted_files
