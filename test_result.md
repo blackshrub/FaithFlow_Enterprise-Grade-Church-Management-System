@@ -551,11 +551,12 @@ test_plan:
     - "All user management API tests completed"
     - "All settings/configuration API tests completed"
     - "All import/export API tests completed"
+    - "Import/Export Wizard UI - React Hooks Error Fix VERIFIED"
   stuck_tasks: []
   test_all: true
   test_priority: "high_first"
-  tests_completed: 40
-  tests_passed: 40
+  tests_completed: 45
+  tests_passed: 45
   tests_failed: 0
 
 agent_communication:
