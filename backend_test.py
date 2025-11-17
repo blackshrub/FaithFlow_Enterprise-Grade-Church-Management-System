@@ -916,6 +916,764 @@ def test_delete_demographic():
         return False
 
 
+def test_parse_csv_file():
+    """Test parsing CSV file"""
+    print_test_header("Parse CSV File")
+    
+    if not auth_token:
+        print_error("No auth token available")
+        return False
+    
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    
+    # Create CSV content
+    csv_content = """first_name,last_name,phone_whatsapp,email,date_of_birth,gender,blood_type,marital_status
+John,Doe,+6281234567890,john.doe@example.com,15-05-1990,M,A+,S
+Jane,Smith,+6281234567891,jane.smith@example.com,20-08-1985,F,B+,M"""
+    
+    # Create a file-like object
+    files = {
+        'file': ('test_members.csv', csv_content, 'text/csv')
+    }
+    
+    try:
+        response = requests.post(
+            f"{BASE_URL}/import-export/parse-file",
+            headers=headers,
+            files=files,
+            timeout=10
+        )
+        
+        if response.status_code == 200:
+            data = response.json()
+            print_success("CSV file parsed successfully")
+            print_info(f"Filename: {data.get('filename')}")
+            print_info(f"File type: {data.get('file_type')}")
+            print_info(f"Headers: {data.get('headers')}")
+            print_info(f"Total records: {data.get('total_records')}")
+            print_info(f"Sample data count: {len(data.get('sample_data', []))}")
+            
+            # Verify headers
+            expected_headers = ['first_name', 'last_name', 'phone_whatsapp', 'email', 'date_of_birth', 'gender', 'blood_type', 'marital_status']
+            if data.get('headers') != expected_headers:
+                print_error(f"Headers mismatch. Expected {expected_headers}, got {data.get('headers')}")
+                return False
+            
+            # Verify sample data (should be first 5 or less)
+            if len(data.get('sample_data', [])) > 5:
+                print_error(f"Sample data should be max 5 records, got {len(data.get('sample_data', []))}")
+                return False
+            
+            return True
+        else:
+            print_error(f"Failed to parse CSV: Status {response.status_code} - {response.text}")
+            return False
+    except Exception as e:
+        print_error(f"Request failed: {str(e)}")
+        return False
+
+
+def test_parse_json_file():
+    """Test parsing JSON file"""
+    print_test_header("Parse JSON File")
+    
+    if not auth_token:
+        print_error("No auth token available")
+        return False
+    
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    
+    # Create JSON content
+    json_content = json.dumps([
+        {
+            "first_name": "Alice",
+            "last_name": "Johnson",
+            "phone_whatsapp": "+6281234567892",
+            "email": "alice.j@example.com",
+            "date_of_birth": "10-03-1992",
+            "gender": "F",
+            "blood_type": "O+",
+            "marital_status": "S"
+        },
+        {
+            "first_name": "Bob",
+            "last_name": "Williams",
+            "phone_whatsapp": "+6281234567893",
+            "email": "bob.w@example.com",
+            "date_of_birth": "25-12-1988",
+            "gender": "M",
+            "blood_type": "AB+",
+            "marital_status": "M"
+        }
+    ])
+    
+    files = {
+        'file': ('test_members.json', json_content, 'application/json')
+    }
+    
+    try:
+        response = requests.post(
+            f"{BASE_URL}/import-export/parse-file",
+            headers=headers,
+            files=files,
+            timeout=10
+        )
+        
+        if response.status_code == 200:
+            data = response.json()
+            print_success("JSON file parsed successfully")
+            print_info(f"Filename: {data.get('filename')}")
+            print_info(f"File type: {data.get('file_type')}")
+            print_info(f"Headers: {data.get('headers')}")
+            print_info(f"Total records: {data.get('total_records')}")
+            print_info(f"Sample data count: {len(data.get('sample_data', []))}")
+            
+            if data.get('file_type') != 'json':
+                print_error(f"File type should be 'json', got '{data.get('file_type')}'")
+                return False
+            
+            return True
+        else:
+            print_error(f"Failed to parse JSON: Status {response.status_code} - {response.text}")
+            return False
+    except Exception as e:
+        print_error(f"Request failed: {str(e)}")
+        return False
+
+
+def test_parse_invalid_file():
+    """Test parsing invalid file format"""
+    print_test_header("Parse Invalid File Format (Should Fail)")
+    
+    if not auth_token:
+        print_error("No auth token available")
+        return False
+    
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    
+    # Create invalid file (XML)
+    invalid_content = "<root><data>test</data></root>"
+    
+    files = {
+        'file': ('test.xml', invalid_content, 'application/xml')
+    }
+    
+    try:
+        response = requests.post(
+            f"{BASE_URL}/import-export/parse-file",
+            headers=headers,
+            files=files,
+            timeout=10
+        )
+        
+        if response.status_code == 400:
+            print_success("Correctly rejected invalid file format (400)")
+            return True
+        else:
+            print_error(f"Should have returned 400, got {response.status_code}")
+            return False
+    except Exception as e:
+        print_error(f"Request failed: {str(e)}")
+        return False
+
+
+def test_simulate_import_valid():
+    """Test simulating import with valid data"""
+    print_test_header("Simulate Import with Valid Data")
+    
+    if not auth_token:
+        print_error("No auth token available")
+        return False
+    
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    
+    csv_content = """first_name,last_name,phone_whatsapp,email,date_of_birth,gender,blood_type,marital_status
+SimTest,User1,+6281999999991,simtest1@example.com,15-05-1990,M,A+,S
+SimTest,User2,+6281999999992,simtest2@example.com,20-08-1985,F,B+,M"""
+    
+    field_mappings = {
+        "first_name": "first_name",
+        "last_name": "last_name",
+        "phone_whatsapp": "phone_whatsapp",
+        "email": "email",
+        "date_of_birth": "date_of_birth",
+        "gender": "gender",
+        "blood_type": "blood_type",
+        "marital_status": "marital_status"
+    }
+    
+    value_mappings = {
+        "gender": {"M": "male", "F": "female"},
+        "marital_status": {"S": "single", "M": "married"}
+    }
+    
+    data = {
+        "file_content": csv_content,
+        "file_type": "csv",
+        "field_mappings": json.dumps(field_mappings),
+        "value_mappings": json.dumps(value_mappings),
+        "date_format": "DD-MM-YYYY"
+    }
+    
+    try:
+        response = requests.post(
+            f"{BASE_URL}/import-export/simulate",
+            headers=headers,
+            data=data,
+            timeout=10
+        )
+        
+        if response.status_code == 200:
+            result = response.json()
+            print_success("Simulation completed successfully")
+            print_info(f"Total records: {result.get('total_records')}")
+            print_info(f"Valid records: {result.get('valid_records')}")
+            print_info(f"Invalid records: {result.get('invalid_records')}")
+            print_info(f"Ready to import: {result.get('ready_to_import')}")
+            
+            if result.get('errors'):
+                print_info(f"Errors: {result.get('errors')}")
+            
+            # Verify value mappings worked
+            sample_valid = result.get('sample_valid', [])
+            if sample_valid:
+                first_record = sample_valid[0]
+                if first_record.get('gender') != 'male':
+                    print_error(f"Value mapping failed: gender should be 'male', got '{first_record.get('gender')}'")
+                    return False
+                if first_record.get('marital_status') != 'single':
+                    print_error(f"Value mapping failed: marital_status should be 'single', got '{first_record.get('marital_status')}'")
+                    return False
+            
+            return True
+        else:
+            print_error(f"Simulation failed: Status {response.status_code} - {response.text}")
+            return False
+    except Exception as e:
+        print_error(f"Request failed: {str(e)}")
+        return False
+
+
+def test_simulate_import_missing_fields():
+    """Test simulating import with missing required fields"""
+    print_test_header("Simulate Import with Missing Required Fields (Should Show Errors)")
+    
+    if not auth_token:
+        print_error("No auth token available")
+        return False
+    
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    
+    # Missing first_name and phone_whatsapp
+    csv_content = """last_name,email
+Incomplete,incomplete@example.com"""
+    
+    field_mappings = {
+        "last_name": "last_name",
+        "email": "email"
+    }
+    
+    data = {
+        "file_content": csv_content,
+        "file_type": "csv",
+        "field_mappings": json.dumps(field_mappings),
+        "value_mappings": "{}",
+        "date_format": "DD-MM-YYYY"
+    }
+    
+    try:
+        response = requests.post(
+            f"{BASE_URL}/import-export/simulate",
+            headers=headers,
+            data=data,
+            timeout=10
+        )
+        
+        if response.status_code == 200:
+            result = response.json()
+            print_success("Simulation completed")
+            print_info(f"Invalid records: {result.get('invalid_records')}")
+            print_info(f"Errors: {result.get('errors')}")
+            
+            # Should have errors for missing fields
+            if result.get('invalid_records') == 0:
+                print_error("Should have validation errors for missing required fields")
+                return False
+            
+            errors = result.get('errors', [])
+            has_first_name_error = any('first_name' in str(e).lower() for e in errors)
+            has_phone_error = any('phone' in str(e).lower() for e in errors)
+            
+            if not has_first_name_error or not has_phone_error:
+                print_error("Missing expected validation errors")
+                return False
+            
+            print_success("Correctly identified missing required fields")
+            return True
+        else:
+            print_error(f"Simulation failed: Status {response.status_code} - {response.text}")
+            return False
+    except Exception as e:
+        print_error(f"Request failed: {str(e)}")
+        return False
+
+
+def test_simulate_import_invalid_date():
+    """Test simulating import with invalid date format"""
+    print_test_header("Simulate Import with Invalid Date Format (Should Show Errors)")
+    
+    if not auth_token:
+        print_error("No auth token available")
+        return False
+    
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    
+    csv_content = """first_name,last_name,phone_whatsapp,date_of_birth
+DateTest,User,+6281999999993,invalid-date"""
+    
+    field_mappings = {
+        "first_name": "first_name",
+        "last_name": "last_name",
+        "phone_whatsapp": "phone_whatsapp",
+        "date_of_birth": "date_of_birth"
+    }
+    
+    data = {
+        "file_content": csv_content,
+        "file_type": "csv",
+        "field_mappings": json.dumps(field_mappings),
+        "value_mappings": "{}",
+        "date_format": "DD-MM-YYYY"
+    }
+    
+    try:
+        response = requests.post(
+            f"{BASE_URL}/import-export/simulate",
+            headers=headers,
+            data=data,
+            timeout=10
+        )
+        
+        if response.status_code == 200:
+            result = response.json()
+            print_success("Simulation completed")
+            print_info(f"Invalid records: {result.get('invalid_records')}")
+            print_info(f"Errors: {result.get('errors')}")
+            
+            # Should have date format error
+            if result.get('invalid_records') == 0:
+                print_error("Should have validation error for invalid date format")
+                return False
+            
+            errors = result.get('errors', [])
+            has_date_error = any('date_of_birth' in str(e).lower() for e in errors)
+            
+            if not has_date_error:
+                print_error("Missing expected date validation error")
+                return False
+            
+            print_success("Correctly identified invalid date format")
+            return True
+        else:
+            print_error(f"Simulation failed: Status {response.status_code} - {response.text}")
+            return False
+    except Exception as e:
+        print_error(f"Request failed: {str(e)}")
+        return False
+
+
+def test_import_members_success():
+    """Test importing members successfully"""
+    global test_member_ids
+    
+    print_test_header("Import Members Successfully")
+    
+    if not auth_token:
+        print_error("No auth token available")
+        return False
+    
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    
+    import time
+    unique_suffix = str(int(time.time()))[-6:]
+    
+    csv_content = f"""first_name,last_name,phone_whatsapp,email,date_of_birth,gender,blood_type,marital_status
+ImportTest,User1,+628199{unique_suffix}1,import1_{unique_suffix}@example.com,15-05-2010,M,A+,S
+ImportTest,User2,+628199{unique_suffix}2,import2_{unique_suffix}@example.com,20-08-1985,F,B+,M"""
+    
+    field_mappings = {
+        "first_name": "first_name",
+        "last_name": "last_name",
+        "phone_whatsapp": "phone_whatsapp",
+        "email": "email",
+        "date_of_birth": "date_of_birth",
+        "gender": "gender",
+        "blood_type": "blood_type",
+        "marital_status": "marital_status"
+    }
+    
+    value_mappings = {
+        "gender": {"M": "male", "F": "female"},
+        "marital_status": {"S": "single", "M": "married"}
+    }
+    
+    data = {
+        "file_content": csv_content,
+        "file_type": "csv",
+        "field_mappings": json.dumps(field_mappings),
+        "value_mappings": json.dumps(value_mappings),
+        "date_format": "DD-MM-YYYY"
+    }
+    
+    try:
+        response = requests.post(
+            f"{BASE_URL}/import-export/import-members",
+            headers=headers,
+            data=data,
+            timeout=10
+        )
+        
+        if response.status_code == 200:
+            result = response.json()
+            print_success("Members imported successfully")
+            print_info(f"Total records: {result.get('total_records')}")
+            print_info(f"Imported: {result.get('imported')}")
+            print_info(f"Failed: {result.get('failed')}")
+            
+            if result.get('errors'):
+                print_info(f"Errors: {result.get('errors')}")
+            
+            # Verify import count
+            if result.get('imported') != 2:
+                print_error(f"Expected 2 imports, got {result.get('imported')}")
+                return False
+            
+            # Store member IDs for cleanup (we'll need to query them)
+            print_success("Import completed successfully")
+            return True
+        else:
+            print_error(f"Import failed: Status {response.status_code} - {response.text}")
+            return False
+    except Exception as e:
+        print_error(f"Request failed: {str(e)}")
+        return False
+
+
+def test_import_members_duplicate():
+    """Test importing members with duplicate phone numbers"""
+    print_test_header("Import Members with Duplicate Phone (Should Fail)")
+    
+    if not auth_token:
+        print_error("No auth token available")
+        return False
+    
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    
+    # Use same phone number twice
+    csv_content = """first_name,last_name,phone_whatsapp,email,date_of_birth,gender
+DupTest,User1,+6281999888777,dup1@example.com,15-05-1990,male
+DupTest,User2,+6281999888777,dup2@example.com,20-08-1985,female"""
+    
+    field_mappings = {
+        "first_name": "first_name",
+        "last_name": "last_name",
+        "phone_whatsapp": "phone_whatsapp",
+        "email": "email",
+        "date_of_birth": "date_of_birth",
+        "gender": "gender"
+    }
+    
+    data = {
+        "file_content": csv_content,
+        "file_type": "csv",
+        "field_mappings": json.dumps(field_mappings),
+        "value_mappings": "{}",
+        "date_format": "DD-MM-YYYY"
+    }
+    
+    try:
+        response = requests.post(
+            f"{BASE_URL}/import-export/import-members",
+            headers=headers,
+            data=data,
+            timeout=10
+        )
+        
+        # Should fail validation
+        if response.status_code == 400:
+            print_success("Correctly rejected duplicate phone numbers (400)")
+            error_data = response.json()
+            print_info(f"Error detail: {error_data.get('detail')}")
+            return True
+        else:
+            print_error(f"Should have returned 400, got {response.status_code}")
+            return False
+    except Exception as e:
+        print_error(f"Request failed: {str(e)}")
+        return False
+
+
+def test_export_members_csv():
+    """Test exporting members as CSV"""
+    print_test_header("Export Members as CSV")
+    
+    if not auth_token:
+        print_error("No auth token available")
+        return False
+    
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    
+    try:
+        response = requests.get(
+            f"{BASE_URL}/import-export/export-members?format=csv",
+            headers=headers,
+            timeout=10
+        )
+        
+        if response.status_code == 200:
+            print_success("CSV export successful")
+            print_info(f"Content-Type: {response.headers.get('Content-Type')}")
+            print_info(f"Content-Disposition: {response.headers.get('Content-Disposition')}")
+            print_info(f"Response size: {len(response.content)} bytes")
+            
+            # Verify it's CSV
+            if 'text/csv' not in response.headers.get('Content-Type', ''):
+                print_error("Content-Type should be text/csv")
+                return False
+            
+            # Verify content-disposition header
+            if 'attachment' not in response.headers.get('Content-Disposition', ''):
+                print_error("Should have attachment in Content-Disposition")
+                return False
+            
+            # Check if content is not empty
+            if len(response.content) == 0:
+                print_error("Export content is empty")
+                return False
+            
+            return True
+        else:
+            print_error(f"Export failed: Status {response.status_code} - {response.text}")
+            return False
+    except Exception as e:
+        print_error(f"Request failed: {str(e)}")
+        return False
+
+
+def test_export_members_json():
+    """Test exporting members as JSON"""
+    print_test_header("Export Members as JSON")
+    
+    if not auth_token:
+        print_error("No auth token available")
+        return False
+    
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    
+    try:
+        response = requests.get(
+            f"{BASE_URL}/import-export/export-members?format=json",
+            headers=headers,
+            timeout=10
+        )
+        
+        if response.status_code == 200:
+            print_success("JSON export successful")
+            print_info(f"Content-Type: {response.headers.get('Content-Type')}")
+            print_info(f"Response size: {len(response.content)} bytes")
+            
+            # Verify it's JSON
+            if 'application/json' not in response.headers.get('Content-Type', ''):
+                print_error("Content-Type should be application/json")
+                return False
+            
+            # Try to parse as JSON
+            try:
+                data = json.loads(response.content)
+                print_info(f"Exported {len(data)} members")
+            except:
+                print_error("Response is not valid JSON")
+                return False
+            
+            return True
+        else:
+            print_error(f"Export failed: Status {response.status_code} - {response.text}")
+            return False
+    except Exception as e:
+        print_error(f"Request failed: {str(e)}")
+        return False
+
+
+def test_export_members_with_filter():
+    """Test exporting members with status filter"""
+    print_test_header("Export Members with Active Filter")
+    
+    if not auth_token:
+        print_error("No auth token available")
+        return False
+    
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    
+    try:
+        response = requests.get(
+            f"{BASE_URL}/import-export/export-members?format=csv&status_filter=active",
+            headers=headers,
+            timeout=10
+        )
+        
+        if response.status_code == 200:
+            print_success("Filtered export successful")
+            print_info(f"Response size: {len(response.content)} bytes")
+            return True
+        else:
+            print_error(f"Export failed: Status {response.status_code} - {response.text}")
+            return False
+    except Exception as e:
+        print_error(f"Request failed: {str(e)}")
+        return False
+
+
+def test_create_import_template():
+    """Test creating an import template"""
+    global test_import_template_id
+    
+    print_test_header("Create Import Template")
+    
+    if not auth_token or not church_id:
+        print_error("No auth token or church_id available")
+        return False
+    
+    headers = {
+        "Authorization": f"Bearer {auth_token}",
+        "Content-Type": "application/json"
+    }
+    
+    import time
+    unique_suffix = str(int(time.time()))[-6:]
+    
+    template_data = {
+        "name": f"Test Template {unique_suffix}",
+        "description": "Template for testing import functionality",
+        "church_id": church_id,
+        "field_mappings": {
+            "first_name": "first_name",
+            "last_name": "last_name",
+            "phone_whatsapp": "phone_whatsapp",
+            "email": "email"
+        },
+        "value_mappings": {
+            "gender": {"M": "male", "F": "female"}
+        },
+        "date_format": "DD-MM-YYYY"
+    }
+    
+    try:
+        response = requests.post(
+            f"{BASE_URL}/import-export/templates",
+            headers=headers,
+            json=template_data,
+            timeout=10
+        )
+        
+        if response.status_code == 201:
+            template = response.json()
+            test_import_template_id = template.get('id')
+            print_success("Import template created successfully")
+            print_info(f"Template ID: {template.get('id')}")
+            print_info(f"Name: {template.get('name')}")
+            print_info(f"Church ID: {template.get('church_id')}")
+            return True
+        else:
+            print_error(f"Failed to create template: Status {response.status_code} - {response.text}")
+            return False
+    except Exception as e:
+        print_error(f"Request failed: {str(e)}")
+        return False
+
+
+def test_list_import_templates():
+    """Test listing import templates"""
+    print_test_header("List Import Templates")
+    
+    if not auth_token:
+        print_error("No auth token available")
+        return False
+    
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    
+    try:
+        response = requests.get(
+            f"{BASE_URL}/import-export/templates",
+            headers=headers,
+            timeout=10
+        )
+        
+        if response.status_code == 200:
+            templates = response.json()
+            print_success(f"Retrieved {len(templates)} template(s)")
+            
+            for template in templates[:3]:  # Show first 3
+                print_info(f"Template: {template.get('name')} (ID: {template.get('id')})")
+            
+            # Verify church scoping
+            if church_id:
+                for template in templates:
+                    if template.get('church_id') != church_id:
+                        # This is OK for super_admin
+                        print_info("Note: Super admin can see templates from other churches")
+                        break
+            
+            return True
+        else:
+            print_error(f"Failed to list templates: Status {response.status_code} - {response.text}")
+            return False
+    except Exception as e:
+        print_error(f"Request failed: {str(e)}")
+        return False
+
+
+def test_list_import_logs():
+    """Test listing import logs"""
+    print_test_header("List Import Logs")
+    
+    if not auth_token:
+        print_error("No auth token available")
+        return False
+    
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    
+    try:
+        response = requests.get(
+            f"{BASE_URL}/import-export/logs",
+            headers=headers,
+            timeout=10
+        )
+        
+        if response.status_code == 200:
+            logs = response.json()
+            print_success(f"Retrieved {len(logs)} import log(s)")
+            
+            for log in logs[:3]:  # Show first 3
+                print_info(f"Log: {log.get('file_name')} - Status: {log.get('status')}")
+                print_info(f"  Total: {log.get('total_records')}, Success: {log.get('successful_records')}, Failed: {log.get('failed_records')}")
+            
+            # Verify church scoping
+            if church_id:
+                for log in logs:
+                    if log.get('church_id') != church_id:
+                        # This is OK for super_admin
+                        print_info("Note: Super admin can see logs from other churches")
+                        break
+            
+            return True
+        else:
+            print_error(f"Failed to list logs: Status {response.status_code} - {response.text}")
+            return False
+    except Exception as e:
+        print_error(f"Request failed: {str(e)}")
+        return False
+
+
 def run_all_tests():
     """Run all backend tests"""
     print(f"\n{Colors.BOLD}{'='*80}{Colors.RESET}")
