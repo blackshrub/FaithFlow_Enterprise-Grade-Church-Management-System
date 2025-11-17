@@ -384,6 +384,97 @@ async def register_rsvp(
     return {"success": True, "message": "RSVP registered successfully", "rsvp": rsvp_entry}
 
 
+@router.post("/{event_id}/rsvp/{member_id}/retry-whatsapp")
+async def retry_whatsapp_notification(
+    event_id: str,
+    member_id: str,
+    session_id: Optional[str] = Query(None),
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    """Retry sending WhatsApp notification for an RSVP"""
+    
+    event = await db.events.find_one({"id": event_id})
+    if not event:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
+    
+    # Find RSVP
+    rsvp = next(
+        (r for r in event.get('rsvp_list', []) 
+         if r.get('member_id') == member_id and r.get('session_id') == session_id),
+        None
+    )
+    if not rsvp:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="RSVP not found")
+    
+    # Get member
+    member = await db.members.find_one({"id": member_id})
+    if not member or not member.get('phone'):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Member phone number not found")
+    
+    # Check settings
+    church_settings = await db.church_settings.find_one({"church_id": event.get('church_id')})
+    if not church_settings or not church_settings.get('enable_whatsapp_notifications'):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="WhatsApp notifications not enabled")
+    
+    try:
+        # Format event date
+        event_date_str = "TBD"
+        if event.get('event_type') == 'single' and event.get('event_date'):
+            event_date = event.get('event_date')
+            if isinstance(event_date, str):
+                event_date = datetime.fromisoformat(event_date)
+            event_date_str = event_date.strftime('%B %d, %Y at %H:%M')
+        elif event.get('event_type') == 'series' and session_id:
+            session = next((s for s in event.get('sessions', []) if s.get('name') == session_id), None)
+            if session and session.get('date'):
+                sess_date = session.get('date')
+                if isinstance(sess_date, str):
+                    sess_date = datetime.fromisoformat(sess_date)
+                event_date_str = sess_date.strftime('%B %d, %Y at %H:%M')
+        
+        # Format message
+        message = format_rsvp_confirmation_message(
+            member_name=member.get('full_name'),
+            event_name=event.get('name'),
+            session_name=session_id,
+            event_date=event_date_str,
+            seat=rsvp.get('seat'),
+            confirmation_code=rsvp.get('confirmation_code'),
+            location=event.get('location')
+        )
+        
+        # Send WhatsApp
+        result = await send_whatsapp_message(
+            phone_number=member.get('phone'),
+            message=message,
+            image_base64=rsvp.get('qr_code')
+        )
+        
+        # Update RSVP with new status
+        rsvp_index = event.get('rsvp_list', []).index(rsvp)
+        await db.events.update_one(
+            {"id": event_id},
+            {"$set": {
+                f"rsvp_list.{rsvp_index}.whatsapp_status": result.get('delivery_status', 'failed'),
+                f"rsvp_list.{rsvp_index}.whatsapp_message_id": result.get('message_id'),
+                f"rsvp_list.{rsvp_index}.whatsapp_retry_count": rsvp.get('whatsapp_retry_count', 0) + 1,
+                f"rsvp_list.{rsvp_index}.last_whatsapp_attempt": datetime.now(timezone.utc).isoformat()
+            }}
+        )
+        
+        return {
+            "success": result.get('success'),
+            "message": result.get('message'),
+            "delivery_status": result.get('delivery_status'),
+            "retry_count": rsvp.get('whatsapp_retry_count', 0) + 1
+        }
+    
+    except Exception as e:
+        logger.error(f"Retry WhatsApp error: {str(e)}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
+
 @router.delete("/{event_id}/rsvp/{member_id}")
 async def cancel_rsvp(
     event_id: str,
