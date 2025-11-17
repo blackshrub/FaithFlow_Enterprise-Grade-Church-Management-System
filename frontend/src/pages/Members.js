@@ -10,6 +10,7 @@ import { Badge } from '../components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '../components/ui/dialog';
 import { Plus, Search, Edit, Trash2, UserX, Phone, Mail, Loader2 } from 'lucide-react';
 import MemberForm from '../components/MemberForm';
+import MemberAvatar from '../components/MemberAvatar';
 
 const initialFormData = {
   first_name: '',
