@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../ui/card';
 import { Button } from '../../ui/button';
 import { Label } from '../../ui/label';
+import { Input } from '../../ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../ui/table';
 import { Badge } from '../../ui/badge';
@@ -28,32 +29,66 @@ const TARGET_FIELDS = [
 
 export default function StepFieldMapping({ wizardData, updateWizardData, nextStep, prevStep }) {
   const { t } = useTranslation();
+  const [defaultValues, setDefaultValues] = useState({});
 
-  const handleMappingChange = (sourceField, targetField) => {
+  const handleMappingChange = (targetField, sourceField) => {
+    // Store reversed mapping: sourceField -> targetField for backend
+    const newMappings = { ...wizardData.fieldMappings };
+    
+    // Remove old mapping for this target field
+    Object.keys(newMappings).forEach(key => {
+      if (newMappings[key] === targetField) {
+        delete newMappings[key];
+      }
+    });
+    
+    // Add new mapping if not skip
+    if (sourceField && sourceField !== '_skip_' && sourceField !== '_default_') {
+      newMappings[sourceField] = targetField;
+    }
+    
+    updateWizardData({ fieldMappings: newMappings });
+  };
+
+  const handleDefaultValueChange = (targetField, value) => {
+    setDefaultValues({
+      ...defaultValues,
+      [targetField]: value,
+    });
+    
+    // Store default values in wizard data
     updateWizardData({
-      fieldMappings: {
-        ...wizardData.fieldMappings,
-        [sourceField]: targetField,
+      defaultValues: {
+        ...wizardData.defaultValues,
+        [targetField]: value,
       },
     });
   };
 
   const autoMap = () => {
     const mappings = {};
-    wizardData.headers.forEach(header => {
-      const normalized = header.toLowerCase().replace(/[\s_-]+/g, '_');
+    TARGET_FIELDS.forEach(targetField => {
+      const normalized = targetField.value.toLowerCase().replace(/[\s_-]+/g, '_');
       
-      // Try to find matching target field
-      const match = TARGET_FIELDS.find(tf => 
-        tf.value === normalized || 
-        tf.label.toLowerCase().replace(/[\s_-]+/g, '_') === normalized
-      );
+      // Try to find matching source column
+      const match = wizardData.headers.find(header => {
+        const headerNormalized = header.toLowerCase().replace(/[\s_-]+/g, '_');
+        return headerNormalized === normalized || headerNormalized.includes(normalized);
+      });
       
       if (match) {
-        mappings[header] = match.value;
+        mappings[match] = targetField.value;
       }
     });
     updateWizardData({ fieldMappings: mappings });
+  };
+
+  const getSourceFieldForTarget = (targetField) => {
+    // Find which source field maps to this target field
+    const entry = Object.entries(wizardData.fieldMappings).find(
+      ([source, target]) => target === targetField
+    );
+    return entry ? entry[0] : '';
   };
 
   const canProceed = () => {
