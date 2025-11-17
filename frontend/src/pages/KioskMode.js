@@ -1,15 +1,17 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Camera, Scan, Search, UserPlus, CheckCircle, XCircle } from 'lucide-react';
+import { Camera, Scan, Search, UserPlus, CheckCircle, ArrowLeft, SwitchCamera } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { useEvents } from '@/hooks/useEvents';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { eventsAPI, membersAPI } from '@/services/api';
 import { toast } from 'sonner';
 import Webcam from 'react-webcam';
 import { BrowserQRCodeReader } from '@zxing/library';
+import SuccessModal from '@/components/Kiosk/SuccessModal';
+import OnsiteRSVPModal from '@/components/Kiosk/OnsiteRSVPModal';
+import QuickAddForm from '@/components/Kiosk/QuickAddForm';
 
 function KioskMode() {
   const { t } = useTranslation();
@@ -25,54 +27,38 @@ function KioskMode() {
 
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [selectedSession, setSelectedSession] = useState('');
-  const [scanMode, setScanMode] = useState('camera'); // 'camera' or 'hardware'
-  const [isScanning, setIsScanning] = useState(false);
+  const [facingMode, setFacingMode] = useState('environment'); // 'user' or 'environment'
+  const [isScanning, setIsScanning] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [recentCheckIns, setRecentCheckIns] = useState([]);
+  const [successData, setSuccessData] = useState(null);
+  const [onsiteRSVPData, setOnsiteRSVPData] = useState(null);
+  const [showQuickAdd, setShowQuickAdd] = useState(false);
 
   const webcamRef = useRef(null);
   const codeReader = useRef(null);
   const scanInterval = useRef(null);
 
-  // Initialize QR code reader
   useEffect(() => {
-    if (scanMode === 'camera') {
-      codeReader.current = new BrowserQRCodeReader();
-    }
+    codeReader.current = new BrowserQRCodeReader();
     return () => {
       if (scanInterval.current) {
         clearInterval(scanInterval.current);
       }
     };
-  }, [scanMode]);
+  }, []);
 
-  // Check-in mutation
-  const checkInMutation = useMutation({
-    mutationFn: ({ eventId, memberId, sessionId }) =>
-      eventsAPI.checkIn(eventId, { member_id: memberId, session_id: sessionId }),
-    onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['attendance', variables.eventId] });
-      queryClient.invalidateQueries({ queryKey: ['events'] });
-      toast.success(t('events.kiosk.checkInSuccess'));
-      
-      // Add to recent check-ins
-      const member = members.find(m => m.id === variables.memberId);
-      if (member) {
-        setRecentCheckIns(prev => [
-          { ...member, checked_in_at: new Date() },
-          ...prev.slice(0, 9)
-        ]);
-      }
-    },
-    onError: (error) => {
-      const errorMsg = error.response?.data?.detail || t('events.kiosk.checkInError');
-      toast.error(errorMsg);
-    },
-  });
+  // Auto-start scanning when event selected
+  useEffect(() => {
+    if (selectedEvent && isScanning) {
+      startScanning();
+    }
+    return () => stopScanning();
+  }, [selectedEvent, isScanning, facingMode]);
 
-  // Camera scanning logic
-  const startCameraScanning = () => {
-    setIsScanning(true);
+  const startScanning = () => {
+    if (scanInterval.current) clearInterval(scanInterval.current);
+    
     scanInterval.current = setInterval(() => {
       if (webcamRef.current) {
         const imageSrc = webcamRef.current.getScreenshot();
@@ -84,337 +70,333 @@ function KioskMode() {
                 handleQRCodeScanned(result.text);
               }
             })
-            .catch(() => {
-              // Ignore scanning errors, keep trying
-            });
+            .catch(() => {});
         }
       }
-    }, 500); // Scan every 500ms
+    }, 500);
   };
 
-  const stopCameraScanning = () => {
-    setIsScanning(false);
+  const stopScanning = () => {
     if (scanInterval.current) {
       clearInterval(scanInterval.current);
       scanInterval.current = null;
     }
   };
 
-  // Hardware scanner listening
-  useEffect(() => {
-    if (scanMode === 'hardware' && isScanning) {
-      let buffer = '';
-      const handleKeyPress = (e) => {
-        if (e.key === 'Enter') {
-          if (buffer.length > 0) {
-            handleQRCodeScanned(buffer);
-            buffer = '';
-          }
-        } else if (e.key.length === 1) {
-          buffer += e.key;
-        }
-      };
+  const toggleCamera = () => {
+    setFacingMode(prev => prev === 'user' ? 'environment' : 'user');
+  };
 
-      window.addEventListener('keypress', handleKeyPress);
-      return () => window.removeEventListener('keypress', handleKeyPress);
-    }
-  }, [scanMode, isScanning]);
+  const checkInMutation = useMutation({
+    mutationFn: ({ eventId, memberId, sessionId, qrCode }) =>
+      eventsAPI.checkIn(eventId, { 
+        member_id: memberId, 
+        session_id: sessionId,
+        qr_code: qrCode 
+      }),
+    onSuccess: (response) => {
+      if (response.data.requires_onsite_rsvp) {
+        // Show onsite RSVP modal
+        setOnsiteRSVPData({
+          member_id: response.data.member_id,
+          member_name: response.data.member_name,
+          event_id: selectedEvent.id,
+          session_id: selectedEvent.event_type === 'series' ? selectedSession : null
+        });
+      } else {
+        // Success!
+        setSuccessData({
+          name: response.data.member_name,
+          photo: response.data.member_photo
+        });
+        addToRecentCheckIns(response.data.member_name, response.data.member_photo);
+        queryClient.invalidateQueries({ queryKey: ['attendance'] });
+      }
+    },
+    onError: (error) => {
+      const errorMsg = error.response?.data?.detail || t('events.kiosk.checkInError');
+      toast.error(errorMsg, { duration: 3000 });
+    },
+  });
 
   const handleQRCodeScanned = (qrData) => {
-    stopCameraScanning();
-    
-    // Parse QR data: "RSVP|event_id|member_id|session|confirmation_code"
-    const parts = qrData.split('|');
-    if (parts.length >= 5 && parts[0] === 'RSVP') {
-      const [, eventId, memberId, session, code] = parts;
-      
-      // Validate event matches
-      if (selectedEvent && selectedEvent.id !== eventId) {
-        toast.error('QR code is for a different event');
-        setTimeout(() => setIsScanning(true), 2000);
-        return;
-      }
-      
-      // Check in
-      checkInMutation.mutate({
-        eventId: eventId,
-        memberId: memberId,
-        sessionId: session === 'single' ? null : session
-      });
-    } else {
-      toast.error(t('events.kiosk.invalidQRCode'));
-      setTimeout(() => setIsScanning(true), 2000);
+    if (!selectedEvent) {
+      toast.error(t('events.kiosk.selectEvent'));
+      return;
     }
+
+    if (selectedEvent.event_type === 'series' && !selectedSession) {
+      toast.error(t('events.kiosk.selectSession'));
+      return;
+    }
+
+    checkInMutation.mutate({
+      eventId: selectedEvent.id,
+      memberId: null,
+      sessionId: selectedEvent.event_type === 'series' ? selectedSession : null,
+      qrCode: qrData
+    });
   };
 
   const handleManualCheckIn = (member) => {
     if (!selectedEvent) {
-      toast.error('Please select an event first');
+      toast.error(t('events.kiosk.selectEvent'));
       return;
     }
 
     checkInMutation.mutate({
       eventId: selectedEvent.id,
       memberId: member.id,
-      sessionId: selectedEvent.event_type === 'series' ? selectedSession : null
+      sessionId: selectedEvent.event_type === 'series' ? selectedSession : null,
+      qrCode: null
     });
     setSearchQuery('');
   };
 
+  const addToRecentCheckIns = (name, photo) => {
+    setRecentCheckIns(prev => [
+      { name, photo, time: new Date() },
+      ...prev.slice(0, 9)
+    ]);
+  };
+
   const filteredMembers = members.filter(member =>
-    member.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    member.phone?.includes(searchQuery)
+    searchQuery.length >= 2 && (
+      member.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      member.phone_whatsapp?.includes(searchQuery)
+    )
   );
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
-      <div className="max-w-6xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            {t('events.kiosk.title')}
-          </h1>
-          <p className="text-gray-600">{t('events.kiosk.subtitle')}</p>
+    <div className="h-screen w-screen overflow-hidden bg-gray-50 flex flex-col">
+      {/* Top Bar */}
+      <div className="bg-white shadow-sm px-6 py-4 flex items-center justify-between flex-shrink-0">
+        <div className="flex items-center gap-4">
+          <a href="/events" className="text-gray-600 hover:text-gray-900">
+            <ArrowLeft className="h-6 w-6" />
+          </a>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">{t('events.kiosk.title')}</h1>
+            <p className="text-sm text-gray-600">{selectedEvent?.name || t('events.kiosk.selectEvent')}</p>
+          </div>
         </div>
-
+        
         {/* Event Selection */}
-        <div className="bg-white rounded-lg shadow p-6 space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>{t('events.kiosk.selectEvent')} *</Label>
-              <select
-                value={selectedEvent?.id || ''}
-                onChange={(e) => {
-                  const event = events.find(ev => ev.id === e.target.value);
-                  setSelectedEvent(event);
-                  setSelectedSession('');
-                }}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
-              >
-                <option value="">{t('events.kiosk.selectEvent')}</option>
-                {events.map(event => (
-                  <option key={event.id} value={event.id}>
-                    {event.name} - {event.event_type}
-                  </option>
-                ))}
-              </select>
-            </div>
+        <div className="flex gap-4">
+          <select
+            value={selectedEvent?.id || ''}
+            onChange={(e) => {
+              const event = events.find(ev => ev.id === e.target.value);
+              setSelectedEvent(event);
+              setSelectedSession('');
+            }}
+            className="px-4 py-2 border border-gray-300 rounded-lg font-medium"
+          >
+            <option value="">{t('events.kiosk.selectEvent')}</option>
+            {events.map(event => (
+              <option key={event.id} value={event.id}>
+                {event.name}
+              </option>
+            ))}
+          </select>
 
-            {selectedEvent?.event_type === 'series' && (
-              <div className="space-y-2">
-                <Label>{t('events.kiosk.selectSession')} *</Label>
-                <select
-                  value={selectedSession}
-                  onChange={(e) => setSelectedSession(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                >
-                  <option value="">{t('events.kiosk.selectSession')}</option>
-                  {selectedEvent.sessions?.map((session, idx) => (
-                    <option key={idx} value={session.name}>
-                      {session.name}
-                    </option>
-                  ))}
-                </select>
+          {selectedEvent?.event_type === 'series' && (
+            <select
+              value={selectedSession}
+              onChange={(e) => setSelectedSession(e.target.value)}
+              className="px-4 py-2 border border-gray-300 rounded-lg font-medium"
+            >
+              <option value="">{t('events.kiosk.selectSession')}</option>
+              {selectedEvent.sessions?.map((session, idx) => (
+                <option key={idx} value={session.name}>
+                  {session.name}
+                </option>
+              ))}
+            </select>
+          )}
+        </div>
+      </div>
+
+      {/* Main Split Screen */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* Left: Camera Scanner */}
+        <div className="w-1/2 bg-gray-900 flex flex-col relative">
+          <div className="absolute top-4 right-4 z-10 flex gap-2">
+            <Button
+              onClick={toggleCamera}
+              variant="secondary"
+              size="sm"
+              className="bg-white/90 hover:bg-white"
+            >
+              <SwitchCamera className="h-4 w-4 mr-2" />
+              {t('events.kiosk.switchCamera')}
+            </Button>
+          </div>
+
+          {selectedEvent ? (
+            <div className="flex-1 flex items-center justify-center p-8">
+              <div className="relative w-full max-w-2xl">
+                <Webcam
+                  ref={webcamRef}
+                  screenshotFormat="image/jpeg"
+                  className="w-full rounded-lg"
+                  videoConstraints={{ facingMode }}
+                />
+                <div className="absolute inset-0 border-8 border-green-500 rounded-lg pointer-events-none animate-pulse" />
+                <p className="text-center text-white text-lg mt-4 font-medium">
+                  {t('events.kiosk.pointCamera')}
+                </p>
               </div>
-            )}
-          </div>
-
-          {/* Scan Mode Selection */}
-          <div className="space-y-2">
-            <Label>{t('events.kiosk.scanMode')}</Label>
-            <div className="flex gap-4">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="radio"
-                  value="camera"
-                  checked={scanMode === 'camera'}
-                  onChange={(e) => {
-                    setScanMode(e.target.value);
-                    stopCameraScanning();
-                  }}
-                  className="w-4 h-4"
-                />
-                <div>
-                  <div className="flex items-center gap-2">
-                    <Camera className="h-4 w-4" />
-                    <span className="font-medium">{t('events.kiosk.cameraMode')}</span>
-                  </div>
-                  <p className="text-xs text-gray-500">{t('events.kiosk.cameraModeDesc')}</p>
-                </div>
-              </label>
-
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="radio"
-                  value="hardware"
-                  checked={scanMode === 'hardware'}
-                  onChange={(e) => {
-                    setScanMode(e.target.value);
-                    stopCameraScanning();
-                  }}
-                  className="w-4 h-4"
-                />
-                <div>
-                  <div className="flex items-center gap-2">
-                    <Scan className="h-4 w-4" />
-                    <span className="font-medium">{t('events.kiosk.hardwareMode')}</span>
-                  </div>
-                  <p className="text-xs text-gray-500">{t('events.kiosk.hardwareModeDesc')}</p>
-                </div>
-              </label>
             </div>
-          </div>
+          ) : (
+            <div className="flex-1 flex items-center justify-center">
+              <div className="text-center text-white">
+                <Camera className="h-24 w-24 mx-auto mb-4 opacity-50" />
+                <p className="text-xl">{t('events.kiosk.selectEvent')}</p>
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Main Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Scanner Section */}
-          <div className="bg-white rounded-lg shadow p-6 space-y-4">
-            <h2 className="text-xl font-semibold text-gray-900">
-              {t('events.kiosk.scanQRCode')}
-            </h2>
-
-            {scanMode === 'camera' ? (
-              <div className="space-y-4">
-                {isScanning ? (
-                  <div className="relative">
-                    <Webcam
-                      ref={webcamRef}
-                      screenshotFormat="image/jpeg"
-                      className="w-full rounded-lg"
-                      videoConstraints={{
-                        facingMode: 'environment'
-                      }}
-                    />
-                    <div className="absolute inset-0 border-4 border-green-500 rounded-lg pointer-events-none" />
-                    <p className="text-center text-sm text-gray-600 mt-2">
-                      {t('events.kiosk.pointCamera')}
-                    </p>
-                  </div>
-                ) : (
-                  <div className="bg-gray-100 rounded-lg h-64 flex items-center justify-center">
-                    <div className="text-center">
-                      <Camera className="h-16 w-16 mx-auto text-gray-400 mb-4" />
-                      <p className="text-gray-600">{t('events.kiosk.waitingForScan')}</p>
-                    </div>
-                  </div>
-                )}
-
-                <Button
-                  onClick={isScanning ? stopCameraScanning : startCameraScanning}
-                  className="w-full"
-                  disabled={!selectedEvent || (selectedEvent.event_type === 'series' && !selectedSession)}
-                >
-                  {isScanning ? t('events.kiosk.stopScanning') : t('events.kiosk.startScanning')}
-                </Button>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <div className="bg-gray-100 rounded-lg h-64 flex items-center justify-center">
-                  <div className="text-center">
-                    <Scan className="h-16 w-16 mx-auto text-gray-400 mb-4" />
-                    <p className="text-gray-600">
-                      {isScanning ? t('events.kiosk.waitingForScan') : 'Ready to scan'}
-                    </p>
-                    <p className="text-sm text-gray-500 mt-2">
-                      {isScanning ? 'Use your barcode scanner...' : 'Click start to begin'}
-                    </p>
-                  </div>
-                </div>
-
-                <Button
-                  onClick={() => setIsScanning(!isScanning)}
-                  className="w-full"
-                  disabled={!selectedEvent || (selectedEvent.event_type === 'series' && !selectedSession)}
-                >
-                  {isScanning ? t('events.kiosk.stopScanning') : t('events.kiosk.startScanning')}
-                </Button>
-              </div>
-            )}
-          </div>
-
-          {/* Manual Search */}
-          <div className="bg-white rounded-lg shadow p-6 space-y-4">
-            <h2 className="text-xl font-semibold text-gray-900">
-              {t('events.kiosk.manualSearch')}
-            </h2>
-
-            <div className="space-y-2">
-              <div className="relative">
+        {/* Right: Manual Search */}
+        <div className="w-1/2 bg-white flex flex-col">
+          {/* Search Bar - Fixed at Top */}
+          <div className="p-6 border-b border-gray-200 flex-shrink-0">
+            <div className="flex gap-3">
+              <div className="flex-1 relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                 <Input
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder={t('events.kiosk.searchMemberPlaceholder')}
-                  className="pl-10"
+                  className="pl-10 h-12 text-lg"
                 />
               </div>
-
-              {searchQuery && (
-                <div className="border border-gray-200 rounded-lg max-h-80 overflow-y-auto">
-                  {filteredMembers.length === 0 ? (
-                    <p className="text-center py-4 text-gray-500 text-sm">
-                      {t('members.noMembers')}
-                    </p>
-                  ) : (
-                    <div className="divide-y divide-gray-200">
-                      {filteredMembers.slice(0, 10).map(member => (
-                        <div
-                          key={member.id}
-                          className="p-4 hover:bg-gray-50 cursor-pointer flex items-center justify-between"
-                          onClick={() => handleManualCheckIn(member)}
-                        >
-                          <div>
-                            <p className="font-medium text-gray-900">{member.full_name}</p>
-                            <p className="text-sm text-gray-600">{member.phone || t('common.na')}</p>
-                          </div>
-                          <Button
-                            size="sm"
-                            disabled={checkInMutation.isPending}
-                          >
-                            {t('events.kiosk.quickCheckIn')}
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
+              <Button
+                onClick={() => setShowQuickAdd(true)}
+                className="h-12 px-6"
+                disabled={!selectedEvent}
+              >
+                <UserPlus className="h-5 w-5 mr-2" />
+                {t('events.kiosk.addNewVisitor')}
+              </Button>
             </div>
           </div>
-        </div>
 
-        {/* Recent Check-ins */}
-        {recentCheckIns.length > 0 && (
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-gray-900">
-                {t('events.kiosk.recentCheckIns')}
-              </h2>
-              <span className="text-sm text-gray-500">
-                {t('events.kiosk.todayCheckIns', { count: recentCheckIns.length })}
-              </span>
-            </div>
+          {/* Search Results */}
+          <div className="flex-1 overflow-y-auto p-6">
+            {searchQuery.length < 2 ? (
+              <div className="text-center py-12 text-gray-500">
+                <Search className="h-16 w-16 mx-auto mb-4 text-gray-300" />
+                <p>{t('events.kiosk.manualSearch')}</p>
+              </div>
+            ) : filteredMembers.length === 0 ? (
+              <div className="text-center py-12 text-gray-500">
+                <p className="text-lg font-medium mb-2">{t('events.kiosk.noResults')}</p>
+                <p className="text-sm">{t('events.kiosk.tryDifferentSearch')}</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {filteredMembers.slice(0, 8).map(member => (
+                  <button
+                    key={member.id}
+                    onClick={() => handleManualCheckIn(member)}
+                    className="w-full bg-white border-2 border-gray-200 rounded-lg p-4 hover:border-blue-500 hover:shadow-lg transition-all text-left"
+                  >
+                    <div className="flex items-center gap-4">
+                      {member.photo_base64 ? (
+                        <img
+                          src={member.photo_base64}
+                          alt={member.full_name}
+                          className="w-16 h-16 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center">
+                          <span className="text-2xl font-bold text-gray-500">
+                            {member.full_name?.charAt(0)}
+                          </span>
+                        </div>
+                      )}
+                      <div className="flex-1">
+                        <p className="font-semibold text-lg text-gray-900">{member.full_name}</p>
+                        <p className="text-sm text-gray-600">{member.phone_whatsapp || t('common.na')}</p>
+                      </div>
+                      <CheckCircle className="h-6 w-6 text-green-500" />
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {recentCheckIns.map((member, index) => (
-                <div
-                  key={index}
-                  className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-center gap-3"
-                >
-                  <CheckCircle className="h-8 w-8 text-green-600 flex-shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-gray-900 truncate">{member.full_name}</p>
-                    <p className="text-xs text-gray-600">
-                      {member.checked_in_at.toLocaleTimeString()}
+          {/* Recent Check-ins */}
+          {recentCheckIns.length > 0 && (
+            <div className="border-t border-gray-200 p-4 flex-shrink-0 bg-gray-50">
+              <p className="text-sm font-medium text-gray-700 mb-2">
+                {t('events.kiosk.recentCheckIns')} ({recentCheckIns.length})
+              </p>
+              <div className="flex gap-2 overflow-x-auto">
+                {recentCheckIns.slice(0, 6).map((item, idx) => (
+                  <div key={idx} className="flex-shrink-0 bg-green-50 rounded-lg p-2 border border-green-200">
+                    <p className="text-xs font-medium text-green-900 truncate max-w-[120px]">
+                      {item.name}
                     </p>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
+
+      {/* Success Modal */}
+      {successData && (
+        <SuccessModal
+          name={successData.name}
+          photo={successData.photo}
+          onClose={() => setSuccessData(null)}
+        />
+      )}
+
+      {/* Onsite RSVP Modal */}
+      {onsiteRSVPData && (
+        <OnsiteRSVPModal
+          data={onsiteRSVPData}
+          onConfirm={async () => {
+            // Step 1: RSVP
+            await eventsAPI.registerRSVP(onsiteRSVPData.event_id, {
+              member_id: onsiteRSVPData.member_id,
+              session_id: onsiteRSVPData.session_id
+            });
+            // Step 2: Check-in
+            const response = await eventsAPI.checkIn(onsiteRSVPData.event_id, {
+              member_id: onsiteRSVPData.member_id,
+              session_id: onsiteRSVPData.session_id
+            });
+            setOnsiteRSVPData(null);
+            setSuccessData({
+              name: response.data.member_name,
+              photo: response.data.member_photo
+            });
+            toast.success(t('events.kiosk.onsiteRSVPSuccess'));
+          }}
+          onClose={() => setOnsiteRSVPData(null)}
+        />
+      )}
+
+      {/* Quick Add Form */}
+      {showQuickAdd && (
+        <QuickAddForm
+          eventId={selectedEvent?.id}
+          sessionId={selectedEvent?.event_type === 'series' ? selectedSession : null}
+          onSuccess={(member) => {
+            setShowQuickAdd(false);
+            setSuccessData({ name: member.full_name, photo: member.photo_base64 });
+            addToRecentCheckIns(member.full_name, member.photo_base64);
+          }}
+          onClose={() => setShowQuickAdd(false)}
+        />
+      )}
     </div>
   );
 }
