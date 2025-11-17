@@ -28,6 +28,7 @@ test_seat_layout_id: Optional[str] = None
 test_event_single_id: Optional[str] = None
 test_event_series_id: Optional[str] = None
 test_event_with_seats_id: Optional[str] = None
+test_members_created: list = []
 
 
 class Colors:
