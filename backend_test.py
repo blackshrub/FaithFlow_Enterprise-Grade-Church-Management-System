@@ -24,6 +24,10 @@ test_member_status_id: Optional[str] = None
 test_demographic_id: Optional[str] = None
 test_import_template_id: Optional[str] = None
 test_member_ids: list = []
+test_seat_layout_id: Optional[str] = None
+test_event_single_id: Optional[str] = None
+test_event_series_id: Optional[str] = None
+test_event_with_seats_id: Optional[str] = None
 
 
 class Colors:
