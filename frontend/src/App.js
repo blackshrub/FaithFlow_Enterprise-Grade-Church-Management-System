@@ -38,6 +38,7 @@ function App() {
               <Route path="members" element={<Members />} />
               <Route path="import-export" element={<ImportExport />} />
               <Route path="settings" element={<Settings />} />
+              <Route path="seat-layouts" element={<SeatLayouts />} />
               
               {/* Placeholder routes - will be implemented in next phases */}
               <Route path="groups" element={<PlaceholderPage title="Groups" />} />
