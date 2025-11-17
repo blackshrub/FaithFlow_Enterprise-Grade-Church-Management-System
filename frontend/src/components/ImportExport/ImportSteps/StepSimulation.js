@@ -1,32 +1,33 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../ui/card';
 import { Button } from '../../ui/button';
 import { Alert, AlertDescription } from '../../ui/alert';
-import { CheckCircle, AlertCircle, Loader2, RefreshCw } from 'lucide-react';
+import { CheckCircle, AlertCircle, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 
-export default function StepResults({ wizardData, updateWizardData, importMembers, resetWizard }) {
+export default function StepSimulation({ wizardData, updateWizardData, simulateImport, nextStep, prevStep }) {
   const { t } = useTranslation();
-  const [importing, setImporting] = useState(false);
-  const [importComplete, setImportComplete] = useState(false);
+  const [simulating, setSimulating] = useState(false);
+  const [simulationComplete, setSimulationComplete] = useState(false);
 
-  const executeImport = async () => {
-    setImporting(true);
+  const runSimulation = async () => {
+    setSimulating(true);
     try {
-      const result = await importMembers.mutateAsync({
+      const result = await simulateImport.mutateAsync({
         file_content: wizardData.fileContent,
         file_type: wizardData.fileType,
         field_mappings: JSON.stringify(wizardData.fieldMappings),
         value_mappings: JSON.stringify(wizardData.valueMappings),
+        default_values: JSON.stringify(wizardData.defaultValues || {}),
         date_format: wizardData.dateFormat,
       });
       
-      updateWizardData({ importResults: result });
-      setImportComplete(true);
+      updateWizardData({ simulationResults: result });
+      setSimulationComplete(true);
     } catch (error) {
-      console.error('Import error:', error);
+      console.error('Simulation error:', error);
     } finally {
-      setImporting(false);
+      setSimulating(false);
     }
   };
 
