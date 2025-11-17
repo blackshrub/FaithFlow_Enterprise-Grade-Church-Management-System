@@ -490,9 +490,9 @@ test_plan:
 metadata:
   created_by: "testing_agent"
   version: "1.0"
-  test_sequence: 2
+  test_sequence: 3
   run_ui: false
-  test_date: "2025-01-10"
+  test_date: "2025-01-17"
   api_base_url: "https://parish-command.preview.emergentagent.com/api"
 
 test_plan:
@@ -501,11 +501,12 @@ test_plan:
     - "All church management API tests completed"
     - "All user management API tests completed"
     - "All settings/configuration API tests completed"
+    - "All import/export API tests completed"
   stuck_tasks: []
   test_all: true
   test_priority: "high_first"
-  tests_completed: 26
-  tests_passed: 26
+  tests_completed: 40
+  tests_passed: 40
   tests_failed: 0
 
 agent_communication:
