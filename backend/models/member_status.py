@@ -9,6 +9,7 @@ class MemberStatusBase(BaseModel):
     description: Optional[str] = None
     order: int = Field(default=0, description="Display order")
     is_active: bool = True
+    is_default_for_new: bool = Field(default=False, description="Default status for new visitors/members")
 
 
 class MemberStatusCreate(MemberStatusBase):
