@@ -31,13 +31,18 @@ export default function Members() {
   const { t } = useTranslation();
   const { church } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
+  const [showIncompleteOnly, setShowIncompleteOnly] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState(null);
   const [formData, setFormData] = useState(initialFormData);
 
-  // React Query hooks
-  const { data: members = [], isLoading, error } = useMembers({ is_active: true });
+  // React Query hooks - now includes incomplete_data filter
+  const { data: members = [], isLoading, error } = useMembers({ 
+    is_active: true,
+    incomplete_data: showIncompleteOnly || undefined
+  });
+  const { data: stats } = useMemberStats();
   const createMember = useCreateMember();
   const updateMember = useUpdateMember();
   const deleteMember = useDeleteMember();
