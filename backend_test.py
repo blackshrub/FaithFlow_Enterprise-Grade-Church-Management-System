@@ -1705,7 +1705,7 @@ def test_create_test_members():
             "full_name": "John Doe",
             "phone_whatsapp": f"+628199{unique_suffix}01",
             "email": f"john.doe.{unique_suffix}@test.com",
-            "gender": "male",
+            "gender": "Male",
             "church_id": church_id,
             "is_active": True
         },
@@ -1715,7 +1715,7 @@ def test_create_test_members():
             "full_name": "Jane Smith",
             "phone_whatsapp": f"+628199{unique_suffix}02",
             "email": f"jane.smith.{unique_suffix}@test.com",
-            "gender": "female",
+            "gender": "Female",
             "church_id": church_id,
             "is_active": True
         },
@@ -1725,7 +1725,7 @@ def test_create_test_members():
             "full_name": "Bob Johnson",
             "phone_whatsapp": f"+628199{unique_suffix}03",
             "email": f"bob.johnson.{unique_suffix}@test.com",
-            "gender": "male",
+            "gender": "Male",
             "church_id": church_id,
             "is_active": True
         }
