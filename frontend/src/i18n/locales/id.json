@@ -413,6 +413,150 @@
       "registerFirst": "Jadilah yang pertama mendaftar!"
     }
   },
+  "devotions": {
+    "title": "Renungan",
+    "subtitle": "Kelola postingan renungan harian",
+    "createDevotion": "Buat Renungan",
+    "editDevotion": "Edit Renungan",
+    "deleteDevotion": "Hapus Renungan",
+    "duplicateDevotion": "Duplikat Renungan",
+    "viewHistory": "Lihat Riwayat",
+    "restoreVersion": "Pulihkan Versi",
+    "devotionsList": "Daftar Renungan",
+    "noDevotions": "Tidak ada renungan ditemukan",
+    "createFirstDevotion": "Buat renungan pertama Anda",
+    "devotionsTotal": "Total: {{count}} renungan",
+    "devotionsTotal_one": "Total: {{count}} renungan",
+    "devotionsTotal_other": "Total: {{count}} renungan",
+    
+    "form": {
+      "date": "Tanggal",
+      "title": "Judul",
+      "titlePlaceholder": "Masukkan judul renungan...",
+      "coverImage": "Gambar Sampul",
+      "uploadImage": "Unggah Gambar",
+      "changeImage": "Ubah Gambar",
+      "removeImage": "Hapus Gambar",
+      "content": "Isi Renungan",
+      "contentPlaceholder": "Tulis isi renungan Anda di sini...",
+      "verses": "Ayat Alkitab",
+      "addVerse": "Tambah Ayat",
+      "removeVerse": "Hapus Ayat",
+      "fetchVerse": "Ambil Ayat",
+      "verseFetched": "Ayat berhasil diambil",
+      "verseFetchError": "Gagal mengambil ayat",
+      "noVerses": "Belum ada ayat ditambahkan",
+      "versePreview": "Pratinjau Ayat"
+    },
+    
+    "versePicker": {
+      "title": "Tambah Ayat Alkitab",
+      "selectVersion": "Pilih Versi Alkitab",
+      "selectBook": "Pilih Kitab",
+      "selectChapter": "Pasal",
+      "selectStartVerse": "Ayat Awal",
+      "selectEndVerse": "Ayat Akhir (opsional)",
+      "verseRange": "{{book}} {{chapter}}:{{start}}-{{end}}",
+      "singleVerse": "{{book}} {{chapter}}:{{verse}}",
+      "fetchingVerse": "Mengambil ayat...",
+      "addToList": "Tambah ke Daftar",
+      "verseAdded": "Ayat berhasil ditambahkan"
+    },
+    
+    "schedule": {
+      "schedulePublishing": "Jadwalkan Penerbitan",
+      "publishDate": "Tanggal Terbit",
+      "publishTime": "Waktu Terbit",
+      "publishNow": "Terbitkan Sekarang",
+      "saveDraft": "Simpan sebagai Draft",
+      "scheduled": "Terjadwal",
+      "scheduledFor": "Dijadwalkan untuk {{date}}",
+      "autoPublish": "Akan otomatis terbit pada tanggal terjadwal"
+    },
+    
+    "status": {
+      "draft": "Draft",
+      "published": "Terbit",
+      "scheduled": "Terjadwal",
+      "archived": "Diarsipkan"
+    },
+    
+    "actions": {
+      "publish": "Terbitkan",
+      "unpublish": "Batalkan Penerbitan",
+      "preview": "Pratinjau",
+      "duplicate": "Duplikat",
+      "generateAudio": "Buat Audio",
+      "playAudio": "Putar Audio",
+      "deleteAudio": "Hapus Audio",
+      "generatingAudio": "Membuat audio...",
+      "audioGenerated": "Audio berhasil dibuat",
+      "audioGenerationFailed": "Pembuatan audio gagal"
+    },
+    
+    "history": {
+      "title": "Riwayat Versi",
+      "noHistory": "Tidak ada riwayat versi tersedia",
+      "editedBy": "Diedit oleh {{user}}",
+      "editedAt": "{{date}}",
+      "viewVersion": "Lihat Versi",
+      "restoreThisVersion": "Pulihkan Versi Ini",
+      "currentVersion": "Versi Saat Ini",
+      "confirmRestore": "Apakah Anda yakin ingin memulihkan versi ini? Perubahan saat ini akan disimpan sebagai versi baru.",
+      "restoreSuccess": "Versi berhasil dipulihkan",
+      "restoreError": "Gagal memulihkan versi"
+    },
+    
+    "filters": {
+      "filterByStatus": "Filter berdasarkan Status",
+      "filterByDate": "Filter berdasarkan Tanggal",
+      "allStatuses": "Semua Status",
+      "dateRange": "Rentang Tanggal",
+      "from": "Dari",
+      "to": "Sampai",
+      "searchPlaceholder": "Cari renungan..."
+    },
+    
+    "messages": {
+      "createSuccess": "Renungan berhasil dibuat",
+      "updateSuccess": "Renungan berhasil diperbarui",
+      "deleteSuccess": "Renungan berhasil dihapus",
+      "duplicateSuccess": "Renungan berhasil diduplikat",
+      "publishSuccess": "Renungan berhasil diterbitkan",
+      "unpublishSuccess": "Penerbitan renungan berhasil dibatalkan",
+      "createError": "Gagal membuat renungan",
+      "updateError": "Gagal memperbarui renungan",
+      "deleteError": "Gagal menghapus renungan",
+      "loadError": "Gagal memuat renungan",
+      "confirmDelete": "Apakah Anda yakin ingin menghapus renungan ini?",
+      "deleteWarning": "Tindakan ini tidak dapat dibatalkan."
+    },
+    
+    "validation": {
+      "titleRequired": "Judul diperlukan",
+      "dateRequired": "Tanggal diperlukan",
+      "contentRequired": "Isi diperlukan",
+      "imageRequired": "Gambar sampul diperlukan",
+      "imageTooLarge": "Ukuran gambar harus kurang dari 2MB",
+      "atLeastOneVerse": "Setidaknya satu ayat diperlukan"
+    },
+    
+    "bible": {
+      "version": "Versi Alkitab",
+      "book": "Kitab",
+      "chapter": "Pasal",
+      "verse": "Ayat",
+      "verses": "Ayat-ayat",
+      "testament": "Perjanjian",
+      "oldTestament": "Perjanjian Lama",
+      "newTestament": "Perjanjian Baru",
+      "versionTB": "TB - Terjemahan Baru (Indonesia)",
+      "versionCHS": "CHS - Chinese Union Simplified",
+      "versionNIV": "NIV - New International Version",
+      "versionNKJV": "NKJV - New King James Version",
+      "versionNLT": "NLT - New Living Translation"
+    }
+  },
   "importExport": {
     "title": "Impor/Ekspor",
     "subtitle": "Impor dan ekspor data jemaat secara massal",
