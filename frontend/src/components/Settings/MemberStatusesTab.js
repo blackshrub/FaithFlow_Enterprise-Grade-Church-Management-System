@@ -79,6 +79,7 @@ export default function MemberStatusesTab() {
       description: status.description || '',
       order: status.order || 0,
       is_active: status.is_active ?? true,
+      is_default_for_new: status.is_default_for_new ?? false,
     });
     setIsEditDialogOpen(true);
   };
