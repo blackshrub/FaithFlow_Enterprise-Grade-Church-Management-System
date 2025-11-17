@@ -40,10 +40,10 @@ function App() {
               <Route path="import-export" element={<ImportExport />} />
               <Route path="settings" element={<Settings />} />
               <Route path="seat-layouts" element={<SeatLayouts />} />
+              <Route path="events" element={<Events />} />
               
               {/* Placeholder routes - will be implemented in next phases */}
               <Route path="groups" element={<PlaceholderPage title="Groups" />} />
-              <Route path="events" element={<PlaceholderPage title="Events" />} />
               <Route path="donations" element={<PlaceholderPage title="Donations" />} />
               <Route path="prayers" element={<PlaceholderPage title="Prayer Requests" />} />
               <Route path="content" element={<PlaceholderPage title="Content Management" />} />
