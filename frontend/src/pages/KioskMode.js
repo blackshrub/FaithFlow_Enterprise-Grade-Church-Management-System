@@ -323,7 +323,7 @@ function KioskMode() {
           </div>
 
           {/* Search Results */}
-          <div className="flex-1 overflow-y-auto p-6">
+          <div className="flex-1 overflow-y-auto p-6 bg-white/90 backdrop-blur-sm">
             {searchQuery.length < 2 ? (
               <div className="text-center py-12 text-gray-500">
                 <Search className="h-16 w-16 mx-auto mb-4 text-gray-300" />
