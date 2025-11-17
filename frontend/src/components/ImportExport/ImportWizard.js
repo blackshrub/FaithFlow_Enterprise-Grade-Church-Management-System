@@ -84,7 +84,7 @@ export default function ImportWizard() {
       fieldMappings: {},
       valueMappings: {},
       defaultValues: {},
-      dateFormat: 'DD-MM-YYYY',
+      dateFormat: churchSettings?.date_format || 'DD-MM-YYYY',
       simulationResults: null,
       importResults: null,
     });
