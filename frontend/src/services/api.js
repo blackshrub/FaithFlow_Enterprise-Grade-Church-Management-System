@@ -229,4 +229,29 @@ export const eventsAPI = {
   getAttendance: (eventId, params = {}) => api.get(`/events/${eventId}/attendance`, { params }),
 };
 
+// Devotions API
+export const devotionsAPI = {
+  list: (params) => api.get('/devotions/', { params }),
+  get: (id) => api.get(`/devotions/${id}`),
+  create: (data) => api.post('/devotions/', data),
+  update: (id, data) => api.patch(`/devotions/${id}`, data),
+  delete: (id) => api.delete(`/devotions/${id}`),
+  duplicate: (id) => api.post(`/devotions/${id}/duplicate`),
+  generateAudio: (id) => api.post(`/devotions/${id}/generate-audio`),
+  restoreVersion: (id, versionIndex) => api.post(`/devotions/${id}/restore-version`, null, { params: { version_index: versionIndex } }),
+};
+
+// Bible API
+export const bibleAPI = {
+  getVersions: () => api.get('/bible/versions'),
+  getBooks: () => api.get('/bible/books'),
+  getChapter: (version, book, chapter) => api.get(`/bible/${version}/${book}/${chapter}`),
+  getVerse: (version, book, chapter, startVerse, endVerse = null) => {
+    const url = endVerse 
+      ? `/bible/${version}/${book}/${chapter}/${startVerse}`
+      : `/bible/${version}/${book}/${chapter}/${startVerse}`;
+    return api.get(url, endVerse ? { params: { end_verse: endVerse } } : {});
+  },
+};
+
 export default api;
