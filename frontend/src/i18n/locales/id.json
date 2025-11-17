@@ -92,7 +92,10 @@
     "contact": "Kontak",
     "status": "Status",
     "membership": "Keanggotaan",
-    "actions": "Aksi"
+    "actions": "Aksi",
+    "showIncomplete": "Tampilkan Data Tidak Lengkap",
+    "showAll": "Tampilkan Semua Jemaat",
+    "incompleteDataInfo": "Jemaat yang tidak lengkap: jenis kelamin, tanggal lahir, alamat, atau telepon"
   },
   "common": {
     "cancel": "Batal",
