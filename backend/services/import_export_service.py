@@ -144,7 +144,7 @@ class ImportExportService:
         church_id: str,
         date_format: str,
         db: AsyncIOMotorDatabase
-    ) -> tuple[List[Dict[str, Any]], List[str]]:
+    ) -> tuple[List[Dict[str, Any]], List[str], List[Dict[str, Any]]]:
         """Validate member data before import
         
         Args:
@@ -154,16 +154,18 @@ class ImportExportService:
             db: Database instance
             
         Returns:
-            tuple: (valid_data, errors)
+            tuple: (valid_data, errors, duplicate_conflicts)
         """
         from utils.helpers import combine_full_name, normalize_phone_number
         
         valid_data = []
         errors = []
-        seen_phones = set()  # Track phone numbers within this batch
+        duplicate_conflicts = []  # List of duplicate phone pairs
+        seen_phones = {}  # Track phone numbers with row index
         
         for idx, row in enumerate(data, start=1):
             row_errors = []
+            row['_import_index'] = idx  # Track original row number
             
             # Combine first_name and last_name into full_name if full_name not provided
             if not row.get('full_name') and (row.get('first_name') or row.get('last_name')):
