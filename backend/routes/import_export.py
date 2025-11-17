@@ -479,7 +479,7 @@ async def upload_documents(
             is_photo=False
         )
         
-        # Update members with matched documents
+        # Update members with matched documents (ignore unmatched files)
         updated_count = 0
         for match in match_results['matched']:
             # Append to documents array
@@ -492,13 +492,19 @@ async def upload_documents(
             )
             updated_count += 1
         
+        # Only return matched files info
         return {
             "success": True,
-            "summary": match_results['summary'],
+            "summary": {
+                "total_files": match_results['summary']['total_files'],
+                "matched_count": match_results['summary']['matched_count'],
+                "unmatched_files_count": match_results['summary']['unmatched_files_count'],
+                "unmatched_members_count": match_results['summary']['unmatched_members_count']
+            },
             "matched": [{"member_id": m['member_id'], "filename": m['filename']} for m in match_results['matched']],
-            "unmatched_files": match_results['unmatched_files'],
             "unmatched_members": match_results['unmatched_members'],
-            "updated_count": updated_count
+            "updated_count": updated_count,
+            "note": "Unmatched document files were ignored (not uploaded to database)"
         }
     
     except Exception as e:
