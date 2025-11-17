@@ -55,13 +55,18 @@ api.interceptors.response.use(
     // If response URL was redirected to HTTP, log warning
     if (response.request && response.request.responseURL) {
       const responseURL = response.request.responseURL;
+      console.log('📥 Response URL:', responseURL);
       if (responseURL.startsWith('http://')) {
-        console.warn('⚠️ Response was served over HTTP instead of HTTPS:', responseURL);
+        console.error('⚠️ Response was served over HTTP instead of HTTPS:', responseURL);
       }
     }
     return response;
   },
   (error) => {
+    console.error('❌ Response error:', error.message);
+    if (error.config) {
+      console.error('   URL:', error.config.baseURL + (error.config.url || ''));
+    }
     if (error.response?.status === 401) {
       // Token expired or invalid
       localStorage.removeItem('access_token');
