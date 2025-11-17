@@ -513,3 +513,222 @@ agent_communication:
     message: "Comprehensive backend API testing completed. All 13 tests passed successfully. Authentication, authorization, church management, and user management APIs are working correctly. JWT tokens valid for 24 hours. Church scoping and role-based access control properly implemented. No critical issues found. System is production-ready from backend perspective."
   - agent: "testing"
     message: "Settings/Configuration API testing completed successfully. All 13 settings API tests passed. Member Status CRUD operations working correctly with duplicate prevention and church scoping. Demographics CRUD operations working correctly with age range validation, duplicate prevention, and church scoping. Admin-only access control properly enforced. All endpoints return proper status codes and error messages. Data sorted by order field as expected. No critical issues found."
+  - agent: "testing"
+    message: "Import/Export API testing completed successfully. All 14 import/export tests passed. Parse File API works for CSV and JSON, correctly rejects invalid formats. Simulate Import API validates data with field/value mappings, detects missing fields, duplicate phones (both in DB and within batch), and invalid dates. Import Members API successfully imports data with auto-demographic assignment working correctly. Export Members API works for CSV/JSON formats with status and demographic filters. Import Templates and Logs APIs working with proper church scoping. No critical issues found."
+
+backend:
+  - task: "Import/Export - Parse CSV File"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/import_export.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "POST /import-export/parse-file endpoint works correctly for CSV files. Returns filename, file_type, headers, total_records, and sample_data (first 5 records). Headers extracted correctly. Sample data limited to 5 records as expected."
+
+  - task: "Import/Export - Parse JSON File"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/import_export.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "POST /import-export/parse-file endpoint works correctly for JSON files. Returns proper file_type='json'. Headers and sample data extracted correctly from JSON array."
+
+  - task: "Import/Export - Reject Invalid File Format"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/import_export.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "POST /import-export/parse-file correctly rejects invalid file formats (e.g., XML) with 400 status code and appropriate error message. Only CSV and JSON are supported."
+
+  - task: "Import/Export - Simulate Import with Valid Data"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/import_export.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "POST /import-export/simulate endpoint works correctly. Validates data with field mappings and value mappings (e.g., M→male, F→female, S→single, M→married). Returns total_records, valid_records, invalid_records, errors, sample_valid, and ready_to_import flag. Value transformations working correctly."
+
+  - task: "Import/Export - Simulate Import with Missing Required Fields"
+    implemented: true
+    working: true
+    file: "/app/backend/services/import_export_service.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "Validation correctly identifies missing required fields (first_name, last_name, phone_whatsapp). Returns appropriate error messages for each missing field. Validation working at lines 155-160."
+
+  - task: "Import/Export - Simulate Import with Invalid Date Format"
+    implemented: true
+    working: true
+    file: "/app/backend/services/import_export_service.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "Date format validation working correctly. Detects invalid date formats and returns appropriate error messages. Supports DD-MM-YYYY, MM-DD-YYYY, and YYYY-MM-DD formats. Validation at lines 172-179."
+
+  - task: "Import/Export - Simulate Import with Duplicate Phone Numbers"
+    implemented: true
+    working: true
+    file: "/app/backend/services/import_export_service.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "Duplicate phone number detection working correctly. Checks both database for existing duplicates (lines 164-169) and within the import batch itself (lines 172-177). Returns appropriate error messages for duplicates."
+
+  - task: "Import/Export - Import Members Successfully"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/import_export.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "POST /import-export/import-members endpoint works correctly. Successfully imports valid member data. Auto-demographic assignment working (Teen for DOB 2010, Adult for DOB 1985). Date fields properly serialized to isoformat for MongoDB storage. Import logging created with success/fail counts. Church_id scoping enforced."
+
+  - task: "Import/Export - Import Members with Duplicate Prevention"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/import_export.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "Import correctly rejects data with duplicate phone numbers (both in database and within batch) with 400 status code. Returns validation errors in detail. Prevents invalid data from being imported."
+
+  - task: "Import/Export - Export Members as CSV"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/import_export.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "GET /import-export/export-members?format=csv endpoint works correctly. Returns CSV file with proper Content-Type (text/csv) and Content-Disposition (attachment) headers. Exports all specified fields. Church scoping enforced for non-super admins."
+
+  - task: "Import/Export - Export Members as JSON"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/import_export.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "GET /import-export/export-members?format=json endpoint works correctly. Returns valid JSON with proper Content-Type (application/json) header. Exports member data in JSON array format."
+
+  - task: "Import/Export - Export with Status Filter"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/import_export.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "Export with status_filter parameter works correctly. Filters members by is_active status (active/inactive). Query building at lines 277-278."
+
+  - task: "Import/Export - Export with Demographic Filter"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/import_export.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "Export with demographic_filter parameter works correctly. Filters members by demographic_category (e.g., Teen, Adult). Verified with test data showing only Teen members exported when filter applied. Query building at lines 280-281."
+
+  - task: "Import/Export - Create Import Template"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/import_export.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "POST /import-export/templates endpoint works correctly. Creates import template with field_mappings, value_mappings, and date_format. Returns 201 status with complete template object including UUID. Church scoping enforced at lines 30-31."
+
+  - task: "Import/Export - List Import Templates"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/import_export.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "GET /import-export/templates endpoint works correctly. Lists templates with church scoping for non-super admins (lines 50-51). Super admin can see all templates. Datetime fields properly converted."
+
+  - task: "Import/Export - List Import Logs"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/import_export.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "GET /import-export/logs endpoint works correctly. Lists import logs sorted by created_at descending. Shows total_records, successful_records, failed_records, and status. Church scoping enforced at lines 321-322. Datetime conversion working properly."
+
+  - task: "Import/Export - Auto-Demographic Assignment"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/import_export.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "Auto-demographic assignment working correctly during import. Members with DOB 2010-05-15 assigned 'Teen' demographic, members with DOB 1985-08-20 assigned 'Adult' demographic. Assignment happens at lines 208-211 before member creation."
+
+  - task: "Import/Export - Church Scoping in All Operations"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/import_export.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "Church scoping properly enforced across all import/export operations. Non-super admin users can only import/export/view templates/logs for their own church. Super admin has access to all churches. Validation includes church_id in all database queries."
