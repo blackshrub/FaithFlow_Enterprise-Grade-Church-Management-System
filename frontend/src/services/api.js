@@ -203,10 +203,10 @@ export const importExportAPI = {
 // Seat Layouts API
 export const seatLayoutsAPI = {
   list: () => api.get('/seat-layouts/'),
-  get: (id) => api.get(`/seat-layouts/${id}/`),
+  get: (id) => api.get(`/seat-layouts/${id}`),
   create: (data) => api.post('/seat-layouts/', data),
-  update: (id, data) => api.patch(`/seat-layouts/${id}/`, data),
-  delete: (id) => api.delete(`/seat-layouts/${id}/`),
+  update: (id, data) => api.patch(`/seat-layouts/${id}`, data),
+  delete: (id) => api.delete(`/seat-layouts/${id}`),
 };
 
 // Events API
