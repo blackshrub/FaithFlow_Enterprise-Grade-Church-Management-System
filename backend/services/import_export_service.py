@@ -147,6 +147,7 @@ class ImportExportService:
         """
         valid_data = []
         errors = []
+        seen_phones = set()  # Track phone numbers within this batch
         
         for idx, row in enumerate(data, start=1):
             row_errors = []
@@ -159,7 +160,7 @@ class ImportExportService:
             if not row.get('phone_whatsapp'):
                 row_errors.append(f"Row {idx}: Missing phone_whatsapp")
             
-            # Check for duplicate phone number
+            # Check for duplicate phone number in database
             if row.get('phone_whatsapp'):
                 existing = await db.members.find_one({
                     "church_id": church_id,
@@ -167,6 +168,12 @@ class ImportExportService:
                 })
                 if existing:
                     row_errors.append(f"Row {idx}: Duplicate phone number {row['phone_whatsapp']}")
+                
+                # Check for duplicate within the batch
+                if row['phone_whatsapp'] in seen_phones:
+                    row_errors.append(f"Row {idx}: Duplicate phone number {row['phone_whatsapp']} within import batch")
+                else:
+                    seen_phones.add(row['phone_whatsapp'])
             
             # Validate date fields
             date_fields = ['date_of_birth', 'baptism_date', 'membership_date']
