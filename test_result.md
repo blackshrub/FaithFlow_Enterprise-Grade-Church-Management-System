@@ -561,18 +561,15 @@ metadata:
 
 test_plan:
   current_focus:
-    - "All backend authentication and authorization tests completed"
-    - "All church management API tests completed"
-    - "All user management API tests completed"
-    - "All settings/configuration API tests completed"
-    - "All import/export API tests completed"
-    - "Import/Export Wizard UI - React Hooks Error Fix VERIFIED"
-  stuck_tasks: []
-  test_all: true
+    - "Import/Export Wizard - Field Mapping Data Transmission (CRITICAL BUG)"
+    - "Import/Export Wizard - Duplicate Resolution (blocked by field mapping bug)"
+  stuck_tasks:
+    - "Import/Export Wizard - Field Mapping Data Transmission"
+  test_all: false
   test_priority: "high_first"
-  tests_completed: 45
+  tests_completed: 47
   tests_passed: 45
-  tests_failed: 0
+  tests_failed: 2
 
 agent_communication:
   - agent: "testing"
