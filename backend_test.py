@@ -1712,6 +1712,21 @@ def run_all_tests():
         ("Update Demographic Preset", test_update_demographic),
         ("Delete Member Status", test_delete_member_status),
         ("Delete Demographic Preset", test_delete_demographic),
+        # Import/Export API Tests
+        ("Parse CSV File", test_parse_csv_file),
+        ("Parse JSON File", test_parse_json_file),
+        ("Parse Invalid File Format", test_parse_invalid_file),
+        ("Simulate Import - Valid Data", test_simulate_import_valid),
+        ("Simulate Import - Missing Fields", test_simulate_import_missing_fields),
+        ("Simulate Import - Invalid Date", test_simulate_import_invalid_date),
+        ("Import Members - Success", test_import_members_success),
+        ("Import Members - Duplicate Phone", test_import_members_duplicate),
+        ("Export Members - CSV", test_export_members_csv),
+        ("Export Members - JSON", test_export_members_json),
+        ("Export Members - With Filter", test_export_members_with_filter),
+        ("Create Import Template", test_create_import_template),
+        ("List Import Templates", test_list_import_templates),
+        ("List Import Logs", test_list_import_logs),
     ]
     
     for test_name, test_func in tests:
