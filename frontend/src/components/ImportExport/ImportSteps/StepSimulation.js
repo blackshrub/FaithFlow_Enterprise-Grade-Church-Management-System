@@ -3,7 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../ui/card';
 import { Button } from '../../ui/button';
 import { Alert, AlertDescription } from '../../ui/alert';
-import { CheckCircle, AlertCircle, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { CheckCircle, AlertCircle, Loader2, ChevronLeft, ChevronRight, AlertTriangle } from 'lucide-react';
+import StepDuplicateResolution from './StepDuplicateResolution';
 
 export default function StepSimulation({ wizardData, updateWizardData, simulateImport, nextStep, prevStep }) {
   const { t } = useTranslation();
