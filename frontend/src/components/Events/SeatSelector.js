@@ -112,58 +112,51 @@ function SeatSelector({ eventId, sessionId, layoutId, selectedSeat, onSeatSelect
 
       {/* Stage and Seat Grid */}
       <div className="bg-gray-50 p-4 rounded-lg overflow-x-auto">
-        <div className="flex justify-center">
+        <div className="flex flex-col items-center">
+          {/* Stage - centered and matches seat grid width */}
+          <div className="bg-gradient-to-b from-gray-800 to-gray-700 text-white text-center py-2 rounded-lg mb-3" style={{ width: `${layout.columns * 28 + (layout.columns - 1) * 4}px` }}>
+            <p className="font-bold text-sm">{t('events.seatLayout.stage')}</p>
+          </div>
+
+          {/* Seat Grid with row labels */}
           <div className="inline-block">
-            {/* Stage - matches seat grid width */}
-            <div className="flex items-center gap-1 mb-3">
-              {/* Empty space for row labels alignment */}
-              <div className="w-6"></div>
-              {/* Stage with exact width of seat grid */}
-              <div className="bg-gradient-to-b from-gray-800 to-gray-700 text-white text-center py-2 rounded-lg" style={{ width: `${layout.columns * 28 + (layout.columns - 1) * 4}px` }}>
-                <p className="font-bold text-sm">{t('events.seatLayout.stage')}</p>
-              </div>
-            </div>
-
-            {/* Seat Grid */}
-            <div>
-              {Array.from({ length: layout.rows }, (_, rowIdx) => {
-                const rowLetter = String.fromCharCode(65 + rowIdx);
-                return (
-                  <div key={rowLetter} className="flex items-center gap-1 mb-1">
-                    {/* Row Label */}
-                    <div className="w-6 text-center font-semibold text-gray-700 text-xs">
-                      {rowLetter}
-                    </div>
-
-                    {/* Seats */}
-                    <div className="flex gap-1">
-                      {Array.from({ length: layout.columns }, (_, colIdx) => {
-                        const seatId = `${rowLetter}${colIdx + 1}`;
-                        const status = getSeatStatus(seatId);
-                        const isClickable = status === 'available' || status === 'selected';
-
-                        return (
-                          <button
-                            key={seatId}
-                            type="button"
-                            onClick={() => isClickable && handleSeatClick(seatId, status)}
-                            disabled={!isClickable}
-                            className={`w-7 h-7 rounded text-xs font-medium transition-all ${
-                              getSeatColor(status)
-                            } ${status === 'no_seat' ? 'invisible' : ''}`}
-                            title={`${seatId} - ${t(`events.rsvp.seat${status.charAt(0).toUpperCase() + status.slice(1)}`)}`}
-                          >
-                            {status !== 'no_seat' && (
-                              <Armchair className="h-4 w-4 mx-auto" />
-                            )}
-                          </button>
-                        );
-                      })}
-                    </div>
+            {Array.from({ length: layout.rows }, (_, rowIdx) => {
+              const rowLetter = String.fromCharCode(65 + rowIdx);
+              return (
+                <div key={rowLetter} className="flex items-center gap-1 mb-1">
+                  {/* Row Label */}
+                  <div className="w-6 text-center font-semibold text-gray-700 text-xs">
+                    {rowLetter}
                   </div>
-                );
-              })}
-            </div>
+
+                  {/* Seats */}
+                  <div className="flex gap-1">
+                    {Array.from({ length: layout.columns }, (_, colIdx) => {
+                      const seatId = `${rowLetter}${colIdx + 1}`;
+                      const status = getSeatStatus(seatId);
+                      const isClickable = status === 'available' || status === 'selected';
+
+                      return (
+                        <button
+                          key={seatId}
+                          type="button"
+                          onClick={() => isClickable && handleSeatClick(seatId, status)}
+                          disabled={!isClickable}
+                          className={`w-7 h-7 rounded text-xs font-medium transition-all ${
+                            getSeatColor(status)
+                          } ${status === 'no_seat' ? 'invisible' : ''}`}
+                          title={`${seatId} - ${t(`events.rsvp.seat${status.charAt(0).toUpperCase() + status.slice(1)}`)}`}
+                        >
+                          {status !== 'no_seat' && (
+                            <Armchair className="h-4 w-4 mx-auto" />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>
