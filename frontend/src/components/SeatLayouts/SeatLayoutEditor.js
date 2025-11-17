@@ -241,46 +241,51 @@ function SeatLayoutEditor({ layout, onClose }) {
               </h3>
 
               <div className="bg-gray-50 p-6 rounded-lg overflow-x-auto">
-                <div className="flex flex-col items-center">
-                  {/* Stage - centered and matches seat grid width */}
-                  <div className="bg-gradient-to-b from-gray-800 to-gray-700 text-white text-center py-3 rounded-lg mb-4" style={{ width: `${formData.columns * 36 + (formData.columns - 1) * 4}px` }}>
-                    <p className="font-bold text-lg">{t('events.seatLayout.stage')}</p>
-                  </div>
-
-                  {/* Seat Grid with row labels */}
+                <div className="flex justify-center">
                   <div className="inline-block">
-                    {Array.from({ length: formData.rows }, (_, rowIdx) => {
-                      const rowLetter = String.fromCharCode(65 + rowIdx);
-                      return (
-                        <div key={rowLetter} className="flex items-center gap-2 mb-2">
-                          {/* Row Label */}
-                          <div className="w-8 text-center font-semibold text-gray-700">
-                            {rowLetter}
-                          </div>
+                    {/* Stage - centered with seat columns only */}
+                    <div className="flex items-center gap-2 mb-4">
+                      <div className="w-8"></div>
+                      <div className="bg-gradient-to-b from-gray-800 to-gray-700 text-white text-center py-3 rounded-lg" style={{ width: `${formData.columns * 36 + (formData.columns - 1) * 4}px` }}>
+                        <p className="font-bold text-lg">{t('events.seatLayout.stage')}</p>
+                      </div>
+                    </div>
 
-                          {/* Seats */}
-                          <div className="flex gap-1">
-                            {Array.from({ length: formData.columns }, (_, colIdx) => {
-                              const seatId = `${rowLetter}${colIdx + 1}`;
-                              const seatStatus = seatMap[seatId] || 'available';
-                              return (
-                                <button
-                                  key={seatId}
-                                  type="button"
-                                  onClick={() => toggleSeatState(seatId)}
-                                  className={`w-8 h-8 rounded text-xs font-medium text-white transition-colors ${
-                                    getSeatColor(seatStatus)
-                                  }`}
-                                  title={`${seatId} - ${seatStatus}`}
-                                >
-                                  {colIdx + 1}
-                                </button>
-                              );
-                            })}
+                    {/* Seat Grid with row labels */}
+                    <div>
+                      {Array.from({ length: formData.rows }, (_, rowIdx) => {
+                        const rowLetter = String.fromCharCode(65 + rowIdx);
+                        return (
+                          <div key={rowLetter} className="flex items-center gap-2 mb-2">
+                            {/* Row Label */}
+                            <div className="w-8 text-center font-semibold text-gray-700">
+                              {rowLetter}
+                            </div>
+
+                            {/* Seats */}
+                            <div className="flex gap-1">
+                              {Array.from({ length: formData.columns }, (_, colIdx) => {
+                                const seatId = `${rowLetter}${colIdx + 1}`;
+                                const seatStatus = seatMap[seatId] || 'available';
+                                return (
+                                  <button
+                                    key={seatId}
+                                    type="button"
+                                    onClick={() => toggleSeatState(seatId)}
+                                    className={`w-8 h-8 rounded text-xs font-medium text-white transition-colors ${
+                                      getSeatColor(seatStatus)
+                                    }`}
+                                    title={`${seatId} - ${seatStatus}`}
+                                  >
+                                    {colIdx + 1}
+                                  </button>
+                                );
+                              })}
+                            </div>
                           </div>
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
               </div>
