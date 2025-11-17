@@ -212,20 +212,20 @@ export const seatLayoutsAPI = {
 // Events API
 export const eventsAPI = {
   list: (params) => api.get('/events/', { params }),
-  get: (id) => api.get(`/events/${id}/`),
+  get: (id) => api.get(`/events/${id}`),
   create: (data) => api.post('/events/', data),
-  update: (id, data) => api.patch(`/events/${id}/`, data),
-  delete: (id) => api.delete(`/events/${id}/`),
+  update: (id, data) => api.patch(`/events/${id}`, data),
+  delete: (id) => api.delete(`/events/${id}`),
   
   // RSVP
-  registerRSVP: (eventId, params) => api.post(`/events/${eventId}/rsvp/`, null, { params }),
-  cancelRSVP: (eventId, memberId, params = {}) => api.delete(`/events/${eventId}/rsvp/${memberId}/`, { params }),
-  getRSVPs: (eventId, params = {}) => api.get(`/events/${eventId}/rsvps/`, { params }),
-  getAvailableSeats: (eventId, params = {}) => api.get(`/events/${eventId}/available-seats/`, { params }),
+  registerRSVP: (eventId, params) => api.post(`/events/${eventId}/rsvp`, null, { params }),
+  cancelRSVP: (eventId, memberId, params = {}) => api.delete(`/events/${eventId}/rsvp/${memberId}`, { params }),
+  getRSVPs: (eventId, params = {}) => api.get(`/events/${eventId}/rsvps`, { params }),
+  getAvailableSeats: (eventId, params = {}) => api.get(`/events/${eventId}/available-seats`, { params }),
   
   // Check-in
-  checkIn: (eventId, params) => api.post(`/events/${eventId}/check-in/`, null, { params }),
-  getAttendance: (eventId, params = {}) => api.get(`/events/${eventId}/attendance/`, { params }),
+  checkIn: (eventId, params) => api.post(`/events/${eventId}/check-in`, null, { params }),
+  getAttendance: (eventId, params = {}) => api.get(`/events/${eventId}/attendance`, { params }),
 };
 
 export default api;
