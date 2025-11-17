@@ -155,19 +155,9 @@ function EventCard({ event, onEdit }) {
           {event.event_type === 'series' && (
             <div className="flex items-center gap-2 text-gray-600">
               <Calendar className="h-4 w-4" />
-              <button
-                onClick={() => setShowSessions(!showSessions)}
-                className="flex items-center gap-1 text-sm hover:text-gray-900 transition-colors"
-              >
-                <span>
-                  {event.sessions?.length || 0} {t('events.event.sessions')}
-                </span>
-                {showSessions ? (
-                  <ChevronUp className="h-4 w-4" />
-                ) : (
-                  <ChevronDown className="h-4 w-4" />
-                )}
-              </button>
+              <span>
+                {event.sessions?.length || 0} {t('events.event.sessions')}
+              </span>
             </div>
           )}
 
