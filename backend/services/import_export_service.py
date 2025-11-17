@@ -209,19 +209,47 @@ class ImportExportService:
                 else:
                     row['phone_whatsapp'] = normalized_phone
                     
-                    # Check for duplicate phone number in database (only if phone provided)
+                    # Check for duplicate phone number in database
                     existing = await db.members.find_one({
                         "church_id": church_id,
                         "phone_whatsapp": normalized_phone
                     })
                     if existing:
-                        row_errors.append(f"Row {idx}: Duplicate phone number {normalized_phone}")
+                        duplicate_conflicts.append({
+                            'phone': normalized_phone,
+                            'existing_member': {
+                                'id': existing.get('id'),
+                                'full_name': existing.get('full_name'),
+                                'source': 'database'
+                            },
+                            'new_record': {
+                                'row_index': idx,
+                                'full_name': row.get('full_name'),
+                                'gender': row.get('gender'),
+                                'address': row.get('address'),
+                                'source': 'import'
+                            }
+                        })
                     
                     # Check for duplicate within the batch
                     if normalized_phone in seen_phones:
-                        row_errors.append(f"Row {idx}: Duplicate phone number {normalized_phone} within import batch")
+                        duplicate_conflicts.append({
+                            'phone': normalized_phone,
+                            'existing_member': {
+                                'row_index': seen_phones[normalized_phone],
+                                'full_name': data[seen_phones[normalized_phone] - 1].get('full_name'),
+                                'source': 'import'
+                            },
+                            'new_record': {
+                                'row_index': idx,
+                                'full_name': row.get('full_name'),
+                                'gender': row.get('gender'),
+                                'address': row.get('address'),
+                                'source': 'import'
+                            }
+                        })
                     else:
-                        seen_phones.add(normalized_phone)
+                        seen_phones[normalized_phone] = idx
             else:
                 # Remove empty phone number from data
                 row.pop('phone_whatsapp', None)
