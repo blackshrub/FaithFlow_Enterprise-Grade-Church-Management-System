@@ -222,6 +222,7 @@ export const eventsAPI = {
   cancelRSVP: (eventId, memberId, params = {}) => api.delete(`/events/${eventId}/rsvp/${memberId}`, { params }),
   getRSVPs: (eventId, params = {}) => api.get(`/events/${eventId}/rsvps`, { params }),
   getAvailableSeats: (eventId, params = {}) => api.get(`/events/${eventId}/available-seats`, { params }),
+  retryWhatsApp: (eventId, memberId, params = {}) => api.post(`/events/${eventId}/rsvp/${memberId}/retry-whatsapp`, null, { params }),
   
   // Check-in
   checkIn: (eventId, params) => api.post(`/events/${eventId}/check-in`, null, { params }),
