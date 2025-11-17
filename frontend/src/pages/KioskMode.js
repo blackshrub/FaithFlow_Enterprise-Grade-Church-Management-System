@@ -258,13 +258,13 @@ function KioskMode() {
       {/* Main Split Screen */}
       <div className="flex-1 flex overflow-hidden">
         {/* Left: Camera Scanner */}
-        <div className={`w-1/2 flex flex-col relative ${themes[kioskTheme]}`}>
+        <div className="w-1/2 flex flex-col relative bg-black/10">
           <div className="absolute top-4 right-4 z-10 flex gap-2">
             <Button
               onClick={toggleCamera}
               variant="secondary"
               size="sm"
-              className="bg-white/90 hover:bg-white"
+              className="bg-white/95 hover:bg-white backdrop-blur-sm"
             >
               <SwitchCamera className="h-4 w-4 mr-2" />
               {t('events.kiosk.switchCamera')}
@@ -277,11 +277,11 @@ function KioskMode() {
                 <Webcam
                   ref={webcamRef}
                   screenshotFormat="image/jpeg"
-                  className="w-full rounded-lg"
+                  className="w-full rounded-lg shadow-2xl"
                   videoConstraints={{ facingMode }}
                 />
-                <div className="absolute inset-0 border-8 border-green-500 rounded-lg pointer-events-none animate-pulse" />
-                <p className="text-center text-white text-lg mt-4 font-medium">
+                <div className="absolute inset-0 border-8 border-white/80 rounded-lg pointer-events-none animate-pulse shadow-lg" />
+                <p className="text-center text-white text-xl mt-4 font-semibold drop-shadow-lg">
                   {t('events.kiosk.pointCamera')}
                 </p>
               </div>
@@ -289,15 +289,15 @@ function KioskMode() {
           ) : (
             <div className="flex-1 flex items-center justify-center">
               <div className="text-center text-white">
-                <Camera className="h-24 w-24 mx-auto mb-4 opacity-50" />
-                <p className="text-xl">{t('events.kiosk.selectEvent')}</p>
+                <Camera className="h-24 w-24 mx-auto mb-4 opacity-70 drop-shadow-lg" />
+                <p className="text-xl font-medium drop-shadow-lg">{t('events.kiosk.selectEvent')}</p>
               </div>
             </div>
           )}
         </div>
 
         {/* Right: Manual Search */}
-        <div className="w-1/2 bg-white flex flex-col">
+        <div className="w-1/2 bg-white/95 backdrop-blur-sm flex flex-col">
           {/* Search Bar - Fixed at Top */}
           <div className="p-6 border-b border-gray-200 flex-shrink-0">
             <div className="flex gap-3">
