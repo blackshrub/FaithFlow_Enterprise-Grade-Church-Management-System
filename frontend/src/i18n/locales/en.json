@@ -92,7 +92,10 @@
     "contact": "Contact",
     "status": "Status",
     "membership": "Membership",
-    "actions": "Actions"
+    "actions": "Actions",
+    "showIncomplete": "Show Incomplete Data",
+    "showAll": "Show All Members",
+    "incompleteDataInfo": "Members missing: gender, birth date, address, or phone"
   },
   "common": {
     "cancel": "Cancel",
