@@ -92,7 +92,7 @@ export default function StepFieldMapping({ wizardData, updateWizardData, nextSte
   };
 
   const canProceed = () => {
-    const requiredFields = ['full_name', 'gender', 'date_of_birth', 'address', 'phone_whatsapp'];
+    const requiredFields = ['full_name', 'gender', 'date_of_birth', 'address'];
     const mappedTargets = Object.values(wizardData.fieldMappings);
     const hasDefaults = wizardData.defaultValues || {};
     
