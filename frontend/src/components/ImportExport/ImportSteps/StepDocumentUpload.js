@@ -23,10 +23,14 @@ export default function StepDocumentUpload({ wizardData, updateWizardData, nextS
       const result = await uploadDocuments.mutateAsync(file);
       setUploadResults(result);
       
+      // Track uploaded member IDs for cleanup
+      const uploadedIds = result.matched?.map(m => m.member_id) || [];
+      
       // Store results in wizard data
       updateWizardData({ 
         documentArchive: file,
-        documentMatchResults: result
+        documentMatchResults: result,
+        uploadedMemberIds: [...(wizardData.uploadedMemberIds || []), ...uploadedIds]
       });
     } catch (error) {
       console.error('Upload error:', error);
