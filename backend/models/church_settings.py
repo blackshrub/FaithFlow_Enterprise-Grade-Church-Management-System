@@ -10,6 +10,10 @@ class ChurchSettingsBase(BaseModel):
     currency: str = Field(default='USD', max_length=10)
     timezone: str = Field(default='UTC', max_length=50)
     default_language: Literal['en', 'id'] = 'en'  # Default system language
+    
+    # WhatsApp Notifications
+    enable_whatsapp_notifications: bool = Field(default=False, description="Enable WhatsApp notifications for RSVPs")
+    whatsapp_send_rsvp_confirmation: bool = Field(default=True, description="Send confirmation when RSVP is registered")
 
 
 class ChurchSettingsCreate(ChurchSettingsBase):
