@@ -17,6 +17,42 @@ class FileUploadService:
     """Service for handling bulk file uploads and matching"""
     
     @staticmethod
+    def normalize_filename(filename: str) -> str:
+        """Normalize filename: lowercase and standardize extensions
+        
+        Args:
+            filename: Original filename
+            
+        Returns:
+            Normalized filename or empty string if invalid
+        """
+        if not filename or filename.startswith('.'):
+            return ''  # Skip hidden files and invalid names
+        
+        # Convert to lowercase
+        filename = filename.lower()
+        
+        # Standardize image extensions to .jpg
+        image_extensions = ['.jpeg', '.png', '.gif', '.bmp', '.webp']
+        for ext in image_extensions:
+            if filename.endswith(ext):
+                # Replace extension with .jpg
+                base_name = filename[:-len(ext)]
+                filename = base_name + '.jpg'
+                break
+        
+        # Standardize PDF extensions to lowercase .pdf
+        if filename.upper().endswith('.PDF'):
+            filename = filename[:-4] + '.pdf'
+        
+        # Filter out non-photo/document files
+        valid_extensions = ['.jpg', '.pdf', '.doc', '.docx', '.txt']
+        if not any(filename.endswith(ext) for ext in valid_extensions):
+            return ''  # Skip non-relevant files
+        
+        return filename
+    
+    @staticmethod
     def extract_archive(file_content: bytes, filename: str) -> Dict[str, bytes]:
         """Extract files from ZIP or RAR archive and normalize filenames
         
