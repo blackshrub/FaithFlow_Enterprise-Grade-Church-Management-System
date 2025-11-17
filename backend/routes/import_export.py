@@ -409,7 +409,7 @@ async def upload_photos(
             is_photo=True
         )
         
-        # Update members with matched photos
+        # Update members with matched photos (ignore unmatched files)
         updated_count = 0
         for match in match_results['matched']:
             await db.members.update_one(
@@ -421,13 +421,19 @@ async def upload_photos(
             )
             updated_count += 1
         
+        # Only return matched files info (not unmatched)
         return {
             "success": True,
-            "summary": match_results['summary'],
+            "summary": {
+                "total_files": match_results['summary']['total_files'],
+                "matched_count": match_results['summary']['matched_count'],
+                "unmatched_files_count": match_results['summary']['unmatched_files_count'],
+                "unmatched_members_count": match_results['summary']['unmatched_members_count']
+            },
             "matched": [{"member_id": m['member_id'], "filename": m['filename']} for m in match_results['matched']],
-            "unmatched_files": match_results['unmatched_files'],
-            "unmatched_members": match_results['unmatched_members'],
-            "updated_count": updated_count
+            "unmatched_members": match_results['unmatched_members'],  # Members without matching photos
+            "updated_count": updated_count,
+            "note": "Unmatched photo files were ignored (not uploaded to database)"
         }
     
     except Exception as e:
