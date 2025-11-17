@@ -169,6 +169,7 @@ async def import_members(
     value_mappings: str = Form(default='{}'),
     default_values: str = Form(default='{}'),
     duplicate_resolutions: str = Form(default='{}'),  # JSON: {phone: row_index_to_keep}
+    custom_fields: str = Form(default='[]'),  # JSON array of custom field definitions
     date_format: str = Form(default='DD-MM-YYYY'),
     db: AsyncIOMotorDatabase = Depends(get_db),
     current_user: dict = Depends(require_admin)
@@ -181,6 +182,7 @@ async def import_members(
         value_map = json.loads(value_mappings)
         defaults = json.loads(default_values)
         resolutions = json.loads(duplicate_resolutions)
+        custom_field_defs = json.loads(custom_fields)
         
         # Parse file
         if file_type == 'csv':
@@ -206,7 +208,8 @@ async def import_members(
             transformed_data, 
             church_id, 
             date_format,
-            db
+            db,
+            custom_field_defs
         )
         
         if errors:
