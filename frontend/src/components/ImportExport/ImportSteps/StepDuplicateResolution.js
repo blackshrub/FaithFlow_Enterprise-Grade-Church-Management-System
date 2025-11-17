@@ -14,11 +14,6 @@ export default function StepDuplicateResolution({ wizardData, updateWizardData, 
   const { duplicate_conflicts } = wizardData.simulationResults || {};
   const [resolutions, setResolutions] = useState({});
 
-  // If no duplicates, skip this step
-  if (!duplicate_conflicts || duplicate_conflicts.length === 0) {
-    return null;
-  }
-
   const handleResolution = (phone, rowIndex) => {
     setResolutions({
       ...resolutions,
@@ -26,12 +21,17 @@ export default function StepDuplicateResolution({ wizardData, updateWizardData, 
     });
   };
 
-  const allResolved = duplicate_conflicts.every(conflict => resolutions[conflict.phone]);
+  const allResolved = duplicate_conflicts?.every(conflict => resolutions[conflict.phone]) || false;
 
   const proceedWithResolutions = () => {
     updateWizardData({ duplicateResolutions: resolutions });
     nextStep();
   };
+
+  // If no duplicates, return empty (but still render hooks above)
+  if (!duplicate_conflicts || duplicate_conflicts.length === 0) {
+    return null;
+  }
 
   return (
     <Card>
