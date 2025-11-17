@@ -6,9 +6,9 @@ import string
 from datetime import datetime
 
 
-def generate_confirmation_code(length=8):
-    """Generate a unique confirmation code"""
-    characters = string.ascii_uppercase + string.digits
+def generate_confirmation_code(length=4):
+    """Generate a unique 4-digit confirmation code"""
+    characters = string.digits
     code = ''.join(secrets.choice(characters) for _ in range(length))
     return code
 
