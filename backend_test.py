@@ -8,7 +8,7 @@ import json
 from typing import Optional, Dict
 
 # API Configuration
-BASE_URL = "https://parish-command.preview.emergentagent.com/api"
+BASE_URL = "https://faithmanage-2.preview.emergentagent.com/api"
 
 # Test credentials
 TEST_CREDENTIALS = {

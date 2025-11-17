@@ -91,24 +91,24 @@ WHATSAPP_PASSWORD=""
 
 **Frontend (.env):**
 ```env
-REACT_APP_BACKEND_URL=https://parish-command.preview.emergentagent.com
+REACT_APP_BACKEND_URL=https://faithmanage-2.preview.emergentagent.com
 ```
 
 ### API Documentation
 
-Base URL: `https://parish-command.preview.emergentagent.com/api`
+Base URL: `https://faithmanage-2.preview.emergentagent.com/api`
 
 All endpoints return JSON. Protected endpoints require `Authorization: Bearer <token>` header.
 
 **Authentication:**
 ```bash
 # Login
-curl -X POST https://parish-command.preview.emergentagent.com/api/auth/login \
+curl -X POST https://faithmanage-2.preview.emergentagent.com/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email": "admin@demochurch.com", "password": "admin123"}'
 
 # Get current user
-curl -X GET https://parish-command.preview.emergentagent.com/api/auth/me \
+curl -X GET https://faithmanage-2.preview.emergentagent.com/api/auth/me \
   -H "Authorization: Bearer YOUR_TOKEN"
 ```
 

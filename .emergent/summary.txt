@@ -1,0 +1,106 @@
+<analysis>
+The trajectory details the development of a full-stack, multi-tenant church management system from scratch. The user provided iterative requirements, and the AI engineer implemented them, focusing on two major features: an Authentication/Settings module and a highly complex Data Import/Export module.
+
+The process began with setting up the project structure (FastAPI backend, React frontend) and establishing best practices. The first phase involved creating a robust authentication system, multi-church capabilities, and a settings page for managing application-wide configurations like member statuses, demographics, and date formats.
+
+The bulk of the work focused on a sophisticated data import wizard. This feature evolved significantly through user feedback. Initial implementation was followed by numerous refactors to handle: reversed field mapping, default values, full name parsing, phone number normalization, ZIP/RAR file uploads for photos/documents, a visual timeline, custom field creation, and duplicate data resolution. A major refactoring effort also introduced TanStack React Query for server-state management and  for internationalization, making the application more robust and scalable.
+
+Throughout the development, the AI engineer faced and resolved numerous bugs, including Python dependency issues, frontend state management problems (especially React hooks errors caused by conditional rendering), data-matching logic flaws, and UI inconsistencies. The final iteration of the import module features a unified 7-step wizard that validates data, photos, and documents against the source file before committing to the database.
+
+The last user request pivoted to a new Event and RSVP Management module, which the AI engineer had just begun to architect by creating the initial backend models and routes before the session ended.
+
+The user's primary language is English. All future responses should be in English.
+</analysis>
+
+<product_requirements>
+The project is an enterprise-grade, multi-tenant Church Management System designed for admin/staff use only (no member-facing login). Communication with members is exclusively via WhatsApp.
+
+**Phase 1: Core System & Data Import (Completed)**
+The system supports a single church, GKBJ Taman Kencana, with secure, role-based authentication. A comprehensive settings module allows admins to configure member statuses, demographic categories, and localization settings like date format and default language.
+
+The most significant feature is a robust data import/export module. Admins can import member data from CSV or JSON files. A 7-step wizard guides them through:
+1.  Uploading the data file.
+2.  Uploading a ZIP/RAR of member photos (optional).
+3.  Uploading a ZIP/RAR of personal documents (optional).
+4.  Mapping source columns to application fields (e.g., , ), with the ability to create and map custom fields.
+5.  Mapping specific values (e.g., M to Male).
+6.  Simulating the import to validate data, resolve duplicate phone numbers, and see photo/document matching results.
+7.  Committing the final data.
+
+The system handles file normalization (e.g., phone numbers to '62' prefix, image extensions to lowercase) and automatically cleans up temporarily uploaded files if the process is aborted.
+
+**Phase 2: Event & RSVP Management (In Progress)**
+This new module, which has just been started, will allow admins to manage single and series events, design interactive seat layouts for rooms, handle RSVP and seat selection, and manage attendance through a kiosk mode with QR code scanning.
+</product_requirements>
+
+<key_technical_concepts>
+- **Backend:** FastAPI, MongoDB (with Pydantic models for data validation).
+- **Frontend:** React, Tailwind CSS, shadcn/ui.
+- **State Management:** TanStack React Query for server state, caching, and mutations.
+- **Internationalization (i18n):**  for multilingual support (English, Indonesian).
+- **Authentication:** JWT-based token authentication for admin/staff roles.
+- **File Handling:** Backend processing of CSV, JSON, ZIP, and RAR files, including image normalization and optimization with Pillow.
+- **Architecture:** API-first, multi-tenant design where all data is scoped by .
+</key_technical_concepts>
+
+<code_architecture>
+The project is a standard monorepo with a  and  directory.
+
+
+
+**Key File Summaries:**
+
+-   ****:
+    -   **Importance:** Contains all the core business logic for parsing files (CSV, JSON), applying field and value mappings, validating data, handling custom fields, and detecting duplicates.
+    -   **Changes:** Heavily iterated upon. Logic was added to handle full name parsing, phone number normalization, custom field validation, and detecting duplicates only within the source file (not the database). Removed SQL parsing logic.
+
+-   ****:
+    -   **Importance:** Manages file uploads, specifically extracting and validating files from ZIP/RAR archives.
+    -   **Changes:** Refactored to correctly count files (ignoring folders and system files like ), normalize filenames to lowercase, and handle image optimization. Added logic to delete unmatched files.
+
+-   ****:
+    -   **Importance:** The main stateful component for the multi-step import process. It manages the current step and the  state object that is passed between steps.
+    -   **Changes:** Refactored to unify the data, photo, and document uploads into a single 7-step flow, and to pass the complete dataset to simulation steps.
+
+-   ****:
+    -   **Importance:** The most complex UI component, responsible for running the validation, displaying results (errors, duplicates), and handling the duplicate resolution flow.
+    -   **Changes:** Underwent significant refactoring to fix a persistent Rendered fewer hooks than expected error. The final solution involved embedding the duplicate resolution UI directly within this component instead of conditionally rendering a separate component, thus ensuring hooks are always called in the same order.
+
+-   ** & **:
+    -   **Importance:** These are the newest models, created to support the Event Management feature. They define the schema for seat layouts, events, sessions, and RSVPs.
+    -   **Changes:** These are newly created files, representing the start of the next major feature.
+</code_architecture>
+
+<pending_tasks>
+- **Fix Import/Export Bug:** A testing agent report mentioned a critical issue: field mapping is not transmitting data correctly, which was set aside to start the new feature. This needs to be investigated and fixed.
+- **Complete Event & RSVP Management Module:**
+  - Finish backend routes for events and seat layouts.
+  - Build the entire frontend UI for:
+    - Seat Layout management (visual editor).
+    - Event creation/management (for single and series events).
+    - Kiosk mode for check-in.
+</pending_tasks>
+
+<current_work>
+The AI engineer has just pivoted from completing the complex Import/Export module to starting the new **Event and RSVP Management module**.
+
+Work was paused immediately after scaffolding the initial backend architecture for this new feature. Specifically, the following actions were taken:
+
+1.  **Created Backend Models:**
+    *   : Defines the  schema, including rows, columns, and the state of each seat (, , ).
+    *   : Defines schemas for  (single/series), , and , all linked by .
+
+2.  **Started Backend Routes:**
+    *   : Created with placeholder CRUD endpoints for managing seat layouts.
+    *   : Created with comprehensive, though not fully tested, endpoints for creating, updating, and managing events and their sessions.
+
+3.  **Updated Main Server & Frontend API:**
+    *   : The new routers for  and  were included.
+    *   : New functions were added to create the service layer for calling the new event and seat layout endpoints from the frontend.
+
+The work stopped before any frontend UI components for the Event Management module were created.
+</current_work>
+
+<optional_next_step>
+Continue building the **Event & RSVP Management** module by creating the frontend UI for the **Seat Layout Management** feature, allowing admins to visually define and save room layouts.
+</optional_next_step>
