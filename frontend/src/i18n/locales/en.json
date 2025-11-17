@@ -334,6 +334,10 @@
     "row": "Row",
     "removePhoneFromBoth": "Remove phone from both",
     "blankPhoneOption": "Both records will be imported without phone number",
-    "continueWithResolutions": "Continue with Resolutions"
+    "continueWithResolutions": "Continue with Resolutions",
+    "readyToImport": "Ready to import {{count}} valid records",
+    "simulationFoundErrors": "Validation found errors",
+    "simulationSuccessful": "Validation successful",
+    "validationErrors": "Validation Errors"
   }
 }
