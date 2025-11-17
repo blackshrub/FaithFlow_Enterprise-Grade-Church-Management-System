@@ -191,7 +191,7 @@ export default function StepFieldMapping({ wizardData, updateWizardData, nextSte
         {!canProceed() && (
           <Alert variant="destructive">
             <AlertDescription>
-              {t('importExport.mapRequiredFields')}
+              {t('importExport.mapBasicRequiredFields')}
             </AlertDescription>
           </Alert>
         )}
