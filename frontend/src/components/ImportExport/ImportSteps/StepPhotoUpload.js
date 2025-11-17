@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useUploadPhotos } from '../../../hooks/useImportExport';
+import { importExportAPI } from '../../../services/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../ui/card';
 import { Button } from '../../ui/button';
 import { Alert, AlertDescription } from '../../ui/alert';
@@ -11,29 +11,41 @@ import { Upload, Image, ChevronRight, ChevronLeft, CheckCircle, AlertCircle, Loa
 export default function StepPhotoUpload({ wizardData, updateWizardData, nextStep, prevStep }) {
   const { t } = useTranslation();
   const fileInputRef = useRef(null);
-  const [uploadResults, setUploadResults] = useState(wizardData.photoMatchResults || null);
-  const uploadPhotos = useUploadPhotos();
+  const [uploadResults, setUploadResults] = useState(wizardData.photoSimulation || null);
+  const [processing, setProcessing] = useState(false);
 
   const handleFileSelect = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     try {
-      // Upload and process photos immediately
-      const result = await uploadPhotos.mutateAsync(file);
-      setUploadResults(result);
+      setProcessing(true);
       
-      // Track uploaded member IDs for cleanup
-      const uploadedIds = result.matched?.map(m => m.member_id) || [];
+      // Find which field contains photo filename
+      const photoFieldMapping = Object.entries(wizardData.fieldMappings).find(
+        ([source, target]) => target === 'photo_filename'
+      );
+      const photoSourceField = photoFieldMapping ? photoFieldMapping[0] : 'photo_filename';
       
-      // Store results in wizard data
+      // Simulate matching against CSV data (not database)
+      const result = await importExportAPI.simulatePhotoMatching(
+        file,
+        JSON.stringify(wizardData.sampleData),
+        photoSourceField
+      );
+      
+      setUploadResults(result.data);
+      
+      // Store file and results in wizard (not uploaded to DB yet!)
       updateWizardData({ 
         photoArchive: file,
-        photoMatchResults: result,
-        uploadedMemberIds: [...(wizardData.uploadedMemberIds || []), ...uploadedIds]
+        photoSimulation: result.data,
+        photoExtractedFiles: result.data.matched || []  // Store for later import
       });
     } catch (error) {
-      console.error('Upload error:', error);
+      console.error('Photo simulation error:', error);
+    } finally {
+      setProcessing(false);
     }
   };
 
