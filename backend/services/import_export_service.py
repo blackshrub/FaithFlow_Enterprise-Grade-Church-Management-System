@@ -95,7 +95,7 @@ class ImportExportService:
         data: List[Dict[str, Any]], 
         value_mappings: Dict[str, Dict[str, str]]
     ) -> List[Dict[str, Any]]:
-        """Apply value mappings to data
+        """Apply value mappings to data and blank unmapped values
         
         Args:
             data: List of data dictionaries
@@ -107,8 +107,13 @@ class ImportExportService:
         """
         for row in data:
             for field, mappings in value_mappings.items():
-                if field in row and row[field] in mappings:
-                    row[field] = mappings[row[field]]
+                if field in row:
+                    # If value is in mappings, transform it
+                    if row[field] in mappings:
+                        row[field] = mappings[row[field]]
+                    # If value is NOT in mappings and mappings exist for this field, blank it
+                    elif mappings and len(mappings) > 0:
+                        row[field] = None  # Blank unmapped values
         return data
     
     @staticmethod
