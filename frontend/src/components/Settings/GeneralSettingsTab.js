@@ -17,6 +17,7 @@ export default function GeneralSettingsTab() {
     time_format: '24h',
     currency: 'USD',
     timezone: 'UTC',
+    default_language: 'en',
   });
 
   useEffect(() => {
@@ -26,6 +27,7 @@ export default function GeneralSettingsTab() {
         time_format: settings.time_format || '24h',
         currency: settings.currency || 'USD',
         timezone: settings.timezone || 'UTC',
+        default_language: settings.default_language || 'en',
       });
     }
   }, [settings]);
