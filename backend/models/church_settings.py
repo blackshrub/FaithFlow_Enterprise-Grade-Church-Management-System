@@ -26,6 +26,8 @@ class ChurchSettingsUpdate(BaseModel):
     currency: Optional[str] = Field(None, max_length=10)
     timezone: Optional[str] = Field(None, max_length=50)
     default_language: Optional[Literal['en', 'id']] = None
+    enable_whatsapp_notifications: Optional[bool] = None
+    whatsapp_send_rsvp_confirmation: Optional[bool] = None
 
 
 class ChurchSettings(ChurchSettingsBase):
