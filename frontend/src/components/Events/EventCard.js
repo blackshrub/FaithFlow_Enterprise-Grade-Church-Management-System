@@ -191,70 +191,19 @@ function EventCard({ event, onEdit }) {
           )}
         </div>
 
-        {/* Expandable Sessions List for Series Events */}
-        {event.event_type === 'series' && showSessions && event.sessions && event.sessions.length > 0 && (
-          <div className="mt-4 pt-4 border-t border-gray-200 space-y-2">
-            <h4 className="text-sm font-semibold text-gray-900 mb-3">
-              {t('events.event.sessions')}:
-            </h4>
-            <div className="space-y-2">
-              {event.sessions.map((session, index) => {
-                // Count RSVPs for this session
-                const sessionRSVPs = event.rsvp_list?.filter(r => r.session_id === session.name).length || 0;
-                const sessionAttendance = event.attendance_list?.filter(a => a.session_id === session.name).length || 0;
-                
-                return (
-                  <div
-                    key={index}
-                    className="bg-gray-50 rounded-lg p-3 border border-gray-200"
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <p className="font-medium text-gray-900 text-sm">{session.name}</p>
-                        <div className="flex items-center gap-4 mt-1 text-xs text-gray-600">
-                          <div className="flex items-center gap-1">
-                            <Calendar className="h-3 w-3" />
-                            <span>{formatEventDate(session.date)}</span>
-                          </div>
-                          {session.date && (() => {
-                            try {
-                              const sessionDate = new Date(session.date);
-                              return (
-                                <div className="flex items-center gap-1">
-                                  <Clock className="h-3 w-3" />
-                                  <span>{format(sessionDate, 'HH:mm')}</span>
-                                </div>
-                              );
-                            } catch {
-                              return null;
-                            }
-                          })()}
-                        </div>
-                      </div>
-                      {event.requires_rsvp && (
-                        <div className="flex flex-col items-end gap-1 text-xs">
-                          {sessionRSVPs > 0 && (
-                            <span className="text-blue-600 font-medium">
-                              {sessionRSVPs} {sessionRSVPs === 1 ? 'RSVP' : 'RSVPs'}
-                            </span>
-                          )}
-                          {sessionAttendance > 0 && (
-                            <span className="text-green-600 font-medium">
-                              {sessionAttendance} {t('events.event.attended')}
-                            </span>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
         {/* Footer Actions */}
         <div className="mt-4 pt-4 border-t border-gray-200 flex gap-2">
+          {event.event_type === 'series' && event.sessions?.length > 0 && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="flex-1"
+              onClick={() => setShowSessionsModal(true)}
+            >
+              <List className="h-4 w-4 mr-1" />
+              {t('events.event.viewSessions')}
+            </Button>
+          )}
           {event.requires_rsvp && (
             <Button 
               variant="outline" 
@@ -274,6 +223,11 @@ function EventCard({ event, onEdit }) {
       {/* RSVP Manager Modal */}
       {showRSVPManager && (
         <RSVPManager event={event} onClose={() => setShowRSVPManager(false)} />
+      )}
+
+      {/* Sessions Modal */}
+      {showSessionsModal && (
+        <SessionsModal event={event} onClose={() => setShowSessionsModal(false)} />
       )}
     </div>
   );
