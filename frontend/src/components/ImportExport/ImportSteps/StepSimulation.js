@@ -1,25 +1,19 @@
-import React, { useEffect } from 'react';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../ui/card';
 import { Button } from '../../ui/button';
 import { Alert, AlertDescription } from '../../ui/alert';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../ui/table';
-import { Badge } from '../../ui/badge';
-import { ChevronRight, ChevronLeft, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { CheckCircle, AlertCircle, Loader2, RefreshCw } from 'lucide-react';
 
-export default function StepSimulation({ wizardData, updateWizardData, simulateImport, nextStep, prevStep }) {
+export default function StepResults({ wizardData, updateWizardData, importMembers, resetWizard }) {
   const { t } = useTranslation();
+  const [importing, setImporting] = useState(false);
+  const [importComplete, setImportComplete] = useState(false);
 
-  useEffect(() => {
-    // Auto-run simulation when step loads
-    if (!wizardData.simulationResults) {
-      runSimulation();
-    }
-  }, []);
-
-  const runSimulation = async () => {
+  const executeImport = async () => {
+    setImporting(true);
     try {
-      const result = await simulateImport.mutateAsync({
+      const result = await importMembers.mutateAsync({
         file_content: wizardData.fileContent,
         file_type: wizardData.fileType,
         field_mappings: JSON.stringify(wizardData.fieldMappings),
@@ -27,37 +21,103 @@ export default function StepSimulation({ wizardData, updateWizardData, simulateI
         date_format: wizardData.dateFormat,
       });
       
-      updateWizardData({ simulationResults: result });
+      updateWizardData({ importResults: result });
+      setImportComplete(true);
     } catch (error) {
-      console.error('Simulation error:', error);
+      console.error('Import error:', error);
+    } finally {
+      setImporting(false);
     }
   };
 
-  const { simulationResults } = wizardData;
-
-  if (simulateImport.isPending) {
+  if (importing) {
     return (
       <Card>
         <CardContent className="py-12">
           <div className="text-center">
-            <Loader2 className="h-12 w-12 animate-spin text-blue-600 mx-auto mb-4" />
-            <p className="text-gray-600">{t('importExport.validatingData')}</p>
-            <p className="text-sm text-gray-500 mt-2">{t('importExport.pleaseWait')}</p>
+            <Loader2 className="h-16 w-16 animate-spin text-blue-600 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold mb-2">{t('importExport.importing')}</h3>
+            <p className="text-gray-600">{t('importExport.pleaseDoNotClose')}</p>
           </div>
         </CardContent>
       </Card>
     );
   }
 
-  if (!simulationResults) {
+  if (importComplete && wizardData.importResults) {
+    const { importResults } = wizardData;
+    const hasErrors = importResults.failed > 0;
+
     return (
       <Card>
-        <CardContent className="py-12">
-          <div className="text-center">
-            <AlertCircle className="h-12 w-12 text-red-600 mx-auto mb-4" />
-            <p className="text-gray-600">{t('importExport.simulationFailed')}</p>
-            <Button onClick={runSimulation} className="mt-4">
-              {t('importExport.tryAgain')}
+        <CardHeader>
+          <CardTitle>{t('importExport.importComplete')}</CardTitle>
+          <CardDescription>
+            {hasErrors ? t('importExport.completedWithErrors') : t('importExport.completedSuccessfully')}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Success Alert */}
+          {!hasErrors && (
+            <Alert className="border-green-500 bg-green-50">
+              <CheckCircle className="h-4 w-4 text-green-600" />
+              <AlertDescription className="text-green-800">
+                {t('importExport.successfullyImported', { count: importResults.imported })}
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* Results Summary */}
+          <div className="grid grid-cols-3 gap-4">
+            <Card>
+              <CardContent className="pt-6">
+                <div className="text-center">
+                  <p className="text-sm text-gray-600">{t('importExport.totalRecords')}</p>
+                  <p className="text-3xl font-bold">{importResults.total_records}</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="border-green-500">
+              <CardContent className="pt-6">
+                <div className="text-center">
+                  <p className="text-sm text-gray-600">{t('importExport.imported')}</p>
+                  <p className="text-3xl font-bold text-green-600">{importResults.imported}</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="border-red-500">
+              <CardContent className="pt-6">
+                <div className="text-center">
+                  <p className="text-sm text-gray-600">{t('importExport.failed')}</p>
+                  <p className="text-3xl font-bold text-red-600">{importResults.failed}</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Errors */}
+          {hasErrors && (
+            <div>
+              <h3 className="font-semibold mb-3 text-red-600">
+                {t('importExport.importErrors')} ({importResults.errors.length})
+              </h3>
+              <div className="border border-red-200 rounded-lg p-4 max-h-64 overflow-y-auto bg-red-50">
+                <ul className="space-y-1">
+                  {importResults.errors.map((error, idx) => (
+                    <li key={idx} className="text-sm text-red-700">
+                      • {error}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          )}
+
+          {/* Actions */}
+          <div className="flex justify-center gap-4 pt-4">
+            <Button onClick={resetWizard} variant="outline">
+              <RefreshCw className="h-4 w-4 mr-2" />
+              {t('importExport.importAnother')}
             </Button>
           </div>
         </CardContent>
@@ -65,126 +125,59 @@ export default function StepSimulation({ wizardData, updateWizardData, simulateI
     );
   }
 
+  // Confirmation screen
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{t('importExport.validationResults')}</CardTitle>
-        <CardDescription>{t('importExport.reviewBeforeImport')}</CardDescription>
+        <CardTitle>{t('importExport.confirmImport')}</CardTitle>
+        <CardDescription>{t('importExport.reviewAndConfirm')}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Summary Stats */}
-        <div className="grid grid-cols-3 gap-4">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="text-center">
-                <p className="text-sm text-gray-600">{t('importExport.totalRecords')}</p>
-                <p className="text-3xl font-bold text-blue-600">{simulationResults.total_records}</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="text-center">
-                <p className="text-sm text-gray-600">{t('importExport.validRecords')}</p>
-                <p className="text-3xl font-bold text-green-600">{simulationResults.valid_records}</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="text-center">
-                <p className="text-sm text-gray-600">{t('importExport.invalidRecords')}</p>
-                <p className="text-3xl font-bold text-red-600">{simulationResults.invalid_records}</p>
-              </div>
-            </CardContent>
-          </Card>
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            {t('importExport.importWarning')}
+          </AlertDescription>
+        </Alert>
+
+        {/* Import Summary */}
+        <div className="space-y-4">
+          <div className="flex justify-between py-2 border-b">
+            <span className="text-gray-600">{t('importExport.fileName')}:</span>
+            <span className="font-semibold">{wizardData.file?.name}</span>
+          </div>
+          <div className="flex justify-between py-2 border-b">
+            <span className="text-gray-600">{t('importExport.totalRecords')}:</span>
+            <span className="font-semibold">{wizardData.simulationResults?.valid_records || 0}</span>
+          </div>
+          <div className="flex justify-between py-2 border-b">
+            <span className="text-gray-600">{t('importExport.dateFormat')}:</span>
+            <span className="font-semibold">{wizardData.dateFormat}</span>
+          </div>
+          <div className="flex justify-between py-2 border-b">
+            <span className="text-gray-600">{t('importExport.fieldsMapped')}:</span>
+            <span className="font-semibold">{Object.keys(wizardData.fieldMappings).length}</span>
+          </div>
         </div>
 
-        {/* Status Alert */}
-        {simulationResults.ready_to_import ? (
-          <Alert className="border-green-500 bg-green-50">
-            <CheckCircle className="h-4 w-4 text-green-600" />
-            <AlertDescription className="text-green-800">
-              {t('importExport.allRecordsValid')}
-            </AlertDescription>
-          </Alert>
-        ) : (
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              {t('importExport.fixErrorsBeforeImport')}
-            </AlertDescription>
-          </Alert>
-        )}
-
-        {/* Sample Valid Data Preview */}
-        {simulationResults.sample_valid && simulationResults.sample_valid.length > 0 && (
-          <div>
-            <h3 className="font-semibold mb-3">{t('importExport.sampleValidData')}</h3>
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>First Name</TableHead>
-                    <TableHead>Last Name</TableHead>
-                    <TableHead>Phone</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Gender</TableHead>
-                    <TableHead>Demographic</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {simulationResults.sample_valid.slice(0, 5).map((row, idx) => (
-                    <TableRow key={idx}>
-                      <TableCell>{row.first_name}</TableCell>
-                      <TableCell>{row.last_name}</TableCell>
-                      <TableCell>{row.phone_whatsapp}</TableCell>
-                      <TableCell>{row.email || '-'}</TableCell>
-                      <TableCell>
-                        {row.gender && <Badge>{row.gender}</Badge>}
-                      </TableCell>
-                      <TableCell>
-                        {row.demographic_category && (
-                          <Badge variant="secondary">{row.demographic_category}</Badge>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </div>
-        )}
-
-        {/* Errors List */}
-        {simulationResults.errors && simulationResults.errors.length > 0 && (
-          <div>
-            <h3 className="font-semibold mb-3 text-red-600">
-              {t('importExport.errors')} ({simulationResults.errors.length})
-            </h3>
-            <div className="border border-red-200 rounded-lg p-4 max-h-64 overflow-y-auto bg-red-50">
-              <ul className="space-y-1">
-                {simulationResults.errors.map((error, idx) => (
-                  <li key={idx} className="text-sm text-red-700">
-                    • {error}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        )}
-
+        {/* Confirmation Buttons */}
         <div className="flex justify-between pt-4">
           <Button variant="outline" onClick={prevStep}>
             <ChevronLeft className="h-4 w-4 mr-2" />
             {t('importExport.previous')}
           </Button>
-          <Button
-            onClick={nextStep}
-            disabled={!simulationResults.ready_to_import}
-          >
-            {t('importExport.proceedToImport')}
-            <ChevronRight className="h-4 w-4 ml-2" />
+          <Button onClick={executeImport} disabled={importing}>
+            {importing ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                {t('importExport.importing')}
+              </>
+            ) : (
+              <>
+                <CheckCircle className="h-4 w-4 mr-2" />
+                {t('importExport.confirmAndImport')}
+              </>
+            )}
           </Button>
         </div>
       </CardContent>
