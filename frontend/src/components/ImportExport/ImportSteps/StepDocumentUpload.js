@@ -11,6 +11,8 @@ export default function StepDocumentUpload({ wizardData, updateWizardData, nextS
   const fileInputRef = useRef(null);
   const [uploadResults, setUploadResults] = useState(wizardData.documentSimulation || null);
   const [processing, setProcessing] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState('');
+  const [progressPercent, setProgressPercent] = useState(0);
 
   const handleFileSelect = async (e) => {
     const file = e.target.files?.[0];
@@ -18,12 +20,27 @@ export default function StepDocumentUpload({ wizardData, updateWizardData, nextS
 
     try {
       setProcessing(true);
+      setProgressPercent(10);
+      setUploadProgress(t('importExport.uploading'));
+      
+      // Simulate progress during upload
+      const progressInterval = setInterval(() => {
+        setProgressPercent(prev => {
+          if (prev < 25) return prev + 3;
+          if (prev < 50) return prev + 2;
+          if (prev < 75) return prev + 1;
+          return prev;
+        });
+      }, 200);
       
       // Find which field contains document filename
       const documentFieldMapping = Object.entries(wizardData.fieldMappings).find(
         ([source, target]) => target === 'personal_document'
       );
       const documentSourceField = documentFieldMapping ? documentFieldMapping[0] : 'personal_document';
+      
+      setProgressPercent(30);
+      setUploadProgress(t('importExport.extracting'));
       
       // Simulate matching against ALL CSV/SQL data (not just sample!)
       const result = await importExportAPI.simulateDocumentMatching(
@@ -32,7 +49,19 @@ export default function StepDocumentUpload({ wizardData, updateWizardData, nextS
         documentSourceField
       );
       
+      clearInterval(progressInterval);
+      setProgressPercent(80);
+      setUploadProgress(t('importExport.matching'));
+      
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      setProgressPercent(95);
+      setUploadProgress(t('importExport.almostReady'));
+      
       setUploadResults(result.data);
+      
+      await new Promise(resolve => setTimeout(resolve, 300));
+      setProgressPercent(100);
       
       // Store file and results in wizard (not uploaded to DB yet!)
       updateWizardData({ 
@@ -40,10 +69,14 @@ export default function StepDocumentUpload({ wizardData, updateWizardData, nextS
         documentSimulation: result.data,
         documentExtractedFiles: result.data.matched || []  // Store for later import
       });
+      
+      setUploadProgress('');
     } catch (error) {
       console.error('Document simulation error:', error);
+      setUploadProgress(t('importExport.error'));
     } finally {
       setProcessing(false);
+      setProgressPercent(0);
     }
   };
 
