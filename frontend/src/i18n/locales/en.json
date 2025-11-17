@@ -345,7 +345,9 @@
       "seatUnavailable": "Unavailable",
       "noSeatsAvailable": "No seats available",
       "filterBySession": "Filter by Session",
-      "allSessions": "All Sessions"
+      "allSessions": "All Sessions",
+      "noRSVPsForSession": "No RSVPs for this session",
+      "registerFirst": "Be the first to register!"
     }
   },
   "importExport": {
