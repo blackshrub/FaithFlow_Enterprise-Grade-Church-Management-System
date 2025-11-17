@@ -69,14 +69,17 @@ class FileUploadService:
             if filename.lower().endswith('.zip'):
                 with zipfile.ZipFile(io.BytesIO(file_content)) as zf:
                     for file_info in zf.filelist:
-                        if not file_info.is_dir():
-                            file_data = zf.read(file_info.filename)
-                            # Get just the filename without path
-                            clean_name = file_info.filename.split('/')[-1]
-                            
-                            # Skip if it's just a folder marker or empty
-                            if not clean_name or clean_name.startswith('.'):
-                                continue
+                        # Skip directories and the ZIP file itself
+                        if file_info.is_dir() or file_info.filename.lower().endswith('.zip'):
+                            continue
+                        
+                        file_data = zf.read(file_info.filename)
+                        # Get just the filename without path
+                        clean_name = file_info.filename.split('/')[-1]
+                        
+                        # Skip if it's just a folder marker, empty, or hidden file
+                        if not clean_name or clean_name.startswith('.') or clean_name.startswith('__MACOSX'):
+                            continue
                             
                             # Normalize filename: lowercase, standardize extensions
                             normalized_name = FileUploadService.normalize_filename(clean_name)
