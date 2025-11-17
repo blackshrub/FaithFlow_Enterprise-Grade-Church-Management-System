@@ -44,6 +44,7 @@ function App() {
               <Route path="seat-layouts" element={<SeatLayouts />} />
               <Route path="events" element={<Events />} />
               <Route path="kiosk" element={<KioskMode />} />
+              <Route path="devotions" element={<Devotions />} />
               
               {/* Placeholder routes - will be implemented in next phases */}
               <Route path="groups" element={<PlaceholderPage title="Groups" />} />
