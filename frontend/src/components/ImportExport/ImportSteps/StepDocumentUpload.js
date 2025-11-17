@@ -92,9 +92,7 @@ export default function StepDocumentUpload({ wizardData, updateWizardData, nextS
                 className="mt-4"
               >
                 {t('importExport.chooseAnother')}
-              </Button>
-            </div>
-          ) : (
+          {processing ? (
             <div>
               <Loader2 className="h-12 w-12 animate-spin text-blue-600 mx-auto mb-4" />
               <p className="text-gray-600">{t('importExport.processingDocuments')}</p>
