@@ -13,6 +13,7 @@ export default function StepPhotoUpload({ wizardData, updateWizardData, nextStep
   const fileInputRef = useRef(null);
   const [uploadResults, setUploadResults] = useState(wizardData.photoSimulation || null);
   const [processing, setProcessing] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState('');
 
   const handleFileSelect = async (e) => {
     const file = e.target.files?.[0];
@@ -20,12 +21,15 @@ export default function StepPhotoUpload({ wizardData, updateWizardData, nextStep
 
     try {
       setProcessing(true);
+      setUploadProgress(t('importExport.uploading'));
       
       // Find which field contains photo filename
       const photoFieldMapping = Object.entries(wizardData.fieldMappings).find(
         ([source, target]) => target === 'photo_filename'
       );
       const photoSourceField = photoFieldMapping ? photoFieldMapping[0] : 'photo_filename';
+      
+      setUploadProgress(t('importExport.extracting'));
       
       // Simulate matching against CSV data (not database)
       const result = await importExportAPI.simulatePhotoMatching(
@@ -34,7 +38,11 @@ export default function StepPhotoUpload({ wizardData, updateWizardData, nextStep
         photoSourceField
       );
       
+      setUploadProgress(t('importExport.matching'));
+      
       setUploadResults(result.data);
+      
+      setUploadProgress(t('importExport.almostReady'));
       
       // Store file and results in wizard (not uploaded to DB yet!)
       updateWizardData({ 
@@ -42,8 +50,11 @@ export default function StepPhotoUpload({ wizardData, updateWizardData, nextStep
         photoSimulation: result.data,
         photoExtractedFiles: result.data.matched || []  // Store for later import
       });
+      
+      setUploadProgress('');
     } catch (error) {
       console.error('Photo simulation error:', error);
+      setUploadProgress(t('importExport.error'));
     } finally {
       setProcessing(false);
     }
