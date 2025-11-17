@@ -325,6 +325,15 @@
     "documentsMatchedSuccess": "Berhasil mencocokkan {{count}} dokumen",
     "simulatingImport": "Mensimulasikan impor...",
     "simulationComplete": "Simulasi Selesai",
-    "preparingImport": "Mempersiapkan impor..."
+    "preparingImport": "Mempersiapkan impor...",
+    "resolveDuplicates": "Selesaikan Nomor Telepon Duplikat",
+    "resolveDuplicatesDesc": "Pilih catatan mana yang harus menyimpan nomor telepon",
+    "duplicatePhoneWarning": "Ditemukan {{count}} nomor telepon duplikat. Harap selesaikan konflik.",
+    "conflict": "Konflik",
+    "existingInDatabase": "Sudah Ada di Database",
+    "row": "Baris",
+    "removePhoneFromBoth": "Hapus telepon dari keduanya",
+    "blankPhoneOption": "Kedua catatan akan diimpor tanpa nomor telepon",
+    "continueWithResolutions": "Lanjutkan dengan Penyelesaian"
   }
 }
