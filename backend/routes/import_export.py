@@ -161,6 +161,7 @@ async def import_members(
     file_type: str = Form(...),
     field_mappings: str = Form(...),
     value_mappings: str = Form(default='{}'),
+    default_values: str = Form(default='{}'),
     date_format: str = Form(default='DD-MM-YYYY'),
     db: AsyncIOMotorDatabase = Depends(get_db),
     current_user: dict = Depends(require_admin)
@@ -171,6 +172,7 @@ async def import_members(
         # Parse mappings
         field_map = json.loads(field_mappings)
         value_map = json.loads(value_mappings)
+        defaults = json.loads(default_values)
         
         # Parse file
         if file_type == 'csv':
@@ -179,7 +181,7 @@ async def import_members(
             _, data = import_export_service.parse_json(file_content)
         
         # Apply mappings
-        mapped_data = import_export_service.apply_field_mapping(data, field_map)
+        mapped_data = import_export_service.apply_field_mapping(data, field_map, defaults)
         transformed_data = import_export_service.apply_value_mapping(mapped_data, value_map)
         
         # Validate data
