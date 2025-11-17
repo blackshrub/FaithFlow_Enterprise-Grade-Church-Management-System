@@ -208,7 +208,7 @@ export default function ImportWizard() {
         )}
         
         {currentStep === 2 && (
-          <StepPhotoUpload
+          <StepFieldMapping
             wizardData={wizardData}
             updateWizardData={updateWizardData}
             nextStep={nextStep}
@@ -217,7 +217,7 @@ export default function ImportWizard() {
         )}
         
         {currentStep === 3 && (
-          <StepDocumentUpload
+          <StepPhotoUpload
             wizardData={wizardData}
             updateWizardData={updateWizardData}
             nextStep={nextStep}
@@ -226,7 +226,7 @@ export default function ImportWizard() {
         )}
         
         {currentStep === 4 && (
-          <StepFieldMapping
+          <StepDocumentUpload
             wizardData={wizardData}
             updateWizardData={updateWizardData}
             nextStep={nextStep}
