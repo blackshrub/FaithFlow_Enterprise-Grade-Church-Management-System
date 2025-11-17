@@ -156,7 +156,7 @@ class ImportExportService:
         Returns:
             tuple: (valid_data, errors)
         """
-        from utils.helpers import parse_full_name
+        from utils.helpers import combine_full_name, normalize_phone_number
         
         valid_data = []
         errors = []
@@ -165,34 +165,46 @@ class ImportExportService:
         for idx, row in enumerate(data, start=1):
             row_errors = []
             
-            # Handle full_name if provided (parse into first_name and last_name)
-            if row.get('full_name') and not (row.get('first_name') and row.get('last_name')):
-                first, last = parse_full_name(row['full_name'])
-                row['first_name'] = first
-                row['last_name'] = last
+            # Combine first_name and last_name into full_name if full_name not provided
+            if not row.get('full_name') and (row.get('first_name') or row.get('last_name')):
+                row['full_name'] = combine_full_name(
+                    row.get('first_name', ''), 
+                    row.get('last_name', '')
+                )
+            
+            # Split full_name for backward compatibility if needed
+            if row.get('full_name') and not row.get('first_name'):
+                parts = row['full_name'].strip().split(maxsplit=1)
+                row['first_name'] = parts[0] if len(parts) > 0 else row['full_name']
+                row['last_name'] = parts[1] if len(parts) > 1 else parts[0] if len(parts) > 0 else row['full_name']
             
             # Required fields validation
-            if not row.get('first_name'):
-                row_errors.append(f"Row {idx}: Missing first_name or full_name")
-            if not row.get('last_name'):
-                row_errors.append(f"Row {idx}: Missing last_name or full_name")
+            if not row.get('full_name'):
+                row_errors.append(f"Row {idx}: Missing full_name")
             if not row.get('phone_whatsapp'):
                 row_errors.append(f"Row {idx}: Missing phone_whatsapp")
             
-            # Check for duplicate phone number in database
+            # Normalize phone number to 62 format
             if row.get('phone_whatsapp'):
-                existing = await db.members.find_one({
-                    "church_id": church_id,
-                    "phone_whatsapp": row['phone_whatsapp']
-                })
-                if existing:
-                    row_errors.append(f"Row {idx}: Duplicate phone number {row['phone_whatsapp']}")
-                
-                # Check for duplicate within the batch
-                if row['phone_whatsapp'] in seen_phones:
-                    row_errors.append(f"Row {idx}: Duplicate phone number {row['phone_whatsapp']} within import batch")
+                normalized_phone = normalize_phone_number(row['phone_whatsapp'])
+                if not normalized_phone or not normalized_phone.startswith('62'):
+                    row_errors.append(f"Row {idx}: Invalid phone number format '{row['phone_whatsapp']}'")
                 else:
-                    seen_phones.add(row['phone_whatsapp'])
+                    row['phone_whatsapp'] = normalized_phone
+                    
+                    # Check for duplicate phone number in database
+                    existing = await db.members.find_one({
+                        "church_id": church_id,
+                        "phone_whatsapp": normalized_phone
+                    })
+                    if existing:
+                        row_errors.append(f"Row {idx}: Duplicate phone number {normalized_phone}")
+                    
+                    # Check for duplicate within the batch
+                    if normalized_phone in seen_phones:
+                        row_errors.append(f"Row {idx}: Duplicate phone number {normalized_phone} within import batch")
+                    else:
+                        seen_phones.add(normalized_phone)
             
             # Validate date fields
             date_fields = ['date_of_birth', 'baptism_date', 'membership_date']
