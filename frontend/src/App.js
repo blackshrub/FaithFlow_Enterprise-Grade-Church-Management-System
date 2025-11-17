@@ -10,6 +10,7 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Members from "./pages/Members";
 import Settings from "./pages/Settings";
+import ImportExport from "./pages/ImportExport";
 import Layout from "./components/Layout/Layout";
 import ProtectedRoute from "./components/Layout/ProtectedRoute";
 
@@ -34,6 +35,7 @@ function App() {
               <Route index element={<Navigate to="/dashboard" replace />} />
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="members" element={<Members />} />
+              <Route path="import-export" element={<ImportExport />} />
               <Route path="settings" element={<Settings />} />
               
               {/* Placeholder routes - will be implemented in next phases */}
