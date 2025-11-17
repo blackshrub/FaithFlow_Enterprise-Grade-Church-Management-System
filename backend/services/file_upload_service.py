@@ -18,14 +18,14 @@ class FileUploadService:
     
     @staticmethod
     def extract_archive(file_content: bytes, filename: str) -> Dict[str, bytes]:
-        """Extract files from ZIP or RAR archive
+        """Extract files from ZIP or RAR archive and normalize filenames
         
         Args:
             file_content: Archive file content as bytes
             filename: Original filename to determine archive type
             
         Returns:
-            Dictionary mapping filename to file content
+            Dictionary mapping normalized filename to file content
         """
         extracted_files = {}
         
@@ -37,8 +37,12 @@ class FileUploadService:
                             file_data = zf.read(file_info.filename)
                             # Get just the filename without path
                             clean_name = file_info.filename.split('/')[-1]
-                            if clean_name:  # Skip empty names
-                                extracted_files[clean_name] = file_data
+                            
+                            # Normalize filename: lowercase, standardize extensions
+                            if clean_name:
+                                clean_name = FileUploadService.normalize_filename(clean_name)
+                                if clean_name:  # Only add if still valid after normalization
+                                    extracted_files[clean_name] = file_data
             
             elif filename.lower().endswith('.rar'):
                 with rarfile.RarFile(io.BytesIO(file_content)) as rf:
@@ -47,8 +51,12 @@ class FileUploadService:
                             file_data = rf.read(file_info.filename)
                             # Get just the filename without path
                             clean_name = file_info.filename.split('/')[-1].split('\\')[-1]
+                            
+                            # Normalize filename: lowercase, standardize extensions
                             if clean_name:
-                                extracted_files[clean_name] = file_data
+                                clean_name = FileUploadService.normalize_filename(clean_name)
+                                if clean_name:  # Only add if still valid after normalization
+                                    extracted_files[clean_name] = file_data
             
             logger.info(f"Extracted {len(extracted_files)} files from {filename}")
             return extracted_files
