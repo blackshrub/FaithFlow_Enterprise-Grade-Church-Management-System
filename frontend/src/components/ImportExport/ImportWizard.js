@@ -115,6 +115,7 @@ export default function ImportWizard() {
       simulationResults: null,
       duplicateResolutions: {},
       importResults: null,
+      uploadedMemberIds: [],
     });
   };
 
