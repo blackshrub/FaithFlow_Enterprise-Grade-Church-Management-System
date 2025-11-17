@@ -325,6 +325,15 @@
     "documentsMatchedSuccess": "Successfully matched {{count}} documents",
     "simulatingImport": "Simulating import...",
     "simulationComplete": "Simulation Complete",
-    "preparingImport": "Preparing import..."
+    "preparingImport": "Preparing import...",
+    "resolveDuplicates": "Resolve Duplicate Phone Numbers",
+    "resolveDuplicatesDesc": "Choose which record should keep the phone number",
+    "duplicatePhoneWarning": "Found {{count}} duplicate phone numbers. Please resolve conflicts.",
+    "conflict": "Conflict",
+    "existingInDatabase": "Existing in Database",
+    "row": "Row",
+    "removePhoneFromBoth": "Remove phone from both",
+    "blankPhoneOption": "Both records will be imported without phone number",
+    "continueWithResolutions": "Continue with Resolutions"
   }
 }
