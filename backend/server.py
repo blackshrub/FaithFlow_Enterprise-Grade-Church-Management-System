@@ -50,6 +50,8 @@ api_router.include_router(members.router)
 api_router.include_router(settings.router)
 api_router.include_router(import_export.router)
 api_router.include_router(photo_document_sim.router)
+api_router.include_router(seat_layouts.router)
+api_router.include_router(events.router)
 
 # Include the API router in the main app
 app.include_router(api_router)
