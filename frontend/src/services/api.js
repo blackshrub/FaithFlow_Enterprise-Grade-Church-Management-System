@@ -97,30 +97,30 @@ api.interceptors.response.use(
 
 // Auth API
 export const authAPI = {
-  login: (email, password) => api.post('/auth/login', { email, password }),
-  register: (userData) => api.post('/auth/register', userData),
-  getCurrentUser: () => api.get('/auth/me'),
-  listUsers: () => api.get('/auth/users'),
+  login: (email, password) => api.post('/auth/login/', { email, password }),
+  register: (userData) => api.post('/auth/register/', userData),
+  getCurrentUser: () => api.get('/auth/me/'),
+  listUsers: () => api.get('/auth/users/'),
 };
 
 // Churches API
 export const churchesAPI = {
-  listPublic: () => api.get('/churches/public/list'),
-  list: () => api.get('/churches'),
-  get: (id) => api.get(`/churches/${id}`),
-  create: (data) => api.post('/churches', data),
-  update: (id, data) => api.patch(`/churches/${id}`, data),
-  delete: (id) => api.delete(`/churches/${id}`),
+  listPublic: () => api.get('/churches/public/list/'),
+  list: () => api.get('/churches/'),
+  get: (id) => api.get(`/churches/${id}/`),
+  create: (data) => api.post('/churches/', data),
+  update: (id, data) => api.patch(`/churches/${id}/`, data),
+  delete: (id) => api.delete(`/churches/${id}/`),
 };
 
 // Members API
 export const membersAPI = {
-  list: (params) => api.get('/members', { params }),
-  get: (id) => api.get(`/members/${id}`),
-  create: (data) => api.post('/members', data),
-  update: (id, data) => api.patch(`/members/${id}`, data),
-  delete: (id) => api.delete(`/members/${id}`),
-  getStats: () => api.get('/members/stats/summary'),
+  list: (params) => api.get('/members/', { params }),
+  get: (id) => api.get(`/members/${id}/`),
+  create: (data) => api.post('/members/', data),
+  update: (id, data) => api.patch(`/members/${id}/`, data),
+  delete: (id) => api.delete(`/members/${id}/`),
+  getStats: () => api.get('/members/stats/summary/'),
 };
 
 // Settings API
