@@ -49,13 +49,29 @@ export default function StepPhotoUpload({ wizardData, updateWizardData, nextStep
             className="hidden"
           />
           
-          {wizardData.photoArchive ? (
+          {uploadPhotos.isPending ? (
+            <div>
+              <Loader2 className="h-12 w-12 animate-spin text-blue-600 mx-auto mb-4" />
+              <p className="text-gray-600">{t('importExport.processingPhotos')}</p>
+              <p className="text-sm text-gray-500">{t('importExport.pleaseWait')}</p>
+            </div>
+          ) : uploadResults ? (
             <div>
               <CheckCircle className="h-12 w-12 text-green-600 mx-auto mb-4" />
-              <p className="font-semibold text-gray-900">{wizardData.photoArchive.name}</p>
-              <p className="text-sm text-gray-500 mt-1">{t('importExport.photosWillBeMatched')}</p>
+              <p className="font-semibold text-gray-900">{wizardData.photoArchive?.name}</p>
+              <p className="text-sm text-green-600 mt-1">
+                {t('importExport.photosMatched', { count: uploadResults.summary?.matched_count || 0 })}
+              </p>
+              {uploadResults.summary?.unmatched_files_count > 0 && (
+                <p className="text-sm text-orange-600">
+                  {t('importExport.unmatchedFiles')}: {uploadResults.summary.unmatched_files_count}
+                </p>
+              )}
               <Button
-                onClick={() => fileInputRef.current?.click()}
+                onClick={() => {
+                  fileInputRef.current?.click();
+                  setUploadResults(null);
+                }}
                 variant="outline"
                 className="mt-4"
               >
@@ -74,6 +90,30 @@ export default function StepPhotoUpload({ wizardData, updateWizardData, nextStep
             </div>
           )}
         </div>
+
+        {/* Results Summary */}
+        {uploadResults && (
+          <div className="grid grid-cols-3 gap-4">
+            <Card>
+              <CardContent className="pt-6 text-center">
+                <p className="text-sm text-gray-600">{t('importExport.totalFiles')}</p>
+                <p className="text-2xl font-bold">{uploadResults.summary?.total_files || 0}</p>
+              </CardContent>
+            </Card>
+            <Card className="border-green-500">
+              <CardContent className="pt-6 text-center">
+                <p className="text-sm text-gray-600">{t('importExport.matched')}</p>
+                <p className="text-2xl font-bold text-green-600">{uploadResults.summary?.matched_count || 0}</p>
+              </CardContent>
+            </Card>
+            <Card className="border-orange-500">
+              <CardContent className="pt-6 text-center">
+                <p className="text-sm text-gray-600">{t('importExport.unmatchedFiles')}</p>
+                <p className="text-2xl font-bold text-orange-600">{uploadResults.summary?.unmatched_files_count || 0}</p>
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
         <Alert>
           <AlertDescription>
