@@ -54,7 +54,7 @@ export default function Layout() {
   // Auto-expand submenu if child route is active
   useEffect(() => {
     const path = location.pathname;
-    if (path.includes('/events') || path.includes('/seat-layouts')) {
+    if (path.includes('/events') || path.includes('/seat-layouts') || path.includes('/kiosk')) {
       setExpandedMenus(prev => ({ ...prev, events: true }));
     }
   }, [location.pathname]);
