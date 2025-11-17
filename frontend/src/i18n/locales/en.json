@@ -330,6 +330,7 @@
     "simulatingImport": "Simulating import...",
     "simulationComplete": "Simulation Complete",
     "preparingImport": "Preparing import...",
+    "rerunSimulation": "Re-run Validation",
     "resolveDuplicates": "Resolve Duplicate Phone Numbers",
     "resolveDuplicatesDesc": "Choose which record should keep the phone number",
     "duplicatePhoneWarning": "Found {{count}} duplicate phone numbers. Please resolve conflicts.",
