@@ -799,3 +799,377 @@ backend:
       - working: true
         agent: "testing"
         comment: "Church scoping properly enforced across all import/export operations. Non-super admin users can only import/export/view templates/logs for their own church. Super admin has access to all churches. Validation includes church_id in all database queries."
+
+# Event & RSVP Management Testing Results (2025-01-XX)
+
+backend:
+  - task: "Seat Layout - Create seat layout"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/seat_layouts.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "POST /seat-layouts/ endpoint works correctly. Creates seat layout with auto-generated seat_map (A1, A2, B1, B2... format). Validates rows (1-50) and columns (1-100). Multi-tenant scoped. Returns 201 with complete layout object including UUID."
+
+  - task: "Seat Layout - List seat layouts"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/seat_layouts.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "GET /seat-layouts/ endpoint works correctly. Lists all seat layouts for church (multi-tenant scoped). Super admin sees all churches' layouts. Returns proper datetime conversion."
+
+  - task: "Seat Layout - Get specific layout"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/seat_layouts.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "GET /seat-layouts/{id} endpoint works correctly. Returns complete layout details with seat_map. Church scoping enforced. Returns 404 for non-existent layout."
+
+  - task: "Seat Layout - Update layout"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/seat_layouts.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "PATCH /seat-layouts/{id} endpoint works correctly. Partial updates supported. Church scoping enforced. Updated_at timestamp automatically updated."
+
+  - task: "Seat Layout - Delete layout"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/seat_layouts.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "DELETE /seat-layouts/{id} endpoint works correctly. Returns 204 on success. Church scoping enforced. Returns 404 for non-existent layout."
+
+  - task: "Event - Create single event"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/events.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "POST /events/ endpoint works for single events. Requires event_date field. Returns 201 with complete event object. Datetime fields properly serialized. Multi-tenant scoped."
+
+  - task: "Event - Single event validation (requires event_date)"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/events.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "Validation correctly rejects single events without event_date with 400 status code. Error message: 'Single events must have an event_date'."
+
+  - task: "Event - Create series event"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/events.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "POST /events/ endpoint works for series events. Requires sessions array with at least one session. Each session has name, date, end_date. Returns 201 with complete event including all sessions."
+
+  - task: "Event - Series event validation (requires sessions)"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/events.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "Validation correctly rejects series events without sessions with 400 status code. Error message: 'Series events must have at least one session'."
+
+  - task: "Event - Create event with seat selection"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/events.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "POST /events/ endpoint works with enable_seat_selection=true and seat_layout_id. Validates that seat_layout_id exists and belongs to same church. Returns 201 with complete event."
+
+  - task: "Event - Seat selection validation (requires layout)"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/events.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "Validation correctly rejects seat selection without seat_layout_id with 400 status code. Error message: 'Seat selection requires a seat layout'."
+
+  - task: "Event - List events"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/events.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "GET /events/ endpoint works correctly. Lists all events for church (multi-tenant scoped). Supports filtering by event_type and is_active. Datetime conversion working properly."
+
+  - task: "Event - Get specific event"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/events.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "GET /events/{id} endpoint works correctly. Returns complete event details including sessions and RSVPs. Church scoping enforced. Returns 404 for non-existent event."
+
+  - task: "Event - Update event"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/events.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "PATCH /events/{id} endpoint works correctly. Partial updates supported. Church scoping enforced. Updated_at timestamp automatically updated."
+
+  - task: "Event - Delete event"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/events.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "DELETE /events/{id} endpoint works correctly. Returns 204 on success. Church scoping enforced. Returns 404 for non-existent event."
+
+  - task: "RSVP - Register for single event with seat selection"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/events.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "POST /events/{event_id}/rsvp endpoint works correctly with seat parameter. Validates member exists and belongs to same church. Validates seat exists in layout and is available. Returns RSVP entry with member_id, seat, timestamp, status."
+
+  - task: "RSVP - Duplicate seat prevention"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/events.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "Correctly rejects RSVP for already taken seat with 400 status code. Error message: 'Seat already taken for this session'. Seat availability tracked per session for series events."
+
+  - task: "RSVP - Get available seats"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/events.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "GET /events/{event_id}/available-seats endpoint works correctly. Returns total_seats, available, taken, unavailable counts. Returns lists of available_seats, taken_seats, and complete seat_map. Filters by session_id for series events."
+
+  - task: "RSVP - Register for series event session"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/events.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "POST /events/{event_id}/rsvp endpoint works correctly with session_id parameter. Validates session exists in event. Allows same member to RSVP for multiple sessions. Returns RSVP entry with session_id."
+
+  - task: "RSVP - Duplicate session prevention"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/events.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "Correctly rejects duplicate RSVP for same member and session with 400 status code. Error message: 'Member already has RSVP for this session'."
+
+  - task: "RSVP - Multiple sessions for same member"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/events.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "Same member can successfully RSVP for different sessions of a series event. Each RSVP tracked separately with session_id."
+
+  - task: "RSVP - List event RSVPs"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/events.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "GET /events/{event_id}/rsvps endpoint works correctly. Returns total_rsvps count and list of all RSVPs. Supports filtering by session_id. Church scoping enforced."
+
+  - task: "RSVP - Cancel RSVP"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/events.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "DELETE /events/{event_id}/rsvp/{member_id} endpoint works correctly. Supports session_id parameter for series events. Returns 404 if RSVP not found. Seat becomes available again after cancellation."
+
+  - task: "Check-in - Without RSVP requirement"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/events.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "POST /events/{event_id}/check-in endpoint works correctly for events with requires_rsvp=false. Validates member exists and belongs to same church. Records check_in_time. Returns attendance entry."
+
+  - task: "Check-in - Duplicate prevention"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/events.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "Correctly rejects duplicate check-in for same member and session with 400 status code. Error message: 'Member already checked in for this session'."
+
+  - task: "Check-in - With RSVP requirement"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/events.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "POST /events/{event_id}/check-in endpoint works correctly for events with requires_rsvp=true. Validates member has RSVP for the session before allowing check-in. Returns attendance entry with member_name and check_in_time."
+
+  - task: "Check-in - RSVP validation"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/events.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "Correctly rejects check-in without RSVP when required with 400 status code. Error message: 'RSVP required but not found for this member and session'."
+
+  - task: "Attendance - Get event attendance"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/events.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "GET /events/{event_id}/attendance endpoint works correctly. Returns total_attendance, total_rsvps, attendance_rate (percentage), and list of attendance records. Supports filtering by session_id. Church scoping enforced."
+
+  - task: "Multi-tenant Security - Events & RSVPs"
+    implemented: true
+    working: true
+    file: "/app/backend/routes/events.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "All event and RSVP endpoints properly enforce multi-tenant security. Non-super admin users can only access events for their church. Member validation includes church_id check. Seat layout validation includes church_id check."
+
+agent_communication:
+  - agent: "testing"
+    message: "Event & RSVP Management backend API testing completed successfully. All 30 event-related tests passed. Tested: Seat Layout CRUD (5 tests), Event Creation & Validation (10 tests), RSVP Management (8 tests), Check-in/Attendance (7 tests). All validations working correctly: single event requires event_date, series event requires sessions, seat selection requires layout, duplicate seat/session prevention, RSVP requirement enforcement. Multi-tenant security properly enforced across all endpoints. No critical issues found."
+
+metadata:
+  created_by: "testing_agent"
+  version: "1.0"
+  test_sequence: 5
+  run_ui: false
+  test_date: "2025-01-XX"
+  api_base_url: "https://faithmanage-2.preview.emergentagent.com/api"
+
+test_plan:
+  current_focus:
+    - "Event & RSVP Management backend APIs - ALL TESTS PASSED"
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
+  tests_completed: 30
+  tests_passed: 30
+  tests_failed: 0
+
