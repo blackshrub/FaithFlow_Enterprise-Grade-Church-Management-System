@@ -43,7 +43,7 @@ export default function StepFileUpload({ wizardData, updateWizardData, parseFile
     <Card>
       <CardHeader>
         <CardTitle>{t('importExport.uploadFile')}</CardTitle>
-        <CardDescription>{t('importExport.uploadFileDesc')}</CardDescription>
+        <CardDescription>{t('importExport.uploadFileDescSQL')}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="border-2 border-dashed border-gray-300 rounded-lg p-12 text-center hover:border-blue-500 transition-colors">
