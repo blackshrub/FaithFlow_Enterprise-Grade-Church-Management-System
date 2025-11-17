@@ -13,6 +13,13 @@ def generate_confirmation_code(length=4):
     return code
 
 
+def generate_member_id_code(length=6):
+    """Generate a unique 6-digit member ID code"""
+    characters = string.digits
+    code = ''.join(secrets.choice(characters) for _ in range(length))
+    return code
+
+
 def generate_qr_code(data: str) -> str:
     """
     Generate QR code image and return as base64 string
