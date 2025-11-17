@@ -48,6 +48,47 @@ function RSVPList({ event, rsvpData, isLoading, selectedSession }) {
     }
   };
 
+  const handleRetryWhatsApp = async (rsvp) => {
+    const key = `${rsvp.member_id}-${rsvp.session_id}`;
+    setRetrying(prev => ({ ...prev, [key]: true }));
+    
+    try {
+      const response = await eventsAPI.retryWhatsApp(
+        event.id,
+        rsvp.member_id,
+        rsvp.session_id ? { session_id: rsvp.session_id } : {}
+      );
+      
+      if (response.data.success) {
+        toast.success('WhatsApp sent successfully');
+        queryClient.invalidateQueries({ queryKey: ['rsvps', event.id] });
+      } else {
+        toast.error(`Failed: ${response.data.message}`);
+      }
+    } catch (error) {
+      toast.error('Failed to send WhatsApp');
+      console.error('Retry WhatsApp error:', error);
+    } finally {
+      setRetrying(prev => ({ ...prev, [key]: false }));
+    }
+  };
+
+  const getWhatsAppStatusIcon = (status) => {
+    switch (status) {
+      case 'sent':
+      case 'delivered':
+        return <CheckCircle className="h-4 w-4 text-green-500" />;
+      case 'failed':
+      case 'error':
+      case 'timeout':
+        return <XCircle className="h-4 w-4 text-red-500" />;
+      case 'pending':
+        return <Clock className="h-4 w-4 text-yellow-500" />;
+      default:
+        return <MessageCircle className="h-4 w-4 text-gray-400" />;
+    }
+  };
+
   const formatDate = (dateStr) => {
     if (!dateStr) return '';
     try {
