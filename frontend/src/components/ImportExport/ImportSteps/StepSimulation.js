@@ -63,7 +63,7 @@ export default function StepSimulation({ wizardData, updateWizardData, simulateI
     const hasWarnings = simulationResults.warnings && simulationResults.warnings.length > 0;
 
     // Check if we need to show duplicate resolution
-    const needsDuplicateResolution = hasDuplicates && !wizardData.duplicateResolutions;
+    const needsDuplicateResolution = hasDuplicates && (!wizardData.duplicateResolutions || Object.keys(wizardData.duplicateResolutions).length === 0);
     
     // If duplicates need resolution and user clicked resolve button
     if (needsDuplicateResolution && showDuplicateResolution) {
