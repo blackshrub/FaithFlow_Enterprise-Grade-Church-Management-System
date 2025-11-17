@@ -469,10 +469,11 @@ async def mark_attendance(
 @router.get("/{event_id}/attendance")
 async def get_event_attendance(
     event_id: str,
+    session_id: Optional[str] = Query(None),
     db: AsyncIOMotorDatabase = Depends(get_db),
     current_user: dict = Depends(get_current_user)
 ):
-    """Get attendance for an event"""
+    """Get attendance for an event or specific session"""
     
     event = await db.events.find_one({"id": event_id}, {"_id": 0})
     if not event:
@@ -481,10 +482,20 @@ async def get_event_attendance(
     if current_user.get('role') != 'super_admin' and current_user.get('church_id') != event.get('church_id'):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
     
+    all_attendance = event.get('attendance_list', [])
+    all_rsvps = event.get('rsvp_list', [])
+    
+    # Filter by session if provided
+    if session_id:
+        all_attendance = [a for a in all_attendance if a.get('session_id') == session_id]
+        all_rsvps = [r for r in all_rsvps if r.get('session_id') == session_id]
+    
     return {
         "event_id": event_id,
         "event_name": event.get('name'),
-        "total_attendance": len(event.get('attendance_list', [])),
-        "total_rsvps": len(event.get('rsvp_list', [])),
-        "attendance": event.get('attendance_list', [])
+        "session_id": session_id,
+        "total_attendance": len(all_attendance),
+        "total_rsvps": len(all_rsvps),
+        "attendance_rate": f"{(len(all_attendance) / len(all_rsvps) * 100):.1f}%" if all_rsvps else "N/A",
+        "attendance": all_attendance
     }
