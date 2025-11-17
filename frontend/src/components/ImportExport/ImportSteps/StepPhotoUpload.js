@@ -1,20 +1,36 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useUploadPhotos } from '../../../hooks/useImportExport';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../ui/card';
 import { Button } from '../../ui/button';
 import { Alert, AlertDescription } from '../../ui/alert';
-import { Upload, Image, ChevronRight, ChevronLeft, CheckCircle } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../ui/table';
+import { Badge } from '../../ui/badge';
+import { Upload, Image, ChevronRight, ChevronLeft, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 
 export default function StepPhotoUpload({ wizardData, updateWizardData, nextStep, prevStep }) {
   const { t } = useTranslation();
   const fileInputRef = useRef(null);
+  const [uploadResults, setUploadResults] = useState(wizardData.photoMatchResults || null);
+  const uploadPhotos = useUploadPhotos();
 
   const handleFileSelect = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Store the archive file for later processing
-    updateWizardData({ photoArchive: file });
+    try {
+      // Upload and process photos immediately
+      const result = await uploadPhotos.mutateAsync(file);
+      setUploadResults(result);
+      
+      // Store results in wizard data
+      updateWizardData({ 
+        photoArchive: file,
+        photoMatchResults: result
+      });
+    } catch (error) {
+      console.error('Upload error:', error);
+    }
   };
 
   return (
