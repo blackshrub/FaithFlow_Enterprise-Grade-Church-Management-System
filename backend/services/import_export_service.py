@@ -178,15 +178,26 @@ class ImportExportService:
                 row['first_name'] = parts[0] if len(parts) > 0 else row['full_name']
                 row['last_name'] = parts[1] if len(parts) > 1 else parts[0] if len(parts) > 0 else row['full_name']
             
-            # Required fields validation
+            # Only full_name is required
             if not row.get('full_name') or row['full_name'] in ['', None, 'NULL', 'null']:
-                row_errors.append(f"Row {idx}: Missing full_name")
-            if not row.get('gender') or row['gender'] in ['', None, 'NULL', 'null']:
-                row_errors.append(f"Row {idx}: Missing gender (required field)")
-            if not row.get('date_of_birth') or row['date_of_birth'] in ['', None, 'NULL', 'null']:
-                row_errors.append(f"Row {idx}: Missing date_of_birth (required field)")
-            if not row.get('address') or row['address'] in ['', None, 'NULL', 'null']:
-                row_errors.append(f"Row {idx}: Missing address (required field)")
+                row_errors.append(f"Row {idx}: Missing full_name (only required field)")
+            
+            # All other fields are optional - validate only if provided
+            
+            # Validate gender (only if provided)
+            if row.get('gender') and row['gender'] not in ['', None, 'NULL', 'null']:
+                if row['gender'] not in ['Male', 'Female']:
+                    row_errors.append(f"Row {idx}: Invalid gender value '{row['gender']}' (must be 'Male' or 'Female')")
+            else:
+                row.pop('gender', None)
+            
+            # Validate address (only if provided)
+            if row.get('address') and row['address'] in ['', None, 'NULL', 'null']:
+                row.pop('address', None)
+            
+            # Validate date_of_birth (only if provided)
+            if row.get('date_of_birth') and row['date_of_birth'] in ['', None, 'NULL', 'null']:
+                row.pop('date_of_birth', None)
             
             # Normalize phone number (only if provided)
             if row.get('phone_whatsapp') and row['phone_whatsapp'] not in ['', None, 'NULL', 'null']:
