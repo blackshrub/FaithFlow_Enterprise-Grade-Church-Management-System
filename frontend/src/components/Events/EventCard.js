@@ -126,6 +126,12 @@ function EventCard({ event, onEdit }) {
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-1">
               <h3 className="font-semibold text-gray-900 line-clamp-2">{event.name}</h3>
+              {failedWhatsAppCount > 0 && (
+                <span className="flex-shrink-0 bg-red-100 text-red-800 text-xs font-medium px-2 py-0.5 rounded-full flex items-center gap-1" title={`${failedWhatsAppCount} failed WhatsApp deliveries`}>
+                  <MessageCircle className="h-3 w-3" />
+                  !
+                </span>
+              )}
             </div>
             <div className="flex items-center gap-2">
               <span
