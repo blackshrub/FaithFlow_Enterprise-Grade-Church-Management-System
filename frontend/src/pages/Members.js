@@ -134,7 +134,32 @@ export default function Members() {
           <h1 className="text-3xl font-bold text-gray-900">{t('members.title')}</h1>
           <p className="text-gray-600 mt-1">{t('members.subtitle')}</p>
         </div>
-        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <div className="flex gap-2">
+          <Button
+            variant={showIncompleteOnly ? "default" : "outline"}
+            onClick={() => setShowIncompleteOnly(!showIncompleteOnly)}
+          >
+            {showIncompleteOnly ? (
+              <>
+                {t('members.showAll')}
+                {stats?.incomplete_data_count > 0 && (
+                  <Badge className="ml-2" variant="secondary">
+                    {stats.incomplete_data_count}
+                  </Badge>
+                )}
+              </>
+            ) : (
+              <>
+                {t('members.showIncomplete')}
+                {stats?.incomplete_data_count > 0 && (
+                  <Badge className="ml-2" variant="destructive">
+                    {stats.incomplete_data_count}
+                  </Badge>
+                )}
+              </>
+            )}
+          </Button>
+          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogTrigger asChild>
             <Button>
               <Plus className="h-4 w-4 mr-2" />
