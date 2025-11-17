@@ -65,7 +65,7 @@ export default function StepPhotoUpload({ wizardData, updateWizardData, nextStep
             className="hidden"
           />
           
-          {uploadPhotos.isPending ? (
+          {processing ? (
             <div>
               <Loader2 className="h-12 w-12 animate-spin text-blue-600 mx-auto mb-4" />
               <p className="text-gray-600">{t('importExport.processingPhotos')}</p>
