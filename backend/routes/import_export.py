@@ -213,8 +213,16 @@ async def import_members(
                 # Create member
                 member = Member(**member_data)
                 member_doc = member.model_dump()
+                
+                # Convert datetime and date fields to isoformat for MongoDB
                 member_doc['created_at'] = member_doc['created_at'].isoformat()
                 member_doc['updated_at'] = member_doc['updated_at'].isoformat()
+                
+                # Convert date fields to isoformat
+                date_fields = ['date_of_birth', 'baptism_date', 'membership_date']
+                for field in date_fields:
+                    if member_doc.get(field) and hasattr(member_doc[field], 'isoformat'):
+                        member_doc[field] = member_doc[field].isoformat()
                 
                 await db.members.insert_one(member_doc)
                 imported_count += 1
