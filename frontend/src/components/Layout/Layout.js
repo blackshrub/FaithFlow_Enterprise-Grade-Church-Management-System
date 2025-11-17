@@ -21,6 +21,7 @@ import {
   Grid3x3,
   ChevronDown,
   ChevronRight,
+  Monitor,
 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
