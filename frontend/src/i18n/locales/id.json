@@ -337,6 +337,40 @@
       "eventDateRequired": "Tanggal acara diperlukan untuk acara tunggal"
     },
     
+    "attendance": {
+      "noAttendance": "Belum ada kehadiran",
+      "noOneCheckedIn": "Belum ada yang check-in",
+      "checkedInAt": "Check-in pada"
+    },
+    
+    "kiosk": {
+      "title": "Mode Kios - Check-in",
+      "subtitle": "Pindai kode QR atau cari jemaat untuk check-in",
+      "selectEvent": "Pilih Acara",
+      "selectSession": "Pilih Sesi",
+      "scanMode": "Mode Pindai",
+      "cameraMode": "Kamera",
+      "cameraModeDesc": "Gunakan kamera perangkat untuk memindai kode QR",
+      "hardwareMode": "Pemindai Perangkat",
+      "hardwareModeDesc": "Gunakan pemindai barcode/QR eksternal",
+      "scanQRCode": "Pindai Kode QR",
+      "waitingForScan": "Menunggu pemindaian...",
+      "pointCamera": "Arahkan kamera ke kode QR",
+      "scanSuccess": "Pemindaian berhasil!",
+      "scanError": "Pemindaian gagal",
+      "invalidQRCode": "Kode QR tidak valid",
+      "alreadyCheckedIn": "Sudah check-in",
+      "manualSearch": "Pencarian Manual",
+      "searchMemberPlaceholder": "Cari jemaat berdasarkan nama atau telepon...",
+      "quickCheckIn": "Check-in Cepat",
+      "checkInSuccess": "Check-in berhasil!",
+      "checkInError": "Check-in gagal",
+      "recentCheckIns": "Check-in Terkini",
+      "todayCheckIns": "Hari ini: {{count}}",
+      "startScanning": "Mulai Pemindaian",
+      "stopScanning": "Hentikan Pemindaian"
+    },
+    
     "rsvp": {
       "title": "Manajemen RSVP",
       "subtitle": "Kelola pendaftaran acara",
