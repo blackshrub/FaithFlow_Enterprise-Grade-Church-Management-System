@@ -39,12 +39,12 @@ api.interceptors.request.use(
 // Add response interceptor to handle auth errors
 api.interceptors.response.use(
   (response) => {
-    // If response URL was redirected to HTTP, log warning
-    if (response.request && response.request.responseURL) {
-      const responseURL = response.request.responseURL;
+    const responseURL = response.request?.responseURL;
+    if (responseURL) {
       console.log('📥 Response URL:', responseURL);
+      // Warn if response came from HTTP instead of HTTPS
       if (responseURL.startsWith('http://')) {
-        console.error('⚠️ Response was served over HTTP instead of HTTPS:', responseURL);
+        console.error('⚠️ WARNING: Response served over HTTP:', responseURL);
       }
     }
     return response;
@@ -52,7 +52,7 @@ api.interceptors.response.use(
   (error) => {
     console.error('❌ Response error:', error.message);
     if (error.config) {
-      console.error('   URL:', error.config.baseURL + (error.config.url || ''));
+      console.error('   Request URL:', error.config.baseURL + (error.config.url || ''));
     }
     if (error.response?.status === 401) {
       // Token expired or invalid
