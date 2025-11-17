@@ -305,6 +305,37 @@ class ImportExportService:
                 if row.get(field) in ['', None, 'NULL', 'null']:
                     row.pop(field, None)
             
+            # Validate custom fields
+            if custom_field_definitions:
+                custom_data = {}
+                for custom_field in custom_field_definitions:
+                    field_name = custom_field.get('name')
+                    field_type = custom_field.get('type', 'string')
+                    is_required = custom_field.get('required', False)
+                    
+                    if field_name in row:
+                        # Validate the custom field
+                        is_valid, validated_value, error_msg = validate_custom_field(
+                            row[field_name],
+                            field_type,
+                            field_name
+                        )
+                        
+                        if not is_valid:
+                            row_errors.append(f\"Row {idx}: {error_msg}\")
+                        else:
+                            if validated_value is not None:
+                                custom_data[field_name] = validated_value
+                        
+                        # Remove from row (will be stored in custom_fields)
+                        row.pop(field_name, None)
+                    elif is_required:
+                        row_errors.append(f\"Row {idx}: Missing required custom field '{field_name}'\")
+                
+                # Store validated custom fields
+                if custom_data:
+                    row['custom_fields'] = custom_data
+            
             if row_errors:
                 errors.extend(row_errors)
             else:
