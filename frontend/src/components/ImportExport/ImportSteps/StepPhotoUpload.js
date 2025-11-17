@@ -31,10 +31,10 @@ export default function StepPhotoUpload({ wizardData, updateWizardData, nextStep
       
       setUploadProgress(t('importExport.extracting'));
       
-      // Simulate matching against CSV data (not database)
+      // Simulate matching against ALL CSV/SQL data (not just sample!)
       const result = await importExportAPI.simulatePhotoMatching(
         file,
-        JSON.stringify(wizardData.sampleData),
+        JSON.stringify(wizardData.allData || wizardData.sampleData),  // Use ALL data
         photoSourceField
       );
       
