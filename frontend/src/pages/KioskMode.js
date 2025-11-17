@@ -299,24 +299,24 @@ function KioskMode() {
         {/* Right: Manual Search */}
         <div className="w-1/2 bg-white/95 backdrop-blur-sm flex flex-col">
           {/* Search Bar - Fixed at Top */}
-          <div className="p-6 border-b border-gray-200 flex-shrink-0">
+          <div className="p-6 border-b border-gray-200/50 flex-shrink-0">
             <div className="flex gap-3">
               <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-6 w-6 text-gray-400" />
                 <Input
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder={t('events.kiosk.searchMemberPlaceholder')}
-                  className="pl-10 h-12 text-lg"
+                  className="pl-12 h-14 text-xl border-2 focus:border-blue-500"
                 />
               </div>
               <Button
                 onClick={() => setShowQuickAdd(true)}
-                className="h-12 px-6"
+                className="h-14 w-14 p-0"
                 disabled={!selectedEvent}
+                title={t('events.kiosk.addNewVisitor')}
               >
-                <UserPlus className="h-5 w-5 mr-2" />
-                {t('events.kiosk.addNewVisitor')}
+                <UserPlus className="h-7 w-7" />
               </Button>
             </div>
           </div>
