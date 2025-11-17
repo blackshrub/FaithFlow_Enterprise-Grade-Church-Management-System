@@ -140,7 +140,12 @@ function EventCard({ event, onEdit }) {
         {/* Footer Actions */}
         <div className="mt-4 pt-4 border-t border-gray-200 flex gap-2">
           {event.requires_rsvp && (
-            <Button variant="outline" size="sm" className="flex-1">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="flex-1"
+              onClick={() => setShowRSVPManager(true)}
+            >
               {t('events.event.viewRSVPs')}
             </Button>
           )}
@@ -149,6 +154,11 @@ function EventCard({ event, onEdit }) {
           </Button>
         </div>
       </div>
+
+      {/* RSVP Manager Modal */}
+      {showRSVPManager && (
+        <RSVPManager event={event} onClose={() => setShowRSVPManager(false)} />
+      )}
     </div>
   );
 }
