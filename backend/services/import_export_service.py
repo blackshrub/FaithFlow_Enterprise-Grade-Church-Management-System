@@ -57,7 +57,7 @@ class ImportExportService:
     
     @staticmethod
     def parse_sql(file_content: str) -> tuple[List[str], List[Dict[str, Any]]]:
-        """Parse SQL INSERT statements and return headers and data
+        """Parse SQL INSERT statements (phpMyAdmin format) and return headers and data
         
         Args:
             file_content: SQL file content as string
@@ -71,65 +71,95 @@ class ImportExportService:
             data = []
             headers = []
             
-            # Find all INSERT INTO statements
-            # Pattern: INSERT INTO table_name (col1, col2, ...) VALUES (val1, val2, ...);
-            insert_pattern = r"INSERT\s+INTO\s+\w+\s*\(([^)]+)\)\s*VALUES\s*\(([^)]+)\)"
+            # Find INSERT INTO statements with column list and VALUES
+            # Pattern matches: INSERT INTO `table` (`col1`, `col2`) VALUES (...), (...);
+            insert_pattern = r"INSERT\s+INTO\s+`?\w+`?\s*\(([^)]+)\)\s+VALUES\s+(.*?)(?:;|\n\n|$)"
             
-            matches = re.finditer(insert_pattern, file_content, re.IGNORECASE | re.MULTILINE)
+            matches = re.finditer(insert_pattern, file_content, re.IGNORECASE | re.DOTALL)
             
             for match in matches:
-                columns = match.group(1)
-                values = match.group(2)
+                columns_str = match.group(1)
+                values_str = match.group(2)
                 
-                # Parse column names
+                # Parse column names (remove backticks and quotes)
                 if not headers:
-                    headers = [col.strip().strip('`"[]\'') for col in columns.split(',')]
+                    headers = [col.strip().strip('`"[]\'') for col in columns_str.split(',')]
+                    logger.info(f"SQL columns found: {headers[:5]}...")  # Log first 5
                 
-                # Parse values
-                value_list = []
-                # Handle quoted strings and values
-                current_value = ''
-                in_quotes = False
-                quote_char = None
+                # Parse VALUES - handle multiple rows: (val1, val2), (val3, val4)
+                # Split by "),(" to get individual rows
+                rows_str = values_str.strip()
                 
-                for char in values + ',':
-                    if char in ['"', "'"]:
-                        if not in_quotes:
-                            in_quotes = True
-                            quote_char = char
-                        elif char == quote_char:
-                            in_quotes = False
-                            quote_char = None
+                # Remove trailing comma or semicolon
+                rows_str = rows_str.rstrip(',;').strip()
+                
+                # Split into individual row value sets
+                row_values_list = []
+                current_row = ''
+                paren_depth = 0
+                
+                for char in rows_str:
+                    if char == '(':
+                        paren_depth += 1
+                        if paren_depth == 1:
+                            continue  # Skip opening paren
+                    elif char == ')':
+                        paren_depth -= 1
+                        if paren_depth == 0:
+                            # End of row
+                            if current_row.strip():
+                                row_values_list.append(current_row.strip())
+                            current_row = ''
+                            continue
+                    
+                    if paren_depth > 0:
+                        current_row += char
+                
+                # Parse each row
+                for row_values_str in row_values_list:
+                    value_list = []
+                    current_value = ''
+                    in_quotes = False
+                    quote_char = None
+                    
+                    for char in row_values_str + ',':
+                        if char in ['"', "'"] and (len(current_value) == 0 or current_value[-1] != '\\\\'):
+                            if not in_quotes:
+                                in_quotes = True
+                                quote_char = char
+                            elif char == quote_char:
+                                in_quotes = False
+                                quote_char = None
+                            else:
+                                current_value += char
+                        elif char == ',' and not in_quotes:
+                            value_list.append(current_value.strip())
+                            current_value = ''
                         else:
                             current_value += char
-                    elif char == ',' and not in_quotes:
-                        value_list.append(current_value.strip())
-                        current_value = ''
-                    else:
-                        current_value += char
-                
-                # Clean values (remove quotes, handle NULL)
-                cleaned_values = []
-                for val in value_list:
-                    val = val.strip()
-                    if val.upper() == 'NULL':
-                        cleaned_values.append(None)
-                    elif val.startswith('"') and val.endswith('"'):
-                        cleaned_values.append(val[1:-1])
-                    elif val.startswith("'") and val.endswith("'"):
-                        cleaned_values.append(val[1:-1])
-                    else:
-                        cleaned_values.append(val)
-                
-                # Create row dictionary
-                if len(cleaned_values) == len(headers):
-                    row = dict(zip(headers, cleaned_values))
-                    data.append(row)
+                    
+                    # Clean values
+                    cleaned_values = []
+                    for val in value_list:
+                        val = val.strip()
+                        if val.upper() == 'NULL' or val == '':
+                            cleaned_values.append(None)
+                        elif val.startswith('"') and val.endswith('"'):
+                            cleaned_values.append(val[1:-1])
+                        elif val.startswith("'") and val.endswith("'"):
+                            cleaned_values.append(val[1:-1])
+                        else:
+                            cleaned_values.append(val)
+                    
+                    # Create row dictionary
+                    if len(cleaned_values) == len(headers):
+                        row = dict(zip(headers, cleaned_values))
+                        data.append(row)
             
             if len(data) == 0:
                 raise ValueError("No valid INSERT statements found in SQL file")
             
-            logger.info(f"Parsed {len(data)} rows from SQL file")
+            logger.info(f"Parsed {len(data)} rows from SQL file with {len(headers)} columns")
             return headers, data
             
         except Exception as e:
