@@ -128,6 +128,24 @@ export const importExportAPI = {
   
   // Logs
   listLogs: () => api.get('/import-export/logs'),
+  
+  // Bulk Photo Upload
+  uploadPhotos: (file) => {
+    const formData = new FormData();
+    formData.append('archive', file);
+    return api.post('/import-export/upload-photos', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
+  
+  // Bulk Document Upload
+  uploadDocuments: (file) => {
+    const formData = new FormData();
+    formData.append('archive', file);
+    return api.post('/import-export/upload-documents', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
 };
 
 export default api;
