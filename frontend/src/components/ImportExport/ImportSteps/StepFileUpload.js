@@ -50,7 +50,7 @@ export default function StepFileUpload({ wizardData, updateWizardData, parseFile
           <input
             ref={fileInputRef}
             type="file"
-            accept=".csv,.json"
+            accept=".csv,.json,.sql"
             onChange={handleFileSelect}
             className="hidden"
           />
