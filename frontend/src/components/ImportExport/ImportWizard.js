@@ -17,12 +17,12 @@ import StepSimulation from './ImportSteps/StepSimulation';
 import StepResults from './ImportSteps/StepResults';
 
 const STEPS = [
-  { id: 1, name: 'Upload File', key: 'upload' },
-  { id: 2, name: 'Upload Photos (Optional)', key: 'photos' },
-  { id: 3, name: 'Upload Documents (Optional)', key: 'documents' },
-  { id: 4, name: 'Map Fields', key: 'mapping' },
+  { id: 1, name: 'Upload Data', key: 'upload' },
+  { id: 2, name: 'Map Fields', key: 'mapping' },
+  { id: 3, name: 'Upload Photos', key: 'photos' },
+  { id: 4, name: 'Upload Documents', key: 'documents' },
   { id: 5, name: 'Map Values', key: 'values' },
-  { id: 6, name: 'Simulate & Validate', key: 'simulate' },
+  { id: 6, name: 'Validate', key: 'simulate' },
   { id: 7, name: 'Import', key: 'import' },
 ];
 
