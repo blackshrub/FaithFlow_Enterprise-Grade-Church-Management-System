@@ -1,0 +1,227 @@
+import zipfile
+import rarfile
+import io
+import base64
+import logging
+from typing import List, Dict, Tuple
+from PIL import Image
+
+logger = logging.getLogger(__name__)
+
+# Supported file formats
+PHOTO_FORMATS = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp']
+DOCUMENT_FORMATS = ['.pdf', '.doc', '.docx', '.txt', '.jpg', '.jpeg', '.png', '.gif', '.bmp']
+
+
+class FileUploadService:
+    """Service for handling bulk file uploads and matching"""
+    
+    @staticmethod
+    def extract_archive(file_content: bytes, filename: str) -> Dict[str, bytes]:
+        """Extract files from ZIP or RAR archive
+        
+        Args:
+            file_content: Archive file content as bytes
+            filename: Original filename to determine archive type
+            
+        Returns:
+            Dictionary mapping filename to file content
+        """
+        extracted_files = {}
+        
+        try:
+            if filename.lower().endswith('.zip'):
+                with zipfile.ZipFile(io.BytesIO(file_content)) as zf:
+                    for file_info in zf.filelist:
+                        if not file_info.is_dir():
+                            file_data = zf.read(file_info.filename)
+                            # Get just the filename without path
+                            clean_name = file_info.filename.split('/')[-1]
+                            if clean_name:  # Skip empty names
+                                extracted_files[clean_name] = file_data
+            
+            elif filename.lower().endswith('.rar'):
+                with rarfile.RarFile(io.BytesIO(file_content)) as rf:
+                    for file_info in rf.infolist():
+                        if not file_info.isdir():
+                            file_data = rf.read(file_info.filename)
+                            # Get just the filename without path
+                            clean_name = file_info.filename.split('/')[-1].split('\\')[-1]
+                            if clean_name:
+                                extracted_files[clean_name] = file_data
+            
+            logger.info(f"Extracted {len(extracted_files)} files from {filename}")
+            return extracted_files
+            
+        except Exception as e:
+            logger.error(f"Error extracting archive: {str(e)}")
+            raise ValueError(f"Failed to extract archive: {str(e)}")
+    
+    @staticmethod
+    def validate_photo(file_data: bytes, filename: str) -> bool:
+        """Validate photo file format and quality
+        
+        Args:
+            file_data: Photo file content
+            filename: Filename to check extension
+            
+        Returns:
+            bool: True if valid photo
+        """
+        # Check extension
+        ext = '.' + filename.lower().split('.')[-1] if '.' in filename else ''
+        if ext not in PHOTO_FORMATS:
+            return False
+        
+        # Try to open as image to validate
+        try:
+            img = Image.open(io.BytesIO(file_data))
+            # Verify it's actually an image
+            img.verify()
+            return True
+        except Exception as e:
+            logger.warning(f"Invalid photo file {filename}: {str(e)}")
+            return False
+    
+    @staticmethod
+    def validate_document(filename: str) -> bool:
+        """Validate document file format
+        
+        Args:
+            filename: Filename to check extension
+            
+        Returns:
+            bool: True if valid document
+        """
+        ext = '.' + filename.lower().split('.')[-1] if '.' in filename else ''
+        return ext in DOCUMENT_FORMATS
+    
+    @staticmethod
+    def convert_to_base64(file_data: bytes) -> str:
+        """Convert file to base64 string
+        
+        Args:
+            file_data: File content as bytes
+            
+        Returns:
+            str: Base64 encoded string
+        """
+        return base64.b64encode(file_data).decode('utf-8')
+    
+    @staticmethod
+    def optimize_photo(file_data: bytes, max_size: Tuple[int, int] = (800, 800)) -> bytes:
+        """Optimize photo size for storage
+        
+        Args:
+            file_data: Original photo bytes
+            max_size: Maximum dimensions (width, height)
+            
+        Returns:
+            bytes: Optimized photo bytes
+        """
+        try:
+            img = Image.open(io.BytesIO(file_data))
+            
+            # Convert RGBA to RGB if needed
+            if img.mode == 'RGBA':
+                img = img.convert('RGB')
+            
+            # Resize if larger than max_size
+            img.thumbnail(max_size, Image.Resampling.LANCZOS)
+            
+            # Save optimized
+            output = io.BytesIO()
+            img.save(output, format='JPEG', quality=85, optimize=True)
+            return output.getvalue()
+        except Exception as e:
+            logger.warning(f"Photo optimization failed: {str(e)}, using original")
+            return file_data
+    
+    @staticmethod
+    def match_files_to_members(
+        files: Dict[str, bytes],
+        members: List[Dict],
+        field_name: str,
+        is_photo: bool = True
+    ) -> Dict[str, Dict]:
+        """Match uploaded files to member records by filename
+        
+        Args:
+            files: Dictionary of filename to file content
+            members: List of member dictionaries
+            field_name: Field name containing the filename (photo_filename or personal_document)
+            is_photo: Whether files are photos (for validation)
+            
+        Returns:
+            Dictionary with matching results
+        """
+        matched = []
+        unmatched_files = []
+        unmatched_members = []
+        
+        # Create lookup by filename
+        member_lookup = {}
+        for member in members:
+            if member.get(field_name):
+                member_lookup[member[field_name]] = member
+        
+        # Match files to members
+        for filename, file_data in files.items():
+            if filename in member_lookup:
+                # Validate file
+                if is_photo:
+                    if not FileUploadService.validate_photo(file_data, filename):
+                        unmatched_files.append({
+                            'filename': filename,
+                            'reason': 'Invalid photo format'
+                        })
+                        continue
+                    # Optimize photo
+                    file_data = FileUploadService.optimize_photo(file_data)
+                else:
+                    if not FileUploadService.validate_document(filename):
+                        unmatched_files.append({
+                            'filename': filename,
+                            'reason': 'Invalid document format'
+                        })
+                        continue
+                
+                # Convert to base64
+                base64_data = FileUploadService.convert_to_base64(file_data)
+                
+                matched.append({
+                    'member_id': member_lookup[filename].get('id'),
+                    'filename': filename,
+                    'base64': base64_data,
+                    'size': len(file_data)
+                })
+            else:
+                unmatched_files.append({
+                    'filename': filename,
+                    'reason': 'No matching member found'
+                })
+        
+        # Find members without matching files
+        for member in members:
+            if member.get(field_name) and member[field_name] not in files:
+                unmatched_members.append({
+                    'member_id': member.get('id'),
+                    'filename': member[field_name],
+                    'member_name': member.get('full_name', f"{member.get('first_name', '')} {member.get('last_name', '')}")
+                })
+        
+        return {
+            'matched': matched,
+            'unmatched_files': unmatched_files,
+            'unmatched_members': unmatched_members,
+            'summary': {
+                'total_files': len(files),
+                'matched_count': len(matched),
+                'unmatched_files_count': len(unmatched_files),
+                'unmatched_members_count': len(unmatched_members)
+            }
+        }
+
+
+# Singleton instance
+file_upload_service = FileUploadService()
