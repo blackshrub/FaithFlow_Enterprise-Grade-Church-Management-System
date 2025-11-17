@@ -13,6 +13,7 @@ from utils.dependencies import get_db, require_admin, get_current_user
 from services.import_export_service import import_export_service
 from services.file_upload_service import file_upload_service
 from utils.demographics import auto_assign_demographic
+from utils.helpers import normalize_phone_number
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/import-export", tags=["Import/Export"])
