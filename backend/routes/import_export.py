@@ -490,3 +490,50 @@ async def upload_documents(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e)
         )
+
+
+# ============= Cleanup Routes =============
+
+@router.post("/cleanup-temp-uploads")
+async def cleanup_temp_uploads(
+    member_ids: List[str],
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current_user: dict = Depends(require_admin)
+):
+    """Clean up temporary photo/document uploads if import fails or is cancelled
+    
+    This endpoint removes photo_base64 and documents from members that were
+    uploaded during the import wizard but the import was never completed.
+    """
+    
+    try:
+        church_id = current_user.get('church_id')
+        
+        # Clear photos and documents for specified members
+        result = await db.members.update_many(
+            {
+                "id": {"$in": member_ids},
+                "church_id": church_id
+            },
+            {
+                "$set": {
+                    "photo_base64": None,
+                    "documents": [],
+                    "updated_at": datetime.now().isoformat()
+                }
+            }
+        )
+        
+        logger.info(f"Cleaned up temp uploads for {result.modified_count} members")
+        
+        return {
+            "success": True,
+            "cleaned_count": result.modified_count
+        }
+    
+    except Exception as e:
+        logger.error(f"Error cleaning up uploads: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
