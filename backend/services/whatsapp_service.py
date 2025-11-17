@@ -1,93 +1,103 @@
-import requests
 import os
+import requests
 import logging
 from typing import Optional
 
 logger = logging.getLogger(__name__)
 
+WHATSAPP_API_URL = os.environ.get('WHATSAPP_API_URL', '')
+WHATSAPP_USERNAME = os.environ.get('WHATSAPP_USERNAME', '')
+WHATSAPP_PASSWORD = os.environ.get('WHATSAPP_PASSWORD', '')
 
-class WhatsAppService:
-    """Service for sending WhatsApp messages via go-whatsapp-web-multidevice API"""
+
+async def send_whatsapp_message(
+    phone_number: str,
+    message: str,
+    image_base64: Optional[str] = None
+) -> dict:
+    """
+    Send WhatsApp message via gateway
     
-    def __init__(self):
-        self.base_url = os.environ.get('WHATSAPP_API_URL', 'http://dermapack.net:3001')
-        self.username = os.environ.get('WHATSAPP_USERNAME', '')
-        self.password = os.environ.get('WHATSAPP_PASSWORD', '')
+    Args:
+        phone_number: Recipient phone number (format: 628xxxxx)
+        message: Text message to send
+        image_base64: Optional base64 encoded image (for QR code)
     
-    def send_message(self, phone: str, message: str) -> dict:
-        """Send a WhatsApp message
-        
-        Args:
-            phone: Recipient phone number in international format (e.g., 6289685028129)
-            message: Message text to send
-            
-        Returns:
-            dict: Response from WhatsApp API
-        """
-        try:
-            # Format phone number for WhatsApp API (add @s.whatsapp.net if not present)
-            if '@' not in phone:
-                phone = f"{phone}@s.whatsapp.net"
-            
-            url = f"{self.base_url}/send/message"
-            payload = {
-                "phone": phone,
-                "message": message
-            }
-            
-            response = requests.post(
-                url,
-                json=payload,
-                auth=(self.username, self.password),
-                headers={"Content-Type": "application/json"},
-                timeout=30
-            )
-            
-            if response.status_code == 200:
-                logger.info(f"WhatsApp message sent successfully to {phone}")
-                return {"success": True, "data": response.json()}
-            else:
-                logger.error(f"Failed to send WhatsApp message: {response.status_code} - {response.text}")
-                return {"success": False, "error": response.text}
-                
-        except Exception as e:
-            logger.error(f"Error sending WhatsApp message: {str(e)}")
-            return {"success": False, "error": str(e)}
+    Returns:
+        dict with success status and message
+    """
+    if not WHATSAPP_API_URL:
+        logger.warning("WhatsApp API URL not configured")
+        return {'success': False, 'message': 'WhatsApp not configured'}
     
-    def send_bulk_messages(self, recipients: list[dict]) -> dict:
-        """Send WhatsApp messages to multiple recipients
-        
-        Args:
-            recipients: List of dicts with 'phone' and 'message' keys
-            
-        Returns:
-            dict: Summary of sent messages
-        """
-        results = {
-            "total": len(recipients),
-            "success": 0,
-            "failed": 0,
-            "errors": []
+    try:
+        # Prepare payload
+        payload = {
+            'phone': phone_number,
+            'message': message,
         }
         
-        for recipient in recipients:
-            phone = recipient.get('phone')
-            message = recipient.get('message')
-            
-            if not phone or not message:
-                results['failed'] += 1
-                results['errors'].append(f"Missing phone or message for recipient")
-                continue
-            
-            result = self.send_message(phone, message)
-            if result['success']:
-                results['success'] += 1
-            else:
-                results['failed'] += 1
-                results['errors'].append(f"{phone}: {result['error']}")
+        # Add image if provided
+        if image_base64:
+            payload['image'] = image_base64
         
-        return results
+        # Send request
+        response = requests.post(
+            f"{WHATSAPP_API_URL}/send",
+            json=payload,
+            auth=(WHATSAPP_USERNAME, WHATSAPP_PASSWORD) if WHATSAPP_USERNAME else None,
+            timeout=10
+        )
+        
+        if response.status_code == 200:
+            logger.info(f"WhatsApp message sent to {phone_number}")
+            return {'success': True, 'message': 'Message sent successfully'}
+        else:
+            logger.error(f"WhatsApp API error: {response.status_code} - {response.text}")
+            return {'success': False, 'message': f'API error: {response.status_code}'}
+    
+    except Exception as e:
+        logger.error(f"WhatsApp send error: {str(e)}")
+        return {'success': False, 'message': str(e)}
 
 
-# Create singleton instance
-whatsapp_service = WhatsAppService()
+def format_rsvp_confirmation_message(
+    member_name: str,
+    event_name: str,
+    session_name: Optional[str],
+    event_date: str,
+    seat: Optional[str],
+    confirmation_code: str,
+    location: Optional[str] = None
+) -> str:
+    """
+    Format RSVP confirmation message for WhatsApp
+    """
+    message = f"""🎉 RSVP Confirmation
+
+Hello {member_name},
+
+Your registration has been confirmed!
+
+📅 Event: {event_name}
+"""
+    
+    if session_name:
+        message += f"📌 Session: {session_name}\n"
+    
+    message += f"📆 Date: {event_date}\n"
+    
+    if location:
+        message += f"📍 Location: {location}\n"
+    
+    if seat:
+        message += f"💺 Seat: {seat}\n"
+    
+    message += f"""\n🔑 Confirmation Code: {confirmation_code}
+
+Please save this QR code for check-in.
+
+See you at the event! 🙏
+"""
+    
+    return message
