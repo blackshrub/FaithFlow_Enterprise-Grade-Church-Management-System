@@ -137,7 +137,7 @@ class FileUploadService:
                                 else:
                                     logger.warning(f"Duplicate normalized filename: {normalized_name} (original: {clean_name})")
             
-            logger.info(f"Extracted {len(extracted_files)} files from {filename}")
+            logger.info(f"Extracted {len(extracted_files)} files from {filename}, skipped {skipped_count}")
             return extracted_files
             
         except Exception as e:
