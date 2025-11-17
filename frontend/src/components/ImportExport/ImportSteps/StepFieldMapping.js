@@ -11,20 +11,20 @@ import { Alert, AlertDescription } from '../../ui/alert';
 import { ChevronRight, ChevronLeft } from 'lucide-react';
 
 const TARGET_FIELDS = [
-  { value: 'full_name', label: 'Full Name', required: true, info: 'Will be split into first and last name' },
-  { value: 'gender', label: 'Gender', required: true, info: 'Must be: Male or Female' },
-  { value: 'date_of_birth', label: 'Birth Date', required: true, info: 'Format must match church setting (default: DD-MM-YYYY)' },
-  { value: 'address', label: 'Address', required: true },
-  { value: 'phone_whatsapp', label: 'Phone Number (WhatsApp)', required: false, info: 'Optional - Kids may not have phones. Will be normalized to 62XXXXXXXXX if provided' },
-  { value: 'blood_type', label: 'Blood Type', required: false, info: 'Must be: A, B, AB, or O' },
-  { value: 'marital_status', label: 'Marital Status', required: false, info: 'Must be: Married, Not Married, Widower, or Widow' },
-  { value: 'baptism_date', label: 'Baptism Date', required: false, info: 'Format must match church setting (default: DD-MM-YYYY)' },
-  { value: 'photo_filename', label: 'Photo Filename', required: false, info: 'Filename to match with bulk uploaded photos' },
-  { value: 'personal_document', label: 'Personal Document', required: false, info: 'Filename to match with bulk uploaded documents' },
-  { value: 'email', label: 'Email', required: false },
-  { value: 'city', label: 'City', required: false },
-  { value: 'occupation', label: 'Occupation', required: false },
-  { value: 'notes', label: 'Notes', required: false },
+  { value: 'full_name', label: 'Full Name', required: true, info: 'Only required field - will be split into first and last name' },
+  { value: 'gender', label: 'Gender', required: false, info: 'Optional - Must be: Male or Female' },
+  { value: 'date_of_birth', label: 'Birth Date', required: false, info: 'Optional - Format must match church setting' },
+  { value: 'address', label: 'Address', required: false, info: 'Optional - Member address' },
+  { value: 'phone_whatsapp', label: 'Phone Number (WhatsApp)', required: false, info: 'Optional - Will be normalized to 62XXXXXXXXX if provided' },
+  { value: 'blood_type', label: 'Blood Type', required: false, info: 'Optional - Must be: A, B, AB, or O' },
+  { value: 'marital_status', label: 'Marital Status', required: false, info: 'Optional - Must be: Married, Not Married, Widower, or Widow' },
+  { value: 'baptism_date', label: 'Baptism Date', required: false, info: 'Optional - Format must match church setting' },
+  { value: 'photo_filename', label: 'Photo Filename', required: false, info: 'Optional - Filename to match with bulk uploaded photos' },
+  { value: 'personal_document', label: 'Personal Document', required: false, info: 'Optional - Filename to match with bulk uploaded documents' },
+  { value: 'email', label: 'Email', required: false, info: 'Optional' },
+  { value: 'city', label: 'City', required: false, info: 'Optional' },
+  { value: 'occupation', label: 'Occupation', required: false, info: 'Optional' },
+  { value: 'notes', label: 'Notes', required: false, info: 'Optional' },
 ];
 
 export default function StepFieldMapping({ wizardData, updateWizardData, nextStep, prevStep }) {
