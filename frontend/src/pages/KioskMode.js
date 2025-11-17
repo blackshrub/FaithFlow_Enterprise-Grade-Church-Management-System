@@ -370,7 +370,7 @@ function KioskMode() {
 
           {/* Recent Check-ins */}
           {recentCheckIns.length > 0 && (
-            <div className="border-t border-gray-200 p-4 flex-shrink-0 bg-gray-50">
+            <div className="border-t border-white/20 p-4 flex-shrink-0 bg-white/95 backdrop-blur-sm">
               <p className="text-sm font-medium text-gray-700 mb-2">
                 {t('events.kiosk.recentCheckIns')} ({recentCheckIns.length})
               </p>
