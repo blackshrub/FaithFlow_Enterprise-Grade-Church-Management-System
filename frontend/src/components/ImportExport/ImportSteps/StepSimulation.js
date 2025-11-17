@@ -163,7 +163,13 @@ export default function StepSimulation({ wizardData, updateWizardData, simulateI
               {t('importExport.rerunSimulation')}
             </Button>
             <Button 
-              onClick={nextStep} 
+              onClick={() => {
+                if (hasDuplicates) {
+                  setShowDuplicateResolution(true);
+                } else {
+                  nextStep();
+                }
+              }}
               disabled={!simulationResults.ready_to_import && !hasDuplicates}
             >
               {hasDuplicates 
