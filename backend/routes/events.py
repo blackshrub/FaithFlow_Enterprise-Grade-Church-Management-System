@@ -231,6 +231,32 @@ async def register_rsvp(
     if duplicate_rsvp:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Member already has RSVP for this session")
     
+    # Check capacity limits (seat layout or manual capacity)
+    if event.get('requires_rsvp'):
+        # Get current RSVPs for this session
+        session_rsvps = [r for r in event.get('rsvp_list', []) if r.get('session_id') == session_id]
+        current_count = len(session_rsvps)
+        
+        # Check if we have a capacity limit
+        max_capacity = None
+        
+        if event.get('enable_seat_selection') and event.get('seat_layout_id'):
+            # Get capacity from seat layout
+            layout = await db.seat_layouts.find_one({"id": event.get('seat_layout_id')})
+            if layout:
+                seat_map = layout.get('seat_map', {})
+                max_capacity = sum(1 for status in seat_map.values() if status == 'available')
+        elif event.get('seat_capacity'):
+            # Use manual capacity
+            max_capacity = event.get('seat_capacity')
+        
+        # Check if capacity is exceeded
+        if max_capacity and current_count >= max_capacity:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, 
+                detail=f"Event is at full capacity ({max_capacity} seats)"
+            )
+    
     # Check if seat is available if seat selection enabled
     if event.get('enable_seat_selection'):
         if not seat:
