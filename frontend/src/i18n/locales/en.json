@@ -186,6 +186,7 @@
   "importExport": {
     "title": "Import/Export",
     "subtitle": "Bulk import and export member data",
+    "subtitleUnified": "Import members with data, photos, and documents in one unified process",
     "import": "Import",
     "export": "Export",
     "history": "History",
