@@ -22,14 +22,13 @@ db = client[os.environ['DB_NAME']]
 DATA_DIR = ROOT_DIR / 'data' / 'bible'
 
 
-async def import_bible_json(file_path: str, version_code: str, book_name_field: str):
+async def import_bible_json(file_path: str, version_code: str):
     """
     Import Bible from BibleSuperSearch JSON format
     
     Args:
         file_path: Path to JSON file
         version_code: 'TB' or 'CHS'
-        book_name_field: 'id' for Indonesian, 'zh' for Chinese, 'en' for English
     """
     print(f"Importing {version_code} from {file_path}...")
     
@@ -38,33 +37,36 @@ async def import_bible_json(file_path: str, version_code: str, book_name_field: 
     
     total_verses = 0
     
-    # Parse BibleSuperSearch format
-    for book_data in data:
-        book_name = book_data.get('name', '')
-        book_abbr = book_data.get('abbreviation', book_name)
+    # BibleSuperSearch format: { metadata: {...}, verses: [...] }
+    verses_data = data.get('verses', [])
+    
+    for verse_item in verses_data:
+        book_name = verse_item.get('book_name', '')
+        book_num = verse_item.get('book', 0)
+        chapter_num = verse_item.get('chapter', 0)
+        verse_num = verse_item.get('verse', 0)
+        verse_text = verse_item.get('text', '')
         
-        for chapter_data in book_data.get('chapters', []):
-            chapter_num = chapter_data.get('number', 0)
+        if verse_text and verse_num and book_name:
+            await db.bible_verses.update_one(
+                {
+                    "version_code": version_code.upper(),
+                    "book": book_name,
+                    "chapter": int(chapter_num),
+                    "verse": int(verse_num)
+                },
+                {"$set": {
+                    "id": f"{version_code.upper()}_{book_num}_{chapter_num}_{verse_num}",
+                    "book_number": int(book_num),
+                    "text": verse_text.strip()
+                }},
+                upsert=True
+            )
+            total_verses += 1
             
-            for verse_data in chapter_data.get('verses', []):
-                verse_num = verse_data.get('number', 0)
-                verse_text = verse_data.get('text', '')
-                
-                if verse_text and verse_num:
-                    await db.bible_verses.update_one(
-                        {
-                            "version_code": version_code.upper(),
-                            "book": book_name,  # Store name as-is from JSON
-                            "chapter": int(chapter_num),
-                            "verse": int(verse_num)
-                        },
-                        {"$set": {
-                            "id": f"{version_code.upper()}_{book_abbr}_{chapter_num}_{verse_num}",
-                            "text": verse_text.strip()
-                        }},
-                        upsert=True
-                    )
-                    total_verses += 1
+            # Progress indicator
+            if total_verses % 1000 == 0:
+                print(f"  Imported {total_verses} verses...")
     
     print(f"  ✓ Imported {total_verses} verses for {version_code.upper()}")
     return total_verses
