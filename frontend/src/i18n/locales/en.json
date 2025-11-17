@@ -352,6 +352,7 @@
     "removePhoneFromBoth": "Remove phone from both",
     "blankPhoneOption": "Both records will be imported without phone number",
     "continueWithResolutions": "Continue with Resolutions",
+    "backToValidation": "Back to Validation",
     "uploadPhotosOptional": "Upload Photos (Optional)",
     "uploadPhotosWizardDesc": "Upload photos to match with member records - this step is optional",
     "uploadDocumentsOptional": "Upload Documents (Optional)",
