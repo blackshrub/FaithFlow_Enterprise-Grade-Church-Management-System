@@ -270,6 +270,7 @@
       "seatSelectionDesc": "Members can choose specific seats during registration",
       "seatCapacity": "Seat Capacity",
       "seatCapacityDesc": "Maximum number of attendees (optional, leave blank for unlimited)",
+      "seatCapacityDescSeries": "Maximum capacity per session (applies to all sessions)",
       "seatCapacityPlaceholder": "e.g., 100",
       "capacityFull": "Event is at full capacity",
       "capacityRemaining": "{{remaining}} seats remaining",
