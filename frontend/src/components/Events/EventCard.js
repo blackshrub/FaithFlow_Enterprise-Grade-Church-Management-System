@@ -144,7 +144,7 @@ function EventCard({ event, onEdit }) {
         )}
 
         {/* Details */}
-        <div className="space-y-2 text-sm">
+        <div className="space-y-2 text-sm flex-1">
           {event.event_type === 'single' && event.event_date && (
             <div className="flex items-center gap-2 text-gray-600">
               <Calendar className="h-4 w-4" />
