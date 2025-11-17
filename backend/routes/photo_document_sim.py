@@ -100,8 +100,8 @@ async def simulate_photo_matching(
                 'unmatched_members_count': len(unmatched_members)
             },
             'matched': matched,
-            'unmatched_files': unmatched_files,
-            'unmatched_members': unmatched_members
+            'unmatched_members': unmatched_members,  # Members without matching photos
+            'note': 'Only matched photos will be imported. Unmatched files will be ignored.'
         }
     
     except Exception as e:
@@ -190,8 +190,8 @@ async def simulate_document_matching(
                 'unmatched_members_count': len(unmatched_members)
             },
             'matched': matched,
-            'unmatched_files': unmatched_files,
-            'unmatched_members': unmatched_members
+            'unmatched_members': unmatched_members,  # Members without matching photos
+            'note': 'Only matched photos will be imported. Unmatched files will be ignored.'
         }
     
     except Exception as e:
