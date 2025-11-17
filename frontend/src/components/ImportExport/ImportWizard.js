@@ -228,31 +228,6 @@ export default function ImportWizard() {
           />
         )}
       </div>
-
-      {/* Step Navigation */}
-      {currentStep < 5 && currentStep > 1 && wizardData.headers.length > 0 && (
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex justify-between">
-              <Button
-                variant="outline"
-                onClick={prevStep}
-                disabled={currentStep === 1}
-              >
-                <ChevronLeft className="h-4 w-4 mr-2" />
-                {t('importExport.previous')}
-              </Button>
-              <Button
-                onClick={nextStep}
-                disabled={currentStep === STEPS.length}
-              >
-                {t('importExport.next')}
-                <ChevronRight className="h-4 w-4 ml-2" />
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 }
