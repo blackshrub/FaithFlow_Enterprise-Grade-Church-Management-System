@@ -18,6 +18,17 @@ const api = axios.create({
 // Add request interceptor to ensure HTTPS
 api.interceptors.request.use(
   (config) => {
+    // Normalize URL to always use trailing slash for base paths
+    if (config.url === '' || config.url === '/') {
+      config.url = '/';
+    } else if (config.url && !config.url.includes('?') && !config.url.endsWith('/')) {
+      // Add trailing slash to prevent redirects (unless it has query params or already has slash)
+      const hasExtension = /\.\w+$/.test(config.url);
+      if (!hasExtension && !config.url.match(/\/\w+$/)) {
+        config.url = config.url + '/';
+      }
+    }
+    
     // Log the actual URL being requested
     const fullURL = config.baseURL + (config.url || '');
     console.log('📡 API Request:', config.method?.toUpperCase(), fullURL);
