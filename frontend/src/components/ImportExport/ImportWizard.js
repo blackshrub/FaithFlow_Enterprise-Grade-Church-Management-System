@@ -98,6 +98,7 @@ export default function ImportWizard() {
       fieldMappings: {},
       valueMappings: {},
       defaultValues: {},
+      customFields: [],
       dateFormat: churchSettings?.date_format || 'DD-MM-YYYY',
       simulationResults: null,
       duplicateResolutions: {},
