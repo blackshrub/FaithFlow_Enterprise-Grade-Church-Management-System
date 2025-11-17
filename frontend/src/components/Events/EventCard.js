@@ -54,11 +54,13 @@ function EventCard({ event, onEdit }) {
   const rsvpCount = event.rsvp_list?.length || 0;
   const attendanceCount = event.attendance_list?.length || 0;
   
-  // Check for failed WhatsApp deliveries
+  // Check for failed WhatsApp deliveries (excluding disabled status)
   const failedWhatsAppCount = event.rsvp_list?.filter(r => 
-    r.whatsapp_status === 'failed' || 
-    r.whatsapp_status === 'error' || 
-    r.whatsapp_status === 'timeout'
+    r.whatsapp_status && 
+    r.whatsapp_status !== 'disabled' &&
+    (r.whatsapp_status === 'failed' || 
+     r.whatsapp_status === 'error' || 
+     r.whatsapp_status === 'timeout')
   ).length || 0;
   
   // Calculate capacity info with progress
