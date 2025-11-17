@@ -93,6 +93,7 @@ export default function ImportWizard() {
       fileType: '',
       headers: [],
       sampleData: [],
+      allData: [],
       totalRecords: 0,
       photoArchive: null,
       photoSimulation: null,
