@@ -191,8 +191,8 @@ function EventCard({ event, onEdit }) {
           )}
         </div>
 
-        {/* Footer Actions */}
-        <div className="mt-4 pt-4 border-t border-gray-200 flex gap-2">
+        {/* Footer Actions - Always at bottom */}
+        <div className="mt-4 pt-4 border-t border-gray-200 flex gap-2 flex-shrink-0">
           {event.event_type === 'series' && event.sessions?.length > 0 && (
             <Button 
               variant="outline" 
