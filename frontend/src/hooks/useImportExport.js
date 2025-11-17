@@ -97,3 +97,37 @@ export const useImportLogs = () => {
     enabled: !!church?.id,
   });
 };
+
+// Photo upload
+export const useUploadPhotos = () => {
+  const queryClient = useQueryClient();
+  const { church } = useAuth();
+  
+  return useMutation({
+    mutationFn: (file) => importExportAPI.uploadPhotos(file).then(res => res.data),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.members.all(church?.id) });
+      toast.success(`Successfully matched ${data.updated_count} photos`);
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.detail || 'Photo upload failed');
+    },
+  });
+};
+
+// Document upload
+export const useUploadDocuments = () => {
+  const queryClient = useQueryClient();
+  const { church } = useAuth();
+  
+  return useMutation({
+    mutationFn: (file) => importExportAPI.uploadDocuments(file).then(res => res.data),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.members.all(church?.id) });
+      toast.success(`Successfully matched ${data.updated_count} documents`);
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.detail || 'Document upload failed');
+    },
+  });
+};
