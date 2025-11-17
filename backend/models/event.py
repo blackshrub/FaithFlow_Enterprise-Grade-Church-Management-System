@@ -1,19 +1,34 @@
 from pydantic import BaseModel, Field, ConfigDict
-from typing import Optional, List, Literal
+from typing import Optional, List, Dict, Literal
 from datetime import datetime, timezone
 import uuid
 
 
+class SessionBase(BaseModel):
+    name: str = Field(..., description="Session name")
+    date: datetime
+    end_date: Optional[datetime] = None
+
+
 class EventBase(BaseModel):
-    title: str = Field(..., min_length=1, max_length=200)
+    name: str = Field(..., min_length=1, max_length=200)
     description: Optional[str] = None
-    event_type: Optional[str] = Field(None, description="e.g., Service, Meeting, Conference")
-    start_datetime: datetime
-    end_datetime: datetime
-    location: Optional[str] = None
-    max_attendees: Optional[int] = None
+    event_type: Literal['single', 'series'] = 'single'
     requires_rsvp: bool = False
-    is_published: bool = True
+    enable_seat_selection: bool = False
+    seat_layout_id: Optional[str] = None
+    location: Optional[str] = None
+    reservation_start: Optional[datetime] = None
+    reservation_end: Optional[datetime] = None
+    event_photo: Optional[str] = None  # Base64 or URL
+    is_active: bool = True
+    
+    # For single events
+    event_date: Optional[datetime] = None
+    event_end_date: Optional[datetime] = None
+    
+    # For series events
+    sessions: List[SessionBase] = Field(default_factory=list)
 
 
 class EventCreate(EventBase):
@@ -21,15 +36,19 @@ class EventCreate(EventBase):
 
 
 class EventUpdate(BaseModel):
-    title: Optional[str] = Field(None, min_length=1, max_length=200)
+    name: Optional[str] = Field(None, min_length=1, max_length=200)
     description: Optional[str] = None
-    event_type: Optional[str] = None
-    start_datetime: Optional[datetime] = None
-    end_datetime: Optional[datetime] = None
-    location: Optional[str] = None
-    max_attendees: Optional[int] = None
     requires_rsvp: Optional[bool] = None
-    is_published: Optional[bool] = None
+    enable_seat_selection: Optional[bool] = None
+    seat_layout_id: Optional[str] = None
+    location: Optional[str] = None
+    reservation_start: Optional[datetime] = None
+    reservation_end: Optional[datetime] = None
+    event_photo: Optional[str] = None
+    is_active: Optional[bool] = None
+    event_date: Optional[datetime] = None
+    event_end_date: Optional[datetime] = None
+    sessions: Optional[List[SessionBase]] = None
 
 
 class Event(EventBase):
@@ -37,8 +56,7 @@ class Event(EventBase):
     
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     church_id: str
-    rsvp_list: List[dict] = Field(default_factory=list)  # [{member_id, status, timestamp}]
-    attendance_list: List[str] = Field(default_factory=list)  # [member_id]
-    volunteer_ids: List[str] = Field(default_factory=list)
+    rsvp_list: List[Dict] = Field(default_factory=list)  # [{member_id, session_id, seat, timestamp, status}]
+    attendance_list: List[Dict] = Field(default_factory=list)  # [{member_id, session_id, check_in_time}]
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
