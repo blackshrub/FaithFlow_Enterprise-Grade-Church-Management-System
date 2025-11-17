@@ -321,6 +321,8 @@
       "totalAttended": "{{count}} hadir",
       "totalAttended_one": "{{count}} orang hadir",
       "totalAttended_other": "{{count}} orang hadir",
+      "totalAttendance": "Total Kehadiran",
+      "attendanceRate": "Tingkat Kehadiran",
       "eventsTotal": "Total: {{count}} acara",
       "eventsTotal_one": "Total: {{count}} acara",
       "eventsTotal_other": "Total: {{count}} acara",
