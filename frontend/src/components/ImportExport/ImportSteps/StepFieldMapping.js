@@ -115,38 +115,65 @@ export default function StepFieldMapping({ wizardData, updateWizardData, nextSte
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>{t('importExport.appField')}</TableHead>
+                <TableHead>{t('importExport.required')}</TableHead>
                 <TableHead>{t('importExport.sourceColumn')}</TableHead>
-                <TableHead>{t('importExport.sampleValue')}</TableHead>
-                <TableHead>{t('importExport.targetField')}</TableHead>
+                <TableHead>{t('importExport.defaultValue')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {wizardData.headers.map((header) => (
-                <TableRow key={header}>
-                  <TableCell className="font-medium">{header}</TableCell>
-                  <TableCell className="text-sm text-gray-600">
-                    {wizardData.sampleData[0]?.[header] || '-'}
-                  </TableCell>
-                  <TableCell>
-                    <Select
-                      value={wizardData.fieldMappings[header] || ''}
-                      onValueChange={(value) => handleMappingChange(header, value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder={t('importExport.selectField')} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="_skip_">{t('importExport.skipField')}</SelectItem>
-                        {TARGET_FIELDS.map((field) => (
-                          <SelectItem key={field.value} value={field.value}>
-                            {field.label} {field.required && '(Required)'}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </TableCell>
-                </TableRow>
-              ))}
+              {TARGET_FIELDS.map((field) => {
+                const sourceField = getSourceFieldForTarget(field.value);
+                const hasDefault = defaultValues[field.value];
+                
+                return (
+                  <TableRow key={field.value}>
+                    <TableCell className="font-medium">
+                      {field.label}
+                      {field.required && <Badge className="ml-2" variant="destructive">Required</Badge>}
+                    </TableCell>
+                    <TableCell>
+                      {field.required ? (
+                        <Badge variant="destructive">Yes</Badge>
+                      ) : (
+                        <Badge variant="secondary">No</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Select
+                        value={sourceField || ''}
+                        onValueChange={(value) => handleMappingChange(field.value, value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder={t('importExport.selectColumn')} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {!field.required && (
+                            <>
+                              <SelectItem value="_skip_">{t('importExport.skipField')}</SelectItem>
+                              <SelectItem value="_default_">{t('importExport.useDefault')}</SelectItem>
+                            </>
+                          )}
+                          {wizardData.headers.map((header) => (
+                            <SelectItem key={header} value={header}>
+                              {header}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </TableCell>
+                    <TableCell>
+                      <Input
+                        placeholder={t('importExport.enterDefault')}
+                        value={defaultValues[field.value] || ''}
+                        onChange={(e) => handleDefaultValueChange(field.value, e.target.value)}
+                        disabled={!!sourceField && sourceField !== '_default_'}
+                        className="max-w-xs"
+                      />
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </div>
