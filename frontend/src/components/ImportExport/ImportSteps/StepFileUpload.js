@@ -30,7 +30,7 @@ export default function StepFileUpload({ wizardData, updateWizardData, parseFile
           totalRecords: result.total_records,
         });
         
-        // Auto-advance to Step 2 (Photos)
+        // Auto-advance to Step 2 (Map Fields)
         nextStep();
       } catch (error) {
         console.error('Parse error:', error);
