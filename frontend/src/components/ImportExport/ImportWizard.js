@@ -90,11 +90,16 @@ export default function ImportWizard() {
       headers: [],
       sampleData: [],
       totalRecords: 0,
+      photoArchive: null,
+      photoMatchResults: null,
+      documentArchive: null,
+      documentMatchResults: null,
       fieldMappings: {},
       valueMappings: {},
       defaultValues: {},
       dateFormat: churchSettings?.date_format || 'DD-MM-YYYY',
       simulationResults: null,
+      duplicateResolutions: {},
       importResults: null,
     });
   };
