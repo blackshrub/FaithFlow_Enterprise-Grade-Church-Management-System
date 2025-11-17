@@ -1679,6 +1679,82 @@ def test_list_import_logs():
         return False
 
 
+def test_create_test_members():
+    """Create test members for RSVP and check-in tests"""
+    global test_members_created
+    
+    print_test_header("Create Test Members for Event Testing")
+    
+    if not auth_token or not church_id:
+        print_error("No auth token or church_id available")
+        return False
+    
+    headers = {
+        "Authorization": f"Bearer {auth_token}",
+        "Content-Type": "application/json"
+    }
+    
+    import time
+    unique_suffix = str(int(time.time()))[-6:]
+    
+    # Create 3 test members
+    members_data = [
+        {
+            "first_name": "John",
+            "last_name": "Doe",
+            "full_name": "John Doe",
+            "phone_whatsapp": f"+628199{unique_suffix}01",
+            "email": f"john.doe.{unique_suffix}@test.com",
+            "gender": "male",
+            "church_id": church_id,
+            "is_active": True
+        },
+        {
+            "first_name": "Jane",
+            "last_name": "Smith",
+            "full_name": "Jane Smith",
+            "phone_whatsapp": f"+628199{unique_suffix}02",
+            "email": f"jane.smith.{unique_suffix}@test.com",
+            "gender": "female",
+            "church_id": church_id,
+            "is_active": True
+        },
+        {
+            "first_name": "Bob",
+            "last_name": "Johnson",
+            "full_name": "Bob Johnson",
+            "phone_whatsapp": f"+628199{unique_suffix}03",
+            "email": f"bob.johnson.{unique_suffix}@test.com",
+            "gender": "male",
+            "church_id": church_id,
+            "is_active": True
+        }
+    ]
+    
+    try:
+        for member_data in members_data:
+            response = requests.post(
+                f"{BASE_URL}/members/",
+                headers=headers,
+                json=member_data,
+                timeout=10
+            )
+            
+            if response.status_code == 201:
+                member = response.json()
+                test_members_created.append(member.get('id'))
+                print_info(f"Created member: {member.get('full_name')} (ID: {member.get('id')})")
+            else:
+                print_error(f"Failed to create member: Status {response.status_code} - {response.text}")
+                return False
+        
+        print_success(f"Created {len(test_members_created)} test members successfully")
+        return True
+    except Exception as e:
+        print_error(f"Request failed: {str(e)}")
+        return False
+
+
 def test_create_seat_layout():
     """Test creating a seat layout"""
     global test_seat_layout_id
