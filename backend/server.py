@@ -49,6 +49,7 @@ api_router.include_router(churches.router)
 api_router.include_router(members.router)
 api_router.include_router(settings.router)
 api_router.include_router(import_export.router)
+api_router.include_router(photo_document_sim.router)
 
 # Include the API router in the main app
 app.include_router(api_router)
