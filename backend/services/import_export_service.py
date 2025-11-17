@@ -149,7 +149,8 @@ class ImportExportService:
         data: List[Dict[str, Any]], 
         church_id: str,
         date_format: str,
-        db: AsyncIOMotorDatabase
+        db: AsyncIOMotorDatabase,
+        custom_field_definitions: List[Dict[str, str]] = None
     ) -> tuple[List[Dict[str, Any]], List[str], List[Dict[str, Any]]]:
         """Validate member data before import
         
@@ -158,11 +159,14 @@ class ImportExportService:
             church_id: Church ID for multi-tenant scoping
             date_format: Date format to use for validation
             db: Database instance
+            custom_field_definitions: List of custom field definitions
+                                     [{name, type, required}, ...]
             
         Returns:
             tuple: (valid_data, errors, duplicate_conflicts)
         """
         from utils.helpers import combine_full_name, normalize_phone_number
+        from utils.custom_fields import validate_custom_field
         
         valid_data = []
         errors = []
