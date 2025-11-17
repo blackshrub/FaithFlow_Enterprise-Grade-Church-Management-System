@@ -343,29 +343,8 @@ class ImportExportService:
                 else:
                     row['phone_whatsapp'] = normalized_phone
                     
-                    # Check for duplicate phone number in database
-                    existing = await db.members.find_one({
-                        "church_id": church_id,
-                        "phone_whatsapp": normalized_phone
-                    })
-                    if existing:
-                        duplicate_conflicts.append({
-                            'phone': normalized_phone,
-                            'existing_member': {
-                                'id': existing.get('id'),
-                                'full_name': existing.get('full_name'),
-                                'source': 'database'
-                            },
-                            'new_record': {
-                                'row_index': idx,
-                                'full_name': row.get('full_name'),
-                                'gender': row.get('gender'),
-                                'address': row.get('address'),
-                                'source': 'import'
-                            }
-                        })
-                    
-                    # Check for duplicate within the batch
+                    # Check for duplicate within the batch ONLY (not database)
+                    # Database check removed since we're doing simulation before import
                     if normalized_phone in seen_phones:
                         duplicate_conflicts.append({
                             'phone': normalized_phone,
