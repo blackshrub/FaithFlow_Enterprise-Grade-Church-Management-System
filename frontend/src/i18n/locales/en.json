@@ -321,6 +321,8 @@
       "totalAttended": "{{count}} attended",
       "totalAttended_one": "{{count}} person attended",
       "totalAttended_other": "{{count}} people attended",
+      "totalAttendance": "Total Attendance",
+      "attendanceRate": "Attendance Rate",
       "eventsTotal": "Total: {{count}} events",
       "eventsTotal_one": "Total: {{count}} event",
       "eventsTotal_other": "Total: {{count}} events",
