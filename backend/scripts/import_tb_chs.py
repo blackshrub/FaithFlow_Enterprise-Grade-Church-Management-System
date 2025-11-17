@@ -81,14 +81,14 @@ async def main():
         # Import Indonesian TB
         tb_file = DATA_DIR / 'indo_tb.json'
         if tb_file.exists():
-            await import_bible_json(tb_file, 'TB', 'id')
+            await import_bible_json(tb_file, 'TB')
         else:
             print(f"Warning: {tb_file} not found")
         
         # Import Chinese Union Simplified
         chs_file = DATA_DIR / 'chinese_union_simp.json'
         if chs_file.exists():
-            await import_bible_json(chs_file, 'CHS', 'zh')
+            await import_bible_json(chs_file, 'CHS')
         else:
             print(f"Warning: {chs_file} not found")
         
