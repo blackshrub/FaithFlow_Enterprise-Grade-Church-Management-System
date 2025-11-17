@@ -112,26 +112,26 @@ function SeatSelector({ eventId, sessionId, layoutId, selectedSeat, onSeatSelect
 
       {/* Stage and Seat Grid */}
       <div className="bg-gray-50 p-4 rounded-lg overflow-x-auto">
-        <div className="w-fit mx-auto">
-          {/* Stage - centered independently */}
-          <div className="mb-3 mx-auto" style={{ width: `${layout.columns * 28 + (layout.columns - 1) * 4}px` }}>
-            <div className="bg-gradient-to-b from-gray-800 to-gray-700 text-white text-center py-2 rounded-lg">
-              <p className="font-bold text-sm">{t('events.seatLayout.stage')}</p>
-            </div>
+        {/* Stage - centered using flex */}
+        <div className="w-full flex justify-center mb-3">
+          <div className="bg-gradient-to-b from-gray-800 to-gray-700 text-white text-center py-2 rounded-lg" style={{ width: `${layout.columns * 28 + (layout.columns - 1) * 4}px` }}>
+            <p className="font-bold text-sm">{t('events.seatLayout.stage')}</p>
           </div>
+        </div>
 
-          {/* Seat Grid - centered independently, row labels positioned outside */}
-          <div className="mx-auto" style={{ width: `${layout.columns * 28 + (layout.columns - 1) * 4}px` }}>
+        {/* Seat Grid - centered using flex */}
+        <div className="w-full flex justify-center">
+          <div className="inline-block">
             {Array.from({ length: layout.rows }, (_, rowIdx) => {
               const rowLetter = String.fromCharCode(65 + rowIdx);
               return (
                 <div key={rowLetter} className="relative mb-1">
-                  {/* Row Label - positioned outside left using absolute */}
+                  {/* Row Label - positioned absolutely outside left */}
                   <div className="absolute right-full pr-1 w-6 text-center font-semibold text-gray-700 text-xs flex items-center justify-center h-7">
                     {rowLetter}
                   </div>
 
-                  {/* Seats - full width of container */}
+                  {/* Seats - exact width based on columns */}
                   <div className="flex gap-1">
                     {Array.from({ length: layout.columns }, (_, colIdx) => {
                       const seatId = `${rowLetter}${colIdx + 1}`;
