@@ -302,7 +302,7 @@ class ImportExportService:
                 row['church_id'] = church_id
                 valid_data.append(row)
         
-        return valid_data, errors
+        return valid_data, errors, duplicate_conflicts
     
     @staticmethod
     def export_to_csv(data: List[Dict[str, Any]], fields: List[str]) -> str:
