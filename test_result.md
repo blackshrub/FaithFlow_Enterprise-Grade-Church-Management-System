@@ -287,17 +287,65 @@ backend:
         comment: "GET /api/health endpoint works correctly. Returns status: healthy and database: connected. API is running and accessible at https://parish-command.preview.emergentagent.com/api"
 
 frontend:
-  - task: "Frontend Testing"
-    implemented: false
-    working: "NA"
-    file: "N/A"
+  - task: "Import/Export Wizard - React Hooks Error Fix"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/components/ImportExport/ImportSteps/StepSimulation.js"
     stuck_count: 0
-    priority: "low"
+    priority: "high"
     needs_retesting: false
     status_history:
-      - working: "NA"
+      - working: true
         agent: "testing"
-        comment: "Frontend testing not performed as per testing agent instructions. Only backend APIs tested."
+        comment: "VERIFIED: React hooks error has been successfully fixed. The localResolutions state in StepSimulation.js is now properly defined at the top level (line 17) before any conditional returns. Tested complete import wizard flow including file upload, field mapping, photo/document steps, value mapping, validation, and duplicate resolution. NO HOOKS ERRORS detected throughout entire wizard. Console monitoring confirmed no 'Rendered fewer hooks' or 'Rendered more hooks' errors during any step transitions or state changes. The fix ensures hooks are always called in the same order regardless of component state."
+  
+  - task: "Import/Export Wizard - File Upload and Parsing"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/components/ImportExport/ImportSteps/StepFileUpload.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "File upload functionality working correctly. CSV files are successfully uploaded, parsed by backend API, and wizard auto-advances to Field Mapping step. FileReader correctly reads file content and parseFile mutation successfully communicates with backend /api/import-export/parse-file endpoint."
+  
+  - task: "Import/Export Wizard - Field Mapping Step"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/components/ImportExport/ImportSteps/StepFieldMapping.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "Field mapping step displays correctly with all member fields listed. Dropdowns for source column selection working. Required field validation in place (Full Name must be mapped). Step navigation (Previous/Next) working correctly."
+  
+  - task: "Import/Export Wizard - Validation and Simulation"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/components/ImportExport/ImportSteps/StepSimulation.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "Validation step working correctly. Simulation runs automatically on step load. Results display properly showing total records, valid records, and invalid records. Sample valid data preview displays correctly. No hooks errors during simulation execution or results rendering."
+  
+  - task: "Import/Export Wizard - Duplicate Resolution"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/components/ImportExport/ImportSteps/StepSimulation.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "Duplicate resolution functionality working correctly. When duplicates detected, 'Resolve Duplicate Phone Numbers' button appears. Clicking button shows duplicate resolution UI with radio button options for each conflict. NO HOOKS ERRORS when transitioning to/from duplicate resolution view. State management (localResolutions) working correctly at top level. Resolution selection and continuation working as expected."
 
 metadata:
   created_by: "testing_agent"
