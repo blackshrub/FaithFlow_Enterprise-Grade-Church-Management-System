@@ -181,8 +181,6 @@ class ImportExportService:
             # Required fields validation
             if not row.get('full_name') or row['full_name'] in ['', None, 'NULL', 'null']:
                 row_errors.append(f"Row {idx}: Missing full_name")
-            if not row.get('phone_whatsapp') or row['phone_whatsapp'] in ['', None, 'NULL', 'null']:
-                row_errors.append(f"Row {idx}: Missing phone_whatsapp")
             if not row.get('gender') or row['gender'] in ['', None, 'NULL', 'null']:
                 row_errors.append(f"Row {idx}: Missing gender (required field)")
             if not row.get('date_of_birth') or row['date_of_birth'] in ['', None, 'NULL', 'null']:
@@ -190,15 +188,15 @@ class ImportExportService:
             if not row.get('address') or row['address'] in ['', None, 'NULL', 'null']:
                 row_errors.append(f"Row {idx}: Missing address (required field)")
             
-            # Normalize phone number to 62 format
-            if row.get('phone_whatsapp'):
+            # Normalize phone number (only if provided)
+            if row.get('phone_whatsapp') and row['phone_whatsapp'] not in ['', None, 'NULL', 'null']:
                 normalized_phone = normalize_phone_number(row['phone_whatsapp'])
                 if not normalized_phone or not normalized_phone.startswith('62'):
                     row_errors.append(f"Row {idx}: Invalid phone number format '{row['phone_whatsapp']}'")
                 else:
                     row['phone_whatsapp'] = normalized_phone
                     
-                    # Check for duplicate phone number in database
+                    # Check for duplicate phone number in database (only if phone provided)
                     existing = await db.members.find_one({
                         "church_id": church_id,
                         "phone_whatsapp": normalized_phone
@@ -211,6 +209,9 @@ class ImportExportService:
                         row_errors.append(f"Row {idx}: Duplicate phone number {normalized_phone} within import batch")
                     else:
                         seen_phones.add(normalized_phone)
+            else:
+                # Remove empty phone number from data
+                row.pop('phone_whatsapp', None)
             
             # Validate date fields (only if provided)
             date_fields = ['date_of_birth', 'baptism_date', 'membership_date']
