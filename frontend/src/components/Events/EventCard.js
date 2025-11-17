@@ -49,6 +49,24 @@ function EventCard({ event, onEdit }) {
 
   const rsvpCount = event.rsvp_list?.length || 0;
   const attendanceCount = event.attendance_list?.length || 0;
+  
+  // Calculate capacity info
+  const getCapacityInfo = () => {
+    if (event.enable_seat_selection && event.seat_layout_id) {
+      // Capacity from seat layout (would need to fetch layout, but for now just show RSVP count)
+      return null; // Will be shown in "View RSVPs" details
+    } else if (event.seat_capacity) {
+      const remaining = event.seat_capacity - rsvpCount;
+      return {
+        total: event.seat_capacity,
+        remaining,
+        percentage: (rsvpCount / event.seat_capacity) * 100
+      };
+    }
+    return null;
+  };
+  
+  const capacityInfo = getCapacityInfo();
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg hover:shadow-md transition-shadow overflow-hidden">
