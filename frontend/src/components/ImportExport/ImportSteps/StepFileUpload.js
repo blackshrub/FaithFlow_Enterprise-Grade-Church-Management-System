@@ -94,6 +94,7 @@ export default function StepFileUpload({ wizardData, updateWizardData, parseFile
             <ul className="list-disc list-inside mt-2 space-y-1">
               <li><strong>CSV</strong>: {t('importExport.csvDesc')}</li>
               <li><strong>JSON</strong>: {t('importExport.jsonDesc')}</li>
+              <li><strong>SQL</strong>: {t('importExport.sqlDesc')}</li>
             </ul>
           </AlertDescription>
         </Alert>
