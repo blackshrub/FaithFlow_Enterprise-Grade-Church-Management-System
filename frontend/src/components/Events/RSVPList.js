@@ -86,20 +86,28 @@ function RSVPList({ event, rsvpData, isLoading, selectedSession }) {
       <h3 className="text-lg font-semibold text-gray-900">{t('events.rsvp.rsvpList')}</h3>
 
       <div className="space-y-3">
-        {rsvps.map((rsvp, index) => (
-          <div
-            key={index}
-            className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
-          >
-            <div className="flex items-start justify-between">
-              <div className="flex-1 space-y-2">
-                {/* Member Info */}
-                <div className="flex items-center gap-2">
-                  <User className="h-5 w-5 text-gray-400" />
-                  <span className="font-medium text-gray-900">
-                    Member ID: {rsvp.member_id}
-                  </span>
-                </div>
+        {rsvps.map((rsvp, index) => {
+          const member = memberMap[rsvp.member_id];
+          
+          return (
+            <div
+              key={index}
+              className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex-1 space-y-2">
+                  {/* Member Info */}
+                  <div className="flex items-center gap-2">
+                    <User className="h-5 w-5 text-gray-400" />
+                    <div>
+                      <span className="font-medium text-gray-900">
+                        {member ? member.full_name : `Member ID: ${rsvp.member_id}`}
+                      </span>
+                      {member?.phone && (
+                        <p className="text-xs text-gray-500">{member.phone}</p>
+                      )}
+                    </div>
+                  </div>
 
                 {/* Session Info */}
                 {rsvp.session_id && (
