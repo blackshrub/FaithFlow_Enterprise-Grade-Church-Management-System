@@ -278,6 +278,8 @@ export default function StepSimulation({ wizardData, updateWizardData, simulateI
           </div>
         </CardContent>
       </Card>
+        )}
+      </div>
     );
   }
 
