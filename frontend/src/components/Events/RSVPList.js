@@ -1,14 +1,34 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Trash2, User, Calendar, Armchair } from 'lucide-react';
+import { Trash2, User, Calendar, Armchair, QrCode } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useCancelRSVP } from '@/hooks/useRSVP';
+import { useQuery } from '@tanstack/react-query';
+import { membersAPI } from '@/services/api';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 
 function RSVPList({ event, rsvpData, isLoading, selectedSession }) {
   const { t } = useTranslation();
   const cancelMutation = useCancelRSVP();
+
+  // Fetch all members to display names
+  const { data: members = [] } = useQuery({
+    queryKey: ['members'],
+    queryFn: async () => {
+      const response = await membersAPI.list();
+      return response.data;
+    },
+  });
+
+  // Create member lookup map
+  const memberMap = useMemo(() => {
+    const map = {};
+    members.forEach(member => {
+      map[member.id] = member;
+    });
+    return map;
+  }, [members]);
 
   const handleCancel = async (rsvp) => {
     if (window.confirm(t('events.rsvp.confirmCancel'))) {
