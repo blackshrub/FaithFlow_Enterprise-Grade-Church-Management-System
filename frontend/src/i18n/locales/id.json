@@ -214,7 +214,7 @@
     "defaultValue": "Nilai Default (Opsional)",
     "enterDefault": "Masukkan nilai default untuk semua catatan...",
     "mapRequiredFields": "Harap petakan semua field wajib: Nama Depan, Nama Belakang, Nomor WhatsApp",
-    "mapBasicRequiredFields": "Harap petakan semua field wajib: Nama Lengkap, Jenis Kelamin, Tanggal Lahir, Alamat, Nomor Telepon",
+    "mapBasicRequiredFields": "Harap petakan semua field wajib: Nama Lengkap, Jenis Kelamin, Tanggal Lahir, Alamat",
     "dateFormatRequired": "Format tanggal yang diperlukan (sesuai pengaturan gereja):",
     "mapValues": "Petakan Nilai",
     "mapValuesDesc": "Ubah nilai agar sesuai dengan format sistem",
