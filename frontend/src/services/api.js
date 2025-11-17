@@ -173,4 +173,31 @@ export const importExportAPI = {
   cleanupTempUploads: (memberIds) => api.post('/import-export/cleanup-temp-uploads', memberIds),
 };
 
+// Seat Layouts API
+export const seatLayoutsAPI = {
+  list: () => api.get('/seat-layouts'),
+  get: (id) => api.get(`/seat-layouts/${id}`),
+  create: (data) => api.post('/seat-layouts', data),
+  update: (id, data) => api.patch(`/seat-layouts/${id}`, data),
+  delete: (id) => api.delete(`/seat-layouts/${id}`),
+};
+
+// Events API
+export const eventsAPI = {
+  list: (params) => api.get('/events', { params }),
+  get: (id) => api.get(`/events/${id}`),
+  create: (data) => api.post('/events', data),
+  update: (id, data) => api.patch(`/events/${id}`, data),
+  delete: (id) => api.delete(`/events/${id}`),
+  
+  // RSVP
+  registerRSVP: (eventId, params) => api.post(`/events/${eventId}/rsvp`, null, { params }),
+  cancelRSVP: (eventId, memberId) => api.delete(`/events/${eventId}/rsvp/${memberId}`),
+  getRSVPs: (eventId) => api.get(`/events/${eventId}/rsvps`),
+  
+  // Check-in
+  checkIn: (eventId, params) => api.post(`/events/${eventId}/check-in`, null, { params }),
+  getAttendance: (eventId) => api.get(`/events/${eventId}/attendance`),
+};
+
 export default api;
