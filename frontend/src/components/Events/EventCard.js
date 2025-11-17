@@ -175,14 +175,6 @@ function EventCard({ event, onEdit }) {
             <div className="flex items-center gap-2 text-gray-600">
               <Users className="h-4 w-4" />
               <span>{t('events.event.rsvpCount', { count: rsvpCount })}</span>
-              {capacityInfo && (
-                <span className={`text-xs ${capacityInfo.remaining > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  ({capacityInfo.remaining > 0 
-                    ? t('events.event.capacityRemaining', { remaining: capacityInfo.remaining })
-                    : t('events.event.capacityFull')
-                  })
-                </span>
-              )}
             </div>
           )}
 
