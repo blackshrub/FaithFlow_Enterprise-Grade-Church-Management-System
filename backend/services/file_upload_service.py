@@ -131,13 +131,14 @@ class FileUploadService:
         """Validate document file format
         
         Args:
-            filename: Filename to check extension
+            filename: Normalized filename to check extension
             
         Returns:
             bool: True if valid document
         """
-        ext = '.' + filename.lower().split('.')[-1] if '.' in filename else ''
-        return ext in DOCUMENT_FORMATS
+        # After normalization, documents should be .jpg, .pdf, .doc, .docx, .txt
+        valid_extensions = ['.jpg', '.pdf', '.doc', '.docx', '.txt']
+        return any(filename.endswith(ext) for ext in valid_extensions)
     
     @staticmethod
     def convert_to_base64(file_data: bytes) -> str:
