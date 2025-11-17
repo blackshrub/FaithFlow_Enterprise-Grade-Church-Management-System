@@ -343,3 +343,132 @@ async def list_import_logs(
             log['updated_at'] = datetime.fromisoformat(log['updated_at'])
     
     return logs
+
+
+# ============= Bulk Photo Upload Routes =============
+
+@router.post("/upload-photos")
+async def upload_photos(
+    archive: UploadFile = File(...),
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current_user: dict = Depends(require_admin)
+):
+    """Upload bulk photos in ZIP/RAR and match to members by filename"""
+    
+    try:
+        # Read archive file
+        archive_content = await archive.read()
+        
+        # Extract files
+        extracted_files = file_upload_service.extract_archive(archive_content, archive.filename)
+        
+        # Get all members with photo_filename for current church
+        church_id = current_user.get('church_id')
+        members = await db.members.find(
+            {
+                "church_id": church_id,
+                "photo_filename": {"$exists": True, "$ne": None, "$ne": ""}
+            },
+            {"_id": 0}
+        ).to_list(10000)
+        
+        # Match files to members
+        match_results = file_upload_service.match_files_to_members(
+            extracted_files,
+            members,
+            'photo_filename',
+            is_photo=True
+        )
+        
+        # Update members with matched photos
+        updated_count = 0
+        for match in match_results['matched']:
+            await db.members.update_one(
+                {"id": match['member_id']},
+                {"$set": {
+                    "photo_base64": match['base64'],
+                    "updated_at": datetime.now().isoformat()
+                }}
+            )
+            updated_count += 1
+        
+        return {
+            "success": True,
+            "summary": match_results['summary'],
+            "matched": [{"member_id": m['member_id'], "filename": m['filename']} for m in match_results['matched']],
+            "unmatched_files": match_results['unmatched_files'],
+            "unmatched_members": match_results['unmatched_members'],
+            "updated_count": updated_count
+        }
+    
+    except Exception as e:
+        logger.error(f"Error uploading photos: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+
+
+# ============= Bulk Document Upload Routes =============
+
+@router.post("/upload-documents")
+async def upload_documents(
+    archive: UploadFile = File(...),
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current_user: dict = Depends(require_admin)
+):
+    """Upload bulk documents in ZIP/RAR and match to members by filename"""
+    
+    try:
+        # Read archive file
+        archive_content = await archive.read()
+        
+        # Extract files
+        extracted_files = file_upload_service.extract_archive(archive_content, archive.filename)
+        
+        # Get all members with personal_document for current church
+        church_id = current_user.get('church_id')
+        members = await db.members.find(
+            {
+                "church_id": church_id,
+                "personal_document": {"$exists": True, "$ne": None, "$ne": ""}
+            },
+            {"_id": 0}
+        ).to_list(10000)
+        
+        # Match files to members
+        match_results = file_upload_service.match_files_to_members(
+            extracted_files,
+            members,
+            'personal_document',
+            is_photo=False
+        )
+        
+        # Update members with matched documents
+        updated_count = 0
+        for match in match_results['matched']:
+            # Append to documents array
+            await db.members.update_one(
+                {"id": match['member_id']},
+                {
+                    "$push": {"documents": match['base64']},
+                    "$set": {"updated_at": datetime.now().isoformat()}
+                }
+            )
+            updated_count += 1
+        
+        return {
+            "success": True,
+            "summary": match_results['summary'],
+            "matched": [{"member_id": m['member_id'], "filename": m['filename']} for m in match_results['matched']],
+            "unmatched_files": match_results['unmatched_files'],
+            "unmatched_members": match_results['unmatched_members'],
+            "updated_count": updated_count
+        }
+    
+    except Exception as e:
+        logger.error(f"Error uploading documents: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
