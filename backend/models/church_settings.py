@@ -9,6 +9,7 @@ class ChurchSettingsBase(BaseModel):
     time_format: Literal['12h', '24h'] = '24h'
     currency: str = Field(default='USD', max_length=10)
     timezone: str = Field(default='UTC', max_length=50)
+    default_language: Literal['en', 'id'] = 'en'  # Default system language
 
 
 class ChurchSettingsCreate(ChurchSettingsBase):
