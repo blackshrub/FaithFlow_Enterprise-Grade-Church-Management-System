@@ -116,26 +116,73 @@ export default function Layout() {
 
           {/* Navigation */}
           <nav className="flex-1 overflow-y-auto p-4">
-            <ul className="space-y-2">
+            <ul className="space-y-1">
               {menuItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = window.location.pathname === item.path;
+                const hasSubmenu = item.submenu && item.submenu.length > 0;
+                const isExpanded = expandedMenus[item.key];
+                const isAnyChildActive = hasSubmenu && item.submenu.some(
+                  sub => window.location.pathname === sub.path
+                );
+
                 return (
-                  <li key={item.path}>
+                  <li key={item.path || item.key}>
+                    {/* Main menu item */}
                     <button
                       onClick={() => {
-                        navigate(item.path);
-                        setSidebarOpen(false);
+                        if (hasSubmenu) {
+                          toggleSubmenu(item.key);
+                        } else {
+                          navigate(item.path);
+                          setSidebarOpen(false);
+                        }
                       }}
-                      className={`flex items-center space-x-3 w-full p-3 rounded-lg transition-colors ${
-                        isActive
+                      className={`flex items-center justify-between w-full p-3 rounded-lg transition-colors ${
+                        isActive || isAnyChildActive
                           ? 'bg-blue-50 text-blue-600'
                           : 'text-gray-700 hover:bg-gray-100'
                       }`}
                     >
-                      <Icon className="h-5 w-5" />
-                      <span className="text-sm font-medium">{item.label}</span>
+                      <div className="flex items-center space-x-3">
+                        <Icon className="h-5 w-5" />
+                        <span className="text-sm font-medium">{item.label}</span>
+                      </div>
+                      {hasSubmenu && (
+                        isExpanded ? (
+                          <ChevronDown className="h-4 w-4" />
+                        ) : (
+                          <ChevronRight className="h-4 w-4" />
+                        )
+                      )}
                     </button>
+
+                    {/* Submenu items */}
+                    {hasSubmenu && isExpanded && (
+                      <ul className="mt-1 ml-9 space-y-1">
+                        {item.submenu.map((subItem) => {
+                          const isSubActive = window.location.pathname === subItem.path;
+                          return (
+                            <li key={subItem.path}>
+                              <button
+                                onClick={() => {
+                                  navigate(subItem.path);
+                                  setSidebarOpen(false);
+                                }}
+                                className={`flex items-center w-full p-2 pl-4 rounded-lg text-sm transition-colors ${
+                                  isSubActive
+                                    ? 'bg-blue-50 text-blue-600 font-medium'
+                                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                                }`}
+                              >
+                                <span className="w-1.5 h-1.5 rounded-full bg-current mr-3 opacity-50"></span>
+                                {subItem.label}
+                              </button>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    )}
                   </li>
                 );
               })}
