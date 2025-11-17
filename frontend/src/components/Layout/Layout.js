@@ -51,6 +51,7 @@ export default function Layout() {
     menuItems.push({ icon: Church, label: t('nav.churches'), path: '/churches' });
   }
 
+  menuItems.push({ icon: Upload, label: t('nav.importExport'), path: '/import-export' });
   menuItems.push({ icon: Settings, label: t('nav.settings'), path: '/settings' });
 
   return (
