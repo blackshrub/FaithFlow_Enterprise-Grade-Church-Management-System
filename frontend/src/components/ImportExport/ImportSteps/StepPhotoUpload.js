@@ -105,17 +105,14 @@ export default function StepPhotoUpload({ wizardData, updateWizardData, nextStep
               <div className="w-64 mx-auto mt-4">
                 <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
                   <div 
-                    className="h-full bg-blue-600 transition-all duration-500"
-                    style={{
-                      width: uploadProgress.includes(t('importExport.uploading')) ? '25%' :
-                             uploadProgress.includes(t('importExport.extracting')) ? '50%' :
-                             uploadProgress.includes(t('importExport.matching')) ? '75%' :
-                             uploadProgress.includes(t('importExport.almostReady')) ? '95%' : '0%'
-                    }}
+                    className="h-full bg-blue-600 transition-all duration-300"
+                    style={{ width: `${progressPercent}%` }}
                   />
                 </div>
               </div>
-              <p className="text-sm text-gray-500 mt-2">{t('importExport.pleaseWait')}</p>
+              <p className="text-sm text-gray-500 mt-2">
+                {progressPercent}% - {t('importExport.pleaseWait')}
+              </p>
             </div>
           ) : uploadResults ? (
             <div>
