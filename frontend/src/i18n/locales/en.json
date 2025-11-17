@@ -300,6 +300,7 @@
       "rsvpCount": "{{count}} RSVPs",
       "attendanceCount": "{{count}} attended",
       "seatsAvailable": "{{available}}/{{total}} seats available",
+      "attended": "attended",
       "eventsTotal": "Total: {{count}} events",
       "eventsTotal_one": "Total: {{count}} event",
       "eventsTotal_other": "Total: {{count}} events",
