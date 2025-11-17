@@ -345,6 +345,11 @@ function EventCard({ event, onEdit }) {
       {showSessionsModal && (
         <SessionsModal event={event} onClose={() => setShowSessionsModal(false)} />
       )}
+
+      {/* Attendance Modal */}
+      {showAttendanceModal && (
+        <AttendanceModal event={event} onClose={() => setShowAttendanceModal(false)} />
+      )}
     </div>
   );
 }
