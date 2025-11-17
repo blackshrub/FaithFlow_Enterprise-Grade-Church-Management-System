@@ -4,8 +4,6 @@ import { importExportAPI } from '../../../services/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../ui/card';
 import { Button } from '../../ui/button';
 import { Alert, AlertDescription } from '../../ui/alert';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../ui/table';
-import { Badge } from '../../ui/badge';
 import { Upload, FileText, ChevronRight, ChevronLeft, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 
 export default function StepDocumentUpload({ wizardData, updateWizardData, nextStep, prevStep }) {
@@ -92,33 +90,6 @@ export default function StepDocumentUpload({ wizardData, updateWizardData, nextS
                 className="mt-4"
               >
                 {t('importExport.chooseAnother')}
-          {processing ? (
-            <div>
-              <Loader2 className="h-12 w-12 animate-spin text-blue-600 mx-auto mb-4" />
-              <p className="text-gray-600">{t('importExport.processingDocuments')}</p>
-              <p className="text-sm text-gray-500">{t('importExport.pleaseWait')}</p>
-            </div>
-          ) : uploadResults ? (
-            <div>
-              <CheckCircle className="h-12 w-12 text-green-600 mx-auto mb-4" />
-              <p className="font-semibold text-gray-900">{wizardData.documentArchive?.name}</p>
-              <p className="text-sm text-green-600 mt-1">
-                {t('importExport.documentsMatched', { count: uploadResults.summary?.matched_count || 0 })}
-              </p>
-              {uploadResults.summary?.unmatched_files_count > 0 && (
-                <p className="text-sm text-orange-600">
-                  {t('importExport.unmatchedFiles')}: {uploadResults.summary.unmatched_files_count}
-                </p>
-              )}
-              <Button
-                onClick={() => {
-                  fileInputRef.current?.click();
-                  setUploadResults(null);
-                }}
-                variant="outline"
-                className="mt-4"
-              >
-                {t('importExport.chooseAnother')}
               </Button>
             </div>
           ) : (
@@ -163,13 +134,13 @@ export default function StepDocumentUpload({ wizardData, updateWizardData, nextS
           <Alert className="border-green-500 bg-green-50">
             <CheckCircle className="h-4 w-4 text-green-600" />
             <AlertDescription className="text-green-800">
-              {t('importExport.documentsUploadedSuccess', { count: uploadResults.summary.matched_count })}
+              {t('importExport.documentsMatched', { count: uploadResults.summary.matched_count })}
             </AlertDescription>
           </Alert>
         )}
         
         {uploadResults && uploadResults.summary?.unmatched_files_count > 0 && (
-          <Alert variant="warning">
+          <Alert>
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
               {t('importExport.someFilesUnmatched', { count: uploadResults.summary.unmatched_files_count })}
@@ -179,7 +150,19 @@ export default function StepDocumentUpload({ wizardData, updateWizardData, nextS
 
         <Alert>
           <AlertDescription>
-            <strong>{t('importExport.optional')}:</strong> {t('importExport.skipDocumentUpload')}
+            <strong>{t('importExport.howItWorks')}:</strong>
+            <ol className="list-decimal list-inside mt-2 space-y-1">
+              <li>{t('importExport.documentStep1')}</li>
+              <li>{t('importExport.documentStep2')}</li>
+              <li>{t('importExport.documentStep3')}</li>
+              <li>{t('importExport.documentStep4')}</li>
+            </ol>
+          </AlertDescription>
+        </Alert>
+
+        <Alert variant="info">
+          <AlertDescription>
+            <strong>{t('importExport.acceptedDocumentFormats')}:</strong> PDF, DOC, DOCX, TXT, JPG (images)
           </AlertDescription>
         </Alert>
 
