@@ -91,6 +91,7 @@ export const membersAPI = {
   update: (id, data) => api.patch(`/members/${id}`, data),
   delete: (id) => api.delete(`/members/${id}`),
   getStats: () => api.get('/members/stats/summary/'),
+  quickAdd: (data) => api.post('/members/quick-add', data),
 };
 
 // Settings API
