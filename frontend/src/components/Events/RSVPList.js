@@ -175,7 +175,7 @@ function RSVPList({ event, rsvpData, isLoading, selectedSession }) {
                   )}
 
                   {/* WhatsApp Status */}
-                  {rsvp.whatsapp_status && (
+                  {rsvp.whatsapp_status && rsvp.whatsapp_status !== 'disabled' && (
                     <div className="flex items-center gap-2">
                       {getWhatsAppStatusIcon(rsvp.whatsapp_status)}
                       <span className={`text-xs ${
