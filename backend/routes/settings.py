@@ -44,6 +44,13 @@ async def create_member_status(
     status_doc['created_at'] = status_doc['created_at'].isoformat()
     status_doc['updated_at'] = status_doc['updated_at'].isoformat()
     
+    # If this is being set as default, unset all others
+    if status_doc.get('is_default_for_new'):
+        await db.member_statuses.update_many(
+            {"church_id": status_data.church_id},
+            {"$set": {"is_default_for_new": False}}
+        )
+    
     await db.member_statuses.insert_one(status_doc)
     return member_status
 
