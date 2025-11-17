@@ -11,21 +11,29 @@ import { ChevronRight, ChevronLeft, Plus, Trash2 } from 'lucide-react';
 
 const PREDEFINED_MAPPINGS = {
   gender: {
-    values: ['Male', 'Female', 'Other'],
+    values: ['Male', 'Female'],
     commonMappings: {
-      'M': 'male', 'F': 'female', 'Male': 'male', 'Female': 'female',
-      '1': 'male', '2': 'female', 'L': 'male', 'P': 'female'
+      'M': 'Male', 'F': 'Female', 'Male': 'Male', 'Female': 'Female',
+      'L': 'Male', 'P': 'Female', 'Laki-laki': 'Male', 'Perempuan': 'Female',
+      'male': 'Male', 'female': 'Female', '1': 'Male', '2': 'Female'
     }
   },
   blood_type: {
-    values: ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'],
-    commonMappings: {}
+    values: ['A', 'B', 'AB', 'O'],
+    commonMappings: {
+      'A+': 'A', 'A-': 'A', 'B+': 'B', 'B-': 'B',
+      'AB+': 'AB', 'AB-': 'AB', 'O+': 'O', 'O-': 'O'
+    }
   },
   marital_status: {
-    values: ['single', 'married', 'divorced', 'widowed'],
+    values: ['Married', 'Not Married', 'Widower', 'Widow'],
     commonMappings: {
-      'S': 'single', 'M': 'married', 'D': 'divorced', 'W': 'widowed',
-      'Single': 'single', 'Married': 'married', 'Divorced': 'divorced', 'Widowed': 'widowed'
+      'M': 'Married', 'Married': 'Married', 'married': 'Married',
+      'S': 'Not Married', 'Single': 'Not Married', 'single': 'Not Married',
+      'Belum Menikah': 'Not Married', 'Menikah': 'Married',
+      'W': 'Widower', 'Widower': 'Widower', 'widower': 'Widower',
+      'Widow': 'Widow', 'widow': 'Widow', 'Janda': 'Widow', 'Duda': 'Widower',
+      'D': 'Not Married', 'Divorced': 'Not Married', 'divorced': 'Not Married'
     }
   }
 };
