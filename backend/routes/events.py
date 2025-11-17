@@ -287,17 +287,30 @@ async def register_rsvp(
 async def cancel_rsvp(
     event_id: str,
     member_id: str,
+    session_id: Optional[str] = Query(None),
     db: AsyncIOMotorDatabase = Depends(get_db),
     current_user: dict = Depends(get_current_user)
 ):
     """Cancel RSVP"""
     
-    await db.events.update_one(
+    event = await db.events.find_one({"id": event_id})
+    if not event:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
+    
+    # Build query to remove specific RSVP
+    pull_query = {"member_id": member_id}
+    if session_id:
+        pull_query["session_id"] = session_id
+    
+    result = await db.events.update_one(
         {"id": event_id},
-        {"$pull": {"rsvp_list": {"member_id": member_id}}}
+        {"$pull": {"rsvp_list": pull_query}}
     )
     
-    logger.info(f"RSVP cancelled: Event {event_id}, Member {member_id}")
+    if result.modified_count == 0:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="RSVP not found")
+    
+    logger.info(f"RSVP cancelled: Event {event_id}, Member {member_id}, Session {session_id}")
     return {"success": True, "message": "RSVP cancelled successfully"}
 
 
