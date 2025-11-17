@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { Label } from '../ui/label';
 
 export default function Layout() {
   const { t, i18n } = useTranslation();
