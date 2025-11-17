@@ -1,62 +1,32 @@
 import axios from 'axios';
 
-const API_BASE_URL = process.env.REACT_APP_BACKEND_URL;
+// Use dynamic origin to always match the frontend's protocol (HTTP/HTTPS)
+// This ensures we don't have mixed content issues
+const API_BASE_URL = `${window.location.origin}/api`;
 
 // Debug logging
-console.log('🔍 API Configuration Debug:');
-console.log('  REACT_APP_BACKEND_URL:', process.env.REACT_APP_BACKEND_URL);
+console.log('🔍 API Configuration:');
+console.log('  window.location.origin:', window.location.origin);
 console.log('  API_BASE_URL:', API_BASE_URL);
-console.log('  Full baseURL:', `${API_BASE_URL}/api`);
 
 const api = axios.create({
-  baseURL: `${API_BASE_URL}/api`,
+  baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// Add request interceptor to ensure HTTPS and prevent HTTP redirects
+// Add request interceptor for auth and logging
 api.interceptors.request.use(
   (config) => {
-    // Add trailing slash to prevent server redirects that change HTTPS to HTTP
-    // This is needed for Kubernetes ingress that redirects /api/events to /api/events/
-    if (config.url && config.url !== '' && config.url !== '/') {
-      // Only add trailing slash if:
-      // 1. URL doesn't have query params
-      // 2. URL doesn't already end with /
-      // 3. URL doesn't have a file extension
-      if (!config.url.includes('?') && !config.url.endsWith('/')) {
-        const hasPathParam = config.url.match(/\/[^\/]+$/); // matches /{id} style params
-        const hasExtension = /\.\w+$/.test(config.url);
-        if (!hasExtension && !hasPathParam) {
-          config.url = config.url + '/';
-          console.log('✓ Added trailing slash to prevent redirect');
-        }
-      }
-    }
-    
     // Log the actual URL being requested
     const fullURL = config.baseURL + (config.url || '');
     console.log('📡 API Request:', config.method?.toUpperCase(), fullURL);
-    
-    // Ensure HTTPS is used - force replace any HTTP
-    if (config.url && config.url.startsWith('http://')) {
-      console.warn('⚠️ Converting URL from HTTP to HTTPS:', config.url);
-      config.url = config.url.replace('http://', 'https://');
-    }
-    if (config.baseURL && config.baseURL.startsWith('http://')) {
-      console.warn('⚠️ Converting baseURL from HTTP to HTTPS:', config.baseURL);
-      config.baseURL = config.baseURL.replace('http://', 'https://');
-    }
     
     const token = localStorage.getItem('access_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
-    
-    // Log final URL after transformation
-    const finalURL = config.baseURL + (config.url || '');
-    console.log('📤 Final URL:', finalURL);
     
     return config;
   },
