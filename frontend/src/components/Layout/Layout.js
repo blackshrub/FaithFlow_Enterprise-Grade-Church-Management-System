@@ -44,6 +44,7 @@ export default function Layout() {
     { icon: Users, label: t('nav.members'), path: '/members' },
     { icon: UsersRound, label: t('nav.groups'), path: '/groups' },
     { icon: Calendar, label: t('nav.events'), path: '/events' },
+    { icon: Grid3x3, label: t('events.seatLayouts'), path: '/seat-layouts' },
     { icon: DollarSign, label: t('nav.donations'), path: '/donations' },
     { icon: Heart, label: t('nav.prayers'), path: '/prayers' },
     { icon: BookOpen, label: t('nav.content'), path: '/content' },
