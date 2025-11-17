@@ -8,7 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../ui/table';
 import { Badge } from '../../ui/badge';
 import { Alert, AlertDescription } from '../../ui/alert';
-import { ChevronRight, ChevronLeft } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '../../ui/dialog';
+import { Switch } from '../../ui/switch';
+import { ChevronRight, ChevronLeft, Plus, Trash2 } from 'lucide-react';
 
 const TARGET_FIELDS = [
   { value: 'full_name', label: 'Full Name', required: true, info: 'Only required field - will be split into first and last name' },
