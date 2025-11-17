@@ -52,6 +52,13 @@ function EventCard({ event, onEdit }) {
   const rsvpCount = event.rsvp_list?.length || 0;
   const attendanceCount = event.attendance_list?.length || 0;
   
+  // Check for failed WhatsApp deliveries
+  const failedWhatsAppCount = event.rsvp_list?.filter(r => 
+    r.whatsapp_status === 'failed' || 
+    r.whatsapp_status === 'error' || 
+    r.whatsapp_status === 'timeout'
+  ).length || 0;
+  
   // Calculate capacity info with progress
   const getCapacityInfo = () => {
     // For events with seat_capacity defined (manual capacity)
