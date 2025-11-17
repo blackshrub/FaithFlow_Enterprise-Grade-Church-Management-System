@@ -47,6 +47,12 @@ async def simulate_photo_matching(
                         'original_filename': member[photo_filename_field]
                     }
         
+        logger.info(f"Created member lookup with {len(member_lookup)} entries from CSV")
+        if len(member_lookup) > 0:
+            # Log first 3 for debugging
+            sample_keys = list(member_lookup.keys())[:3]
+            logger.info(f"Sample CSV filenames (normalized): {sample_keys}")
+        
         # Match files
         for filename, file_data in extracted_files.items():
             if filename in member_lookup:
