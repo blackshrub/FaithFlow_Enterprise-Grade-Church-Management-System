@@ -182,7 +182,13 @@
     "createError": "Failed to create",
     "updateError": "Failed to update",
     "deleteError": "Failed to delete",
-    "loadError": "Failed to load settings"
+    "loadError": "Failed to load settings",
+    "whatsappNotifications": "WhatsApp Notifications",
+    "whatsappNotificationsDesc": "Configure WhatsApp message notifications",
+    "enableWhatsappNotifications": "Enable WhatsApp Notifications",
+    "enableWhatsappDesc": "Send automated WhatsApp messages to members",
+    "sendRSVPConfirmation": "Send RSVP Confirmation",
+    "sendRSVPConfirmationDesc": "Send confirmation message with QR code when member registers for event"
   },
   "events": {
     "title": "Events",
