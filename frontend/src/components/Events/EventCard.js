@@ -326,7 +326,7 @@ function EventCard({ event, onEdit }) {
               {t('events.event.viewRSVPs')}
             </Button>
           )}
-          <Button variant="outline" size="sm" className="flex-1">
+          <Button variant="outline" size="sm" className="flex-1" onClick={() => setShowAttendanceModal(true)}>
             {t('events.event.viewAttendance')}
           </Button>
         </div>
