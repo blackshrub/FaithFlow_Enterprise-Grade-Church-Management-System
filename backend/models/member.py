@@ -38,15 +38,16 @@ class MemberCreate(MemberBase):
 class MemberUpdate(BaseModel):
     first_name: Optional[str] = Field(None, min_length=1, max_length=100)
     last_name: Optional[str] = Field(None, min_length=1, max_length=100)
+    full_name: Optional[str] = None
     email: Optional[EmailStr] = None
     phone_whatsapp: Optional[str] = None
     date_of_birth: Optional[date] = None
-    gender: Optional[Literal['male', 'female', 'other']] = None
+    gender: Optional[Literal['Male', 'Female']] = None
     address: Optional[str] = None
     city: Optional[str] = None
     state: Optional[str] = None
     country: Optional[str] = None
-    marital_status: Optional[Literal['single', 'married', 'divorced', 'widowed']] = None
+    marital_status: Optional[Literal['Married', 'Not Married', 'Widower', 'Widow']] = None
     occupation: Optional[str] = None
     baptism_date: Optional[date] = None
     membership_date: Optional[date] = None
@@ -54,8 +55,10 @@ class MemberUpdate(BaseModel):
     household_id: Optional[str] = None
     notes: Optional[str] = None
     demographic_category: Optional[str] = None  # Auto-assigned based on age
-    blood_type: Optional[Literal['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']] = None
+    blood_type: Optional[Literal['A', 'B', 'AB', 'O']] = None
+    photo_filename: Optional[str] = None
     photo_base64: Optional[str] = None  # Profile photo in base64
+    personal_document: Optional[str] = None
     documents: Optional[List[str]] = None  # List of document URLs or base64
 
 
