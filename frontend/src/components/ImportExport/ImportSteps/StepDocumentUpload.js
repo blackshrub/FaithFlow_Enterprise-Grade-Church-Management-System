@@ -99,22 +99,18 @@ export default function StepDocumentUpload({ wizardData, updateWizardData, nextS
           {processing ? (
             <div>
               <Loader2 className="h-12 w-12 animate-spin text-blue-600 mx-auto mb-4" />
-              <p className="text-gray-600">{t('importExport.processingDocuments')}</p>
-              {uploadProgress && (
-                <div className="mt-4 max-w-md mx-auto">
-                  <div className="flex justify-between text-sm text-gray-600 mb-2">
-                    <span>{uploadProgress}</span>
-                    <span>{progressPercent}%</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2.5">
-                    <div 
-                      className="bg-blue-600 h-2.5 rounded-full transition-all duration-300"
-                      style={{ width: `${progressPercent}%` }}
-                    ></div>
-                  </div>
+              <p className="text-gray-600 font-semibold">{uploadProgress}</p>
+              <div className="w-64 mx-auto mt-4">
+                <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-blue-600 transition-all duration-300"
+                    style={{ width: `${progressPercent}%` }}
+                  />
                 </div>
-              )}
-              <p className="text-sm text-gray-500 mt-2">{t('importExport.pleaseWait')}</p>
+              </div>
+              <p className="text-sm text-gray-500 mt-2">
+                {progressPercent}% - {t('importExport.pleaseWait')}
+              </p>
             </div>
           ) : uploadResults ? (
             <div>
