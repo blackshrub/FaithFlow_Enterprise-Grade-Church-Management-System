@@ -16,10 +16,12 @@ import StepResults from './ImportSteps/StepResults';
 
 const STEPS = [
   { id: 1, name: 'Upload File', key: 'upload' },
-  { id: 2, name: 'Map Fields', key: 'mapping' },
-  { id: 3, name: 'Map Values', key: 'values' },
-  { id: 4, name: 'Simulate & Validate', key: 'simulate' },
-  { id: 5, name: 'Import', key: 'import' },
+  { id: 2, name: 'Upload Photos (Optional)', key: 'photos' },
+  { id: 3, name: 'Upload Documents (Optional)', key: 'documents' },
+  { id: 4, name: 'Map Fields', key: 'mapping' },
+  { id: 5, name: 'Map Values', key: 'values' },
+  { id: 6, name: 'Simulate & Validate', key: 'simulate' },
+  { id: 7, name: 'Import', key: 'import' },
 ];
 
 export default function ImportWizard() {
