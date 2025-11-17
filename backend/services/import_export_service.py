@@ -61,7 +61,7 @@ class ImportExportService:
         field_mappings: Dict[str, str],
         default_values: Dict[str, str] = None
     ) -> List[Dict[str, Any]]:
-        """Apply field mappings to data
+        """Apply field mappings to data and ignore unmapped fields
         
         Args:
             data: List of data dictionaries
@@ -69,15 +69,16 @@ class ImportExportService:
             default_values: Dictionary of default values for fields not in source
             
         Returns:
-            List of mapped data dictionaries
+            List of mapped data dictionaries (only mapped fields included)
         """
         mapped_data = []
         for row in data:
             mapped_row = {}
             
-            # Apply field mappings
+            # Only apply field mappings for explicitly mapped source fields
+            # Ignore any source fields that aren't in field_mappings
             for source_field, target_field in field_mappings.items():
-                if source_field in row:
+                if source_field in row and row[source_field] not in ['', None, 'NULL', 'null']:
                     mapped_row[target_field] = row[source_field]
             
             # Apply default values for unmapped fields
