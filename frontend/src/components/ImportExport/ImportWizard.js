@@ -71,6 +71,7 @@ export default function ImportWizard() {
       totalRecords: 0,
       fieldMappings: {},
       valueMappings: {},
+      defaultValues: {},
       dateFormat: 'DD-MM-YYYY',
       simulationResults: null,
       importResults: null,
