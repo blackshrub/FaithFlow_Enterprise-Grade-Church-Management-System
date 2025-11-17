@@ -102,6 +102,7 @@ function EventForm({ event, onClose }) {
         requires_rsvp: formData.requires_rsvp,
         enable_seat_selection: formData.enable_seat_selection,
         seat_layout_id: formData.seat_layout_id || null,
+        seat_capacity: formData.seat_capacity ? parseInt(formData.seat_capacity) : null,
         is_active: formData.is_active,
       };
 
