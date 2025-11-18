@@ -151,7 +151,9 @@ async def calculate_account_balance(
     }
     
     if as_of_date:
-        query["date"] = {"$lte": as_of_date}
+        # Convert date to datetime for MongoDB compatibility
+        as_of_datetime = datetime.combine(as_of_date, datetime.max.time())
+        query["date"] = {"$lte": as_of_datetime}
     
     # Get all journals with this account
     cursor = db.journals.find(query)
