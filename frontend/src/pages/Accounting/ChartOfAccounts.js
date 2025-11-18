@@ -190,9 +190,37 @@ export default function ChartOfAccounts() {
                       )}
                     </TableCell>
                     <TableCell>
-                      <Button variant="ghost" size="sm">
-                        {t('accounting.common.edit')}
-                      </Button>
+                      <div className="flex items-center space-x-2">
+                        <Button variant="ghost" size="sm" onClick={() => {
+                          setSelectedAccount(account);
+                          setShowModal(true);
+                        }}>
+                          {t('accounting.common.edit')}
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={async () => {
+                            if (!window.confirm(t('accounting.coa.deleteAccount') + '?')) return;
+                            try {
+                              await deleteMutation.mutateAsync(account.id);
+                              toast({
+                                title: t('accounting.common.success'),
+                                description: `Account ${account.code} deleted`
+                              });
+                            } catch (error) {
+                              const errorCode = error.response?.data?.detail?.error_code;
+                              toast({
+                                variant: "destructive",
+                                title: t('accounting.common.error'),
+                                description: errorCode ? t(`errors.${errorCode}`) : error.message
+                              });
+                            }
+                          }}
+                        >
+                          {t('accounting.common.delete')}
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
