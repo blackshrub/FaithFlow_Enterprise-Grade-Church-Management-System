@@ -87,7 +87,7 @@ export default function Layout() {
       ]
     },
     { icon: DollarSign, label: t('nav.donations'), path: '/donations' },
-    { icon: Heart, label: t('nav.prayers'), path: '/prayers' },
+    { icon: Heart, label: t('prayerRequests.title'), path: '/prayer-requests' },
     { icon: BookOpen, label: t('nav.content'), path: '/devotions' },
     { icon: Award, label: t('nav.spiritualJourney'), path: '/spiritual-journey' },
     {
