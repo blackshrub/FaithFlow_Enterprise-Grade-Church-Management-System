@@ -23,15 +23,24 @@ async def generate_journal_number(
     Returns:
         Generated journal number
     """
+    from datetime import datetime as dt
+    
     year = journal_date.year
     month = journal_date.month
+    
+    # Convert dates to datetime for MongoDB query
+    start_date = dt(year, month, 1)
+    if month < 12:
+        end_date = dt(year, month + 1, 1)
+    else:
+        end_date = dt(year + 1, 1, 1)
     
     # Get count of journals for this month
     count = await db.journals.count_documents({
         "church_id": church_id,
         "date": {
-            "$gte": date(year, month, 1),
-            "$lt": date(year, month + 1, 1) if month < 12 else date(year + 1, 1, 1)
+            "$gte": journal_date.isoformat(),
+            "$lt": end_date.date().isoformat()
         }
     })
     
