@@ -124,6 +124,14 @@ export default function ResponsibilityCenters() {
           )}
         </CardContent>
       </Card>
+
+      {/* Modal */}
+      <ResponsibilityCenterModal
+        open={showModal}
+        onOpenChange={setShowModal}
+        center={selectedCenter}
+        onSuccess={() => refetch()}
+      />
     </div>
   );
 }
