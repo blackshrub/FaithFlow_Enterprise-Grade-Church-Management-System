@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, Save, Upload, Trash2, Plus, Volume2 } from 'lucide-react';
+import { X, Save, Upload, Trash2, Plus, Volume2, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
