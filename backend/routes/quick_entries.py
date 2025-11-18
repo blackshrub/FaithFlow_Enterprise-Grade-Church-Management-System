@@ -77,7 +77,7 @@ async def create_weekly_giving(
         "id": str(uuid.uuid4()),
         "church_id": church_id,
         "journal_number": journal_number,
-        "date": data.date,
+        "date": datetime.combine(data.date, datetime.min.time()),
         "reference_number": None,
         "description": f"Persembahan {data.service_name} - {data.giving_type}",
         "status": "approved",
