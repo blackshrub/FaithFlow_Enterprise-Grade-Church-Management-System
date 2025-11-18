@@ -12,15 +12,18 @@ FaithFlow is a comprehensive, production-ready church management system designed
 ### Key Features
 
 - ✅ **Multi-Tenant Architecture** - Manage multiple churches from one system
-- ✅ **Event & RSVP Management** - Events, seat selection, QR codes, WhatsApp notifications
-- ✅ **Kiosk Mode** - Professional check-in system with QR scanning (10 colorful themes)
-- ✅ **Devotion CMS** - Daily devotions with 6 Bible versions (186,000+ verses)
-- ✅ **Indonesian TTS** - Professional male voice (Wibowo) with Coqui TTS
-- ✅ **Member Management** - Complete CRUD, import/export, personal QR codes
-- ✅ **Accounting System** - COA, journals, budgeting, bank reconciliation, reports
+- ✅ **Event & RSVP Management** - Events, seat selection, QR codes, WhatsApp notifications, **event categories**
+- ✅ **Kiosk Mode** - Professional check-in system with QR scanning (10 colorful themes, **fullscreen mode**)
+- ✅ **Devotion CMS** - Daily devotions with 6 Bible versions (186,000+ verses), **calendar view**
+- ✅ **Indonesian TTS** - Professional male voice (Wibowo) with **perfect pronunciation** (g, b, d fixes)
+- ✅ **Member Management** - Complete CRUD, import/export, **personal QR codes**, **QR display modal**
+- ✅ **Personal QR System** - Universal member ID (6-digit code) for check-in at any event
+- ✅ **Accounting System** - COA, journals, budgeting, bank reconciliation, reports (foundation ready)
 - ✅ **Prayer Requests** - Manage and track prayer requests
-- ✅ **Full i18n Support** - English & Indonesian (500+ translation keys)
+- ✅ **Full i18n Support** - English & Indonesian (**535+ translation keys**, zero hardcoded strings)
 - ✅ **Mobile API Ready** - RESTful APIs for mobile apps
+- ✅ **Collapsible Sidebar** - Icon-only mode for focused work
+- ✅ **FaithFlow Branding** - Professional identity with logo, colors, tagline
 
 ### Tech Stack
 
