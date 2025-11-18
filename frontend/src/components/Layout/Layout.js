@@ -83,6 +83,21 @@ export default function Layout() {
     { icon: Heart, label: t('nav.prayers'), path: '/prayers' },
     { icon: BookOpen, label: t('nav.content'), path: '/devotions' },
     { icon: Award, label: t('nav.spiritualJourney'), path: '/spiritual-journey' },
+    {
+      icon: Calculator,
+      label: t('accounting.title'),
+      key: 'accounting',
+      submenu: [
+        { label: t('accounting.dashboard'), path: '/accounting' },
+        { label: t('accounting.coa.title'), path: '/accounting/coa' },
+        { label: t('accounting.journal.title'), path: '/accounting/journals' },
+        { label: t('accounting.quickEntry.title'), path: '/accounting/quick-entry' },
+        { label: t('accounting.budget.title'), path: '/accounting/budgets' },
+        { label: t('accounting.fixedAsset.title'), path: '/accounting/assets' },
+        { label: t('accounting.bank.title'), path: '/accounting/bank' },
+        { label: t('accounting.reports.title'), path: '/accounting/reports' },
+      ]
+    },
   ];
 
   if (isSuperAdmin) {
