@@ -19,8 +19,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../../components/ui/select';
-import { useChartOfAccounts, useSeedDefaultCOA } from '../../hooks/useAccounting';
+import { useChartOfAccounts, useSeedDefaultCOA, useDeleteCOA } from '../../hooks/useAccounting';
 import AccountTypeBadge from '../../components/Accounting/AccountTypeBadge';
+import COAModal from '../../components/Accounting/COAModal';
 import { Badge } from '../../components/ui/badge';
 import { useToast } from '../../hooks/use-toast';
 
@@ -30,13 +31,16 @@ export default function ChartOfAccounts() {
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
   const [viewMode, setViewMode] = useState('list'); // 'list' or 'tree'
+  const [showModal, setShowModal] = useState(false);
+  const [selectedAccount, setSelectedAccount] = useState(null);
 
-  const { data: accounts, isLoading } = useChartOfAccounts({
+  const { data: accounts, isLoading, refetch } = useChartOfAccounts({
     search,
     account_type: (typeFilter && typeFilter !== 'all') ? typeFilter : undefined
   });
 
   const seedMutation = useSeedDefaultCOA();
+  const deleteMutation = useDeleteCOA();
 
   const handleSeedDefault = async () => {
     if (!window.confirm(t('accounting.coa.seedDefaultConfirm'))) return;
