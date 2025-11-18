@@ -37,9 +37,13 @@ async def list_bank_transactions(
     if start_date or end_date:
         query["transaction_date"] = {}
         if start_date:
-            query["transaction_date"]["$gte"] = start_date
+            # Convert date to datetime for MongoDB compatibility
+            start_datetime = datetime.combine(start_date, datetime.min.time())
+            query["transaction_date"]["$gte"] = start_datetime
         if end_date:
-            query["transaction_date"]["$lte"] = end_date
+            # Convert date to datetime for MongoDB compatibility
+            end_datetime = datetime.combine(end_date, datetime.max.time())
+            query["transaction_date"]["$lte"] = end_datetime
     
     total = await db.bank_transactions.count_documents(query)
     cursor = db.bank_transactions.find(query, {"_id": 0}).sort("transaction_date", -1).skip(offset).limit(limit)
