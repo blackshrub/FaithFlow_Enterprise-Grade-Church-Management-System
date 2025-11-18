@@ -90,4 +90,4 @@ class ChartOfAccount(ChartOfAccountBase):
 
 class ChartOfAccountTreeNode(ChartOfAccount):
     """COA with children for tree structure"""
-    children: List['ChartOfAccountTreeNode'] = Field(default_factory=list)
+    children: list['ChartOfAccountTreeNode'] = Field(default_factory=list)
