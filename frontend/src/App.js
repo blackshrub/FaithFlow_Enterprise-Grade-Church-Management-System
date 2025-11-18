@@ -18,6 +18,8 @@ import Devotions from "./pages/Devotions";
 import Layout from "./components/Layout/Layout";
 import ProtectedRoute from "./components/Layout/ProtectedRoute";
 
+import FaithFlowLogo from './components/Branding/FaithFlowLogo';
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
