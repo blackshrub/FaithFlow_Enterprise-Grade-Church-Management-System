@@ -464,3 +464,95 @@ async def update_church_settings(
         updated_settings['updated_at'] = datetime.fromisoformat(updated_settings['updated_at'])
     
     return updated_settings
+
+
+# ============= Event Category Routes =============
+
+@router.get("/event-categories", response_model=List[EventCategory])
+async def list_event_categories(
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    """List all event categories"""
+    query = {}
+    if current_user.get('role') != 'super_admin':
+        query['church_id'] = current_user.get('church_id')
+    
+    categories = await db.event_categories.find(query, {"_id": 0}).sort("order", 1).to_list(100)
+    
+    for cat in categories:
+        if isinstance(cat.get('created_at'), str):
+            cat['created_at'] = datetime.fromisoformat(cat['created_at'])
+        if isinstance(cat.get('updated_at'), str):
+            cat['updated_at'] = datetime.fromisoformat(cat['updated_at'])
+    
+    return categories
+
+
+@router.post("/event-categories", response_model=EventCategory, status_code=status.HTTP_201_CREATED)
+async def create_event_category(
+    category_data: EventCategoryCreate,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current_user: dict = Depends(require_admin)
+):
+    """Create event category"""
+    if current_user.get('role') != 'super_admin' and current_user.get('church_id') != category_data.church_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
+    
+    category = EventCategory(**category_data.model_dump())
+    cat_doc = category.model_dump()
+    cat_doc['created_at'] = cat_doc['created_at'].isoformat()
+    cat_doc['updated_at'] = cat_doc['updated_at'].isoformat()
+    
+    await db.event_categories.insert_one(cat_doc)
+    return category
+
+
+@router.patch("/event-categories/{category_id}", response_model=EventCategory)
+async def update_event_category(
+    category_id: str,
+    category_data: EventCategoryUpdate,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current_user: dict = Depends(require_admin)
+):
+    """Update event category"""
+    category = await db.event_categories.find_one({"id": category_id})
+    if not category:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Category not found")
+    
+    if current_user.get('role') != 'super_admin' and current_user.get('church_id') != category.get('church_id'):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
+    
+    update_data = category_data.model_dump(exclude_unset=True)
+    if update_data:
+        update_data['updated_at'] = datetime.now().isoformat()
+        await db.event_categories.update_one({"id": category_id}, {"$set": update_data})
+    
+    updated = await db.event_categories.find_one({"id": category_id}, {"_id": 0})
+    if isinstance(updated.get('created_at'), str):
+        updated['created_at'] = datetime.fromisoformat(updated['created_at'])
+    if isinstance(updated.get('updated_at'), str):
+        updated['updated_at'] = datetime.fromisoformat(updated['updated_at'])
+    
+    return updated
+
+
+@router.delete("/event-categories/{category_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_event_category(
+    category_id: str,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current_user: dict = Depends(require_admin)
+):
+    """Delete event category (except system categories)"""
+    category = await db.event_categories.find_one({"id": category_id})
+    if not category:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Category not found")
+    
+    if category.get('is_system'):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Cannot delete system category")
+    
+    if current_user.get('role') != 'super_admin' and current_user.get('church_id') != category.get('church_id'):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
+    
+    await db.event_categories.delete_one({"id": category_id})
+    return None
