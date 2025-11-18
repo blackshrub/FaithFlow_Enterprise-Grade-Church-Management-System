@@ -1226,13 +1226,16 @@ frontend:
     implemented: true
     working: false
     file: "/app/frontend/src/pages/Accounting/FixedAssetForm.js"
-    stuck_count: 1
+    stuck_count: 2
     priority: "high"
     needs_retesting: true
     status_history:
       - working: false
         agent: "testing"
         comment: "CRITICAL ISSUE: Fixed Asset form loads with basic UI elements. Form accepts Asset Code, Asset Name, and Acquisition Date. However, backend returns 422 Unprocessable Entity errors when attempting to create asset. Backend logs show: 'POST /api/v1/accounting/assets/ HTTP/1.1 422'. During testing, only 1 number input field was detected (expected 3 for Cost, Useful Life, Salvage Value), suggesting the form structure may not be rendering all required fields properly. The CurrencyInput component for Cost field may not be rendering as a standard number input. Account selectors for Asset Account, Depreciation Expense Account, and Accumulated Depreciation Account are present but may have same dropdown issue as Journal form. Backend validation requires all three account IDs to be provided."
+      - working: false
+        agent: "testing"
+        comment: "ROUND 5 BUG FIX VALIDATION (2025-01-18): Tested asset form end-to-end. CRITICAL BUGS FOUND: (1) Asset Code filled: 'VEH-TEST-001' ✓ (2) Asset Name filled: 'Test Church Van' ✓ (3) Acquisition Date filled: 2025-01-20 ✓ (4) COST FIELD NOT WORKING: Attempted to fill '500000000' but field shows validation error 'Please fill out this field'. CurrencyInput component is not capturing the value. (5) Useful Life filled: 60 ✓ (6) SALVAGE VALUE NOT WORKING: Same issue as Cost field - value not captured. (7) Monthly Depreciation shows 'Rp 0' because Cost is not captured (should calculate depreciation). (8) AccountSelectors open but only 2 options available. (9) Save button is ENABLED but will fail validation due to missing Cost. ROOT CAUSE: CurrencyInput component in Asset form is NOT capturing values for Cost and Salvage Value fields. This is the same issue as Debit amount in Journal form. The component renders but doesn't update form state."
 
   - task: "Accounting - Account Selector Component"
     implemented: true
