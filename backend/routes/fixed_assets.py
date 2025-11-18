@@ -57,7 +57,7 @@ async def get_asset(
 
 @router.post("/", status_code=status.HTTP_201_CREATED)
 async def create_asset(
-    asset_data: FixedAssetCreate,
+    asset_data: FixedAssetBase,
     current_user: dict = Depends(get_current_user),
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
