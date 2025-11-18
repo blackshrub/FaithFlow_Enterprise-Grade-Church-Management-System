@@ -21,21 +21,28 @@ const AccountSelector = ({
   const { t } = useTranslation();
   const { data: coaTree, isLoading } = useCOATree();
 
-  // Flatten tree to list
+  // Flatten tree to list (recursive for all levels)
   const flattenTree = (nodes, level = 0) => {
-    if (!nodes) return [];
+    if (!nodes || !Array.isArray(nodes)) return [];
     
     let result = [];
     nodes.forEach(node => {
+      // Add current node
       result.push({ ...node, displayLevel: level });
-      if (node.children && node.children.length > 0) {
-        result = result.concat(flattenTree(node.children, level + 1));
+      
+      // Recursively add all children
+      if (node.children && Array.isArray(node.children) && node.children.length > 0) {
+        const childResults = flattenTree(node.children, level + 1);
+        result = result.concat(childResults);
       }
     });
     return result;
   };
 
   const accounts = flattenTree(coaTree || []);
+  
+  console.log('AccountSelector: COA Tree data:', coaTree);
+  console.log('AccountSelector: Flattened accounts:', accounts.length, 'accounts');
   
   // Handle filterByType as either string or array
   let filteredAccounts = accounts;
@@ -46,11 +53,8 @@ const AccountSelector = ({
       filteredAccounts = accounts.filter(acc => acc.account_type === filterByType);
     }
   }
-
-  // Debug logging
-  if (accounts.length === 0 && !isLoading) {
-    console.warn('AccountSelector: No accounts loaded. COA tree:', coaTree);
-  }
+  
+  console.log('AccountSelector: Filtered accounts:', filteredAccounts.length, 'accounts', 'Filter:', filterByType);
 
   return (
     <div className="space-y-2">
