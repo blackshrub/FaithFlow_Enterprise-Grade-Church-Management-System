@@ -37,6 +37,16 @@ function Devotions() {
     setEditingDevotion(null);
   };
 
+  const handleDateClick = (date, devotion) => {
+    if (devotion) {
+      handleEdit(devotion);
+    } else {
+      // Create new devotion for this date
+      setEditingDevotion({ date: date.toISOString().split('T')[0] });
+      setIsFormOpen(true);
+    }
+  };
+
   const toggleSelection = (devotionId) => {
     setSelectedDevotions(prev =>
       prev.includes(devotionId)
