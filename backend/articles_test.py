@@ -108,7 +108,7 @@ class ArticlesAPITester:
         success, response = self.run_test(
             "Admin Login",
             "POST",
-            "/api/v1/auth/login",
+            "/api/auth/login",
             200,
             data={
                 "email": "admin@gkbjtamankencana.org",
