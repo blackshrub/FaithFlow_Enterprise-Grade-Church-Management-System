@@ -281,9 +281,13 @@ function DevotionForm({ devotion, onClose }) {
                   variant="outline"
                   onClick={handleGenerateAudio}
                   disabled={generatingAudio || !formData.content}
+                  className="min-w-[200px]"
                 >
                   {generatingAudio ? (
-                    t('devotions.actions.generatingAudio')
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      {t('devotions.actions.generatingAudio')} (60-90s...)
+                    </>
                   ) : (
                     <>
                       <Volume2 className="h-4 w-4 mr-2" />
