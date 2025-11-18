@@ -42,6 +42,7 @@ import AuditLogs from "./pages/Accounting/AuditLogs";
 import GeneralLedger from "./pages/Accounting/GeneralLedger";
 import CashFlowStatement from "./pages/Accounting/CashFlowStatement";
 import ResponsibilityCenterReport from "./pages/Accounting/ResponsibilityCenterReport";
+import CustomReportBuilder from "./pages/Accounting/CustomReportBuilder";
 
 import FaithFlowLogo from './components/Branding/FaithFlowLogo';
 
