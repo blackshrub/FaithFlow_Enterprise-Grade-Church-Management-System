@@ -29,17 +29,6 @@ export default function PrayerRequestForm() {
     needs_follow_up: false,
     follow_up_notes: ''
   });
-
-  const [formData, setFormData] = useState({
-    member_id: '',
-    title: '',
-    description: '',
-    category: 'other',
-    status: 'new',
-    internal_notes: '',
-    needs_follow_up: false,
-    follow_up_notes: ''
-  });
   const [memberSearch, setMemberSearch] = useState('');
   const [showMemberDropdown, setShowMemberDropdown] = useState(false);
 
