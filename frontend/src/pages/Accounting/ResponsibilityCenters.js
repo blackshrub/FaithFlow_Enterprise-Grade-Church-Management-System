@@ -14,6 +14,7 @@ import {
 import { Badge } from '../../components/ui/badge';
 import { useResponsibilityCenters, useDeleteResponsibilityCenter } from '../../hooks/useAccounting';
 import ResponsibilityCenterModal from '../../components/Accounting/ResponsibilityCenterModal';
+import { useToast } from '../../hooks/use-toast';
 
 export default function ResponsibilityCenters() {
   const { t } = useTranslation();
