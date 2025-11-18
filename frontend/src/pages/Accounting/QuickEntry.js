@@ -93,7 +93,8 @@ export default function QuickEntry() {
         amount: 0,
         from_account_id: '',
         to_account_id: '',
-        responsibility_center_id: null
+        responsibility_center_id: null,
+        file_ids: []
       });
     } catch (error) {
       const errorCode = error.response?.data?.detail?.error_code;
