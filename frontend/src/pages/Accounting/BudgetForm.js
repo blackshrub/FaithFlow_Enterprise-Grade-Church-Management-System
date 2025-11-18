@@ -66,8 +66,36 @@ export default function BudgetForm() {
   };
 
   const handleSaveDraft = async () => {
+    // Validate form
+    if (!formData.name || !formData.fiscal_year) {
+      toast({
+        variant: "destructive",
+        title: t('accounting.common.error'),
+        description: "Name and fiscal year are required"
+      });
+      return;
+    }
+
+    // Validate lines
+    const validLines = formData.lines.filter(line => line.account_id && line.annual_amount > 0);
+    if (validLines.length === 0) {
+      toast({
+        variant: "destructive",
+        title: t('accounting.common.error'),
+        description: "At least one budget line with account and amount is required"
+      });
+      return;
+    }
+
     try {
-      const response = await createMutation.mutateAsync({ ...formData, status: 'draft' });
+      const payload = {
+        name: formData.name,
+        fiscal_year: formData.fiscal_year,
+        lines: validLines,
+        attachments: formData.attachments || []
+      };
+      
+      const response = await createMutation.mutateAsync(payload);
       toast({
         title: t('accounting.common.success'),
         description: `Budget ${formData.name} created`
@@ -75,6 +103,7 @@ export default function BudgetForm() {
       navigate('/accounting/budgets');
     } catch (error) {
       const errorCode = error.response?.data?.detail?.error_code;
+      console.error('Budget creation error:', error);
       toast({
         variant: "destructive",
         title: t('accounting.common.error'),
