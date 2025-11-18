@@ -120,7 +120,23 @@ function Devotions() {
           <p className="text-gray-600 mt-1">{t('devotions.subtitle')}</p>
         </div>
         <div className="flex gap-2">
-          {selectedDevotions.length > 0 && (
+          <Button
+            variant={viewMode === 'grid' ? 'default' : 'outline'}
+            onClick={() => setViewMode('grid')}
+            size="sm"
+          >
+            <BookOpen className="h-4 w-4 mr-2" />
+            {t('common.list') || 'List'}
+          </Button>
+          <Button
+            variant={viewMode === 'calendar' ? 'default' : 'outline'}
+            onClick={() => setViewMode('calendar')}
+            size="sm"
+          >
+            <Calendar className="h-4 w-4 mr-2" />
+            {t('common.calendar') || 'Calendar'}
+          </Button>
+          {selectedDevotions.length > 0 && viewMode === 'grid' && (
             <>
               <Button variant="outline" onClick={() => handleBulkAction('publish')}>
                 {t('devotions.actions.publish')} ({selectedDevotions.length})
