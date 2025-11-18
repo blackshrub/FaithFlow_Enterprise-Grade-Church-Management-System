@@ -156,7 +156,7 @@ async def create_outgoing_money(
         "id": str(uuid.uuid4()),
         "church_id": church_id,
         "journal_number": journal_number,
-        "date": data.date,
+        "date": datetime.combine(data.date, datetime.min.time()),
         "reference_number": None,
         "description": f"Pengeluaran: {data.description}",
         "status": "approved",
