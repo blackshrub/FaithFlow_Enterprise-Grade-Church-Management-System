@@ -8,6 +8,16 @@ function DevotionCalendar({ devotions, onDateClick }) {
   const { t } = useTranslation();
   const [currentDate, setCurrentDate] = useState(new Date());
 
+  const dayNames = [
+    t('common.sunday') || 'Sun',
+    t('common.monday') || 'Mon', 
+    t('common.tuesday') || 'Tue',
+    t('common.wednesday') || 'Wed',
+    t('common.thursday') || 'Thu',
+    t('common.friday') || 'Fri',
+    t('common.saturday') || 'Sat'
+  ];
+
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);
   const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
