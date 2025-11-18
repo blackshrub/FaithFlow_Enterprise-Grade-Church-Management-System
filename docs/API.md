@@ -15,7 +15,8 @@
 5. [Devotions](#devotions)
 6. [Bible](#bible)
 7. [Settings](#settings)
-8. [Common Patterns](#common-patterns)
+8. **[Accounting (v1)](#accounting-v1)** ⭐ NEW
+9. [Common Patterns](#common-patterns)
 
 ---
 
