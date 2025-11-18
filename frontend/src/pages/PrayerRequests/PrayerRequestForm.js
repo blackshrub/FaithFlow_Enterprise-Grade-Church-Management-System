@@ -21,8 +21,6 @@ export default function PrayerRequestForm() {
 
   const [formData, setFormData] = useState({
     member_id: '',
-    requester_name: '',
-    requester_contact: '',
     title: '',
     description: '',
     category: 'other',
