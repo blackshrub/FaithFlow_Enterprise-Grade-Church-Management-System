@@ -24,6 +24,18 @@ function VersePicker({ verses, onVersesChange }) {
 
   const [fetchedText, setFetchedText] = useState('');
 
+  // Get book name field based on Bible version
+  const getBookNameForVersion = (book, version) => {
+    const versionCode = version.toUpperCase();
+    if (versionCode === 'TB') {
+      return book.name_local || book.name; // Indonesian
+    } else if (versionCode === 'CHS') {
+      return book.name_zh || book.name; // Chinese
+    } else {
+      return book.name; // English (NIV, NKJV, NLT, ESV)
+    }
+  };
+
   const fetchVerseMutation = useMutation({
     mutationFn: async () => {
       const response = await bibleAPI.getVerse(
