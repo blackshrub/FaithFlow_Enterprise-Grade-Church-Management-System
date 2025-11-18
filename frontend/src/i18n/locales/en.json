@@ -99,7 +99,10 @@
     "personalQR": "Personal QR Code",
     "memberID": "Member ID",
     "downloadQR": "Download QR",
-    "printQR": "Print QR"
+    "printQR": "Print QR",
+    "viewQR": "View QR Code",
+    "universalID": "Universal Member ID",
+    "useForCheckIn": "Use this QR code for check-in at any event"
   },
   "common": {
     "cancel": "Cancel",
