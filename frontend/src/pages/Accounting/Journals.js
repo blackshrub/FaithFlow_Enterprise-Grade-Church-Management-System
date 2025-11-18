@@ -32,13 +32,13 @@ export default function Journals() {
   const navigate = useNavigate();
   
   const [pagination, setPagination] = useState({ limit: 50, offset: 0 });
-  const [statusFilter, setStatusFilter] = useState('');
-  const [typeFilter, setTypeFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [typeFilter, setTypeFilter] = useState('all');
 
   const { data: journalsData, isLoading } = useJournals({
     ...pagination,
-    status: statusFilter || undefined,
-    journal_type: typeFilter || undefined
+    status: (statusFilter && statusFilter !== 'all') ? statusFilter : undefined,
+    journal_type: (typeFilter && typeFilter !== 'all') ? typeFilter : undefined
   });
 
   const approveMutation = useApproveJournal();
