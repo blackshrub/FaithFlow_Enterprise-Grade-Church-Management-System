@@ -22,7 +22,14 @@ import {
 import { useChartOfAccounts, useSeedDefaultCOA, useDeleteCOA } from '../../hooks/useAccounting';
 import AccountTypeBadge from '../../components/Accounting/AccountTypeBadge';
 import COAModal from '../../components/Accounting/COAModal';
+import TableSkeleton from '../../components/Accounting/TableSkeleton';
 import { Badge } from '../../components/ui/badge';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '../../components/ui/tooltip';
 import { useToast } from '../../hooks/use-toast';
 
 export default function ChartOfAccounts() {
