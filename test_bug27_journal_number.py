@@ -96,7 +96,7 @@ def get_test_accounts():
     
     try:
         response = requests.get(
-            f"{BASE_URL}/v1/accounting/coa",
+            f"{BASE_URL}/v1/accounting/coa/",
             headers=headers,
             timeout=10
         )
