@@ -33,7 +33,7 @@ export default function ChartOfAccounts() {
 
   const { data: accounts, isLoading } = useChartOfAccounts({
     search,
-    account_type: typeFilter || undefined
+    account_type: (typeFilter && typeFilter !== 'all') ? typeFilter : undefined
   });
 
   const seedMutation = useSeedDefaultCOA();
