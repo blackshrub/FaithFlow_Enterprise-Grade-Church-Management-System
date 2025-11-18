@@ -6,7 +6,7 @@ from datetime import date, datetime
 from decimal import Decimal
 import uuid
 
-from models.beginning_balance import BeginningBalanceCreate, BeginningBalanceUpdate, BeginningBalanceEntry
+from models.beginning_balance import BeginningBalanceBase, BeginningBalanceUpdate, BeginningBalanceEntry
 from utils.dependencies import get_db, get_current_user
 from utils.tenant_utils import get_current_church_id
 from utils import error_codes
