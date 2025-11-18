@@ -372,10 +372,12 @@ export default function Members() {
       </Dialog>
 
       {/* QR Code Modal */}
-      <MemberQRModal 
-        member={qrMember} 
-        onClose={() => setQrMember(null)} 
-      />
+      {qrMember && (
+        <MemberQRModal 
+          member={qrMember} 
+          onClose={() => setQrMember(null)} 
+        />
+      )}
     </div>
   );
 }
