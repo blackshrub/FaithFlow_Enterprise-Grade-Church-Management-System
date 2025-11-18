@@ -43,7 +43,8 @@
     "recentActivity": "Aktivitas Terkini",
     "latestUpdates": "Pembaruan terbaru dari gereja Anda",
     "noActivity": "Tidak ada aktivitas terkini untuk ditampilkan",
-    "activityWillAppear": "Aktivitas akan muncul di sini saat Anda menggunakan sistem"
+    "activityWillAppear": "Aktivitas akan muncul di sini saat Anda menggunakan sistem",
+    "createdAt": "Dibuat Pada"
   },
   "members": {
     "title": "Jemaat",
@@ -136,7 +137,9 @@
     "inactive": "Tidak Aktif",
     "active": "Aktif",
     "all": "Semua",
-    "noData": "Tidak ada data"
+    "noData": "Tidak ada data",
+    "back": "Kembali",
+    "none": "Tidak Ada"
   },
   "nav": {
     "dashboard": "Dasbor",

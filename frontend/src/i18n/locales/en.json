@@ -43,7 +43,8 @@
     "recentActivity": "Recent Activity",
     "latestUpdates": "Latest updates from your church",
     "noActivity": "No recent activity to display",
-    "activityWillAppear": "Activity will appear here as you use the system"
+    "activityWillAppear": "Activity will appear here as you use the system",
+    "createdAt": "Created At"
   },
   "members": {
     "title": "Members",
@@ -136,7 +137,9 @@
     "inactive": "Inactive",
     "active": "Active",
     "all": "All",
-    "noData": "No data available"
+    "noData": "No data available",
+    "back": "Back",
+    "none": "None"
   },
   "nav": {
     "dashboard": "Dashboard",
