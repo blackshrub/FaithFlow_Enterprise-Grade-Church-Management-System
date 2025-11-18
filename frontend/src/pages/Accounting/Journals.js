@@ -24,6 +24,7 @@ import { useJournals, useApproveJournal, useDeleteJournal } from '../../hooks/us
 import StatusBadge from '../../components/Accounting/StatusBadge';
 import CurrencyDisplay from '../../components/Accounting/CurrencyDisplay';
 import PaginationControls from '../../components/Accounting/PaginationControls';
+import TableSkeleton from '../../components/Accounting/TableSkeleton';
 import { useToast } from '../../hooks/use-toast';
 
 export default function Journals() {
