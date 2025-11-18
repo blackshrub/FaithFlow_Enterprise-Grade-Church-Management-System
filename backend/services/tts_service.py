@@ -41,12 +41,16 @@ def generate_indonesian_tts_coqui(text: str) -> str:
         text = re.sub(r'\s+', ' ', text)  # Normalize whitespace
         text = text.strip()
         
-        # Fix 'g' pronunciation issues:
-        # 1. 'G' at start of word → 'GH' (for proper 'g' sound)
-        text = re.sub(r'(^|[\s])([Gg])([aeiouAEIOU])', r'\1\2h\3', text)
+        # Fix 'g' pronunciation issues (model lacks 'g' in vocabulary):
+        # Strategy: Replace 'g' with 'k' (closest available sound)
+        # 1. 'G' at start of word → 'K' (Gambaran → Kambaran)
+        text = re.sub(r'(^|[\s])([Gg])([aeiouAEIOU])', r'\1K\3', text)
         
-        # 2. 'g' in middle between vowels → 'k' (smoother: menegaskan → menekaskan)
+        # 2. 'g' between vowels → 'k' (menegaskan → menekaskan)
         text = re.sub(r'([aeiouAEIOU])g([aeiouAEIOU])', r'\1k\2', text)
+        
+        # 3. Preserve 'ng' combinations (don't touch them)
+        # Already handled - patterns above don't match 'ng'
         
         # Fix 'd' at end of words → 't' for smoother sound
         # Examples: "murid" → "murit", "tekad" → "tekat"
