@@ -1,17 +1,19 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, BookOpen, Filter } from 'lucide-react';
+import { Plus, BookOpen, Filter, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useDevotions } from '@/hooks/useDevotions';
 import DevotionForm from '@/components/Devotions/DevotionForm';
 import DevotionCard from '@/components/Devotions/DevotionCard';
 import DevotionFilters from '@/components/Devotions/DevotionFilters';
+import DevotionCalendar from '@/components/Devotions/DevotionCalendar';
 
 function Devotions() {
   const { t } = useTranslation();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingDevotion, setEditingDevotion] = useState(null);
   const [selectedDevotions, setSelectedDevotions] = useState([]);
+  const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'calendar'
   const [filters, setFilters] = useState({
     status_filter: null,
     date_from: null,
