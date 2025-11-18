@@ -19,6 +19,8 @@ class PrayerRequestBase(BaseModel):
     )
     assigned_to_user_id: Optional[str] = Field(None, description="Staff member assigned")
     internal_notes: Optional[str] = Field(None, max_length=2000, description="Internal staff notes")
+    needs_follow_up: bool = Field(default=False, description="Needs pastoral counseling/follow-up")
+    follow_up_notes: Optional[str] = Field(None, max_length=1000, description="Follow-up notes")
 
 
 class PrayerRequestCreate(PrayerRequestBase):
