@@ -291,6 +291,33 @@ export default function PrayerRequestForm() {
                   </Select>
                 </div>
 
+                <div className="space-y-4 border-t pt-4">
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="needs_follow_up"
+                      checked={formData.needs_follow_up}
+                      onChange={(e) => setFormData({ ...formData, needs_follow_up: e.target.checked })}
+                      className="h-4 w-4 rounded border-gray-300"
+                    />
+                    <Label htmlFor="needs_follow_up" className="cursor-pointer">
+                      {t('prayerRequests.needsFollowUp')}
+                    </Label>
+                  </div>
+
+                  {formData.needs_follow_up && (
+                    <div>
+                      <Label>{t('prayerRequests.followUpNotes')}</Label>
+                      <Textarea
+                        value={formData.follow_up_notes}
+                        onChange={(e) => setFormData({ ...formData, follow_up_notes: e.target.value })}
+                        placeholder={t('prayerRequests.followUpNotesPlaceholder')}
+                        rows={3}
+                      />
+                    </div>
+                  )}
+                </div>
+
                 {isEdit && (
                   <div>
                     <Label>{t('prayerRequests.status')}</Label>
