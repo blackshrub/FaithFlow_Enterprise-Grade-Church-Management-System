@@ -61,7 +61,8 @@ export default function QuickEntry() {
         giving_type: 'Persembahan Umum',
         amount: 0,
         from_account_id: '',
-        to_account_id: ''
+        to_account_id: '',
+        file_ids: []
       });
     } catch (error) {
       const errorCode = error.response?.data?.detail?.error_code;
