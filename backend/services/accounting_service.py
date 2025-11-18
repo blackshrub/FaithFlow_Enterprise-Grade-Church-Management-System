@@ -14,6 +14,7 @@ async def generate_journal_number(
 ) -> str:
     """
     Generate unique journal number in format: JRN-YYYY-MM-XXXX
+    Uses MongoDB findOneAndUpdate with atomic increment to prevent duplicates.
     
     Args:
         db: Database instance
@@ -24,27 +25,31 @@ async def generate_journal_number(
         Generated journal number
     """
     from datetime import datetime as dt
+    import uuid
     
     year = journal_date.year
     month = journal_date.month
     
-    # Convert dates to datetime for MongoDB query
-    start_date = dt(year, month, 1)
-    if month < 12:
-        end_date = dt(year, month + 1, 1)
-    else:
-        end_date = dt(year + 1, 1, 1)
+    # Use atomic counter to prevent duplicate journal numbers
+    # Create or update counter document for this church/month
+    counter_id = f"{church_id}_{year}_{month:02d}"
     
-    # Get count of journals for this month
-    count = await db.journals.count_documents({
-        "church_id": church_id,
-        "date": {
-            "$gte": journal_date.isoformat(),
-            "$lt": end_date.date().isoformat()
-        }
-    })
+    result = await db.journal_counters.find_one_and_update(
+        {"_id": counter_id},
+        {
+            "$inc": {"sequence": 1},
+            "$setOnInsert": {
+                "church_id": church_id,
+                "year": year,
+                "month": month,
+                "created_at": datetime.utcnow()
+            }
+        },
+        upsert=True,
+        return_document=True  # Return updated document
+    )
     
-    sequence = count + 1
+    sequence = result.get("sequence", 1)
     journal_number = f"JRN-{year}-{month:02d}-{sequence:04d}"
     
     return journal_number
