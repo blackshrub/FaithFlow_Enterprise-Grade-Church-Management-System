@@ -26,6 +26,7 @@ import {
 import { Button } from '../ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Label } from '../ui/label';
+import FaithFlowLogo from '../Branding/FaithFlowLogo';
 
 export default function Layout() {
   const { t, i18n } = useTranslation();
