@@ -60,7 +60,7 @@ async def get_beginning_balance(
 
 @router.post("/", status_code=status.HTTP_201_CREATED)
 async def create_beginning_balance(
-    balance_data: BeginningBalanceCreate,
+    balance_data: BeginningBalanceBase,
     current_user: dict = Depends(get_current_user),
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
