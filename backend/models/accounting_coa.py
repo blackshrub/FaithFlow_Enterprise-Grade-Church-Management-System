@@ -30,7 +30,7 @@ class ChartOfAccountBase(BaseModel):
     parent_id: Optional[str] = Field(None, description="Parent account ID for hierarchy")
     level: int = Field(default=0, ge=0, description="Hierarchy level (0=root)")
     is_active: bool = Field(default=True, description="Active status")
-    tags: List[str] = Field(default_factory=list, description="Tags for categorization")
+    tags: list[str] = Field(default_factory=list, description="Tags for categorization")
     default_responsibility_center_id: Optional[str] = Field(None, description="Default responsibility center")
 
     @field_validator('code')
