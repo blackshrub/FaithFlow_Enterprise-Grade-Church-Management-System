@@ -87,8 +87,13 @@ function App() {
               <Route path="accounting/responsibility-centers" element={<ResponsibilityCenters />} />
               <Route path="accounting/quick-entry" element={<QuickEntry />} />
               <Route path="accounting/reports" element={<Reports />} />
+              <Route path="accounting/reports/general-ledger" element={<GeneralLedger />} />
               <Route path="accounting/budgets" element={<Budgets />} />
+              <Route path="accounting/budgets/new" element={<BudgetForm />} />
+              <Route path="accounting/budgets/:id/variance" element={<BudgetVariance />} />
               <Route path="accounting/assets" element={<FixedAssets />} />
+              <Route path="accounting/assets/new" element={<FixedAssetForm />} />
+              <Route path="accounting/assets/:id/schedule" element={<DepreciationSchedule />} />
               <Route path="accounting/bank" element={<BankReconciliation />} />
               <Route path="accounting/year-end-closing" element={<YearEndClosing />} />
               <Route path="accounting/audit-logs" element={<AuditLogs />} />
