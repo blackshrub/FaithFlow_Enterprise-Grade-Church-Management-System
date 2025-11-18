@@ -184,8 +184,8 @@ function VersePicker({ verses, onVersesChange }) {
             >
               <option value="">{t('devotions.versePicker.selectBook')}</option>
               {books.map((book) => (
-                <option key={book.book_number} value={book.name}>
-                  {book.name_local || book.name}
+                <option key={book.book_number} value={getBookNameForVersion(book, newVerse.bible_version)}>
+                  {getBookNameForVersion(book, newVerse.bible_version)}
                 </option>
               ))}
             </select>
