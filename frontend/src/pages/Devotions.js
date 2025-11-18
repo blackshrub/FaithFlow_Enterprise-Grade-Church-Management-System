@@ -11,6 +11,7 @@ function Devotions() {
   const { t } = useTranslation();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingDevotion, setEditingDevotion] = useState(null);
+  const [selectedDevotions, setSelectedDevotions] = useState([]);
   const [filters, setFilters] = useState({
     status_filter: null,
     date_from: null,
@@ -32,6 +33,42 @@ function Devotions() {
   const handleFormClose = () => {
     setIsFormOpen(false);
     setEditingDevotion(null);
+  };
+
+  const toggleSelection = (devotionId) => {
+    setSelectedDevotions(prev =>
+      prev.includes(devotionId)
+        ? prev.filter(id => id !== devotionId)
+        : [...prev, devotionId]
+    );
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedDevotions.length === devotions.length) {
+      setSelectedDevotions([]);
+    } else {
+      setSelectedDevotions(devotions.map(d => d.id));
+    }
+  };
+
+  const handleBulkAction = async (action) => {
+    if (selectedDevotions.length === 0) {
+      toast.error('Please select at least one devotion');
+      return;
+    }
+
+    if (action === 'delete' && !window.confirm(t('devotions.messages.confirmDelete'))) {
+      return;
+    }
+
+    try {
+      await devotionsAPI.bulkAction(action, selectedDevotions);
+      toast.success(`${selectedDevotions.length} devotions ${action}ed`);
+      setSelectedDevotions([]);
+      window.location.reload();
+    } catch (error) {
+      toast.error(`Failed to ${action} devotions`);
+    }
   };
 
   if (isLoading) {
