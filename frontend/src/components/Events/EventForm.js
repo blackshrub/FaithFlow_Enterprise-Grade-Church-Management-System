@@ -205,6 +205,18 @@ function EventForm({ event, onClose }) {
                 />
               </div>
 
+              {/* Event Category */}
+              <div className="space-y-2 md:col-span-2">
+                <Label htmlFor="category">{t('settings.eventCategory')}</Label>
+                <select
+                  id="category"
+                  value={formData.event_category_id}
+                  onChange={(e) => handleChange('event_category_id', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                >
+                  <option value="">{t('settings.eventCategory')} ({t('common.optional') || 'Optional'})</option>
+                  {categories.map((cat) => (\n                    <option key={cat.id} value={cat.id}>\n                      {cat.name}\n                    </option>\n                  ))}\n                </select>\n              </div>
+
               <div className="space-y-2 md:col-span-2">
                 <Label htmlFor="description">{t('events.event.description')}</Label>
                 <Textarea
