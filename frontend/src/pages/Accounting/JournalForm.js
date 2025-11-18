@@ -265,8 +265,13 @@ export default function JournalForm() {
                   label={t('accounting.journal.debitAmount')}
                   value={line.debit}
                   onChange={(value) => {
-                    handleLineChange(index, 'debit', value);
-                    handleLineChange(index, 'credit', 0);
+                    const newLines = [...formData.lines];
+                    newLines[index] = {
+                      ...newLines[index],
+                      debit: value,
+                      credit: 0  // Set credit to 0 when debit is entered
+                    };
+                    setFormData({ ...formData, lines: newLines });
                   }}
                 />
 
@@ -274,8 +279,13 @@ export default function JournalForm() {
                   label={t('accounting.journal.creditAmount')}
                   value={line.credit}
                   onChange={(value) => {
-                    handleLineChange(index, 'credit', value);
-                    handleLineChange(index, 'debit', 0);
+                    const newLines = [...formData.lines];
+                    newLines[index] = {
+                      ...newLines[index],
+                      credit: value,
+                      debit: 0  // Set debit to 0 when credit is entered
+                    };
+                    setFormData({ ...formData, lines: newLines });
                   }}
                 />
 
