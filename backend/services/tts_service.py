@@ -28,35 +28,37 @@ def generate_indonesian_tts_coqui(text: str) -> str:
     Generate Indonesian TTS using Coqui TTS with Wibowo voice
     """
     try:
-        with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as tmp_audio:
-            output_path = tmp_audio.name
+        from TTS.utils.synthesizer import Synthesizer
+        import numpy as np
+        import scipy.io.wavfile as wavfile
         
-        # Run TTS command with Indonesian model
-        cmd = [
-            'tts',
-            '--text', text,
-            '--model_path', str(CHECKPOINT_PATH),
-            '--config_path', str(CONFIG_PATH),
-            '--speaker_idx', 'wibowo',
-            '--out_path', output_path
-        ]
+        synth = Synthesizer(
+            tts_checkpoint=str(CHECKPOINT_PATH),
+            tts_config_path=str(CONFIG_PATH),
+            use_cuda=False
+        )
         
         logger.info("Generating Indonesian TTS with Wibowo voice...")
-        result = subprocess.run(cmd, capture_output=True, timeout=60, text=True)
+        wav = synth.tts(text=text, speaker_name="wibowo")
         
-        if result.returncode == 0 and os.path.exists(output_path):
+        # Convert to numpy array and normalize
+        wav_data = np.array(wav) if isinstance(wav, list) else wav
+        wav_data = wav_data.flatten()
+        wav_data = np.int16(wav_data / np.max(np.abs(wav_data)) * 32767)
+        
+        # Save to temporary file
+        with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as tmp_file:
+            wavfile.write(tmp_file.name, synth.output_sample_rate, wav_data)
+            
             # Read and convert to base64
-            with open(output_path, 'rb') as f:
+            with open(tmp_file.name, 'rb') as f:
                 audio_data = f.read()
             
-            os.unlink(output_path)
-            audio_base64 = base64.b64encode(audio_data).decode('utf-8')
-            logger.info("✓ Coqui TTS generation successful")
-            return f"data:audio/wav;base64,{audio_base64}"
-        else:
-            error_msg = result.stderr if result.stderr else "Unknown error"
-            logger.warning(f"Coqui TTS failed: {error_msg}")
-            raise Exception(f"TTS command failed: {error_msg}")
+            os.unlink(tmp_file.name)
+        
+        audio_base64 = base64.b64encode(audio_data).decode('utf-8')
+        logger.info("✓ Coqui TTS (Wibowo) generation successful")
+        return f"data:audio/wav;base64,{audio_base64}"
     
     except Exception as e:
         logger.warning(f"Coqui TTS failed, falling back to gTTS: {str(e)}")
