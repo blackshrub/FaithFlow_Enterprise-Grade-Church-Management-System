@@ -1480,7 +1480,8 @@
       "titleRequired": "Judul diperlukan",
       "descriptionRequired": "Deskripsi diperlukan",
       "requesterNameRequired": "Nama pemohon diperlukan",
-      "categoryRequired": "Kategori diperlukan"
+      "categoryRequired": "Kategori diperlukan",
+      "memberRequired": "Jemaat harus dipilih"
     }
   }
 }

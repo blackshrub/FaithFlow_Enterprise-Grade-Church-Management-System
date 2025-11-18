@@ -1490,7 +1490,8 @@
       "titleRequired": "Title is required",
       "descriptionRequired": "Description is required",
       "requesterNameRequired": "Requester name is required",
-      "categoryRequired": "Category is required"
+      "categoryRequired": "Category is required",
+      "memberRequired": "Member must be selected"
     }
   }
 }
