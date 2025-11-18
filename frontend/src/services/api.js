@@ -113,6 +113,12 @@ export const settingsAPI = {
   // Church Settings
   getChurchSettings: () => api.get('/settings/church-settings'),
   updateChurchSettings: (data) => api.patch('/settings/church-settings', data),
+  
+  // Event Categories
+  listEventCategories: () => api.get('/settings/event-categories'),
+  createEventCategory: (data) => api.post('/settings/event-categories', data),
+  updateEventCategory: (id, data) => api.patch(`/settings/event-categories/${id}`, data),
+  deleteEventCategory: (id) => api.delete(`/settings/event-categories/${id}`),
 };
 
 // Import/Export API
