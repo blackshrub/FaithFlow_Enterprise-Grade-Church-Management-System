@@ -28,7 +28,7 @@ export default function ChartOfAccounts() {
   const { t } = useTranslation();
   const { toast } = useToast();
   const [search, setSearch] = useState('');
-  const [typeFilter, setTypeFilter] = useState('');
+  const [typeFilter, setTypeFilter] = useState('all');
   const [viewMode, setViewMode] = useState('list'); // 'list' or 'tree'
 
   const { data: accounts, isLoading } = useChartOfAccounts({
