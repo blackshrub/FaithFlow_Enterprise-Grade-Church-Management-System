@@ -18,6 +18,7 @@ class EventBase(BaseModel):
     enable_seat_selection: bool = False
     seat_layout_id: Optional[str] = None
     seat_capacity: Optional[int] = Field(None, ge=1, description="Maximum seat capacity (used when no seat layout)")
+    event_category_id: Optional[str] = Field(None, description="Event category ID")
     location: Optional[str] = None
     reservation_start: Optional[datetime] = None
     reservation_end: Optional[datetime] = None
