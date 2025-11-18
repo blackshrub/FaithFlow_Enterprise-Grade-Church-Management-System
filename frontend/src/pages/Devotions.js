@@ -177,6 +177,8 @@ function Devotions() {
                 key={devotion.id}
                 devotion={devotion}
                 onEdit={handleEdit}
+                isSelected={selectedDevotions.includes(devotion.id)}
+                onToggleSelect={() => toggleSelection(devotion.id)}
               />
             ))}
           </div>
