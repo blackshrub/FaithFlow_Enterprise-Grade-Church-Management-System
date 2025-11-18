@@ -7,7 +7,18 @@ import logging
 from pathlib import Path
 
 # Import routes
-from routes import auth, churches, members, settings, import_export, photo_document_sim, seat_layouts, events, bible, devotions
+from routes import (
+    auth, churches, members, settings, import_export, photo_document_sim, 
+    seat_layouts, events, bible, devotions
+)
+
+# Import accounting routes (v1)
+from routes import (
+    file_upload, accounting_coa, responsibility_centers, journals,
+    fiscal_periods, quick_entries, audit_logs, beginning_balance,
+    budgets, fixed_assets, bank_accounts, bank_transactions,
+    year_end_closing, accounting_reports, report_templates
+)
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
