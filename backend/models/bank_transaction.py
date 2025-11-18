@@ -42,7 +42,7 @@ class BankTransaction(BankTransactionBase):
     reconciled_at: Optional[datetime] = Field(None, description="Reconciliation timestamp")
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
-    attachments: List[str] = Field(default_factory=list, description="File attachment IDs")
+    attachments: list[str] = Field(default_factory=list, description="File attachment IDs")
     
     class Config:
         json_schema_extra = {
