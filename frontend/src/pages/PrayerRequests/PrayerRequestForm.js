@@ -238,48 +238,38 @@ export default function PrayerRequestForm() {
                 <CardTitle>{t('prayerRequests.requesterName')}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div>
-                  <Label>{t('prayerRequests.selectMember')}</Label>
-                  <Select value={formData.member_id || 'none'} onValueChange={(value) => {
-                    if (value === 'none') {
-                      setFormData({ ...formData, member_id: '', requester_name: '', requester_contact: '' });
-                    } else {
-                      handleMemberChange(value);
-                    }
-                  }}>
-                    <SelectTrigger>
-                      <SelectValue placeholder={t('prayerRequests.selectMember')} />
-                    </SelectTrigger>
-                    <SelectContent className="max-h-[300px] overflow-y-auto">
-                      <SelectItem value="none">{t('common.none')}</SelectItem>
-                      {members.map((member) => (
-                        <SelectItem key={member.id} value={member.id}>
-                          {member.full_name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <p className="text-xs text-gray-500 mt-1">{t('prayerRequests.orManualEntry')}</p>
-                </div>
-
-                <div>
-                  <Label>{t('prayerRequests.requesterName')} *</Label>
+                <div className="relative">
+                  <Label>{t('prayerRequests.selectMember')} *</Label>
                   <Input
-                    value={formData.requester_name}
-                    onChange={(e) => setFormData({ ...formData, requester_name: e.target.value })}
+                    value={memberSearch}
+                    onChange={(e) => {
+                      setMemberSearch(e.target.value);
+                      setShowMemberDropdown(true);
+                    }}
+                    onFocus={() => setShowMemberDropdown(true)}
+                    placeholder={t('common.search') + '...'}
                     required
-                    disabled={!!formData.member_id}
                   />
-                </div>
-
-                <div>
-                  <Label>{t('prayerRequests.requesterContact')}</Label>
-                  <Input
-                    value={formData.requester_contact}
-                    onChange={(e) => setFormData({ ...formData, requester_contact: e.target.value })}
-                    placeholder="+62812345678"
-                    disabled={!!formData.member_id}
-                  />
+                  {showMemberDropdown && filteredMembers.length > 0 && (
+                    <div className="absolute z-50 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                      {filteredMembers.map((member) => (
+                        <div
+                          key={member.id}
+                          onClick={() => handleMemberSelect(member)}
+                          className="px-4 py-2 hover:bg-gray-100 cursor-pointer border-b last:border-b-0"
+                        >
+                          <p className="font-medium">{member.full_name}</p>
+                          <p className="text-sm text-gray-600">{member.whatsapp || member.email}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {selectedMember && (
+                    <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                      <p className="text-sm font-medium">{selectedMember.full_name}</p>
+                      <p className="text-xs text-gray-600">{selectedMember.whatsapp || selectedMember.email}</p>
+                    </div>
+                  )}
                 </div>
 
                 <div>
