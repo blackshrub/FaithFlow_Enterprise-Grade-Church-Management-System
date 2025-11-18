@@ -199,6 +199,19 @@ export default function QuickEntry() {
                   placeholder="Persembahan"
                 />
 
+                <div className="pt-2">
+                  <Label>{t('accounting.files.attachDocument')} ({t('accounting.common.optional')})</Label>
+                  <FileUpload
+                    referenceType="quick_entry"
+                    referenceId={null}
+                    onUploadSuccess={(file) => setGivingData({
+                      ...givingData, 
+                      file_ids: [...givingData.file_ids, file.id]
+                    })}
+                    multiple={true}
+                  />
+                </div>
+
                 <div className="pt-4">
                   <Button type="submit" className="w-full" disabled={givingMutation.isLoading}>
                     {givingMutation.isLoading ? t('accounting.common.loading') : t('accounting.quickEntry.saveGiving')}
