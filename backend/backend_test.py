@@ -970,6 +970,11 @@ def main():
     tester.test_quick_entry_endpoints()
     tester.test_report_endpoints()
     tester.test_year_end_closing()
+    tester.test_events_endpoints()
+    tester.test_devotions_endpoints()
+    tester.test_members_endpoints()
+    tester.test_bible_endpoints()
+    tester.test_settings_endpoints()
     tester.test_multi_tenant_isolation()
     
     # Print summary
