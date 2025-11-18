@@ -32,11 +32,26 @@ def generate_indonesian_tts_coqui(text: str) -> str:
         from g2p_id import G2P
         import numpy as np
         import scipy.io.wavfile as wavfile
+        import html
+        import re
+        
+        # Preprocess text
+        text = html.unescape(text)  # Decode HTML entities
+        text = re.sub(r'<[^>]+>', '', text)  # Remove HTML tags
+        text = re.sub(r'\s+', ' ', text)  # Normalize whitespace
+        text = text.strip()
+        
+        # Limit length for better quality (split if too long)
+        max_length = 500  # characters
+        if len(text) > max_length:
+            # Take first 500 chars for now (can be enhanced to split by sentence)
+            text = text[:max_length] + "..."
+            logger.info(f"Text truncated to {max_length} characters for TTS quality")
         
         # Convert Indonesian text to phonemes
         g2p = G2P()
         phonemes = g2p(text)
-        logger.info(f"Text to phonemes: '{text}' -> '{phonemes}'")
+        logger.info(f"Text to phonemes: '{text[:50]}...' -> '{phonemes[:50]}...'")
         
         synth = Synthesizer(
             tts_checkpoint=str(CHECKPOINT_PATH),
@@ -51,7 +66,16 @@ def generate_indonesian_tts_coqui(text: str) -> str:
         # Convert to numpy array and normalize
         wav_data = np.array(wav) if isinstance(wav, list) else wav
         wav_data = wav_data.flatten()
-        wav_data = np.int16(wav_data / np.max(np.abs(wav_data)) * 32767)
+        
+        # Ensure valid audio data
+        if wav_data.size == 0:
+            raise Exception("Generated audio is empty")
+        
+        # Normalize to int16
+        if np.max(np.abs(wav_data)) > 0:
+            wav_data = np.int16(wav_data / np.max(np.abs(wav_data)) * 32767)
+        else:
+            wav_data = np.int16(wav_data)
         
         # Save to temporary file
         with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as tmp_file:
