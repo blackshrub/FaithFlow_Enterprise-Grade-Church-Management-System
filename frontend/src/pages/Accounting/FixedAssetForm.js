@@ -48,8 +48,43 @@ export default function FixedAssetForm() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // Validate required fields
+    if (!formData.asset_code || !formData.name || !formData.acquisition_date || formData.cost <= 0) {
+      toast({
+        variant: "destructive",
+        title: t('accounting.common.error'),
+        description: "Asset code, name, date, and cost are required"
+      });
+      return;
+    }
+
+    if (!formData.asset_account_id || !formData.depreciation_expense_account_id || !formData.accumulated_depreciation_account_id) {
+      toast({
+        variant: "destructive",
+        title: t('accounting.common.error'),
+        description: "All three accounts must be selected"
+      });
+      return;
+    }
+
     try {
-      await createMutation.mutateAsync(formData);
+      const payload = {
+        asset_code: formData.asset_code,
+        name: formData.name,
+        acquisition_date: formData.acquisition_date,
+        cost: formData.cost,
+        useful_life_months: formData.useful_life_months,
+        salvage_value: formData.salvage_value,
+        depreciation_method: formData.depreciation_method,
+        asset_account_id: formData.asset_account_id,
+        depreciation_expense_account_id: formData.depreciation_expense_account_id,
+        accumulated_depreciation_account_id: formData.accumulated_depreciation_account_id,
+        is_active: formData.is_active
+      };
+
+      console.log('Creating asset with payload:', payload);
+      await createMutation.mutateAsync(payload);
+      
       toast({
         title: t('accounting.common.success'),
         description: `Asset ${formData.asset_code} created`
@@ -57,6 +92,7 @@ export default function FixedAssetForm() {
       navigate('/accounting/assets');
     } catch (error) {
       const errorCode = error.response?.data?.detail?.error_code;
+      console.error('Asset creation error:', error);
       toast({
         variant: "destructive",
         title: t('accounting.common.error'),
