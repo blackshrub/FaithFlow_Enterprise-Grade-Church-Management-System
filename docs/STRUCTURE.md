@@ -1,0 +1,458 @@
+# FaithFlow - Codebase Structure
+
+## Directory Layout
+
+```
+faithflow/
+├── backend/                 # Python FastAPI backend
+│   ├── models/              # Pydantic data models
+│   │   ├── user.py
+│   │   ├── church.py
+│   │   ├── member.py
+│   │   ├── event.py
+│   │   ├── devotion.py
+│   │   ├── bible.py
+│   │   └── ...
+│   ├── routes/              # API endpoints
+│   │   ├── auth.py          # Authentication
+│   │   ├── members.py       # Member CRUD
+│   │   ├── events.py        # Events & RSVP
+│   │   ├── devotions.py     # Devotion CMS
+│   │   ├── bible.py         # Bible API
+│   │   └── ...
+│   ├── services/            # Business logic
+│   │   ├── tts_service.py   # Text-to-Speech
+│   │   ├── qr_service.py    # QR code generation
+│   │   ├── whatsapp_service.py  # WhatsApp gateway
+│   │   └── auth_service.py  # Auth logic
+│   ├── utils/               # Helper functions
+│   │   ├── dependencies.py  # FastAPI dependencies
+│   │   ├── security.py      # Password hashing
+│   │   └── helpers.py       # Common utilities
+│   ├── data/                # Static data
+│   │   └── bible/           # Bible JSON files
+│   │       ├── indo_tb.json       # Indonesian (6.5MB)
+│   │       ├── chinese_union_simp.json  # Chinese (9.5MB)
+│   │       ├── niv.json           # NIV English (4.5MB)
+│   │       ├── nkjv.json          # NKJV (4.6MB)
+│   │       ├── nlt.json           # NLT (4.7MB)
+│   │       └── esv.json           # ESV (4.6MB)
+│   ├── models/              # ML models
+│   │   └── tts_indonesian/  # Coqui TTS (Wibowo)
+│   │       ├── checkpoint.pth     # Model weights (330MB)
+│   │       ├── config.json        # Model config
+│   │       └── speakers.pth       # Speaker embeddings
+│   ├── scripts/             # Utility scripts
+│   │   ├── init_db.py       # Database initialization
+│   │   ├── import_tb_chs.py # Import TB & Chinese
+│   │   └── import_english_bibles.py  # Import English
+│   ├── server.py            # Main FastAPI app
+│   ├── requirements.txt     # Python dependencies
+│   └── .env                 # Environment variables (not in git)
+├── frontend/                # React frontend
+│   ├── public/              # Static assets
+│   │   └── index.html       # HTML template
+│   ├── src/
+│   │   ├── components/      # React components
+│   │   │   ├── Events/      # Event components
+│   │   │   ├── Devotions/   # Devotion components
+│   │   │   ├── Kiosk/       # Kiosk components
+│   │   │   ├── Settings/    # Settings components
+│   │   │   └── ui/          # shadcn/ui components
+│   │   ├── pages/           # Page components
+│   │   │   ├── Login.js
+│   │   │   ├── Dashboard.js
+│   │   │   ├── Events.js
+│   │   │   ├── Devotions.js
+│   │   │   ├── KioskMode.js
+│   │   │   └── ...
+│   │   ├── hooks/           # React Query hooks
+│   │   │   ├── useEvents.js
+│   │   │   ├── useDevotions.js
+│   │   │   └── ...
+│   │   ├── services/        # API service layer
+│   │   │   └── api.js       # Axios configuration
+│   │   ├── i18n/            # Internationalization
+│   │   │   ├── index.js     # i18n setup
+│   │   │   └── locales/
+│   │   │       ├── en.json   # English (500+ keys)
+│   │   │       └── id.json   # Indonesian (500+ keys)
+│   │   ├── context/         # React context
+│   │   │   └── AuthContext.js
+│   │   └── App.js           # Main React app
+│   ├── package.json         # Node dependencies
+│   ├── tailwind.config.js   # Tailwind theme
+│   └── .env                 # Frontend env (not in git)
+├── docs/                    # Documentation
+│   ├── FEATURES.md          # Feature documentation
+│   ├── API.md               # API reference
+│   ├── DEPLOYMENT_DEBIAN.md # Deployment guide
+│   ├── STRUCTURE.md         # This file
+│   └── ...
+├── .gitignore               # Git ignore rules
+├── .gitattributes           # Git LFS config
+└── README.md                # Project overview
+```
+
+---
+
+## Key Files Explained
+
+### Backend
+
+**`server.py`**
+- Main FastAPI application
+- Registers all routers
+- CORS middleware
+- MongoDB connection
+
+**`requirements.txt`**
+- All Python dependencies
+- Pinned versions for stability
+- Includes: FastAPI, Motor, TTS, QR libraries
+
+**`models/`**
+- Pydantic models for validation
+- Define data structure
+- Request/response schemas
+
+**`routes/`**
+- API endpoint definitions
+- One file per module
+- Uses FastAPI router pattern
+
+**`services/`**
+- Business logic separated from routes
+- Reusable service functions
+- TTS, QR, WhatsApp integrations
+
+**`data/bible/`**
+- **Critical:** 6 Bible JSON files (35MB total)
+- **Must be in Git LFS**
+- Required for devotion verse picker
+- Imported to MongoDB on first run
+
+**`models/tts_indonesian/`**
+- **Critical:** Coqui TTS model files (330MB)
+- **Must be in Git LFS**
+- checkpoint.pth: Model weights
+- config.json: Model configuration
+- speakers.pth: Speaker embeddings
+- Required for Wibowo voice TTS
+
+### Frontend
+
+**`src/App.js`**
+- Main React application
+- Route definitions
+- Global providers (Auth, Query, i18n)
+
+**`src/services/api.js`**
+- Axios instance configuration
+- All API service functions
+- Dynamic origin detection
+
+**`src/i18n/`**
+- react-i18next configuration
+- Translation files (en.json, id.json)
+- 500+ translation keys
+
+**`tailwind.config.js`**
+- FaithFlow theme colors
+- Custom design tokens
+- Animation keyframes
+
+**`package.json`**
+- Node dependencies
+- Build scripts
+- React 18, TanStack Query, Tailwind, Tiptap
+
+### Configuration Files
+
+**Backend `.env`:**
+```bash
+MONGO_URL=mongodb://user:pass@localhost:27017
+DB_NAME=church_management
+JWT_SECRET_KEY=your-secret-key
+CORS_ORIGINS=https://yourdomain.com
+WHATSAPP_API_URL=http://gateway:3001
+```
+
+**Frontend `.env`:**
+```bash
+REACT_APP_BACKEND_URL=https://yourdomain.com
+```
+
+---
+
+## Data Flow
+
+### Request Flow
+
+```
+Browser
+  ↓ HTTPS
+Nginx (Port 80/443)
+  ↓ Proxy /api/*
+FastAPI Backend (Port 8001)
+  ↓ MongoDB Driver
+MongoDB (Port 27017)
+```
+
+### Authentication Flow
+
+```
+1. User submits credentials
+2. Backend validates against MongoDB
+3. Generate JWT token
+4. Return token to frontend
+5. Frontend stores in localStorage
+6. All requests include token in header
+7. Backend validates and extracts church_id
+```
+
+### Devotion Creation Flow
+
+```
+1. Admin writes devotion in Tiptap editor
+2. Selects Bible verses
+   ↓ Frontend calls /api/bible/{version}/{book}/{chapter}/{verse}
+   ↓ Backend queries MongoDB bible_verses
+   ↓ Returns verse text
+3. Clicks "Generate Audio"
+   ↓ Frontend calls /api/devotions/generate-audio-preview
+   ↓ Backend:
+      - Preprocesses text (g→k, d→t fixes)
+      - Converts to phonemes (g2p-id)
+      - Loads Coqui TTS model
+      - Generates audio with Wibowo
+      - Returns base64 WAV
+4. Audio player appears immediately
+5. Admin saves devotion
+   ↓ POST /api/devotions/
+   ↓ Stored in MongoDB with audio URL
+```
+
+---
+
+## Important Files for Deployment
+
+### Must Be in Repository
+
+**Bible Data (35MB):**
+- `/backend/data/bible/indo_tb.json`
+- `/backend/data/bible/chinese_union_simp.json`
+- `/backend/data/bible/niv.json`
+- `/backend/data/bible/nkjv.json`
+- `/backend/data/bible/nlt.json`
+- `/backend/data/bible/esv.json`
+
+**TTS Models (330MB):**
+- `/backend/models/tts_indonesian/checkpoint.pth`
+- `/backend/models/tts_indonesian/config.json`
+- `/backend/models/tts_indonesian/speakers.pth`
+
+**Configuration Examples:**
+- `/backend/.env.example`
+- `/frontend/.env.example`
+
+### Generated at Runtime
+
+**Build Artifacts:**
+- `/frontend/build/` (React production build)
+
+**Logs:**
+- `/var/log/faithflow/` (systemd logs)
+
+**Uploads:**
+- Member photos (base64 in MongoDB)
+- Documents (base64 in MongoDB)
+
+---
+
+## Git LFS Setup
+
+### Why LFS?
+
+- Bible JSON files: 35MB total
+- TTS models: 330MB
+- Too large for regular Git
+
+### LFS Configuration
+
+**`.gitattributes`:**
+```
+*.pth filter=lfs diff=lfs merge=lfs -text
+*.pt filter=lfs diff=lfs merge=lfs -text
+backend/data/bible/*.json filter=lfs diff=lfs merge=lfs -text
+```
+
+### Using LFS
+
+**Initial commit:**
+```bash
+git lfs install
+git lfs track "*.pth"
+git lfs track "backend/data/bible/*.json"
+git add .gitattributes
+git add .
+git commit -m "Initial commit with LFS"
+git push
+```
+
+**Cloning:**
+```bash
+git lfs install
+git clone https://github.com/your-org/faithflow.git
+git lfs pull  # Ensure all large files downloaded
+```
+
+---
+
+## Database Collections
+
+### Core Collections
+
+- `users` - Admin/staff accounts
+- `churches` - Church organizations
+- `members` - Church members
+- `member_statuses` - Custom statuses
+- `demographic_presets` - Age categories
+- `church_settings` - Church configuration
+
+### Feature Collections
+
+- `events` - Events and series
+- `seat_layouts` - Seat configurations
+- `devotions` - Daily devotions
+- `bible_versions` - Bible metadata
+- `bible_books` - 66 books info
+- `bible_verses` - 186k+ verses
+- `prayer_requests` - Prayer management
+- `accounting_...` - Accounting tables
+
+### Import/Export
+
+- `import_logs` - Import history
+- `import_templates` - Saved mappings
+
+---
+
+## Technology Decisions
+
+### Why FastAPI?
+- Fast (ASGI)
+- Auto-generated API docs (Swagger)
+- Type hints and validation
+- Async support
+- Modern Python
+
+### Why MongoDB?
+- Flexible schema (custom fields)
+- Fast for read-heavy workloads
+- Good for multi-tenant
+- JSON-native (matches Bible data)
+- Easy horizontal scaling
+
+### Why React Query?
+- Server state management
+- Automatic caching
+- Optimistic updates
+- Refetch on focus
+- Better than Redux for this use case
+
+### Why Coqui TTS?
+- Open source
+- Local/offline
+- High quality
+- Customizable (Wibowo voice)
+- No API costs
+
+### Why Local Bible?
+- No external API dependency
+- Fast lookups
+- Works offline
+- No rate limits
+- Complete control
+
+---
+
+## Scalability Notes
+
+### Current Limits
+
+- **Churches:** Unlimited (multi-tenant design)
+- **Members per church:** 10,000+ (tested)
+- **Events:** Unlimited
+- **Devotions:** Unlimited
+- **Bible queries:** Fast (indexed)
+- **TTS:** CPU-bound (60-90s per generation)
+
+### Optimization Options
+
+**If TTS is slow:**
+- Use queue system (Celery)
+- Generate in background
+- Cache generated audio
+
+**If database is slow:**
+- Add more indexes
+- Use MongoDB Atlas (managed)
+- Enable sharding (for huge datasets)
+
+**If API is slow:**
+- Increase uvicorn workers
+- Use Redis for caching
+- CDN for static assets
+
+---
+
+## Security Architecture
+
+### Authentication
+
+- JWT tokens (HTTPOnly recommended for cookies)
+- Bcrypt password hashing
+- Token expiration (configurable)
+- Refresh token support (if needed)
+
+### Authorization
+
+- Role-based (Super Admin, Admin, Staff)
+- Church-level isolation
+- Endpoint-level checks
+
+### Data Protection
+
+- `church_id` filtering on ALL queries
+- No cross-church data access
+- Encrypted MongoDB connection (TLS)
+- HTTPS required in production
+
+---
+
+## Maintenance Tasks
+
+### Daily
+- Monitor service status
+- Check error logs
+
+### Weekly
+- Review disk space
+- Check backup success
+
+### Monthly
+- Update dependencies (security patches)
+- Review user activity
+- Database optimization
+
+### Quarterly
+- Full system backup
+- Disaster recovery test
+- Performance review
+
+---
+
+**For detailed API documentation, see:** `/docs/API.md`
+
+**For troubleshooting, see:** `/docs/TROUBLESHOOTING.md`
