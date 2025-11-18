@@ -95,6 +95,7 @@ api_v1_router.include_router(articles.router)
 api_v1_router.include_router(article_categories.router)
 api_v1_router.include_router(article_tags.router)
 api_v1_router.include_router(article_comments.router)
+api_v1_router.include_router(prayer_requests.router)
 
 # Include v1 router in main API router
 api_router.include_router(api_v1_router)
