@@ -784,6 +784,11 @@ def main():
     tester.test_journal_endpoints()
     tester.test_fiscal_period_endpoints()
     tester.test_beginning_balance_endpoints()
+    tester.test_budget_endpoints()
+    tester.test_fixed_asset_endpoints()
+    tester.test_quick_entry_endpoints()
+    tester.test_report_endpoints()
+    tester.test_year_end_closing()
     tester.test_multi_tenant_isolation()
     
     # Print summary
