@@ -70,18 +70,20 @@ function DevotionForm({ devotion, onClose }) {
 
     setGeneratingAudio(true);
     try {
-      // If editing existing devotion, use the API
       if (devotion?.id) {
+        // Editing existing devotion - use saved endpoint
         const response = await devotionsAPI.generateAudio(devotion.id);
         setFormData({ ...formData, tts_audio_url: response.data.audio_url });
         toast.success(t('devotions.actions.audioGenerated'));
       } else {
-        // For new devotions, generate preview locally
-        // We'll need to save first or generate on backend with content
-        toast.error('Please save the devotion first, then generate audio');
+        // Creating new devotion - use preview endpoint
+        const response = await devotionsAPI.generateAudioPreview(formData.content);
+        setFormData({ ...formData, tts_audio_url: response.data.audio_url });
+        toast.success(t('devotions.actions.audioGenerated') + ' (Preview)');
       }
     } catch (error) {
       toast.error(t('devotions.actions.audioGenerationFailed'));
+      console.error('TTS Error:', error);
     } finally {
       setGeneratingAudio(false);
     }
