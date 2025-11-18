@@ -55,7 +55,13 @@ export default function Reports() {
           <Card 
             key={report.id}
             className={`cursor-pointer hover:shadow-lg transition-shadow border-${report.color}-200`}
-            onClick={() => setActiveReport(report.id)}
+            onClick={() => {
+              if (report.route) {
+                navigate(report.route);
+              } else {
+                setActiveReport(report.id);
+              }
+            }}
           >
             <CardHeader>
               <Icon className={`w-12 h-12 text-${report.color}-600 mb-2`} />
