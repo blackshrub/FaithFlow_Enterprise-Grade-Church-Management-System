@@ -201,12 +201,18 @@ export default function PrayerRequestForm() {
               <CardContent className="space-y-4">
                 <div>
                   <Label>{t('prayerRequests.selectMember')}</Label>
-                  <Select value={formData.member_id} onValueChange={handleMemberChange}>
+                  <Select value={formData.member_id || 'none'} onValueChange={(value) => {
+                    if (value === 'none') {
+                      setFormData({ ...formData, member_id: '', requester_name: '', requester_contact: '' });
+                    } else {
+                      handleMemberChange(value);
+                    }
+                  }}>
                     <SelectTrigger>
                       <SelectValue placeholder={t('prayerRequests.selectMember')} />
                     </SelectTrigger>
                     <SelectContent className="max-h-[300px] overflow-y-auto">
-                      <SelectItem value="">{t('common.none')}</SelectItem>
+                      <SelectItem value="none">{t('common.none')}</SelectItem>
                       {members.map((member) => (
                         <SelectItem key={member.id} value={member.id}>
                           {member.full_name}
