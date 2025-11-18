@@ -7,7 +7,7 @@ import * as accountingApi from '../services/accountingApi';
 // ============================================
 
 export const useChartOfAccounts = (params = {}) => {
-  const { user } = useContext(AuthContext);
+  const { user } = useAuth();
   const churchId = user?.church_id;
   
   return useQuery({
@@ -21,7 +21,7 @@ export const useChartOfAccounts = (params = {}) => {
 };
 
 export const useCOATree = () => {
-  const { user } = useContext(AuthContext);
+  const { user } = useAuth();
   const churchId = user?.church_id;
   
   return useQuery({
@@ -35,7 +35,7 @@ export const useCOATree = () => {
 };
 
 export const useCOA = (id) => {
-  const { user } = useContext(AuthContext);
+  const { user } = useAuth();
   const churchId = user?.church_id;
   
   return useQuery({
@@ -50,7 +50,7 @@ export const useCOA = (id) => {
 
 export const useCreateCOA = () => {
   const queryClient = useQueryClient();
-  const { user } = useContext(AuthContext);
+  const { user } = useAuth();
   const churchId = user?.church_id;
   
   return useMutation({
@@ -64,7 +64,7 @@ export const useCreateCOA = () => {
 
 export const useUpdateCOA = () => {
   const queryClient = useQueryClient();
-  const { user } = useContext(AuthContext);
+  const { user } = useAuth();
   const churchId = user?.church_id;
   
   return useMutation({
@@ -79,7 +79,7 @@ export const useUpdateCOA = () => {
 
 export const useDeleteCOA = () => {
   const queryClient = useQueryClient();
-  const { user } = useContext(AuthContext);
+  const { user } = useAuth();
   const churchId = user?.church_id;
   
   return useMutation({
@@ -93,7 +93,7 @@ export const useDeleteCOA = () => {
 
 export const useSeedDefaultCOA = () => {
   const queryClient = useQueryClient();
-  const { user } = useContext(AuthContext);
+  const { user } = useAuth();
   const churchId = user?.church_id;
   
   return useMutation({
@@ -110,7 +110,7 @@ export const useSeedDefaultCOA = () => {
 // ============================================
 
 export const useResponsibilityCenters = (params = {}) => {
-  const { user } = useContext(AuthContext);
+  const { user } = useAuth();
   const churchId = user?.church_id;
   
   return useQuery({
@@ -125,7 +125,7 @@ export const useResponsibilityCenters = (params = {}) => {
 
 export const useCreateResponsibilityCenter = () => {
   const queryClient = useQueryClient();
-  const { user } = useContext(AuthContext);
+  const { user } = useAuth();
   const churchId = user?.church_id;
   
   return useMutation({
@@ -138,7 +138,7 @@ export const useCreateResponsibilityCenter = () => {
 
 export const useUpdateResponsibilityCenter = () => {
   const queryClient = useQueryClient();
-  const { user } = useContext(AuthContext);
+  const { user } = useAuth();
   const churchId = user?.church_id;
   
   return useMutation({
@@ -151,7 +151,7 @@ export const useUpdateResponsibilityCenter = () => {
 
 export const useDeleteResponsibilityCenter = () => {
   const queryClient = useQueryClient();
-  const { user } = useContext(AuthContext);
+  const { user } = useAuth();
   const churchId = user?.church_id;
   
   return useMutation({
@@ -167,7 +167,7 @@ export const useDeleteResponsibilityCenter = () => {
 // ============================================
 
 export const useJournals = (params = {}) => {
-  const { user } = useContext(AuthContext);
+  const { user } = useAuth();
   const churchId = user?.church_id;
   
   return useQuery({
@@ -181,7 +181,7 @@ export const useJournals = (params = {}) => {
 };
 
 export const useJournal = (id) => {
-  const { user } = useContext(AuthContext);
+  const { user } = useAuth();
   const churchId = user?.church_id;
   
   return useQuery({
@@ -196,7 +196,7 @@ export const useJournal = (id) => {
 
 export const useCreateJournal = () => {
   const queryClient = useQueryClient();
-  const { user } = useContext(AuthContext);
+  const { user } = useAuth();
   const churchId = user?.church_id;
   
   return useMutation({
@@ -209,7 +209,7 @@ export const useCreateJournal = () => {
 
 export const useUpdateJournal = () => {
   const queryClient = useQueryClient();
-  const { user } = useContext(AuthContext);
+  const { user } = useAuth();
   const churchId = user?.church_id;
   
   return useMutation({
@@ -223,7 +223,7 @@ export const useUpdateJournal = () => {
 
 export const useApproveJournal = () => {
   const queryClient = useQueryClient();
-  const { user } = useContext(AuthContext);
+  const { user } = useAuth();
   const churchId = user?.church_id;
   
   return useMutation({
@@ -236,7 +236,7 @@ export const useApproveJournal = () => {
 
 export const useDeleteJournal = () => {
   const queryClient = useQueryClient();
-  const { user } = useContext(AuthContext);
+  const { user } = useAuth();
   const churchId = user?.church_id;
   
   return useMutation({
@@ -252,7 +252,7 @@ export const useDeleteJournal = () => {
 // ============================================
 
 export const useFiscalPeriods = (params = {}) => {
-  const { user } = useContext(AuthContext);
+  const { user } = useAuth();
   const churchId = user?.church_id;
   
   return useQuery({
@@ -266,7 +266,7 @@ export const useFiscalPeriods = (params = {}) => {
 };
 
 export const useCurrentPeriod = () => {
-  const { user } = useContext(AuthContext);
+  const { user } = useAuth();
   const churchId = user?.church_id;
   
   return useQuery({
@@ -282,7 +282,7 @@ export const useCurrentPeriod = () => {
 
 export const useClosePeriod = () => {
   const queryClient = useQueryClient();
-  const { user } = useContext(AuthContext);
+  const { user } = useAuth();
   const churchId = user?.church_id;
   
   return useMutation({
@@ -296,7 +296,7 @@ export const useClosePeriod = () => {
 
 export const useLockPeriod = () => {
   const queryClient = useQueryClient();
-  const { user } = useContext(AuthContext);
+  const { user } = useAuth();
   const churchId = user?.church_id;
   
   return useMutation({
@@ -310,7 +310,7 @@ export const useLockPeriod = () => {
 
 export const useUnlockPeriod = () => {
   const queryClient = useQueryClient();
-  const { user } = useContext(AuthContext);
+  const { user } = useAuth();
   const churchId = user?.church_id;
   
   return useMutation({
@@ -328,7 +328,7 @@ export const useUnlockPeriod = () => {
 
 export const useCreateWeeklyGiving = () => {
   const queryClient = useQueryClient();
-  const { user } = useContext(AuthContext);
+  const { user } = useAuth();
   const churchId = user?.church_id;
   
   return useMutation({
@@ -341,7 +341,7 @@ export const useCreateWeeklyGiving = () => {
 
 export const useCreateOutgoingMoney = () => {
   const queryClient = useQueryClient();
-  const { user } = useContext(AuthContext);
+  const { user } = useAuth();
   const churchId = user?.church_id;
   
   return useMutation({
@@ -357,7 +357,7 @@ export const useCreateOutgoingMoney = () => {
 // ============================================
 
 export const useBudgets = (params = {}) => {
-  const { user } = useContext(AuthContext);
+  const { user } = useAuth();
   const churchId = user?.church_id;
   
   return useQuery({
@@ -371,7 +371,7 @@ export const useBudgets = (params = {}) => {
 };
 
 export const useBudget = (id) => {
-  const { user } = useContext(AuthContext);
+  const { user } = useAuth();
   const churchId = user?.church_id;
   
   return useQuery({
@@ -386,7 +386,7 @@ export const useBudget = (id) => {
 
 export const useCreateBudget = () => {
   const queryClient = useQueryClient();
-  const { user } = useContext(AuthContext);
+  const { user } = useAuth();
   const churchId = user?.church_id;
   
   return useMutation({
@@ -399,7 +399,7 @@ export const useCreateBudget = () => {
 
 export const useActivateBudget = () => {
   const queryClient = useQueryClient();
-  const { user } = useContext(AuthContext);
+  const { user } = useAuth();
   const churchId = user?.church_id;
   
   return useMutation({
@@ -411,7 +411,7 @@ export const useActivateBudget = () => {
 };
 
 export const useBudgetVariance = (budgetId, month, year) => {
-  const { user } = useContext(AuthContext);
+  const { user } = useAuth();
   const churchId = user?.church_id;
   
   return useQuery({
@@ -429,7 +429,7 @@ export const useBudgetVariance = (budgetId, month, year) => {
 // ============================================
 
 export const useAssets = (params = {}) => {
-  const { user } = useContext(AuthContext);
+  const { user } = useAuth();
   const churchId = user?.church_id;
   
   return useQuery({
@@ -444,7 +444,7 @@ export const useAssets = (params = {}) => {
 
 export const useCreateAsset = () => {
   const queryClient = useQueryClient();
-  const { user } = useContext(AuthContext);
+  const { user } = useAuth();
   const churchId = user?.church_id;
   
   return useMutation({
@@ -457,7 +457,7 @@ export const useCreateAsset = () => {
 
 export const useRunDepreciation = () => {
   const queryClient = useQueryClient();
-  const { user } = useContext(AuthContext);
+  const { user } = useAuth();
   const churchId = user?.church_id;
   
   return useMutation({
@@ -470,7 +470,7 @@ export const useRunDepreciation = () => {
 };
 
 export const useDepreciationSchedule = (assetId) => {
-  const { user } = useContext(AuthContext);
+  const { user } = useAuth();
   const churchId = user?.church_id;
   
   return useQuery({
@@ -488,7 +488,7 @@ export const useDepreciationSchedule = (assetId) => {
 // ============================================
 
 export const useBankAccounts = () => {
-  const { user } = useContext(AuthContext);
+  const { user } = useAuth();
   const churchId = user?.church_id;
   
   return useQuery({
@@ -502,7 +502,7 @@ export const useBankAccounts = () => {
 };
 
 export const useBankTransactions = (params = {}) => {
-  const { user } = useContext(AuthContext);
+  const { user } = useAuth();
   const churchId = user?.church_id;
   
   return useQuery({
@@ -517,7 +517,7 @@ export const useBankTransactions = (params = {}) => {
 
 export const useImportBankTransactions = () => {
   const queryClient = useQueryClient();
-  const { user } = useContext(AuthContext);
+  const { user } = useAuth();
   const churchId = user?.church_id;
   
   return useMutation({
@@ -533,7 +533,7 @@ export const useImportBankTransactions = () => {
 // ============================================
 
 export const useBeginningBalances = () => {
-  const { user } = useContext(AuthContext);
+  const { user } = useAuth();
   const churchId = user?.church_id;
   
   return useQuery({
@@ -548,7 +548,7 @@ export const useBeginningBalances = () => {
 
 export const useCreateBeginningBalance = () => {
   const queryClient = useQueryClient();
-  const { user } = useContext(AuthContext);
+  const { user } = useAuth();
   const churchId = user?.church_id;
   
   return useMutation({
@@ -561,7 +561,7 @@ export const useCreateBeginningBalance = () => {
 
 export const usePostBeginningBalance = () => {
   const queryClient = useQueryClient();
-  const { user } = useContext(AuthContext);
+  const { user } = useAuth();
   const churchId = user?.church_id;
   
   return useMutation({
@@ -578,7 +578,7 @@ export const usePostBeginningBalance = () => {
 // ============================================
 
 export const useYearEndClosingStatus = (year) => {
-  const { user } = useContext(AuthContext);
+  const { user } = useAuth();
   const churchId = user?.church_id;
   
   return useQuery({
@@ -593,7 +593,7 @@ export const useYearEndClosingStatus = (year) => {
 
 export const useRunYearEndClosing = () => {
   const queryClient = useQueryClient();
-  const { user } = useContext(AuthContext);
+  const { user } = useAuth();
   const churchId = user?.church_id;
   
   return useMutation({
@@ -612,7 +612,7 @@ export const useRunYearEndClosing = () => {
 // ============================================
 
 export const useGeneralLedger = (params) => {
-  const { user } = useContext(AuthContext);
+  const { user } = useAuth();
   const churchId = user?.church_id;
   
   return useQuery({
@@ -626,7 +626,7 @@ export const useGeneralLedger = (params) => {
 };
 
 export const useTrialBalance = (asOfDate) => {
-  const { user } = useContext(AuthContext);
+  const { user } = useAuth();
   const churchId = user?.church_id;
   
   return useQuery({
@@ -640,7 +640,7 @@ export const useTrialBalance = (asOfDate) => {
 };
 
 export const useIncomeStatement = (startDate, endDate) => {
-  const { user } = useContext(AuthContext);
+  const { user } = useAuth();
   const churchId = user?.church_id;
   
   return useQuery({
@@ -657,7 +657,7 @@ export const useIncomeStatement = (startDate, endDate) => {
 };
 
 export const useBalanceSheet = (asOfDate) => {
-  const { user } = useContext(AuthContext);
+  const { user } = useAuth();
   const churchId = user?.church_id;
   
   return useQuery({
@@ -675,7 +675,7 @@ export const useBalanceSheet = (asOfDate) => {
 // ============================================
 
 export const useAuditLogs = (params = {}) => {
-  const { user } = useContext(AuthContext);
+  const { user } = useAuth();
   const churchId = user?.church_id;
   
   return useQuery({
