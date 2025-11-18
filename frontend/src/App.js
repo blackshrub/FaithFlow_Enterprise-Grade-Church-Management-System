@@ -61,6 +61,12 @@ function App() {
               {/* Kiosk moved outside Layout for fullscreen */}
               <Route path="devotions" element={<Devotions />} />
               
+              {/* Accounting Routes */}
+              <Route path="accounting" element={<AccountingDashboard />} />
+              <Route path="accounting/coa" element={<ChartOfAccounts />} />
+              <Route path="accounting/journals" element={<Journals />} />
+              <Route path="accounting/fiscal-periods" element={<FiscalPeriods />} />
+              
               {/* Placeholder routes - will be implemented in next phases */}
               <Route path="groups" element={<PlaceholderPage title="Groups" />} />
               <Route path="donations" element={<PlaceholderPage title="Donations" />} />
