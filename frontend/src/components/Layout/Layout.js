@@ -218,9 +218,9 @@ export default function Layout() {
             {/* Footer */}
             <div className="pt-3 border-t">
               <p className="text-xs text-center text-gray-500">
-                <span className="font-semibold text-blue-600">FaithFlow</span>
+                <span className="font-semibold text-blue-600">{t('app.name')}</span>
                 <br />
-                Empowering Churches
+                {t('app.tagline').split(',')[0]}
               </p>
             </div>
           </div>
