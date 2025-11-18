@@ -159,8 +159,14 @@ function Devotions() {
       {/* Filters */}
       <DevotionFilters filters={filters} onFiltersChange={setFilters} />
 
-      {/* Devotions List */}
-      <div className="bg-white rounded-lg shadow">
+      {/* Devotions List or Calendar */}
+      {viewMode === 'calendar' ? (
+        <DevotionCalendar
+          devotions={devotions}
+          onDateClick={handleDateClick}
+        />
+      ) : (
+        <div className="bg-white rounded-lg shadow">
         <div className="p-6 border-b border-gray-200">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
