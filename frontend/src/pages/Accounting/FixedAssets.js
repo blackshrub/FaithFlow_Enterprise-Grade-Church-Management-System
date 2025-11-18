@@ -24,6 +24,7 @@ import {
 } from '../../components/ui/dialog';
 import { useAssets, useRunDepreciation } from '../../hooks/useAccounting';
 import CurrencyDisplay from '../../components/Accounting/CurrencyDisplay';
+import TableSkeleton from '../../components/Accounting/TableSkeleton';
 import { useToast } from '../../hooks/use-toast';
 
 export default function FixedAssets() {
@@ -144,7 +145,7 @@ export default function FixedAssets() {
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <div className="text-center py-8">{t('accounting.common.loading')}</div>
+            <TableSkeleton rows={5} columns={7} />
           ) : !assets || assets.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               <Building2 className="w-16 h-16 mx-auto mb-4 text-gray-300" />

@@ -15,6 +15,7 @@ import {
 import { Badge } from '../../components/ui/badge';
 import { useBudgets, useActivateBudget } from '../../hooks/useAccounting';
 import StatusBadge from '../../components/Accounting/StatusBadge';
+import TableSkeleton from '../../components/Accounting/TableSkeleton';
 import { useToast } from '../../hooks/use-toast';
 
 export default function Budgets() {
@@ -79,7 +80,7 @@ export default function Budgets() {
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <div className="text-center py-8">{t('accounting.common.loading')}</div>
+            <TableSkeleton rows={5} columns={4} />
           ) : !budgets || budgets.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               <TrendingUp className="w-16 h-16 mx-auto mb-4 text-gray-300" />

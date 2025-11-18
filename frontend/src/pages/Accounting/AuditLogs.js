@@ -16,6 +16,7 @@ import {
 import { Badge } from '../../components/ui/badge';
 import { useAuditLogs } from '../../hooks/useAccounting';
 import PaginationControls from '../../components/Accounting/PaginationControls';
+import TableSkeleton from '../../components/Accounting/TableSkeleton';
 
 export default function AuditLogs() {
   const { t } = useTranslation();
@@ -92,7 +93,7 @@ export default function AuditLogs() {
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <div className="text-center py-8">{t('accounting.common.loading')}</div>
+            <TableSkeleton rows={10} columns={6} />
           ) : logs.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               <Shield className="w-16 h-16 mx-auto mb-4 text-gray-300" />
