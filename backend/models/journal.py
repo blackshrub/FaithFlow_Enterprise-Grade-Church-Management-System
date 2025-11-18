@@ -89,7 +89,7 @@ class Journal(JournalBase):
     created_by: str = Field(..., description="User ID who created")
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
-    attachments: list[str] = Field(default_factory=list, description="File attachment IDs")
+    attachments: List[str] = Field(default_factory=list, description="File attachment IDs")
     
     def calculate_totals(self):
         """Calculate total debit and credit"""
