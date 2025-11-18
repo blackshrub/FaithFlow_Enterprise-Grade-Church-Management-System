@@ -97,11 +97,11 @@ export default function Tags() {
       <Dialog open={showModal} onOpenChange={setShowModal}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editingTag ? t('articles.tags.editTag') : t('articles.tags.createTag')}</DialogTitle>
+            <DialogTitle>{editingTag ? t('articles.tagsManagement.editTag') : t('articles.tagsManagement.createTag')}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <Label>{t('articles.tags.tagName')} *</Label>
+              <Label>{t('articles.tagsManagement.tagName')} *</Label>
               <Input value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required />
             </div>
             <div className="flex justify-end space-x-2">
