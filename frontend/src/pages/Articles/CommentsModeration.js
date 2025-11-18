@@ -46,7 +46,7 @@ export default function CommentsModeration() {
           <div className="text-center py-8 text-gray-500">
             <MessageSquare className="w-16 h-16 mx-auto mb-4 text-gray-300" />
             <p>{t('articles.comments.noComments')}</p>
-            <p className="text-sm mt-2">Comments will appear here when articles receive comments</p>
+            <p className="text-sm mt-2">{t('common.noData')}</p>
           </div>
         </CardContent>
       </Card>
