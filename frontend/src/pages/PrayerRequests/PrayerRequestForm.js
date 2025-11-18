@@ -27,7 +27,9 @@ export default function PrayerRequestForm() {
     description: '',
     category: 'other',
     status: 'new',
-    internal_notes: ''
+    internal_notes: '',
+    needs_follow_up: false,
+    follow_up_notes: ''
   });
 
   const { data: existingRequest } = usePrayerRequest(id);
