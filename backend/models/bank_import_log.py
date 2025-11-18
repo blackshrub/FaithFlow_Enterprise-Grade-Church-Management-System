@@ -11,7 +11,7 @@ class BankImportLogBase(BaseModel):
     total_rows: int = Field(..., ge=0, description="Total rows in file")
     success_count: int = Field(default=0, ge=0, description="Successfully imported count")
     error_count: int = Field(default=0, ge=0, description="Error count")
-    errors: List[Dict[str, Any]] = Field(default_factory=list, description="Error details")
+    errors: list[Dict[str, Any]] = Field(default_factory=list, description="Error details")
     imported_by: str = Field(..., description="User ID who imported")
 
 
