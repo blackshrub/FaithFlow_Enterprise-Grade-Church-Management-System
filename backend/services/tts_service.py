@@ -41,17 +41,18 @@ def generate_indonesian_tts_coqui(text: str) -> str:
         text = re.sub(r'\s+', ' ', text)  # Normalize whitespace
         text = text.strip()
         
-        # Fix 'g' pronunciation issue by adding 'h' after 'g'
-        # This helps the model pronounce 'g' correctly (model lacks plain 'g' in vocabulary)
-        # Pattern: Replace 'g' + vowel with 'gh' + vowel, except 'ng' combinations
-        text = re.sub(r'(^|[\s])([Gg])([aeiouAEIOU])', r'\1\2h\3', text)  # Start of word
-        text = re.sub(r'([^nN])([Gg])([aeiouAEIOU])', r'\1\2h\3', text)  # Middle of word (not after n)
+        # Fix 'g' pronunciation issues:
+        # 1. 'G' at start of word → 'GH' (for proper 'g' sound)
+        text = re.sub(r'(^|[\s])([Gg])([aeiouAEIOU])', r'\1\2h\3', text)
         
-        # Fix 'd' at end of words - pronounce as 't' for smoother sound
+        # 2. 'g' in middle between vowels → 'k' (smoother: menegaskan → menekaskan)
+        text = re.sub(r'([aeiouAEIOU])g([aeiouAEIOU])', r'\1k\2', text)
+        
+        # Fix 'd' at end of words → 't' for smoother sound
         # Examples: "murid" → "murit", "tekad" → "tekat"
-        text = re.sub(r'([aeiouAEIOU])d(\s|$|[,.\?!;:\-])', r'\1t\2', text)  # Vowel + d + word boundary or hyphen
+        text = re.sub(r'([aeiouAEIOU])d(\s|$|[,.\?!;:\-])', r'\1t\2', text)
         
-        logger.info(f"Text after pronunciation fixes (first 100 chars): {text[:100]}")
+        logger.info(f"Text after pronunciation fixes (first 150 chars): {text[:150]}")
         
         # Convert Indonesian text to phonemes
         g2p = G2P()
