@@ -9,6 +9,7 @@ import { Textarea } from '../../components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 import { usePrayerRequest, useCreatePrayerRequest, useUpdatePrayerRequest } from '../../hooks/usePrayerRequests';
+import { useMembers } from '../../hooks/useMembers';
 import { useToast } from '../../hooks/use-toast';
 
 export default function PrayerRequestForm() {
@@ -19,6 +20,7 @@ export default function PrayerRequestForm() {
   const isEdit = !!id;
 
   const [formData, setFormData] = useState({
+    member_id: '',
     requester_name: '',
     requester_contact: '',
     title: '',
@@ -29,6 +31,8 @@ export default function PrayerRequestForm() {
   });
 
   const { data: existingRequest } = usePrayerRequest(id);
+  const { data: membersData } = useMembers();
+  const members = membersData?.data || [];
   const createMutation = useCreatePrayerRequest();
   const updateMutation = useUpdatePrayerRequest();
 
