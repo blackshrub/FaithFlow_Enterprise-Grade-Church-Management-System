@@ -120,6 +120,10 @@ async def create_journal(
     journal_dict["created_at"] = datetime.utcnow()
     journal_dict["updated_at"] = datetime.utcnow()
     
+    # Convert date to ISO string for MongoDB
+    if isinstance(journal_dict.get("date"), date):
+        journal_dict["date"] = journal_dict["date"].isoformat()
+    
     # Convert Decimal to float for MongoDB
     journal_dict["total_debit"] = float(journal_dict["total_debit"])
     journal_dict["total_credit"] = float(journal_dict["total_credit"])
