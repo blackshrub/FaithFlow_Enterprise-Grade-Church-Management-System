@@ -312,6 +312,34 @@ async def bulk_devotion_action(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid action")
 
 
+@router.post("/generate-audio-preview")
+async def generate_audio_preview(
+    text: str = Query(..., description="Text content to convert to speech"),
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current_user: dict = Depends(require_admin)
+):
+    """Generate TTS audio preview from raw text (no devotion ID needed)"""
+    
+    try:
+        # Strip HTML tags
+        import re
+        clean_text = re.sub(r'<[^>]+>', '', text)
+        clean_text = clean_text.strip()
+        
+        if not clean_text:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No text to convert")
+        
+        # Generate audio (Indonesian with Wibowo voice)
+        audio_base64 = generate_tts_audio(clean_text, lang='id')
+        
+        logger.info("TTS audio preview generated")
+        return {"success": True, "audio_url": audio_base64}
+    
+    except Exception as e:
+        logger.error(f"TTS preview generation failed: {str(e)}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
+
 @router.post("/{devotion_id}/generate-audio")
 async def generate_audio(
     devotion_id: str,
