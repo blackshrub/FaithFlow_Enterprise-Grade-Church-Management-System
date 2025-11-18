@@ -61,7 +61,7 @@ async def get_budget(
 
 @router.post("/", status_code=status.HTTP_201_CREATED)
 async def create_budget(
-    budget_data: BudgetCreate,
+    budget_data: BudgetBase,
     current_user: dict = Depends(get_current_user),
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
@@ -71,6 +71,7 @@ async def create_budget(
     
     budget_dict = budget_data.model_dump()
     budget_dict["church_id"] = church_id
+    budget_dict["status"] = "draft"  # Default to draft
     budget_dict["id"] = str(uuid.uuid4())
     budget_dict["created_at"] = datetime.utcnow()
     budget_dict["updated_at"] = datetime.utcnow()
