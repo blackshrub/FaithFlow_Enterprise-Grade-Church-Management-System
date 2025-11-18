@@ -1253,15 +1253,18 @@ agent_communication:
 
   - task: "Accounting - CurrencyInput Component - Value Capture"
     implemented: true
-    working: false
+    working: true
     file: "/app/frontend/src/components/Accounting/CurrencyInput.js"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: false
         agent: "testing"
         comment: "ROUND 5 BUG FIX VALIDATION (2025-01-18): CRITICAL BUG DISCOVERED. CurrencyInput component is NOT capturing values properly in multiple forms: (1) Journal Form - Debit Amount: When entering '1000000', the balance indicator shows 'Total Debit: Rp 0'. Credit amount works correctly. (2) Asset Form - Cost Field: Shows HTML5 validation error 'Please fill out this field' even after entering '500000000'. (3) Asset Form - Salvage Value: Same issue as Cost. The component appears to render correctly and accepts input, but the value is not being passed to the parent form state. This is blocking journal and asset creation. The onChange handler in CurrencyInput may not be firing correctly, or the value transformation is breaking the state update. Budget form's Annual Amount field works correctly, suggesting the issue is specific to certain usage patterns of CurrencyInput."
+      - working: true
+        agent: "testing"
+        comment: "PRIORITY 3 FINAL VALIDATION (2025-01-18): ✓ BUG 25 COMPLETELY FIXED! CurrencyInput component now working perfectly across ALL forms. Verified: (1) Journal Form - Debit Amount: Entering '1000000' correctly shows 'Rp 1.000.000' in input and balance indicator shows 'Total Debit: Rp 1.000.000' ✓ (2) Journal Form - Credit Amount: Entering '1000000' correctly shows 'Rp 1.000.000' and balance updates ✓ (3) Budget Form - Annual Amount: Entering '120000000' correctly shows 'Rp 120.000.000' ✓ (4) Asset Form - Cost: Entering '500000000' correctly shows 'Rp 500.000.000' and depreciation calculates ✓ (5) Asset Form - Salvage Value: Entering '50000000' correctly shows 'Rp 50.000.000' ✓. The fix includes: better null handling (lines 18-19, 28-29), inputMode='numeric' for mobile keyboards (line 44), and always calling onChange with numeric value (lines 22-24). Component now reliably captures and formats currency values in all contexts."
 
 agent_communication:
   - agent: "testing"
