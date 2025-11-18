@@ -188,6 +188,18 @@ export default function Reports() {
           <Button onClick={() => refetchIS()}>
             {t('accounting.reports.generateReport')}
           </Button>
+          {incomeStatementData && (
+            <Button 
+              variant="outline" 
+              onClick={() => exportToCSV(
+                [...incomeStatementData.income, ...incomeStatementData.expenses], 
+                `income-statement-${reportParams.start_date}`
+              )}
+            >
+              <Download className="w-4 h-4 mr-2" />
+              {t('accounting.reports.exportCSV')}
+            </Button>
+          )}
         </div>
       </div>
 
