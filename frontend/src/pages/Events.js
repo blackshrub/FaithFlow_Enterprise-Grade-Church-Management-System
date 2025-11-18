@@ -123,6 +123,7 @@ function Events() {
               <EventCard
                 key={event.id}
                 event={event}
+                category={categoryMap[event.event_category_id]}
                 onEdit={handleEdit}
               />
             ))}
