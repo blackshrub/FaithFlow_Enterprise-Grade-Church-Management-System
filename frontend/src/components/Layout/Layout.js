@@ -104,13 +104,26 @@ export default function Layout() {
         <div className="flex flex-col h-full">
           {/* Logo/Header */}
           <div className="flex items-center justify-between p-4 border-b">
-            <FaithFlowLogo size="sm" />
-            <button
-              onClick={() => setSidebarOpen(false)}
-              className="lg:hidden"
-            >
-              <X className="h-6 w-6" />
-            </button>
+            {!sidebarCollapsed && <FaithFlowLogo size="sm" />}
+            <div className="flex gap-2">
+              <button
+                onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+                className="hidden lg:block p-1 hover:bg-gray-100 rounded"
+                title={sidebarCollapsed ? t('common.expand') || 'Expand' : t('common.collapse') || 'Collapse'}
+              >
+                {sidebarCollapsed ? (
+                  <ChevronsRight className="h-5 w-5 text-gray-600" />
+                ) : (
+                  <ChevronsLeft className="h-5 w-5 text-gray-600" />
+                )}
+              </button>
+              <button
+                onClick={() => setSidebarOpen(false)}
+                className="lg:hidden"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
           </div>
 
           {/* User Info */}
