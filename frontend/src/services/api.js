@@ -240,6 +240,7 @@ export const devotionsAPI = {
   delete: (id) => api.delete(`/devotions/${id}`),
   duplicate: (id) => api.post(`/devotions/${id}/duplicate`),
   generateAudio: (id) => api.post(`/devotions/${id}/generate-audio`),
+  generateAudioPreview: (text) => api.post('/devotions/generate-audio-preview', null, { params: { text } }),
   restoreVersion: (id, versionIndex) => api.post(`/devotions/${id}/restore-version`, null, { params: { version_index: versionIndex } }),
   bulkAction: (action, devotionIds) => api.post('/devotions/bulk-action', null, { params: { action, devotion_ids: devotionIds } }),
 };
