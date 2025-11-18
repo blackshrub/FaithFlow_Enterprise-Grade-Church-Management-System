@@ -1171,17 +1171,15 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Accounting Module - Form Submission Issues (CRITICAL)"
-    - "Budget Form - Save functionality not working"
-    - "Fixed Asset Form - Save functionality not working"
-    - "Journal Form - Amount input and balance calculation issues"
+    - "Accounting Module - Complete Testing Suite (CRITICAL)"
+    - "Form Submission Validation - Budget, Asset, Journal"
+    - "End-to-End Workflow Testing"
   stuck_tasks:
-    - "Accounting - Form Submission - Budget Form"
-    - "Accounting - Form Submission - Fixed Asset Form"
-    - "Accounting - Form Submission - Journal Form"
+    - "Accounting - Form Submission - Budget Form (422 validation errors)"
+    - "Accounting - Form Submission - Fixed Asset Form (422 validation errors)"
   test_all: true
   test_priority: "high_first"
-  tests_completed: 63
+  tests_completed: 66
   tests_passed: 50
   tests_failed: 3
 
