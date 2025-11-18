@@ -135,11 +135,22 @@ function Devotions() {
       <div className="bg-white rounded-lg shadow">
         <div className="p-6 border-b border-gray-200">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <BookOpen className="h-5 w-5 text-gray-400" />
-              <h2 className="text-lg font-semibold text-gray-900">
-                {t('devotions.devotionsList')}
-              </h2>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <BookOpen className="h-5 w-5 text-gray-400" />
+                <h2 className="text-lg font-semibold text-gray-900">
+                  {t('devotions.devotionsList')}
+                </h2>
+              </div>
+              {devotions.length > 0 && (
+                <input
+                  type="checkbox"
+                  checked={selectedDevotions.length === devotions.length && devotions.length > 0}
+                  onChange={toggleSelectAll}
+                  className="w-5 h-5"
+                  title="Select all"
+                />
+              )}
             </div>
             <span className="text-sm text-gray-500">
               {t('devotions.devotionsTotal', { count: devotions.length })}
