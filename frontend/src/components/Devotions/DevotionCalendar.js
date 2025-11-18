@@ -73,8 +73,8 @@ function DevotionCalendar({ devotions, onDateClick }) {
 
       {/* Day headers */}
       <div className="grid grid-cols-7 gap-2 mb-2">
-        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-          <div key={day} className="text-center text-sm font-medium text-gray-600 py-2">
+        {dayNames.map((day, index) => (
+          <div key={index} className="text-center text-sm font-medium text-gray-600 py-2">
             {day}
           </div>
         ))}
