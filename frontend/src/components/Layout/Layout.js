@@ -98,10 +98,7 @@ export default function Layout() {
         <div className="flex flex-col h-full">
           {/* Logo/Header */}
           <div className="flex items-center justify-between p-4 border-b">
-            <div className="flex items-center space-x-2">
-              <Church className="h-8 w-8 text-blue-600" />
-              <span className="font-bold text-lg">Church Admin</span>
-            </div>
+            <FaithFlowLogo size="sm" />
             <button
               onClick={() => setSidebarOpen(false)}
               className="lg:hidden"
