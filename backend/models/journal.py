@@ -72,7 +72,7 @@ class JournalUpdate(BaseModel):
     date: Optional[date] = None
     reference_number: Optional[str] = Field(None, max_length=100)
     description: Optional[str] = Field(None, min_length=1, max_length=1000)
-    lines: Optional[list[JournalLine]] = Field(None, min_length=2)
+    lines: Optional[list[JournalLine]] = Field(None, description="Journal lines")
 
 
 class Journal(JournalBase):
