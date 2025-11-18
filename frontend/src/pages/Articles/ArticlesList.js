@@ -194,52 +194,95 @@ export default function ArticlesList() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>{t('articles.articleTitle')}</TableHead>
-                  <TableHead>{t('articles.status')}</TableHead>
-                  <TableHead>{t('articles.publishDate')}</TableHead>
-                  <TableHead>{t('articles.readingTime')}</TableHead>
-                  <TableHead>{t('articles.views')}</TableHead>
-                  <TableHead>{t('articles.scheduling.scheduleStatus')}</TableHead>
-                  <TableHead>{t('members.actions')}</TableHead>
+                  <TableHead className="w-12">
+                    <input
+                      type="checkbox"
+                      checked={selectedArticles.length === articles.length && articles.length > 0}
+                      onChange={toggleAllSelection}
+                      className="rounded"
+                    />
+                  </TableHead>
+                  {visibleColumns.title && <TableHead>{t('articles.articleTitle')}</TableHead>}
+                  {visibleColumns.status && <TableHead>{t('articles.status')}</TableHead>}
+                  {visibleColumns.publishDate && <TableHead>{t('articles.publishDate')}</TableHead>}
+                  {visibleColumns.readingTime && <TableHead>{t('articles.readingTime')}</TableHead>}
+                  {visibleColumns.views && <TableHead>{t('articles.views')}</TableHead>}
+                  {visibleColumns.scheduleStatus && <TableHead>{t('articles.scheduling.scheduleStatus')}</TableHead>}
+                  {visibleColumns.actions && <TableHead>{t('members.actions')}</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {articles.map((article) => (
                   <TableRow key={article.id}>
-                    <TableCell className="font-medium">{article.title}</TableCell>
                     <TableCell>
-                      <ArticleStatusBadge status={article.status} />
+                      <input
+                        type="checkbox"
+                        checked={selectedArticles.includes(article.id)}
+                        onChange={() => toggleSelection(article.id)}
+                        className="rounded"
+                      />
                     </TableCell>
-                    <TableCell>
-                      {article.publish_date 
-                        ? new Date(article.publish_date).toLocaleDateString('id-ID')
-                        : '-'}
-                    </TableCell>
-                    <TableCell>
-                      <ReadingTimeDisplay readingTime={article.reading_time} />
-                    </TableCell>
-                    <TableCell>{article.views_count || 0}</TableCell>
-                    <TableCell>
-                      <ScheduleStatusBadge status={article.schedule_status} />
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center space-x-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => navigate(`/articles/${article.id}/edit`)}
-                        >
-                          {t('common.edit')}
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDelete(article.id, article.title)}
-                        >
-                          {t('common.delete')}
-                        </Button>
-                      </div>
-                    </TableCell>
+                    {visibleColumns.title && <TableCell className="font-medium">{article.title}</TableCell>}
+                    {visibleColumns.status && (
+                      <TableCell>
+                        <ArticleStatusBadge status={article.status} />
+                      </TableCell>
+                    )}
+                    {visibleColumns.publishDate && (
+                      <TableCell>
+                        {article.publish_date 
+                          ? new Date(article.publish_date).toLocaleDateString('id-ID')
+                          : '-'}
+                      </TableCell>
+                    )}
+                    {visibleColumns.readingTime && (
+                      <TableCell>
+                        <ReadingTimeDisplay readingTime={article.reading_time} />
+                      </TableCell>
+                    )}
+                    {visibleColumns.views && <TableCell>{article.views_count || 0}</TableCell>}
+                    {visibleColumns.scheduleStatus && (
+                      <TableCell>
+                        <ScheduleStatusBadge status={article.schedule_status} />
+                      </TableCell>
+                    )}
+                    {visibleColumns.actions && (
+                      <TableCell>
+                        <div className="flex items-center space-x-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => navigate(`/articles/${article.id}/edit`)}
+                          >
+                            {t('common.edit')}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setEditingArticle(article);
+                              setShowQuickEdit(true);
+                            }}
+                          >
+                            Quick Edit
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDuplicate(article.id)}
+                          >
+                            {t('articles.duplicate')}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDelete(article.id, article.title)}
+                          >
+                            {t('common.delete')}
+                          </Button>
+                        </div>
+                      </TableCell>
+                    )}
                   </TableRow>
                 ))}
               </TableBody>
