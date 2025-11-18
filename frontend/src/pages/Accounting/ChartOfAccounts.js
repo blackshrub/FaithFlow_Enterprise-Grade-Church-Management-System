@@ -95,7 +95,7 @@ export default function ChartOfAccounts() {
                 <SelectValue placeholder={t('accounting.coa.accountType')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">{t('common.all')}</SelectItem>
+                <SelectItem value="all">{t('common.all')}</SelectItem>
                 <SelectItem value="Asset">{t('accounting.coa.asset')}</SelectItem>
                 <SelectItem value="Liability">{t('accounting.coa.liability')}</SelectItem>
                 <SelectItem value="Equity">{t('accounting.coa.equity')}</SelectItem>
