@@ -121,6 +121,18 @@ function EventCard({ event, category, onEdit }) {
             </svg>
           </div>
         )}
+        
+        {/* Category Badge Overlay (Top Right) */}
+        {category && (
+          <div className="absolute top-3 right-3">
+            <span
+              className="px-3 py-1.5 rounded-full text-xs font-semibold text-white shadow-lg"
+              style={{ backgroundColor: category.color }}
+            >
+              {category.name}
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Content */}
