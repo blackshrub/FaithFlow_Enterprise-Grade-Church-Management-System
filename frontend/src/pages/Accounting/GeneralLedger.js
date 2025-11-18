@@ -16,6 +16,8 @@ import { useGeneralLedger } from '../../hooks/useAccounting';
 import AccountSelector from '../../components/Accounting/AccountSelector';
 import CurrencyDisplay from '../../components/Accounting/CurrencyDisplay';
 import PaginationControls from '../../components/Accounting/PaginationControls';
+import { Download } from 'lucide-react';
+import { exportToCSV } from '../../utils/exportUtils';
 
 export default function GeneralLedger() {
   const { t } = useTranslation();
