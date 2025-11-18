@@ -67,9 +67,9 @@ export default function Categories() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>{t('articles.categories.categoryName')}</TableHead>
-                  <TableHead>{t('articles.categories.categorySlug')}</TableHead>
-                  <TableHead>{t('articles.categories.articleCount')}</TableHead>
+                  <TableHead>{t('articles.categoriesManagement.categoryName')}</TableHead>
+                  <TableHead>{t('articles.categoriesManagement.categorySlug')}</TableHead>
+                  <TableHead>{t('articles.categoriesManagement.articleCount')}</TableHead>
                   <TableHead>{t('members.actions')}</TableHead>
                 </TableRow>
               </TableHeader>
