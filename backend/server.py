@@ -121,6 +121,18 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# Initialize APScheduler for article publishing
+from scheduler import setup_scheduler, start_scheduler, shutdown_scheduler
+
+@app.on_event("startup")
+async def startup_event():
+    """Initialize scheduler on startup."""
+    setup_scheduler(db)
+    start_scheduler()
+    logger.info("✓ Article scheduler initialized and started")
+
 @app.on_event("shutdown")
 async def shutdown_db_client():
+    shutdown_scheduler()
     client.close()
+    logger.info("✓ Scheduler and database connections closed")
