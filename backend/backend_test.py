@@ -667,7 +667,7 @@ class AccountingAPITester:
         success, events = self.run_test(
             "List Events (Empty)",
             "GET",
-            "/api/v1/events/",
+            "/api/events/",
             200
         )
         
@@ -687,7 +687,7 @@ class AccountingAPITester:
         success, created_event = self.run_test(
             "Create Single Event",
             "POST",
-            "/api/v1/events/",
+            "/api/events/",
             201,
             data=event_data
         )
@@ -699,7 +699,7 @@ class AccountingAPITester:
             success, event = self.run_test(
                 "Get Single Event",
                 "GET",
-                f"/api/v1/events/{event_id}",
+                f"/api/events/{event_id}",
                 200
             )
             
@@ -707,7 +707,7 @@ class AccountingAPITester:
             success, rsvps = self.run_test(
                 "Get Event RSVPs",
                 "GET",
-                f"/api/v1/events/{event_id}/rsvps",
+                f"/api/events/{event_id}/rsvps",
                 200
             )
             
@@ -715,7 +715,7 @@ class AccountingAPITester:
             success, attendance = self.run_test(
                 "Get Event Attendance",
                 "GET",
-                f"/api/v1/events/{event_id}/attendance",
+                f"/api/events/{event_id}/attendance",
                 200
             )
     
