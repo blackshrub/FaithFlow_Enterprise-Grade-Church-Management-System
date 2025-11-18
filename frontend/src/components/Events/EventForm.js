@@ -208,14 +208,15 @@ function EventForm({ event, onClose }) {
 
               {/* Event Category */}
               <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="category">{t('settings.eventCategory')}</Label>
+                <Label htmlFor="category">{t('settings.eventCategory')} *</Label>
                 <select
                   id="category"
                   value={formData.event_category_id}
                   onChange={(e) => handleChange('event_category_id', e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  required
                 >
-                  <option value="">{t('settings.eventCategory')} ({t('common.optional') || 'Optional'})</option>
+                  <option value="">{t('settings.eventCategory')}</option>
                   {categories.map((cat) => (
                     <option key={cat.id} value={cat.id}>
                       {cat.name}
