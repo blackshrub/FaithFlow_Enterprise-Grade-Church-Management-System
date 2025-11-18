@@ -80,10 +80,13 @@ export default function Login() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
       <Card className="w-full max-w-md shadow-xl">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold text-center">{t('app.name')}</CardTitle>
+        <CardHeader className="space-y-4">
+          <div className="flex justify-center">
+            <FaithFlowLogo size="lg" />
+          </div>
+          <CardTitle className="text-2xl font-bold text-center">Admin Portal</CardTitle>
           <CardDescription className="text-center">
-            {t('app.tagline')}
+            Empowering Churches with Clarity, Care, and Connection
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
