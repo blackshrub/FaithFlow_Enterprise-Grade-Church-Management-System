@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useCreateEvent, useUpdateEvent } from '@/hooks/useEvents';
 import { useSeatLayouts } from '@/hooks/useSeatLayouts';
+import { useEventCategories } from '@/hooks/useSettings';
 import { useAuth } from '@/context/AuthContext';
 import SessionManager from './SessionManager';
 
@@ -19,12 +20,14 @@ function EventForm({ event, onClose }) {
   const createMutation = useCreateEvent();
   const updateMutation = useUpdateEvent();
   const { data: layouts = [] } = useSeatLayouts();
+  const { data: categories = [] } = useEventCategories();
 
   // Form state
   const [formData, setFormData] = useState({
     name: event?.name || '',
     description: event?.description || '',
     event_type: event?.event_type || 'single',
+    event_category_id: event?.event_category_id || '',
     location: event?.location || '',
     event_photo: event?.event_photo || '',
     requires_rsvp: event?.requires_rsvp ?? false,
