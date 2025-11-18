@@ -72,9 +72,19 @@ export default function ChartOfAccounts() {
     <div className="p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
+        <div className="flex items-center space-x-2">
           <h1 className="text-3xl font-bold">{t('accounting.coa.title')}</h1>
-          <p className="text-gray-600">{t('accounting.coa.subtitle')}</p>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger>
+                <HelpCircle className="w-5 h-5 text-gray-400" />
+              </TooltipTrigger>
+              <TooltipContent className="max-w-sm">
+                <p>{t('accounting.coa.subtitle')}</p>
+                <p className="text-xs mt-1">{t('accounting.coa.codeTooltip')}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
         <div className="flex items-center space-x-2">
           <Button variant="outline" onClick={handleSeedDefault} disabled={accounts?.length > 0}>
