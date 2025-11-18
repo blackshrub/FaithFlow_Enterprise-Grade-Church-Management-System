@@ -1724,3 +1724,104 @@ agent_communication:
   - agent: "testing"
     message: "COMPREHENSIVE ACCOUNTING MODULE UI TESTING COMPLETED (2025-01-18). Tested all 27 accounting pages across 15 test categories. RESULTS: 18/18 tests PASSED after fixing 1 critical bug. CRITICAL BUG FOUND & FIXED: Bank Reconciliation page had ReferenceError - Label component not imported (lines 173, 188, 211, 226). Added missing import and restarted frontend. All pages now load successfully. VERIFIED FEATURES: (1) Navigation - All 13 accounting submenu items functional, (2) COA - 52 accounts seeded, search and filter working, (3) Journals - Create/list/approve workflows functional, balance indicator working, (4) Quick Entry - Dual-tab interface (Weekly Giving/Outgoing Money) working, (5) Budgets - Page loads, create button present, (6) Fixed Assets - Page loads, asset management structure in place, (7) Bank Reconciliation - 3-tab structure (Accounts/Transactions/Reconcile) working after fix, (8) Reports - All 7 report types displayed with icons, (9) Fiscal Periods - 12-month display with status badges (Open/Closed), (10) Beginning Balance - Wizard structure present, (11) Responsibility Centers - Page loads correctly, (12) Year-End Closing - Prerequisites check in place, (13) Audit Logs - Audit trail display functional, (14) Dashboard - Financial summary cards, recent activity, quick actions all working, (15) Currency Display - Rp format working throughout (9+ instances verified), (16) Language Selector - Present and functional, (17) Loading States - Skeletons appear during page loads, (18) Navigation Stability - No crashes across 5+ page navigations. MINOR OBSERVATIONS: Some pages show empty states (no data) which is expected for new installation. All core UI structures are in place and functional. System is production-ready from frontend perspective."
 
+
+# Bug 27 Verification - Journal Number Generator (2025-11-18)
+
+backend:
+  - task: "Bug 27 - Journal Number Generator - Atomic Counter Implementation"
+    implemented: true
+    working: false
+    file: "/app/backend/services/accounting_service.py"
+    stuck_count: 1
+    priority: "critical"
+    needs_retesting: false
+    status_history:
+      - working: false
+        agent: "testing"
+        comment: "CRITICAL BUG NOT FIXED - Duplicate journal_number errors still occurring. Testing revealed: (1) Atomic counter implementation is CORRECT - using findOneAndUpdate with $inc on journal_counters collection. (2) Counter collection exists and increments properly (verified sequence: 3). (3) ROOT CAUSE: Counter was initialized AFTER journals already existed in database. Database has 11 journals (JRN-2025-11-0001 through JRN-2025-11-0011 created between 11:44-13:25), but counter was created at 16:01:33 starting from sequence 1. (4) When creating new journals, counter generates JRN-2025-11-0002, JRN-2025-11-0003 which already exist, causing DuplicateKeyError. (5) TEST RESULTS: 5 journal creation attempts all failed with 500 errors. Backend logs show: 'E11000 duplicate key error collection: church_management.journals index: church_id_1_journal_number_1 dup key'. (6) Beginning balance posting failed (500). (7) Quick entry weekly giving failed (500). (8) Quick entry outgoing money failed (500). (9) Only Test 5 passed - counter collection structure is correct. SOLUTION NEEDED: Counter must be initialized with max(existing_journal_sequence) + 1, not starting from 1. Need migration script to fix existing counters or logic to check existing journals before initializing counter."
+
+  - task: "Bug 27 - Journal Creation API - Multiple Rapid Requests"
+    implemented: true
+    working: false
+    file: "/app/backend/routes/journals.py"
+    stuck_count: 1
+    priority: "critical"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "testing"
+        comment: "TEST 1 FAILED: Attempted to create 5 journals in quick succession. First journal failed with 500 error due to duplicate journal_number JRN-2025-11-0002 (already exists in database). All subsequent journals also failed. Expected: All 5 journals created with unique sequential numbers (0012-0016). Actual: 0/5 journals created successfully. The atomic counter is working but starting from wrong sequence number."
+
+  - task: "Bug 27 - Beginning Balance Posting"
+    implemented: true
+    working: false
+    file: "/app/backend/routes/beginning_balance.py"
+    stuck_count: 1
+    priority: "critical"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "testing"
+        comment: "TEST 2 FAILED: Beginning balance creation succeeded (201 status), but posting failed with 500 error. The post endpoint calls generate_journal_number which returns a duplicate number. Cannot verify beginning balance posting workflow until counter initialization issue is fixed."
+
+  - task: "Bug 27 - Quick Entry Weekly Giving"
+    implemented: true
+    working: false
+    file: "/app/backend/routes/quick_entries.py"
+    stuck_count: 1
+    priority: "critical"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "testing"
+        comment: "TEST 3 FAILED: Quick entry weekly giving failed with 500 error. The endpoint auto-generates journal using generate_journal_number which returns duplicate number. Quick entry functionality blocked by counter initialization issue."
+
+  - task: "Bug 27 - Quick Entry Outgoing Money"
+    implemented: true
+    working: false
+    file: "/app/backend/routes/quick_entries.py"
+    stuck_count: 1
+    priority: "critical"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "testing"
+        comment: "TEST 4 FAILED: Quick entry outgoing money failed with 500 error. Same root cause as weekly giving - generate_journal_number returns duplicate number. All quick entry operations blocked."
+
+  - task: "Bug 27 - Journal Counter Collection Structure"
+    implemented: true
+    working: true
+    file: "/app/backend/services/accounting_service.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "TEST 5 PASSED: Journal counter collection exists and has correct structure. Verified: (1) Collection 'journal_counters' exists in MongoDB. (2) Counter document structure correct: _id format '{church_id}_{year}_{month:02d}', contains church_id, year, month, sequence, created_at fields. (3) Atomic increment working - sequence increments on each call. (4) Counter ID format validated: '3880a17d-f858-4622-87c2-96eaa7b25c83_2025_11'. The implementation is correct, only initialization logic needs fix."
+
+metadata:
+  created_by: "testing_agent"
+  version: "1.0"
+  test_sequence: 8
+  run_ui: false
+  test_date: "2025-11-18"
+  api_base_url: "https://church-manager-33.preview.emergentagent.com/api"
+  last_backend_test: "2025-11-18"
+
+test_plan:
+  current_focus:
+    - "Bug 27 - Journal Number Generator (CRITICAL - NOT FIXED)"
+    - "Counter initialization logic needs fix"
+    - "All journal creation endpoints blocked"
+  stuck_tasks:
+    - "Bug 27 - Journal Number Generator - Atomic Counter Implementation"
+  test_all: false
+  test_priority: "critical_first"
+  tests_completed: 5
+  tests_passed: 1
+  tests_failed: 4
+
+agent_communication:
+  - agent: "testing"
+    message: "BUG 27 VERIFICATION COMPLETED (2025-11-18 16:01). CRITICAL FINDING: Bug 27 is NOT FIXED. The atomic counter implementation is technically correct (using findOneAndUpdate with $inc), but there's a CRITICAL INITIALIZATION BUG. The counter was created at 16:01:33 starting from sequence 1, but the database already contains 11 journals (JRN-2025-11-0001 through JRN-2025-11-0011) created between 11:44-13:25. When new journals are created, the counter generates numbers 0002, 0003, etc. which already exist, causing DuplicateKeyError E11000. TEST RESULTS: 1/5 tests passed. Only the counter collection structure test passed. All journal creation tests failed with 500 errors. SOLUTION: The generate_journal_number function must check for existing journals and initialize the counter with max(existing_sequence) + 1, not always starting from 1. Need either: (1) Migration script to fix existing counters, OR (2) Logic in generate_journal_number to query max journal_number if counter doesn't exist. This is blocking ALL accounting operations: journal creation, beginning balance posting, quick entries."
