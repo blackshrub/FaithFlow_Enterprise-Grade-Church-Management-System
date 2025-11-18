@@ -29,6 +29,13 @@ function App() {
             {/* Public Routes */}
             <Route path="/login" element={<Login />} />
             
+            {/* Kiosk Mode - Fullscreen (no layout) */}
+            <Route path="/kiosk" element={
+              <ProtectedRoute>
+                <KioskMode />
+              </ProtectedRoute>
+            } />
+            
             {/* Protected Routes */}
             <Route
               path="/"
