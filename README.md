@@ -49,6 +49,9 @@ FaithFlow is a comprehensive, production-ready church management system designed
 - MongoDB 7.0+
 - 186,592 Bible verses (6 versions: TB, CHS, NIV, NKJV, NLT, ESV)
 - Multi-church data isolation
+- **16 accounting collections** with optimized indexes
+- **24+ database indexes** for performance
+- **Compound unique indexes** for multi-tenancy
 
 ## Quick Links
 
