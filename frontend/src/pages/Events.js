@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Plus, Calendar, Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useEvents } from '@/hooks/useEvents';
+import { useEventCategories } from '@/hooks/useSettings';
 import EventForm from '@/components/Events/EventForm';
 import EventCard from '@/components/Events/EventCard';
 import EventFilters from '@/components/Events/EventFilters';
@@ -17,6 +18,16 @@ function Events() {
   });
 
   const { data: events = [], isLoading, error } = useEvents(filters);
+  const { data: categories = [] } = useEventCategories();
+
+  // Create category lookup map
+  const categoryMap = React.useMemo(() => {
+    const map = {};
+    categories.forEach(cat => {
+      map[cat.id] = cat;
+    });
+    return map;
+  }, [categories]);
 
   const handleCreate = () => {
     setEditingEvent(null);
