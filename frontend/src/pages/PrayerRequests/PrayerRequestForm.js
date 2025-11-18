@@ -167,11 +167,30 @@ export default function PrayerRequestForm() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
+                  <Label>{t('prayerRequests.selectMember')}</Label>
+                  <Select value={formData.member_id} onValueChange={handleMemberChange}>
+                    <SelectTrigger>
+                      <SelectValue placeholder={t('prayerRequests.selectMember')} />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-[300px] overflow-y-auto">
+                      <SelectItem value="">{t('common.none')}</SelectItem>
+                      {members.map((member) => (
+                        <SelectItem key={member.id} value={member.id}>
+                          {member.full_name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-gray-500 mt-1">{t('prayerRequests.orManualEntry')}</p>
+                </div>
+
+                <div>
                   <Label>{t('prayerRequests.requesterName')} *</Label>
                   <Input
                     value={formData.requester_name}
                     onChange={(e) => setFormData({ ...formData, requester_name: e.target.value })}
                     required
+                    disabled={!!formData.member_id}
                   />
                 </div>
 
@@ -181,6 +200,7 @@ export default function PrayerRequestForm() {
                     value={formData.requester_contact}
                     onChange={(e) => setFormData({ ...formData, requester_contact: e.target.value })}
                     placeholder="+62812345678"
+                    disabled={!!formData.member_id}
                   />
                 </div>
 
