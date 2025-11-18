@@ -472,6 +472,267 @@ class AccountingAPITester:
             if success:
                 self.log(f"Beginning balance posted, journal created", "SUCCESS")
 
+    def test_budget_endpoints(self):
+        """Test Budget endpoints"""
+        self.log("\n=== BUDGET TESTS ===", "INFO")
+        
+        if len(self.created_accounts) < 2:
+            self.log("Not enough accounts for budget", "WARNING")
+            return
+        
+        # 1. List budgets (empty)
+        success, budgets = self.run_test(
+            "List Budgets (Empty)",
+            "GET",
+            "/api/v1/accounting/budgets/",
+            200
+        )
+        
+        # 2. Create budget
+        budget_data = {
+            "name": "Test Budget 2025",
+            "fiscal_year": 2025,
+            "status": "draft",
+            "lines": [
+                {
+                    "account_id": self.created_accounts[0]['id'],
+                    "annual_amount": 12000000,
+                    "monthly_amounts": {
+                        "01": 1000000, "02": 1000000, "03": 1000000,
+                        "04": 1000000, "05": 1000000, "06": 1000000,
+                        "07": 1000000, "08": 1000000, "09": 1000000,
+                        "10": 1000000, "11": 1000000, "12": 1000000
+                    }
+                }
+            ]
+        }
+        
+        success, created_budget = self.run_test(
+            "Create Budget",
+            "POST",
+            "/api/v1/accounting/budgets/",
+            201,
+            data=budget_data
+        )
+        
+        if success and 'id' in created_budget:
+            budget_id = created_budget['id']
+            
+            # 3. Get single budget
+            success, budget = self.run_test(
+                "Get Single Budget",
+                "GET",
+                f"/api/v1/accounting/budgets/{budget_id}",
+                200
+            )
+            
+            # 4. Auto-distribute monthly
+            success, distributed = self.run_test(
+                "Auto-Distribute Monthly Amounts",
+                "POST",
+                f"/api/v1/accounting/budgets/{budget_id}/distribute-monthly",
+                200
+            )
+            
+            # 5. Activate budget
+            success, activated = self.run_test(
+                "Activate Budget",
+                "POST",
+                f"/api/v1/accounting/budgets/{budget_id}/activate",
+                200
+            )
+            
+            # 6. Get budget variance
+            success, variance = self.run_test(
+                "Get Budget Variance",
+                "GET",
+                f"/api/v1/accounting/budgets/{budget_id}/variance",
+                200,
+                params={"month": 1, "year": 2025}
+            )
+
+    def test_fixed_asset_endpoints(self):
+        """Test Fixed Asset endpoints"""
+        self.log("\n=== FIXED ASSET TESTS ===", "INFO")
+        
+        if len(self.created_accounts) < 3:
+            self.log("Not enough accounts for fixed assets", "WARNING")
+            return
+        
+        # 1. List assets (empty)
+        success, assets = self.run_test(
+            "List Fixed Assets (Empty)",
+            "GET",
+            "/api/v1/accounting/assets/",
+            200
+        )
+        
+        # 2. Create fixed asset
+        asset_data = {
+            "asset_code": "FA-001",
+            "name": "Test Computer",
+            "cost": 10000000,
+            "salvage_value": 1000000,
+            "useful_life_months": 36,
+            "depreciation_method": "straight_line",
+            "purchase_date": date.today().isoformat(),
+            "asset_account_id": self.created_accounts[0]['id'],
+            "depreciation_expense_account_id": self.created_accounts[1]['id'],
+            "accumulated_depreciation_account_id": self.created_accounts[2]['id'],
+            "is_active": True
+        }
+        
+        success, created_asset = self.run_test(
+            "Create Fixed Asset",
+            "POST",
+            "/api/v1/accounting/assets/",
+            201,
+            data=asset_data
+        )
+        
+        if success and 'id' in created_asset:
+            asset_id = created_asset['id']
+            
+            # 3. Get single asset
+            success, asset = self.run_test(
+                "Get Single Fixed Asset",
+                "GET",
+                f"/api/v1/accounting/assets/{asset_id}",
+                200
+            )
+            
+            # 4. Get depreciation schedule
+            success, schedule = self.run_test(
+                "Get Depreciation Schedule",
+                "GET",
+                f"/api/v1/accounting/assets/{asset_id}/depreciation-schedule",
+                200
+            )
+            
+            # 5. Run monthly depreciation
+            current_month = datetime.now().month
+            current_year = datetime.now().year
+            success, depreciation = self.run_test(
+                "Run Monthly Depreciation",
+                "POST",
+                "/api/v1/accounting/assets/run-monthly-depreciation",
+                200,
+                params={"month": current_month, "year": current_year}
+            )
+
+    def test_quick_entry_endpoints(self):
+        """Test Quick Entry endpoints"""
+        self.log("\n=== QUICK ENTRY TESTS ===", "INFO")
+        
+        if len(self.created_accounts) < 2:
+            self.log("Not enough accounts for quick entries", "WARNING")
+            return
+        
+        # 1. Weekly Giving
+        giving_data = {
+            "date": date.today().isoformat(),
+            "service_name": "Ibadah Minggu",
+            "giving_type": "Persepuluhan",
+            "amount": 5000000,
+            "from_account_id": self.created_accounts[0]['id'],
+            "to_account_id": self.created_accounts[1]['id'],
+            "file_ids": []
+        }
+        
+        success, giving_journal = self.run_test(
+            "Create Weekly Giving Entry",
+            "POST",
+            "/api/v1/accounting/quick/weekly-giving",
+            201,
+            data=giving_data
+        )
+        
+        # 2. Outgoing Money
+        expense_data = {
+            "date": date.today().isoformat(),
+            "description": "Pembelian ATK",
+            "amount": 500000,
+            "from_account_id": self.created_accounts[0]['id'],
+            "to_account_id": self.created_accounts[1]['id'],
+            "file_ids": []
+        }
+        
+        success, expense_journal = self.run_test(
+            "Create Outgoing Money Entry",
+            "POST",
+            "/api/v1/accounting/quick/outgoing-money",
+            201,
+            data=expense_data
+        )
+
+    def test_report_endpoints(self):
+        """Test Report endpoints"""
+        self.log("\n=== REPORT TESTS ===", "INFO")
+        
+        today = date.today()
+        start_date = date(today.year, 1, 1)
+        
+        # 1. Trial Balance
+        success, trial_balance = self.run_test(
+            "Generate Trial Balance Report",
+            "GET",
+            "/api/v1/accounting/reports/trial-balance",
+            200,
+            params={"as_of_date": today.isoformat()}
+        )
+        
+        if success:
+            self.log(f"Trial Balance: Debit={trial_balance.get('total_debit', 0)}, Credit={trial_balance.get('total_credit', 0)}, Balanced={trial_balance.get('is_balanced', False)}", "INFO")
+        
+        # 2. Income Statement
+        success, income_stmt = self.run_test(
+            "Generate Income Statement Report",
+            "GET",
+            "/api/v1/accounting/reports/income-statement",
+            200,
+            params={"start_date": start_date.isoformat(), "end_date": today.isoformat()}
+        )
+        
+        if success:
+            self.log(f"Income Statement: Income={income_stmt.get('total_income', 0)}, Expenses={income_stmt.get('total_expenses', 0)}, Net={income_stmt.get('net_income', 0)}", "INFO")
+        
+        # 3. Balance Sheet
+        success, balance_sheet = self.run_test(
+            "Generate Balance Sheet Report",
+            "GET",
+            "/api/v1/accounting/reports/balance-sheet",
+            200,
+            params={"as_of_date": today.isoformat()}
+        )
+        
+        if success:
+            self.log(f"Balance Sheet: Assets={balance_sheet.get('total_assets', 0)}, Liabilities={balance_sheet.get('total_liabilities', 0)}, Equity={balance_sheet.get('total_equity', 0)}", "INFO")
+        
+        # 4. General Ledger
+        success, general_ledger = self.run_test(
+            "Generate General Ledger Report",
+            "GET",
+            "/api/v1/accounting/reports/general-ledger",
+            200,
+            params={"start_date": start_date.isoformat(), "end_date": today.isoformat()}
+        )
+
+    def test_year_end_closing(self):
+        """Test Year-End Closing"""
+        self.log("\n=== YEAR-END CLOSING TESTS ===", "INFO")
+        
+        # 1. Check status for previous year
+        test_year = datetime.now().year - 1
+        success, status = self.run_test(
+            "Get Year-End Closing Status",
+            "GET",
+            f"/api/v1/accounting/year-end/status/{test_year}",
+            200
+        )
+        
+        # Note: We won't actually run year-end closing as it requires all 12 months closed
+        self.log("Year-end closing execution requires all 12 months closed - skipping execution test", "INFO")
+
     def test_multi_tenant_isolation(self):
         """Test multi-tenant isolation"""
         self.log("\n=== MULTI-TENANT ISOLATION TEST ===", "INFO")
