@@ -75,6 +75,11 @@ function App() {
               <Route path="accounting/fiscal-periods" element={<FiscalPeriods />} />
               <Route path="accounting/beginning-balance" element={<BeginningBalance />} />
               <Route path="accounting/responsibility-centers" element={<ResponsibilityCenters />} />
+              <Route path="accounting/quick-entry" element={<QuickEntry />} />
+              <Route path="accounting/reports" element={<Reports />} />
+              <Route path="accounting/budgets" element={<PlaceholderPage title="Budgets" />} />
+              <Route path="accounting/assets" element={<PlaceholderPage title="Fixed Assets" />} />
+              <Route path="accounting/bank" element={<PlaceholderPage title="Bank Reconciliation" />} />
               
               {/* Placeholder routes - will be implemented in next phases */}
               <Route path="groups" element={<PlaceholderPage title="Groups" />} />
