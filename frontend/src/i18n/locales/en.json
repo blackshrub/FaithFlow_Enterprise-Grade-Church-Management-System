@@ -134,7 +134,9 @@
     "list": "List",
     "optional": "Optional",
     "inactive": "Inactive",
-    "active": "Active"
+    "active": "Active",
+    "all": "All",
+    "noData": "No data available"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -1258,34 +1260,8 @@
     "content": "Content",
     "excerpt": "Excerpt",
     "featuredImage": "Featured Image",
-    "categories": {
-      "title": "Article Categories",
-      "manageCategories": "Manage Categories",
-      "createCategory": "Create Category",
-      "editCategory": "Edit Category",
-      "deleteCategory": "Delete Category",
-      "categoryName": "Category Name",
-      "categorySlug": "Category Slug",
-      "categoryDescription": "Category Description",
-      "articleCount": "Article Count",
-      "categoryInUse": "Cannot delete category that is used in articles",
-      "selectCategories": "Select Categories",
-      "noCategories": "No categories yet"
-    },
-    "tags": {
-      "title": "Article Tags",
-      "manageTags": "Manage Tags",
-      "createTag": "Create Tag",
-      "editTag": "Edit Tag",
-      "deleteTag": "Delete Tag",
-      "tagName": "Tag Name",
-      "tagSlug": "Tag Slug",
-      "articleCount": "Article Count",
-      "tagInUse": "Cannot delete tag that is used in articles",
-      "selectTags": "Select Tags",
-      "inlineCreate": "Type and press Enter to create new tag",
-      "noTags": "No tags yet"
-    },
+    "categories": "Categories",
+    "tags": "Tags",
     "status": "Status",
     "publishDate": "Publish Date",
     "allowComments": "Allow Comments",
@@ -1412,6 +1388,34 @@
       "subtitle": "Edit basic article information",
       "save": "Save Changes"
     },
-    "saveFirst": "Please save article first"
+    "saveFirst": "Please save article first",
+    "categoriesManagement": {
+      "title": "Article Categories",
+      "manageCategories": "Manage Categories",
+      "createCategory": "Create Category",
+      "editCategory": "Edit Category",
+      "deleteCategory": "Delete Category",
+      "categoryName": "Category Name",
+      "categorySlug": "Category Slug",
+      "categoryDescription": "Category Description",
+      "articleCount": "Article Count",
+      "categoryInUse": "Cannot delete category that is used in articles",
+      "selectCategories": "Select Categories",
+      "noCategories": "No categories yet"
+    },
+    "tagsManagement": {
+      "title": "Article Tags",
+      "manageTags": "Manage Tags",
+      "createTag": "Create Tag",
+      "editTag": "Edit Tag",
+      "deleteTag": "Delete Tag",
+      "tagName": "Tag Name",
+      "tagSlug": "Tag Slug",
+      "articleCount": "Article Count",
+      "tagInUse": "Cannot delete tag that is used in articles",
+      "selectTags": "Select Tags",
+      "inlineCreate": "Type and press Enter to create new tag",
+      "noTags": "No tags yet"
+    }
   }
 }

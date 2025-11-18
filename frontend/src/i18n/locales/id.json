@@ -134,7 +134,9 @@
     "list": "Daftar",
     "optional": "Opsional",
     "inactive": "Tidak Aktif",
-    "active": "Aktif"
+    "active": "Aktif",
+    "all": "Semua",
+    "noData": "Tidak ada data"
   },
   "nav": {
     "dashboard": "Dasbor",
@@ -1248,34 +1250,8 @@
     "content": "Konten",
     "excerpt": "Kutipan",
     "featuredImage": "Gambar Unggulan",
-    "categories": {
-      "title": "Kategori Artikel",
-      "manageCategories": "Kelola Kategori",
-      "createCategory": "Buat Kategori",
-      "editCategory": "Edit Kategori",
-      "deleteCategory": "Hapus Kategori",
-      "categoryName": "Nama Kategori",
-      "categorySlug": "Slug Kategori",
-      "categoryDescription": "Deskripsi Kategori",
-      "articleCount": "Jumlah Artikel",
-      "categoryInUse": "Tidak dapat menghapus kategori yang digunakan dalam artikel",
-      "selectCategories": "Pilih Kategori",
-      "noCategories": "Belum ada kategori"
-    },
-    "tags": {
-      "title": "Tag Artikel",
-      "manageTags": "Kelola Tag",
-      "createTag": "Buat Tag",
-      "editTag": "Edit Tag",
-      "deleteTag": "Hapus Tag",
-      "tagName": "Nama Tag",
-      "tagSlug": "Slug Tag",
-      "articleCount": "Jumlah Artikel",
-      "tagInUse": "Tidak dapat menghapus tag yang digunakan dalam artikel",
-      "selectTags": "Pilih Tag",
-      "inlineCreate": "Ketik dan tekan Enter untuk membuat tag baru",
-      "noTags": "Belum ada tag"
-    },
+    "categories": "Kategori",
+    "tags": "Tag",
     "status": "Status",
     "publishDate": "Tanggal Terbit",
     "allowComments": "Izinkan Komentar",
@@ -1402,6 +1378,34 @@
       "subtitle": "Edit informasi dasar artikel",
       "save": "Simpan Perubahan"
     },
-    "saveFirst": "Silakan simpan artikel terlebih dahulu"
+    "saveFirst": "Silakan simpan artikel terlebih dahulu",
+    "categoriesManagement": {
+      "title": "Kategori Artikel",
+      "manageCategories": "Kelola Kategori",
+      "createCategory": "Buat Kategori",
+      "editCategory": "Edit Kategori",
+      "deleteCategory": "Hapus Kategori",
+      "categoryName": "Nama Kategori",
+      "categorySlug": "Slug Kategori",
+      "categoryDescription": "Deskripsi Kategori",
+      "articleCount": "Jumlah Artikel",
+      "categoryInUse": "Tidak dapat menghapus kategori yang digunakan dalam artikel",
+      "selectCategories": "Pilih Kategori",
+      "noCategories": "Belum ada kategori"
+    },
+    "tagsManagement": {
+      "title": "Tag Artikel",
+      "manageTags": "Kelola Tag",
+      "createTag": "Buat Tag",
+      "editTag": "Edit Tag",
+      "deleteTag": "Hapus Tag",
+      "tagName": "Nama Tag",
+      "tagSlug": "Slug Tag",
+      "articleCount": "Jumlah Artikel",
+      "tagInUse": "Tidak dapat menghapus tag yang digunakan dalam artikel",
+      "selectTags": "Pilih Tag",
+      "inlineCreate": "Ketik dan tekan Enter untuk membuat tag baru",
+      "noTags": "Belum ada tag"
+    }
   }
 }
