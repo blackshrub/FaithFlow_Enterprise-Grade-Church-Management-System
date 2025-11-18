@@ -216,37 +216,42 @@ export default function Layout() {
           {/* Logout Button */}
           <div className="p-4 border-t space-y-3">
             {/* Language Selector */}
-            <div className="space-y-1">
-              <Label className="text-xs text-gray-500">{t('settings.language')}</Label>
-              <Select value={i18n.language} onValueChange={changeLanguage}>
-                <SelectTrigger className="h-9">
-                  <SelectValue>
-                    {i18n.language === 'en' ? 'English' : 'Bahasa Indonesia'}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="en">🇬🇧 English</SelectItem>
-                  <SelectItem value="id">🇮🇩 Bahasa Indonesia</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            {!sidebarCollapsed && (
+              <div className="space-y-1">
+                <Label className="text-xs text-gray-500">{t('settings.language')}</Label>
+                <Select value={i18n.language} onValueChange={changeLanguage}>
+                  <SelectTrigger className="h-9">
+                    <SelectValue>
+                      {i18n.language === 'en' ? 'English' : 'Bahasa Indonesia'}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="en">🇬🇧 English</SelectItem>
+                    <SelectItem value="id">🇮🇩 Bahasa Indonesia</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <Button
               onClick={handleLogout}
               variant="outline"
-              className="w-full"
+              className={`w-full ${sidebarCollapsed ? 'px-2' : ''}`}
+              title={sidebarCollapsed ? t('auth.logout') : ''}
             >
-              <LogOut className="h-4 w-4 mr-2" />
-              {t('auth.logout')}
+              <LogOut className={`h-4 w-4 ${sidebarCollapsed ? '' : 'mr-2'}`} />
+              {!sidebarCollapsed && t('auth.logout')}
             </Button>
             
             {/* Footer */}
-            <div className="pt-3 border-t">
-              <p className="text-xs text-center text-gray-500">
-                <span className="font-semibold text-blue-600">{t('app.name')}</span>
-                <br />
-                {t('app.tagline').split(',')[0]}
-              </p>
-            </div>
+            {!sidebarCollapsed && (
+              <div className="pt-3 border-t">
+                <p className="text-xs text-center text-gray-500">
+                  <span className="font-semibold text-blue-600">{t('app.name')}</span>
+                  <br />
+                  {t('app.tagline').split(',')[0]}
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </aside>
