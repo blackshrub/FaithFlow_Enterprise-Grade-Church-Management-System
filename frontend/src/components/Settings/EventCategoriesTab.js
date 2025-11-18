@@ -207,7 +207,7 @@ export default function EventCategoriesTab() {
                 <TableHead>{t('settings.categoryDescription')}</TableHead>
                 <TableHead>{t('settings.categoryColor')}</TableHead>
                 <TableHead>{t('settings.order')}</TableHead>
-                <TableHead>{t('settings.status')}</TableHead>
+                <TableHead>{t('common.status') || t('settings.status')}</TableHead>
                 <TableHead className="text-right">{t('members.actions')}</TableHead>
               </TableRow>
             </TableHeader>
