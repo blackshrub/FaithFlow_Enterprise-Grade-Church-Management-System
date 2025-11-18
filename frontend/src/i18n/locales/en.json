@@ -1411,6 +1411,7 @@
       "title": "Quick Edit",
       "subtitle": "Edit basic article information",
       "save": "Save Changes"
-    }
+    },
+    "saveFirst": "Please save article first"
   }
 }

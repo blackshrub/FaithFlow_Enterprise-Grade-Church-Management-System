@@ -1401,6 +1401,7 @@
       "title": "Edit Cepat",
       "subtitle": "Edit informasi dasar artikel",
       "save": "Simpan Perubahan"
-    }
+    },
+    "saveFirst": "Silakan simpan artikel terlebih dahulu"
   }
 }
