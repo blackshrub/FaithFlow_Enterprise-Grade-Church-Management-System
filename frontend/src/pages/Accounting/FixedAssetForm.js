@@ -89,14 +89,20 @@ export default function FixedAssetForm() {
         title: t('accounting.common.success'),
         description: `Asset ${formData.asset_code} created`
       });
-      navigate('/accounting/assets');
+      
+      // Force navigation after short delay
+      setTimeout(() => {
+        navigate('/accounting/assets');
+      }, 500);
+      
     } catch (error) {
       const errorCode = error.response?.data?.detail?.error_code;
       console.error('Asset creation error:', error);
+      console.error('Error response:', error.response?.data);
       toast({
         variant: "destructive",
         title: t('accounting.common.error'),
-        description: errorCode ? t(`errors.${errorCode}`) : error.message
+        description: errorCode ? t(`errors.${errorCode}`) : (error.response?.data?.detail?.message || error.message)
       });
     }
   };
