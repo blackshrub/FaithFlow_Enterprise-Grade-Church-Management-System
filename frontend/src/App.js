@@ -44,6 +44,13 @@ import CashFlowStatement from "./pages/Accounting/CashFlowStatement";
 import ResponsibilityCenterReport from "./pages/Accounting/ResponsibilityCenterReport";
 import CustomReportBuilder from "./pages/Accounting/CustomReportBuilder";
 
+// Articles pages
+import ArticlesList from "./pages/Articles/ArticlesList";
+import ArticleEditor from "./pages/Articles/ArticleEditor";
+import Categories from "./pages/Articles/Categories";
+import Tags from "./pages/Articles/Tags";
+import CommentsModeration from "./pages/Articles/CommentsModeration";
+
 import FaithFlowLogo from './components/Branding/FaithFlowLogo';
 
 function App() {
