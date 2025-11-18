@@ -51,6 +51,10 @@ import Categories from "./pages/Articles/Categories";
 import Tags from "./pages/Articles/Tags";
 import CommentsModeration from "./pages/Articles/CommentsModeration";
 
+// Prayer Requests pages
+import PrayerRequestsList from "./pages/PrayerRequests/PrayerRequestsList";
+import PrayerRequestForm from "./pages/PrayerRequests/PrayerRequestForm";
+
 import FaithFlowLogo from './components/Branding/FaithFlowLogo';
 
 function App() {
