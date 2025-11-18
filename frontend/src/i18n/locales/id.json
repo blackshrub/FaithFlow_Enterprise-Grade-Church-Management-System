@@ -99,7 +99,10 @@
     "personalQR": "Kode QR Pribadi",
     "memberID": "ID Jemaat",
     "downloadQR": "Unduh QR",
-    "printQR": "Cetak QR"
+    "printQR": "Cetak QR",
+    "viewQR": "Lihat Kode QR",
+    "universalID": "ID Jemaat Universal",
+    "useForCheckIn": "Gunakan kode QR ini untuk check-in di semua acara"
   },
   "common": {
     "cancel": "Batal",
