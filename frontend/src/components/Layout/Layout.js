@@ -98,6 +98,9 @@ export default function Layout() {
         { label: t('accounting.budget.title'), path: '/accounting/budgets' },
         { label: t('accounting.fixedAsset.title'), path: '/accounting/assets' },
         { label: t('accounting.bank.title'), path: '/accounting/bank' },
+        { label: t('accounting.beginningBalance.title'), path: '/accounting/beginning-balance' },
+        { label: t('accounting.fiscalPeriod.title'), path: '/accounting/fiscal-periods' },
+        { label: t('accounting.responsibilityCenter.title'), path: '/accounting/responsibility-centers' },
         { label: t('accounting.reports.title'), path: '/accounting/reports' },
       ]
     },
