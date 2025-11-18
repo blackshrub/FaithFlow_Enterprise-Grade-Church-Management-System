@@ -46,7 +46,12 @@ def generate_indonesian_tts_coqui(text: str) -> str:
         # Pattern: Replace 'g' + vowel with 'gh' + vowel, except 'ng' combinations
         text = re.sub(r'(^|[\s])([Gg])([aeiouAEIOU])', r'\1\2h\3', text)  # Start of word
         text = re.sub(r'([^nN])([Gg])([aeiouAEIOU])', r'\1\2h\3', text)  # Middle of word (not after n)
-        logger.info(f"Text after 'g' fix (first 100 chars): {text[:100]}")
+        
+        # Fix 'd' at end of words - pronounce as 't' for smoother sound
+        # Examples: "murid" → "murit", "tekad" → "tekat"
+        text = re.sub(r'([aeiouAEIOU])d(\s|$|[,.\?!;:])', r'\1t\2', text)  # Vowel + d + word boundary
+        
+        logger.info(f"Text after pronunciation fixes (first 100 chars): {text[:100]}")
         
         # Convert Indonesian text to phonemes
         g2p = G2P()
