@@ -115,6 +115,14 @@ function App() {
               <Route path="accounting/year-end-closing" element={<YearEndClosing />} />
               <Route path="accounting/audit-logs" element={<AuditLogs />} />
               
+              {/* Articles Routes */}
+              <Route path="articles" element={<ArticlesList />} />
+              <Route path="articles/new" element={<ArticleEditor />} />
+              <Route path="articles/:id/edit" element={<ArticleEditor />} />
+              <Route path="articles/categories" element={<Categories />} />
+              <Route path="articles/tags" element={<Tags />} />
+              <Route path="articles/comments" element={<CommentsModeration />} />
+              
               {/* Placeholder routes - will be implemented in next phases */}
               <Route path="groups" element={<PlaceholderPage title="Groups" />} />
               <Route path="donations" element={<PlaceholderPage title="Donations" />} />
