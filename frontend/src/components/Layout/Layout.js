@@ -22,6 +22,9 @@ import {
   ChevronDown,
   ChevronRight,
   Monitor,
+  ChevronLeft,
+  ChevronsLeft,
+  ChevronsRight,
 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
