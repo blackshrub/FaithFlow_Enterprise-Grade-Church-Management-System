@@ -132,7 +132,9 @@
     "today": "Hari Ini",
     "calendar": "Kalender",
     "list": "Daftar",
-    "optional": "Opsional"
+    "optional": "Opsional",
+    "inactive": "Tidak Aktif",
+    "active": "Aktif"
   },
   "nav": {
     "dashboard": "Dasbor",
