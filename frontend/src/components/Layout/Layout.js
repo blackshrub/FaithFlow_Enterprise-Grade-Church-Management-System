@@ -214,6 +214,15 @@ export default function Layout() {
               <LogOut className="h-4 w-4 mr-2" />
               {t('auth.logout')}
             </Button>
+            
+            {/* Footer */}
+            <div className="pt-3 border-t">
+              <p className="text-xs text-center text-gray-500">
+                <span className="font-semibold text-blue-600">FaithFlow</span>
+                <br />
+                Empowering Churches
+              </p>
+            </div>
           </div>
         </div>
       </aside>
