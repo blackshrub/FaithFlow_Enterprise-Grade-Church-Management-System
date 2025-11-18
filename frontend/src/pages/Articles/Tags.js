@@ -52,15 +52,15 @@ export default function Tags() {
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">{t('articles.tags.title')}</h1>
+        <h1 className="text-3xl font-bold">{t('articles.tagsManagement.title')}</h1>
         <Button onClick={() => { setEditingTag(null); setFormData({ name: '' }); setShowModal(true); }}>
           <Plus className="w-4 h-4 mr-2" />
-          {t('articles.tags.createTag')}
+          {t('articles.tagsManagement.createTag')}
         </Button>
       </div>
 
       <Card>
-        <CardHeader><CardTitle>{tags?.length || 0} {t('articles.tags.title')}</CardTitle></CardHeader>
+        <CardHeader><CardTitle>{tags?.length || 0} {t('articles.tagsManagement.title')}</CardTitle></CardHeader>
         <CardContent>
           {isLoading ? <div>{t('common.loading')}</div> : (
             <Table>
