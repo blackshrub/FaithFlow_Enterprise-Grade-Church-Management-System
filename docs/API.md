@@ -16,7 +16,9 @@
 6. [Bible](#bible)
 7. [Settings](#settings)
 8. **[Accounting (v1)](#accounting-v1)** ⭐ NEW
-9. [Common Patterns](#common-patterns)
+9. **[Articles (v1)](#articles-v1)** ⭐ NEW
+10. **[Prayer Requests (v1)](#prayer-requests-v1)** ⭐ NEW
+11. [Common Patterns](#common-patterns)
 
 ---
 
