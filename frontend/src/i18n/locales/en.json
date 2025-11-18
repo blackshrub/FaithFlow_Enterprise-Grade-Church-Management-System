@@ -95,7 +95,11 @@
     "actions": "Actions",
     "showIncomplete": "Show Incomplete Data",
     "showAll": "Show All Members",
-    "incompleteDataInfo": "Members missing: gender, birth date, address, or phone"
+    "incompleteDataInfo": "Members missing: gender, birth date, address, or phone",
+    "personalQR": "Personal QR Code",
+    "memberID": "Member ID",
+    "downloadQR": "Download QR",
+    "printQR": "Print QR"
   },
   "common": {
     "cancel": "Cancel",
