@@ -18,10 +18,11 @@ export default function Settings() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full max-w-2xl grid-cols-3">
+        <TabsList className="grid w-full max-w-3xl grid-cols-4">
           <TabsTrigger value="general">{t('settings.general')}</TabsTrigger>
           <TabsTrigger value="statuses">{t('settings.memberStatuses')}</TabsTrigger>
           <TabsTrigger value="demographics">{t('settings.demographics')}</TabsTrigger>
+          <TabsTrigger value="categories">{t('settings.eventCategories')}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="general" className="mt-6">
