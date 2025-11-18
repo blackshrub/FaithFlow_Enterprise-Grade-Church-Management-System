@@ -98,15 +98,15 @@ export default function Categories() {
       <Dialog open={showModal} onOpenChange={setShowModal}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editingCategory ? t('articles.categories.editCategory') : t('articles.categories.createCategory')}</DialogTitle>
+            <DialogTitle>{editingCategory ? t('articles.categoriesManagement.editCategory') : t('articles.categoriesManagement.createCategory')}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <Label>{t('articles.categories.categoryName')} *</Label>
+              <Label>{t('articles.categoriesManagement.categoryName')} *</Label>
               <Input value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required />
             </div>
             <div>
-              <Label>{t('articles.categories.categoryDescription')}</Label>
+              <Label>{t('articles.categoriesManagement.categoryDescription')}</Label>
               <Textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} rows={3} />
             </div>
             <div className="flex justify-end space-x-2">
