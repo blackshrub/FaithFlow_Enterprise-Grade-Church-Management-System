@@ -49,7 +49,7 @@ def generate_indonesian_tts_coqui(text: str) -> str:
         
         # Fix 'd' at end of words - pronounce as 't' for smoother sound
         # Examples: "murid" → "murit", "tekad" → "tekat"
-        text = re.sub(r'([aeiouAEIOU])d(\s|$|[,.\?!;:])', r'\1t\2', text)  # Vowel + d + word boundary
+        text = re.sub(r'([aeiouAEIOU])d(\s|$|[,.\?!;:\-])', r'\1t\2', text)  # Vowel + d + word boundary or hyphen
         
         logger.info(f"Text after pronunciation fixes (first 100 chars): {text[:100]}")
         
