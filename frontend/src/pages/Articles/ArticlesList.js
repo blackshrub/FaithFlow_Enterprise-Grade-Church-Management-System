@@ -57,8 +57,49 @@ export default function ArticlesList() {
   });
 
   const deleteMutation = useDeleteArticle();
+  const duplicateMutation = useDuplicateArticle();
 
   const articles = articlesData?.data || [];
+
+  const toggleSelection = (articleId) => {
+    setSelectedArticles(prev =>
+      prev.includes(articleId)
+        ? prev.filter(id => id !== articleId)
+        : [...prev, articleId]
+    );
+  };
+
+  const toggleAllSelection = () => {
+    if (selectedArticles.length === articles.length) {
+      setSelectedArticles([]);
+    } else {
+      setSelectedArticles(articles.map(a => a.id));
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedArticles.length === 0) return;
+    if (!window.confirm(`Delete ${selectedArticles.length} articles?`)) return;
+
+    try {
+      for (const id of selectedArticles) {
+        await deleteMutation.mutateAsync(id);
+      }
+      toast({ title: t('common.success'), description: `${selectedArticles.length} articles deleted` });
+      setSelectedArticles([]);
+    } catch (error) {
+      toast({ variant: "destructive", title: t('common.error'), description: error.message });
+    }
+  };
+
+  const handleDuplicate = async (articleId) => {
+    try {
+      await duplicateMutation.mutateAsync(articleId);
+      toast({ title: t('common.success'), description: t('articles.messages.duplicateSuccess') });
+    } catch (error) {
+      toast({ variant: "destructive", title: t('common.error'), description: error.message });
+    }
+  };
 
   const handleDelete = async (articleId, title) => {
     if (!window.confirm(t('articles.messages.confirmDelete'))) return;
