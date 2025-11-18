@@ -23,7 +23,7 @@ function LoadingAnimation({ message }) {
           Faith<span className="text-blue-600">Flow</span>
         </p>
         <p className="text-sm text-gray-600">
-          {message || 'Loading...'}
+          {message || t('common.loading')}
         </p>
       </div>
     </div>
