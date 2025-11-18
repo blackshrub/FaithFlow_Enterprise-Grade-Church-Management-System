@@ -282,6 +282,19 @@ export default function QuickEntry() {
                   onChange={(value) => setExpenseData({...expenseData, responsibility_center_id: value})}
                 />
 
+                <div className="pt-2">
+                  <Label>{t('accounting.files.attachDocument')} ({t('accounting.common.optional')})</Label>
+                  <FileUpload
+                    referenceType="quick_entry"
+                    referenceId={null}
+                    onUploadSuccess={(file) => setExpenseData({
+                      ...expenseData, 
+                      file_ids: [...expenseData.file_ids, file.id]
+                    })}
+                    multiple={true}
+                  />
+                </div>
+
                 <div className="pt-4">
                   <Button type="submit" className="w-full" disabled={expenseMutation.isLoading}>
                     {expenseMutation.isLoading ? t('accounting.common.loading') : t('accounting.quickEntry.saveExpense')}
