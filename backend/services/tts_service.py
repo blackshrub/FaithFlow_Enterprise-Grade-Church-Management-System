@@ -5,43 +5,44 @@ import os
 import logging
 import subprocess
 import tempfile
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
-# For Indonesian TTS, we'll try to use Indonesian-TTS if available, fallback to gTTS
-INDONESIAN_TTS_AVAILABLE = False
+# Coqui TTS model paths
+TTS_MODEL_DIR = Path(__file__).parent.parent / 'models' / 'tts_indonesian'
+CHECKPOINT_PATH = TTS_MODEL_DIR / 'checkpoint.pth'
+CONFIG_PATH = TTS_MODEL_DIR / 'config.json'
 
-try:
-    # Check if TTS (Coqui) is available
-    import TTS
-    INDONESIAN_TTS_AVAILABLE = True
-    logger.info("Coqui TTS available for Indonesian")
-except ImportError:
-    logger.info("Coqui TTS not available, using gTTS fallback")
+# Check if Indonesian TTS model is available
+INDONESIAN_TTS_AVAILABLE = CHECKPOINT_PATH.exists() and CONFIG_PATH.exists()
+
+if INDONESIAN_TTS_AVAILABLE:
+    logger.info(f"✓ Indonesian TTS model found: {CHECKPOINT_PATH}")
+else:
+    logger.warning(f"Indonesian TTS model not found, using gTTS fallback")
 
 
 def generate_indonesian_tts_coqui(text: str) -> str:
     """
     Generate Indonesian TTS using Coqui TTS with Wibowo voice
-    Requires: indonesian-tts model from Wikidepia
     """
     try:
-        # Use Coqui TTS with Indonesian model
-        # Note: This requires model files to be downloaded
-        # For now, we'll use a subprocess call to tts command
-        
         with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as tmp_audio:
             output_path = tmp_audio.name
         
-        # Run TTS command (if model is available)
+        # Run TTS command with Indonesian model
         cmd = [
             'tts',
             '--text', text,
+            '--model_path', str(CHECKPOINT_PATH),
+            '--config_path', str(CONFIG_PATH),
             '--speaker_idx', 'wibowo',
             '--out_path', output_path
         ]
         
-        result = subprocess.run(cmd, capture_output=True, timeout=30)
+        logger.info("Generating Indonesian TTS with Wibowo voice...")
+        result = subprocess.run(cmd, capture_output=True, timeout=60, text=True)
         
         if result.returncode == 0 and os.path.exists(output_path):
             # Read and convert to base64
@@ -50,13 +51,16 @@ def generate_indonesian_tts_coqui(text: str) -> str:
             
             os.unlink(output_path)
             audio_base64 = base64.b64encode(audio_data).decode('utf-8')
+            logger.info("✓ Coqui TTS generation successful")
             return f"data:audio/wav;base64,{audio_base64}"
         else:
-            raise Exception("TTS command failed")
+            error_msg = result.stderr if result.stderr else "Unknown error"
+            logger.warning(f"Coqui TTS failed: {error_msg}")
+            raise Exception(f"TTS command failed: {error_msg}")
     
     except Exception as e:
         logger.warning(f"Coqui TTS failed, falling back to gTTS: {str(e)}")
-        return generate_tts_gtts(text, 'id')
+        raise  # Re-raise to trigger fallback
 
 
 def generate_tts_gtts(text: str, lang: str = 'id') -> str:
