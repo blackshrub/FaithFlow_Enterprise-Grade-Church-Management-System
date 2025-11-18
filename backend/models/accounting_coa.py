@@ -56,7 +56,7 @@ class ChartOfAccountUpdate(BaseModel):
     normal_balance: Optional[Literal["Debit", "Credit"]] = None
     parent_id: Optional[str] = None
     is_active: Optional[bool] = None
-    tags: Optional[List[str]] = None
+    tags: Optional[list[str]] = None
     default_responsibility_center_id: Optional[str] = None
 
 
