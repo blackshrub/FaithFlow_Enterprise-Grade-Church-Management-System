@@ -107,10 +107,25 @@ function Devotions() {
           <h1 className="text-3xl font-bold text-gray-900">{t('devotions.title')}</h1>
           <p className="text-gray-600 mt-1">{t('devotions.subtitle')}</p>
         </div>
-        <Button onClick={handleCreate}>
-          <Plus className="h-4 w-4 mr-2" />
-          {t('devotions.createDevotion')}
-        </Button>
+        <div className="flex gap-2">
+          {selectedDevotions.length > 0 && (
+            <>
+              <Button variant="outline" onClick={() => handleBulkAction('publish')}>
+                {t('devotions.actions.publish')} ({selectedDevotions.length})
+              </Button>
+              <Button variant="outline" onClick={() => handleBulkAction('unpublish')}>
+                {t('devotions.actions.unpublish')} ({selectedDevotions.length})
+              </Button>
+              <Button variant="destructive" onClick={() => handleBulkAction('delete')}>
+                {t('common.delete')} ({selectedDevotions.length})
+              </Button>
+            </>
+          )}
+          <Button onClick={handleCreate}>
+            <Plus className="h-4 w-4 mr-2" />
+            {t('devotions.createDevotion')}
+          </Button>
+        </div>
       </div>
 
       {/* Filters */}
