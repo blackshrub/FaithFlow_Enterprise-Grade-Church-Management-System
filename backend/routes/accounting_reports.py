@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Query
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from typing import Optional
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal
 
 from utils.dependencies import get_db, get_current_user
@@ -22,10 +22,14 @@ async def general_ledger_report(
     """Generate General Ledger report."""
     church_id = get_current_church_id(current_user)
     
+    # Convert date to datetime for MongoDB compatibility
+    start_datetime = datetime.combine(start_date, datetime.min.time())
+    end_datetime = datetime.combine(end_date, datetime.max.time())
+    
     query = {
         "church_id": church_id,
         "status": "approved",
-        "date": {"$gte": start_date, "$lte": end_date}
+        "date": {"$gte": start_datetime, "$lte": end_datetime}
     }
     
     if account_id:
