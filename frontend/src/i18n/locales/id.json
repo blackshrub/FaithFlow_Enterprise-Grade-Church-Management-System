@@ -1,7 +1,10 @@
 {
   "app": {
-    "name": "Manajemen Gereja",
-    "tagline": "Masuk ke akun Anda untuk melanjutkan"
+    "name": "FaithFlow",
+    "tagline": "Memberdayakan Gereja dengan Kejelasan, Perhatian, dan Koneksi",
+    "adminPortal": "Portal Admin",
+    "welcomeTo": "Selamat datang di",
+    "empoweringYourChurch": "Memberdayakan gereja Anda dengan kejelasan, perhatian, dan koneksi"
   },
   "auth": {
     "login": "Masuk",
