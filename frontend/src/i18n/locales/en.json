@@ -240,7 +240,6 @@
     "eventManagementSubtitle": "Create and manage events",
     "kioskMode": "Kiosk Mode",
     "kioskModeSubtitle": "Check-in and attendance tracking",
-    
     "seatLayout": {
       "title": "Seat Layouts",
       "subtitle": "Manage seat layouts for different rooms",
@@ -286,7 +285,6 @@
       "columnRange": "Columns: 1 to {{columns}}",
       "seatMapPreview": "Seat Map Preview"
     },
-    
     "event": {
       "createEvent": "Create Event",
       "editEvent": "Edit Event",
@@ -377,7 +375,6 @@
       "confirmDelete": "Are you sure you want to delete this event?",
       "eventDateRequired": "Event date is required for single events"
     },
-    
     "rsvp": {
       "title": "RSVP Management",
       "subtitle": "Manage event registrations",
@@ -419,13 +416,11 @@
       "noRSVPsForSession": "No RSVPs for this session",
       "registerFirst": "Be the first to register!"
     },
-    
     "attendance": {
       "noAttendance": "No attendance yet",
       "noOneCheckedIn": "No one has checked in yet",
       "checkedInAt": "Checked in at"
     },
-    
     "kiosk": {
       "title": "Kiosk Mode - Check-in",
       "subtitle": "Scan QR codes or search members to check in",
@@ -517,7 +512,6 @@
     "devotionsTotal": "Total: {{count}} devotions",
     "devotionsTotal_one": "Total: {{count}} devotion",
     "devotionsTotal_other": "Total: {{count}} devotions",
-    
     "form": {
       "date": "Date",
       "title": "Title",
@@ -537,7 +531,6 @@
       "noVerses": "No verses added yet",
       "versePreview": "Verse Preview"
     },
-    
     "versePicker": {
       "title": "Add Bible Verse",
       "selectVersion": "Select Bible Version",
@@ -551,7 +544,6 @@
       "addToList": "Add to List",
       "verseAdded": "Verse added successfully"
     },
-    
     "schedule": {
       "schedulePublishing": "Schedule Publishing",
       "publishDate": "Publish Date",
@@ -562,14 +554,12 @@
       "scheduledFor": "Scheduled for {{date}}",
       "autoPublish": "Will auto-publish on scheduled date"
     },
-    
     "status": {
       "draft": "Draft",
       "published": "Published",
       "scheduled": "Scheduled",
       "archived": "Archived"
     },
-    
     "actions": {
       "publish": "Publish",
       "unpublish": "Unpublish",
@@ -582,7 +572,6 @@
       "audioGenerated": "Audio generated successfully",
       "audioGenerationFailed": "Audio generation failed"
     },
-    
     "history": {
       "title": "Version History",
       "noHistory": "No version history available",
@@ -595,7 +584,6 @@
       "restoreSuccess": "Version restored successfully",
       "restoreError": "Failed to restore version"
     },
-    
     "filters": {
       "filterByStatus": "Filter by Status",
       "filterByDate": "Filter by Date",
@@ -605,7 +593,6 @@
       "to": "To",
       "searchPlaceholder": "Search devotions..."
     },
-    
     "messages": {
       "createSuccess": "Devotion created successfully",
       "updateSuccess": "Devotion updated successfully",
@@ -620,7 +607,6 @@
       "confirmDelete": "Are you sure you want to delete this devotion?",
       "deleteWarning": "This action cannot be undone."
     },
-    
     "validation": {
       "titleRequired": "Title is required",
       "dateRequired": "Date is required",
@@ -629,7 +615,6 @@
       "imageTooLarge": "Image size must be less than 2MB",
       "atLeastOneVerse": "At least one verse is required"
     },
-    
     "bible": {
       "version": "Bible Version",
       "book": "Book",
@@ -1261,5 +1246,171 @@
     "VALIDATION_ERROR": "Validation error. Please check your input.",
     "NOT_FOUND": "Data not found.",
     "GENERIC_ERROR": "An error occurred. Please try again."
+  },
+  "articles": {
+    "title": "Articles",
+    "subtitle": "Manage articles and content",
+    "allArticles": "All Articles",
+    "addNew": "Add New Article",
+    "editArticle": "Edit Article",
+    "articleTitle": "Article Title",
+    "slug": "Slug",
+    "content": "Content",
+    "excerpt": "Excerpt",
+    "featuredImage": "Featured Image",
+    "categories": {
+      "title": "Article Categories",
+      "manageCategories": "Manage Categories",
+      "createCategory": "Create Category",
+      "editCategory": "Edit Category",
+      "deleteCategory": "Delete Category",
+      "categoryName": "Category Name",
+      "categorySlug": "Category Slug",
+      "categoryDescription": "Category Description",
+      "articleCount": "Article Count",
+      "categoryInUse": "Cannot delete category that is used in articles",
+      "selectCategories": "Select Categories",
+      "noCategories": "No categories yet"
+    },
+    "tags": {
+      "title": "Article Tags",
+      "manageTags": "Manage Tags",
+      "createTag": "Create Tag",
+      "editTag": "Edit Tag",
+      "deleteTag": "Delete Tag",
+      "tagName": "Tag Name",
+      "tagSlug": "Tag Slug",
+      "articleCount": "Article Count",
+      "tagInUse": "Cannot delete tag that is used in articles",
+      "selectTags": "Select Tags",
+      "inlineCreate": "Type and press Enter to create new tag",
+      "noTags": "No tags yet"
+    },
+    "status": "Status",
+    "publishDate": "Publish Date",
+    "allowComments": "Allow Comments",
+    "readingTime": "Reading Time",
+    "views": "Views",
+    "estimatedReading": "Reading",
+    "minRead": "min read",
+    "draft": "Draft",
+    "published": "Published",
+    "archived": "Archived",
+    "saveDraft": "Save Draft",
+    "publish": "Publish",
+    "unpublish": "Unpublish",
+    "archive": "Archive",
+    "duplicate": "Duplicate",
+    "duplicateArticle": "Duplicate Article",
+    "preview": "Preview",
+    "generatePreviewLink": "Generate Preview Link",
+    "previewLink": "Preview Link",
+    "copyLink": "Copy Link",
+    "sharePreview": "Share Preview",
+    "previewUrl": "Preview URL",
+    "linkGenerated": "Preview link generated successfully",
+    "linkCopied": "Link copied to clipboard",
+    "regenerateSlug": "Regenerate Slug",
+    "slugAutoGenerated": "Slug auto-generated from title",
+    "slugUnique": "Slug must be unique per church",
+    "scheduling": {
+      "title": "Scheduling",
+      "scheduledPublishDate": "Scheduled Publish Date",
+      "scheduleStatus": "Schedule Status",
+      "scheduleArticle": "Schedule Article",
+      "unscheduleArticle": "Unschedule Article",
+      "scheduledFor": "Scheduled for",
+      "scheduledBy": "Scheduled by",
+      "scheduleSuccess": "Article scheduled successfully",
+      "scheduleRemoved": "Schedule removed successfully",
+      "scheduleFailed": "Failed to schedule article",
+      "upcomingSchedules": "Upcoming Schedules",
+      "failedSchedules": "Failed Schedules",
+      "completedSchedules": "Completed Schedules",
+      "none": "None",
+      "scheduled": "Scheduled",
+      "running": "Running",
+      "completed": "Completed",
+      "failed": "Failed",
+      "scheduleNowInvalid": "Schedule date must be in the future",
+      "scheduleForFuture": "Select date and time to auto-publish",
+      "onlyDraftCanSchedule": "Only draft articles can be scheduled",
+      "cannotScheduleWithoutContent": "Cannot schedule article without content"
+    },
+    "comments": {
+      "title": "Comment Moderation",
+      "manageComments": "Manage Comments",
+      "pending": "Pending",
+      "approved": "Approved",
+      "spam": "Spam",
+      "trash": "Trash",
+      "approve": "Approve",
+      "markSpam": "Mark as Spam",
+      "moveToTrash": "Move to Trash",
+      "authorName": "Author Name",
+      "commentText": "Comment Text",
+      "articleTitle": "Article Title",
+      "commentStatus": "Comment Status",
+      "filterByArticle": "Filter by Article",
+      "filterByStatus": "Filter by Status",
+      "bulkActions": "Bulk Actions",
+      "approveSelected": "Approve Selected",
+      "spamSelected": "Spam Selected",
+      "trashSelected": "Trash Selected",
+      "editComment": "Edit Comment",
+      "deleteComment": "Delete Comment",
+      "noComments": "No comments yet",
+      "commentApproved": "Comment approved",
+      "commentMarkedSpam": "Comment marked as spam",
+      "commentDeleted": "Comment deleted",
+      "bulkActionSuccess": "{{count}} comments processed successfully"
+    },
+    "editor": {
+      "richEditor": "Rich Text Editor",
+      "formatting": "Formatting",
+      "bold": "Bold",
+      "italic": "Italic",
+      "underline": "Underline",
+      "heading1": "Heading 1",
+      "heading2": "Heading 2",
+      "heading3": "Heading 3",
+      "bulletList": "Bullet List",
+      "orderedList": "Numbered List",
+      "blockquote": "Blockquote",
+      "codeBlock": "Code Block",
+      "insertLink": "Insert Link",
+      "insertImage": "Insert Image",
+      "wordCount": "Word Count",
+      "autoSaving": "Auto-saving...",
+      "lastSaved": "Last saved",
+      "unsavedChanges": "Unsaved changes"
+    },
+    "validation": {
+      "titleRequired": "Title is required",
+      "contentRequired": "Content is required to publish",
+      "slugRequired": "Slug is required",
+      "slugInvalid": "Slug can only contain lowercase letters, numbers, hyphens, and underscores",
+      "slugTaken": "Slug is already taken",
+      "imageTooLarge": "Image must be less than 5MB",
+      "invalidImageType": "Only jpg, png, and webp are allowed",
+      "scheduleDatePast": "Schedule date must be in the future",
+      "scheduleDraftOnly": "Only draft articles can be scheduled"
+    },
+    "messages": {
+      "createSuccess": "Article created successfully",
+      "updateSuccess": "Article updated successfully",
+      "deleteSuccess": "Article archived successfully",
+      "publishSuccess": "Article published successfully",
+      "duplicateSuccess": "Article duplicated successfully",
+      "imageUploadSuccess": "Image uploaded successfully",
+      "confirmDelete": "Are you sure you want to archive this article?",
+      "confirmPublish": "Publish article now?",
+      "hasComments": "This article has {{count}} comments. They will remain after archiving."
+    },
+    "quickEdit": {
+      "title": "Quick Edit",
+      "subtitle": "Edit basic article information",
+      "save": "Save Changes"
+    }
   }
 }
