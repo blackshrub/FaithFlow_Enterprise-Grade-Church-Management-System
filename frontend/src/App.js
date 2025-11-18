@@ -68,7 +68,11 @@ function App() {
               <Route path="accounting" element={<AccountingDashboard />} />
               <Route path="accounting/coa" element={<ChartOfAccounts />} />
               <Route path="accounting/journals" element={<Journals />} />
+              <Route path="accounting/journals/new" element={<JournalForm />} />
+              <Route path="accounting/journals/:id" element={<JournalForm />} />
               <Route path="accounting/fiscal-periods" element={<FiscalPeriods />} />
+              <Route path="accounting/beginning-balance" element={<BeginningBalance />} />
+              <Route path="accounting/responsibility-centers" element={<ResponsibilityCenters />} />
               
               {/* Placeholder routes - will be implemented in next phases */}
               <Route path="groups" element={<PlaceholderPage title="Groups" />} />
