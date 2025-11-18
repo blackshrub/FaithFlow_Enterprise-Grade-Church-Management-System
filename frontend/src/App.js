@@ -122,6 +122,7 @@ function App() {
         <Toaster />
       </AuthProvider>
     </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
 
