@@ -378,7 +378,25 @@ git lfs pull  # Ensure all large files downloaded
 - `bible_books` - 66 books info
 - `bible_verses` - 186k+ verses
 - `prayer_requests` - Prayer management
-- `accounting_...` - Accounting tables
+
+### Accounting Collections ⭐ NEW (16 collections)
+
+- `chart_of_accounts` - Multi-level COA with hierarchy
+- `responsibility_centers` - Ministry/project tracking
+- `journals` - Double-entry journal entries
+- `fiscal_periods` - Monthly period locking
+- `budgets` - Annual/monthly budgets
+- `fixed_assets` - Asset register
+- `asset_depreciation_logs` - Depreciation history
+- `bank_accounts` - Bank account list
+- `bank_transactions` - Transaction register
+- `bank_import_logs` - CSV import tracking
+- `beginning_balances` - Opening balances
+- `year_end_closings` - Year-end closing records
+- `file_uploads` - File attachments (receipts, invoices)
+- `audit_logs` - Complete audit trail
+- `report_templates` - Custom report configurations
+- `export_jobs` - Async export job tracking
 
 ### Import/Export
 
