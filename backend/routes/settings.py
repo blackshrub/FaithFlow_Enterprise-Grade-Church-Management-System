@@ -6,6 +6,7 @@ from datetime import datetime
 from models.member_status import MemberStatus, MemberStatusCreate, MemberStatusUpdate
 from models.demographic_preset import DemographicPreset, DemographicPresetCreate, DemographicPresetUpdate
 from models.church_settings import ChurchSettings, ChurchSettingsCreate, ChurchSettingsUpdate
+from models.event_category import EventCategory, EventCategoryCreate, EventCategoryUpdate
 from utils.dependencies import get_db, require_admin, get_current_user
 
 router = APIRouter(prefix="/settings", tags=["Settings"])
