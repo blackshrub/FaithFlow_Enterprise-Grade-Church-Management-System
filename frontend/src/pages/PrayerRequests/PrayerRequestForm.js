@@ -30,11 +30,32 @@ export default function PrayerRequestForm() {
     follow_up_notes: ''
   });
 
+  const [formData, setFormData] = useState({
+    member_id: '',
+    title: '',
+    description: '',
+    category: 'other',
+    status: 'new',
+    internal_notes: '',
+    needs_follow_up: false,
+    follow_up_notes: ''
+  });
+  const [memberSearch, setMemberSearch] = useState('');
+  const [showMemberDropdown, setShowMemberDropdown] = useState(false);
+
   const { data: existingRequest } = usePrayerRequest(id);
   const { data: membersData } = useMembers();
   const members = membersData?.data || [];
   const createMutation = useCreatePrayerRequest();
   const updateMutation = useUpdatePrayerRequest();
+
+  // Filter members by search
+  const filteredMembers = members.filter(m => 
+    m.full_name?.toLowerCase().includes(memberSearch.toLowerCase())
+  );
+
+  // Get selected member info
+  const selectedMember = members.find(m => m.id === formData.member_id);
 
   useEffect(() => {
     if (existingRequest) {
