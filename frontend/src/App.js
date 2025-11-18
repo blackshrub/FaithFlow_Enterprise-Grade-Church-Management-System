@@ -28,6 +28,11 @@ import BeginningBalance from "./pages/Accounting/BeginningBalance";
 import ResponsibilityCenters from "./pages/Accounting/ResponsibilityCenters";
 import QuickEntry from "./pages/Accounting/QuickEntry";
 import Reports from "./pages/Accounting/Reports";
+import Budgets from "./pages/Accounting/Budgets";
+import FixedAssets from "./pages/Accounting/FixedAssets";
+import BankReconciliation from "./pages/Accounting/BankReconciliation";
+import YearEndClosing from "./pages/Accounting/YearEndClosing";
+import AuditLogs from "./pages/Accounting/AuditLogs";
 
 import FaithFlowLogo from './components/Branding/FaithFlowLogo';
 
