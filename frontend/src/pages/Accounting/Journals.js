@@ -107,7 +107,7 @@ export default function Journals() {
                 <SelectValue placeholder={t('accounting.journal.status')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">{t('common.all')}</SelectItem>
+                <SelectItem value="all">{t('common.all')}</SelectItem>
                 <SelectItem value="draft">{t('accounting.journal.draft')}</SelectItem>
                 <SelectItem value="approved">{t('accounting.journal.approved')}</SelectItem>
               </SelectContent>
@@ -118,7 +118,7 @@ export default function Journals() {
                 <SelectValue placeholder={t('accounting.journal.journalType')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">{t('common.all')}</SelectItem>
+                <SelectItem value="all">{t('common.all')}</SelectItem>
                 <SelectItem value="general">{t('accounting.journal.general')}</SelectItem>
                 <SelectItem value="quick_giving">{t('accounting.journal.quickGiving')}</SelectItem>
                 <SelectItem value="quick_expense">{t('accounting.journal.quickExpense')}</SelectItem>
