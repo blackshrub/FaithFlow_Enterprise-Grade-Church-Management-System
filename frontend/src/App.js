@@ -52,7 +52,7 @@ function App() {
               <Route path="settings" element={<Settings />} />
               <Route path="seat-layouts" element={<SeatLayouts />} />
               <Route path="events" element={<Events />} />
-              <Route path="kiosk" element={<KioskMode />} />
+              {/* Kiosk moved outside Layout for fullscreen */}
               <Route path="devotions" element={<Devotions />} />
               
               {/* Placeholder routes - will be implemented in next phases */}
