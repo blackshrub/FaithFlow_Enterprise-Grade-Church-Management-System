@@ -61,7 +61,7 @@ export default function Categories() {
       </div>
 
       <Card>
-        <CardHeader><CardTitle>{categories?.length || 0} Categories</CardTitle></CardHeader>
+        <CardHeader><CardTitle>{categories?.length || 0} {t('articles.categories.title')}</CardTitle></CardHeader>
         <CardContent>
           {isLoading ? <div>{t('common.loading')}</div> : (
             <Table>
