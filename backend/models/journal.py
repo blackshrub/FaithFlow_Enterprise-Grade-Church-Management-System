@@ -70,7 +70,7 @@ class JournalCreate(JournalBase):
 
 class JournalUpdate(BaseModel):
     """Model for updating a journal (only if draft)"""
-    date: Optional[date] = None
+    date: Optional[DateType] = None
     reference_number: Optional[str] = Field(None, max_length=100)
     description: Optional[str] = Field(None, min_length=1, max_length=1000)
     lines: Optional[List[JournalLine]] = Field(None, description="Journal lines")
