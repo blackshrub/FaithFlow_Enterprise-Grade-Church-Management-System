@@ -243,9 +243,19 @@ export default function PrayerRequestForm() {
                     value={memberSearch}
                     onChange={(e) => {
                       setMemberSearch(e.target.value);
-                      setShowMemberDropdown(true);
+                      if (e.target.value.length >= 2) {
+                        setShowMemberDropdown(true);
+                      }
                     }}
-                    onFocus={() => setShowMemberDropdown(true)}
+                    onFocus={() => {
+                      if (memberSearch.length >= 2) {
+                        setShowMemberDropdown(true);
+                      }
+                    }}
+                    onBlur={() => {
+                      // Delay to allow click on dropdown
+                      setTimeout(() => setShowMemberDropdown(false), 200);
+                    }}
                     placeholder={t('common.search') + '...'}
                     required
                   />
