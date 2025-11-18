@@ -789,7 +789,7 @@ class AccountingAPITester:
         success, members = self.run_test(
             "List Members (Empty)",
             "GET",
-            "/api/v1/members/",
+            "/api/members/",
             200
         )
         
@@ -811,7 +811,7 @@ class AccountingAPITester:
         success, created_member = self.run_test(
             "Create Member",
             "POST",
-            "/api/v1/members/",
+            "/api/members/",
             201,
             data=member_data
         )
@@ -823,7 +823,7 @@ class AccountingAPITester:
             success, member = self.run_test(
                 "Get Single Member",
                 "GET",
-                f"/api/v1/members/{member_id}",
+                f"/api/members/{member_id}",
                 200
             )
             
@@ -835,7 +835,7 @@ class AccountingAPITester:
             success, stats = self.run_test(
                 "Get Member Statistics",
                 "GET",
-                "/api/v1/members/stats/summary",
+                "/api/members/stats/summary",
                 200
             )
     
