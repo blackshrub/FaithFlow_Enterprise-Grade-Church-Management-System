@@ -29,6 +29,7 @@ function DevotionForm({ devotion, onClose }) {
     status: devotion?.status || 'draft',
     publish_at: devotion?.publish_at ? new Date(devotion.publish_at).toISOString().split('T')[0] : '',
     publish_time: devotion?.publish_at ? new Date(devotion.publish_at).toISOString().split('T')[1].substring(0, 5) : '',
+    tts_audio_url: devotion?.tts_audio_url || '',
   });
 
   const [imagePreview, setImagePreview] = useState(devotion?.cover_image_url || '');
