@@ -36,9 +36,21 @@ const AccountSelector = ({
   };
 
   const accounts = flattenTree(coaTree || []);
-  const filteredAccounts = filterByType 
-    ? accounts.filter(acc => acc.account_type === filterByType)
-    : accounts;
+  
+  // Handle filterByType as either string or array
+  let filteredAccounts = accounts;
+  if (filterByType) {
+    if (Array.isArray(filterByType)) {
+      filteredAccounts = accounts.filter(acc => filterByType.includes(acc.account_type));
+    } else {
+      filteredAccounts = accounts.filter(acc => acc.account_type === filterByType);
+    }
+  }
+
+  // Debug logging
+  if (accounts.length === 0 && !isLoading) {
+    console.warn('AccountSelector: No accounts loaded. COA tree:', coaTree);
+  }
 
   return (
     <div className="space-y-2">
