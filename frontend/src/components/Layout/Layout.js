@@ -63,6 +63,9 @@ export default function Layout() {
     if (path.includes('/events') || path.includes('/seat-layouts') || path.includes('/kiosk')) {
       setExpandedMenus(prev => ({ ...prev, events: true }));
     }
+    if (path.includes('/accounting')) {
+      setExpandedMenus(prev => ({ ...prev, accounting: true }));
+    }
   }, [location.pathname]);
 
   const menuItems = [
