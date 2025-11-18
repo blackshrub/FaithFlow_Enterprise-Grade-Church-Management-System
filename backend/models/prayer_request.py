@@ -35,6 +35,8 @@ class PrayerRequestUpdate(BaseModel):
     status: Optional[Literal["new", "prayed"]] = None
     assigned_to_user_id: Optional[str] = None
     internal_notes: Optional[str] = None
+    needs_follow_up: Optional[bool] = None
+    follow_up_notes: Optional[str] = None
 
 
 class PrayerRequest(PrayerRequestBase):
