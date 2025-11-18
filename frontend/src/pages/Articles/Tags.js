@@ -66,9 +66,9 @@ export default function Tags() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>{t('articles.tags.tagName')}</TableHead>
-                  <TableHead>{t('articles.tags.tagSlug')}</TableHead>
-                  <TableHead>{t('articles.tags.articleCount')}</TableHead>
+                  <TableHead>{t('articles.tagsManagement.tagName')}</TableHead>
+                  <TableHead>{t('articles.tagsManagement.tagSlug')}</TableHead>
+                  <TableHead>{t('articles.tagsManagement.articleCount')}</TableHead>
                   <TableHead>{t('members.actions')}</TableHead>
                 </TableRow>
               </TableHeader>
