@@ -34,7 +34,7 @@ export default function PrayerRequestForm() {
 
   const { data: existingRequest } = usePrayerRequest(id);
   const { data: membersData } = useMembers({ limit: 1000, offset: 0 });
-  const members = membersData?.data || [];
+  const members = membersData || [];
   const createMutation = useCreatePrayerRequest();
   const updateMutation = useUpdatePrayerRequest();
 
