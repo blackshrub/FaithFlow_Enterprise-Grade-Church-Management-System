@@ -246,7 +246,7 @@ export default function EventCategoriesTab() {
                       {category.is_active ? (
                         <Badge variant="success">{t('settings.isActive')}</Badge>
                       ) : (
-                        <Badge variant="secondary">Inactive</Badge>
+                        <Badge variant="secondary">{t('common.inactive') || 'Inactive'}</Badge>
                       )}
                     </TableCell>
                     <TableCell className="text-right">
