@@ -31,6 +31,7 @@ import FaithFlowLogo from '../Branding/FaithFlowLogo';
 export default function Layout() {
   const { t, i18n } = useTranslation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [expandedMenus, setExpandedMenus] = useState({});
   const { user, church, logout, isSuperAdmin } = useAuth();
   const navigate = useNavigate();
