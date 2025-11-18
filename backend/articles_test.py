@@ -427,7 +427,7 @@ class ArticlesAPITester:
                 "POST",
                 f"/api/v1/articles/{article_id}/schedule",
                 200,
-                data={"scheduled_publish_date": future_date}
+                params={"scheduled_publish_date": future_date}
             )
             
             if success:
