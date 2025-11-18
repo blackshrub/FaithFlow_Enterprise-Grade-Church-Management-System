@@ -12,6 +12,22 @@ faithflow/
 │   │   ├── event.py
 │   │   ├── devotion.py
 │   │   ├── bible.py
+│   │   ├── accounting_coa.py           # ⭐ NEW - Chart of Accounts
+│   │   ├── responsibility_center.py    # ⭐ NEW - Ministry tracking
+│   │   ├── journal.py                  # ⭐ NEW - Double-entry journals
+│   │   ├── fiscal_period.py            # ⭐ NEW - Period locking
+│   │   ├── budget.py                   # ⭐ NEW - Budgeting
+│   │   ├── fixed_asset.py              # ⭐ NEW - Asset management
+│   │   ├── asset_depreciation_log.py   # ⭐ NEW - Depreciation
+│   │   ├── bank_account.py             # ⭐ NEW - Bank accounts
+│   │   ├── bank_transaction.py         # ⭐ NEW - Bank transactions
+│   │   ├── bank_import_log.py          # ⭐ NEW - Import tracking
+│   │   ├── beginning_balance.py        # ⭐ NEW - Migration
+│   │   ├── year_end_closing.py         # ⭐ NEW - Year-end
+│   │   ├── file_upload.py              # ⭐ NEW - File attachments
+│   │   ├── audit_log.py                # ⭐ NEW - Audit trail
+│   │   ├── report_template.py          # ⭐ NEW - Report configs
+│   │   ├── export_job.py               # ⭐ NEW - Export jobs
 │   │   └── ...
 │   ├── routes/              # API endpoints
 │   │   ├── auth.py          # Authentication
@@ -19,16 +35,46 @@ faithflow/
 │   │   ├── events.py        # Events & RSVP
 │   │   ├── devotions.py     # Devotion CMS
 │   │   ├── bible.py         # Bible API
+│   │   ├── accounting_coa.py           # ⭐ NEW - COA endpoints
+│   │   ├── responsibility_centers.py   # ⭐ NEW - RC endpoints
+│   │   ├── journals.py                 # ⭐ NEW - Journal endpoints
+│   │   ├── fiscal_periods.py           # ⭐ NEW - Period endpoints
+│   │   ├── quick_entries.py            # ⭐ NEW - Quick forms
+│   │   ├── budgets.py                  # ⭐ NEW - Budget endpoints
+│   │   ├── fixed_assets.py             # ⭐ NEW - Asset endpoints
+│   │   ├── bank_accounts.py            # ⭐ NEW - Bank endpoints
+│   │   ├── bank_transactions.py        # ⭐ NEW - Transaction endpoints
+│   │   ├── beginning_balance.py        # ⭐ NEW - Migration endpoints
+│   │   ├── year_end_closing.py         # ⭐ NEW - Year-end endpoints
+│   │   ├── accounting_reports.py       # ⭐ NEW - Report endpoints
+│   │   ├── audit_logs.py               # ⭐ NEW - Audit endpoints
+│   │   ├── report_templates.py         # ⭐ NEW - Template endpoints
+│   │   ├── file_upload.py              # ⭐ NEW - File endpoints
 │   │   └── ...
 │   ├── services/            # Business logic
 │   │   ├── tts_service.py   # Text-to-Speech
 │   │   ├── qr_service.py    # QR code generation
 │   │   ├── whatsapp_service.py  # WhatsApp gateway
-│   │   └── auth_service.py  # Auth logic
+│   │   ├── auth_service.py  # Auth logic
+│   │   ├── accounting_service.py       # ⭐ NEW - Accounting utilities
+│   │   ├── fiscal_period_service.py    # ⭐ NEW - Period management
+│   │   ├── year_end_closing_service.py # ⭐ NEW - Year-end logic
+│   │   ├── audit_service.py            # ⭐ NEW - Audit logging
+│   │   ├── file_service.py             # ⭐ NEW - File management
+│   │   ├── pagination_service.py       # ⭐ NEW - Pagination
+│   │   ├── validation_service.py       # ⭐ NEW - Validation
+│   │   └── ...
 │   ├── utils/               # Helper functions
 │   │   ├── dependencies.py  # FastAPI dependencies
 │   │   ├── security.py      # Password hashing
-│   │   └── helpers.py       # Common utilities
+│   │   ├── helpers.py       # Common utilities
+│   │   ├── error_codes.py   # ⭐ NEW - Error constants
+│   │   ├── error_response.py # ⭐ NEW - Error handling
+│   │   ├── db_transaction.py # ⭐ NEW - MongoDB transactions
+│   │   ├── tenant_utils.py  # ⭐ NEW - Multi-tenant utilities
+│   │   └── ...
+│   ├── middleware/          # ⭐ NEW - Middleware
+│   │   └── tenant_middleware.py  # Multi-tenant enforcement
 │   ├── data/                # Static data
 │   │   └── bible/           # Bible JSON files
 │   │       ├── indo_tb.json       # Indonesian (6.5MB)
@@ -45,7 +91,10 @@ faithflow/
 │   ├── scripts/             # Utility scripts
 │   │   ├── init_db.py       # Database initialization
 │   │   ├── import_tb_chs.py # Import TB & Chinese
-│   │   └── import_english_bibles.py  # Import English
+│   │   ├── import_english_bibles.py  # Import English
+│   │   ├── seed_coa.py              # ⭐ NEW - Indonesian COA seeder
+│   │   ├── create_accounting_indexes.py # ⭐ NEW - Accounting indexes
+│   │   └── ...
 │   ├── server.py            # Main FastAPI app
 │   ├── requirements.txt     # Python dependencies
 │   └── .env                 # Environment variables (not in git)
