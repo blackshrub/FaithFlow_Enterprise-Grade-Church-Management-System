@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Plus, Search, Edit, Trash2, UserX, Phone, Mail, Loader2, QrCode } from 'lucide-react';
 import MemberForm from '../components/MemberForm';
 import MemberAvatar from '../components/MemberAvatar';
+import MemberQRModal from '../components/Members/MemberQRModal';
 
 const initialFormData = {
   first_name: '',
