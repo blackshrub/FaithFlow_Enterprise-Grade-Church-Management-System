@@ -886,7 +886,7 @@ class AccountingAPITester:
         success, settings = self.run_test(
             "Get Church Settings",
             "GET",
-            "/api/v1/settings/church-settings",
+            "/api/settings/church-settings",
             200
         )
         
@@ -894,7 +894,7 @@ class AccountingAPITester:
         success, statuses = self.run_test(
             "List Member Statuses",
             "GET",
-            "/api/v1/settings/member-statuses",
+            "/api/settings/member-statuses",
             200
         )
         
@@ -902,7 +902,7 @@ class AccountingAPITester:
         success, categories = self.run_test(
             "List Event Categories",
             "GET",
-            "/api/v1/settings/event-categories",
+            "/api/settings/event-categories",
             200
         )
         
@@ -910,7 +910,7 @@ class AccountingAPITester:
         success, demographics = self.run_test(
             "List Demographic Presets",
             "GET",
-            "/api/v1/settings/demographics",
+            "/api/settings/demographics",
             200
         )
 
