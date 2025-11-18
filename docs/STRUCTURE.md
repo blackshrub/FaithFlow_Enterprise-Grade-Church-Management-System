@@ -316,6 +316,10 @@ MongoDB (Port 27017)
 **Uploads:**
 - Member photos (base64 in MongoDB)
 - Documents (base64 in MongoDB)
+- **Accounting attachments (file system):** `/app/uploads/{church_id}/` ⭐ NEW
+  - Receipts, invoices, bank slips
+  - Max 10MB per file
+  - Images (JPEG, PNG), PDFs, Excel, CSV
 
 ---
 
