@@ -48,14 +48,6 @@ export default function PrayerRequestForm() {
   // Get selected member info
   const selectedMember = members.find(m => m.id === formData.member_id);
 
-  // Debug logging
-  useEffect(() => {
-    console.log('Members loaded:', members.length);
-    console.log('Search:', memberSearch);
-    console.log('Filtered members:', filteredMembers.length);
-    console.log('Show dropdown:', showMemberDropdown);
-  }, [members, memberSearch, filteredMembers, showMemberDropdown]);
-
   useEffect(() => {
     if (existingRequest) {
       setFormData({
