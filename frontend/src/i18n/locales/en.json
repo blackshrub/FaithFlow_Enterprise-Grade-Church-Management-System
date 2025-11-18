@@ -132,7 +132,9 @@
     "today": "Today",
     "calendar": "Calendar",
     "list": "List",
-    "optional": "Optional"
+    "optional": "Optional",
+    "inactive": "Inactive",
+    "active": "Active"
   },
   "nav": {
     "dashboard": "Dashboard",
