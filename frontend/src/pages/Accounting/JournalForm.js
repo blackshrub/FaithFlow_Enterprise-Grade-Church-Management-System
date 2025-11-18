@@ -83,6 +83,26 @@ export default function JournalForm() {
 
   const handleSubmit = async (asDraft = true) => {
     // Validate
+    if (!formData.date || !formData.description) {
+      toast({
+        variant: "destructive",
+        title: t('accounting.common.error'),
+        description: "Date and description are required"
+      });
+      return;
+    }
+
+    // Validate lines
+    const validLines = formData.lines.filter(line => line.account_id && (line.debit > 0 || line.credit > 0));
+    if (validLines.length < 2) {
+      toast({
+        variant: "destructive",
+        title: t('accounting.common.error'),
+        description: t('accounting.journal.minimumTwoLines')
+      });
+      return;
+    }
+
     if (!isBalanced) {
       toast({
         variant: "destructive",
@@ -93,11 +113,21 @@ export default function JournalForm() {
     }
 
     const payload = {
-      ...formData,
-      status: asDraft ? 'draft' : 'approved'
+      date: formData.date,
+      reference_number: formData.reference_number || null,
+      description: formData.description,
+      journal_type: 'general',
+      lines: validLines.map(line => ({
+        account_id: line.account_id,
+        description: line.description || formData.description,
+        debit: parseFloat(line.debit) || 0,
+        credit: parseFloat(line.credit) || 0,
+        responsibility_center_id: line.responsibility_center_id || null
+      }))
     };
 
     try {
+      console.log('Creating journal with payload:', payload);
       if (isEdit) {
         await updateMutation.mutateAsync({ id, data: payload });
       } else {
@@ -112,6 +142,7 @@ export default function JournalForm() {
       navigate('/accounting/journals');
     } catch (error) {
       const errorCode = error.response?.data?.detail?.error_code;
+      console.error('Journal creation error:', error);
       toast({
         variant: "destructive",
         title: t('accounting.common.error'),
