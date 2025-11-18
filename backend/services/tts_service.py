@@ -41,19 +41,31 @@ def generate_indonesian_tts_coqui(text: str) -> str:
         text = re.sub(r'\s+', ' ', text)  # Normalize whitespace
         text = text.strip()
         
-        # Fix 'd' at end of words → 't' for smoother/softer sound
-        # Examples: "murid" → "murit", "tekad" → "tekat"
+        # Indonesian pronunciation normalization (before g2p conversion):
+        
+        # 1. 'b' at end of word → 'p' (jawab → jawap)
+        text = re.sub(r'([aeiouAEIOU])b(\s|$|[,.\?!;:\-])', r'\1p\2', text)
+        
+        # 2. 'b' before consonant → 'p' (sebabnya → sebapnya)
+        text = re.sub(r'b([bcdfghjklmnpqrstvwxyz])', r'p\1', text, flags=re.IGNORECASE)
+        
+        # 3. 'd' at end of word → 't' (murid → murit, tekad → tekat)
         text = re.sub(r'([aeiouAEIOU])d(\s|$|[,.\?!;:\-])', r'\1t\2', text)
+        
+        # 4. 'd' before consonant → 't' (maksudnya → maksutnya)
+        text = re.sub(r'd([bcdfghjklmnpqrstvwxyz])', r't\1', text, flags=re.IGNORECASE)
+        
+        logger.info(f"Text after Indonesian pronunciation normalization")
         
         # Convert Indonesian text to phonemes
         g2p = G2P()
         phonemes = g2p(text)
         
         # Critical fix: g2p outputs regular 'g' (U+0067) but model needs script 'ɡ' (U+0261)
-        # Replace all regular 'g' with script 'ɡ' for proper pronunciation
-        phonemes = phonemes.replace('g', 'ɡ')  # U+0067 → U+0261
+        # This fixes ALL 'g' sounds including in 'anggur', 'gambaran', etc.
+        phonemes = phonemes.replace('g', 'ɡ')  # Unicode U+0067 → U+0261
         
-        logger.info(f"Phoneme conversion complete with script-g fix ({len(text)} chars)")
+        logger.info(f"Phoneme conversion complete ({len(text)} chars → {len(phonemes)} phonemes)")
         
         synth = Synthesizer(
             tts_checkpoint=str(CHECKPOINT_PATH),
