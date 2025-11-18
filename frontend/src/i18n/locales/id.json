@@ -95,7 +95,11 @@
     "actions": "Aksi",
     "showIncomplete": "Tampilkan Data Tidak Lengkap",
     "showAll": "Tampilkan Semua Jemaat",
-    "incompleteDataInfo": "Jemaat yang tidak lengkap: jenis kelamin, tanggal lahir, alamat, atau telepon"
+    "incompleteDataInfo": "Jemaat yang tidak lengkap: jenis kelamin, tanggal lahir, alamat, atau telepon",
+    "personalQR": "Kode QR Pribadi",
+    "memberID": "ID Jemaat",
+    "downloadQR": "Unduh QR",
+    "printQR": "Cetak QR"
   },
   "common": {
     "cancel": "Batal",
