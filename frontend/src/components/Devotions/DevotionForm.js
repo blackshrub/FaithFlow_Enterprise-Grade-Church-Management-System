@@ -63,17 +63,23 @@ function DevotionForm({ devotion, onClose }) {
   };
 
   const handleGenerateAudio = async () => {
-    if (!devotion?.id) {
-      toast.error('Please save the devotion first');
+    if (!formData.content) {
+      toast.error(t('devotions.validation.contentRequired'));
       return;
     }
 
     setGeneratingAudio(true);
     try {
-      const response = await devotionsAPI.generateAudio(devotion.id);
-      toast.success(t('devotions.actions.audioGenerated'));
-      // Update form data with new audio URL
-      setFormData({ ...formData, tts_audio_url: response.data.audio_url });
+      // If editing existing devotion, use the API
+      if (devotion?.id) {
+        const response = await devotionsAPI.generateAudio(devotion.id);
+        setFormData({ ...formData, tts_audio_url: response.data.audio_url });
+        toast.success(t('devotions.actions.audioGenerated'));
+      } else {
+        // For new devotions, generate preview locally
+        // We'll need to save first or generate on backend with content
+        toast.error('Please save the devotion first, then generate audio');
+      }
     } catch (error) {
       toast.error(t('devotions.actions.audioGenerationFailed'));
     } finally {
