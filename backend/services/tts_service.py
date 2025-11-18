@@ -20,7 +20,7 @@ INDONESIAN_TTS_AVAILABLE = CHECKPOINT_PATH.exists() and CONFIG_PATH.exists()
 if INDONESIAN_TTS_AVAILABLE:
     logger.info(f"✓ Indonesian TTS model found: {CHECKPOINT_PATH}")
 else:
-    logger.warning(f"Indonesian TTS model not found, using gTTS fallback")
+    logger.warning("Indonesian TTS model not found, using gTTS fallback")
 
 
 def generate_indonesian_tts_coqui(text: str) -> str:
@@ -55,7 +55,7 @@ def generate_indonesian_tts_coqui(text: str) -> str:
         # 4. 'd' before consonant → 't' (maksudnya → maksutnya)
         text = re.sub(r'd([bcdfghjklmnpqrstvwxyz])', r't\1', text, flags=re.IGNORECASE)
         
-        logger.info(f"Text after Indonesian pronunciation normalization")
+        logger.info("Text after Indonesian pronunciation normalization")
         
         # Convert Indonesian text to phonemes
         g2p = G2P()
