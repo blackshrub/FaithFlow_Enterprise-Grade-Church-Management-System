@@ -3,7 +3,7 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 from typing import Optional
 from datetime import datetime, date
 
-from models.journal import JournalCreate, JournalUpdate
+from models.journal import JournalBase, JournalUpdate
 from utils.dependencies import get_db, get_current_user
 from utils.tenant_utils import get_current_church_id
 from utils import error_codes
