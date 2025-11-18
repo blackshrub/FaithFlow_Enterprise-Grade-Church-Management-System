@@ -1237,6 +1237,126 @@ All accounting endpoints support mobile apps:
 
 ---
 
+## CMS Article Management Module
+
+### Overview
+Complete WordPress-style content management system with rich text editing, scheduling, categories, tags, comments, and mobile API.
+
+### Features
+
+**Article Management:**
+- Rich text editor (TipTap) with formatting toolbar
+- Featured image upload (drag-drop, 5MB max, jpg/png/webp)
+- Auto-generated slugs from titles (URL-safe)
+- Reading time calculation (200 words/min)
+- Views counter (atomic increment)
+- Article duplication
+- Draft/Published/Archived status
+
+**Scheduling System:**
+- Schedule articles for future publishing
+- APScheduler background worker (auto-publish every 30 seconds)
+- Status tracking (None/Scheduled/Running/Completed/Failed)
+- Unschedule functionality
+
+**Categories & Tags:**
+- Full CRUD operations
+- Slug auto-generation
+- Delete protection (if used in articles)
+- Article count per category/tag
+- Multi-select with badges
+
+**Comments Moderation:**
+- Create/Edit/Delete comments
+- Status management (Pending/Approved/Spam/Trash)
+- Bulk actions (approve, spam, trash)
+- Per-article comment listing
+
+**Draft Preview System:**
+- Generate preview tokens
+- Share preview links
+- Token-based access (no authentication)
+- Copy to clipboard
+
+**Public API (Mobile App):**
+- Published articles list
+- Featured articles (for carousels)
+- Get article by slug
+- Categories and tags
+- Content sanitization (security)
+- Views increment on read
+
+**Admin Features:**
+- Articles list (table, filters, pagination)
+- Search (title, content)
+- Bulk actions (delete)
+- Quick edit modal
+- Auto-save (every 30 seconds)
+- Word count display
+
+**Multi-Church:**
+- All data isolated by church_id
+- Separate article libraries per church
+- Slug uniqueness per church
+
+---
+
+## Prayer Requests Module
+
+### Overview
+Pastoral care management system for tracking and managing congregation prayer requests with follow-up coordination.
+
+### Features
+
+**Prayer Request Management:**
+- Member-linked requests (searchable dropdown)
+- Profile photo display in search
+- Auto-fill requester info from member data
+- Title and detailed description
+- 8 prayer categories (Healing, Family, Work, Financial, Spiritual, Guidance, Thanksgiving, Other)
+- Status tracking (New/Prayed with timestamp)
+
+**Pastoral Follow-up:**
+- "Needs Follow-up" checkbox (create & edit)
+- Follow-up notes field (counseling details)
+- Visual indicator in list view (amber badge)
+- Quick identification of follow-up needs
+
+**Staff Features:**
+- Assignment to staff members
+- Internal notes (staff-only)
+- Source tracking (Admin Input/Mobile App/Imported)
+- Filter by status, category, assigned staff
+- Search by requester, title, description
+
+**List View:**
+- Table with all prayer requests
+- Columns: Title, Requester (with photo), Category, Status, Follow-up indicator, Created Date
+- Filters: Status, Category, Assigned To, Date Range
+- Quick actions: View, Mark as Prayed, Delete
+- Empty state guidance
+
+**Create/Edit Form:**
+- Member search with autocomplete
+- Profile photo preview
+- Phone number display
+- Category dropdown (i18n)
+- Status selector
+- Follow-up tracking
+- Internal notes
+
+**Multi-Church:**
+- All requests isolated by church_id
+- Member pool scoped per church
+- Separate prayer management per church
+
+---
+
+**CMS Articles Status:** ✅ **Complete** (Backend + Frontend)  
+**Prayer Requests Status:** ✅ **Complete** (Backend + Frontend)
+
+---
+
 ## Prayer Requests
 
 ### Overview
