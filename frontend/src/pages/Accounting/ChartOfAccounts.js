@@ -117,7 +117,7 @@ export default function ChartOfAccounts() {
                 size="sm"
                 onClick={() => setViewMode('tree')}
               >
-                <Tree className="w-4 h-4 mr-2" />
+                <Network className="w-4 h-4 mr-2" />
                 {t('accounting.coa.treeView')}
               </Button>
             </div>
