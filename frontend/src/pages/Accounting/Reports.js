@@ -19,6 +19,7 @@ import CurrencyDisplay from '../../components/Accounting/CurrencyDisplay';
 
 export default function Reports() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [activeReport, setActiveReport] = useState(null);
   const [reportParams, setReportParams] = useState({
     start_date: new Date(new Date().getFullYear(), 0, 1).toISOString().split('T')[0],
