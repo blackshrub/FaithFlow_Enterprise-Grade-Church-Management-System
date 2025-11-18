@@ -1407,5 +1407,74 @@
       "inlineCreate": "Ketik dan tekan Enter untuk membuat tag baru",
       "noTags": "Belum ada tag"
     }
+  },
+  "prayerRequests": {
+    "title": "Permintaan Doa",
+    "subtitle": "Kelola permintaan doa jemaat",
+    "allRequests": "Semua Permintaan Doa",
+    "newRequest": "Permintaan Baru",
+    "createRequest": "Buat Permintaan Doa",
+    "editRequest": "Edit Permintaan Doa",
+    "viewRequest": "Lihat Detail",
+    "deleteRequest": "Hapus Permintaan",
+    "requesterName": "Nama Pemohon",
+    "requesterContact": "Kontak Pemohon",
+    "requestTitle": "Judul Permintaan",
+    "description": "Deskripsi",
+    "category": "Kategori",
+    "status": "Status",
+    "assignedTo": "Ditugaskan Kepada",
+    "internalNotes": "Catatan Internal",
+    "prayedAt": "Didoakan Pada",
+    "createdBy": "Dibuat Oleh",
+    "source": "Sumber",
+    "selectMember": "Pilih Jemaat",
+    "orManualEntry": "atau masukkan manual",
+    "statuses": {
+      "new": "Baru",
+      "prayed": "Sudah Didoakan"
+    },
+    "categories": {
+      "healing": "Kesembuhan",
+      "family": "Keluarga",
+      "work": "Pekerjaan",
+      "financial": "Keuangan",
+      "spiritual": "Spiritual",
+      "guidance": "Bimbingan",
+      "thanksgiving": "Syukur",
+      "other": "Lainnya"
+    },
+    "sources": {
+      "admin_input": "Input Admin",
+      "mobile_app": "Aplikasi Mobile",
+      "imported": "Diimpor"
+    },
+    "filters": {
+      "filterByStatus": "Filter Status",
+      "filterByCategory": "Filter Kategori",
+      "filterByAssigned": "Filter Penugasan",
+      "dateRange": "Rentang Tanggal"
+    },
+    "actions": {
+      "markAsPrayed": "Tandai Sudah Didoakan",
+      "markAsNew": "Tandai Baru",
+      "assignToStaff": "Tugaskan ke Staff",
+      "unassign": "Batalkan Penugasan"
+    },
+    "messages": {
+      "createSuccess": "Permintaan doa berhasil dibuat",
+      "updateSuccess": "Permintaan doa berhasil diperbarui",
+      "deleteSuccess": "Permintaan doa berhasil dihapus",
+      "markedAsPrayed": "Ditandai sebagai sudah didoakan",
+      "confirmDelete": "Apakah Anda yakin ingin menghapus permintaan doa ini?",
+      "noRequests": "Belum ada permintaan doa",
+      "createFirst": "Buat permintaan doa pertama"
+    },
+    "validation": {
+      "titleRequired": "Judul diperlukan",
+      "descriptionRequired": "Deskripsi diperlukan",
+      "requesterNameRequired": "Nama pemohon diperlukan",
+      "categoryRequired": "Kategori diperlukan"
+    }
   }
 }

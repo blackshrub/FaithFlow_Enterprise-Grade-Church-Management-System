@@ -1417,5 +1417,74 @@
       "inlineCreate": "Type and press Enter to create new tag",
       "noTags": "No tags yet"
     }
+  },
+  "prayerRequests": {
+    "title": "Prayer Requests",
+    "subtitle": "Manage congregation prayer requests",
+    "allRequests": "All Prayer Requests",
+    "newRequest": "New Request",
+    "createRequest": "Create Prayer Request",
+    "editRequest": "Edit Prayer Request",
+    "viewRequest": "View Details",
+    "deleteRequest": "Delete Request",
+    "requesterName": "Requester Name",
+    "requesterContact": "Requester Contact",
+    "requestTitle": "Request Title",
+    "description": "Description",
+    "category": "Category",
+    "status": "Status",
+    "assignedTo": "Assigned To",
+    "internalNotes": "Internal Notes",
+    "prayedAt": "Prayed At",
+    "createdBy": "Created By",
+    "source": "Source",
+    "selectMember": "Select Member",
+    "orManualEntry": "or enter manually",
+    "statuses": {
+      "new": "New",
+      "prayed": "Prayed"
+    },
+    "categories": {
+      "healing": "Healing",
+      "family": "Family",
+      "work": "Work",
+      "financial": "Financial",
+      "spiritual": "Spiritual",
+      "guidance": "Guidance",
+      "thanksgiving": "Thanksgiving",
+      "other": "Other"
+    },
+    "sources": {
+      "admin_input": "Admin Input",
+      "mobile_app": "Mobile App",
+      "imported": "Imported"
+    },
+    "filters": {
+      "filterByStatus": "Filter by Status",
+      "filterByCategory": "Filter by Category",
+      "filterByAssigned": "Filter by Assigned",
+      "dateRange": "Date Range"
+    },
+    "actions": {
+      "markAsPrayed": "Mark as Prayed",
+      "markAsNew": "Mark as New",
+      "assignToStaff": "Assign to Staff",
+      "unassign": "Unassign"
+    },
+    "messages": {
+      "createSuccess": "Prayer request created successfully",
+      "updateSuccess": "Prayer request updated successfully",
+      "deleteSuccess": "Prayer request deleted successfully",
+      "markedAsPrayed": "Marked as prayed",
+      "confirmDelete": "Are you sure you want to delete this prayer request?",
+      "noRequests": "No prayer requests yet",
+      "createFirst": "Create your first prayer request"
+    },
+    "validation": {
+      "titleRequired": "Title is required",
+      "descriptionRequired": "Description is required",
+      "requesterNameRequired": "Requester name is required",
+      "categoryRequired": "Category is required"
+    }
   }
 }
