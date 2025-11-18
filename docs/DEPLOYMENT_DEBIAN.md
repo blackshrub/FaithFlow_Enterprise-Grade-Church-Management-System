@@ -1,6 +1,41 @@
 # FaithFlow - Debian Server Deployment Guide
 
-**Complete step-by-step deployment for production environment**
+**Complete deployment options for production environment**
+
+---
+
+## Deployment Options
+
+### Option 1: Automated Installation (Recommended)
+
+**Use the one-click installer for easiest deployment:**
+
+```bash
+# On your fresh Debian 12 server:
+sudo bash install.sh
+```
+
+**Features:**
+- ✅ Interactive prompts for configuration
+- ✅ Automated installation of all dependencies
+- ✅ Complete setup in 15-20 minutes
+- ✅ Verbose logging
+- ✅ Error handling and verification
+- ✅ Creates backups and security setup
+
+**See:** `README.md` for installer usage
+
+---
+
+### Option 2: Manual Step-by-Step Deployment
+
+**Follow this guide if you:**
+- Need custom configuration
+- Want to understand each step
+- Are installing on non-Debian systems
+- Have special requirements
+
+---
 
 This guide assumes:
 - Fresh Debian 12 server
