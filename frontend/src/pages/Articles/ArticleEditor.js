@@ -73,6 +73,28 @@ export default function ArticleEditor() {
 
   const readingTime = Math.max(1, Math.round(wordCount / 200));
 
+  // Auto-save every 30 seconds
+  useEffect(() => {
+    if (!isEdit || !formData.title) return;
+
+    const autoSaveInterval = setInterval(async () => {
+      try {
+        setIsSaving(true);
+        await updateMutation.mutateAsync({ 
+          id, 
+          data: { ...formData, status: 'draft' } 
+        });
+        setLastSaved(new Date());
+      } catch (error) {
+        console.error('Auto-save failed:', error);
+      } finally {
+        setIsSaving(false);
+      }
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(autoSaveInterval);
+  }, [isEdit, formData, id]);
+
   const handleSave = async (publish = false) => {
     if (!formData.title) {
       toast({
