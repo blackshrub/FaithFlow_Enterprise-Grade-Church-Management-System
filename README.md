@@ -38,6 +38,7 @@ FaithFlow is a comprehensive, production-ready church management system designed
 - WhatsApp Gateway integration
 - **API Versioning (/api/v1/)** - Future-proof, mobile-ready
 - **MongoDB Transactions** - Atomic operations for accounting
+- **APScheduler** - Background workers for scheduled publishing and depreciation
 
 **Frontend:**
 - React 18
