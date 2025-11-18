@@ -218,6 +218,7 @@ function Devotions() {
           </div>
         )}
       </div>
+      )}
 
       {/* Devotion Form Modal */}
       {isFormOpen && (
