@@ -58,3 +58,4 @@ backend/models/tts_indonesian/checkpoint.pth
 # Environment files
 *.env
 *.env.*
+frontend/node_modules/.cache/default-development/8.pack
