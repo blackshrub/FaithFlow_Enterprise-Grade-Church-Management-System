@@ -81,7 +81,7 @@ async def get_journal(
 
 @router.post("/", status_code=status.HTTP_201_CREATED)
 async def create_journal(
-    journal_data: JournalCreate,
+    journal_data: JournalBase,
     current_user: dict = Depends(get_current_user),
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
@@ -92,6 +92,7 @@ async def create_journal(
     journal_dict = journal_data.model_dump()
     journal_dict["church_id"] = church_id
     journal_dict["created_by"] = user_id
+    journal_dict["status"] = "draft"  # Default to draft
     
     # Validate fiscal period
     journal_date = journal_dict["date"]
