@@ -44,6 +44,7 @@ class EventUpdate(BaseModel):
     enable_seat_selection: Optional[bool] = None
     seat_layout_id: Optional[str] = None
     seat_capacity: Optional[int] = Field(None, ge=1)
+    event_category_id: Optional[str] = None
     location: Optional[str] = None
     reservation_start: Optional[datetime] = None
     reservation_end: Optional[datetime] = None
