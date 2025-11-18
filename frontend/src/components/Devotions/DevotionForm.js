@@ -265,33 +265,37 @@ function DevotionForm({ devotion, onClose }) {
             </div>
 
             {/* TTS Audio */}
-            {isEdit && (
-              <div className="space-y-2">
-                <Label>{t('devotions.actions.generateAudio')}</Label>
-                <div className="flex gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={handleGenerateAudio}
-                    disabled={generatingAudio}
-                  >
-                    {generatingAudio ? (
-                      t('devotions.actions.generatingAudio')
-                    ) : (
-                      <>
-                        <Volume2 className="h-4 w-4 mr-2" />
-                        {t('devotions.actions.generateAudio')}
-                      </>
-                    )}
-                  </Button>
-                  {(devotion?.tts_audio_url || formData.tts_audio_url) && (
-                    <audio controls className="flex-1">
-                      <source src={devotion?.tts_audio_url || formData.tts_audio_url} type="audio/mp3" />
-                    </audio>
+            <div className="space-y-2">
+              <Label>{t('devotions.actions.generateAudio')}</Label>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleGenerateAudio}
+                  disabled={generatingAudio || !formData.content}
+                >
+                  {generatingAudio ? (
+                    t('devotions.actions.generatingAudio')
+                  ) : (
+                    <>
+                      <Volume2 className="h-4 w-4 mr-2" />
+                      {t('devotions.actions.generateAudio')}
+                    </>
                   )}
-                </div>
+                </Button>
+                {(devotion?.tts_audio_url || formData.tts_audio_url) && (
+                  <audio controls className="flex-1">
+                    <source src={devotion?.tts_audio_url || formData.tts_audio_url} type="audio/wav" />
+                    <source src={devotion?.tts_audio_url || formData.tts_audio_url} type="audio/mp3" />
+                  </audio>
+                )}
               </div>
-            )}
+              {!formData.content && (
+                <p className="text-xs text-gray-500">
+                  {t('devotions.validation.contentRequired')}
+                </p>
+              )}
+            </div>
           </div>
 
           {/* Footer */}
