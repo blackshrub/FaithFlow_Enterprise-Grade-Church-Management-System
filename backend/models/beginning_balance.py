@@ -15,7 +15,7 @@ class BeginningBalanceEntry(BaseModel):
 class BeginningBalanceBase(BaseModel):
     """Base model for Beginning Balance"""
     effective_date: date = Field(..., description="Effective date of beginning balance")
-    entries: List[BeginningBalanceEntry] = Field(..., min_length=1, description="Balance entries")
+    entries: list[BeginningBalanceEntry] = Field(..., min_length=1, description="Balance entries")
 
     @model_validator(mode='after')
     def validate_balanced(self):
