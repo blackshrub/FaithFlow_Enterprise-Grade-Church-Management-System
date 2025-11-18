@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';\nimport { useTranslation } from 'react-i18next';
 
 function LoadingAnimation({ message }) {
+  const { t } = useTranslation();
   const [show, setShow] = useState(true);
 
   return (
