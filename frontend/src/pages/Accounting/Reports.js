@@ -33,6 +33,9 @@ export default function Reports() {
     { id: 'trial-balance', icon: Scale, title: t('accounting.reports.trialBalance'), color: 'green' },
     { id: 'income-statement', icon: TrendingUp, title: t('accounting.reports.incomeStatement'), color: 'purple' },
     { id: 'balance-sheet', icon: PieChart, title: t('accounting.reports.balanceSheet'), color: 'orange' },
+    { id: 'cash-flow', icon: FileText, title: t('accounting.reports.cashFlow'), color: 'teal', route: '/accounting/reports/cash-flow' },
+    { id: 'rc-report', icon: FileText, title: t('accounting.reports.responsibilityCenterReport'), color: 'indigo', route: '/accounting/reports/responsibility-center' },
+    { id: 'custom', icon: FileText, title: t('accounting.reports.customReport'), color: 'pink', route: '/accounting/reports/custom' },
   ];
 
   const { data: trialBalanceData, refetch: refetchTB } = useTrialBalance(
