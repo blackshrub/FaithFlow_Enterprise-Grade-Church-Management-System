@@ -180,7 +180,7 @@ export default function Layout() {
                     </button>
 
                     {/* Submenu items */}
-                    {hasSubmenu && isExpanded && (
+                    {hasSubmenu && isExpanded && !sidebarCollapsed && (
                       <ul className="mt-1 ml-9 space-y-1">
                         {item.submenu.map((subItem) => {
                           const isSubActive = window.location.pathname === subItem.path;
