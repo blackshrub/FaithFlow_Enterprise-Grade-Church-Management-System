@@ -100,6 +100,7 @@ function EventForm({ event, onClose }) {
         name: formData.name,
         description: formData.description,
         event_type: formData.event_type,
+        event_category_id: formData.event_category_id || null,
         location: formData.location,
         event_photo: formData.event_photo,
         requires_rsvp: formData.requires_rsvp,
