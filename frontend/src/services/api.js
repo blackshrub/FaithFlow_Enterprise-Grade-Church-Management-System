@@ -239,8 +239,8 @@ export const devotionsAPI = {
   update: (id, data) => api.patch(`/devotions/${id}`, data),
   delete: (id) => api.delete(`/devotions/${id}`),
   duplicate: (id) => api.post(`/devotions/${id}/duplicate`),
-  generateAudio: (id) => api.post(`/devotions/${id}/generate-audio`),
-  generateAudioPreview: (text) => api.post('/devotions/generate-audio-preview', null, { params: { text } }),
+  generateAudio: (id) => api.post(`/devotions/${id}/generate-audio`, null, { timeout: 120000 }),
+  generateAudioPreview: (text) => api.post('/devotions/generate-audio-preview', null, { params: { text }, timeout: 120000 }),
   restoreVersion: (id, versionIndex) => api.post(`/devotions/${id}/restore-version`, null, { params: { version_index: versionIndex } }),
   bulkAction: (action, devotionIds) => api.post('/devotions/bulk-action', null, { params: { action, devotion_ids: devotionIds } }),
 };
