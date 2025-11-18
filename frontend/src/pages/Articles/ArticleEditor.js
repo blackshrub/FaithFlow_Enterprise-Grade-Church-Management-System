@@ -121,9 +121,9 @@ export default function ArticleEditor() {
   const handleGeneratePreview = async () => {
     if (!id) {
       toast({
-        variant="destructive",
+        variant: "destructive",
         title: t('common.error'),
-        description: "Please save article first"
+        description: t('articles.saveFirst')
       });
       return;
     }
