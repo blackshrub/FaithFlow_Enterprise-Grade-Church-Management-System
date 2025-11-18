@@ -32,7 +32,10 @@ export default function ResponsibilityCenters() {
           <h1 className="text-3xl font-bold">{t('accounting.responsibilityCenter.title')}</h1>
           <p className="text-gray-600">{t('accounting.responsibilityCenter.subtitle')}</p>
         </div>
-        <Button>
+        <Button onClick={() => {
+          setSelectedCenter(null);
+          setShowModal(true);
+        }}>
           <Plus className="w-4 h-4 mr-2" />
           {t('accounting.responsibilityCenter.create')}
         </Button>
