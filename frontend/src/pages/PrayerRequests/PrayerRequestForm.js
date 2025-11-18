@@ -61,8 +61,6 @@ export default function PrayerRequestForm() {
     if (existingRequest) {
       setFormData({
         member_id: existingRequest.member_id || '',
-        requester_name: existingRequest.requester_name || '',
-        requester_contact: existingRequest.requester_contact || '',
         title: existingRequest.title || '',
         description: existingRequest.description || '',
         category: existingRequest.category || 'other',
@@ -71,30 +69,39 @@ export default function PrayerRequestForm() {
         needs_follow_up: existingRequest.needs_follow_up || false,
         follow_up_notes: existingRequest.follow_up_notes || ''
       });
-    }
-  }, [existingRequest]);
-
-  // Update requester name when member selected
-  const handleMemberChange = (memberId) => {
-    setFormData({ ...formData, member_id: memberId });
-    
-    if (memberId) {
-      const selectedMember = members.find(m => m.id === memberId);
-      if (selectedMember) {
-        setFormData({
-          ...formData,
-          member_id: memberId,
-          requester_name: selectedMember.full_name,
-          requester_contact: selectedMember.whatsapp || selectedMember.email || ''
-        });
+      
+      // Set search to member name if member linked
+      if (existingRequest.member_id) {
+        const member = members.find(m => m.id === existingRequest.member_id);
+        if (member) {
+          setMemberSearch(member.full_name);
+        }
       }
     }
+  }, [existingRequest, members]);
+
+  const handleMemberSelect = (member) => {
+    setFormData({
+      ...formData,
+      member_id: member.id
+    });
+    setMemberSearch(member.full_name);
+    setShowMemberDropdown(false);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!formData.requester_name || !formData.title || !formData.description) {
+    if (!formData.member_id) {
+      toast({
+        variant: "destructive",
+        title: t('common.error'),
+        description: t('prayerRequests.validation.memberRequired')
+      });
+      return;
+    }
+
+    if (!formData.title || !formData.description) {
       toast({
         variant: "destructive",
         title: t('common.error'),
@@ -102,6 +109,19 @@ export default function PrayerRequestForm() {
       });
       return;
     }
+
+    const payload = {
+      member_id: formData.member_id,
+      requester_name: selectedMember?.full_name || '',
+      requester_contact: selectedMember?.whatsapp || selectedMember?.email || '',
+      title: formData.title,
+      description: formData.description,
+      category: formData.category,
+      status: formData.status,
+      internal_notes: formData.internal_notes,
+      needs_follow_up: formData.needs_follow_up,
+      follow_up_notes: formData.follow_up_notes
+    };
 
     try {
       if (isEdit) {
