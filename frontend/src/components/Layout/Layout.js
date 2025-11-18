@@ -102,6 +102,8 @@ export default function Layout() {
         { label: t('accounting.fiscalPeriod.title'), path: '/accounting/fiscal-periods' },
         { label: t('accounting.responsibilityCenter.title'), path: '/accounting/responsibility-centers' },
         { label: t('accounting.reports.title'), path: '/accounting/reports' },
+        { label: t('accounting.yearEnd.title'), path: '/accounting/year-end-closing' },
+        { label: t('accounting.auditLog.title'), path: '/accounting/audit-logs' },
       ]
     },
   ];
