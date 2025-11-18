@@ -253,8 +253,13 @@ async def approve_journal(
         )
     
     # Validate fiscal period
+    journal_date = journal["date"]
+    # Convert string date to date object if needed
+    if isinstance(journal_date, str):
+        from datetime import datetime as dt
+        journal_date = dt.fromisoformat(journal_date).date()
     can_perform, error_code, _ = await accounting_service.validate_fiscal_period(
-        db, church_id, journal["date"], "approve"
+        db, church_id, journal_date, "approve"
     )
     
     if not can_perform:
