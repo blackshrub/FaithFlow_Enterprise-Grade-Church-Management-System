@@ -37,6 +37,7 @@ export default function Members() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState(null);
+  const [qrMember, setQrMember] = useState(null);
   const [formData, setFormData] = useState(initialFormData);
 
   // React Query hooks - now includes incomplete_data filter
