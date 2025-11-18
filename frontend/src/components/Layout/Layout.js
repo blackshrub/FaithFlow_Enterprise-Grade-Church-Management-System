@@ -92,14 +92,14 @@ export default function Layout() {
     { icon: Award, label: t('nav.spiritualJourney'), path: '/spiritual-journey' },
     {
       icon: FileText,
-      label: 'Articles',
+      label: t('articles.title'),
       key: 'articles',
       submenu: [
-        { label: 'All Articles', path: '/articles' },
-        { label: 'Add New', path: '/articles/new' },
-        { label: 'Categories', path: '/articles/categories' },
-        { label: 'Tags', path: '/articles/tags' },
-        { label: 'Comments', path: '/articles/comments' },
+        { label: t('articles.allArticles'), path: '/articles' },
+        { label: t('articles.addNew'), path: '/articles/new' },
+        { label: t('articles.categories.title'), path: '/articles/categories' },
+        { label: t('articles.tags.title'), path: '/articles/tags' },
+        { label: t('articles.comments.title'), path: '/articles/comments' },
       ]
     },
     {
