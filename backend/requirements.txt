@@ -29,3 +29,4 @@ pillow>=10.0.0
 qrcode[pil]==7.4.2
 tiptap==0.1.0
 gTTS==2.5.1
+torch==2.1.0
