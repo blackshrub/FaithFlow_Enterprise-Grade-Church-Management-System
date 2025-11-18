@@ -96,6 +96,7 @@ function App() {
               <Route path="accounting/reports/general-ledger" element={<GeneralLedger />} />
               <Route path="accounting/reports/cash-flow" element={<CashFlowStatement />} />
               <Route path="accounting/reports/responsibility-center" element={<ResponsibilityCenterReport />} />
+              <Route path="accounting/reports/custom" element={<CustomReportBuilder />} />
               <Route path="accounting/budgets" element={<Budgets />} />
               <Route path="accounting/budgets/new" element={<BudgetForm />} />
               <Route path="accounting/budgets/:id/variance" element={<BudgetVariance />} />
