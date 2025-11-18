@@ -1196,13 +1196,16 @@ frontend:
     implemented: true
     working: false
     file: "/app/frontend/src/pages/Accounting/JournalForm.js"
-    stuck_count: 1
+    stuck_count: 2
     priority: "high"
     needs_retesting: true
     status_history:
       - working: false
         agent: "testing"
         comment: "CRITICAL ISSUE: Journal form loads correctly with all UI elements present (date, description, account selectors, debit/credit inputs, balance indicator). However, form submission is NOT working. The form is displayed in Bahasa Indonesia. Account selectors show 'Pilih' (Select) but dropdown functionality appears broken - when clicking account selector, the dropdown does not properly open with account options. Balance indicator correctly shows 'Unbalanced' when no amounts entered. Save buttons (Save as Draft, Save & Approve) are present at bottom but cannot test submission due to account selector issue. The account selector component needs investigation - it may not be loading COA data properly or the dropdown interaction is broken."
+      - working: false
+        agent: "testing"
+        comment: "ROUND 5 BUG FIX VALIDATION (2025-01-18): Tested journal form end-to-end. PARTIAL FIX: AccountSelector dropdown NOW OPENS (improvement from previous test), but CRITICAL BUGS REMAIN: (1) Only 2 account options available in dropdown (should be 52 accounts from seeded COA). (2) DEBIT AMOUNT NOT CAPTURED: When filling debit input with '1000000', the balance indicator shows 'Total Debit: Rp 0'. Credit amount works correctly showing 'Total Credit: Rp 1.000.000'. (3) Balance indicator correctly shows 'UNBALANCED' and Save buttons are correctly DISABLED. ROOT CAUSE: CurrencyInput component for debit amounts is not capturing values. The value is entered but not reflected in form state. This is blocking journal creation. AccountSelector needs to load all 52 COA accounts, not just 2."
 
   - task: "Accounting - Budget Form Submission"
     implemented: true
