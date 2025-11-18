@@ -46,7 +46,18 @@ function DevotionCard({ devotion, onEdit, isSelected, onToggleSelect }) {
   };
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg hover:shadow-md transition-shadow overflow-hidden flex flex-col h-full">
+    <div className={`bg-white border-2 rounded-lg hover:shadow-md transition-shadow overflow-hidden flex flex-col h-full ${isSelected ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-200'}`}>
+      {/* Selection Checkbox */}
+      <div className="absolute top-2 left-2 z-10">
+        <input
+          type="checkbox"
+          checked={isSelected}
+          onChange={onToggleSelect}
+          className="w-6 h-6 rounded cursor-pointer"
+          onClick={(e) => e.stopPropagation()}
+        />
+      </div>
+
       {/* Cover Image */}
       <div className="h-48 bg-gradient-to-br from-purple-500 to-pink-600 overflow-hidden relative flex-shrink-0">
         {devotion.cover_image_url ? (
