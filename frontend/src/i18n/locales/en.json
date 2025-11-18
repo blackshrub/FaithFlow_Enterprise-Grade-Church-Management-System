@@ -1,7 +1,10 @@
 {
   "app": {
-    "name": "Church Management",
-    "tagline": "Sign in to your account to continue"
+    "name": "FaithFlow",
+    "tagline": "Empowering Churches with Clarity, Care, and Connection",
+    "adminPortal": "Admin Portal",
+    "welcomeTo": "Welcome to",
+    "empoweringYourChurch": "Empowering your church with clarity, care, and connection"
   },
   "auth": {
     "login": "Sign In",
