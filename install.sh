@@ -584,11 +584,30 @@ db.bible_verses.create_index([("version_code", 1), ("book_number", 1), ("chapter
 # Search indexes
 db.members.create_index([("church_id", 1), ("full_name", "text")])
 
-print("Indexes created")
+print("Standard indexes created")
 PYEOF
 INDEXEOF
 
-log_success "Database indexes created"
+log_success "Standard database indexes created"
+
+# Create accounting indexes (NEW)
+log_info "Creating accounting module indexes..."
+
+su - $APP_USER << ACCTINDEXEOF
+cd $APP_DIR/backend
+source venv/bin/activate
+
+python3 scripts/create_accounting_indexes.py
+ACCTINDEXEOF
+
+log_success "Accounting indexes created (24+ indexes)"
+
+# Create uploads directory
+log_info "Creating uploads directory for accounting file attachments..."
+mkdir -p /app/uploads
+chown www-data:www-data /app/uploads
+chmod 755 /app/uploads
+log_success "Uploads directory created"
 
 print_header "Step 16: Setup Backups"
 
