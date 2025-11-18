@@ -165,3 +165,57 @@ export const useUpdateChurchSettings = () => {
     },
   });
 };
+
+// Event Categories hooks
+export function useEventCategories() {
+  return useQuery({
+    queryKey: ['eventCategories'],
+    queryFn: async () => {
+      const response = await settingsAPI.listEventCategories();
+      return response.data;
+    },
+  });
+}
+
+export function useCreateEventCategory() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data) => settingsAPI.createEventCategory(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['eventCategories'] });
+      toast.success('Category created successfully');
+    },
+    onError: () => {
+      toast.error('Failed to create category');
+    },
+  });
+}
+
+export function useUpdateEventCategory() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }) => settingsAPI.updateEventCategory(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['eventCategories'] });
+      toast.success('Category updated successfully');
+    },
+    onError: () => {
+      toast.error('Failed to update category');
+    },
+  });
+}
+
+export function useDeleteEventCategory() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id) => settingsAPI.deleteEventCategory(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['eventCategories'] });
+      toast.success('Category deleted successfully');
+    },
+    onError: (error) => {
+      const message = error.response?.data?.detail || 'Failed to delete category';
+      toast.error(message);
+    },
+  });
+}
