@@ -951,7 +951,7 @@ class AccountingAPITester:
 def main():
     """Main test execution"""
     print("\n" + "="*60)
-    print("🧪 ACCOUNTING MODULE - COMPREHENSIVE API TESTING")
+    print("🧪 FAITHFLOW - COMPREHENSIVE SYSTEM-WIDE API TESTING")
     print("="*60 + "\n")
     
     tester = AccountingAPITester()
