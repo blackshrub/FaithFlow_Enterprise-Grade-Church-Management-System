@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field, field_validator, model_validator
 from typing import Optional, Literal, List
-from datetime import datetime, date
+from datetime import datetime
+from datetime import date as DateType
 from decimal import Decimal
 import uuid
 
