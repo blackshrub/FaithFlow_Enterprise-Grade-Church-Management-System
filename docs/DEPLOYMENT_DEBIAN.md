@@ -663,6 +663,48 @@ db.users.insertOne({
 })
 ```
 
+### Create Accounting Database Indexes ⭐ NEW
+
+**CRITICAL for accounting performance:**
+
+```bash
+cd /opt/faithflow/backend
+source venv/bin/activate
+
+# Create all accounting indexes (24+ indexes)
+python3 scripts/create_accounting_indexes.py
+```
+
+**What it does:**
+- Creates unique compound indexes for multi-tenancy
+- Optimizes queries on `church_id`, `date`, `status`
+- Ensures code uniqueness per church (COA, assets, banks)
+- Improves pagination performance
+- Required for fiscal period enforcement
+
+**Expected output:**
+```
+Creating accounting indexes...
+✓ Chart of Accounts indexes created
+✓ Responsibility Centers indexes created
+✓ Journals indexes created
+✓ Fiscal Periods indexes created
+✓ Budgets indexes created
+✓ Fixed Assets indexes created
+... (16 total)
+✅ All accounting indexes created successfully!
+```
+
+### Create Uploads Directory ⭐ NEW
+
+For file attachments (receipts, invoices, etc.):
+
+```bash
+sudo mkdir -p /app/uploads
+sudo chown www-data:www-data /app/uploads
+sudo chmod 755 /app/uploads
+```
+
 ---
 
 ## 11. Smoke Testing
