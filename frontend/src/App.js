@@ -35,9 +35,12 @@ import FixedAssets from "./pages/Accounting/FixedAssets";
 import FixedAssetForm from "./pages/Accounting/FixedAssetForm";
 import DepreciationSchedule from "./pages/Accounting/DepreciationSchedule";
 import BankReconciliation from "./pages/Accounting/BankReconciliation";
+import BankMatching from "./pages/Accounting/BankMatching";
 import YearEndClosing from "./pages/Accounting/YearEndClosing";
 import AuditLogs from "./pages/Accounting/AuditLogs";
 import GeneralLedger from "./pages/Accounting/GeneralLedger";
+import CashFlowStatement from "./pages/Accounting/CashFlowStatement";
+import ResponsibilityCenterReport from "./pages/Accounting/ResponsibilityCenterReport";
 
 import FaithFlowLogo from './components/Branding/FaithFlowLogo';
 
