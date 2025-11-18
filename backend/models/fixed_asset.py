@@ -49,7 +49,7 @@ class FixedAsset(FixedAssetBase):
     church_id: str = Field(..., description="Church ID")
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
-    attachments: List[str] = Field(default_factory=list, description="File attachment IDs")
+    attachments: list[str] = Field(default_factory=list, description="File attachment IDs")
     
     def calculate_monthly_depreciation(self) -> Decimal:
         """Calculate monthly depreciation amount (straight-line)"""
