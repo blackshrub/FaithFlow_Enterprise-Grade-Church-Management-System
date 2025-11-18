@@ -47,12 +47,12 @@ const CategorySelector = ({ value = [], onChange, label }) => {
 
       <Select onValueChange={handleAdd} disabled={isLoading}>
         <SelectTrigger>
-          <SelectValue placeholder={t('articles.categories.selectCategories')} />
+          <SelectValue placeholder={t('articles.categoriesManagement.selectCategories')} />
         </SelectTrigger>
         <SelectContent>
           {availableCategories.length === 0 ? (
             <SelectItem value="_none" disabled>
-              {t('articles.categories.noCategories')}
+              {t('articles.categoriesManagement.noCategories')}
             </SelectItem>
           ) : (
             availableCategories.map((cat) => (
