@@ -140,6 +140,7 @@ export default function Budgets() {
                             size="sm"
                             onClick={() => navigate(`/accounting/budgets/${budget.id}/variance`)}
                           >
+                            <TrendingUp className="w-4 h-4 mr-2" />
                             {t('accounting.budget.budgetVsActual')}
                           </Button>
                         )}
