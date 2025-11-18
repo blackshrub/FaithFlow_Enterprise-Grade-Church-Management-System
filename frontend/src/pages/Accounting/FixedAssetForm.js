@@ -209,6 +209,24 @@ export default function FixedAssetForm() {
           </CardContent>
         </Card>
 
+        <Card>
+          <CardHeader>
+            <CardTitle>{t('accounting.files.attachedFiles')} ({t('accounting.common.optional')})</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <FileUpload
+              referenceType="asset"
+              referenceId={null}
+              onUploadSuccess={(file) => setFormData({
+                ...formData,
+                attachments: [...formData.attachments, file.id]
+              })}
+              multiple={true}
+            />
+            <p className="text-xs text-gray-500 mt-2">Upload purchase documents, invoices, etc.</p>
+          </CardContent>
+        </Card>
+
         <div className="flex justify-end space-x-2">
           <Button type="button" variant="outline" onClick={() => navigate('/accounting/assets')}>
             {t('accounting.common.cancel')}
