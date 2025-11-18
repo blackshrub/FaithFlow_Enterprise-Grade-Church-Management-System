@@ -12,11 +12,17 @@ import {
   TableRow,
 } from '../../components/ui/table';
 import { Badge } from '../../components/ui/badge';
-import { useResponsibilityCenters } from '../../hooks/useAccounting';
+import { useResponsibilityCenters, useDeleteResponsibilityCenter } from '../../hooks/useAccounting';
+import ResponsibilityCenterModal from '../../components/Accounting/ResponsibilityCenterModal';
 
 export default function ResponsibilityCenters() {
   const { t } = useTranslation();
-  const { data: centers, isLoading } = useResponsibilityCenters();
+  const { toast } = useToast();
+  const [showModal, setShowModal] = useState(false);
+  const [selectedCenter, setSelectedCenter] = useState(null);
+  
+  const { data: centers, isLoading, refetch } = useResponsibilityCenters();
+  const deleteMutation = useDeleteResponsibilityCenter();
 
   return (
     <div className="p-6 space-y-6">
