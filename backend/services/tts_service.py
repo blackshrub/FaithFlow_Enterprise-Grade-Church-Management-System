@@ -29,8 +29,14 @@ def generate_indonesian_tts_coqui(text: str) -> str:
     """
     try:
         from TTS.utils.synthesizer import Synthesizer
+        from g2p_id import G2P
         import numpy as np
         import scipy.io.wavfile as wavfile
+        
+        # Convert Indonesian text to phonemes
+        g2p = G2P()
+        phonemes = g2p(text)
+        logger.info(f"Text to phonemes: '{text}' -> '{phonemes}'")
         
         synth = Synthesizer(
             tts_checkpoint=str(CHECKPOINT_PATH),
@@ -39,7 +45,8 @@ def generate_indonesian_tts_coqui(text: str) -> str:
         )
         
         logger.info("Generating Indonesian TTS with Wibowo voice...")
-        wav = synth.tts(text=text, speaker_name="wibowo")
+        # Use phonemes instead of raw text
+        wav = synth.tts(text=phonemes, speaker_name="wibowo")
         
         # Convert to numpy array and normalize
         wav_data = np.array(wav) if isinstance(wav, list) else wav
@@ -57,7 +64,7 @@ def generate_indonesian_tts_coqui(text: str) -> str:
             os.unlink(tmp_file.name)
         
         audio_base64 = base64.b64encode(audio_data).decode('utf-8')
-        logger.info("✓ Coqui TTS (Wibowo) generation successful")
+        logger.info("✓ Coqui TTS (Wibowo) generation successful with g2p phonemes")
         return f"data:audio/wav;base64,{audio_base64}"
     
     except Exception as e:
