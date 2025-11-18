@@ -11,6 +11,7 @@ import AccountSelector from '../../components/Accounting/AccountSelector';
 import ResponsibilityCenterSelector from '../../components/Accounting/ResponsibilityCenterSelector';
 import CurrencyInput from '../../components/Accounting/CurrencyInput';
 import CurrencyDisplay from '../../components/Accounting/CurrencyDisplay';
+import FileUpload from '../../components/Accounting/FileUpload';
 import { useToast } from '../../hooks/use-toast';
 
 export default function BudgetForm() {
@@ -23,7 +24,8 @@ export default function BudgetForm() {
     fiscal_year: new Date().getFullYear(),
     lines: [
       { account_id: '', responsibility_center_id: null, annual_amount: 0, monthly_amounts: {} }
-    ]
+    ],
+    attachments: []
   });
 
   const createMutation = useCreateBudget();
