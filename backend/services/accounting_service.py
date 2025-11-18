@@ -165,7 +165,6 @@ async def calculate_account_balance(
     if not account:
         return Decimal('0')
     
-    account_type = account.get("account_type")
     normal_balance = account.get("normal_balance")
     
     # Calculate balance based on normal balance
