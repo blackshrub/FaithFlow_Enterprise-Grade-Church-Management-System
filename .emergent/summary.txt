@@ -1,106 +1,87 @@
 <analysis>
-The trajectory details the development of a full-stack, multi-tenant church management system from scratch. The user provided iterative requirements, and the AI engineer implemented them, focusing on two major features: an Authentication/Settings module and a highly complex Data Import/Export module.
+The trajectory documents the development of a comprehensive, multi-tenant church management system. The AI engineer began by scaffolding the project (FastAPI backend, React frontend) and implementing core features like authentication and settings. The majority of the effort was then dedicated to building two highly complex, feature-rich modules based on iterative user feedback: **Event & RSVP Management** and a **Devotion CMS**.
 
-The process began with setting up the project structure (FastAPI backend, React frontend) and establishing best practices. The first phase involved creating a robust authentication system, multi-church capabilities, and a settings page for managing application-wide configurations like member statuses, demographics, and date formats.
+The Event module evolved to include interactive seat layouts, single/series event types, and an immersive, tablet-friendly Kiosk Mode for check-ins with QR code scanning (both personal and event-specific).
 
-The bulk of the work focused on a sophisticated data import wizard. This feature evolved significantly through user feedback. Initial implementation was followed by numerous refactors to handle: reversed field mapping, default values, full name parsing, phone number normalization, ZIP/RAR file uploads for photos/documents, a visual timeline, custom field creation, and duplicate data resolution. A major refactoring effort also introduced TanStack React Query for server-state management and  for internationalization, making the application more robust and scalable.
+The Devotion CMS implementation was particularly challenging. It involved sourcing and importing multiple Bible versions into a local MongoDB database, creating a rich-text editor (Tiptap), and integrating a Text-to-Speech (TTS) engine. The TTS feature required extensive debugging of Python dependencies for Coqui TTS and fine-tuning pronunciation for Bahasa Indonesia by implementing several custom text-preprocessing rules (e.g., Unicode character mapping for 'g', softening final 'd' sounds).
 
-Throughout the development, the AI engineer faced and resolved numerous bugs, including Python dependency issues, frontend state management problems (especially React hooks errors caused by conditional rendering), data-matching logic flaws, and UI inconsistencies. The final iteration of the import module features a unified 7-step wizard that validates data, photos, and documents against the source file before committing to the database.
+Numerous UI/UX refinements were made based on user feedback, such as fixing component alignments, implementing a collapsible sidebar, and addressing a persistent HTTPS mixed-content issue by enforcing trailing slashes on API calls.
 
-The last user request pivoted to a new Event and RSVP Management module, which the AI engineer had just begun to architect by creating the initial backend models and routes before the session ended.
-
-The user's primary language is English. All future responses should be in English.
+The final phase focused on a complete re-branding to FaithFlow and creating extensive, production-ready documentation, including a one-click  script for deployment on a Debian server. The project was concluded with a final documentation update before being handed over. The user's primary language is English, and future interactions should be in English.
 </analysis>
 
 <product_requirements>
-The project is an enterprise-grade, multi-tenant Church Management System designed for admin/staff use only (no member-facing login). Communication with members is exclusively via WhatsApp.
+The application is an enterprise-grade, multi-tenant Church Management System named FaithFlow, designed for administrative staff.
 
-**Phase 1: Core System & Data Import (Completed)**
-The system supports a single church, GKBJ Taman Kencana, with secure, role-based authentication. A comprehensive settings module allows admins to configure member statuses, demographic categories, and localization settings like date format and default language.
+**Completed Core Modules:**
+1.  **Event & RSVP Management:** Allows creation of single or series events with customizable categories. Features an interactive, visual seat layout editor. Manages RSVPs, including seat selection for specific events. Includes a fullscreen, tablet-optimized Kiosk Mode for attendance tracking via QR code scanning (camera or hardware scanner) or manual search. Supports on-the-spot registration for existing members and quick-add forms for new visitors.
 
-The most significant feature is a robust data import/export module. Admins can import member data from CSV or JSON files. A 7-step wizard guides them through:
-1.  Uploading the data file.
-2.  Uploading a ZIP/RAR of member photos (optional).
-3.  Uploading a ZIP/RAR of personal documents (optional).
-4.  Mapping source columns to application fields (e.g., , ), with the ability to create and map custom fields.
-5.  Mapping specific values (e.g., M to Male).
-6.  Simulating the import to validate data, resolve duplicate phone numbers, and see photo/document matching results.
-7.  Committing the final data.
+2.  **Devotion CMS:** Enables staff to create, edit, and manage devotional posts. Features a rich-text editor (Tiptap), cover image uploads, and the ability to embed Bible verses fetched from a local database containing 6 different Bible versions (TB, CHS, NIV, NKJV, NLT, ESV).
 
-The system handles file normalization (e.g., phone numbers to '62' prefix, image extensions to lowercase) and automatically cleans up temporarily uploaded files if the process is aborted.
+3.  **Advanced Integrations:**
+    *   **Text-to-Speech (TTS):** Generates high-quality audio for devotionals in Bahasa Indonesia using a locally hosted Coqui TTS model with a custom Wibowo voice, featuring sophisticated text preprocessing for natural pronunciation.
+    *   **Member QR Codes:** Each member profile has a unique, persistent QR code for easy identification and check-in.
 
-**Phase 2: Event & RSVP Management (In Progress)**
-This new module, which has just been started, will allow admins to manage single and series events, design interactive seat layouts for rooms, handle RSVP and seat selection, and manage attendance through a kiosk mode with QR code scanning.
+4.  **System & Settings:** Includes secure authentication, role-based access, a collapsible navigation sidebar, and a settings panel for managing member statuses and event categories. The entire UI is themed with the FaithFlow brand identity.
 </product_requirements>
 
 <key_technical_concepts>
-- **Backend:** FastAPI, MongoDB (with Pydantic models for data validation).
-- **Frontend:** React, Tailwind CSS, shadcn/ui.
-- **State Management:** TanStack React Query for server state, caching, and mutations.
-- **Internationalization (i18n):**  for multilingual support (English, Indonesian).
-- **Authentication:** JWT-based token authentication for admin/staff roles.
-- **File Handling:** Backend processing of CSV, JSON, ZIP, and RAR files, including image normalization and optimization with Pillow.
-- **Architecture:** API-first, multi-tenant design where all data is scoped by .
+- **Backend:** FastAPI, MongoDB (Pydantic for validation), Python 3.11.
+- **Frontend:** React, Tailwind CSS, shadcn/ui, TanStack React Query (server state),  (i18n).
+- **Authentication:** JWT for role-based access (Admin/Staff).
+- **Architecture:** API-first, multi-tenant design (all data scoped by ).
+- **TTS Engine:** Locally hosted Coqui TTS with a custom Indonesian model (Wibowo voice) and  for phoneme conversion.
+- **Bible Data:** Local JSON files for 6 Bible versions (TB, CHS, NIV, NKJV, NLT, ESV) imported into MongoDB for offline access.
+- **Deployment:** Documented for a Debian server using Nginx, systemd, and a comprehensive  script.
 </key_technical_concepts>
 
 <code_architecture>
-The project is a standard monorepo with a  and  directory.
+The project follows a monorepo structure with distinct  and  directories. The backend is a FastAPI application, and the frontend is a Create React App-based application.
 
 
 
 **Key File Summaries:**
 
--   ****:
-    -   **Importance:** Contains all the core business logic for parsing files (CSV, JSON), applying field and value mappings, validating data, handling custom fields, and detecting duplicates.
-    -   **Changes:** Heavily iterated upon. Logic was added to handle full name parsing, phone number normalization, custom field validation, and detecting duplicates only within the source file (not the database). Removed SQL parsing logic.
+-   ****
+    -   **Importance:** Contains the highly complex and fine-tuned logic for generating Text-to-Speech audio.
+    -   **Summary of Changes:** This file evolved from using a simple  fallback to implementing a sophisticated local Coqui TTS solution. It now includes extensive text preprocessing rules for natural Indonesian pronunciation, such as replacing 'g' with the Unicode script 'ɡ' (U+0261) and softening final 'd' sounds to 't'. It dynamically loads the local Wibowo voice model.
 
--   ****:
-    -   **Importance:** Manages file uploads, specifically extracting and validating files from ZIP/RAR archives.
-    -   **Changes:** Refactored to correctly count files (ignoring folders and system files like ), normalize filenames to lowercase, and handle image optimization. Added logic to delete unmatched files.
+-   ****
+    -   **Importance:** This is the main UI for the event check-in process, designed for a tablet-first, fullscreen experience.
+    -   **Summary of Changes:** It was completely refactored to be a standalone page outside the main  to achieve a true immersive fullscreen mode. It features a split-screen UI for camera scanning and manual member search, with selectable colorful background themes.
 
--   ****:
-    -   **Importance:** The main stateful component for the multi-step import process. It manages the current step and the  state object that is passed between steps.
-    -   **Changes:** Refactored to unify the data, photo, and document uploads into a single 7-step flow, and to pass the complete dataset to simulation steps.
+-   ****
+    -   **Importance:** The central Axios instance for all frontend API calls.
+    -   **Summary of Changes:** This file was modified multiple times to resolve a critical Mixed Content error. The final solution involves dynamically setting the  using  to ensure protocol consistency (HTTPS). It also standardizes the use of trailing slashes on API endpoints to prevent server-side redirects that were causing issues. A longer timeout was added specifically for TTS generation requests.
 
--   ****:
-    -   **Importance:** The most complex UI component, responsible for running the validation, displaying results (errors, duplicates), and handling the duplicate resolution flow.
-    -   **Changes:** Underwent significant refactoring to fix a persistent Rendered fewer hooks than expected error. The final solution involved embedding the duplicate resolution UI directly within this component instead of conditionally rendering a separate component, thus ensuring hooks are always called in the same order.
+-   ****
+    -   **Importance:** The main application shell containing the sidebar and content area.
+    -   **Summary of Changes:** It was updated to include the FaithFlow brand logo and a collapsible sidebar. The component now manages the  state, adjusting its width and conditionally rendering text labels to provide a more focused user experience.
 
--   ** & **:
-    -   **Importance:** These are the newest models, created to support the Event Management feature. They define the schema for seat layouts, events, sessions, and RSVPs.
-    -   **Changes:** These are newly created files, representing the start of the next major feature.
+-   ****
+    -   **Importance:** A critical new file for deployment automation.
+    -   **Summary of Changes:** This is an interactive shell script created to automate the entire setup process on a fresh Debian server, including installing dependencies, setting up environment variables, configuring systemd services, and setting up Nginx.
+
+-   ** directory**
+    -   **Importance:** Contains all project documentation for handover and future maintenance.
+    -   **Summary of Changes:** This entire directory was created in the final stages of the project. It includes a detailed deployment guide (), API reference (), feature descriptions (), and codebase structure ().
 </code_architecture>
 
 <pending_tasks>
-- **Fix Import/Export Bug:** A testing agent report mentioned a critical issue: field mapping is not transmitting data correctly, which was set aside to start the new feature. This needs to be investigated and fixed.
-- **Complete Event & RSVP Management Module:**
-  - Finish backend routes for events and seat layouts.
-  - Build the entire frontend UI for:
-    - Seat Layout management (visual editor).
-    - Event creation/management (for single and series events).
-    - Kiosk mode for check-in.
+- **New Major Feature: Accounting System.** The user has provided detailed requirements for a comprehensive, enterprise-grade accounting module. This was explicitly deferred to be worked on in a separate project fork. All existing work has been finalized and documented in preparation for this.
 </pending_tasks>
 
 <current_work>
-The AI engineer has just pivoted from completing the complex Import/Export module to starting the new **Event and RSVP Management module**.
+The work just before this summary request was the **finalization of all project documentation** to ensure the codebase is self-contained, well-documented, and ready for handover and deployment. This was a direct response to the user's request to make sure update all the documentation, including what new feature has been added etc and make sure no miss for any api endpoint, docs, for github purpose.
 
-Work was paused immediately after scaffolding the initial backend architecture for this new feature. Specifically, the following actions were taken:
+Specifically, the AI engineer was in the process of:
+1.  **Updating  and **: These files were being edited to include the most recently added features, such as the collapsible sidebar and event categories, ensuring the documentation accurately reflects the final state of the application.
+2.  **Creating  and **: These crucial documents were created from scratch to provide a complete API reference and a step-by-step guide for deploying the application on a fresh server.
+3.  **Creating an  script**: An interactive installer was built to automate the entire deployment process, and the documentation was updated to highlight this as the primary installation method.
 
-1.  **Created Backend Models:**
-    *   : Defines the  schema, including rows, columns, and the state of each seat (, , ).
-    *   : Defines schemas for  (single/series), , and , all linked by .
-
-2.  **Started Backend Routes:**
-    *   : Created with placeholder CRUD endpoints for managing seat layouts.
-    *   : Created with comprehensive, though not fully tested, endpoints for creating, updating, and managing events and their sessions.
-
-3.  **Updated Main Server & Frontend API:**
-    *   : The new routers for  and  were included.
-    *   : New functions were added to create the service layer for calling the new event and seat layout endpoints from the frontend.
-
-The work stopped before any frontend UI components for the Event Management module were created.
+Essentially, the project was being wrapped up for a clean handoff, with a strong focus on making it easy for a new developer to understand, deploy, and maintain the system. All feature development on the current branch was complete.
 </current_work>
 
 <optional_next_step>
-Continue building the **Event & RSVP Management** module by creating the frontend UI for the **Seat Layout Management** feature, allowing admins to visually define and save room layouts.
+Review the generated documentation files (, , , ) for accuracy and completeness, ensuring they reflect all the final features like the collapsible sidebar and event category enhancements.
 </optional_next_step>
