@@ -727,7 +727,7 @@ class AccountingAPITester:
         success, devotions = self.run_test(
             "List Devotions (Empty)",
             "GET",
-            "/api/v1/devotions/",
+            "/api/devotions/",
             200
         )
         
@@ -753,7 +753,7 @@ class AccountingAPITester:
         success, created_devotion = self.run_test(
             "Create Devotion",
             "POST",
-            "/api/v1/devotions/",
+            "/api/devotions/",
             201,
             data=devotion_data
         )
@@ -765,7 +765,7 @@ class AccountingAPITester:
             success, devotion = self.run_test(
                 "Get Single Devotion",
                 "GET",
-                f"/api/v1/devotions/{devotion_id}",
+                f"/api/devotions/{devotion_id}",
                 200
             )
             
@@ -776,7 +776,7 @@ class AccountingAPITester:
             success, updated = self.run_test(
                 "Update Devotion",
                 "PATCH",
-                f"/api/v1/devotions/{devotion_id}",
+                f"/api/devotions/{devotion_id}",
                 200,
                 data=update_data
             )
