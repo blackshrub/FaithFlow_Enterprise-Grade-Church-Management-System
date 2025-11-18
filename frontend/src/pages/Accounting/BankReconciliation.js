@@ -313,9 +313,11 @@ export default function BankReconciliation() {
               <CardTitle>{t('accounting.bank.reconcile')}</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-8 text-gray-500">
-                <p>{t('accounting.bank.reconciliationTooltip')}</p>
-                <p className="text-sm mt-2">Coming soon: Two-column matching interface</p>
+              <div className="text-center py-8">
+                <p className="text-gray-600 mb-4">{t('accounting.bank.reconciliationTooltip')}</p>
+                <Button onClick={() => navigate('/accounting/bank/matching')}>
+                  Open Matching Interface
+                </Button>
               </div>
             </CardContent>
           </Card>
