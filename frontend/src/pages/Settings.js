@@ -36,6 +36,10 @@ export default function Settings() {
         <TabsContent value="demographics" className="mt-6">
           <DemographicsTab />
         </TabsContent>
+
+        <TabsContent value="categories" className="mt-6">
+          <EventCategoriesTab />
+        </TabsContent>
       </Tabs>
     </div>
   );
