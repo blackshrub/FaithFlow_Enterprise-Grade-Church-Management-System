@@ -1185,6 +1185,59 @@ test_plan:
 
 
 
+
+
+# Accounting Module - Complete Testing Suite Results (2025-11-18)
+
+frontend:
+  - task: "Accounting - Journal Form Submission"
+    implemented: true
+    working: false
+    file: "/app/frontend/src/pages/Accounting/JournalForm.js"
+    stuck_count: 1
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "testing"
+        comment: "CRITICAL ISSUE: Journal form loads correctly with all UI elements present (date, description, account selectors, debit/credit inputs, balance indicator). However, form submission is NOT working. The form is displayed in Bahasa Indonesia. Account selectors show 'Pilih' (Select) but dropdown functionality appears broken - when clicking account selector, the dropdown does not properly open with account options. Balance indicator correctly shows 'Unbalanced' when no amounts entered. Save buttons (Save as Draft, Save & Approve) are present at bottom but cannot test submission due to account selector issue. The account selector component needs investigation - it may not be loading COA data properly or the dropdown interaction is broken."
+
+  - task: "Accounting - Budget Form Submission"
+    implemented: true
+    working: false
+    file: "/app/frontend/src/pages/Accounting/BudgetForm.js"
+    stuck_count: 1
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "testing"
+        comment: "CRITICAL ISSUE: Budget form loads with all UI elements present. Form accepts Name and Fiscal Year inputs. However, backend returns 422 Unprocessable Entity errors when attempting to create budget. Backend logs show: 'POST /api/v1/accounting/budgets/ HTTP/1.1 422'. The issue is likely related to data validation - the BudgetLine model requires annual_amount as Decimal and monthly_amounts as Dict[str, Decimal]. Frontend may be sending incorrect data types or missing required fields. The form shows 'Save as Draft' button as ENABLED even without complete data, suggesting frontend validation is not strict enough. Backend validation in /app/backend/models/budget.py requires: (1) lines must be list of BudgetLine objects, (2) each line needs account_id and annual_amount, (3) if monthly_amounts provided, they must sum to annual_amount within 0.01 tolerance."
+
+  - task: "Accounting - Fixed Asset Form Submission"
+    implemented: true
+    working: false
+    file: "/app/frontend/src/pages/Accounting/FixedAssetForm.js"
+    stuck_count: 1
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "testing"
+        comment: "CRITICAL ISSUE: Fixed Asset form loads with basic UI elements. Form accepts Asset Code, Asset Name, and Acquisition Date. However, backend returns 422 Unprocessable Entity errors when attempting to create asset. Backend logs show: 'POST /api/v1/accounting/assets/ HTTP/1.1 422'. During testing, only 1 number input field was detected (expected 3 for Cost, Useful Life, Salvage Value), suggesting the form structure may not be rendering all required fields properly. The CurrencyInput component for Cost field may not be rendering as a standard number input. Account selectors for Asset Account, Depreciation Expense Account, and Accumulated Depreciation Account are present but may have same dropdown issue as Journal form. Backend validation requires all three account IDs to be provided."
+
+  - task: "Accounting - Account Selector Component"
+    implemented: true
+    working: false
+    file: "/app/frontend/src/components/Accounting/AccountSelector.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "testing"
+        comment: "CRITICAL ISSUE: AccountSelector component appears to be broken across all accounting forms (Journal, Budget, Asset). When clicking the combobox button, the dropdown does not properly display account options. During testing, clicking the selector resulted in language selector appearing instead of account list. This suggests the component's dropdown functionality is not working correctly. The component needs to: (1) Load COA data from API, (2) Display accounts in searchable dropdown, (3) Allow selection and update parent form state. This is blocking all form submissions that require account selection."
+
 # Accounting Module Frontend Testing Results (2025-01-18)
 
 frontend:
