@@ -39,6 +39,7 @@ export default function PrayerRequestForm() {
   useEffect(() => {
     if (existingRequest) {
       setFormData({
+        member_id: existingRequest.member_id || '',
         requester_name: existingRequest.requester_name || '',
         requester_contact: existingRequest.requester_contact || '',
         title: existingRequest.title || '',
@@ -49,6 +50,23 @@ export default function PrayerRequestForm() {
       });
     }
   }, [existingRequest]);
+
+  // Update requester name when member selected
+  const handleMemberChange = (memberId) => {
+    setFormData({ ...formData, member_id: memberId });
+    
+    if (memberId) {
+      const selectedMember = members.find(m => m.id === memberId);
+      if (selectedMember) {
+        setFormData({
+          ...formData,
+          member_id: memberId,
+          requester_name: selectedMember.full_name,
+          requester_contact: selectedMember.whatsapp || selectedMember.email || ''
+        });
+      }
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
