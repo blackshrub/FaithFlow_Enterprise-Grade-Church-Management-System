@@ -176,45 +176,48 @@ Includes detailed steps for:
 
 ### 1. Event Management
 - Create single or series events
+- **Event categories** (Sunday Service, Prayer Meeting, etc.)
 - Seat layout editor (visual grid)
 - Cinema-style seat selection
 - RSVP with QR codes (4-digit confirmation)
+- **Personal QR codes** (6-digit universal member ID)
 - WhatsApp confirmations (delivery tracking)
 - Attendance tracking
 
 ### 2. Kiosk Mode
-- Fullscreen tablet-optimized UI
+- **Fullscreen tablet-optimized UI** (no sidebar)
 - Split-screen (camera + manual search)
 - 10 colorful themes
-- Dual QR support (personal + event)
+- **Dual QR support** (personal + event RSVP)
 - Onsite RSVP flow
-- Quick visitor registration
-- 3-second countdown photo capture
+- Quick visitor registration (3s photo countdown)
+- **Enhanced check-in** (accepts both QR types)
 
 ### 3. Devotion CMS
 - Daily devotion posts
 - Rich text editor (Tiptap)
 - 6 Bible versions (186,592 verses)
 - Verse picker with auto-fetch
-- Indonesian TTS (Wibowo voice)
+- **Indonesian TTS** (Wibowo voice - perfect pronunciation)
+- **Pronunciation normalization** (g→ɡ, b→p, d→t automatic fixes)
 - Version history tracking
 - Schedule publishing
-- Bulk operations
+- **Bulk operations** (select multiple, publish/delete)
+- **Calendar view** (monthly overview with color-coded status)
 
-### 4. Accounting System
-- Chart of Accounts (COA)
-- General Journal
-- Budget management
-- Fixed assets tracking
-- Bank reconciliation
-- Financial reports
-- Multi-church isolation
+### 4. Personal QR System
+- Auto-generated on member creation
+- 6-digit unique code
+- **QR display modal** (download, print)
+- Works for universal check-in
+- Stored in member profile
 
 ### 5. Member Management
 - Complete member CRUD
 - Bulk import (CSV/JSON)
 - Photo & document management
-- Personal QR codes (universal ID)
+- **Personal QR codes** (universal ID)
+- **QR modal** (view, download, print)
 - Demographics & categories
 - Custom fields support
 
@@ -225,12 +228,16 @@ Includes detailed steps for:
   - NIV, NKJV, NLT, ESV (English)
 - 186,592 verses stored locally
 - Fast verse lookup API
-- Language-appropriate book names
+- **Language-appropriate book names** (respects Bible version)
 
 ### 7. Text-to-Speech
 - Coqui TTS with Wibowo voice (male, Indonesian)
-- Automatic pronunciation normalization
+- **Perfect pronunciation** with automatic fixes:
+  - Unicode script ɡ (U+0261) for 'g' sounds
+  - 'b' → 'p' at word end & before consonants
+  - 'd' → 't' at word end & before consonants
 - Preview before saving
+- 120s timeout for generation
 - gTTS fallback
 
 ## Multi-Church Support
