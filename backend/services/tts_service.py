@@ -35,23 +35,16 @@ def generate_indonesian_tts_coqui(text: str) -> str:
         import html
         import re
         
-        # Preprocess text
+        # Preprocess text (same as TTS-Indonesia-Gratis)
         text = html.unescape(text)  # Decode HTML entities
         text = re.sub(r'<[^>]+>', '', text)  # Remove HTML tags
         text = re.sub(r'\s+', ' ', text)  # Normalize whitespace
         text = text.strip()
         
-        # Limit length for better quality (split if too long)
-        max_length = 500  # characters
-        if len(text) > max_length:
-            # Take first 500 chars for now (can be enhanced to split by sentence)
-            text = text[:max_length] + "..."
-            logger.info(f"Text truncated to {max_length} characters for TTS quality")
-        
         # Convert Indonesian text to phonemes
         g2p = G2P()
         phonemes = g2p(text)
-        logger.info(f"Text to phonemes: '{text[:50]}...' -> '{phonemes[:50]}...'")
+        logger.info(f"Converting {len(text)} chars to phonemes (g2p-id)")
         
         synth = Synthesizer(
             tts_checkpoint=str(CHECKPOINT_PATH),
@@ -88,7 +81,7 @@ def generate_indonesian_tts_coqui(text: str) -> str:
             os.unlink(tmp_file.name)
         
         audio_base64 = base64.b64encode(audio_data).decode('utf-8')
-        logger.info("✓ Coqui TTS (Wibowo) generation successful with g2p phonemes")
+        logger.info(f"✓ Coqui TTS (Wibowo) successful - {len(audio_data)} bytes WAV")
         return f"data:audio/wav;base64,{audio_base64}"
     
     except Exception as e:
