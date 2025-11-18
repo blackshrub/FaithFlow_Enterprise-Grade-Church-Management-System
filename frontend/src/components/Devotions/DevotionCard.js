@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 import { format } from 'date-fns';
 import VersionHistoryModal from './VersionHistoryModal';
 
-function DevotionCard({ devotion, onEdit }) {
+function DevotionCard({ devotion, onEdit, isSelected, onToggleSelect }) {
   const { t } = useTranslation();
   const deleteMutation = useDeleteDevotion();
   const [showHistory, setShowHistory] = useState(false);
