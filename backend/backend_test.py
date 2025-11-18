@@ -847,7 +847,7 @@ class AccountingAPITester:
         success, versions = self.run_test(
             "List Bible Versions",
             "GET",
-            "/api/v1/bible/versions",
+            "/api/bible/versions",
             200
         )
         
@@ -858,7 +858,7 @@ class AccountingAPITester:
         success, books = self.run_test(
             "List Bible Books",
             "GET",
-            "/api/v1/bible/books",
+            "/api/bible/books",
             200
         )
         
@@ -866,7 +866,7 @@ class AccountingAPITester:
         success, verse = self.run_test(
             "Get Bible Verse (John 3:16 TB)",
             "GET",
-            "/api/v1/bible/TB/Yohanes/3/16",
+            "/api/bible/TB/Yohanes/3/16",
             200
         )
         
@@ -874,7 +874,7 @@ class AccountingAPITester:
         success, verse_niv = self.run_test(
             "Get Bible Verse (John 3:16 NIV)",
             "GET",
-            "/api/v1/bible/NIV/John/3/16",
+            "/api/bible/NIV/John/3/16",
             200
         )
     
