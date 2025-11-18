@@ -121,7 +121,18 @@
     "confirm": "Konfirmasi",
     "na": "T/A",
     "close": "Tutup",
-    "add": "Tambah"
+    "add": "Tambah",
+    "sunday": "Min",
+    "monday": "Sen",
+    "tuesday": "Sel",
+    "wednesday": "Rab",
+    "thursday": "Kam",
+    "friday": "Jum",
+    "saturday": "Sab",
+    "today": "Hari Ini",
+    "calendar": "Kalender",
+    "list": "Daftar",
+    "optional": "Opsional"
   },
   "nav": {
     "dashboard": "Dasbor",
