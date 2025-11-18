@@ -10,6 +10,7 @@ import { useCreateWeeklyGiving, useCreateOutgoingMoney } from '../../hooks/useAc
 import AccountSelector from '../../components/Accounting/AccountSelector';
 import ResponsibilityCenterSelector from '../../components/Accounting/ResponsibilityCenterSelector';
 import CurrencyInput from '../../components/Accounting/CurrencyInput';
+import FileUpload from '../../components/Accounting/FileUpload';
 import { useToast } from '../../hooks/use-toast';
 
 export default function QuickEntry() {
@@ -23,7 +24,8 @@ export default function QuickEntry() {
     giving_type: 'Persembahan Umum',
     amount: 0,
     from_account_id: '',
-    to_account_id: ''
+    to_account_id: '',
+    file_ids: []
   });
 
   // Outgoing Money State
