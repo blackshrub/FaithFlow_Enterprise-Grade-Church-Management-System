@@ -62,14 +62,14 @@ export default function PrayerRequestForm() {
       });
       
       // Set search to member name if member linked
-      if (existingRequest.member_id) {
+      if (existingRequest.member_id && members.length > 0) {
         const member = members.find(m => m.id === existingRequest.member_id);
         if (member) {
           setMemberSearch(member.full_name);
         }
       }
     }
-  }, [existingRequest, members]);
+  }, [existingRequest]);
 
   const handleMemberSelect = (member) => {
     setFormData({
