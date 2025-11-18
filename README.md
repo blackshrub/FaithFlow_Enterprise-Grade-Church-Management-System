@@ -34,6 +34,8 @@ FaithFlow is a comprehensive, production-ready church management system designed
 - gTTS (Fallback TTS)
 - QR Code generation
 - WhatsApp Gateway integration
+- **API Versioning (/api/v1/)** - Future-proof, mobile-ready
+- **MongoDB Transactions** - Atomic operations for accounting
 
 **Frontend:**
 - React 18
