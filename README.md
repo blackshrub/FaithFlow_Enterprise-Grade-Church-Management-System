@@ -91,46 +91,56 @@ faithflow/
 - MongoDB 7.0+
 - Git LFS (for large model files)
 
-### Installation
-
-```bash
-# Clone repository
-git clone https://github.com/your-org/faithflow.git
-cd faithflow
-
-# Pull Git LFS files (TTS models, Bible data)
-git lfs install
-git lfs pull
-
-# Backend setup
-cd backend
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-cp .env.example .env  # Configure your environment
-
-# Frontend setup
-cd ../frontend
-npm install
-cp .env.example .env  # Configure frontend environment
-
-# Start development
-# Terminal 1: Backend
-cd backend && uvicorn server:app --reload --host 0.0.0.0 --port 8001
-
-# Terminal 2: Frontend
-cd frontend && npm start
-```
-
-Access admin at: http://localhost:3000
+---
 
 ## Production Deployment
 
+**Two Options:**
+
+### Option 1: One-Click Automated Installer (Recommended)
+
+**For fresh Debian 12 server:**
+
+```bash
+# Copy installer to server
+scp install.sh root@yourserver:/root/
+
+# SSH and run
+ssh root@yourserver
+sudo bash install.sh
+
+# Follow interactive prompts
+# Installation takes 15-20 minutes
+# Everything automated!
+```
+
+**The installer handles:**
+- ✅ All system dependencies
+- ✅ MongoDB installation (or uses your managed DB)
+- ✅ Backend setup (venv, packages, .env)
+- ✅ Frontend build
+- ✅ Nginx configuration
+- ✅ SSL certificate (Let's Encrypt)
+- ✅ Systemd services
+- ✅ Bible data import (186k verses)
+- ✅ Admin user creation
+- ✅ Database indexes
+- ✅ Backup scheduling
+- ✅ Firewall setup
+- ✅ Health verification
+
+**After installation:**
+- Open `https://yourdomain.com`
+- Login with your admin credentials
+- System ready to use!
+
+### Option 2: Manual Step-by-Step Deployment
+
 **For production deployment on Debian server, follow the complete guide:**
 
-👉 **[Debian Deployment Guide](./docs/DEPLOYMENT_DEBIAN.md)**
+👉 **[Manual Deployment Guide](./docs/DEPLOYMENT_DEBIAN.md)**
 
-Includes:
+Includes detailed steps for:
 - Server setup
 - Database configuration
 - Nginx reverse proxy
