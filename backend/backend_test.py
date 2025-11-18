@@ -659,6 +659,261 @@ class AccountingAPITester:
         # Note: We won't actually run year-end closing as it requires all 12 months closed
         self.log("Year-end closing execution requires all 12 months closed - skipping execution test", "INFO")
 
+    def test_events_endpoints(self):
+        """Test Events & RSVP endpoints"""
+        self.log("\n=== EVENTS & RSVP TESTS ===", "INFO")
+        
+        # 1. List events (empty)
+        success, events = self.run_test(
+            "List Events (Empty)",
+            "GET",
+            "/api/v1/events/",
+            200
+        )
+        
+        # 2. Create single event
+        event_data = {
+            "church_id": self.church_id,
+            "name": "Test Sunday Service",
+            "description": "Test event for API testing",
+            "event_type": "single",
+            "event_date": datetime.now().isoformat(),
+            "location": "Main Sanctuary",
+            "requires_rsvp": True,
+            "enable_seat_selection": False,
+            "is_active": True
+        }
+        
+        success, created_event = self.run_test(
+            "Create Single Event",
+            "POST",
+            "/api/v1/events/",
+            201,
+            data=event_data
+        )
+        
+        if success and 'id' in created_event:
+            event_id = created_event['id']
+            
+            # 3. Get single event
+            success, event = self.run_test(
+                "Get Single Event",
+                "GET",
+                f"/api/v1/events/{event_id}",
+                200
+            )
+            
+            # 4. Get event RSVPs
+            success, rsvps = self.run_test(
+                "Get Event RSVPs",
+                "GET",
+                f"/api/v1/events/{event_id}/rsvps",
+                200
+            )
+            
+            # 5. Get event attendance
+            success, attendance = self.run_test(
+                "Get Event Attendance",
+                "GET",
+                f"/api/v1/events/{event_id}/attendance",
+                200
+            )
+    
+    def test_devotions_endpoints(self):
+        """Test Devotions endpoints"""
+        self.log("\n=== DEVOTIONS TESTS ===", "INFO")
+        
+        # 1. List devotions (empty)
+        success, devotions = self.run_test(
+            "List Devotions (Empty)",
+            "GET",
+            "/api/v1/devotions/",
+            200
+        )
+        
+        # 2. Create devotion
+        devotion_data = {
+            "church_id": self.church_id,
+            "title": "Test Devotion",
+            "content": "This is a test devotion content for API testing.",
+            "date": datetime.now().isoformat(),
+            "status": "draft",
+            "verses": [
+                {
+                    "version": "TB",
+                    "book": "Yohanes",
+                    "chapter": 3,
+                    "start_verse": 16,
+                    "end_verse": 16,
+                    "text": "Karena begitu besar kasih Allah akan dunia ini..."
+                }
+            ]
+        }
+        
+        success, created_devotion = self.run_test(
+            "Create Devotion",
+            "POST",
+            "/api/v1/devotions/",
+            201,
+            data=devotion_data
+        )
+        
+        if success and 'id' in created_devotion:
+            devotion_id = created_devotion['id']
+            
+            # 3. Get single devotion
+            success, devotion = self.run_test(
+                "Get Single Devotion",
+                "GET",
+                f"/api/v1/devotions/{devotion_id}",
+                200
+            )
+            
+            # 4. Update devotion
+            update_data = {
+                "title": "Updated Test Devotion"
+            }
+            success, updated = self.run_test(
+                "Update Devotion",
+                "PATCH",
+                f"/api/v1/devotions/{devotion_id}",
+                200,
+                data=update_data
+            )
+    
+    def test_members_endpoints(self):
+        """Test Members endpoints"""
+        self.log("\n=== MEMBERS TESTS ===", "INFO")
+        
+        # 1. List members (empty)
+        success, members = self.run_test(
+            "List Members (Empty)",
+            "GET",
+            "/api/v1/members/",
+            200
+        )
+        
+        # 2. Create member
+        member_data = {
+            "church_id": self.church_id,
+            "first_name": "Test",
+            "last_name": "Member",
+            "full_name": "Test Member",
+            "gender": "male",
+            "date_of_birth": "1990-01-01",
+            "email": "test.member@example.com",
+            "phone_whatsapp": "+6281234567890",
+            "address": "Test Address",
+            "member_status": "Active",
+            "is_active": True
+        }
+        
+        success, created_member = self.run_test(
+            "Create Member",
+            "POST",
+            "/api/v1/members/",
+            201,
+            data=member_data
+        )
+        
+        if success and 'id' in created_member:
+            member_id = created_member['id']
+            
+            # 3. Get single member
+            success, member = self.run_test(
+                "Get Single Member",
+                "GET",
+                f"/api/v1/members/{member_id}",
+                200
+            )
+            
+            # 4. Verify QR code generated
+            if success and member.get('personal_qr_code'):
+                self.log("Member QR code generated successfully", "SUCCESS")
+            
+            # 5. Get member stats
+            success, stats = self.run_test(
+                "Get Member Statistics",
+                "GET",
+                "/api/v1/members/stats/summary",
+                200
+            )
+    
+    def test_bible_endpoints(self):
+        """Test Bible endpoints"""
+        self.log("\n=== BIBLE TESTS ===", "INFO")
+        
+        # 1. List Bible versions
+        success, versions = self.run_test(
+            "List Bible Versions",
+            "GET",
+            "/api/v1/bible/versions",
+            200
+        )
+        
+        if success:
+            self.log(f"Found {len(versions)} Bible versions", "INFO")
+        
+        # 2. List Bible books
+        success, books = self.run_test(
+            "List Bible Books",
+            "GET",
+            "/api/v1/bible/books",
+            200
+        )
+        
+        # 3. Get verse (John 3:16 in TB)
+        success, verse = self.run_test(
+            "Get Bible Verse (John 3:16 TB)",
+            "GET",
+            "/api/v1/bible/TB/Yohanes/3/16",
+            200
+        )
+        
+        # 4. Get verse in NIV
+        success, verse_niv = self.run_test(
+            "Get Bible Verse (John 3:16 NIV)",
+            "GET",
+            "/api/v1/bible/NIV/John/3/16",
+            200
+        )
+    
+    def test_settings_endpoints(self):
+        """Test Settings endpoints"""
+        self.log("\n=== SETTINGS TESTS ===", "INFO")
+        
+        # 1. Get church settings
+        success, settings = self.run_test(
+            "Get Church Settings",
+            "GET",
+            "/api/v1/settings/church-settings",
+            200
+        )
+        
+        # 2. List member statuses
+        success, statuses = self.run_test(
+            "List Member Statuses",
+            "GET",
+            "/api/v1/settings/member-statuses",
+            200
+        )
+        
+        # 3. List event categories
+        success, categories = self.run_test(
+            "List Event Categories",
+            "GET",
+            "/api/v1/settings/event-categories",
+            200
+        )
+        
+        # 4. List demographic presets
+        success, demographics = self.run_test(
+            "List Demographic Presets",
+            "GET",
+            "/api/v1/settings/demographics",
+            200
+        )
+
     def test_multi_tenant_isolation(self):
         """Test multi-tenant isolation"""
         self.log("\n=== MULTI-TENANT ISOLATION TEST ===", "INFO")
