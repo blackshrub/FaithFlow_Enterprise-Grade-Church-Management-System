@@ -67,7 +67,7 @@ const AccountSelector = ({
         <SelectTrigger>
           <SelectValue placeholder={placeholder || t('accounting.common.select')} />
         </SelectTrigger>
-        <SelectContent className="max-h-[300px] overflow-y-auto">
+        <SelectContent className="max-h-[300px] overflow-y-auto z-50">
           {isLoading ? (
             <SelectItem value="_loading" disabled>Loading accounts...</SelectItem>
           ) : filteredAccounts.length === 0 ? (
