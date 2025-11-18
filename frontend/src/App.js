@@ -17,6 +17,7 @@ import KioskMode from "./pages/KioskMode";
 import Devotions from "./pages/Devotions";
 import Layout from "./components/Layout/Layout";
 import ProtectedRoute from "./components/Layout/ProtectedRoute";
+import ErrorBoundary from "./components/ErrorBoundary";
 
 // Accounting pages
 import AccountingDashboard from "./pages/Accounting/AccountingDashboard";
