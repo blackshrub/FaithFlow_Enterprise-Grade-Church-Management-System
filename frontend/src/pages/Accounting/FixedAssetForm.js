@@ -17,6 +17,7 @@ import { useCreateAsset } from '../../hooks/useAccounting';
 import AccountSelector from '../../components/Accounting/AccountSelector';
 import CurrencyInput from '../../components/Accounting/CurrencyInput';
 import CurrencyDisplay from '../../components/Accounting/CurrencyDisplay';
+import FileUpload from '../../components/Accounting/FileUpload';
 import { useToast } from '../../hooks/use-toast';
 
 export default function FixedAssetForm() {
@@ -35,7 +36,8 @@ export default function FixedAssetForm() {
     asset_account_id: '',
     depreciation_expense_account_id: '',
     accumulated_depreciation_account_id: '',
-    is_active: true
+    is_active: true,
+    attachments: []
   });
 
   const createMutation = useCreateAsset();
