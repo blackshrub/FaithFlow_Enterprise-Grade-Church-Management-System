@@ -28,7 +28,7 @@ class JournalBase(BaseModel):
     date: date = Field(..., description="Journal date")
     reference_number: Optional[str] = Field(None, max_length=100, description="External reference number")
     description: str = Field(..., min_length=1, max_length=1000, description="Journal description")
-    lines: List[JournalLine] = Field(..., min_length=2, description="Journal lines (minimum 2)")
+    lines: list[JournalLine] = Field(..., min_length=2, description="Journal lines (minimum 2)")
     journal_type: Literal[
         "general",
         "opening_balance",
