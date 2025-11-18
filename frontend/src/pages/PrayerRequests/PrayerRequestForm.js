@@ -125,13 +125,13 @@ export default function PrayerRequestForm() {
 
     try {
       if (isEdit) {
-        await updateMutation.mutateAsync({ id, data: formData });
+        await updateMutation.mutateAsync({ id, data: payload });
         toast({
           title: t('common.success'),
           description: t('prayerRequests.messages.updateSuccess')
         });
       } else {
-        await createMutation.mutateAsync(formData);
+        await createMutation.mutateAsync(payload);
         toast({
           title: t('common.success'),
           description: t('prayerRequests.messages.createSuccess')
