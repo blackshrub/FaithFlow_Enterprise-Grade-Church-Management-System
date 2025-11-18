@@ -31,6 +31,7 @@ import { useToast } from '../../hooks/use-toast';
 export default function BankReconciliation() {
   const { t } = useTranslation();
   const { toast } = useToast();
+  const navigate = useNavigate();
   
   const [selectedBankAccount, setSelectedBankAccount] = useState(null);
   const [importFile, setImportFile] = useState(null);
