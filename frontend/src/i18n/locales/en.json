@@ -121,7 +121,18 @@
     "confirm": "Confirm",
     "na": "N/A",
     "close": "Close",
-    "add": "Add"
+    "add": "Add",
+    "sunday": "Sun",
+    "monday": "Mon",
+    "tuesday": "Tue",
+    "wednesday": "Wed",
+    "thursday": "Thu",
+    "friday": "Fri",
+    "saturday": "Sat",
+    "today": "Today",
+    "calendar": "Calendar",
+    "list": "List",
+    "optional": "Optional"
   },
   "nav": {
     "dashboard": "Dashboard",
