@@ -174,7 +174,14 @@ export default function ArticlesList() {
 
       <Card>
         <CardHeader>
-          <CardTitle>{t('articles.allArticles')} ({articlesData?.pagination?.total || 0})</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle>{t('articles.allArticles')} ({articlesData?.pagination?.total || 0})</CardTitle>
+            {selectedArticles.length > 0 && (
+              <Button variant="destructive" size="sm" onClick={handleBulkDelete}>
+                Delete {selectedArticles.length} Selected
+              </Button>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           {isLoading ? (
