@@ -22,7 +22,10 @@ import ProtectedRoute from "./components/Layout/ProtectedRoute";
 import AccountingDashboard from "./pages/Accounting/AccountingDashboard";
 import ChartOfAccounts from "./pages/Accounting/ChartOfAccounts";
 import Journals from "./pages/Accounting/Journals";
+import JournalForm from "./pages/Accounting/JournalForm";
 import FiscalPeriods from "./pages/Accounting/FiscalPeriods";
+import BeginningBalance from "./pages/Accounting/BeginningBalance";
+import ResponsibilityCenters from "./pages/Accounting/ResponsibilityCenters";
 
 import FaithFlowLogo from './components/Branding/FaithFlowLogo';
 
