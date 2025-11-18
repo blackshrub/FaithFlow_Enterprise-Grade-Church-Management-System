@@ -188,9 +188,16 @@ export default function ArticleEditor() {
     <div className="p-6 space-y-6">
       {/* Sticky Action Bar */}
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">
-          {isEdit ? t('articles.editArticle') : t('articles.addNew')}
-        </h1>
+        <div>
+          <h1 className="text-2xl font-bold">
+            {isEdit ? t('articles.editArticle') : t('articles.addNew')}
+          </h1>
+          {isEdit && (
+            <p className="text-sm text-gray-500 mt-1">
+              {isSaving ? t('articles.editor.autoSaving') : lastSaved ? `${t('articles.editor.lastSaved')}: ${lastSaved.toLocaleTimeString()}` : ''}
+            </p>
+          )}
+        </div>
         <div className="flex items-center space-x-2">
             {isEdit && (
               <>
