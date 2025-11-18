@@ -60,7 +60,7 @@ export default function Tags() {
       </div>
 
       <Card>
-        <CardHeader><CardTitle>{tags?.length || 0} Tags</CardTitle></CardHeader>
+        <CardHeader><CardTitle>{tags?.length || 0} {t('articles.tags.title')}</CardTitle></CardHeader>
         <CardContent>
           {isLoading ? <div>{t('common.loading')}</div> : (
             <Table>
