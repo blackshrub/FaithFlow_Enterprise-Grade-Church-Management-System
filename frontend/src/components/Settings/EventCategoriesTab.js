@@ -130,7 +130,7 @@ export default function EventCategoriesTab() {
               <DialogHeader>
                 <DialogTitle>{t('settings.addCategory')}</DialogTitle>
                 <DialogDescription>
-                  Create a new event category
+                  {t('settings.createCategoryDesc') || t('settings.addCategory')}
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-4">
