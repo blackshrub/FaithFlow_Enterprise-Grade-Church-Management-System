@@ -20,6 +20,12 @@ from routes import (
     year_end_closing, accounting_reports, report_templates
 )
 
+# Import articles routes (v1)
+from routes import (
+    articles, article_categories, article_tags, article_comments,
+    articles_public, article_preview
+)
+
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
