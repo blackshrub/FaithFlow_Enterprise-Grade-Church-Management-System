@@ -110,11 +110,11 @@ async def close_period(
     
     # Check for draft journals in this period
     from datetime import date
-    start_date = date(year, month, 1)
+    start_date = datetime(year, month, 1)
     if month == 12:
-        end_date = date(year + 1, 1, 1)
+        end_date = datetime(year + 1, 1, 1)
     else:
-        end_date = date(year, month + 1, 1)
+        end_date = datetime(year, month + 1, 1)
     
     draft_count = await db.journals.count_documents({
         "church_id": church_id,
