@@ -63,14 +63,20 @@ const AccountSelector = ({
         <SelectTrigger>
           <SelectValue placeholder={placeholder || t('accounting.common.select')} />
         </SelectTrigger>
-        <SelectContent>
-          {filteredAccounts.map((account) => (
-            <SelectItem key={account.id} value={account.id}>
-              <span style={{ paddingLeft: `${account.displayLevel * 12}px` }}>
-                {account.code} - {account.name}
-              </span>
-            </SelectItem>
-          ))}
+        <SelectContent className="max-h-[300px] overflow-y-auto">
+          {isLoading ? (
+            <SelectItem value="_loading" disabled>Loading accounts...</SelectItem>
+          ) : filteredAccounts.length === 0 ? (
+            <SelectItem value="_empty" disabled>No accounts found</SelectItem>
+          ) : (
+            filteredAccounts.map((account) => (
+              <SelectItem key={account.id} value={account.id}>
+                <span style={{ paddingLeft: `${account.displayLevel * 12}px` }}>
+                  {account.code} - {account.name}
+                </span>
+              </SelectItem>
+            ))
+          )}
         </SelectContent>
       </Select>
     </div>
