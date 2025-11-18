@@ -29,10 +29,15 @@ import ResponsibilityCenters from "./pages/Accounting/ResponsibilityCenters";
 import QuickEntry from "./pages/Accounting/QuickEntry";
 import Reports from "./pages/Accounting/Reports";
 import Budgets from "./pages/Accounting/Budgets";
+import BudgetForm from "./pages/Accounting/BudgetForm";
+import BudgetVariance from "./pages/Accounting/BudgetVariance";
 import FixedAssets from "./pages/Accounting/FixedAssets";
+import FixedAssetForm from "./pages/Accounting/FixedAssetForm";
+import DepreciationSchedule from "./pages/Accounting/DepreciationSchedule";
 import BankReconciliation from "./pages/Accounting/BankReconciliation";
 import YearEndClosing from "./pages/Accounting/YearEndClosing";
 import AuditLogs from "./pages/Accounting/AuditLogs";
+import GeneralLedger from "./pages/Accounting/GeneralLedger";
 
 import FaithFlowLogo from './components/Branding/FaithFlowLogo';
 
