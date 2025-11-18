@@ -52,7 +52,7 @@ class BudgetCreate(BudgetBase):
 class BudgetUpdate(BaseModel):
     """Model for updating a budget"""
     name: Optional[str] = Field(None, min_length=1, max_length=200)
-    lines: Optional[List[BudgetLine]] = Field(None, min_length=1)
+    lines: Optional[list[BudgetLine]] = Field(None, min_length=1)
 
 
 class Budget(BudgetBase):
