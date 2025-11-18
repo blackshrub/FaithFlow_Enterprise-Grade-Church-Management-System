@@ -26,7 +26,7 @@ class JournalLine(BaseModel):
 
 class JournalBase(BaseModel):
     """Base model for Journal Entry"""
-    date: date = Field(..., description="Journal date")
+    date: DateType = Field(..., description="Journal date")
     reference_number: Optional[str] = Field(None, max_length=100, description="External reference number")
     description: str = Field(..., min_length=1, max_length=1000, description="Journal description")
     lines: List[JournalLine] = Field(..., description="Journal lines (minimum 2)")
