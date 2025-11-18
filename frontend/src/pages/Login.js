@@ -84,9 +84,9 @@ export default function Login() {
           <div className="flex justify-center">
             <FaithFlowLogo size="lg" />
           </div>
-          <CardTitle className="text-2xl font-bold text-center">Admin Portal</CardTitle>
+          <CardTitle className="text-2xl font-bold text-center">{t('app.adminPortal')}</CardTitle>
           <CardDescription className="text-center">
-            Empowering Churches with Clarity, Care, and Connection
+            {t('app.tagline')}
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
