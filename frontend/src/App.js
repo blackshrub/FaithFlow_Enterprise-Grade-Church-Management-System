@@ -127,6 +127,11 @@ function App() {
               <Route path="articles/tags" element={<Tags />} />
               <Route path="articles/comments" element={<CommentsModeration />} />
               
+              {/* Prayer Requests Routes */}
+              <Route path="prayer-requests" element={<PrayerRequestsList />} />
+              <Route path="prayer-requests/new" element={<PrayerRequestForm />} />
+              <Route path="prayer-requests/:id" element={<PrayerRequestForm />} />
+              
               {/* Placeholder routes - will be implemented in next phases */}
               <Route path="groups" element={<PlaceholderPage title="Groups" />} />
               <Route path="donations" element={<PlaceholderPage title="Donations" />} />
