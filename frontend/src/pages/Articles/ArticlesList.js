@@ -290,6 +290,14 @@ export default function ArticlesList() {
           )}
         </CardContent>
       </Card>
+
+      {/* Quick Edit Modal */}
+      <QuickEditModal
+        open={showQuickEdit}
+        onOpenChange={setShowQuickEdit}
+        article={editingArticle}
+        onSuccess={() => window.location.reload()}
+      />
     </div>
   );
 }
