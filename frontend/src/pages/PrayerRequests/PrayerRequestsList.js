@@ -155,7 +155,17 @@ export default function PrayerRequestsList() {
               <TableBody>
                 {requests.map((request) => (
                   <TableRow key={request.id}>
-                    <TableCell className="font-medium">{request.title}</TableCell>
+                    <TableCell className="font-medium">
+                      <div className="flex items-center gap-2">
+                        {request.title}
+                        {request.needs_follow_up && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800" title={t('prayerRequests.needsFollowUp')}>
+                            <AlertCircle className="w-3 h-3" />
+                            Follow-up
+                          </span>
+                        )}
+                      </div>
+                    </TableCell>
                     <TableCell>{request.requester_name}</TableCell>
                     <TableCell>{t(`prayerRequests.categories.${request.category}`)}</TableCell>
                     <TableCell>
