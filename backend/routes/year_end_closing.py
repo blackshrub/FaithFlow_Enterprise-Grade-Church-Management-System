@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
-from utils.dependencies import get_db, require_admin
+from utils.dependencies import get_db, require_admin, get_current_user
 from utils.tenant_utils import get_current_church_id
 from services import year_end_closing_service, audit_service
 
