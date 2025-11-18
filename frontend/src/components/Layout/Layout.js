@@ -88,6 +88,18 @@ export default function Layout() {
     { icon: BookOpen, label: t('nav.content'), path: '/devotions' },
     { icon: Award, label: t('nav.spiritualJourney'), path: '/spiritual-journey' },
     {
+      icon: FileText,
+      label: 'Articles',
+      key: 'articles',
+      submenu: [
+        { label: 'All Articles', path: '/articles' },
+        { label: 'Add New', path: '/articles/new' },
+        { label: 'Categories', path: '/articles/categories' },
+        { label: 'Tags', path: '/articles/tags' },
+        { label: 'Comments', path: '/articles/comments' },
+      ]
+    },
+    {
       icon: Calculator,
       label: t('accounting.title'),
       key: 'accounting',
