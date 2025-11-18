@@ -74,7 +74,10 @@ export default function ChartOfAccounts() {
             <Plus className="w-4 h-4 mr-2" />
             {t('accounting.coa.seedDefault')}
           </Button>
-          <Button>
+          <Button onClick={() => {
+            setSelectedAccount(null);
+            setShowModal(true);
+          }}>
             <Plus className="w-4 h-4 mr-2" />
             {t('accounting.coa.createAccount')}
           </Button>
