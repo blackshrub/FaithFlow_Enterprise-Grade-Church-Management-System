@@ -39,6 +39,8 @@ export default function ArticleEditor() {
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [previewUrl, setPreviewUrl] = useState('');
   const [wordCount, setWordCount] = useState(0);
+  const [isSaving, setIsSaving] = useState(false);
+  const [lastSaved, setLastSaved] = useState(null);
 
   const { data: existingArticle } = useArticle(id);
   const createMutation = useCreateArticle();
