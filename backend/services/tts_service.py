@@ -41,6 +41,10 @@ def generate_indonesian_tts_coqui(text: str) -> str:
         text = re.sub(r'\s+', ' ', text)  # Normalize whitespace
         text = text.strip()
         
+        # Fix 'd' at end of words → 't' for smoother/softer sound
+        # Examples: "murid" → "murit", "tekad" → "tekat"
+        text = re.sub(r'([aeiouAEIOU])d(\s|$|[,.\?!;:\-])', r'\1t\2', text)
+        
         # Convert Indonesian text to phonemes
         g2p = G2P()
         phonemes = g2p(text)
@@ -49,7 +53,7 @@ def generate_indonesian_tts_coqui(text: str) -> str:
         # Replace all regular 'g' with script 'ɡ' for proper pronunciation
         phonemes = phonemes.replace('g', 'ɡ')  # U+0067 → U+0261
         
-        logger.info(f"Converting {len(text)} chars to phonemes with script-g fix")
+        logger.info(f"Phoneme conversion complete with script-g fix ({len(text)} chars)")
         
         synth = Synthesizer(
             tts_checkpoint=str(CHECKPOINT_PATH),
