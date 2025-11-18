@@ -42,5 +42,3 @@ class AssetDepreciationLog(AssetDepreciationLogBase):
                 "created_at": "2024-01-31T00:00:00"
             }
         }
-
-from typing import Optional
