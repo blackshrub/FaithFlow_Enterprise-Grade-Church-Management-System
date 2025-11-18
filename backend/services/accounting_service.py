@@ -15,6 +15,7 @@ async def generate_journal_number(
     """
     Generate unique journal number in format: JRN-YYYY-MM-XXXX
     Uses MongoDB findOneAndUpdate with atomic increment to prevent duplicates.
+    Initializes counter based on max existing journal number to handle migration.
     
     Args:
         db: Database instance
@@ -25,27 +26,51 @@ async def generate_journal_number(
         Generated journal number
     """
     from datetime import datetime as dt
-    import uuid
+    import re
     
     year = journal_date.year
     month = journal_date.month
     
-    # Use atomic counter to prevent duplicate journal numbers
-    # Create or update counter document for this church/month
+    # Counter document ID
     counter_id = f"{church_id}_{year}_{month:02d}"
     
+    # Check if counter exists
+    existing_counter = await db.journal_counters.find_one({"_id": counter_id})
+    
+    if not existing_counter:
+        # Counter doesn't exist - need to initialize based on existing journals
+        # Find max journal number for this church/month
+        pattern = f"JRN-{year}-{month:02d}-"
+        cursor = db.journals.find({
+            "church_id": church_id,
+            "journal_number": {"$regex": f"^{re.escape(pattern)}"}
+        }).sort("journal_number", -1).limit(1)
+        
+        journals = await cursor.to_list(length=1)
+        
+        max_sequence = 0
+        if journals:
+            max_journal = journals[0]
+            max_journal_number = max_journal.get("journal_number", "")
+            # Extract sequence from JRN-YYYY-MM-XXXX
+            match = re.search(r'-(\d{4})$', max_journal_number)
+            if match:
+                max_sequence = int(match.group(1))
+        
+        # Initialize counter with max_sequence
+        await db.journal_counters.insert_one({
+            "_id": counter_id,
+            "church_id": church_id,
+            "year": year,
+            "month": month,
+            "sequence": max_sequence,
+            "created_at": datetime.utcnow()
+        })
+    
+    # Atomically increment and get new sequence
     result = await db.journal_counters.find_one_and_update(
         {"_id": counter_id},
-        {
-            "$inc": {"sequence": 1},
-            "$setOnInsert": {
-                "church_id": church_id,
-                "year": year,
-                "month": month,
-                "created_at": datetime.utcnow()
-            }
-        },
-        upsert=True,
+        {"$inc": {"sequence": 1}},
         return_document=True  # Return updated document
     )
     
