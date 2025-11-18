@@ -44,7 +44,7 @@ class BeginningBalanceCreate(BeginningBalanceBase):
 class BeginningBalanceUpdate(BaseModel):
     """Model for updating beginning balance (only if draft)"""
     effective_date: Optional[date] = None
-    entries: Optional[List[BeginningBalanceEntry]] = Field(None, min_length=1)
+    entries: Optional[list[BeginningBalanceEntry]] = Field(None, min_length=1)
 
 
 class BeginningBalance(BeginningBalanceBase):
