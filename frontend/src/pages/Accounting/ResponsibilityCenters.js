@@ -86,9 +86,36 @@ export default function ResponsibilityCenters() {
                       )}
                     </TableCell>
                     <TableCell>
-                      <Button variant="ghost" size="sm">
-                        {t('accounting.common.edit')}
-                      </Button>
+                      <div className="flex items-center space-x-2">
+                        <Button variant="ghost" size="sm" onClick={() => {
+                          setSelectedCenter(center);
+                          setShowModal(true);
+                        }}>
+                          {t('accounting.common.edit')}
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={async () => {
+                            if (!window.confirm(t('accounting.common.delete') + '?')) return;
+                            try {
+                              await deleteMutation.mutateAsync(center.id);
+                              toast({
+                                title: t('accounting.common.success'),
+                                description: `${center.name} deleted`
+                              });
+                            } catch (error) {
+                              toast({
+                                variant: "destructive",
+                                title: t('accounting.common.error'),
+                                description: error.message
+                              });
+                            }
+                          }}
+                        >
+                          {t('accounting.common.delete')}
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
