@@ -1389,6 +1389,186 @@ frontend:
         agent: "testing"
         comment: "VERIFIED: Loading skeletons appear when navigating between accounting pages. Smooth transitions observed. No blank screens during page loads."
 
+  - task: "Accounting - Form Submission - Budget Form"
+    implemented: true
+    working: false
+    file: "/app/frontend/src/pages/Accounting/BudgetForm.js"
+    stuck_count: 1
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: false
+        agent: "testing"
+        comment: "CRITICAL ISSUE: Budget form does not submit successfully. Form loads correctly, all fields accept input (name, year, account selection, annual amount), auto-distribute button works and populates all 12 monthly amounts with correct validation (shows ✓ when total matches annual amount), file upload component present. However, when clicking 'Save as Draft', the form does not redirect to budget list and budget does not appear in table. No error messages displayed to user. No failed API requests detected in network monitoring. Save button may be getting disabled due to hidden validation issue. Form validation logic needs investigation - likely missing required field validation or account selection not being captured correctly."
+
+  - task: "Accounting - Form Submission - Fixed Asset Form"
+    implemented: true
+    working: false
+    file: "/app/frontend/src/pages/Accounting/FixedAssetForm.js"
+    stuck_count: 1
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: false
+        agent: "testing"
+        comment: "CRITICAL ISSUE: Fixed Asset form does not submit successfully. Form loads correctly, all fields accept input (asset code, name, acquisition date, cost, useful life, salvage value), depreciation preview displays correctly (shows monthly depreciation calculation), account selectors work (Asset Account, Depreciation Expense Account, Accumulated Depreciation Account), file upload component present. However, when clicking 'Save', the form does not redirect to assets list and asset does not appear in table. No error messages displayed to user. No failed API requests detected. Form submission logic needs investigation - likely issue with account selection validation or required field checking."
+
+  - task: "Accounting - Form Submission - Journal Form"
+    implemented: true
+    working: false
+    file: "/app/frontend/src/pages/Accounting/JournalForm.js"
+    stuck_count: 1
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: false
+        agent: "testing"
+        comment: "CRITICAL ISSUE: Journal form does not submit successfully. Form loads correctly, date and description fields work, account selectors functional, amount inputs present. Balance indicator shows 'Unbalanced' even when amounts appear to be entered. Save buttons remain DISABLED even after filling all fields. No visible validation error messages. Issue appears to be with amount input capture - the CurrencyInput component may not be properly updating form state, or balance calculation is not detecting the entered amounts. This prevents any journal from being saved. Form state management and balance calculation logic needs investigation."
+
+  - task: "Accounting - Balance Validation - Unbalanced Journal"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/Accounting/JournalForm.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "VERIFIED: Unbalanced journal validation working correctly. When debit and credit amounts don't match, the balance indicator displays 'Unbalanced' text, save buttons are properly DISABLED, preventing submission of unbalanced journals. This is correct behavior per double-entry accounting requirements."
+
+  - task: "Accounting - Reports - Generation & Export"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/Accounting/Reports.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "VERIFIED: Reports page displays all 7 report cards (General Ledger, Trial Balance, Income Statement, Balance Sheet, Cash Flow, RC Report, Custom Report). Generate buttons work - clicking generates report and displays table. Export CSV buttons present on generated reports. Trial Balance and General Ledger tested successfully - both generate and show export option."
+
+  - task: "Accounting - Budget - Auto-Distribute Functionality"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/Accounting/BudgetForm.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "VERIFIED: Auto-Distribute functionality working perfectly. When annual amount is entered (e.g., Rp 12.000.000) and Auto-Distribute button clicked, all 12 monthly amounts are populated correctly (Rp 1.000.000 per month). Monthly amounts display in grid format showing all months (01: through 12:). Total validation shows ✓ when monthly total equals annual amount. This is core budget functionality and works as expected."
+
+  - task: "Accounting - Fixed Asset - Depreciation Preview"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/Accounting/FixedAssetForm.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "VERIFIED: Depreciation preview calculation displays on asset form. When cost, useful life, and salvage value are entered, the monthly depreciation amount is calculated and displayed. Formula: (Cost - Salvage Value) / Useful Life Months. Preview section visible with green background highlighting the calculated amount."
+
+  - task: "Accounting - Fiscal Periods - Display & Status"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/Accounting/FiscalPeriods.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "VERIFIED: Fiscal Periods page displays all 12 months of 2025. Status badges working correctly: 11 periods show 'Open' (green), 1 period shows 'Closed' (yellow), 0 periods 'Locked'. Action buttons present: 'Close Period' buttons for open periods, 'Lock Period' button for closed period. Table structure clean with Month, Year, Status, and Actions columns."
+
+  - task: "Accounting - Beginning Balance - Wizard Interface"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/Accounting/BeginningBalance.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "VERIFIED: Beginning Balance wizard page loads successfully. Asset step visible and functional. Wizard structure in place for entering opening balances by account type (Assets, Liabilities, Equity). Form inputs present for entering beginning balance amounts."
+
+  - task: "Accounting - Audit Logs - Recording & Display"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/Accounting/AuditLogs.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "VERIFIED: Audit Logs page functional. Currently showing 28 audit log entries, confirming that accounting actions are being logged. Filter options present for Module and Action. Table displays audit trail of all accounting transactions and changes. Audit logging system is working correctly."
+
+  - task: "Accounting - Quick Entry - Dual Tab Interface"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/Accounting/QuickEntry.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "VERIFIED: Quick Entry page loads with dual-tab interface. Both tabs present and functional: 'Weekly Giving' tab and 'Outgoing Money' tab. Tab switching works correctly. Form fields present: Journal Date, Amount, Account selectors. This provides simplified journal entry for common transactions."
+
+  - task: "Accounting - Bank Reconciliation - Tab Structure"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/Accounting/BankReconciliation.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "VERIFIED: Bank Reconciliation page loads successfully with 3-tab structure: (1) Bank Accounts tab, (2) Bank Transactions tab, (3) Reconcile tab. Import CSV button present for importing bank statements. Tab navigation functional. Page structure matches requirements for bank reconciliation workflow."
+
+  - task: "Accounting - Currency Display - Rp Format"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/components/Accounting/CurrencyDisplay.js"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "VERIFIED: Currency displays throughout accounting module use Indonesian Rupiah format 'Rp X.XXX.XXX'. Found 46+ elements displaying currency with proper 'Rp' prefix and thousand separators. Dashboard shows Rp 0 for Asset, Liability, Equity, Net Income. Journal amounts display in Rp format. All financial amounts consistently formatted."
+
+  - task: "Accounting - Loading States - Skeletons"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/components/Accounting/TableSkeleton.js"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "VERIFIED: Loading skeletons appear when navigating between accounting pages. Detected 66 skeleton elements with animate-pulse class. Smooth transitions observed. No blank screens during page loads. TableSkeleton component working correctly to provide visual feedback during data loading."
+
+  - task: "Accounting - Responsive Design - Viewport Adaptation"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/Accounting/"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "VERIFIED: Responsive design tested at 1024x768 viewport. Layout adapts correctly - found 8 cards in responsive layout. All accounting pages remain accessible and usable at smaller viewport. Cards stack appropriately. Navigation remains functional. Returns to normal layout at 1920x1080."
+
   - task: "Accounting - Navigation Stability"
     implemented: true
     working: true
