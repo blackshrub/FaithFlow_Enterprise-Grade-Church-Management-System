@@ -175,7 +175,7 @@ async def post_beginning_balance(
         "id": str(uuid.uuid4()),
         "church_id": church_id,
         "journal_number": journal_number,
-        "date": effective_date,
+        "date": effective_date.isoformat() if isinstance(effective_date, date) else effective_date,
         "reference_number": None,
         "description": "Opening Balance Entry",
         "status": "approved",
