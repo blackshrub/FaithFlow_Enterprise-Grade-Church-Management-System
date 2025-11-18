@@ -283,9 +283,9 @@ function DevotionForm({ devotion, onClose }) {
                       </>
                     )}
                   </Button>
-                  {devotion?.tts_audio_url && (
+                  {(devotion?.tts_audio_url || formData.tts_audio_url) && (
                     <audio controls className="flex-1">
-                      <source src={devotion.tts_audio_url} type="audio/mp3" />
+                      <source src={devotion?.tts_audio_url || formData.tts_audio_url} type="audio/mp3" />
                     </audio>
                   )}
                 </div>
