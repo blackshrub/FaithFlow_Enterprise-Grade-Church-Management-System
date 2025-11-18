@@ -39,12 +39,22 @@ export default function PrayerRequestForm() {
   const updateMutation = useUpdatePrayerRequest();
 
   // Filter members by search
-  const filteredMembers = members.filter(m => 
-    m.full_name?.toLowerCase().includes(memberSearch.toLowerCase())
-  );
+  const filteredMembers = memberSearch.length >= 2 
+    ? members.filter(m => 
+        m.full_name?.toLowerCase().includes(memberSearch.toLowerCase())
+      )
+    : [];
 
   // Get selected member info
   const selectedMember = members.find(m => m.id === formData.member_id);
+
+  // Debug logging
+  useEffect(() => {
+    console.log('Members loaded:', members.length);
+    console.log('Search:', memberSearch);
+    console.log('Filtered members:', filteredMembers.length);
+    console.log('Show dropdown:', showMemberDropdown);
+  }, [members, memberSearch, filteredMembers, showMemberDropdown]);
 
   useEffect(() => {
     if (existingRequest) {
