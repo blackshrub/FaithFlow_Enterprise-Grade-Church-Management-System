@@ -26,7 +26,7 @@ export default function Reports() {
   });
 
   const reports = [
-    { id: 'general-ledger', icon: BookOpen, title: t('accounting.reports.generalLedger'), color: 'blue' },
+    { id: 'general-ledger', icon: BookOpen, title: t('accounting.reports.generalLedger'), color: 'blue', route: '/accounting/reports/general-ledger' },
     { id: 'trial-balance', icon: Scale, title: t('accounting.reports.trialBalance'), color: 'green' },
     { id: 'income-statement', icon: TrendingUp, title: t('accounting.reports.incomeStatement'), color: 'purple' },
     { id: 'balance-sheet', icon: PieChart, title: t('accounting.reports.balanceSheet'), color: 'orange' },
