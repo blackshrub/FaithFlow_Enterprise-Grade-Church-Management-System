@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Alert, AlertDescription } from '../components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Loader2 } from 'lucide-react';
+import FaithFlowLogo from '../components/Branding/FaithFlowLogo';
 
 export default function Login() {
   const { t } = useTranslation();
