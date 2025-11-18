@@ -26,6 +26,8 @@ import JournalForm from "./pages/Accounting/JournalForm";
 import FiscalPeriods from "./pages/Accounting/FiscalPeriods";
 import BeginningBalance from "./pages/Accounting/BeginningBalance";
 import ResponsibilityCenters from "./pages/Accounting/ResponsibilityCenters";
+import QuickEntry from "./pages/Accounting/QuickEntry";
+import Reports from "./pages/Accounting/Reports";
 
 import FaithFlowLogo from './components/Branding/FaithFlowLogo';
 
