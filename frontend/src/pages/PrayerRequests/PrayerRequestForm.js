@@ -48,7 +48,9 @@ export default function PrayerRequestForm() {
         description: existingRequest.description || '',
         category: existingRequest.category || 'other',
         status: existingRequest.status || 'new',
-        internal_notes: existingRequest.internal_notes || ''
+        internal_notes: existingRequest.internal_notes || '',
+        needs_follow_up: existingRequest.needs_follow_up || false,
+        follow_up_notes: existingRequest.follow_up_notes || ''
       });
     }
   }, [existingRequest]);
