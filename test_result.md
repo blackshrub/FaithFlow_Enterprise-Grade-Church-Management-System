@@ -571,7 +571,25 @@ test_plan:
   tests_passed: 45
   tests_failed: 2
 
+frontend:
+  - task: "Prayer Requests - Infinite Loop Error Fix"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/PrayerRequests/PrayerRequestForm.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: false
+        agent: "user"
+        comment: "User reported 'Maximum update depth exceeded' error when navigating to /prayer-requests/new. Error occurs in PrayerRequestForm.js causing infinite loop."
+      - working: true
+        agent: "testing"
+        comment: "ROOT CAUSE IDENTIFIED AND FIXED: The useEffect hook at line 51-72 had 'members' in its dependency array. Since 'members' is derived from 'membersData?.data || []', it creates a new array reference on every render, triggering the useEffect infinitely. FIX APPLIED: Removed 'members' from dependency array, keeping only 'existingRequest'. Added safety check 'members.length > 0' before accessing members array. VERIFICATION: Tested both create form (/prayer-requests/new) and list page (/prayer-requests). NO infinite loop errors detected. Form is fully functional - title input, description textarea, and member search all working correctly. Console monitoring confirmed no 'Maximum update depth exceeded' or React re-render errors."
+
 agent_communication:
+  - agent: "testing"
+    message: "PRAYER REQUESTS INFINITE LOOP - FIXED (2025-11-18): Successfully debugged and resolved the 'Maximum update depth exceeded' error in PrayerRequestForm.js. The issue was caused by including 'members' array in useEffect dependencies, which created a new reference on every render due to the fallback operator (membersData?.data || []). Fixed by removing 'members' from dependency array and adding a safety check. Comprehensive testing confirms: (1) Create form loads without errors, (2) All form fields are interactive, (3) Member search works correctly, (4) No infinite loop detected in console, (5) List page displays 9 prayer requests correctly. The Prayer Requests module is now fully functional."
   - agent: "testing"
     message: "Comprehensive backend API testing completed. All 13 tests passed successfully. Authentication, authorization, church management, and user management APIs are working correctly. JWT tokens valid for 24 hours. Church scoping and role-based access control properly implemented. No critical issues found. System is production-ready from backend perspective."
   - agent: "testing"
