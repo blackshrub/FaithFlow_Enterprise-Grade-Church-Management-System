@@ -64,6 +64,8 @@ class PrayerRequest(PrayerRequestBase):
                 "source": "admin_input",
                 "assigned_to_user_id": "user123",
                 "internal_notes": "Follow up needed",
+                "needs_follow_up": True,
+                "follow_up_notes": "Contact for pastoral counseling",
                 "prayed_at": None,
                 "created_by": "user123",
                 "created_at": "2025-01-01T10:00:00"
