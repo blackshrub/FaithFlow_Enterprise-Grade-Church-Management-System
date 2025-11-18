@@ -23,7 +23,7 @@ from routes import (
 # Import articles routes (v1)
 from routes import (
     articles, article_categories, article_tags, article_comments,
-    articles_public, article_preview
+    articles_public, article_preview, prayer_requests
 )
 
 ROOT_DIR = Path(__file__).parent
