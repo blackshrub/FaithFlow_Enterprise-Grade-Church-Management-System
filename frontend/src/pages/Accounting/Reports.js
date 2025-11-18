@@ -96,6 +96,18 @@ export default function Reports() {
           <Button onClick={() => refetchTB()}>
             {t('accounting.reports.generateReport')}
           </Button>
+          {trialBalanceData && (
+            <Button 
+              variant="outline" 
+              onClick={() => exportToCSV(
+                trialBalanceData.trial_balance, 
+                `trial-balance-${reportParams.as_of_date}`
+              )}
+            >
+              <Download className="w-4 h-4 mr-2" />
+              {t('accounting.reports.exportCSV')}
+            </Button>
+          )}
         </div>
       </div>
 
