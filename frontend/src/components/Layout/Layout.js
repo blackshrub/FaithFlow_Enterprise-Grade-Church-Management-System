@@ -97,8 +97,8 @@ export default function Layout() {
       submenu: [
         { label: t('articles.allArticles'), path: '/articles' },
         { label: t('articles.addNew'), path: '/articles/new' },
-        { label: t('articles.categories.title'), path: '/articles/categories' },
-        { label: t('articles.tags.title'), path: '/articles/tags' },
+        { label: t('articles.categoriesManagement.title'), path: '/articles/categories' },
+        { label: t('articles.tagsManagement.title'), path: '/articles/tags' },
         { label: t('articles.comments.title'), path: '/articles/comments' },
       ]
     },
