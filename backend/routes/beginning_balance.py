@@ -82,6 +82,10 @@ async def create_beginning_balance(
     balance_dict["created_at"] = datetime.utcnow()
     balance_dict["updated_at"] = datetime.utcnow()
     
+    # Convert date to ISO string for MongoDB
+    if isinstance(balance_dict.get("effective_date"), date):
+        balance_dict["effective_date"] = balance_dict["effective_date"].isoformat()
+    
     # Convert Decimal to float
     balance_dict["total_debit"] = float(balance_dict["total_debit"])
     balance_dict["total_credit"] = float(balance_dict["total_credit"])
