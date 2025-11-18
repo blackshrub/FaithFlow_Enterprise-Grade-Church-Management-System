@@ -229,6 +229,14 @@ export default function ChartOfAccounts() {
           )}
         </CardContent>
       </Card>
+
+      {/* Modal */}
+      <COAModal
+        open={showModal}
+        onOpenChange={setShowModal}
+        account={selectedAccount}
+        onSuccess={() => refetch()}
+      />
     </div>
   );
 }
