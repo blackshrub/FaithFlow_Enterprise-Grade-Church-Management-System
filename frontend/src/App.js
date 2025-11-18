@@ -18,6 +18,12 @@ import Devotions from "./pages/Devotions";
 import Layout from "./components/Layout/Layout";
 import ProtectedRoute from "./components/Layout/ProtectedRoute";
 
+// Accounting pages
+import AccountingDashboard from "./pages/Accounting/AccountingDashboard";
+import ChartOfAccounts from "./pages/Accounting/ChartOfAccounts";
+import Journals from "./pages/Accounting/Journals";
+import FiscalPeriods from "./pages/Accounting/FiscalPeriods";
+
 import FaithFlowLogo from './components/Branding/FaithFlowLogo';
 
 function App() {
