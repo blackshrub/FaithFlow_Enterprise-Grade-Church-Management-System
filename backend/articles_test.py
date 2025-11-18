@@ -551,9 +551,10 @@ class ArticlesAPITester:
             f"/api/v1/articles/{article_id}/comments/",
             201,
             data={
+                "article_id": article_id,
                 "author_name": "Test User",
                 "author_email": "test@example.com",
-                "content": "This is a test comment",
+                "comment": "This is a test comment",
                 "status": "pending"
             }
         )
