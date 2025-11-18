@@ -62,7 +62,7 @@ class Budget(BudgetBase):
     status: Literal["draft", "active", "closed"] = Field(default="draft", description="Budget status")
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
-    attachments: List[str] = Field(default_factory=list, description="File attachment IDs")
+    attachments: list[str] = Field(default_factory=list, description="File attachment IDs")
     
     def distribute_monthly(self):
         """Distribute annual amounts evenly across 12 months"""
