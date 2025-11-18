@@ -70,6 +70,30 @@ export default function GeneralLedger() {
             <Button onClick={() => refetch()}>
               {t('accounting.reports.generateReport')}
             </Button>
+            {ledgerData && (
+              <Button 
+                variant="outline" 
+                className="ml-2"
+                onClick={() => {
+                  const exportData = [];
+                  ledgerData.journals?.forEach(journal => {
+                    journal.lines?.forEach(line => {
+                      exportData.push({
+                        date: journal.date,
+                        journal_number: journal.journal_number,
+                        description: line.description,
+                        debit: line.debit,
+                        credit: line.credit
+                      });
+                    });
+                  });
+                  exportToCSV(exportData, `general-ledger-${params.start_date}`);
+                }}
+              >
+                <Download className="w-4 h-4 mr-2" />
+                {t('accounting.reports.exportCSV')}
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>
