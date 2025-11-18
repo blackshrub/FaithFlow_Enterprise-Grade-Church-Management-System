@@ -44,9 +44,10 @@ FaithFlow is a comprehensive, production-ready church management system designed
 - React 18
 - TanStack React Query (Server state)
 - Tailwind CSS + shadcn/ui
-- Tiptap (Rich text editor)
 - react-i18next (Internationalization)
-- @zxing/library (QR scanning)
+- **TipTap** - Rich text editor for articles
+- QR Scanner integration
+- Axios for API calls
 
 **Database:**
 - MongoDB 7.0+
