@@ -1,7 +1,7 @@
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from datetime import datetime, date
 from decimal import Decimal
-from typing import Optional, tuple, Dict, Any
+from typing import Optional, Dict, Any
 import uuid
 import logging
 
