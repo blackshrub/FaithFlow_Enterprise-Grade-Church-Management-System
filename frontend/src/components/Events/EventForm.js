@@ -216,7 +216,13 @@ function EventForm({ event, onClose }) {
                   className="w-full px-3 py-2 border border-gray-300 rounded-md"
                 >
                   <option value="">{t('settings.eventCategory')} ({t('common.optional') || 'Optional'})</option>
-                  {categories.map((cat) => (\n                    <option key={cat.id} value={cat.id}>\n                      {cat.name}\n                    </option>\n                  ))}\n                </select>\n              </div>
+                  {categories.map((cat) => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
               <div className="space-y-2 md:col-span-2">
                 <Label htmlFor="description">{t('events.event.description')}</Label>
