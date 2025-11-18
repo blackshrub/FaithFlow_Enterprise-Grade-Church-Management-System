@@ -9,7 +9,7 @@ import RSVPManager from './RSVPManager';
 import SessionsModal from './SessionsModal';
 import AttendanceModal from './AttendanceModal';
 
-function EventCard({ event, onEdit }) {
+function EventCard({ event, category, onEdit }) {
   const { t } = useTranslation();
   const deleteMutation = useDeleteEvent();
   const [showRSVPManager, setShowRSVPManager] = useState(false);
