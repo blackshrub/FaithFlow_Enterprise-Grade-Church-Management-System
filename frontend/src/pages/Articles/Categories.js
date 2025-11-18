@@ -53,15 +53,15 @@ export default function Categories() {
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">{t('articles.categories.title')}</h1>
+        <h1 className="text-3xl font-bold">{t('articles.categoriesManagement.title')}</h1>
         <Button onClick={() => { setEditingCategory(null); setFormData({ name: '', description: '' }); setShowModal(true); }}>
           <Plus className="w-4 h-4 mr-2" />
-          {t('articles.categories.createCategory')}
+          {t('articles.categoriesManagement.createCategory')}
         </Button>
       </div>
 
       <Card>
-        <CardHeader><CardTitle>{categories?.length || 0} {t('articles.categories.title')}</CardTitle></CardHeader>
+        <CardHeader><CardTitle>{categories?.length || 0} {t('articles.categoriesManagement.title')}</CardTitle></CardHeader>
         <CardContent>
           {isLoading ? <div>{t('common.loading')}</div> : (
             <Table>
