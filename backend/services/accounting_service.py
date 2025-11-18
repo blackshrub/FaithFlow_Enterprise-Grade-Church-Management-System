@@ -194,7 +194,7 @@ async def get_coa_hierarchy(
     cursor = db.chart_of_accounts.find({
         "church_id": church_id,
         "is_active": True
-    }).sort("code", 1)
+    }, {"_id": 0}).sort("code", 1)
     
     accounts = await cursor.to_list(length=None)
     
