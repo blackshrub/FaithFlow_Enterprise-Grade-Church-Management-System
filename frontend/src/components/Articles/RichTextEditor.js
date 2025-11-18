@@ -93,7 +93,7 @@ const RichTextEditor = ({ value, onChange, placeholder }) => {
       <MenuBar editor={editor} />
       <EditorContent 
         editor={editor} 
-        className="prose max-w-none p-4 min-h-[300px] focus:outline-none"
+        className="prose prose-sm max-w-none p-4 min-h-[300px] focus:outline-none [&_.ProseMirror]:outline-none [&_.ProseMirror]:min-h-[300px]"
       />
     </div>
   );
