@@ -116,10 +116,14 @@ async def close_period(
     else:
         end_date = datetime(year, month + 1, 1)
     
+    # Convert to ISO string format for MongoDB comparison (dates stored as strings)
+    start_date_str = start_date.date().isoformat()
+    end_date_str = end_date.date().isoformat()
+    
     draft_count = await db.journals.count_documents({
         "church_id": church_id,
         "status": "draft",
-        "date": {"$gte": start_date, "$lt": end_date}
+        "date": {"$gte": start_date_str, "$lt": end_date_str}
     })
     
     if draft_count > 0:
