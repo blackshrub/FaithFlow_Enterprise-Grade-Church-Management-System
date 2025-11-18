@@ -287,18 +287,44 @@ export default function PrayerRequestForm() {
                         <div
                           key={member.id}
                           onClick={() => handleMemberSelect(member)}
-                          className="px-4 py-2 hover:bg-gray-100 cursor-pointer border-b last:border-b-0"
+                          className="flex items-center gap-3 px-4 py-3 hover:bg-gray-100 cursor-pointer border-b last:border-b-0"
                         >
-                          <p className="font-medium">{member.full_name}</p>
-                          <p className="text-sm text-gray-600">{member.whatsapp || member.email}</p>
+                          {member.profile_photo ? (
+                            <img
+                              src={member.profile_photo}
+                              alt={member.full_name}
+                              className="w-10 h-10 rounded-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-medium">
+                              {member.full_name?.charAt(0)?.toUpperCase()}
+                            </div>
+                          )}
+                          <div className="flex-1">
+                            <p className="font-medium">{member.full_name}</p>
+                            <p className="text-sm text-gray-600">{member.whatsapp || member.phone || '-'}</p>
+                          </div>
                         </div>
                       ))}
                     </div>
                   )}
                   {selectedMember && (
-                    <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                      <p className="text-sm font-medium">{selectedMember.full_name}</p>
-                      <p className="text-xs text-gray-600">{selectedMember.whatsapp || selectedMember.email}</p>
+                    <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg flex items-center gap-3">
+                      {selectedMember.profile_photo ? (
+                        <img
+                          src={selectedMember.profile_photo}
+                          alt={selectedMember.full_name}
+                          className="w-12 h-12 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-12 h-12 rounded-full bg-blue-200 flex items-center justify-center text-blue-700 font-medium text-lg">
+                          {selectedMember.full_name?.charAt(0)?.toUpperCase()}
+                        </div>
+                      )}
+                      <div>
+                        <p className="text-sm font-medium">{selectedMember.full_name}</p>
+                        <p className="text-xs text-gray-600">{selectedMember.whatsapp || selectedMember.phone || '-'}</p>
+                      </div>
                     </div>
                   )}
                 </div>
