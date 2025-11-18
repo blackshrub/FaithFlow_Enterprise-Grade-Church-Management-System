@@ -71,8 +71,8 @@ function DevotionForm({ devotion, onClose }) {
     try {
       const response = await devotionsAPI.generateAudio(devotion.id);
       toast.success(t('devotions.actions.audioGenerated'));
-      // Refresh the devotion data
-      window.location.reload();
+      // Update form data with new audio URL
+      setFormData({ ...formData, tts_audio_url: response.data.audio_url });
     } catch (error) {
       toast.error(t('devotions.actions.audioGenerationFailed'));
     } finally {
