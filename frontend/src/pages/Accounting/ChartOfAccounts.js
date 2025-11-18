@@ -158,7 +158,7 @@ export default function ChartOfAccounts() {
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <div className="text-center py-8">{t('accounting.common.loading')}</div>
+            <TableSkeleton rows={10} columns={6} />
           ) : !accounts || accounts.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               <p>{t('accounting.common.noData')}</p>
