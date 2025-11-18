@@ -32,7 +32,7 @@ class BudgetBase(BaseModel):
     """Base model for Budget"""
     name: str = Field(..., min_length=1, max_length=200, description="Budget name")
     fiscal_year: int = Field(..., ge=1900, le=2100, description="Fiscal year")
-    lines: list[BudgetLine] = Field(..., min_length=1, description="Budget lines")
+    lines: list[BudgetLine] = Field(..., description="Budget lines")
 
     @field_validator('fiscal_year')
     @classmethod
