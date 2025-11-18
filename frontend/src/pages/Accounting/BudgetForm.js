@@ -221,6 +221,23 @@ export default function BudgetForm() {
         </CardContent>
       </Card>
 
+      <Card>
+        <CardHeader>
+          <CardTitle>{t('accounting.files.attachedFiles')} ({t('accounting.common.optional')})</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <FileUpload
+            referenceType="budget"
+            referenceId={null}
+            onUploadSuccess={(file) => setFormData({
+              ...formData,
+              attachments: [...formData.attachments, file.id]
+            })}
+            multiple={true}
+          />
+        </CardContent>
+      </Card>
+
       <div className="flex justify-end space-x-2">
         <Button variant="outline" onClick={() => navigate('/accounting/budgets')}>
           {t('accounting.common.cancel')}
