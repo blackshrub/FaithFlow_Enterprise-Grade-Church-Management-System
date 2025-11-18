@@ -133,7 +133,14 @@ async def post_beginning_balance(
     
     # Check if opening period (month 0) is locked
     # For simplicity, we check the effective date's period
-    effective_date = balance["effective_date"]
+    effective_date_str = balance["effective_date"]
+    # Convert string to date object if needed
+    if isinstance(effective_date_str, str):
+        from datetime import datetime as dt
+        effective_date = dt.fromisoformat(effective_date_str).date()
+    else:
+        effective_date = effective_date_str
+        
     can_perform, error_code, _ = await accounting_service.validate_fiscal_period(
         db, church_id, effective_date, "create"
     )
