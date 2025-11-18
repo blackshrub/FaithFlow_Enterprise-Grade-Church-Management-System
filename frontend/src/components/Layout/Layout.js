@@ -25,6 +25,7 @@ import {
   ChevronLeft,
   ChevronsLeft,
   ChevronsRight,
+  Calculator,
 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
