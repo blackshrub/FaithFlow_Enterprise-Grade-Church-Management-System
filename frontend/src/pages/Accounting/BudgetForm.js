@@ -95,19 +95,28 @@ export default function BudgetForm() {
         attachments: formData.attachments || []
       };
       
+      console.log('Budget payload:', payload);
       const response = await createMutation.mutateAsync(payload);
+      console.log('Budget created response:', response);
+      
       toast({
         title: t('accounting.common.success'),
         description: `Budget ${formData.name} created`
       });
-      navigate('/accounting/budgets');
+      
+      // Force navigation after short delay to ensure toast shows
+      setTimeout(() => {
+        navigate('/accounting/budgets');
+      }, 500);
+      
     } catch (error) {
       const errorCode = error.response?.data?.detail?.error_code;
       console.error('Budget creation error:', error);
+      console.error('Error response:', error.response?.data);
       toast({
         variant: "destructive",
         title: t('accounting.common.error'),
-        description: errorCode ? t(`errors.${errorCode}`) : error.message
+        description: errorCode ? t(`errors.${errorCode}`) : (error.response?.data?.detail?.message || error.message)
       });
     }
   };
