@@ -20,10 +20,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../../components/ui/select';
-import { useArticles, useDeleteArticle } from '../../hooks/useArticles';
+import { useArticles, useDeleteArticle, useDuplicateArticle } from '../../hooks/useArticles';
 import ArticleStatusBadge from '../../components/Articles/ArticleStatusBadge';
 import ScheduleStatusBadge from '../../components/Articles/ScheduleStatusBadge';
 import ReadingTimeDisplay from '../../components/Articles/ReadingTimeDisplay';
+import QuickEditModal from '../../components/Articles/QuickEditModal';
 import { useToast } from '../../hooks/use-toast';
 
 export default function ArticlesList() {
@@ -35,6 +36,18 @@ export default function ArticlesList() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [scheduleFilter, setScheduleFilter] = useState('all');
   const [pagination, setPagination] = useState({ limit: 50, offset: 0 });
+  const [selectedArticles, setSelectedArticles] = useState([]);
+  const [showQuickEdit, setShowQuickEdit] = useState(false);
+  const [editingArticle, setEditingArticle] = useState(null);
+  const [visibleColumns, setVisibleColumns] = useState({
+    title: true,
+    status: true,
+    publishDate: true,
+    readingTime: true,
+    views: true,
+    scheduleStatus: true,
+    actions: true
+  });
 
   const { data: articlesData, isLoading } = useArticles({
     search,
