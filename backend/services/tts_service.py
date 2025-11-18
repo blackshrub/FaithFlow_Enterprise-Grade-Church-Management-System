@@ -42,10 +42,10 @@ def generate_indonesian_tts_coqui(text: str) -> str:
         text = text.strip()
         
         # Fix 'g' pronunciation issue by adding 'h' after 'g'
-        # This helps the model pronounce 'g' correctly
-        # Pattern: 'g' followed by vowel (a, e, i, o, u) → 'gh'
-        text = re.sub(r'\bg([aeiouAEIOU])', r'gh\1', text)  # Word boundary + g + vowel
-        text = re.sub(r'([^n])g([aeiouAEIOU])', r'\1gh\2', text)  # Not 'ng' + g + vowel
+        # This helps the model pronounce 'g' correctly (model lacks plain 'g' in vocabulary)
+        # Pattern: Replace 'g' + vowel with 'gh' + vowel, except 'ng' combinations
+        text = re.sub(r'(^|[\s])([Gg])([aeiouAEIOU])', r'\1\2h\3', text)  # Start of word
+        text = re.sub(r'([^nN])([Gg])([aeiouAEIOU])', r'\1\2h\3', text)  # Middle of word (not after n)
         logger.info(f"Text after 'g' fix (first 100 chars): {text[:100]}")
         
         # Convert Indonesian text to phonemes
