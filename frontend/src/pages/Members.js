@@ -305,6 +305,14 @@ export default function Members() {
                           <Button
                             variant="outline"
                             size="sm"
+                            onClick={() => setQrMember(member)}
+                            title={t('members.viewQR')}
+                          >
+                            <QrCode className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
                             onClick={() => openEditDialog(member)}
                           >
                             <Edit className="h-4 w-4" />
