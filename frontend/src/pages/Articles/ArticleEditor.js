@@ -163,12 +163,11 @@ export default function ArticleEditor() {
   return (
     <div className="p-6 space-y-6">
       {/* Sticky Action Bar */}
-      <div className="sticky top-0 z-10 bg-white border-b pb-4">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold">
-            {isEdit ? t('articles.editArticle') : t('articles.addNew')}
-          </h1>
-          <div className="flex items-center space-x-2">
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold">
+          {isEdit ? t('articles.editArticle') : t('articles.addNew')}
+        </h1>
+        <div className="flex items-center space-x-2">
             {isEdit && (
               <>
                 <Button variant="outline" onClick={handleDuplicate}>
