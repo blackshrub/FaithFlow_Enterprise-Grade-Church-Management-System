@@ -287,6 +287,18 @@ export default function Reports() {
           <Button onClick={() => refetchBS()}>
             {t('accounting.reports.generateReport')}
           </Button>
+          {balanceSheetData && (
+            <Button 
+              variant="outline" 
+              onClick={() => exportToCSV(
+                [...balanceSheetData.assets, ...balanceSheetData.liabilities, ...balanceSheetData.equity], 
+                `balance-sheet-${reportParams.as_of_date}`
+              )}
+            >
+              <Download className="w-4 h-4 mr-2" />
+              {t('accounting.reports.exportCSV')}
+            </Button>
+          )}
         </div>
       </div>
 
