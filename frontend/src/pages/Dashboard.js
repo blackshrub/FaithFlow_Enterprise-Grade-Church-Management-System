@@ -67,13 +67,13 @@ export default function Dashboard() {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-gray-900">
-          Welcome to <span className="text-blue-600">FaithFlow</span>
+          {t('app.welcomeTo')} <span className="text-blue-600">{t('app.name')}</span>
         </h1>
         <p className="text-gray-600 mt-1">
           {t('dashboard.welcome', { name: user?.full_name, church: church?.name })}
         </p>
         <p className="text-sm text-gray-500 mt-1">
-          Empowering your church with clarity, care, and connection
+          {t('app.empoweringYourChurch')}
         </p>
       </div>
 
