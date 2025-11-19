@@ -145,6 +145,7 @@ export const statusRulesAPI = {
   update: (id, data) => api.patch(`/status-rules/${id}`, data),
   delete: (id) => api.delete(`/status-rules/${id}`),
   test: (id, memberId) => api.post(`/status-rules/${id}/test`, { member_id: memberId }),
+  simulate: (ruleData) => api.post('/status-rules/simulate', ruleData),
   evaluateAll: () => api.post('/status-rules/evaluate-all'),
 };
 
