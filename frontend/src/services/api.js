@@ -97,16 +97,16 @@ export const membersAPI = {
 // Settings API
 export const settingsAPI = {
   // Member Statuses
-  listMemberStatuses: () => api.get('/settings/member-statuses/'),
+  listMemberStatuses: () => api.get('/settings/member-statuses'),
   getMemberStatus: (id) => api.get(`/settings/member-statuses/${id}`),
-  createMemberStatus: (data) => api.post('/settings/member-statuses/', data),
+  createMemberStatus: (data) => api.post('/settings/member-statuses', data),
   updateMemberStatus: (id, data) => api.patch(`/settings/member-statuses/${id}`, data),
   deleteMemberStatus: (id) => api.delete(`/settings/member-statuses/${id}`),
   
   // Demographics
-  listDemographics: () => api.get('/settings/demographics/'),
+  listDemographics: () => api.get('/settings/demographics'),
   getDemographic: (id) => api.get(`/settings/demographics/${id}`),
-  createDemographic: (data) => api.post('/settings/demographics/', data),
+  createDemographic: (data) => api.post('/settings/demographics', data),
   updateDemographic: (id, data) => api.patch(`/settings/demographics/${id}`, data),
   deleteDemographic: (id) => api.delete(`/settings/demographics/${id}`),
   
