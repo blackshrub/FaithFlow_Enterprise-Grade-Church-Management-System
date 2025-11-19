@@ -1400,6 +1400,376 @@ Manage prayer requests from members and track prayer responses.
 
 ---
 
+## Group Management
+
+### Overview
+Comprehensive group management system for organizing church small groups, ministry teams, and various fellowship activities. Designed for staff to manage groups while enabling members to discover and join groups via mobile apps.
+
+### Group Features
+
+**Core Information:**
+- Group name and description
+- **Configurable category** (labels customizable in church settings)
+- Cover image (base64-encoded)
+- Meeting schedule and location
+- Maximum member capacity
+- Active/inactive status
+- Linked group leader (searchable from member database)
+- Denormalized leader name and contact for quick access
+
+**Staff Management:**
+- Card-based directory UI with cover image thumbnails
+- Filter by category
+- Search by name, leader, or description
+- Create, edit, and delete groups
+- Cannot delete groups with active members (business rule)
+- Add/remove members from groups
+- Approve or reject join/leave requests
+
+**Mobile Integration:**
+- Public API for group discovery
+- Member authentication required for join/leave requests
+- WhatsApp notifications for request approvals/rejections
+
+### Group Categories
+
+**Configuration (Church Settings):**
+- Editable category labels
+- Default categories provided:
+  - `cell_group`: Cell Group
+  - `ministry_team`: Ministry Team
+  - `prayer_group`: Prayer Group
+  - `youth_group`: Youth Group
+  - `worship_team`: Worship Team
+  - `service_team`: Service Team
+  - `other`: Other
+
+**Customization:**
+- Staff can edit category display labels
+- Changes apply system-wide for that church
+- Categories use code keys (e.g., `cell_group`) with localized labels
+- Fully i18n compatible
+
+### Group Leader System
+
+**Linked Member Leaders:**
+- Leaders are **not** free-form text entries
+- Leaders are linked to existing member records
+- Searchable leader selector component
+- Shows member name, email, and phone for selection
+- Denormalized fields (`leader_name`, `leader_contact`) cached for performance
+- Prevents data inconsistency
+
+**Leader Selector UI:**
+- Combobox with search functionality
+- Real-time member search
+- Displays: "Name (email, phone)"
+- Clear selection option
+- Required field validation
+
+### Group Membership
+
+**Member Management:**
+- Add existing members to groups
+- Remove members from groups
+- Track join date (`joined_at`)
+- Member role: `member` or `assistant`
+- View member count and roster
+- Member list with contact information
+
+**Business Rules:**
+- Cannot delete a group with active members
+- Must remove all members first
+- Maximum member limit enforced (optional)
+- Each member linked to member database record
+
+### Join/Leave Request Workflows
+
+**Join Request Flow (Mobile):**
+1. Member browses public group directory
+2. Requests to join a group (optional message)
+3. Request appears in staff dashboard
+4. Staff approves or rejects request
+5. Member receives WhatsApp notification (if enabled)
+6. On approval: member automatically added to group
+
+**Leave Request Flow (Mobile):**
+1. Member requests to leave group (optional reason)
+2. Request appears in staff dashboard
+3. Staff approves request
+4. Member removed from group
+5. WhatsApp notification sent (if enabled)
+
+**Staff Dashboard:**
+- Pending requests view
+- Approve/reject actions
+- View request timestamp and message/reason
+- Real-time updates via React Query
+
+### WhatsApp Notifications
+
+**Notification Events:**
+- Join request approved
+- Join request rejected
+- Leave request approved
+
+**Configuration:**
+- Global WhatsApp toggle (church settings)
+- Module-specific toggle: `whatsapp_send_group_notifications`
+- Respects member's preferred language
+- Uses member's WhatsApp phone number
+- Includes group name and personalized message
+
+**Message Templates (Localized):**
+- **Join Approved (EN):** "Hello {name}, your request to join '{group_name}' has been approved. Welcome!"
+- **Join Approved (ID):** "Halo {name}, permintaan Anda untuk bergabung dengan '{group_name}' telah disetujui. Selamat datang!"
+- **Join Rejected (EN):** "Hello {name}, your request to join '{group_name}' has been declined."
+- **Join Rejected (ID):** "Halo {name}, permintaan Anda untuk bergabung dengan '{group_name}' telah ditolak."
+- **Leave Approved (EN):** "Hello {name}, your request to leave '{group_name}' has been approved."
+- **Leave Approved (ID):** "Halo {name}, permintaan Anda untuk keluar dari '{group_name}' telah disetujui."
+
+### Directory UI
+
+**Card-Based Layout:**
+- Visual grid of group cards
+- Cover image thumbnails
+- Group name and category badge
+- Leader name and member count
+- Active/inactive indicator
+- Hover effects and smooth animations
+
+**Filtering & Search:**
+- Category filter dropdown (All Categories + specific categories)
+- Real-time search across:
+  - Group name
+  - Description
+  - Leader name
+- Empty state with helpful message
+
+**Actions:**
+- Edit group (opens form)
+- Delete group (with confirmation)
+- View members (navigates to roster page)
+
+### Group Form
+
+**Create/Edit Group:**
+- Group name (required)
+- Category selection (dropdown with configurable labels)
+- Description (textarea)
+- Leader selector (searchable combobox)
+- Meeting schedule (text)
+- Meeting location (text)
+- Maximum members (number, optional)
+- Active status (checkbox)
+- Cover image upload (base64)
+
+**Cover Image Upload:**
+- Drag-and-drop or click to select
+- Image preview
+- Base64 encoding for storage
+- Replace existing image option
+- Optional field
+
+**Validation:**
+- Group name required
+- Category required
+- Leader required
+- Max members must be positive (if provided)
+- Zod schema validation
+
+### API Architecture
+
+**Staff Endpoints (`/api/groups/`):**
+- `GET /api/groups/` - List all groups (filtered by church_id)
+- `POST /api/groups/` - Create new group
+- `GET /api/groups/{group_id}` - Get group details
+- `PUT /api/groups/{group_id}` - Update group
+- `DELETE /api/groups/{group_id}` - Delete group (fails if has members)
+- `GET /api/groups/{group_id}/members` - List group members
+- `POST /api/groups/{group_id}/members` - Add member to group
+- `DELETE /api/groups/{group_id}/members/{member_id}` - Remove member
+
+**Join Request Endpoints (`/api/group-join-requests/`):**
+- `GET /api/group-join-requests/` - List pending requests (staff)
+- `POST /api/group-join-requests/approve/{request_id}` - Approve request
+- `POST /api/group-join-requests/reject/{request_id}` - Reject request
+
+**Leave Request Endpoints (`/api/group-leave-requests/`):**
+- `GET /api/group-leave-requests/` - List pending requests (staff)
+- `POST /api/group-leave-requests/approve/{request_id}` - Approve request
+
+**Public/Mobile Endpoints (`/api/groups/public/`):**
+- `GET /api/groups/public/` - List active groups for mobile discovery
+- `POST /api/groups/public/{group_id}/join` - Request to join (requires member auth)
+- `POST /api/groups/public/{group_id}/leave` - Request to leave (requires member auth)
+
+**Authentication:**
+- Staff endpoints: `get_current_user` (JWT-based)
+- Mobile endpoints: `get_current_member` (member-specific auth)
+- All requests scoped by `church_id`
+
+### Database Schema
+
+**Groups Collection:**
+```python
+{
+  "_id": "uuid",
+  "church_id": "uuid",
+  "name": "Young Adults Fellowship",
+  "category": "youth_group",
+  "description": "Weekly fellowship for young adults...",
+  "leader_member_id": "uuid",  # Link to members collection
+  "leader_name": "John Doe",   # Denormalized for performance
+  "leader_contact": "+62812...",
+  "meeting_schedule": "Every Friday 7 PM",
+  "meeting_location": "Room 201",
+  "cover_image": "data:image/jpeg;base64,...",
+  "max_members": 30,
+  "is_active": true,
+  "created_at": "ISO datetime",
+  "updated_at": "ISO datetime"
+}
+```
+
+**Group Memberships Collection:**
+```python
+{
+  "_id": "uuid",
+  "church_id": "uuid",
+  "group_id": "uuid",
+  "member_id": "uuid",
+  "role": "member",  # or "assistant"
+  "joined_at": "ISO datetime"
+}
+```
+
+**Group Join Requests Collection:**
+```python
+{
+  "_id": "uuid",
+  "church_id": "uuid",
+  "group_id": "uuid",
+  "member_id": "uuid",
+  "message": "I would like to join...",
+  "status": "pending",  # or "approved", "rejected"
+  "requested_at": "ISO datetime",
+  "processed_at": "ISO datetime",
+  "processed_by": "user_id"
+}
+```
+
+**Group Leave Requests Collection:**
+```python
+{
+  "_id": "uuid",
+  "church_id": "uuid",
+  "group_id": "uuid",
+  "member_id": "uuid",
+  "reason": "Moving to another city",
+  "status": "pending",  # or "approved"
+  "requested_at": "ISO datetime",
+  "approved_at": "ISO datetime",
+  "approved_by": "user_id"
+}
+```
+
+### React Query Integration
+
+**Hooks (`useGroups.js`):**
+- `useGroups()` - Fetch all groups with filters
+- `useGroupById(id)` - Fetch single group
+- `useCreateGroup()` - Create mutation
+- `useUpdateGroup()` - Update mutation
+- `useDeleteGroup()` - Delete mutation
+- `useGroupMembers(groupId)` - Fetch members
+- `useAddGroupMember()` - Add member mutation
+- `useRemoveGroupMember()` - Remove member mutation
+- `useJoinRequests()` - Fetch pending join requests
+- `useApproveJoinRequest()` - Approve mutation
+- `useRejectJoinRequest()` - Reject mutation
+- `useLeaveRequests()` - Fetch pending leave requests
+- `useApproveLeaveRequest()` - Approve mutation
+
+**Query Invalidation:**
+- After mutations, automatically refetch affected queries
+- Optimistic updates for better UX
+- Error handling with user-friendly toast messages
+
+### Internationalization (i18n)
+
+**Translation Keys:**
+- `groups.title` - "Groups" / "Kelompok"
+- `groups.addGroup` - "Add Group" / "Tambah Kelompok"
+- `groups.searchPlaceholder` - Search prompt
+- `groups.categories.*` - Category labels
+- `groups.validation.*` - Form validation messages
+- `groups.createSuccess` - Success messages
+- `groups.confirmDelete` - Confirmation dialogs
+
+**Supported Languages:**
+- English (`en.json`)
+- Indonesian (`id.json`)
+
+**Usage:**
+```javascript
+import { useTranslation } from 'react-i18next';
+const { t } = useTranslation();
+<h1>{t('groups.title')}</h1>
+```
+
+### Use Cases
+
+**Cell Groups:**
+- Small fellowship groups (8-15 members)
+- Meet weekly in homes
+- Assigned facilitators as leaders
+- Members request to join via mobile app
+- Staff approve based on capacity and location
+
+**Ministry Teams:**
+- Worship team, ushers, media team
+- Fixed membership
+- Leader assigns roles (e.g., assistant)
+- Staff manage rosters directly
+
+**Prayer Groups:**
+- Intercessory prayer teams
+- Open membership
+- Members can freely join
+- Staff monitor and approve
+
+**Youth Groups:**
+- Age-specific groups
+- Event-focused activities
+- Dynamic membership
+- High join/leave request volume
+
+### Best Practices
+
+**For Church Administrators:**
+- Set clear group descriptions and expectations
+- Keep cover images professional and relevant
+- Regularly review join/leave requests
+- Update meeting schedules and locations
+- Monitor member counts vs. capacity
+- Remove inactive groups
+
+**For Group Leaders:**
+- Ensure your member profile is complete
+- Coordinate with staff for roster changes
+- Communicate meeting details to members
+- Report issues to staff
+
+**For Developers:**
+- Always scope queries by `church_id`
+- Use denormalized fields for performance
+- Validate group deletion business rules
+- Handle WhatsApp notification failures gracefully
+- Test mobile API integration thoroughly
+
+---
+
 ## Settings & Configuration
 
 ### Church Settings
