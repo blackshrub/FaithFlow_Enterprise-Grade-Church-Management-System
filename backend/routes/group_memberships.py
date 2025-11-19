@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from typing import Optional
 from datetime import datetime
+import uuid
 
 from models.group_membership import GroupMembership, GroupMembershipCreate, GroupMembershipUpdate
 from utils.dependencies import get_db, get_current_user
