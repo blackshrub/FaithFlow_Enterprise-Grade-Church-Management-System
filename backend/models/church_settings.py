@@ -15,6 +15,17 @@ class ChurchSettingsBase(BaseModel):
     enable_whatsapp_notifications: bool = Field(default=False, description="Enable WhatsApp notifications (global switch)")
     whatsapp_send_rsvp_confirmation: bool = Field(default=True, description="Send confirmation when RSVP is registered")
     whatsapp_send_group_notifications: bool = Field(default=True, description="Send WhatsApp notifications for group join/leave approvals")
+    
+    # Group module configuration
+    group_categories: dict = Field(
+        default_factory=lambda: {
+            "cell_group": "Cell Group / Small Group",
+            "ministry_team": "Ministry Team",
+            "activity": "Activity Group",
+            "support_group": "Support Group",
+        },
+        description="Mapping of group category code to display label",
+    )
 
 
 class ChurchSettingsCreate(ChurchSettingsBase):
