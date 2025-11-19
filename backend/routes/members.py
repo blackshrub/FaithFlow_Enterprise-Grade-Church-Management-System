@@ -409,13 +409,13 @@ async def get_member_stats(
     total_members = await db.members.count_documents({**query, 'is_active': True})
     total_inactive = await db.members.count_documents({**query, 'is_active': False})
     
-    # Count by gender
-    male_count = await db.members.count_documents({**query, 'gender': 'male', 'is_active': True})
-    female_count = await db.members.count_documents({**query, 'gender': 'female', 'is_active': True})
+    # Count by gender (case-insensitive)
+    male_count = await db.members.count_documents({**query, 'gender': {'$regex': '^male$', '$options': 'i'}, 'is_active': True})
+    female_count = await db.members.count_documents({**query, 'gender': {'$regex': '^female$', '$options': 'i'}, 'is_active': True})
     
-    # Count by marital status
-    married_count = await db.members.count_documents({**query, 'marital_status': 'married', 'is_active': True})
-    single_count = await db.members.count_documents({**query, 'marital_status': 'single', 'is_active': True})
+    # Count by marital status (case-insensitive)
+    married_count = await db.members.count_documents({**query, 'marital_status': {'$regex': '^married$', '$options': 'i'}, 'is_active': True})
+    single_count = await db.members.count_documents({**query, 'marital_status': {'$regex': '^(single|not married)$', '$options': 'i'}, 'is_active': True})
     
     # Count incomplete data (missing key fields)
     incomplete_count = await db.members.count_documents({
