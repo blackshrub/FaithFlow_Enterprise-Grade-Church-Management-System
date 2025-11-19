@@ -109,7 +109,10 @@
     "useForCheckIn": "Use this QR code for check-in at any event",
     "notmarried": "Not Married",
     "widow": "Widow",
-    "widower": "Widower"
+    "widower": "Widower",
+    "photo": "Photo",
+    "photoUploaded": "Uploaded via import",
+    "personalDocument": "Personal Document"
   },
   "common": {
     "cancel": "Cancel",

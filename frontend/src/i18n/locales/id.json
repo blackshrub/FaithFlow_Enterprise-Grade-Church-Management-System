@@ -109,7 +109,10 @@
     "useForCheckIn": "Gunakan kode QR ini untuk check-in di semua acara",
     "notmarried": "Belum Menikah",
     "widow": "Janda",
-    "widower": "Duda"
+    "widower": "Duda",
+    "photo": "Foto",
+    "photoUploaded": "Diunggah melalui import",
+    "personalDocument": "Dokumen Pribadi"
   },
   "common": {
     "cancel": "Batal",
