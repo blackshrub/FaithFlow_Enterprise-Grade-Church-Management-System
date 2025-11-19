@@ -90,7 +90,7 @@ export const membersAPI = {
   create: (data) => api.post('/members/', data),
   update: (id, data) => api.patch(`/members/${id}`, data),
   delete: (id) => api.delete(`/members/${id}`),
-  getStats: () => api.get('/members/stats/summary/'),
+  getStats: () => api.get('/members/stats/summary'),
   quickAdd: (data) => api.post('/members/quick-add', data),
 };
 
