@@ -202,6 +202,43 @@ export default function GeneralSettingsTab() {
         </CardContent>
       </Card>
 
+      {/* Group Categories */}
+      <Card>
+        <CardHeader>
+          <CardTitle>{t('settings.groupCategoriesTitle') || 'Group Categories'}</CardTitle>
+          <CardDescription>
+            {t('settings.groupCategoriesDesc') || 'Configure labels for each group category type.'}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {['cell_group', 'ministry_team', 'activity', 'support_group'].map((code) => (
+            <div key={code} className="flex items-center gap-4">
+              <div className="w-40">
+                <Label className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                  {code}
+                </Label>
+              </div>
+              <div className="flex-1">
+                <input
+                  type="text"
+                  className="w-full border rounded px-3 py-2 text-sm"
+                  value={formData.group_categories[code] || ''}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      group_categories: {
+                        ...formData.group_categories,
+                        [code]: e.target.value,
+                      },
+                    })
+                  }
+                />
+              </div>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+
       {/* WhatsApp Notifications */}
       <Card>
         <CardHeader>
