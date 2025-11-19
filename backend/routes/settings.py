@@ -139,10 +139,10 @@ async def update_member_status(
         update_data['updated_at'] = datetime.now().isoformat()
         
         # If setting as default, unset all others first
-        if update_data.get('is_default_for_new'):
+        if update_data.get('is_default'):
             await db.member_statuses.update_many(
                 {"church_id": status.get('church_id')},
-                {"$set": {"is_default_for_new": False}}
+                {"$set": {"is_default": False}}
             )
         
         await db.member_statuses.update_one(
