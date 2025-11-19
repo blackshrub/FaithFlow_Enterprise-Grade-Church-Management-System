@@ -112,7 +112,9 @@
     "widower": "Duda",
     "photo": "Foto",
     "photoUploaded": "Diunggah melalui import",
-    "personalDocument": "Dokumen Pribadi"
+    "personalDocument": "Dokumen Pribadi",
+    "memberStatus": "Status Keanggotaan",
+    "selectMemberStatus": "Pilih status keanggotaan"
   },
   "common": {
     "cancel": "Batal",

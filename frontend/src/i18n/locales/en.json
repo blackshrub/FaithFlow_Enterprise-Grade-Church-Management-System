@@ -112,7 +112,9 @@
     "widower": "Widower",
     "photo": "Photo",
     "photoUploaded": "Uploaded via import",
-    "personalDocument": "Personal Document"
+    "personalDocument": "Personal Document",
+    "memberStatus": "Member Status",
+    "selectMemberStatus": "Select member status"
   },
   "common": {
     "cancel": "Cancel",
