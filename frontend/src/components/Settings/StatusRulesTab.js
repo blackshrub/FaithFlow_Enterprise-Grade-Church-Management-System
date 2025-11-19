@@ -217,6 +217,7 @@ export default function StatusRulesTab() {
   const { church } = useAuth();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isPreviewDialogOpen, setIsPreviewDialogOpen] = useState(false);
   const [selectedRule, setSelectedRule] = useState(null);
   const [simulationResults, setSimulationResults] = useState(null);
   const [formData, setFormData] = useState({
@@ -242,6 +243,25 @@ export default function StatusRulesTab() {
   const eventCategories = [
     { id: 'sunday-service', name: 'Sunday Service' },
   ]; // Simplified for now
+
+  const handlePreviewExistingRule = (rule) => {
+    // Simulate existing rule
+    const ruleData = {
+      rule_type: rule.rule_type,
+      current_status_id: rule.current_status_id,
+      action_status_id: rule.action_status_id,
+      conditions: rule.conditions,
+      church_id: church.id
+    };
+
+    simulateRule.mutate(ruleData, {
+      onSuccess: (data) => {
+        setSimulationResults(data);
+        setSelectedRule(rule);
+        setIsPreviewDialogOpen(true);
+      },
+    });
+  };
 
   const handleCreateRule = async (e) => {
     e.preventDefault();
