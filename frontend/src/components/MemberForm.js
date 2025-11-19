@@ -27,7 +27,7 @@ export default function MemberForm({ formData, setFormData, member = null }) {
                 <img 
                   src={member.photo_base64} 
                   alt={member.full_name || 'Member photo'}
-                  className="h-16 w-16 rounded-full object-cover border-2 border-gray-200"
+                  className="h-20 w-20 rounded-lg object-cover border-2 border-gray-200"
                 />
                 <span className="text-sm text-gray-600">{t('members.photoUploaded')}</span>
               </div>
@@ -36,11 +36,15 @@ export default function MemberForm({ formData, setFormData, member = null }) {
           {member.personal_document && (
             <div className="space-y-2">
               <Label>{t('members.personalDocument')}</Label>
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-mono bg-gray-100 px-2 py-1 rounded">
-                  {member.personal_document}
-                </span>
-              </div>
+              <a 
+                href={`/uploads/${member.personal_document}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 hover:underline"
+              >
+                <FileText className="h-4 w-4" />
+                <span className="font-mono">{member.personal_document}</span>
+              </a>
             </div>
           )}
         </div>
