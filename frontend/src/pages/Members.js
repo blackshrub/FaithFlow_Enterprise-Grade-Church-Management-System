@@ -394,6 +394,7 @@ export default function Members() {
                       <TableHead>{t('members.contact')}</TableHead>
                       <TableHead>{t('members.gender')}</TableHead>
                       <TableHead>{t('members.maritalStatus')}</TableHead>
+                      <TableHead>Demographic</TableHead>
                       <TableHead>{t('members.status')}</TableHead>
                       <TableHead className="text-right">{t('members.actions')}</TableHead>
                     </TableRow>
