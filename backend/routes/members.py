@@ -279,6 +279,25 @@ async def update_member(
     if update_data:
         update_data['updated_at'] = datetime.now().isoformat()
         
+        # Normalize phone number if being updated
+        if 'phone_whatsapp' in update_data and update_data['phone_whatsapp']:
+            normalized_phone = normalize_phone_number(update_data['phone_whatsapp'])
+            update_data['phone_whatsapp'] = normalized_phone
+            
+            # Check for duplicate phone number (excluding current member)
+            existing = await db.members.find_one({
+                "church_id": member.get('church_id'),
+                "phone_whatsapp": normalized_phone,
+                "id": {"$ne": member_id},  # Exclude current member
+                "is_active": True
+            })
+            
+            if existing:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Member with phone number {normalized_phone} already exists: {existing.get('full_name', 'Unknown')}"
+                )
+        
         # Re-calculate demographic if date_of_birth is being updated
         if 'date_of_birth' in update_data:
             # Get current member data and merge with update
