@@ -139,7 +139,11 @@
     "all": "All",
     "noData": "No data available",
     "back": "Back",
-    "none": "None"
+    "none": "None",
+    "showingResults": "Showing {{from}}-{{to}} of {{total}} results",
+    "pageOfPages": "Page {{page}} of {{total}}",
+    "previous": "Previous",
+    "next": "Next"
   },
   "nav": {
     "dashboard": "Dashboard",

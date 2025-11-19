@@ -139,7 +139,11 @@
     "all": "Semua",
     "noData": "Tidak ada data",
     "back": "Kembali",
-    "none": "Tidak Ada"
+    "none": "Tidak Ada",
+    "showingResults": "Menampilkan {{from}}-{{to}} dari {{total}} hasil",
+    "pageOfPages": "Halaman {{page}} dari {{total}}",
+    "previous": "Sebelumnya",
+    "next": "Berikutnya"
   },
   "nav": {
     "dashboard": "Dasbor",
