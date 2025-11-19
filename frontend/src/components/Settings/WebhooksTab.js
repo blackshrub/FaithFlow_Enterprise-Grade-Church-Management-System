@@ -117,12 +117,87 @@ export default function WebhooksTab() {
     setFormData({ ...formData, secret_key: key });
   };
 
+  // Get API base URL for external apps
+  const getAPIBaseURL = () => {
+    return process.env.REACT_APP_BACKEND_URL || window.location.origin;
+  };
+
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text);
+    toast.success('Copied to clipboard!');
+  };
+
   return (
     <div className="space-y-6">
+      {/* API Information Card */}
+      <Card className="border-blue-200 bg-blue-50">
+        <CardHeader>
+          <CardTitle className="text-lg">{t('settings.webhooks.apiInfo')}</CardTitle>
+          <CardDescription>{t('settings.webhooks.apiInfoDesc')}</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div>
+            <Label className="text-xs text-gray-600">{t('settings.webhooks.apiBaseUrl')}</Label>
+            <div className="flex items-center gap-2 mt-1">
+              <code className="flex-1 px-3 py-2 bg-white border rounded font-mono text-sm">
+                {getAPIBaseURL()}/api
+              </code>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => copyToClipboard(`${getAPIBaseURL()}/api`)}
+              >
+                {t('common.copy')}
+              </Button>
+            </div>
+          </div>
+          <div>
+            <Label className="text-xs text-gray-600">{t('settings.webhooks.authEndpoint')}</Label>
+            <div className="flex items-center gap-2 mt-1">
+              <code className="flex-1 px-3 py-2 bg-white border rounded font-mono text-sm">
+                POST {getAPIBaseURL()}/api/auth/login
+              </code>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => copyToClipboard(`${getAPIBaseURL()}/api/auth/login`)}
+              >
+                {t('common.copy')}
+              </Button>
+            </div>
+          </div>
+          <div>
+            <Label className="text-xs text-gray-600">{t('settings.webhooks.membersEndpoint')}</Label>
+            <div className="flex items-center gap-2 mt-1">
+              <code className="flex-1 px-3 py-2 bg-white border rounded font-mono text-sm">
+                GET {getAPIBaseURL()}/api/members/
+              </code>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => copyToClipboard(`${getAPIBaseURL()}/api/members/`)}
+              >
+                {t('common.copy')}
+              </Button>
+            </div>
+          </div>
+          <Alert>
+            <AlertDescription className="text-sm">
+              <strong>{t('settings.webhooks.externalAppNote')}</strong>
+              <br />
+              {t('settings.webhooks.externalAppInstructions')}
+            </AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
+
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-xl font-semibold">{t('settings.webhooks.title')}</h2>
-          <p className="text-sm text-gray-600 mt-1">{t('settings.webhooks.description')}</p>
+          <h2 className="text-xl font-semibold">{t('settings.webhooks.configurationsTitle')}</h2>
+          <p className="text-sm text-gray-600 mt-1">{t('settings.webhooks.configurationsDesc')}</p>
         </div>
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogTrigger asChild>
