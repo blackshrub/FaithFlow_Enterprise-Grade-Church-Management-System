@@ -308,6 +308,65 @@ export default function Members() {
               </div>
             </div>
           </div>
+          
+          {/* Filters Row */}
+          <div className="flex items-center gap-2 mt-4 flex-wrap">
+            <Filter className="h-4 w-4 text-gray-500" />
+            <Select value={filters.gender} onValueChange={(value) => setFilters({...filters, gender: value})}>
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="Gender" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value=" ">All Genders</SelectItem>
+                <SelectItem value="Male">Male</SelectItem>
+                <SelectItem value="Female">Female</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={filters.marital_status} onValueChange={(value) => setFilters({...filters, marital_status: value})}>
+              <SelectTrigger className="w-44">
+                <SelectValue placeholder="Marital Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value=" ">All Marital Status</SelectItem>
+                <SelectItem value="Married">Married</SelectItem>
+                <SelectItem value="Not Married">Not Married</SelectItem>
+                <SelectItem value="Widow">Widow</SelectItem>
+                <SelectItem value="Widower">Widower</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={filters.member_status} onValueChange={(value) => setFilters({...filters, member_status: value})}>
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="Member Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value=" ">All Statuses</SelectItem>
+                {statuses.map(status => (
+                  <SelectItem key={status.id} value={status.name}>{status.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={filters.demographic_category} onValueChange={(value) => setFilters({...filters, demographic_category: value})}>
+              <SelectTrigger className="w-44">
+                <SelectValue placeholder="Demographics" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value=" ">All Demographics</SelectItem>
+                {demographics.map(demo => (
+                  <SelectItem key={demo.id} value={demo.name}>{demo.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {hasActiveFilters && (
+              <Button variant="ghost" size="sm" onClick={clearFilters}>
+                <X className="h-4 w-4 mr-1" />
+                Clear Filters
+              </Button>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           {isLoading ? (
