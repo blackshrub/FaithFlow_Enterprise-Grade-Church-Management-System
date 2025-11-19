@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useStatusConflicts, useResolveConflict } from '../hooks/useStatusAutomation';
+import { useMemberStatuses } from '../hooks/useSettings';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
@@ -8,6 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Loader2, AlertTriangle, CheckCircle, User } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '../components/ui/radio-group';
 import { Label } from '../components/ui/label';
+import { Textarea } from '../components/ui/textarea';
 
 export default function ConflictReview() {
   const [statusFilter, setStatusFilter] = useState('open');
