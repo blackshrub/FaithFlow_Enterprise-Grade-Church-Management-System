@@ -108,14 +108,16 @@ faithflow/
 │   │   ├── hooks/           # React Query hooks
 │   │   │   ├── useEvents.js
 │   │   │   ├── useDevotions.js
+│   │   │   ├── useGroups.js             # ⭐ Groups hooks
 │   │   │   └── ...
 │   │   ├── services/        # API service layer
-│   │   │   └── api.js       # Axios configuration
+│   │   │   ├── api.js       # Axios configuration
+│   │   │   └── groupsApi.js             # ⭐ Groups API calls
 │   │   ├── i18n/            # Internationalization
 │   │   │   ├── index.js     # i18n setup
 │   │   │   └── locales/
-│   │   │       ├── en.json   # English (500+ keys)
-│   │   │       └── id.json   # Indonesian (500+ keys)
+│   │   │       ├── en.json   # English (650+ keys)
+│   │   │       └── id.json   # Indonesian (650+ keys)
 │   │   ├── context/         # React context
 │   │   │   └── AuthContext.js
 │   │   └── App.js           # Main React app
