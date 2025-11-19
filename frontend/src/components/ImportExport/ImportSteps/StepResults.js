@@ -33,6 +33,14 @@ export default function StepResults({ wizardData, updateWizardData, importMember
     }
   };
 
+  // IMPORTANT: All hooks must be at the top, before any conditional returns
+  // Auto-execute import when component first mounts
+  React.useEffect(() => {
+    if (!importing && !importComplete) {
+      executeImport();
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   if (importing) {
     return (
       <Card>
@@ -128,13 +136,7 @@ export default function StepResults({ wizardData, updateWizardData, importMember
     );
   }
 
-  // Initial confirmation screen - auto-execute import
-  React.useEffect(() => {
-    if (!importing && !importComplete) {
-      executeImport();
-    }
-  }, []);
-
+  // Initial confirmation screen - preparing import
   return (
     <Card>
       <CardContent className="py-12">
