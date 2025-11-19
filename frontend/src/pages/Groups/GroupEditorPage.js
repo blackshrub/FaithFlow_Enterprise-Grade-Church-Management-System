@@ -5,6 +5,7 @@ import { useGroup, useCreateGroup, useUpdateGroup } from '../../hooks/useGroups'
 import { GroupForm } from '../../components/Groups/GroupForm';
 import { CoverImageUploader } from '../../components/Groups/CoverImageUploader';
 import { useToast } from '../../hooks/use-toast';
+import { useQueryClient } from '@tanstack/react-query';
 
 export default function GroupEditorPage() {
   const { id } = useParams();
