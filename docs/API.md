@@ -422,11 +422,13 @@ Get single verse.
 
 **Base URL:** `/api/v1/accounting/`
 
-**Authentication:** Required for all endpoints
+**Overview:** Enterprise-grade, double-entry accounting for Indonesian churches including multi-level Chart of Accounts, journals, fiscal periods, budgets, fixed assets, bank reconciliation, and year-end closing.
 
-**Multi-Tenant:** All requests automatically filtered by `church_id` from JWT token
+**Authentication:** Required for all accounting endpoints (Admin/Staff, with some Admin-only actions such as period locking and year-end closing).
 
-**Pagination:** Mandatory for journals, bank transactions, audit logs (limit, offset params)
+**Multi-Tenant:** All requests are scoped by `church_id` from the JWT; all unique constraints (e.g., COA codes, asset codes) are per-church.
+
+**Pagination:** Mandatory for heavy lists such as journals, bank transactions, and audit logs (limit, offset params).
 
 ---
 
