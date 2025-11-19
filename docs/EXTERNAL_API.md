@@ -687,8 +687,9 @@ import asyncio
 from datetime import datetime
 
 BASE_URL = "https://faithflow-hub.preview.emergentagent.com/api"
-EMAIL = "admin@church.com"
-PASSWORD = "your-password"
+# Use API Key for external integrations
+API_USERNAME = "api_abc12345_churchname"
+API_KEY = "ffa_your_api_key_here"
 
 class FaithFlowClient:
     def __init__(self):
@@ -698,7 +699,7 @@ class FaithFlowClient:
     async def login(self):
         response = await self.client.post(
             f"{BASE_URL}/auth/login",
-            json={"email": EMAIL, "password": PASSWORD}
+            json={"email": API_USERNAME, "password": API_KEY}
         )
         self.token = response.json()["access_token"]
         return self.token
