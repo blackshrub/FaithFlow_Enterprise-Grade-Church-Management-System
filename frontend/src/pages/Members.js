@@ -442,6 +442,13 @@ export default function Members() {
                           ) : t('common.na')}
                         </TableCell>
                         <TableCell>
+                          {member.demographic_category ? (
+                            <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
+                              {member.demographic_category}
+                            </Badge>
+                          ) : t('common.na')}
+                        </TableCell>
+                        <TableCell>
                           {member.member_status ? (
                             <Badge>{member.member_status}</Badge>
                           ) : (
