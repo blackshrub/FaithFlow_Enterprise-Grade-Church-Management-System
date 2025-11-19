@@ -372,10 +372,16 @@ export default function Members() {
                 variant={showIncompleteOnly ? "default" : "outline"}
                 size="sm"
                 onClick={() => setShowIncompleteOnly(!showIncompleteOnly)}
+                className={showIncompleteOnly ? "bg-amber-600 hover:bg-amber-700" : ""}
               >
                 <AlertCircle className="h-4 w-4 mr-2" />
-                {showIncompleteOnly ? "Showing Incomplete Data" : "Show Incomplete Data"}
+                {showIncompleteOnly ? "Showing Incomplete Only" : "Show Incomplete Data"}
               </Button>
+              {showIncompleteOnly && (
+                <span className="text-xs text-amber-600 font-medium">
+                  (Missing: gender, DOB, address, or phone)
+                </span>
+              )}
             </div>
           </div>
         </CardHeader>
