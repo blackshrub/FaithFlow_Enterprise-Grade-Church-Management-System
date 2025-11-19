@@ -1310,6 +1310,8 @@ Complete WordPress-style content management system with rich text editing, sched
 ### Overview
 Pastoral care management system for tracking and managing congregation prayer requests with follow-up coordination.
 
+> Technical API reference: see `docs/API.md` → **Prayer Requests (v1)** section.
+
 ### Features
 
 **Prayer Request Management:**
