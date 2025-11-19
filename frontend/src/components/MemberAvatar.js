@@ -37,8 +37,14 @@ function getColorFromName(name) {
   return COLORS[Math.abs(hash) % COLORS.length];
 }
 
-export default function MemberAvatar({ member, size = 'md', className = '' }) {
-  const { full_name, first_name, last_name, photo_base64 } = member;
+export default function MemberAvatar({ member, name, photo, firstName, lastName, size = 'md', className = '' }) {
+  // Support both interfaces:
+  // 1. member object: { full_name, first_name, last_name, photo_base64 }
+  // 2. individual props: name, photo, firstName, lastName
+  const full_name = member?.full_name || name;
+  const first_name = member?.first_name || firstName;
+  const last_name = member?.last_name || lastName;
+  const photo_base64 = member?.photo_base64 || photo;
   
   const sizes = {
     sm: 'w-8 h-8 text-xs',
@@ -51,10 +57,15 @@ export default function MemberAvatar({ member, size = 'md', className = '' }) {
   
   // If photo exists, show it
   if (photo_base64) {
+    // Handle both formats: with or without data URL prefix
+    const photoSrc = photo_base64.startsWith('data:') 
+      ? photo_base64 
+      : `data:image/jpeg;base64,${photo_base64}`;
+      
     return (
       <img
-        src={`data:image/jpeg;base64,${photo_base64}`}
-        alt={full_name || `${first_name} ${last_name}`}
+        src={photoSrc}
+        alt={full_name || `${first_name || ''} ${last_name || ''}`.trim() || 'Member'}
         className={`${sizeClass} rounded-full object-cover ${className}`}
       />
     );
@@ -62,8 +73,8 @@ export default function MemberAvatar({ member, size = 'md', className = '' }) {
   
   // Generate placeholder with initials
   const initials = getInitials(full_name, first_name, last_name);
-  const name = full_name || `${first_name || ''} ${last_name || ''}`.trim();
-  const color = getColorFromName(name || 'Default');
+  const displayName = full_name || `${first_name || ''} ${last_name || ''}`.trim();
+  const color = getColorFromName(displayName || 'Default');
   
   return (
     <div
