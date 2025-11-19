@@ -101,7 +101,7 @@ export default function Members() {
 
   const openEditDialog = (member) => {
     setSelectedMember(member);
-    setFormData({
+    const formValues = {
       first_name: member.first_name || '',
       last_name: member.last_name || '',
       phone_whatsapp: member.phone_whatsapp || '',
@@ -112,7 +112,11 @@ export default function Members() {
       member_status: member.member_status || '',
       baptism_date: member.baptism_date || '',
       notes: member.notes || ''
-    });
+    };
+    console.log('[DEBUG] Opening edit dialog for member:', member.full_name);
+    console.log('[DEBUG] Member status from DB:', member.member_status);
+    console.log('[DEBUG] Form data member_status:', formValues.member_status);
+    setFormData(formValues);
     setIsEditDialogOpen(true);
   };
 
