@@ -621,6 +621,15 @@ export default function StatusRulesTab() {
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
                         <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handlePreviewExistingRule(rule)}
+                          disabled={simulateRule.isPending}
+                          title="Preview affected members"
+                        >
+                          <Search className="h-4 w-4" />
+                        </Button>
+                        <Button
                           variant="outline"
                           size="sm"
                           onClick={() => openEditDialog(rule)}
