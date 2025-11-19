@@ -160,7 +160,9 @@
     "pageOfPages": "Halaman {{page}} dari {{total}}",
     "previous": "Sebelumnya",
     "next": "Berikutnya",
-    "remove": "Hapus"
+    "remove": "Hapus",
+    "searching": "Mencari...",
+    "clear": "Hapus"
   },
   "nav": {
     "dashboard": "Dasbor",
@@ -1576,7 +1578,8 @@
       "openForJoinHelper": "Izinkan anggota untuk meminta bergabung dengan kelompok ini melalui aplikasi mobile",
       "uploadCover": "Unggah Gambar Sampul",
       "removeCover": "Hapus Sampul",
-      "changeCover": "Ubah Sampul"
+      "changeCover": "Ubah Sampul",
+      "noMembersFound": "Anggota tidak ditemukan"
     },
     "editor": {
       "createTitle": "Buat Kelompok Baru",

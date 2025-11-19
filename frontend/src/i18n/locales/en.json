@@ -160,7 +160,9 @@
     "pageOfPages": "Page {{page}} of {{total}}",
     "previous": "Previous",
     "next": "Next",
-    "remove": "Remove"
+    "remove": "Remove",
+    "searching": "Searching...",
+    "clear": "Clear"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -1586,7 +1588,8 @@
       "openForJoinHelper": "Allow members to request to join this group via mobile app",
       "uploadCover": "Upload Cover Image",
       "removeCover": "Remove Cover",
-      "changeCover": "Change Cover"
+      "changeCover": "Change Cover",
+      "noMembersFound": "No members found"
     },
     "editor": {
       "createTitle": "Create New Group",
