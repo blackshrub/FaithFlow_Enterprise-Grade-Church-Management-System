@@ -442,8 +442,10 @@ async def import_members(
                 if document_mapping and member_data.get('personal_document'):
                     normalized_filename = file_upload_service.normalize_filename(member_data['personal_document'])
                     if normalized_filename in document_mapping:
-                        # Document is already a filename, just ensure it's set
-                        member_data['personal_document'] = document_mapping[normalized_filename]
+                        # Store the base64 document data
+                        member_data['personal_document_base64'] = document_mapping[normalized_filename]
+                        # Keep filename for reference
+                        member_data['personal_document'] = member_data['personal_document']
                         logger.info(f"Matched document for member: {member_data.get('full_name')}")
                 
                 # Auto-assign demographic
