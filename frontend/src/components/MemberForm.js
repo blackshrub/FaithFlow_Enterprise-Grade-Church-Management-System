@@ -43,15 +43,6 @@ export default function MemberForm({ formData, setFormData }) {
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="email">{t('members.email')}</Label>
-        <Input
-          id="email"
-          type="email"
-          value={formData.email}
-          onChange={(e) => handleChange('email', e.target.value)}
-        />
-      </div>
-      <div className="space-y-2">
         <Label htmlFor="date_of_birth">{t('members.dateOfBirth')}</Label>
         <Input
           id="date_of_birth"
