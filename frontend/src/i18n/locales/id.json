@@ -120,7 +120,9 @@
     "uploadPhoto": "Unggah Foto",
     "photoSelected": "Foto dipilih",
     "photoHint": "JPG, PNG maks 5MB",
-    "documentNotAvailable": "File tidak tersedia (diimpor sebelum fitur penyimpanan dokumen)"
+    "documentNotAvailable": "File tidak tersedia (diimpor sebelum fitur penyimpanan dokumen)",
+    "uploadDocument": "Unggah Dokumen",
+    "documentHint": "PDF, DOC, JPG maks 10MB"
   },
   "common": {
     "cancel": "Batal",

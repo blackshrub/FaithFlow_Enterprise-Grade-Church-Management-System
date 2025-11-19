@@ -120,7 +120,9 @@
     "uploadPhoto": "Upload Photo",
     "photoSelected": "Photo selected",
     "photoHint": "JPG, PNG max 5MB",
-    "documentNotAvailable": "File not available (imported before document storage feature)"
+    "documentNotAvailable": "File not available (imported before document storage feature)",
+    "uploadDocument": "Upload Document",
+    "documentHint": "PDF, DOC, JPG max 10MB"
   },
   "common": {
     "cancel": "Cancel",
