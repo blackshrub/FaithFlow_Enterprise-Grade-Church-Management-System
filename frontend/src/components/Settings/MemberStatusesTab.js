@@ -207,6 +207,7 @@ export default function MemberStatusesTab() {
                   <TableHead>{t('settings.statusDescription')}</TableHead>
                   <TableHead>{t('settings.order')}</TableHead>
                   <TableHead>{t('settings.isActive')}</TableHead>
+                  <TableHead>{t('settings.default')}</TableHead>
                   <TableHead className="text-right">{t('members.actions')}</TableHead>
                 </TableRow>
               </TableHeader>
@@ -223,6 +224,13 @@ export default function MemberStatusesTab() {
                         <Badge variant="default">Active</Badge>
                       ) : (
                         <Badge variant="secondary">Inactive</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {status.is_default_for_new ? (
+                        <Badge variant="default" className="bg-blue-600">Default</Badge>
+                      ) : (
+                        <span className="text-gray-400">-</span>
                       )}
                     </TableCell>
                     <TableCell className="text-right">
