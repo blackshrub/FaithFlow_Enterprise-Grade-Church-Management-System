@@ -137,29 +137,40 @@ export const settingsAPI = {
   deleteEventCategory: (id) => api.delete(`/settings/event-categories/${id}`),
 };
 
-// Status Rules API
+// Status Rules API (v1 paths)
 export const statusRulesAPI = {
-  list: () => api.get('/status-rules/'),
-  get: (id) => api.get(`/status-rules/${id}`),
-  create: (data) => api.post('/status-rules/', data),
-  update: (id, data) => api.patch(`/status-rules/${id}`, data),
-  delete: (id) => api.delete(`/status-rules/${id}`),
-  test: (id, memberId) => api.post(`/status-rules/${id}/test`, { member_id: memberId }),
-  simulate: (ruleData) => api.post('/status-rules/simulate', ruleData),
-  evaluateAll: () => api.post('/status-rules/evaluate-all'),
+  list: () => api.get('/v1/member-status/rules'),
+  get: (id) => api.get(`/v1/member-status/rules/${id}`),
+  create: (data) => api.post('/v1/member-status/rules', data),
+  update: (id, data) => api.put(`/v1/member-status/rules/${id}`, data),
+  delete: (id) => api.delete(`/v1/member-status/rules/${id}`),
+  simulate: (ruleData) => api.post('/v1/member-status/simulate', ruleData),
+  evaluateAll: () => api.post('/v1/member-status/run-once'),
 };
 
-// Status Conflicts API
+// Status Conflicts API (v1 paths)
 export const statusConflictsAPI = {
-  list: (pendingOnly = true) => api.get('/status-conflicts/', { params: { pending_only: pendingOnly } }),
-  get: (id) => api.get(`/status-conflicts/${id}`),
-  resolve: (id, statusId) => api.post(`/status-conflicts/${id}/resolve`, { selected_status_id: statusId }),
-  delete: (id) => api.delete(`/status-conflicts/${id}`),
+  list: (statusFilter = 'open', memberId = null) => {
+    const params = { status: statusFilter };
+    if (memberId) params.member_id = memberId;
+    return api.get('/v1/member-status/conflicts', { params });
+  },
+  get: (id) => api.get(`/v1/member-status/conflicts/${id}`),
+  resolve: (id, statusId, comment = null) => api.post(`/v1/member-status/conflicts/${id}/resolve`, { 
+    resolution_status_id: statusId,
+    resolution_comment: comment 
+  }),
 };
 
-// Status History API
+// Status History API (v1 paths)
 export const statusHistoryAPI = {
-  getMemberHistory: (memberId) => api.get(`/members/${memberId}/status-history`),
+  getMemberHistory: (memberId) => api.get(`/v1/member-status/members/${memberId}/history`),
+};
+
+// Automation Settings API (v1 paths)
+export const automationSettingsAPI = {
+  getSettings: () => api.get('/v1/member-status/settings'),
+  updateSettings: (data) => api.put('/v1/member-status/settings', data),
 };
 
 // Webhooks API
