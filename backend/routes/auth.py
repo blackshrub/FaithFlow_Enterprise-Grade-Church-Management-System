@@ -39,13 +39,26 @@ async def login(
     login_data: UserLogin,
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
-    """Login and get access token"""
+    """Login and get access token (supports both user and API key authentication)"""
+    
+    # Try API key authentication first (if email looks like api username)
+    if login_data.email.startswith('api_'):
+        result = await auth_service.authenticate_api_key(
+            username=login_data.email,
+            api_key=login_data.password,
+            db=db
+        )
+        
+        if result:
+            return result
+    
+    # Fall back to regular user authentication
     result = await auth_service.authenticate_user(login_data, db)
     
     if not result:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid email or password",
+            detail="Invalid credentials",
             headers={"WWW-Authenticate": "Bearer"},
         )
     
