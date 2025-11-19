@@ -62,8 +62,11 @@ async def simulate_photo_matching(
             logger.info(f"Sample CSV filenames (normalized): {sample_keys}")
         
         # Match files and store temporarily
-        photo_data_map = {}  # {normalized_filename: base64_data}
-        session_id = str(uuid.uuid4())  # Create session ID for temporary storage
+        session_id = str(uuid.uuid4())
+        temp_dir = f"/tmp/photo_upload_{session_id}"
+        os.makedirs(temp_dir, exist_ok=True)
+        
+        matched_photos = {}  # {normalized_filename: filepath}
         
         for filename, file_data in extracted_files.items():
             if filename in member_lookup:
@@ -74,8 +77,12 @@ async def simulate_photo_matching(
                     base64_data = base64.b64encode(file_data).decode('utf-8')
                     photo_base64 = f"data:image/jpeg;base64,{base64_data}"
                     
-                    # Store in photo_data_map for this session
-                    photo_data_map[filename] = photo_base64
+                    # Save to temp file instead of database
+                    temp_filepath = os.path.join(temp_dir, f"{filename}.b64")
+                    with open(temp_filepath, 'w') as f:
+                        f.write(photo_base64)
+                    
+                    matched_photos[filename] = temp_filepath
                     
                     matched.append({
                         'filename': filename,
@@ -93,13 +100,12 @@ async def simulate_photo_matching(
                     'reason': 'No matching member in CSV'
                 })
         
-        # Store photos temporarily in database for later retrieval during import
-        # This avoids sending huge base64 data in response
-        if photo_data_map:
-            await db.temp_photo_uploads.delete_many({})  # Clear old temp data
-            await db.temp_photo_uploads.insert_one({
+        # Store metadata in database (not the photos themselves)
+        if matched_photos:
+            await db.temp_photo_sessions.insert_one({
                 'session_id': session_id,
-                'photo_data': photo_data_map,
+                'temp_dir': temp_dir,
+                'photo_count': len(matched_photos),
                 'created_at': datetime.now().isoformat(),
                 'expires_at': (datetime.now() + timedelta(hours=2)).isoformat()
             })
