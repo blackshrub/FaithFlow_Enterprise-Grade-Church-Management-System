@@ -105,9 +105,9 @@ export default function Members() {
       last_name: member.last_name || '',
       phone_whatsapp: member.phone_whatsapp || '',
       date_of_birth: member.date_of_birth || '',
-      gender: member.gender || '',
+      gender: member.gender ? member.gender.toLowerCase() : '',
       address: member.address || '',
-      marital_status: member.marital_status || '',
+      marital_status: member.marital_status ? member.marital_status.toLowerCase().replace(/\s+/g, '') : '',
       baptism_date: member.baptism_date || '',
       notes: member.notes || ''
     });
