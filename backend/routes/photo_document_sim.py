@@ -59,19 +59,20 @@ async def simulate_photo_matching(
             sample_keys = list(member_lookup.keys())[:3]
             logger.info(f"Sample CSV filenames (normalized): {sample_keys}")
         
-        # Match files
+        # Match files and store temporarily
         photo_data_map = {}  # {normalized_filename: base64_data}
+        session_id = str(uuid.uuid4())  # Create session ID for temporary storage
         
         for filename, file_data in extracted_files.items():
             if filename in member_lookup:
                 # Validate photo
                 if file_upload_service.validate_photo(file_data, filename):
-                    # Convert binary data to base64 string for JSON serialization
+                    # Convert binary data to base64 string
                     import base64
                     base64_data = base64.b64encode(file_data).decode('utf-8')
                     photo_base64 = f"data:image/jpeg;base64,{base64_data}"
                     
-                    # Store base64 data for later use in import
+                    # Store in photo_data_map for this session
                     photo_data_map[filename] = photo_base64
                     
                     matched.append({
@@ -89,6 +90,17 @@ async def simulate_photo_matching(
                     'filename': filename,
                     'reason': 'No matching member in CSV'
                 })
+        
+        # Store photos temporarily in database for later retrieval during import
+        # This avoids sending huge base64 data in response
+        if photo_data_map:
+            await db.temp_photo_uploads.delete_many({})  # Clear old temp data
+            await db.temp_photo_uploads.insert_one({
+                'session_id': session_id,
+                'photo_data': photo_data_map,
+                'created_at': datetime.now().isoformat(),
+                'expires_at': (datetime.now() + timedelta(hours=2)).isoformat()
+            })
         
         # Find members without matching photos
         matched_filenames = set(m['filename'] for m in matched)
