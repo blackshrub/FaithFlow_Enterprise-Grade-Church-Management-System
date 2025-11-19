@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useMemberStatuses } from '../../hooks/useSettings';
+import { toast } from 'sonner';
 import {
   useStatusRules,
   useCreateStatusRule,
