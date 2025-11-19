@@ -67,6 +67,8 @@ class MemberUpdate(BaseModel):
     notes: Optional[str] = None
     demographic_category: Optional[str] = None
     member_status: Optional[str] = None
+    current_status_id: Optional[str] = None
+    participate_in_automation: Optional[bool] = None
     blood_type: Optional[Literal['A', 'B', 'AB', 'O']] = None
     photo_filename: Optional[str] = None
     photo_base64: Optional[str] = None
