@@ -7,27 +7,19 @@ import uuid
 class MemberStatusHistoryBase(BaseModel):
     member_id: str = Field(..., description="Member ID")
     member_name: str = Field(..., description="Member full name (for display)")
-    previous_status: Optional[str] = Field(None, description="Previous status name")
-    new_status: str = Field(..., description="New status name")
-    change_type: Literal['manual', 'automation', 'conflict_resolved'] = Field(
+    old_status_id: Optional[str] = Field(None, description="Previous status ID (null if initial)")
+    new_status_id: str = Field(..., description="New status ID")
+    reason: Literal['automation', 'manual', 'conflict_resolution'] = Field(
         ...,
         description="How the status was changed"
-    )
-    changed_by_user_id: Optional[str] = Field(
-        None,
-        description="User ID who made the change (for manual changes)"
-    )
-    changed_by_user_name: Optional[str] = Field(
-        None,
-        description="User name who made the change"
     )
     rule_id: Optional[str] = Field(
         None,
         description="Rule ID that triggered the change (for automation)"
     )
-    rule_name: Optional[str] = Field(
+    changed_by: Optional[str] = Field(
         None,
-        description="Rule name that triggered the change"
+        description="User ID who made the change (for manual/conflict_resolution)"
     )
     notes: Optional[str] = Field(
         None,
