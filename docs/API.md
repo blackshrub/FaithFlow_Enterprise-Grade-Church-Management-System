@@ -1043,13 +1043,36 @@ All accounting errors return structured format:
 
 **Base URL:** `/api/v1/articles/`
 
-**Authentication:** Required for admin endpoints, not required for public endpoints
+**Overview:** Internal CMS for long-form content (articles, news, blog posts) with rich text editing, categories/tags, featured images, scheduling, comments, and public/mobile APIs.
 
-**Multi-Tenant:** All requests automatically filtered by `church_id` from JWT token
+**Authentication:** Required for all admin CMS endpoints (Admin/Staff); public/mobile endpoints do not require auth.
+
+**Multi-Tenant:** All admin article records are scoped by `church_id` from the JWT; public endpoints require an explicit `church_id` query parameter.
 
 ---
 
-### Articles Management
+### Data Model Summary
+
+Key fields (see `backend/models/article.py` for full schema):
+- `title` (string) – Article title
+- `slug` (string) – URL-safe slug, auto-generated if omitted, unique per church
+- `content` (string) – HTML content (sanitized before public exposure)
+- `excerpt` (string, optional) – Short summary
+- `featured_image` (string, optional) – Path to uploaded featured image
+- `category_ids` (string[]) – IDs of categories
+- `tag_ids` (string[]) – IDs of tags
+- `status` ("draft" | "published" | "archived") – CMS status
+- `publish_date` (datetime, optional) – Actual publish timestamp
+- `scheduled_publish_date` (datetime, optional) – Future publish datetime
+- `schedule_status` ("none" | "scheduled" | "running" | "completed" | "failed") – Scheduler status
+- `reading_time` (int) – Estimated minutes to read (approx. 200 words/min)
+- `views_count` (int) – View counter (incremented via API)
+- `allow_comments` (bool) – Whether comments are allowed
+- `preview_token` (string, optional) – Draft preview token
+
+---
+
+### Articles Management (Admin)
 
 #### POST /api/v1/articles/
 
