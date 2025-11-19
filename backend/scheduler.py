@@ -28,8 +28,9 @@ def setup_scheduler(db: AsyncIOMotorDatabase):
     # Create scheduler
     scheduler = AsyncIOScheduler()
     
-    # Import the job function
+    # Import the job functions
     from services.article_scheduler import publish_scheduled_articles
+    from services.webhook_service import webhook_service
     
     # Add job: Publish scheduled articles every 30 seconds
     scheduler.add_job(
@@ -40,7 +41,16 @@ def setup_scheduler(db: AsyncIOMotorDatabase):
         replace_existing=True
     )
     
-    logger.info("APScheduler configured with article publishing job (every 30 seconds)")
+    # Add job: Process webhook queue every 10 seconds
+    scheduler.add_job(
+        func=lambda: webhook_service.process_webhook_queue(db),
+        trigger=IntervalTrigger(seconds=10),
+        id='process_webhook_queue',
+        name='Process Webhook Queue',
+        replace_existing=True
+    )
+    
+    logger.info("APScheduler configured with article publishing and webhook processing jobs")
     
     return scheduler
 
