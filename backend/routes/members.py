@@ -426,7 +426,7 @@ async def delete_member(
     db: AsyncIOMotorDatabase = Depends(get_db),
     current_user: dict = Depends(get_current_user)
 ):
-    """Delete member (soft delete by setting is_active to False)"""
+    """Delete member (soft delete - moves to trash bin, auto-emptied after 14 days)"""
     
     member = await db.members.find_one({"id": member_id})
     if not member:
@@ -442,11 +442,21 @@ async def delete_member(
             detail="Access denied"
         )
     
-    # Soft delete
+    # Soft delete - move to trash bin
     await db.members.update_one(
         {"id": member_id},
-        {"$set": {"is_active": False, "updated_at": datetime.now().isoformat()}}
+        {
+            "$set": {
+                "is_deleted": True,
+                "deleted_at": datetime.now().isoformat(),
+                "deleted_by": current_user.get('id'),
+                "is_active": False,
+                "updated_at": datetime.now().isoformat()
+            }
+        }
     )
+    
+    logger.info(f"Member moved to trash: {member.get('full_name')} (ID: {member_id}) by {current_user.get('full_name')}")
     
     # Trigger webhook: member.deleted
     await webhook_service.trigger_member_webhook(
