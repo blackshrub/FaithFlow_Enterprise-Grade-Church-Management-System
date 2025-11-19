@@ -24,6 +24,10 @@ faithflow/
 │   │   ├── article_category.py, article_tag.py # ⭐ CMS - Categories & Tags
 │   │   ├── article_comment.py          # ⭐ CMS - Comments
 │   │   ├── prayer_request.py           # ⭐ Prayer Requests
+│   │   ├── group.py                    # ⭐ Groups - Group model
+│   │   ├── group_membership.py         # ⭐ Groups - Memberships
+│   │   ├── group_join_request.py       # ⭐ Groups - Join requests
+│   │   ├── group_leave_request.py      # ⭐ Groups - Leave requests
 │   │   └── ...
 │   ├── routes/              # API endpoints
 │   │   ├── auth.py, members.py, events.py, devotions.py, bible.py
