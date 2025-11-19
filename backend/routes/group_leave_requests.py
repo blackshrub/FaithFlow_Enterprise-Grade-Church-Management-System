@@ -160,7 +160,9 @@ async def approve_leave_request(
         if member and member.get("phone_whatsapp") and group:
             try:
                 church_settings = church_settings or {}
-                language = church_settings.get("default_language", "en")
+                member_lang = member.get("preferred_language")
+                church_lang = church_settings.get("default_language", "en")
+                language = member_lang or church_lang or "en"
                 from services.whatsapp_service import format_group_notification_message
 
                 message = format_group_notification_message(
