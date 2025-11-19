@@ -28,7 +28,7 @@ from datetime import datetime
 
 # MongoDB connection
 MONGO_URL = os.environ.get('MONGO_URL', 'mongodb://localhost:27017')
-DB_NAME = os.environ.get('DB_NAME', 'faithflow')
+DB_NAME = os.environ.get('DB_NAME', 'church_management')
 
 async def clear_data():
     print("=" * 60)
