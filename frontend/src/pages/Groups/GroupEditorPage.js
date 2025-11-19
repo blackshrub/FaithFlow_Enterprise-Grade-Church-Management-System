@@ -59,12 +59,38 @@ export default function GroupEditorPage() {
         </div>
       </div>
 
-      <GroupForm
-        initialData={group}
-        onSubmit={handleSubmit}
-        onCancel={() => navigate('/groups')}
-        isSaving={createMutation.isLoading || updateMutation.isLoading}
-      />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+        <div className="lg:col-span-2">
+          <GroupForm
+            initialData={group}
+            onSubmit={handleSubmit}
+            onCancel={() => navigate('/groups')}
+            isSaving={createMutation.isLoading || updateMutation.isLoading}
+          />
+        </div>
+        <div className="lg:col-span-1 space-y-4">
+          {isEdit && (
+            <CoverImageUploader
+              group={group}
+              onUpload={async (file) => {
+                try {
+                  const { uploadGroupCover } = await import('../../services/groupsApi');
+                  await uploadGroupCover(id, file);
+                  // no direct refetch here; react-query will refresh group via invalidation from mutation if added later
+                } catch (error) {
+                  console.error('Failed to upload cover image', error);
+                  toast({
+                    title: t('common.error'),
+                    description: t('groups.messages.saveError'),
+                    variant: 'destructive',
+                  });
+                }
+              }}
+              isUploading={false}
+            />
+          )}
+        </div>
+      </div>
     </div>
   );
 }
