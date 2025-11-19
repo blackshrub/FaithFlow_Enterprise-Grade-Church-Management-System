@@ -29,27 +29,11 @@ export default function PrayerRequestForm() {
     needs_follow_up: false,
     follow_up_notes: ''
   });
-  const [memberSearch, setMemberSearch] = useState('');
-  const [showMemberDropdown, setShowMemberDropdown] = useState(false);
+  const [selectedMemberData, setSelectedMemberData] = useState(null);
 
   const { data: existingRequest } = usePrayerRequest(id);
-  const { data: membersData } = useMembers({ limit: 1000, offset: 0 });
-  const members = membersData || [];
   const createMutation = useCreatePrayerRequest();
   const updateMutation = useUpdatePrayerRequest();
-
-  // Filter members by search
-  const filteredMembers = memberSearch.length >= 2 
-    ? members.filter(m => 
-        m.full_name?.toLowerCase().includes(memberSearch.toLowerCase())
-      )
-    : [];
-
-  // Get selected member info
-  const selectedMember = members.find(m => m.id === formData.member_id);
-
-  // Log member loading status
-  console.log('[PrayerRequestForm] Members loaded:', members.length, 'Search:', memberSearch, 'Filtered:', filteredMembers.length);
 
   useEffect(() => {
     if (existingRequest) {
