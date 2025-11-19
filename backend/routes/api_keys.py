@@ -9,12 +9,12 @@ from utils.dependencies import get_db, require_admin, get_current_user
 router = APIRouter(prefix="/api-keys", tags=["API Keys"])
 
 
-@router.get("/", response_model=List[APIKey])
+@router.get("/")
 async def list_api_keys(
     db: AsyncIOMotorDatabase = Depends(get_db),
     current_user: dict = Depends(get_current_user)
 ):
-    """List all API keys for current church"""
+    """List all API keys for current church (excludes sensitive key data)"""
     
     query = {}
     if current_user.get('role') != 'super_admin':
