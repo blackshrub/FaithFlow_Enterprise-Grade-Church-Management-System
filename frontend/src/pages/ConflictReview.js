@@ -73,7 +73,7 @@ export default function ConflictReview() {
         <CardHeader>
           <CardTitle>Conflicts List</CardTitle>
           <CardDescription>
-            {conflicts.length} conflict(s) {pendingOnly ? 'pending resolution' : 'total'}
+            {conflicts.length} conflict(s) {statusFilter ? `(${statusFilter})` : 'total'}
           </CardDescription>
         </CardHeader>
         <CardContent>
