@@ -61,7 +61,7 @@ async def create_leave_request_public(
     }
 
 
-@router.get("/leave-requests")
+@router.get("/v1/groups/leave-requests")
 async def list_leave_requests(
     status_filter: Optional[str] = None,
     current_user: dict = Depends(get_current_user),
