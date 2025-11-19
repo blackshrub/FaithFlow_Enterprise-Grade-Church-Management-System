@@ -248,6 +248,24 @@ export default function GeneralSettingsTab() {
                   className="w-5 h-5"
                 />
               </div>
+
+              <div className="flex items-center justify-between mt-4">
+                <div className="flex-1">
+                  <Label htmlFor="send_group_notifications" className="font-medium">
+                    {t('settings.sendGroupNotifications')}
+                  </Label>
+                  <p className="text-sm text-gray-500 mt-1">
+                    {t('settings.sendGroupNotificationsDesc')}
+                  </p>
+                </div>
+                <input
+                  type="checkbox"
+                  id="send_group_notifications"
+                  checked={formData.whatsapp_send_group_notifications}
+                  onChange={(e) => setFormData({ ...formData, whatsapp_send_group_notifications: e.target.checked })}
+                  className="w-5 h-5"
+                />
+              </div>
             </div>
           )}
 
