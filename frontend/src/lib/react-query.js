@@ -89,4 +89,9 @@ export const queryKeys = {
     logs: (id) => ['webhook-logs', id],
     queueStatus: (churchId) => ['webhook-queue-status', { churchId }],
   },
+  
+  // API Keys
+  apiKeys: {
+    all: (churchId) => ['api-keys', { churchId }],
+  },
 };
