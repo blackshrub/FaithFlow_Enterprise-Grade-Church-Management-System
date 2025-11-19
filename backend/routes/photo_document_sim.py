@@ -201,8 +201,9 @@ async def simulate_document_matching(
                 'unmatched_members_count': len(unmatched_members)
             },
             'matched': matched,
-            'unmatched_members': unmatched_members,  # Members without matching photos
-            'note': 'Only matched photos will be imported. Unmatched files will be ignored.'
+            'unmatched_members': unmatched_members,
+            'document_data': document_data_map,  # NEW: {normalized_filename: filename}
+            'note': 'Only matched documents will be imported. Unmatched files will be ignored.'
         }
     
     except Exception as e:
