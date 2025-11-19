@@ -226,9 +226,14 @@ async def approve_join_request(
 
         if member and member.get("phone_whatsapp") and group:
             try:
-                message = (
-                    "You have been added to the group: "
-                    f"{group.get('name', '')}"
+                church_settings = church_settings or {}
+                language = church_settings.get("default_language", "en")
+                from services.whatsapp_service import format_group_notification_message
+
+                message = format_group_notification_message(
+                    event="join_approved",
+                    group_name=group.get("name", ""),
+                    language=language,
                 )
                 await send_whatsapp_message(
                     phone_number=member["phone_whatsapp"],
