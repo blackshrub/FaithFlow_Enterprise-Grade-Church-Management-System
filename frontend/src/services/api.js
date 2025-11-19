@@ -6,13 +6,14 @@ const getAPIBaseURL = () => {
   // Check if we have explicit backend URL from env
   const envURL = process.env.REACT_APP_BACKEND_URL;
   if (envURL) {
-    return `${envURL}/api`;
+    // Force HTTPS even if env has HTTP
+    const secureURL = envURL.replace('http://', 'https://');
+    return `${secureURL}/api`;
   }
   
-  // Otherwise, force HTTPS (never use HTTP in production)
-  const protocol = window.location.protocol === 'https:' ? 'https:' : 'https:';  // Always HTTPS
+  // Otherwise, always use HTTPS with current host
   const host = window.location.host;
-  return `${protocol}//${host}/api`;
+  return `https://${host}/api`;
 };
 
 const API_BASE_URL = getAPIBaseURL();
