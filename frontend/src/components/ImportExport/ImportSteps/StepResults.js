@@ -39,7 +39,8 @@ export default function StepResults({ wizardData, updateWizardData, importMember
     if (!importing && !importComplete) {
       executeImport();
     }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line
+  }, []);
 
   if (importing) {
     return (
