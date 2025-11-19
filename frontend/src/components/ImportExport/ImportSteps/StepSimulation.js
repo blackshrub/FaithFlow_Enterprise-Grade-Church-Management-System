@@ -39,10 +39,26 @@ export default function StepSimulation({ wizardData, updateWizardData, simulateI
   };
 
   useEffect(() => {
-    if (!wizardData.simulationResults && !simulating) {
+    // Always run simulation when this step becomes active
+    // This ensures fresh validation even if user goes back and changes things
+    if (!simulating && !simulationResults) {
       runSimulation();
     }
-  }, []);
+  }, []); // Empty dependency means run once on mount
+  
+  // Add a separate effect to re-run if user navigated back and returned
+  useEffect(() => {
+    // If we have old results but the step is freshly mounted, clear them and re-run
+    const shouldRevalidate = 
+      simulationResults && 
+      !simulating && 
+      (wizardData.photoArchive || wizardData.documentArchive); // If photos/docs were added
+    
+    if (shouldRevalidate) {
+      updateWizardData({ simulationResults: null });
+      runSimulation();
+    }
+  }, []); // Run once on mount to check if revalidation needed
 
   // Always define these at top level (before any conditionals)
   const simulationResults = wizardData.simulationResults;
