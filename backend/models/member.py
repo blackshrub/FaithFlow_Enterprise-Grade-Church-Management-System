@@ -28,7 +28,8 @@ class MemberBase(BaseModel):
     blood_type: Optional[Literal['A', 'B', 'AB', 'O']] = None
     photo_filename: Optional[str] = None  # Profile photo filename for matching
     photo_base64: Optional[str] = None  # Profile photo in base64
-    personal_document: Optional[str] = None  # Personal document filename or base64
+    personal_document: Optional[str] = None  # Personal document filename
+    personal_document_base64: Optional[str] = None  # Personal document in base64
     documents: List[str] = Field(default_factory=list)  # List of document URLs or base64
     custom_fields: Dict[str, Any] = Field(default_factory=dict)  # Custom fields defined by church
     
