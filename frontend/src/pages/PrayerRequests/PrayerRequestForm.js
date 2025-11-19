@@ -9,8 +9,8 @@ import { Textarea } from '../../components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 import { usePrayerRequest, useCreatePrayerRequest, useUpdatePrayerRequest } from '../../hooks/usePrayerRequests';
-import { useMembers } from '../../hooks/useMembers';
 import { useToast } from '../../hooks/use-toast';
+import MemberSelector from '../../components/MemberSelector';
 
 export default function PrayerRequestForm() {
   const { t } = useTranslation();
