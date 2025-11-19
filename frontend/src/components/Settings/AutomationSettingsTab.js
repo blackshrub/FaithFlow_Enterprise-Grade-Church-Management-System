@@ -31,19 +31,18 @@ export default function AutomationSettingsTab() {
   });
 
   useEffect(() => {
-    if (churchSettings) {
+    if (automationSettings) {
       setSettings({
-        enabled: churchSettings.status_automation_enabled || false,
-        schedule: churchSettings.status_automation_schedule || '00:00',
-        lastRun: churchSettings.last_status_automation_run || null,
+        enabled: automationSettings.automation_enabled || false,
+        schedule: automationSettings.schedule || '00:00',
       });
     }
-  }, [churchSettings]);
+  }, [automationSettings]);
 
   const updateSettings = useMutation({
-    mutationFn: (data) => settingsAPI.updateChurchSettings(data).then(res => res.data),
+    mutationFn: (data) => automationSettingsAPI.updateSettings(data).then(res => res.data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.settings.churchSettings(church?.id) });
+      queryClient.invalidateQueries({ queryKey: ['automation-settings', church?.id] });
       toast.success('Automation settings updated successfully');
     },
     onError: (error) => {
@@ -59,10 +58,13 @@ export default function AutomationSettingsTab() {
 
   const handleSave = () => {
     updateSettings.mutate({
-      status_automation_enabled: settings.enabled,
-      status_automation_schedule: settings.schedule,
+      automation_enabled: settings.enabled,
+      schedule: settings.schedule,
     });
   };
+
+  const lastRun = automationSettings?.last_run_at;
+  const churchTimezone = 'UTC'; // Will be fetched from church settings later
 
   return (
     <div className="space-y-6">
