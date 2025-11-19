@@ -66,8 +66,13 @@ async def simulate_photo_matching(
             if filename in member_lookup:
                 # Validate photo
                 if file_upload_service.validate_photo(file_data, filename):
+                    # Convert binary data to base64 string for JSON serialization
+                    import base64
+                    base64_data = base64.b64encode(file_data).decode('utf-8')
+                    photo_base64 = f"data:image/jpeg;base64,{base64_data}"
+                    
                     # Store base64 data for later use in import
-                    photo_data_map[filename] = file_data
+                    photo_data_map[filename] = photo_base64
                     
                     matched.append({
                         'filename': filename,
