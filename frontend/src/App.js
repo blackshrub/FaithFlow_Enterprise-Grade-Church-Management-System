@@ -95,6 +95,7 @@ function App() {
               <Route index element={<Navigate to="/dashboard" replace />} />
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="members" element={<Members />} />
+              <Route path="trash" element={<TrashBin />} />
               <Route path="import-export" element={<ImportExport />} />
               <Route path="settings" element={<Settings />} />
               <Route path="conflicts" element={<ConflictReview />} />
