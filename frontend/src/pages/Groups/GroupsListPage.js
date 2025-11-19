@@ -105,11 +105,53 @@ export default function GroupsListPage() {
         isLoading={isLoading}
         onEdit={(group) => navigate(`/groups/${group.id}/edit`)}
         onViewMembers={(group) => navigate(`/groups/${group.id}/members`)}
-        onDelete={() => {
-          // deletion handled in future enhancement (with confirmation + API)
-        }}
+        onDelete={(group) => setGroupToDelete(group)}
         churchSettings={churchSettings}
       />
+
+      <AlertDialog open={!!groupToDelete} onOpenChange={(open) => !open && setGroupToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('groups.delete.confirmTitle') || 'Delete group?'}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('groups.delete.confirmDescription', {
+                groupName: groupToDelete?.name ?? '',
+              }) ||
+                'This action cannot be undone. The group will be deleted if there are no active members.'}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteGroupMutation.isLoading}>
+              {t('common.cancel')}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={deleteGroupMutation.isLoading}
+              onClick={async () => {
+                if (!groupToDelete) return;
+                try {
+                  await deleteGroupMutation.mutateAsync(groupToDelete.id);
+                  toast({
+                    title: t('common.success'),
+                    description: t('groups.messages.deleteSuccess'),
+                  });
+                } catch (error) {
+                  const message =
+                    error?.response?.data?.detail?.message || t('groups.messages.deleteError');
+                  toast({
+                    title: t('common.error'),
+                    description: message,
+                    variant: 'destructive',
+                  });
+                } finally {
+                  setGroupToDelete(null);
+                }
+              }}
+            >
+              {t('common.delete')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
