@@ -21,6 +21,7 @@ const initialFormData = {
   gender: '',
   address: '',
   marital_status: '',
+  member_status: '',
   baptism_date: '',
   notes: ''
 };
