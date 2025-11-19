@@ -380,6 +380,18 @@ async def import_members(
         
         for idx, member_data in enumerate(valid_data, start=1):
             try:
+                # Set default member status if not provided
+                if not member_data.get('member_status'):
+                    default_status = await db.member_statuses.find_one({
+                        "church_id": church_id,
+                        "is_default_for_new": True,
+                        "is_active": True
+                    })
+                    if default_status:
+                        member_data['member_status'] = default_status.get('name')
+                    else:
+                        member_data['member_status'] = "Visitor"  # Fallback
+                
                 # Auto-assign demographic
                 if member_data.get('date_of_birth'):
                     demographic = await auto_assign_demographic(member_data, db)
