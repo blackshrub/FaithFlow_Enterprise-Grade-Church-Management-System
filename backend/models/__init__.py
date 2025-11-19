@@ -9,6 +9,9 @@ from .prayer_request import PrayerRequest, PrayerRequestCreate, PrayerRequestUpd
 from .content import Content, ContentCreate, ContentUpdate
 from .spiritual_journey import SpiritualJourney, SpiritualJourneyCreate, SpiritualJourneyUpdate
 from .member_status import MemberStatus, MemberStatusCreate, MemberStatusUpdate
+from .member_status_rule import MemberStatusRule, MemberStatusRuleCreate, MemberStatusRuleUpdate
+from .rule_evaluation_conflict import RuleEvaluationConflict, RuleEvaluationConflictCreate, RuleEvaluationConflictUpdate
+from .member_status_history import MemberStatusHistory, MemberStatusHistoryCreate
 from .demographic_preset import DemographicPreset, DemographicPresetCreate, DemographicPresetUpdate
 from .church_settings import ChurchSettings, ChurchSettingsCreate, ChurchSettingsUpdate
 from .seat_layout import SeatLayout, SeatLayoutCreate, SeatLayoutUpdate
@@ -25,6 +28,9 @@ __all__ = [
     'Content', 'ContentCreate', 'ContentUpdate',
     'SpiritualJourney', 'SpiritualJourneyCreate', 'SpiritualJourneyUpdate',
     'MemberStatus', 'MemberStatusCreate', 'MemberStatusUpdate',
+    'MemberStatusRule', 'MemberStatusRuleCreate', 'MemberStatusRuleUpdate',
+    'RuleEvaluationConflict', 'RuleEvaluationConflictCreate', 'RuleEvaluationConflictUpdate',
+    'MemberStatusHistory', 'MemberStatusHistoryCreate',
     'DemographicPreset', 'DemographicPresetCreate', 'DemographicPresetUpdate',
     'ChurchSettings', 'ChurchSettingsCreate', 'ChurchSettingsUpdate',
     'SeatLayout', 'SeatLayoutCreate', 'SeatLayoutUpdate',
