@@ -186,27 +186,23 @@ export default function ConflictReview() {
               <p className="text-sm font-medium text-gray-700">Member</p>
               <p className="text-lg font-semibold">{selectedConflict?.member_name}</p>
               <p className="text-sm text-gray-600 mt-1">
-                Current: {selectedConflict?.current_status || 'None'}
+                Current: {getStatusById(selectedConflict?.current_status_id)?.name || 'None'}
               </p>
             </div>
 
-            <div className="space-y-2">
-              <Label className="text-base font-medium">Matched Rules</Label>
-              <div className="space-y-2">
-                {selectedConflict?.matched_rules?.map((rule, index) => (
-                  <div key={index} className="p-3 bg-blue-50 rounded border border-blue-200">
-                    <p className="font-medium text-sm text-blue-900">{rule.name}</p>
-                    <p className="text-xs text-blue-700 mt-1">{rule.human_readable}</p>
-                    <p className="text-xs text-gray-500 mt-1">Priority: {rule.priority}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
             <div className="space-y-3">
-              <Label className="text-base font-medium">Select Target Status *</Label>
+              <Label className="text-base font-medium">Select Target Status</Label>
+              <p className="text-sm text-gray-600">
+                Multiple rules matched. Choose the appropriate status or keep current.
+              </p>
               <RadioGroup value={selectedStatusId} onValueChange={setSelectedStatusId}>
-                {selectedConflict?.possible_statuses?.map((status) => (
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="" id="keep-current" />
+                  <Label htmlFor="keep-current" className="cursor-pointer">
+                    <Badge variant="outline">Keep Current Status</Badge>
+                  </Label>
+                </div>
+                {getProposedStatuses(selectedConflict).map((status) => (
                   <div key={status.id} className="flex items-center space-x-2">
                     <RadioGroupItem value={status.id} id={status.id} />
                     <Label htmlFor={status.id} className="flex items-center gap-2 cursor-pointer">
@@ -222,6 +218,17 @@ export default function ConflictReview() {
                   </div>
                 ))}
               </RadioGroup>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="comment">Comment (Optional)</Label>
+              <Textarea
+                id="comment"
+                placeholder="Add notes about this resolution..."
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                rows={3}
+              />
             </div>
           </div>
 
