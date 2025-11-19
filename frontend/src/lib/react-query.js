@@ -90,7 +90,7 @@ export const queryKeys = {
   
   // Status Conflicts keys
   statusConflicts: {
-    list: (churchId, pendingOnly) => ['status-conflicts', { churchId, pendingOnly }],
+    list: (churchId, statusFilter, memberId) => ['status-conflicts', { churchId, statusFilter, memberId }],
     detail: (id) => ['status-conflicts', id],
   },
   
