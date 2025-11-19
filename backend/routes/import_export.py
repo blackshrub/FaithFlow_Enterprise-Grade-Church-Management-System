@@ -104,6 +104,126 @@ async def parse_import_file(
         )
 
 
+@router.post("/validate-phone-duplicates")
+async def validate_phone_duplicates(
+    file_content: str = Form(...),
+    file_type: str = Form(...),
+    field_mappings: str = Form(...),  # JSON string
+    default_values: str = Form(default='{}'),  # JSON string
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current_user: dict = Depends(require_admin)
+):
+    """Validate phone number duplicates at Step 2 (after field mapping)
+    
+    Checks for duplicates in TWO places:
+    1. Within the CSV file itself (internal duplicates)
+    2. Against existing members in the database (external duplicates)
+    
+    Returns detailed duplicate information with full names for user review.
+    """
+    
+    try:
+        # Parse mappings
+        field_map = json.loads(field_mappings)
+        defaults = json.loads(default_values)
+        
+        # Parse file
+        if file_type == 'csv':
+            _, data = import_export_service.parse_csv(file_content)
+        elif file_type == 'json':
+            _, data = import_export_service.parse_json(file_content)
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Unsupported file type"
+            )
+        
+        # Apply field mapping to get the data in the correct format
+        mapped_data = import_export_service.apply_field_mapping(data, field_map, defaults)
+        
+        # Get church_id for database queries
+        church_id = current_user.get('church_id')
+        
+        # Track duplicates
+        internal_duplicates = []  # Duplicates within CSV
+        external_duplicates = []  # Duplicates with existing DB members
+        seen_phones = {}  # Track phones in CSV: {normalized_phone: {row_idx, full_name}}
+        
+        for idx, row in enumerate(mapped_data, start=1):
+            # Get phone number if exists
+            phone_raw = row.get('phone_whatsapp')
+            
+            if not phone_raw or phone_raw in ['', None, 'NULL', 'null']:
+                continue  # Skip rows without phone numbers
+            
+            # Normalize phone number
+            normalized_phone = normalize_phone_number(phone_raw)
+            
+            if not normalized_phone or not normalized_phone.startswith('62'):
+                continue  # Skip invalid phone numbers
+            
+            full_name = row.get('full_name', f'Row {idx}')
+            
+            # Check 1: Internal duplicates (within CSV)
+            if normalized_phone in seen_phones:
+                internal_duplicates.append({
+                    'phone': normalized_phone,
+                    'first_occurrence': {
+                        'row': seen_phones[normalized_phone]['row'],
+                        'full_name': seen_phones[normalized_phone]['full_name']
+                    },
+                    'duplicate_occurrence': {
+                        'row': idx,
+                        'full_name': full_name
+                    }
+                })
+            else:
+                seen_phones[normalized_phone] = {
+                    'row': idx,
+                    'full_name': full_name
+                }
+            
+            # Check 2: External duplicates (against database)
+            existing_member = await db.members.find_one({
+                'church_id': church_id,
+                'phone_whatsapp': normalized_phone,
+                'is_active': True
+            })
+            
+            if existing_member:
+                external_duplicates.append({
+                    'phone': normalized_phone,
+                    'csv_record': {
+                        'row': idx,
+                        'full_name': full_name
+                    },
+                    'existing_member': {
+                        'id': str(existing_member.get('id')),
+                        'full_name': existing_member.get('full_name', 'Unknown'),
+                        'email': existing_member.get('email', ''),
+                        'address': existing_member.get('address', '')
+                    }
+                })
+        
+        has_duplicates = len(internal_duplicates) > 0 or len(external_duplicates) > 0
+        
+        return {
+            'has_duplicates': has_duplicates,
+            'internal_duplicates': internal_duplicates,
+            'external_duplicates': external_duplicates,
+            'total_internal': len(internal_duplicates),
+            'total_external': len(external_duplicates),
+            'total_records_checked': len(mapped_data)
+        }
+        
+    except Exception as e:
+        logger.error(f"Error validating phone duplicates: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+
+
 @router.post("/simulate")
 async def simulate_import(
     file_content: str = Form(...),
