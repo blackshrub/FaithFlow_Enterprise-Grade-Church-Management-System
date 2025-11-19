@@ -139,8 +139,15 @@ function App() {
               <Route path="prayer-requests/new" element={<PrayerRequestForm />} />
               <Route path="prayer-requests/:id" element={<PrayerRequestForm />} />
               
+              {/* Groups Routes */}
+              <Route path="groups" element={<GroupsListPage />} />
+              <Route path="groups/new" element={<GroupEditorPage />} />
+              <Route path="groups/:id/edit" element={<GroupEditorPage />} />
+              <Route path="groups/:groupId/members" element={<GroupMembersPage />} />
+              <Route path="groups/join-requests" element={<JoinRequestsPage />} />
+              <Route path="groups/leave-requests" element={<LeaveRequestsPage />} />
+              
               {/* Placeholder routes - will be implemented in next phases */}
-              <Route path="groups" element={<PlaceholderPage title="Groups" />} />
               <Route path="donations" element={<PlaceholderPage title="Donations" />} />
               <Route path="prayers" element={<PlaceholderPage title="Prayer Requests" />} />
               <Route path="content" element={<PlaceholderPage title="Content Management" />} />
