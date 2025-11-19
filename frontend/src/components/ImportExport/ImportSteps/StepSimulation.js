@@ -62,7 +62,10 @@ export default function StepSimulation({ wizardData, updateWizardData, simulateI
     setShowDuplicateResolution(false);
   };
 
-  const allResolved = simulationResults?.duplicate_conflicts?.every(c => localResolutions[c.phone]) || false;
+  const allResolved =
+    simulationResults?.duplicate_conflicts?.every((c) =>
+      Object.prototype.hasOwnProperty.call(localResolutions, c.phone)
+    ) || false;
 
   // Render different content based on state (but always same structure)
   if (simulating) {
