@@ -255,15 +255,17 @@ Includes detailed steps for:
 
 ### 8. Group Management
 - **Configurable categories** (editable labels in church settings)
-- **Card-based directory UI** with cover images
-- **Linked group leaders** (searchable member selection)
-- Member roster management (add/remove members)
+- **Real-time leader search** with profile photos (300ms debounce, server-side)
+- **Cover image upload** (base64 storage, preview, remove button)
+- **Card-based directory UI** with cover thumbnails
+- Member roster management (add/remove with real-time search)
 - **Join/Leave request workflows** (mobile API + staff approval)
 - WhatsApp notifications for approvals/rejections
-- Filter and search functionality
+- Filter by category and open/closed status
 - Meeting schedule and location tracking
-- Maximum member limits
+- Maximum member limits with enforcement
 - Mobile API for group discovery
+- **No 307 redirects** (proper API paths)
 
 ### 9. Articles & Content Management
 - WordPress-style CMS with TipTap rich editor
