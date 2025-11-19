@@ -89,6 +89,23 @@ export default function GroupEditorPage() {
                   });
                 }
               }}
+              onRemove={async () => {
+                try {
+                  const { updateGroup } = await import('../../services/groupsApi');
+                  await updateGroup(id, { cover_image: null });
+                  queryClient.invalidateQueries({ queryKey: ['group'], exact: false });
+                  toast({
+                    description: t('groups.messages.coverRemoved') || 'Cover image removed',
+                  });
+                } catch (error) {
+                  console.error('Failed to remove cover image', error);
+                  toast({
+                    title: t('common.error'),
+                    description: t('groups.messages.saveError'),
+                    variant: 'destructive',
+                  });
+                }
+              }}
               isUploading={false}
             />
           )}
