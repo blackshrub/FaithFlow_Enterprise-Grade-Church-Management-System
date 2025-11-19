@@ -9,6 +9,7 @@ import './i18n';
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Members from "./pages/Members";
+import TrashBin from "./pages/TrashBin";
 import Settings from "./pages/Settings";
 import ConflictReview from "./pages/ConflictReview";
 import ImportExport from "./pages/ImportExport";
