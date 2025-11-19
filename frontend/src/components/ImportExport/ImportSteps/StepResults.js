@@ -9,9 +9,18 @@ export default function StepResults({ wizardData, updateWizardData, importMember
   const { t } = useTranslation();
   const [importing, setImporting] = useState(false);
   const [importComplete, setImportComplete] = useState(false);
+  const importStartedRef = React.useRef(false);  // Guard against double execution
 
   const executeImport = async () => {
+    // Prevent double execution
+    if (importStartedRef.current) {
+      console.log('[DEBUG] Import already started, skipping');
+      return;
+    }
+    
+    importStartedRef.current = true;
     setImporting(true);
+    
     try {
       const result = await importMembers.mutateAsync({
         file_content: wizardData.fileContent,
@@ -30,6 +39,7 @@ export default function StepResults({ wizardData, updateWizardData, importMember
       setImportComplete(true);
     } catch (error) {
       console.error('Import error:', error);
+      importStartedRef.current = false;  // Reset on error so user can retry
     } finally {
       setImporting(false);
     }
