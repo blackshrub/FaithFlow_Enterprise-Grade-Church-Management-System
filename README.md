@@ -59,9 +59,10 @@ FaithFlow is a comprehensive, production-ready church management system designed
 
 - 📚 [Complete Features Documentation](./docs/FEATURES.md)
 - 🔌 [API Documentation](./docs/API.md)
+- 📥 [Import/Export API Guide](./docs/IMPORT_EXPORT_API.md) - **Member import wizard**
+- 📊 [Current System State](./docs/CURRENT_STATE.md) - **Latest updates & status**
 - 🏗️ [Codebase Structure](./docs/STRUCTURE.md)
 - 🚀 [Debian Deployment Guide](./docs/DEPLOYMENT_DEBIAN.md)
-- 🌐 [Internationalization Guide](./docs/I18N.md)
 
 ## Project Structure
 
