@@ -62,7 +62,8 @@ export function GroupTable({
             <CardTitle className="text-base flex items-center justify-between gap-2">
               <span className="truncate" title={group.name}>{group.name}</span>
               <Badge variant="outline">
-                {t(categoryLabelKey[group.category] || group.category)}
+                {churchSettings?.group_categories?.[group.category] ||
+                  t(categoryLabelKey[group.category] || group.category)}
               </Badge>
             </CardTitle>
           </CardHeader>
