@@ -23,6 +23,49 @@ async def get_db() -> AsyncIOMotorDatabase:
     return _db_instance
 
 
+async def get_current_member(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    database: AsyncIOMotorDatabase = Depends(get_db)
+) -> dict:
+    """Get current authenticated mobile member from JWT token.
+
+    This expects a member JWT where `sub` is the member id and `church_id` is present.
+    """
+    token = credentials.credentials
+    payload = decode_access_token(token)
+
+    if payload is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authentication credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    member_id: str = payload.get("sub")
+    church_id: str = payload.get("church_id")
+    if not member_id or not church_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid member authentication credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    member = await database.members.find_one(
+        {"id": member_id, "church_id": church_id},
+        {"_id": 0},
+    )
+    if member is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Member not found",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    # Attach church_id so downstream logic can reuse it
+    member["church_id"] = church_id
+    return member
+
+
 async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
     database: AsyncIOMotorDatabase = Depends(get_db)
