@@ -78,14 +78,6 @@ export default function MemberForm({ formData, setFormData }) {
           </SelectContent>
         </Select>
       </div>
-      <div className="space-y-2">
-        <Label htmlFor="occupation">{t('members.occupation')}</Label>
-        <Input
-          id="occupation"
-          value={formData.occupation}
-          onChange={(e) => handleChange('occupation', e.target.value)}
-        />
-      </div>
       <div className="space-y-2 col-span-2">
         <Label htmlFor="address">{t('members.address')}</Label>
         <Input
@@ -95,29 +87,12 @@ export default function MemberForm({ formData, setFormData }) {
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="city">{t('members.city')}</Label>
-        <Input
-          id="city"
-          value={formData.city}
-          onChange={(e) => handleChange('city', e.target.value)}
-        />
-      </div>
-      <div className="space-y-2">
         <Label htmlFor="baptism_date">{t('members.baptismDate')}</Label>
         <Input
           id="baptism_date"
           type="date"
           value={formData.baptism_date}
           onChange={(e) => handleChange('baptism_date', e.target.value)}
-        />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="membership_date">{t('members.membershipDate')}</Label>
-        <Input
-          id="membership_date"
-          type="date"
-          value={formData.membership_date}
-          onChange={(e) => handleChange('membership_date', e.target.value)}
         />
       </div>
       <div className="space-y-2 col-span-2">
