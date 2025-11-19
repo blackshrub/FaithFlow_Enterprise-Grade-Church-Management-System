@@ -81,4 +81,12 @@ export const queryKeys = {
     demographics: (churchId) => ['settings', 'demographics', { churchId }],
     churchSettings: (churchId) => ['settings', 'churchSettings', { churchId }],
   },
+  
+  // Webhooks keys
+  webhooks: {
+    all: (churchId) => ['webhooks', { churchId }],
+    detail: (id) => ['webhooks', id],
+    logs: (id) => ['webhook-logs', id],
+    queueStatus: (churchId) => ['webhook-queue-status', { churchId }],
+  },
 };
