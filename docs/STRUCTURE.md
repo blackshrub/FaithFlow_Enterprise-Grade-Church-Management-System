@@ -95,6 +95,7 @@ faithflow/
 │   │   ├── components/      # React components
 │   │   │   ├── Events/      # Event components
 │   │   │   ├── Devotions/   # Devotion components
+│   │   │   ├── Groups/      # ⭐ Groups components (GroupForm, LeaderSelector, CoverImageUploader)
 │   │   │   ├── Kiosk/       # Kiosk components
 │   │   │   ├── Settings/    # Settings components
 │   │   │   └── ui/          # shadcn/ui components
@@ -103,6 +104,7 @@ faithflow/
 │   │   │   ├── Dashboard.js
 │   │   │   ├── Events.js
 │   │   │   ├── Devotions.js
+│   │   │   ├── Groups/      # ⭐ Groups pages (GroupsListPage, GroupEditorPage)
 │   │   │   ├── KioskMode.js
 │   │   │   └── ...
 │   │   ├── hooks/           # React Query hooks
