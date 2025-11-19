@@ -36,15 +36,32 @@ export default function MemberForm({ formData, setFormData, member = null }) {
           {member.personal_document && (
             <div className="space-y-2">
               <Label>{t('members.personalDocument')}</Label>
-              <a 
-                href={`/uploads/${member.personal_document}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 hover:underline"
-              >
-                <FileText className="h-4 w-4" />
-                <span className="font-mono">{member.personal_document}</span>
-              </a>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-gray-600" />
+                  <span className="text-sm font-mono">{member.personal_document}</span>
+                </div>
+                {member.personal_document_base64 && (
+                  <div className="flex gap-2">
+                    <a 
+                      href={member.personal_document_base64}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-blue-600 hover:text-blue-800 hover:underline"
+                    >
+                      {t('members.viewDocument')}
+                    </a>
+                    <span className="text-gray-300">|</span>
+                    <a 
+                      href={member.personal_document_base64}
+                      download={member.personal_document}
+                      className="text-xs text-blue-600 hover:text-blue-800 hover:underline"
+                    >
+                      {t('members.downloadDocument')}
+                    </a>
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>
