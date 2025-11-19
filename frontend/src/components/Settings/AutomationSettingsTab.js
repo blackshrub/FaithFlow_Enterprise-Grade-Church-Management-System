@@ -72,90 +72,123 @@ export default function AutomationSettingsTab() {
         <p className="text-sm text-gray-500">Configure automatic member status updates</p>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Automation Status</CardTitle>
-          <CardDescription>
-            Current automation configuration and status
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <Clock className="h-5 w-5 text-blue-600" />
-              </div>
-              <div>
-                <p className="font-medium">Automation Status</p>
-                <p className="text-sm text-gray-500">Automatic status updates</p>
-              </div>
+      {isLoading ? (
+        <Card>
+          <CardContent className="py-12">
+            <div className="text-center">
+              <Loader2 className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-2" />
+              <p className="text-gray-500">Loading settings...</p>
             </div>
-            <Badge variant={settings.enabled ? 'default' : 'secondary'}>
-              {settings.enabled ? 'Enabled' : 'Disabled'}
-            </Badge>
-          </div>
-
-          <div className="space-y-4">
-            <div className="flex items-center space-x-2">
-              <Switch
-                checked={settings.enabled}
-                onCheckedChange={(enabled) => setSettings({ ...settings, enabled })}
-              />
-              <div className="flex-1">
-                <Label>Enable Automatic Status Updates</Label>
-                <p className="text-xs text-gray-500 mt-1">
-                  When enabled, member statuses will be automatically updated daily at midnight UTC
-                </p>
-              </div>
-            </div>
-
-            {settings.lastRun && (
-              <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="h-5 w-5 text-green-600" />
+          </CardContent>
+        </Card>
+      ) : (
+        <>
+          <Card>
+            <CardHeader>
+              <CardTitle>Automation Status</CardTitle>
+              <CardDescription>
+                Current automation configuration and status
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-blue-100 rounded-lg">
+                    <Clock className="h-5 w-5 text-blue-600" />
+                  </div>
                   <div>
-                    <p className="font-medium text-green-900">Last Run</p>
-                    <p className="text-sm text-green-700">
-                      {new Date(settings.lastRun).toLocaleString()}
+                    <p className="font-medium">Automation Status</p>
+                    <p className="text-sm text-gray-500">Automatic status updates</p>
+                  </div>
+                </div>
+                <Badge variant={settings.enabled ? 'default' : 'secondary'}>
+                  {settings.enabled ? 'Enabled' : 'Disabled'}
+                </Badge>
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    checked={settings.enabled}
+                    onCheckedChange={(enabled) => setSettings({ ...settings, enabled })}
+                  />
+                  <div className="flex-1">
+                    <Label>Enable Automatic Status Updates</Label>
+                    <p className="text-xs text-gray-500 mt-1">
+                      When enabled, member statuses will be automatically updated daily based on rules
                     </p>
                   </div>
                 </div>
-              </div>
-            )}
 
-            <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-              <div className="space-y-2">
-                <p className="text-sm font-medium text-blue-900">Automation Schedule</p>
-                <p className="text-sm text-blue-700">
-                  Automation runs <strong>once daily at midnight (00:00 UTC)</strong> for all churches with automation enabled.
-                </p>
-                <p className="text-xs text-blue-600">
-                  💡 Tip: Use the "Run Now" button below to test rules immediately or run automation on-demand.
-                </p>
-              </div>
-            </div>
+                <div className="space-y-2">
+                  <Label htmlFor="schedule">Daily Schedule (24h format, UTC)</Label>
+                  <Input
+                    id="schedule"
+                    type="time"
+                    value={settings.schedule}
+                    onChange={(e) => setSettings({ ...settings, schedule: e.target.value })}
+                    disabled={!settings.enabled}
+                  />
+                  <p className="text-xs text-gray-500">
+                    Automation will run once daily at this time (UTC timezone). The scheduler checks every hour.
+                  </p>
+                </div>
 
-            <div className="flex gap-2 pt-4">
-              <Button onClick={handleSave}>
-                Save Settings
-              </Button>
-              <Button variant="outline" onClick={handleRunNow} disabled={evaluateAll.isPending}>
-                {evaluateAll.isPending ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Running...
-                  </>
-                ) : (
-                  <>
-                    <PlayCircle className="h-4 w-4 mr-2" />
-                    Run Now
-                  </>
+                {settings.lastRun && (
+                  <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="h-5 w-5 text-green-600" />
+                      <div>
+                        <p className="font-medium text-green-900">Last Run</p>
+                        <p className="text-sm text-green-700">
+                          {new Date(settings.lastRun).toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                 )}
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+
+                <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-blue-900">How It Works</p>
+                    <p className="text-sm text-blue-700">
+                      The automation job runs <strong>every hour</strong> and checks if any church is scheduled for that hour.
+                      Your church will run at <strong>{settings.schedule} UTC</strong> when enabled.
+                    </p>
+                    <p className="text-xs text-blue-600">
+                      💡 Tip: Use "Run Now" below to test immediately without waiting for the schedule.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex gap-2 pt-4">
+                  <Button onClick={handleSave} disabled={updateSettings.isPending}>
+                    {updateSettings.isPending ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      'Save Settings'
+                    )}
+                  </Button>
+                  <Button variant="outline" onClick={handleRunNow} disabled={evaluateAll.isPending}>
+                    {evaluateAll.isPending ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Running...
+                      </>
+                    ) : (
+                      <>
+                        <PlayCircle className="h-4 w-4 mr-2" />
+                        Run Now
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
       <Card>
         <CardHeader>
