@@ -12,7 +12,37 @@ This document describes the REST API endpoints available for external systems to
 
 ## Authentication
 
-### Get Access Token
+### Option 1: API Key Authentication (Recommended for External Apps)
+
+**Endpoint:** `POST /api/auth/login`
+
+**Request:**
+```json
+{
+  "email": "api_abc12345_churchname",
+  "password": "ffa_your_api_key_here"
+}
+```
+
+**Note:** The `email` field accepts both email addresses (for regular users) and API usernames (for API keys). API usernames are generated in FaithFlow Settings → API Keys.
+
+**Response:**
+```json
+{
+  "access_token": "eyJ0eXAiOiJKV1QiLCJhbGc...",
+  "token_type": "bearer",
+  "user": {
+    "id": "api-key-uuid",
+    "email": "api_abc12345_churchname",
+    "full_name": "API: My Integration",
+    "role": "admin",
+    "church_id": "church-uuid",
+    "type": "api_key"
+  }
+}
+```
+
+### Option 2: Regular User Authentication
 
 **Endpoint:** `POST /api/auth/login`
 
