@@ -1125,6 +1125,46 @@ List articles with filters and pagination (Admin/Staff).
 }
 ```
 
+#### GET /api/v1/articles/recent
+
+Get the most recent published articles for the current church (Admin/Staff).
+
+**Query Parameters:**
+- `limit` – Max items to return (default 10, max 50)
+
+**Response:**
+- Array of article objects, sorted by `publish_date` descending (status = `published`).
+
+#### GET /api/v1/articles/{id}
+
+Get a single article by ID (Admin/Staff).
+
+**Response:**
+- Full article object for the current church.
+
+#### PUT /api/v1/articles/{id}
+
+Update an existing article (Admin/Staff).
+
+**Request (example):**
+```json
+{
+  "title": "Revised Article Title",
+  "excerpt": "Updated short description",
+  "status": "published"
+}
+```
+
+- Only fields provided are updated.
+- If `content` changes, `reading_time` is recalculated.
+- If `slug` changes, uniqueness per church is re-enforced.
+
+#### DELETE /api/v1/articles/{id}
+
+Soft delete/archive an article (Admin/Staff).
+
+- If the article has comments, it is archived by setting `status` to `archived` instead of being physically removed.
+
 #### POST /api/v1/articles/{id}/upload-featured-image
 
 Upload featured image.
