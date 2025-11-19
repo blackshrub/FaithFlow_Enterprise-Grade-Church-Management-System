@@ -7,11 +7,11 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '../../ui/dialog';
-import { Button } from '../../ui/button';
-import { Alert, AlertDescription } from '../../ui/alert';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../ui/table';
-import { Badge } from '../../ui/badge';
+} from '../ui/dialog';
+import { Button } from '../ui/button';
+import { Alert, AlertDescription } from '../ui/alert';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
+import { Badge } from '../ui/badge';
 import { AlertTriangle, XCircle } from 'lucide-react';
 
 export default function DuplicatePhoneModal({ isOpen, onClose, duplicateData }) {
