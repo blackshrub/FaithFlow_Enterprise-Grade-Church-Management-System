@@ -121,7 +121,7 @@ export default function AutomationSettingsTab() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="schedule">Daily Schedule (24h format, UTC)</Label>
+                  <Label htmlFor="schedule">Daily Schedule (Your Church Time)</Label>
                   <Input
                     id="schedule"
                     type="time"
@@ -130,7 +130,8 @@ export default function AutomationSettingsTab() {
                     disabled={!settings.enabled}
                   />
                   <p className="text-xs text-gray-500">
-                    Automation will run once daily at this time (UTC timezone). The scheduler checks every hour.
+                    Automation will run once daily at this time in your church's timezone ({churchSettings?.timezone || 'UTC'}).
+                    The system checks every hour and runs churches scheduled for that hour.
                   </p>
                 </div>
 
@@ -150,13 +151,15 @@ export default function AutomationSettingsTab() {
 
                 <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
                   <div className="space-y-2">
-                    <p className="text-sm font-medium text-blue-900">How It Works</p>
+                    <p className="text-sm font-medium text-blue-900">⏰ Timezone & Schedule</p>
                     <p className="text-sm text-blue-700">
-                      The automation job runs <strong>every hour</strong> and checks if any church is scheduled for that hour.
-                      Your church will run at <strong>{settings.schedule} UTC</strong> when enabled.
+                      Your church timezone: <strong>{churchSettings?.timezone || 'UTC'}</strong>
+                    </p>
+                    <p className="text-sm text-blue-700">
+                      Scheduled time: <strong>{settings.schedule} ({churchSettings?.timezone || 'UTC'})</strong>
                     </p>
                     <p className="text-xs text-blue-600">
-                      💡 Tip: Use "Run Now" below to test immediately without waiting for the schedule.
+                      💡 Tip: Change your church timezone in General Settings if needed.
                     </p>
                   </div>
                 </div>
