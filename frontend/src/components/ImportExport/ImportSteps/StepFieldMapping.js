@@ -54,10 +54,11 @@ export default function StepFieldMapping({ wizardData, updateWizardData, nextSte
     
     try {
       const API_URL = process.env.REACT_APP_BACKEND_URL || '';
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('access_token');  // FIXED: Use 'access_token' not 'token'
       
       console.log('[DEBUG] Starting phone validation...');
       console.log('[DEBUG] API_URL:', API_URL);
+      console.log('[DEBUG] Has token:', !!token);
       console.log('[DEBUG] Field mappings:', wizardData.fieldMappings);
       
       const formData = new FormData();
