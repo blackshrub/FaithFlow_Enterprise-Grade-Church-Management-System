@@ -109,10 +109,27 @@ export default function MemberForm({ formData, setFormData, member = null }) {
               <SelectValue placeholder={t('members.selectStatus')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="single">{t('members.single')}</SelectItem>
+              <SelectItem value="notmarried">{t('members.notmarried')}</SelectItem>
               <SelectItem value="married">{t('members.married')}</SelectItem>
               <SelectItem value="divorced">{t('members.divorced')}</SelectItem>
               <SelectItem value="widowed">{t('members.widowed')}</SelectItem>
+              <SelectItem value="widow">{t('members.widow')}</SelectItem>
+              <SelectItem value="widower">{t('members.widower')}</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="member_status">{t('members.memberStatus')}</Label>
+          <Select value={formData.member_status || ''} onValueChange={(value) => handleChange('member_status', value)}>
+            <SelectTrigger>
+              <SelectValue placeholder={t('members.selectMemberStatus')} />
+            </SelectTrigger>
+            <SelectContent>
+              {memberStatuses.map((status) => (
+                <SelectItem key={status.id} value={status.name}>
+                  {status.name}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
