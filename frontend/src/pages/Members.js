@@ -58,13 +58,22 @@ export default function Members() {
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  // React Query hooks - with pagination and server-side search
+  // Reset to page 1 when filters change
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [filters, showIncompleteOnly]);
+
+  // React Query hooks - with pagination, server-side search, and filters
   const { data: members = [], isLoading, error } = useMembers({ 
     is_active: true,
     incomplete_data: showIncompleteOnly || undefined,
     skip: (currentPage - 1) * membersPerPage,
     limit: membersPerPage,
-    search: debouncedSearch || undefined
+    search: debouncedSearch || undefined,
+    gender: filters.gender || undefined,
+    marital_status: filters.marital_status || undefined,
+    member_status: filters.member_status || undefined,
+    demographic_category: filters.demographic_category || undefined
   });
   const { data: stats } = useMemberStats();
   const createMember = useCreateMember();
