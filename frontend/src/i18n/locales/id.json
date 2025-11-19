@@ -1572,7 +1572,8 @@
       "noCoverImage": "Tidak ada gambar sampul",
       "noLeaderSelected": "Belum ada pemimpin dipilih",
       "searchLeader": "Cari anggota...",
-      "selectLeader": "Pilih pemimpin kelompok"
+      "selectLeader": "Pilih pemimpin kelompok",
+      "openForJoinHelper": "Izinkan anggota untuk meminta bergabung dengan kelompok ini melalui aplikasi mobile"
     },
     "editor": {
       "createTitle": "Buat Kelompok Baru",
@@ -1604,7 +1605,8 @@
       "removeMember": "Hapus",
       "noMembers": "Belum ada anggota dalam kelompok ini",
       "memberCount": "{{count}} anggota",
-      "confirmRemove": "Hapus anggota ini dari kelompok?"
+      "confirmRemove": "Hapus anggota ini dari kelompok?",
+      "searchPlaceholder": "Cari anggota..."
     },
     "joinRequests": {
       "title": "Permintaan Bergabung",
@@ -1618,6 +1620,15 @@
       "pending": "Permintaan Keluar Tertunda",
       "approve": "Setujui",
       "noRequests": "Tidak ada permintaan keluar tertunda"
+    },
+    "table": {
+      "leader": "Pemimpin",
+      "membersCount": "Anggota",
+      "openForJoin": "Terbuka untuk Bergabung"
+    },
+    "status": {
+      "open": "Terbuka",
+      "close": "Tutup"
     }
   }
 }

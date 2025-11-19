@@ -1582,7 +1582,8 @@
       "noCoverImage": "No cover image",
       "noLeaderSelected": "No leader selected",
       "searchLeader": "Search for a member...",
-      "selectLeader": "Select group leader"
+      "selectLeader": "Select group leader",
+      "openForJoinHelper": "Allow members to request to join this group via mobile app"
     },
     "editor": {
       "createTitle": "Create New Group",
@@ -1614,7 +1615,8 @@
       "removeMember": "Remove",
       "noMembers": "No members in this group yet",
       "memberCount": "{{count}} members",
-      "confirmRemove": "Remove this member from the group?"
+      "confirmRemove": "Remove this member from the group?",
+      "searchPlaceholder": "Search for a member..."
     },
     "joinRequests": {
       "title": "Join Requests",
@@ -1628,6 +1630,15 @@
       "pending": "Pending Leave Requests",
       "approve": "Approve",
       "noRequests": "No pending leave requests"
+    },
+    "table": {
+      "leader": "Leader",
+      "membersCount": "Members",
+      "openForJoin": "Open for Join"
+    },
+    "status": {
+      "open": "Open",
+      "close": "Closed"
     }
   }
 }
