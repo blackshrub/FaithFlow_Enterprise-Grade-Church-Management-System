@@ -35,6 +35,7 @@ const initialFormData = {
 export default function Members() {
   const { t } = useTranslation();
   const { church } = useAuth();
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [showIncompleteOnly, setShowIncompleteOnly] = useState(false);
