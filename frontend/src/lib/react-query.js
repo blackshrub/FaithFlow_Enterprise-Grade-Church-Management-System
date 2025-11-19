@@ -82,6 +82,23 @@ export const queryKeys = {
     churchSettings: (churchId) => ['settings', 'churchSettings', { churchId }],
   },
   
+  // Status Rules keys
+  statusRules: {
+    list: (churchId) => ['status-rules', { churchId }],
+    detail: (id) => ['status-rules', id],
+  },
+  
+  // Status Conflicts keys
+  statusConflicts: {
+    list: (churchId, pendingOnly) => ['status-conflicts', { churchId, pendingOnly }],
+    detail: (id) => ['status-conflicts', id],
+  },
+  
+  // Status History keys
+  statusHistory: {
+    member: (memberId) => ['status-history', memberId],
+  },
+  
   // Webhooks keys
   webhooks: {
     all: (churchId) => ['webhooks', { churchId }],
