@@ -4,9 +4,12 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Textarea } from '../components/ui/textarea';
+import { useMemberStatuses } from '../hooks/useSettings';
+import { FileText } from 'lucide-react';
 
 export default function MemberForm({ formData, setFormData, member = null }) {
   const { t } = useTranslation();
+  const { data: memberStatuses = [] } = useMemberStatuses();
 
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
