@@ -119,8 +119,8 @@ export default function Login() {
               <Label htmlFor="email">{t('auth.email')}</Label>
               <Input
                 id="email"
-                type="email"
-                placeholder="admin@gkbjtamankencana.org"
+                type="text"
+                placeholder="admin@gkbjtamankencana.org or API username"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
