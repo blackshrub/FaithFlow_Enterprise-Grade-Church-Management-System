@@ -1312,9 +1312,11 @@ Increment article views (public, no auth).
 
 **Base URL:** `/api/v1/prayer-requests/`
 
-**Authentication:** Required (admin/staff only)
+**Overview:** Internal pastoral care tracking for member-linked or anonymous prayer requests, with statuses, follow-up flags, and staff assignment.
 
-**Multi-Tenant:** All requests filtered by `church_id`
+**Authentication:** Required (Admin/Staff only).
+
+**Multi-Tenant:** All requests are scoped by `church_id` from the JWT; member lookups only use members for the same church.
 
 ---
 
