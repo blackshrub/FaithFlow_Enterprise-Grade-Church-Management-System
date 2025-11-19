@@ -515,6 +515,8 @@ Use cases:
 
 #### **1. Multi-Level Chart of Accounts (COA)**
 
+> Technical API reference: see `docs/API.md` → **Accounting (v1)** section.
+
 **Unlimited Hierarchy:**
 - Category → Subcategory → Account Group → Sub-Account → Account
 - Visual tree structure
