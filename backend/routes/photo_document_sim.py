@@ -124,9 +124,9 @@ async def simulate_photo_matching(
                 'unmatched_members_count': len(unmatched_members)
             },
             'matched': matched,
-            'unmatched_members': unmatched_members,  # Members without matching photos
-            'photo_data': photo_data_map,  # NEW: {normalized_filename: base64_data}
-            'note': 'Only matched photos will be imported. Unmatched files will be ignored.'
+            'unmatched_members': unmatched_members,
+            'session_id': session_id if photo_data_map else None,  # Session ID to retrieve photos during import
+            'note': 'Photos stored temporarily. Will be embedded during import.'
         }
     
     except Exception as e:
