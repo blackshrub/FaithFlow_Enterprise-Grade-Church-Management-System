@@ -11,6 +11,7 @@ import { useNavigate } from 'react-router-dom';
 export default function GroupsListPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { data: churchSettings } = useChurchSettings();
   const [search, setSearch] = React.useState('');
   const [category, setCategory] = React.useState('all');
   const [openFilter, setOpenFilter] = React.useState('all');
