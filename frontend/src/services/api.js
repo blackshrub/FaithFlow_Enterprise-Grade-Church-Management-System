@@ -117,6 +117,7 @@ export const settingsAPI = {
   createMemberStatus: (data) => api.post('/settings/member-statuses', data),
   updateMemberStatus: (id, data) => api.patch(`/settings/member-statuses/${id}`, data),
   deleteMemberStatus: (id) => api.delete(`/settings/member-statuses/${id}`),
+  reorderMemberStatuses: (statusIds) => api.post('/settings/member-statuses/reorder', statusIds),
   
   // Demographics
   listDemographics: () => api.get('/settings/demographics'),
@@ -134,6 +135,30 @@ export const settingsAPI = {
   createEventCategory: (data) => api.post('/settings/event-categories', data),
   updateEventCategory: (id, data) => api.patch(`/settings/event-categories/${id}`, data),
   deleteEventCategory: (id) => api.delete(`/settings/event-categories/${id}`),
+};
+
+// Status Rules API
+export const statusRulesAPI = {
+  list: () => api.get('/status-rules/'),
+  get: (id) => api.get(`/status-rules/${id}`),
+  create: (data) => api.post('/status-rules/', data),
+  update: (id, data) => api.patch(`/status-rules/${id}`, data),
+  delete: (id) => api.delete(`/status-rules/${id}`),
+  test: (id, memberId) => api.post(`/status-rules/${id}/test`, { member_id: memberId }),
+  evaluateAll: () => api.post('/status-rules/evaluate-all'),
+};
+
+// Status Conflicts API
+export const statusConflictsAPI = {
+  list: (pendingOnly = true) => api.get('/status-conflicts/', { params: { pending_only: pendingOnly } }),
+  get: (id) => api.get(`/status-conflicts/${id}`),
+  resolve: (id, statusId) => api.post(`/status-conflicts/${id}/resolve`, { selected_status_id: statusId }),
+  delete: (id) => api.delete(`/status-conflicts/${id}`),
+};
+
+// Status History API
+export const statusHistoryAPI = {
+  getMemberHistory: (memberId) => api.get(`/members/${memberId}/status-history`),
 };
 
 // Webhooks API
