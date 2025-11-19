@@ -333,6 +333,8 @@ async def import_members(
         defaults = json.loads(default_values)
         resolutions = json.loads(duplicate_resolutions)
         custom_field_defs = json.loads(custom_fields)
+        photo_mapping = json.loads(photo_matches)  # {normalized_filename: base64}
+        document_mapping = json.loads(document_matches)  # {normalized_filename: filename}
         
         # Parse file
         if file_type == 'csv':
