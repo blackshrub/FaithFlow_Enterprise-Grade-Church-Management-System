@@ -21,6 +21,9 @@ class MemberBase(BaseModel):
     baptism_date: Optional[date] = None
     membership_date: Optional[date] = None
     is_active: bool = True
+    is_deleted: bool = Field(default=False, description="Soft delete flag - member in trash bin")
+    deleted_at: Optional[datetime] = Field(None, description="When member was moved to trash")
+    deleted_by: Optional[str] = Field(None, description="User ID who deleted the member")
     household_id: Optional[str] = None
     notes: Optional[str] = None
     demographic_category: Optional[str] = None  # Auto-assigned based on age
