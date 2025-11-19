@@ -104,6 +104,11 @@ export default function Members() {
         onSuccess: () => {
           setIsCreateDialogOpen(false);
           resetForm();
+        },
+        onError: (error) => {
+          // Error already handled by hook's onError (shows toast)
+          // Just log for debugging
+          console.error('[ERROR] Create member failed:', error.response?.data);
         }
       }
     );
