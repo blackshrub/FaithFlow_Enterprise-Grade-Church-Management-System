@@ -49,14 +49,20 @@ export default function ConflictReview() {
         </div>
         <div className="flex gap-2">
           <Button
-            variant={pendingOnly ? 'default' : 'outline'}
-            onClick={() => setPendingOnly(true)}
+            variant={statusFilter === 'open' ? 'default' : 'outline'}
+            onClick={() => setStatusFilter('open')}
           >
-            Pending
+            Open
           </Button>
           <Button
-            variant={!pendingOnly ? 'default' : 'outline'}
-            onClick={() => setPendingOnly(false)}
+            variant={statusFilter === 'resolved' ? 'default' : 'outline'}
+            onClick={() => setStatusFilter('resolved')}
+          >
+            Resolved
+          </Button>
+          <Button
+            variant={!statusFilter ? 'default' : 'outline'}
+            onClick={() => setStatusFilter('')}
           >
             All
           </Button>
