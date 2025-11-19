@@ -24,6 +24,7 @@ class MemberBase(BaseModel):
     household_id: Optional[str] = None
     notes: Optional[str] = None
     demographic_category: Optional[str] = None  # Auto-assigned based on age
+    member_status: Optional[str] = None  # Member status (e.g., Full Member, Visitor)
     blood_type: Optional[Literal['A', 'B', 'AB', 'O']] = None
     photo_filename: Optional[str] = None  # Profile photo filename for matching
     photo_base64: Optional[str] = None  # Profile photo in base64
