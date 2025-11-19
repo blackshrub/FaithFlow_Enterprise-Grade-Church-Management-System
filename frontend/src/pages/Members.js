@@ -23,6 +23,7 @@ const initialFormData = {
   marital_status: '',
   member_status: '',
   baptism_date: '',
+  photo_base64: '',
   notes: ''
 };
 
