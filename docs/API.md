@@ -18,7 +18,8 @@
 8. **[Accounting (v1)](#accounting-v1)** ⭐ NEW
 9. **[Articles (v1)](#articles-v1)** ⭐ NEW
 10. **[Prayer Requests (v1)](#prayer-requests-v1)** ⭐ NEW
-11. [Common Patterns](#common-patterns)
+11. **[Groups (v1)](#groups-v1)** ⭐ NEW
+12. [Common Patterns](#common-patterns)
 
 ---
 
