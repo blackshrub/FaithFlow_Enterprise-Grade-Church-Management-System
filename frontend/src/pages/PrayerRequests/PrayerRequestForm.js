@@ -73,8 +73,8 @@ export default function PrayerRequestForm() {
 
     const payload = {
       member_id: formData.member_id,
-      requester_name: selectedMember?.full_name || '',
-      requester_contact: selectedMember?.whatsapp || selectedMember?.email || '',
+      requester_name: selectedMemberData?.full_name || '',
+      requester_contact: selectedMemberData?.phone_whatsapp || selectedMemberData?.email || '',
       title: formData.title,
       description: formData.description,
       category: formData.category,
