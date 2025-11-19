@@ -416,8 +416,12 @@ async def import_members(
                     })
                     if default_status:
                         member_data['member_status'] = default_status.get('name')
+                        logger.info(f"Applied default status '{default_status.get('name')}' to {member_data.get('full_name')}")
                     else:
                         member_data['member_status'] = "Visitor"  # Fallback
+                        logger.warning(f"No default status found, using 'Visitor' for {member_data.get('full_name')}")
+                else:
+                    logger.info(f"Member already has status: {member_data.get('member_status')}")
                 
                 # Merge photo if matched
                 if photo_mapping and member_data.get('photo_filename'):
