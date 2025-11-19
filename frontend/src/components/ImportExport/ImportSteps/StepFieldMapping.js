@@ -56,11 +56,17 @@ export default function StepFieldMapping({ wizardData, updateWizardData, nextSte
       const API_URL = process.env.REACT_APP_BACKEND_URL || '';
       const token = localStorage.getItem('token');
       
+      console.log('[DEBUG] Starting phone validation...');
+      console.log('[DEBUG] API_URL:', API_URL);
+      console.log('[DEBUG] Field mappings:', wizardData.fieldMappings);
+      
       const formData = new FormData();
       formData.append('file_content', wizardData.fileContent);
       formData.append('file_type', wizardData.fileType);
       formData.append('field_mappings', JSON.stringify(wizardData.fieldMappings));
       formData.append('default_values', JSON.stringify(wizardData.defaultValues || {}));
+      
+      console.log('[DEBUG] Sending validation request...');
       
       const response = await axios.post(
         `${API_URL}/api/import-export/validate-phone-duplicates`,
@@ -73,20 +79,26 @@ export default function StepFieldMapping({ wizardData, updateWizardData, nextSte
         }
       );
       
+      console.log('[DEBUG] Validation response:', response.data);
+      
       const data = response.data;
       
       if (data.has_duplicates) {
         // Show duplicate modal and block progression
+        console.log('[DEBUG] Duplicates found:', data);
         setDuplicateData(data);
         setShowDuplicateModal(true);
         return false; // Block progression
       } else {
         // No duplicates, proceed to next step
+        console.log('[DEBUG] No duplicates found');
         return true;
       }
     } catch (error) {
-      console.error('Error validating phone duplicates:', error);
-      toast.error(t('importExport.validationError'));
+      console.error('[ERROR] Validation error:', error);
+      console.error('[ERROR] Response data:', error.response?.data);
+      console.error('[ERROR] Status:', error.response?.status);
+      toast.error(t('importExport.validationError') + ': ' + (error.response?.data?.detail || error.message));
       return false;
     } finally {
       setIsValidating(false);
