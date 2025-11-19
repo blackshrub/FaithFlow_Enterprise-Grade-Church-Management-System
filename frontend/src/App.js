@@ -96,6 +96,7 @@ function App() {
               <Route path="members" element={<Members />} />
               <Route path="import-export" element={<ImportExport />} />
               <Route path="settings" element={<Settings />} />
+              <Route path="conflicts" element={<ConflictReview />} />
               <Route path="seat-layouts" element={<SeatLayouts />} />
               <Route path="events" element={<Events />} />
               {/* Kiosk moved outside Layout for fullscreen */}
