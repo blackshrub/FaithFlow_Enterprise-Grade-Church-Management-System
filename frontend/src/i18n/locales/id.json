@@ -308,12 +308,13 @@
       "configurationsDesc": "Konfigurasi webhook untuk mengirim data anggota ke aplikasi eksternal",
       "apiCredentials": "Kredensial API untuk Aplikasi Eksternal",
       "apiCredentialsDesc": "Gunakan kredensial ini untuk polling/sinkronisasi API (alternatif webhook)",
-      "apiEmail": "Email API",
-      "apiPassword": "Password API",
-      "useYourPassword": "Gunakan password login FaithFlow Anda",
-      "passwordNote": "Untuk keamanan, gunakan password admin Anda yang sebenarnya. Aplikasi eksternal akan autentikasi dengan kredensial ini.",
       "exampleUsage": "Contoh Penggunaan API:",
-      "fullDocumentation": "Dokumentasi Lengkap"
+      "fullDocumentation": "Dokumentasi Lengkap",
+      "apiUsername": "Nama Pengguna API",
+      "apiKey": "Kunci API / Password",
+      "usernameNote": "Gunakan nama pengguna ini untuk autentikasi API. Ini adalah akun sistem, bukan email pribadi.",
+      "useAdminCredentials": "Gunakan password akun admin mana pun",
+      "credentialsNote": "Saat ini menggunakan autentikasi standar. Untuk produksi, buat akun pengguna API khusus (misalnya, api_external@church.com) atau hubungi dukungan untuk pembuatan kunci API."
     }
   },
   "events": {

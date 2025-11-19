@@ -308,12 +308,13 @@
       "configurationsDesc": "Configure webhooks to push member data to external applications",
       "apiCredentials": "API Credentials for External Apps",
       "apiCredentialsDesc": "Use these credentials for API polling/sync (alternative to webhooks)",
-      "apiEmail": "API Email",
-      "apiPassword": "API Password",
-      "useYourPassword": "Use your FaithFlow login password",
-      "passwordNote": "For security, use your actual admin password. External app will authenticate with these credentials.",
       "exampleUsage": "Example API Usage:",
-      "fullDocumentation": "Full Documentation"
+      "fullDocumentation": "Full Documentation",
+      "apiUsername": "API Username",
+      "apiKey": "API Key / Password",
+      "usernameNote": "Use this username for API authentication. This is a system account, not a personal email.",
+      "useAdminCredentials": "Use any admin account password",
+      "credentialsNote": "Currently using standard authentication. For production, create a dedicated API user account (e.g., api_external@church.com) or contact support for API key generation."
     }
   },
   "events": {
