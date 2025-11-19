@@ -20,7 +20,8 @@ async def list_api_keys(
     if current_user.get('role') != 'super_admin':
         query['church_id'] = current_user.get('church_id')
     
-    api_keys = await db.api_keys.find(query, {"_id": 0, "api_key_hash": 0}).to_list(100)
+    # Exclude sensitive fields: api_key (plain text) and api_key_hash
+    api_keys = await db.api_keys.find(query, {"_id": 0, "api_key": 0, "api_key_hash": 0}).to_list(100)
     
     # Convert ISO strings to datetime
     for key in api_keys:
