@@ -19,7 +19,7 @@ export default function GroupEditorPage() {
   const handleSubmit = async (values) => {
     try {
       if (isEdit) {
-        await updateMutation.mutateAsync({ id, data: values });
+        await updateMutation.mutateAsync({ id, data: { ...values } });
         toast({
           title: t('common.success'),
           description: t('groups.messages.updateSuccess'),
