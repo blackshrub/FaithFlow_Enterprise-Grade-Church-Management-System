@@ -184,26 +184,45 @@ async def validate_phone_duplicates(
                 }
             
             # Check 2: External duplicates (against database)
-            existing_member = await db.members.find_one({
+            # IMPORTANT: We need to compare normalized phone numbers
+            # Database might have phones in different formats (+62, 0, plain)
+            # So we fetch all members with phones and normalize for comparison
+            
+            # Get all active members with phone numbers for this church
+            all_members_cursor = db.members.find({
                 'church_id': church_id,
-                'phone_whatsapp': normalized_phone,
+                'phone_whatsapp': {'$exists': True, '$ne': None, '$ne': ''},
                 'is_active': True
             })
             
-            if existing_member:
-                external_duplicates.append({
-                    'phone': normalized_phone,
-                    'csv_record': {
-                        'row': idx,
-                        'full_name': full_name
-                    },
-                    'existing_member': {
-                        'id': str(existing_member.get('id')),
-                        'full_name': existing_member.get('full_name', 'Unknown'),
-                        'email': existing_member.get('email', ''),
-                        'address': existing_member.get('address', '')
-                    }
-                })
+            # Check each member's phone after normalization
+            async for existing_member in all_members_cursor:
+                db_phone_raw = existing_member.get('phone_whatsapp')
+                if not db_phone_raw:
+                    continue
+                
+                # Normalize the database phone number
+                db_phone_normalized = normalize_phone_number(db_phone_raw)
+                
+                if not db_phone_normalized:
+                    continue
+                
+                # Compare normalized phone numbers
+                if db_phone_normalized == normalized_phone:
+                    external_duplicates.append({
+                        'phone': normalized_phone,
+                        'csv_record': {
+                            'row': idx,
+                            'full_name': full_name
+                        },
+                        'existing_member': {
+                            'id': str(existing_member.get('id')),
+                            'full_name': existing_member.get('full_name', 'Unknown'),
+                            'email': existing_member.get('email', ''),
+                            'address': existing_member.get('address', '')
+                        }
+                    })
+                    break  # Found a match, no need to check more members for this CSV row
         
         has_duplicates = len(internal_duplicates) > 0 or len(external_duplicates) > 0
         
