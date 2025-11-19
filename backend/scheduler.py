@@ -125,7 +125,36 @@ def setup_scheduler(db: AsyncIOMotorDatabase):
         replace_existing=True
     )
     
-    logger.info("APScheduler configured with article publishing, webhook processing, and status automation jobs")
+    # Add job: Empty trash bin (delete members deleted > 14 days ago)
+    async def empty_trash_bin():
+        """Permanently delete members in trash for more than 14 days"""
+        try:
+            from datetime import timedelta
+            cutoff_date = datetime.now(timezone.utc) - timedelta(days=14)
+            
+            logger.info("Checking trash bin for members older than 14 days")
+            
+            # Find members deleted more than 14 days ago
+            result = await db.members.delete_many({
+                "is_deleted": True,
+                "deleted_at": {"$lt": cutoff_date.isoformat()}
+            })
+            
+            if result.deleted_count > 0:
+                logger.info(f"Permanently deleted {result.deleted_count} member(s) from trash bin (older than 14 days)")
+            
+        except Exception as e:
+            logger.error(f"Error emptying trash bin: {e}")
+    
+    scheduler.add_job(
+        func=lambda: empty_trash_bin(),
+        trigger=CronTrigger(hour=2, minute=0),  # Daily at 2 AM
+        id='empty_trash_bin',
+        name='Empty Trash Bin (14 days)',
+        replace_existing=True
+    )
+    
+    logger.info("APScheduler configured with article publishing, webhook processing, status automation, and trash cleanup jobs")
     
     return scheduler
 
