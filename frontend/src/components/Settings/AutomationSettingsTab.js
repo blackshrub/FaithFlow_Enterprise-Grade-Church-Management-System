@@ -131,19 +131,19 @@ export default function AutomationSettingsTab() {
                     disabled={!settings.enabled}
                   />
                   <p className="text-xs text-gray-500">
-                    Automation will run once daily at this time in your church's timezone ({churchSettings?.timezone || 'UTC'}).
+                    Automation will run once daily at this time in your church's timezone ({churchTimezone}).
                     The system checks every hour and runs churches scheduled for that hour.
                   </p>
                 </div>
 
-                {settings.lastRun && (
+                {lastRun && (
                   <div className="p-4 bg-green-50 rounded-lg border border-green-200">
                     <div className="flex items-center gap-2">
                       <CheckCircle2 className="h-5 w-5 text-green-600" />
                       <div>
                         <p className="font-medium text-green-900">Last Run</p>
                         <p className="text-sm text-green-700">
-                          {new Date(settings.lastRun).toLocaleString()}
+                          {new Date(lastRun).toLocaleString()}
                         </p>
                       </div>
                     </div>
@@ -154,10 +154,10 @@ export default function AutomationSettingsTab() {
                   <div className="space-y-2">
                     <p className="text-sm font-medium text-blue-900">⏰ Timezone & Schedule</p>
                     <p className="text-sm text-blue-700">
-                      Your church timezone: <strong>{churchSettings?.timezone || 'UTC'}</strong>
+                      Your church timezone: <strong>{churchTimezone}</strong>
                     </p>
                     <p className="text-sm text-blue-700">
-                      Scheduled time: <strong>{settings.schedule} ({churchSettings?.timezone || 'UTC'})</strong>
+                      Scheduled time: <strong>{settings.schedule} ({churchTimezone})</strong>
                     </p>
                     <p className="text-xs text-blue-600">
                       💡 Tip: Change your church timezone in General Settings if needed.
