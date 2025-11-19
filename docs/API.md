@@ -1188,11 +1188,11 @@ Upload featured image.
 Schedule article for future publishing.
 
 **Query Parameters:**
-- `scheduled_publish_date` - ISO datetime string
+- `scheduled_publish_date` – ISO datetime string (UTC)
 
 **Validation:**
-- Only draft articles can be scheduled
-- Date must be in the future
+- Only `status = "draft"` articles can be scheduled
+- Date must be in the future (validated server-side)
 
 **Response:**
 ```json
@@ -1200,6 +1200,19 @@ Schedule article for future publishing.
   "id": "article-uuid",
   "schedule_status": "scheduled",
   "scheduled_publish_date": "2025-12-25T10:00:00Z"
+}
+```
+
+#### POST /api/v1/articles/{id}/unschedule
+
+Remove any existing schedule from a draft article.
+
+**Response:**
+```json
+{
+  "id": "article-uuid",
+  "schedule_status": "none",
+  "scheduled_publish_date": null
 }
 ```
 
