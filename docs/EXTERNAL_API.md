@@ -343,15 +343,20 @@ import httpx
 import asyncio
 
 BASE_URL = "https://faithflow-hub.preview.emergentagent.com/api"
-EMAIL = "admin@church.com"
-PASSWORD = "your-password"
+# Option 1: Use API Key (recommended for external apps)
+API_USERNAME = "api_abc12345_churchname"  # From FaithFlow Settings → API Keys
+API_KEY = "ffa_your_api_key_here"  # From FaithFlow Settings → API Keys
+
+# Option 2: Use regular user credentials
+# EMAIL = "admin@church.com"
+# PASSWORD = "your-password"
 
 async def full_member_sync():
     async with httpx.AsyncClient() as client:
-        # 1. Login
+        # 1. Login with API Key
         auth_response = await client.post(
             f"{BASE_URL}/auth/login",
-            json={"email": EMAIL, "password": PASSWORD}
+            json={"email": API_USERNAME, "password": API_KEY}
         )
         token = auth_response.json()["access_token"]
         
