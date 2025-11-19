@@ -116,9 +116,7 @@ def format_rsvp_confirmation_message(
     confirmation_code: str,
     location: Optional[str] = None
 ) -> str:
-    """
-    Format RSVP confirmation message for WhatsApp
-    """
+    """Format RSVP confirmation message for WhatsApp (English only)."""
     message = f"""🎉 RSVP Confirmation
 
 Hello {member_name},
@@ -147,3 +145,38 @@ See you at the event! 🙏
 """
     
     return message
+
+
+def format_group_notification_message(
+    event: str,
+    group_name: str,
+    language: str = "en",
+) -> str:
+    """Format group-related WhatsApp notifications with simple i18n.
+
+    Args:
+        event: one of "join_approved", "join_rejected", "leave_approved".
+        group_name: Name of the group.
+        language: "en" or "id" (default "en").
+    """
+    lang = language or "en"
+
+    if event == "join_approved":
+        if lang == "id":
+            return f"Anda telah ditambahkan ke kelompok: {group_name}"
+        return f"You have been added to the group: {group_name}"
+
+    if event == "join_rejected":
+        if lang == "id":
+            return f"Permohonan bergabung Anda untuk {group_name} tidak disetujui."
+        return f"Your join request for {group_name} was not approved."
+
+    if event == "leave_approved":
+        if lang == "id":
+            return f"Anda telah dikeluarkan dari kelompok: {group_name}"
+        return f"You have been removed from the group: {group_name}"
+
+    # Fallback
+    if lang == "id":
+        return f"Notifikasi kelompok untuk {group_name}"
+    return f"Group notification for {group_name}"
