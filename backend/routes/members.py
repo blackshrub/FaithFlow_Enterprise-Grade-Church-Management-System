@@ -357,6 +357,16 @@ async def update_member(
     # Get updated member
     updated_member = await db.members.find_one({"id": member_id}, {"_id": 0})
     
+    # Trigger webhook: member.updated (hybrid approach)
+    if update_data:  # Only if something actually changed
+        await webhook_service.trigger_member_webhook(
+            db=db,
+            event_type="member.updated",
+            member_data=updated_member,
+            church_id=member.get('church_id'),
+            changes=update_data  # Send what changed
+        )
+    
     # Convert ISO strings to datetime/date
     if isinstance(updated_member.get('created_at'), str):
         updated_member['created_at'] = datetime.fromisoformat(updated_member['created_at'])
