@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import { useWebhooks, useCreateWebhook, useUpdateWebhook, useDeleteWebhook, useTestWebhook } from '../../hooks/useWebhooks';
+import { useAPIKeys, useCreateAPIKey, useDeleteAPIKey, useRegenerateAPIKey } from '../../hooks/useAPIKeys';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
@@ -10,7 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { Badge } from '../ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '../ui/dialog';
-import { Plus, Edit, Trash2, Loader2, Zap, CheckCircle, XCircle, Eye } from 'lucide-react';
+import { Plus, Edit, Trash2, Loader2, Zap, CheckCircle, XCircle, Eye, Key, RefreshCw, Copy } from 'lucide-react';
 import { Switch } from '../ui/switch';
 import { Alert, AlertDescription } from '../ui/alert';
 import { toast } from 'sonner';
