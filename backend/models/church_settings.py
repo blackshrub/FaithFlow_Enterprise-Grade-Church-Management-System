@@ -29,6 +29,7 @@ class ChurchSettingsUpdate(BaseModel):
     default_language: Optional[Literal['en', 'id']] = None
     enable_whatsapp_notifications: Optional[bool] = None
     whatsapp_send_rsvp_confirmation: Optional[bool] = None
+    whatsapp_send_group_notifications: Optional[bool] = None
 
 
 class ChurchSettings(ChurchSettingsBase):
