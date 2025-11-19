@@ -1,0 +1,169 @@
+{
+  "groups": {
+    "title": "Groups",
+    "subtitle": "Manage groups and memberships",
+    "categories": {
+      "cellGroup": "Cell Group / Small Group",
+      "ministryTeam": "Ministry Team",
+      "activityGroup": "Activity Group",
+      "supportGroup": "Support Group"
+    },
+    "table": {
+      "name": "Group Name",
+      "category": "Category",
+      "leader": "Leader",
+      "membersCount": "Members",
+      "openForJoin": "Open for Join",
+      "actions": "Actions"
+    },
+    "status": {
+      "open": "Open",
+      "closed": "Closed"
+    },
+    "filters": {
+      "searchPlaceholder": "Search groups by name, leader, or description...",
+      "categoryPlaceholder": "Filter by category",
+      "allCategories": "All Categories",
+      "openStatusPlaceholder": "Filter by join status",
+      "openStatus": {
+        "all": "All",
+        "open": "Open for Join",
+        "closed": "Closed"
+      }
+    },
+    "actions": {
+      "create": "Create Group",
+      "viewMembers": "View Members"
+    },
+    "emptyStates": {
+      "noGroups": "No groups found. Create your first group." 
+    },
+    "form": {
+      "name": "Group Name",
+      "category": "Category",
+      "selectCategory": "Select category",
+      "description": "Description",
+      "meetingSchedule": "Meeting Schedule",
+      "location": "Location",
+      "leaderName": "Leader Name",
+      "leaderContact": "Leader WhatsApp",
+      "maxMembers": "Max Members",
+      "maxMembersPlaceholder": "Leave empty for unlimited",
+      "openForJoin": "Open for Join",
+      "openForJoinHelper": "If turned off, members cannot send join requests from mobile app."
+    },
+    "editor": {
+      "createTitle": "Create Group",
+      "editTitle": "Edit Group",
+      "subtitle": "Set up basic information for this group."
+    },
+    "messages": {
+      "createSuccess": "Group created successfully",
+      "updateSuccess": "Group updated successfully",
+      "saveError": "Failed to save group. Please try again.",
+      "deleteSuccess": "Group deleted successfully",
+      "deleteError": "Failed to delete group."
+    },
+    "members": {
+      "title": "Group Members",
+      "subtitle": "Manage members in this group",
+      "searchPlaceholder": "Search members by name or phone...",
+      "searchResults": "Search Results",
+      "table": {
+        "member": "Member",
+        "contact": "Contact",
+        "joinedAt": "Joined At",
+        "status": "Status",
+        "actions": "Actions"
+      },
+      "statuses": {
+        "active": "Active",
+        "pendingLeave": "Pending Leave",
+        "removed": "Removed"
+      },
+      "actions": {
+        "addMember": "Add Member",
+        "addToGroup": "Add to Group",
+        "remove": "Remove"
+      },
+      "emptyStates": {
+        "noMembers": "No members in this group yet."
+      },
+      "messages": {
+        "searchError": "Failed to search members.",
+        "addSuccess": "Member added to group.",
+        "addError": "Failed to add member.",
+        "removeSuccess": "Member removed from group.",
+        "removeError": "Failed to remove member."
+      }
+    },
+    "joinRequests": {
+      "title": "Join Requests",
+      "subtitle": "Review and approve group join requests",
+      "table": {
+        "member": "Member",
+        "group": "Group",
+        "submittedAt": "Submitted At",
+        "message": "Message",
+        "actions": "Actions"
+      },
+      "actions": {
+        "approve": "Approve",
+        "reject": "Reject"
+      },
+      "emptyStates": {
+        "noRequests": "No pending join requests."
+      },
+      "confirmation": {
+        "title": "Did you confirm with the group leader via WhatsApp?",
+        "message": "Before approving, please make sure you have checked with the group leader via WhatsApp.",
+        "confirmButton": "Yes, approve membership"
+      },
+      "messages": {
+        "approveSuccess": "Join request approved.",
+        "approveError": "Failed to approve join request.",
+        "rejectSuccess": "Join request rejected.",
+        "rejectError": "Failed to reject join request."
+      }
+    },
+    "leaveRequests": {
+      "title": "Leave Requests",
+      "subtitle": "Process member leave requests",
+      "table": {
+        "member": "Member",
+        "group": "Group",
+        "joinedAt": "Joined At",
+        "reason": "Reason",
+        "actions": "Actions"
+      },
+      "actions": {
+        "approve": "Approve & Remove"
+      },
+      "emptyStates": {
+        "noRequests": "No pending leave requests."
+      },
+      "messages": {
+        "approveSuccess": "Leave request approved and member removed.",
+        "approveError": "Failed to approve leave request."
+      }
+    },
+    "mobile": {
+      "join": {
+        "requestSentTitle": "Request Sent",
+        "requestSentDescription": "Your request has been sent.",
+        "infoStaffWillContactLeader": "A church staff will contact the group leader.",
+        "infoIfApproved": "If approved, you will receive a confirmation notification.",
+        "infoTime": "This may take 1–3 days depending on group schedule."
+      },
+      "leave": {
+        "requestSentTitle": "Leave Request Sent",
+        "requestSentDescription": "Your leave request is submitted and waiting for staff confirmation."
+      },
+      "notifications": {
+        "joinApproved": "You have been added to the group: {{group_name}}",
+        "joinRejected": "Your join request for {{group_name}} was not approved.",
+        "leaveApproved": "You have been removed from the group: {{group_name}}"
+      }
+    }
+  }
+}

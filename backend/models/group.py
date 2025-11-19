@@ -1,38 +1,73 @@
-from pydantic import BaseModel, Field, ConfigDict
-from typing import Optional, List
-from datetime import datetime, timezone
+from pydantic import BaseModel, Field
+from typing import Optional, Literal
+from datetime import datetime
 import uuid
 
 
 class GroupBase(BaseModel):
-    name: str = Field(..., min_length=1, max_length=200)
-    description: Optional[str] = None
-    group_type: Optional[str] = Field(None, description="e.g., Small Group, Ministry, Bible Study")
-    meeting_schedule: Optional[str] = None
-    location: Optional[str] = None
-    leader_id: Optional[str] = None
-    is_active: bool = True
+    """Base model for Group"""
+    name: str = Field(..., min_length=1, max_length=200, description="Group name")
+    description: Optional[str] = Field(None, description="Group description (rich text HTML)")
+    category: Literal["cell_group", "ministry_team", "activity", "support_group"] = Field(
+        ..., description="Group category"
+    )
+    cover_image: Optional[str] = Field(None, description="Cover image URL/path")
+    meeting_schedule: Optional[str] = Field(
+        None, max_length=200, description="Free text schedule, e.g. 'Every Tuesday 7PM'"
+    )
+    location: Optional[str] = Field(
+        None, max_length=200, description="Location description or address"
+    )
+    leader_name: str = Field(..., min_length=1, max_length=200, description="Group leader name")
+    leader_contact: str = Field(..., min_length=3, max_length=50, description="Leader WhatsApp number")
+    max_members: Optional[int] = Field(
+        None, ge=1, description="Maximum members allowed (None = unlimited)"
+    )
+    is_open_for_join: bool = Field(True, description="Whether group is open for join requests")
 
 
 class GroupCreate(GroupBase):
-    church_id: str
+    """Model for creating group (internal use)"""
+    church_id: str = Field(..., description="Church ID")
 
 
 class GroupUpdate(BaseModel):
+    """Model for updating group"""
     name: Optional[str] = Field(None, min_length=1, max_length=200)
     description: Optional[str] = None
-    group_type: Optional[str] = None
-    meeting_schedule: Optional[str] = None
-    location: Optional[str] = None
-    leader_id: Optional[str] = None
-    is_active: Optional[bool] = None
+    category: Optional[Literal["cell_group", "ministry_team", "activity", "support_group"]] = None
+    cover_image: Optional[str] = None
+    meeting_schedule: Optional[str] = Field(None, max_length=200)
+    location: Optional[str] = Field(None, max_length=200)
+    leader_name: Optional[str] = Field(None, min_length=1, max_length=200)
+    leader_contact: Optional[str] = Field(None, min_length=3, max_length=50)
+    max_members: Optional[int] = Field(None, ge=1)
+    is_open_for_join: Optional[bool] = None
 
 
 class Group(GroupBase):
-    model_config = ConfigDict(extra="ignore")
-    
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    church_id: str
-    member_ids: List[str] = Field(default_factory=list)
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    """Full Group model"""
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()), description="Unique ID")
+    church_id: str = Field(..., description="Church ID")
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "id": "group-uuid",
+                "church_id": "church-uuid",
+                "name": "South Jakarta Youth Cell",
+                "description": "<p>Weekly youth cell group for ages 18-25.</p>",
+                "category": "cell_group",
+                "cover_image": "/uploads/church/groups/group-id/cover.jpg",
+                "meeting_schedule": "Every Friday 7PM",
+                "location": "GKBJ Taman Kencana, Room 4",
+                "leader_name": "Budi Santoso",
+                "leader_contact": "628123456789",
+                "max_members": 15,
+                "is_open_for_join": True,
+                "created_at": "2025-01-01T10:00:00Z",
+                "updated_at": "2025-01-01T10:00:00Z",
+            }
+        }
