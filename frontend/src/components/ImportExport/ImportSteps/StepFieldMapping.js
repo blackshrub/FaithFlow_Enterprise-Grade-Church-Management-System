@@ -43,6 +43,11 @@ export default function StepFieldMapping({ wizardData, updateWizardData, nextSte
     required: false,
     description: ''
   });
+  
+  // Duplicate validation states
+  const [isValidating, setIsValidating] = useState(false);
+  const [duplicateData, setDuplicateData] = useState(null);
+  const [showDuplicateModal, setShowDuplicateModal] = useState(false);
 
   const handleMappingChange = (targetField, sourceField) => {
     // Store reversed mapping: sourceField -> targetField for backend
