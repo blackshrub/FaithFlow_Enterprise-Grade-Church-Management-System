@@ -68,23 +68,9 @@ export default function AutomationSettingsTab() {
               <div className="flex-1">
                 <Label>Enable Automatic Status Updates</Label>
                 <p className="text-xs text-gray-500 mt-1">
-                  When enabled, member statuses will be automatically updated based on rules
+                  When enabled, member statuses will be automatically updated daily at midnight UTC
                 </p>
               </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="schedule">Daily Schedule (24h format)</Label>
-              <Input
-                id="schedule"
-                type="time"
-                value={settings.schedule}
-                onChange={(e) => setSettings({ ...settings, schedule: e.target.value })}
-                disabled={!settings.enabled}
-              />
-              <p className="text-xs text-gray-500">
-                Automation will run daily at this time
-              </p>
             </div>
 
             {settings.lastRun && (
@@ -100,6 +86,18 @@ export default function AutomationSettingsTab() {
                 </div>
               </div>
             )}
+
+            <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-blue-900">Automation Schedule</p>
+                <p className="text-sm text-blue-700">
+                  Automation runs <strong>once daily at midnight (00:00 UTC)</strong> for all churches with automation enabled.
+                </p>
+                <p className="text-xs text-blue-600">
+                  💡 Tip: Use the "Run Now" button below to test rules immediately or run automation on-demand.
+                </p>
+              </div>
+            </div>
 
             <div className="flex gap-2 pt-4">
               <Button onClick={handleSave}>
