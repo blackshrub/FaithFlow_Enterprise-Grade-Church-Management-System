@@ -281,7 +281,7 @@ class RuleEngineService:
                             check_in_time = datetime.fromisoformat(check_in_time_str.replace('Z', '+00:00'))
                             if check_in_time >= start_date:
                                 attendance_count += 1
-                        except:
+                        except (ValueError, AttributeError):
                             pass
         
         # Evaluate operator
