@@ -18,6 +18,7 @@ export function GroupTable({
   onEdit,
   onViewMembers,
   onDelete,
+  churchSettings,
 }) {
   const { t } = useTranslation();
 
