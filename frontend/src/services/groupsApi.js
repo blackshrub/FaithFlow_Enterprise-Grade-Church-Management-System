@@ -40,3 +40,10 @@ export const getLeaveRequests = (params) =>
 
 export const approveLeaveRequest = (membershipId) =>
   api.post(`/v1/groups/leave-requests/${membershipId}/approve`);
+
+// Public mobile APIs for join/leave requests (to be used by mobile app)
+export const createJoinRequestPublic = (groupId, payload) =>
+  api.post(`/public/groups/${groupId}/join-request`, payload);
+
+export const createLeaveRequestPublic = (groupId, payload) =>
+  api.post(`/public/groups/${groupId}/leave-request`, payload);
