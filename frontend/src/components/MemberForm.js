@@ -95,6 +95,9 @@ export default function MemberForm({ formData, setFormData }) {
           onChange={(e) => handleChange('baptism_date', e.target.value)}
         />
       </div>
+      <div className="space-y-2">
+        {/* Empty space for grid alignment */}
+      </div>
       <div className="space-y-2 col-span-2">
         <Label htmlFor="notes">{t('members.notes')}</Label>
         <Textarea
