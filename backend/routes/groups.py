@@ -156,6 +156,29 @@ async def update_group(
     if not update_dict:
         return existing
 
+    # If leader_member_id is being updated, resolve name & contact from members
+    if "leader_member_id" in update_dict:
+        leader_member_id = update_dict.get("leader_member_id")
+        if leader_member_id:
+            member = await db.members.find_one(
+                {"id": leader_member_id, "church_id": church_id},
+                {"_id": 0, "full_name": 1, "phone_whatsapp": 1},
+            )
+            if not member:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail={
+                        "error_code": "LEADER_MEMBER_NOT_FOUND",
+                        "message": "Selected leader member not found for this church",
+                    },
+                )
+            update_dict["leader_name"] = member.get("full_name")
+            update_dict["leader_contact"] = member.get("phone_whatsapp")
+        else:
+            # Clearing leader; also clear cached name/contact
+            update_dict["leader_name"] = None
+            update_dict["leader_contact"] = None
+
     update_dict["updated_at"] = datetime.utcnow()
 
     await db.groups.update_one({"id": group_id}, {"$set": update_dict})
