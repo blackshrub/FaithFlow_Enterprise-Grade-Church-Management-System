@@ -105,7 +105,7 @@ async def list_leave_requests(
     return memberships
 
 
-@router.post("/leave-requests/{membership_id}/approve")
+@router.post("/v1/groups/leave-requests/{membership_id}/approve")
 async def approve_leave_request(
     membership_id: str,
     current_user: dict = Depends(get_current_user),
