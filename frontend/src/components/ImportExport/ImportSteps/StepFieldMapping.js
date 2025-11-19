@@ -49,6 +49,67 @@ export default function StepFieldMapping({ wizardData, updateWizardData, nextSte
   const [duplicateData, setDuplicateData] = useState(null);
   const [showDuplicateModal, setShowDuplicateModal] = useState(false);
 
+  const validatePhoneDuplicates = async () => {
+    setIsValidating(true);
+    
+    try {
+      const API_URL = process.env.REACT_APP_BACKEND_URL || '';
+      const token = localStorage.getItem('token');
+      
+      const formData = new FormData();
+      formData.append('file_content', wizardData.fileContent);
+      formData.append('file_type', wizardData.fileType);
+      formData.append('field_mappings', JSON.stringify(wizardData.fieldMappings));
+      formData.append('default_values', JSON.stringify(wizardData.defaultValues || {}));
+      
+      const response = await axios.post(
+        `${API_URL}/api/import-export/validate-phone-duplicates`,
+        formData,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data',
+          },
+        }
+      );
+      
+      const data = response.data;
+      
+      if (data.has_duplicates) {
+        // Show duplicate modal and block progression
+        setDuplicateData(data);
+        setShowDuplicateModal(true);
+        return false; // Block progression
+      } else {
+        // No duplicates, proceed to next step
+        return true;
+      }
+    } catch (error) {
+      console.error('Error validating phone duplicates:', error);
+      toast.error(t('importExport.validationError'));
+      return false;
+    } finally {
+      setIsValidating(false);
+    }
+  };
+  
+  const handleNextClick = async () => {
+    if (!canProceed()) return;
+    
+    // Validate phone duplicates before proceeding
+    const isValid = await validatePhoneDuplicates();
+    
+    if (isValid) {
+      nextStep();
+    }
+  };
+  
+  const handleCloseDuplicateModal = () => {
+    setShowDuplicateModal(false);
+    setDuplicateData(null);
+    // User must cancel import and fix CSV file
+  };
+
   const handleMappingChange = (targetField, sourceField) => {
     // Store reversed mapping: sourceField -> targetField for backend
     const newMappings = { ...wizardData.fieldMappings };
