@@ -78,9 +78,24 @@ export default function Members() {
     demographic_category: filters.demographic_category || undefined
   });
   const { data: stats } = useMemberStats();
+  const { data: statuses = [] } = useMemberStatuses();
+  const { data: demographics = [] } = useDemographics();
   const createMember = useCreateMember();
   const updateMember = useUpdateMember();
   const deleteMember = useDeleteMember();
+
+  // Get unique values for filters
+  const uniqueStatuses = [...new Set(members.map(m => m.member_status).filter(Boolean))];
+  const hasActiveFilters = filters.gender || filters.marital_status || filters.member_status || filters.demographic_category;
+
+  const clearFilters = () => {
+    setFilters({
+      gender: '',
+      marital_status: '',
+      member_status: '',
+      demographic_category: ''
+    });
+  };
 
   // Calculate total pages
   const totalMembers = stats?.total_members || 0;
