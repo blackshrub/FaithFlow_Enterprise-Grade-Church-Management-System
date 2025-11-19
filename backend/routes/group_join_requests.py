@@ -217,7 +217,7 @@ async def approve_join_request(
     return updated
 
 
-@router.post("/join-requests/{request_id}/reject")
+@router.post("/v1/groups/join-requests/{request_id}/reject")
 async def reject_join_request(
     request_id: str,
     current_user: dict = Depends(get_current_user),
