@@ -19,7 +19,14 @@ export default function ConflictReview() {
   const [isResolveDialogOpen, setIsResolveDialogOpen] = useState(false);
 
   const { data: conflicts = [], isLoading, error } = useStatusConflicts(statusFilter);
+  const { data: statuses = [] } = useMemberStatuses();
   const resolveConflict = useResolveConflict();
+
+  const getStatusById = (id) => statuses.find(s => s.id === id);
+
+  const getProposedStatuses = (conflict) => {
+    return (conflict.proposed_status_ids || []).map(id => getStatusById(id)).filter(Boolean);
+  };
 
   const handleResolve = (conflict) => {
     setSelectedConflict(conflict);
