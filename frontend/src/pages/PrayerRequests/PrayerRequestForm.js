@@ -230,8 +230,9 @@ export default function PrayerRequestForm() {
                   <Label>{t('prayerRequests.selectMember')} *</Label>
                   <MemberSelector
                     value={formData.member_id}
-                    onChange={(memberId) => {
+                    onChange={(memberId, memberData) => {
                       setFormData({ ...formData, member_id: memberId });
+                      setSelectedMemberData(memberData);
                     }}
                     selectedMember={selectedMemberData}
                     placeholder={t('prayerRequests.form.searchMemberPlaceholder') || 'Search for a member...'}
