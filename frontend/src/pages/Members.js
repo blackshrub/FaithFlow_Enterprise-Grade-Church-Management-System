@@ -251,7 +251,7 @@ export default function Members() {
         <div className="flex gap-2">
           <Button 
             variant="outline"
-            onClick={() => window.location.href = '/trash'}
+            onClick={() => navigate('/trash')}
           >
             <Trash2 className="h-4 w-4 mr-2" />
             Trash Bin
