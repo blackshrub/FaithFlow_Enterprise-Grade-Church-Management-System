@@ -56,6 +56,9 @@ class ChurchSettingsUpdate(BaseModel):
     whatsapp_send_rsvp_confirmation: Optional[bool] = None
     whatsapp_send_group_notifications: Optional[bool] = None
     group_categories: Optional[dict] = None
+    status_automation_enabled: Optional[bool] = None
+    status_automation_schedule: Optional[str] = None
+    last_status_automation_run: Optional[datetime] = None
 
 
 class ChurchSettings(ChurchSettingsBase):
