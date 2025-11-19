@@ -249,6 +249,46 @@ Includes detailed steps for:
 - 120s timeout for generation
 - gTTS fallback
 
+### 8. Group Management
+- **Configurable categories** (editable labels in church settings)
+- **Card-based directory UI** with cover images
+- **Linked group leaders** (searchable member selection)
+- Member roster management (add/remove members)
+- **Join/Leave request workflows** (mobile API + staff approval)
+- WhatsApp notifications for approvals/rejections
+- Filter and search functionality
+- Meeting schedule and location tracking
+- Maximum member limits
+- Mobile API for group discovery
+
+### 9. Articles & Content Management
+- WordPress-style CMS with TipTap rich editor
+- Scheduled publishing (APScheduler)
+- Categories & tags taxonomy
+- Comment moderation system
+- Draft preview before publishing
+- Featured images support
+- Public API for mobile apps
+
+### 10. Prayer Request Management
+- Member-linked prayer requests
+- 8 prayer categories
+- Status tracking (New/Prayed)
+- Pastoral follow-up tracking
+- Internal staff notes
+- Advanced filters & search
+
+### 11. Enterprise Accounting System
+- Complete Chart of Accounts (52 Indonesian accounts)
+- Double-entry bookkeeping
+- Fiscal period locking
+- Budget management
+- Fixed assets & depreciation
+- Bank reconciliation
+- Year-end closing procedures
+- Financial reports & audit trail
+- MongoDB transactions for atomicity
+
 ## Multi-Church Support
 
 Every data record is scoped by `church_id`:
