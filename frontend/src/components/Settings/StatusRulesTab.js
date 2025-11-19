@@ -250,6 +250,23 @@ export default function StatusRulesTab() {
         onSuccess: () => {
           setIsCreateDialogOpen(false);
           resetForm();
+          setSimulationResults(null);
+        },
+      }
+    );
+  };
+
+  const handleSimulate = () => {
+    if (!formData.action_status_id || formData.conditions.length === 0) {
+      toast.error('Please add conditions and select target status');
+      return;
+    }
+
+    simulateRule.mutate(
+      { ...formData, church_id: church.id },
+      {
+        onSuccess: (data) => {
+          setSimulationResults(data);
         },
       }
     );
