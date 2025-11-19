@@ -601,16 +601,21 @@ GET    /api/events/{id}                   # Get single event
 const axios = require('axios');
 
 const FAITHFLOW_URL = 'https://faithflow-hub.preview.emergentagent.com/api';
-const EMAIL = 'admin@church.com';
-const PASSWORD = 'your-password';
+// Option 1: Use API Key (recommended for external apps)
+const API_USERNAME = 'api_abc12345_churchname';  // From FaithFlow Settings → API Keys
+const API_KEY = 'ffa_your_api_key_here';  // From FaithFlow Settings → API Keys
+
+// Option 2: Use regular user credentials
+// const EMAIL = 'admin@church.com';
+// const PASSWORD = 'your-password';
 
 let token = null;
 
-// Login and get token
+// Login and get token with API Key
 async function login() {
   const response = await axios.post(`${FAITHFLOW_URL}/auth/login`, {
-    email: EMAIL,
-    password: PASSWORD
+    email: API_USERNAME,  // Field name is "email" but accepts API username
+    password: API_KEY
   });
   
   token = response.data.access_token;
