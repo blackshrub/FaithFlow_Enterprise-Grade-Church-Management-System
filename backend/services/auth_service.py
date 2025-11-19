@@ -110,6 +110,81 @@ class AuthService:
         except Exception as e:
             logger.error(f"Error authenticating user: {str(e)}")
             return None
+    
+    @staticmethod
+    async def authenticate_api_key(username: str, api_key: str, db: AsyncIOMotorDatabase) -> Optional[dict]:
+        """Authenticate using API key
+        
+        Args:
+            username: API username (e.g., api_abc123_church)
+            api_key: API key (e.g., ffa_abc123...)
+            db: Database instance
+            
+        Returns:
+            Dict with access_token if successful, None otherwise
+        """
+        try:
+            from models.api_key import APIKey
+            from datetime import datetime
+            
+            # Find API key by username
+            api_key_doc = await db.api_keys.find_one({"api_username": username}, {"_id": 0})
+            if not api_key_doc:
+                logger.warning(f"API key login failed: Username {username} not found")
+                return None
+            
+            # Check if active
+            if not api_key_doc.get('is_active', False):
+                logger.warning(f"API key login failed: API key {username} is inactive")
+                return None
+            
+            # Verify API key
+            api_key_hash = APIKey.hash_api_key(api_key)
+            if api_key_hash != api_key_doc.get('api_key_hash'):
+                logger.warning(f"API key login failed: Invalid key for {username}")
+                return None
+            
+            # Get church info
+            church = await db.churches.find_one({"id": api_key_doc.get('church_id')}, {"_id": 0})
+            if not church:
+                logger.warning(f"API key login failed: Church not found for {username}")
+                return None
+            
+            # Update last used timestamp
+            await db.api_keys.update_one(
+                {"id": api_key_doc["id"]},
+                {"$set": {"last_used_at": datetime.now().isoformat()}}
+            )
+            
+            # Create access token (use API key ID as sub, role as 'api')
+            access_token = create_access_token(
+                data={
+                    "sub": api_key_doc['id'],
+                    "email": username,  # For compatibility
+                    "role": "admin",  # API keys have admin access
+                    "type": "api_key"
+                }
+            )
+            
+            logger.info(f"API key {username} authenticated successfully")
+            
+            return {
+                "access_token": access_token,
+                "token_type": "bearer",
+                "user": {
+                    "id": api_key_doc['id'],
+                    "email": username,
+                    "full_name": f"API: {api_key_doc['name']}",
+                    "role": "admin",
+                    "church_id": api_key_doc['church_id'],
+                    "type": "api_key"
+                },
+                "church": church
+            }
+            
+        except Exception as e:
+            logger.error(f"Error during API key authentication: {str(e)}")
+            return None
 
 
 # Create singleton instance
