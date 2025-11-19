@@ -99,7 +99,7 @@ async def create_join_request_public(
     }
 
 
-@router.get("/join-requests")
+@router.get("/v1/groups/join-requests")
 async def list_join_requests(
     status_filter: Optional[str] = Query(None, alias="status"),
     current_user: dict = Depends(get_current_user),
