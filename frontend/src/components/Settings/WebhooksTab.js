@@ -344,11 +344,11 @@ export default function WebhooksTab() {
             <AlertDescription className="text-xs space-y-2">
               <strong>{t('settings.webhooks.exampleUsage')}</strong>
               <pre className="mt-2 p-2 bg-gray-800 text-gray-100 rounded overflow-x-auto text-xs">
-{`// Step 1: Authenticate
+{`// Step 1: Generate API Key above, then authenticate
 POST ${getAPIBaseURL()}/api/auth/login
 Body: {
-  "email": "api_user@${church?.name?.toLowerCase().replace(/\s+/g, '') || 'church'}.local",
-  "password": "your-admin-password"
+  "email": "api_abc123_church",  // Use generated username
+  "password": "ffa_xyz789..."     // Use generated API key
 }
 Response: { "access_token": "eyJ..." }
 
