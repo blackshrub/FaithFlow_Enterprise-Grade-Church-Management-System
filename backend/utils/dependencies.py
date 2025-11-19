@@ -70,7 +70,7 @@ async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
     database: AsyncIOMotorDatabase = Depends(get_db)
 ) -> dict:
-    """Get current authenticated user from JWT token"""
+    """Get current authenticated user from JWT token (supports both users and API keys)"""
     token = credentials.credentials
     payload = decode_access_token(token)
     
@@ -82,6 +82,8 @@ async def get_current_user(
         )
     
     user_id: str = payload.get("sub")
+    token_type: str = payload.get("type")  # 'user' or 'api_key'
+    
     if user_id is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -89,7 +91,35 @@ async def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
     
-    # Get user from database
+    # Handle API key authentication
+    if token_type == "api_key":
+        # Get API key from database
+        api_key = await database.api_keys.find_one({"id": user_id}, {"_id": 0})
+        if api_key is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="API key not found",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        
+        if not api_key.get("is_active", False):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="API key is inactive"
+            )
+        
+        # Return API key as user object
+        return {
+            "id": api_key.get("id"),
+            "email": api_key.get("api_username"),
+            "full_name": f"API: {api_key.get('name')}",
+            "role": "admin",  # API keys have admin access
+            "church_id": api_key.get("church_id"),
+            "type": "api_key",
+            "is_active": True
+        }
+    
+    # Handle regular user authentication
     user = await database.users.find_one({"id": user_id}, {"_id": 0})
     if user is None:
         raise HTTPException(
