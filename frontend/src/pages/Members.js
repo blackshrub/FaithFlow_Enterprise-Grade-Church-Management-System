@@ -30,6 +30,7 @@ export default function Members() {
   const { t } = useTranslation();
   const { church } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [showIncompleteOnly, setShowIncompleteOnly] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -39,12 +40,22 @@ export default function Members() {
   const [currentPage, setCurrentPage] = useState(1);
   const membersPerPage = 50;
 
-  // React Query hooks - with pagination
+  // Debounce search to avoid too many API calls
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+      setCurrentPage(1); // Reset to page 1 when searching
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // React Query hooks - with pagination and server-side search
   const { data: members = [], isLoading, error } = useMembers({ 
     is_active: true,
     incomplete_data: showIncompleteOnly || undefined,
     skip: (currentPage - 1) * membersPerPage,
-    limit: membersPerPage
+    limit: membersPerPage,
+    search: debouncedSearch || undefined
   });
   const { data: stats } = useMemberStats();
   const createMember = useCreateMember();
