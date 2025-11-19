@@ -150,8 +150,8 @@ export const webhooksAPI = {
 
 // API Keys API
 export const apiKeysAPI = {
-  list: () => api.get('/api-keys'),
-  create: (data) => api.post('/api-keys', data),
+  list: () => api.get('/api-keys/'),
+  create: (data) => api.post('/api-keys/', data),
   update: (id, data) => api.patch(`/api-keys/${id}`, data),
   delete: (id) => api.delete(`/api-keys/${id}`),
   regenerate: (id) => api.post(`/api-keys/${id}/regenerate`),
