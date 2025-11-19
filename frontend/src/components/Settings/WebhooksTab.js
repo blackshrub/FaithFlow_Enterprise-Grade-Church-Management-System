@@ -703,6 +703,72 @@ Header: Authorization: Bearer YOUR_TOKEN`}
           </DialogContent>
         </Dialog>
       )}
+      
+      {/* API Key Display Dialog (shown once when created/regenerated) */}
+      <Dialog open={isAPIKeyDialogOpen} onOpenChange={setIsAPIKeyDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t('settings.apiKeys.newKeyTitle')}</DialogTitle>
+            <DialogDescription className="text-red-600">
+              {t('settings.apiKeys.newKeyWarning')}
+            </DialogDescription>
+          </DialogHeader>
+          {newAPIKeyData && (
+            <div className="space-y-4">
+              <div>
+                <Label>{t('settings.apiKeys.username')}</Label>
+                <div className="flex items-center gap-2 mt-1">
+                  <code className="flex-1 px-3 py-2 bg-gray-100 border rounded font-mono text-sm">
+                    {newAPIKeyData.api_username}
+                  </code>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => copyToClipboard(newAPIKeyData.api_username)}
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+              
+              <div>
+                <Label>{t('settings.apiKeys.apiKey')}</Label>
+                <div className="flex items-center gap-2 mt-1">
+                  <code className="flex-1 px-3 py-2 bg-yellow-50 border-2 border-yellow-400 rounded font-mono text-sm break-all">
+                    {newAPIKeyData.api_key}
+                  </code>
+                  <Button
+                    type="button"
+                    variant="default"
+                    size="sm"
+                    onClick={() => copyToClipboard(newAPIKeyData.api_key)}
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </div>
+                <p className="text-xs text-red-600 mt-1">
+                  {t('settings.apiKeys.copyNow')}
+                </p>
+              </div>
+              
+              <Alert variant="destructive">
+                <AlertDescription>
+                  {newAPIKeyData.message || t('settings.apiKeys.saveWarning')}
+                </AlertDescription>
+              </Alert>
+            </div>
+          )}
+          <DialogFooter>
+            <Button onClick={() => {
+              setIsAPIKeyDialogOpen(false);
+              setNewAPIKeyData(null);
+            }}>
+              {t('common.close')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
