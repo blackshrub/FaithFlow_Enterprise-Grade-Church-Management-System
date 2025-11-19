@@ -137,30 +137,19 @@ export function GroupForm({ initialData, onSubmit, onCancel, isSaving }) {
           />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Leader selection (linked to members) */}
+        <div className="space-y-2">
           <FormField
             control={form.control}
-            name="leader_name"
+            name="leader_member_id"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>{t('groups.form.leaderName')}</FormLabel>
-                <FormControl>
-                  <Input {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="leader_contact"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t('groups.form.leaderContact')}</FormLabel>
-                <FormControl>
-                  <Input {...field} placeholder="628123456789" />
-                </FormControl>
+                <LeaderSelector
+                  value={field.value}
+                  onChange={field.onChange}
+                  selectedLeader={initialData?.leader}
+                />
                 <FormMessage />
               </FormItem>
             )}
