@@ -79,6 +79,15 @@ export const useTestStatusRule = () => {
   });
 };
 
+export const useSimulateRule = () => {
+  return useMutation({
+    mutationFn: (ruleData) => statusRulesAPI.simulate(ruleData).then(res => res.data),
+    onError: (error) => {
+      toast.error(error.response?.data?.detail || 'Failed to simulate rule');
+    },
+  });
+};
+
 export const useEvaluateAllRules = () => {
   const queryClient = useQueryClient();
   const { church } = useAuth();
