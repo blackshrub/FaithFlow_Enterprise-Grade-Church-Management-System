@@ -203,24 +203,34 @@ export default function MemberForm({ formData, setFormData, member = null }) {
         </div>
         <div className="space-y-2 col-span-2">
           <Label htmlFor="member_status">{t('members.memberStatus')}</Label>
-          <Select 
-            value={formData.member_status || ''} 
-            onValueChange={(value) => {
-              console.log('[DEBUG] Member status selected:', value);
-              handleChange('member_status', value);
-            }}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder={statusesLoading ? t('common.loading') : t('members.selectMemberStatus')} />
-            </SelectTrigger>
-            <SelectContent>
-              {memberStatuses.map((status) => (
-                <SelectItem key={status.id} value={status.name}>
-                  {status.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {statusesLoading ? (
+            <Input value={formData.member_status || ''} disabled className="bg-gray-50" />
+          ) : (
+            <Select 
+              value={formData.member_status || ''} 
+              onValueChange={(value) => {
+                console.log('[DEBUG] Member status selected:', value);
+                handleChange('member_status', value);
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder={t('members.selectMemberStatus')}>
+                  {formData.member_status || t('members.selectMemberStatus')}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {memberStatuses.length > 0 ? (
+                  memberStatuses.map((status) => (
+                    <SelectItem key={status.id} value={status.name}>
+                      {status.name}
+                    </SelectItem>
+                  ))
+                ) : (
+                  <SelectItem value="" disabled>{t('common.loading')}</SelectItem>
+                )}
+              </SelectContent>
+            </Select>
+          )}
         </div>
         <div className="space-y-2 col-span-2">
           <Label htmlFor="address">{t('members.address')}</Label>
