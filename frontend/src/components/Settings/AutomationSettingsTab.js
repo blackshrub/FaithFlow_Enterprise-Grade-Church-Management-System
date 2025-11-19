@@ -1,6 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useEvaluateAllRules } from '../../hooks/useStatusAutomation';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { settingsAPI } from '../../services/api';
+import { queryKeys } from '../../lib/react-query';
+import { toast } from 'sonner';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
@@ -11,11 +15,41 @@ import { Badge } from '../ui/badge';
 
 export default function AutomationSettingsTab() {
   const { church } = useAuth();
+  const queryClient = useQueryClient();
   const evaluateAll = useEvaluateAllRules();
+
+  // Fetch church settings
+  const { data: churchSettings, isLoading } = useQuery({
+    queryKey: queryKeys.settings.churchSettings(church?.id),
+    queryFn: () => settingsAPI.getChurchSettings().then(res => res.data),
+    enabled: !!church?.id,
+  });
+
   const [settings, setSettings] = useState({
     enabled: false,
     schedule: '00:00',
     lastRun: null,
+  });
+
+  useEffect(() => {
+    if (churchSettings) {
+      setSettings({
+        enabled: churchSettings.status_automation_enabled || false,
+        schedule: churchSettings.status_automation_schedule || '00:00',
+        lastRun: churchSettings.last_status_automation_run || null,
+      });
+    }
+  }, [churchSettings]);
+
+  const updateSettings = useMutation({
+    mutationFn: (data) => settingsAPI.updateChurchSettings(data).then(res => res.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.settings.churchSettings(church?.id) });
+      toast.success('Automation settings updated successfully');
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.detail || 'Failed to update settings');
+    },
   });
 
   const handleRunNow = () => {
@@ -25,8 +59,10 @@ export default function AutomationSettingsTab() {
   };
 
   const handleSave = () => {
-    // TODO: Implement save to church settings API
-    console.log('Saving settings:', settings);
+    updateSettings.mutate({
+      status_automation_enabled: settings.enabled,
+      status_automation_schedule: settings.schedule,
+    });
   };
 
   return (
