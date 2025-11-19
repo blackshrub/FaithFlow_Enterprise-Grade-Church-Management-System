@@ -184,8 +184,47 @@ async def delete_member_status(
             detail="Access denied"
         )
     
+    # Check if system status
+    if status.get('is_system'):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot delete system status"
+        )
+    
+    # Check if used in any rules as target
+    rules_using_status = await db.member_status_rules.count_documents({
+        "church_id": status.get('church_id'),
+        "action_status_id": status_id
+    })
+    
+    if rules_using_status > 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Cannot delete status: {rules_using_status} rule(s) are using this status as target"
+        )
+    
     await db.member_statuses.delete_one({"id": status_id})
     return None
+
+
+@router.post("/member-statuses/reorder", status_code=status.HTTP_200_OK)
+async def reorder_member_statuses(
+    status_ids: List[str],
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current_user: dict = Depends(require_admin)
+):
+    """Reorder member statuses by providing ordered list of IDs"""
+    
+    church_id = current_user.get('church_id')
+    
+    # Update display_order for each status
+    for index, status_id in enumerate(status_ids):
+        await db.member_statuses.update_one(
+            {"id": status_id, "church_id": church_id},
+            {"$set": {"display_order": index + 1}}
+        )
+    
+    return {"message": "Statuses reordered successfully"}
 
 
 # ============= Demographic Preset Routes =============
