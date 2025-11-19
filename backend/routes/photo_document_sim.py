@@ -174,14 +174,15 @@ async def simulate_document_matching(
                         'original_filename': member[document_filename_field]
                     }
         
-        # Match files
+        # Match files and store temporarily
         document_data_map = {}  # {normalized_filename: filename}
+        session_id = str(uuid.uuid4())  # Create session ID for temporary storage
         
         for filename, file_data in extracted_files.items():
             if filename in member_lookup:
                 # Validate document
                 if file_upload_service.validate_document(filename):
-                    # Store filename for later use in import
+                    # Store filename (documents are just filenames, not base64)
                     document_data_map[filename] = filename
                     
                     matched.append({
@@ -199,6 +200,16 @@ async def simulate_document_matching(
                     'filename': filename,
                     'reason': 'No matching member in CSV'
                 })
+        
+        # Store document mapping temporarily
+        if document_data_map:
+            await db.temp_document_uploads.delete_many({})  # Clear old temp data
+            await db.temp_document_uploads.insert_one({
+                'session_id': session_id,
+                'document_data': document_data_map,
+                'created_at': datetime.now().isoformat(),
+                'expires_at': (datetime.now() + timedelta(hours=2)).isoformat()
+            })
         
         # Find members without matching documents
         matched_filenames = set(m['filename'] for m in matched)
