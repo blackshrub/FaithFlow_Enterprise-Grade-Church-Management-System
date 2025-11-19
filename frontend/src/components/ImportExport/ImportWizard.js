@@ -75,6 +75,11 @@ export default function ImportWizard() {
 
   const nextStep = () => {
     if (currentStep < STEPS.length) {
+      // Clear simulation results when moving through earlier steps
+      // This ensures fresh validation when reaching Step 6
+      if (currentStep < 6 && wizardData.simulationResults) {
+        updateWizardData({ simulationResults: null });
+      }
       setCurrentStep(currentStep + 1);
     }
   };
