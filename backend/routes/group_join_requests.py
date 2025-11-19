@@ -13,19 +13,23 @@ from utils.dependencies import get_db, get_current_user, get_current_member
 from utils.tenant_utils import get_current_church_id
 from services import audit_service
 
-router = APIRouter(prefix="/groups", tags=["Group Join Requests"])
+router = APIRouter(tags=["Group Join Requests"])
 
 
-@router.post("/{group_id}/join-request", status_code=status.HTTP_201_CREATED)
+@router.post("/public/groups/{group_id}/join-request", status_code=status.HTTP_201_CREATED)
 async def create_join_request_public(
     group_id: str,
     body: GroupJoinRequestCreate,
-    current_user: dict = Depends(get_current_user),  # mobile auth
+    current_member: dict = Depends(get_current_member),  # mobile auth (member)
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
-    """Create join request from mobile app (member)."""
-    church_id = get_current_church_id(current_user)
-    member_id = current_user.get("member_id")
+    """Create join request from mobile app (member).
+
+    This endpoint is exposed under /api/public/groups/{group_id}/join-request
+    and requires a valid member JWT.
+    """
+    church_id = current_member["church_id"]
+    member_id = current_member.get("id")
 
     if not member_id:
         raise HTTPException(
