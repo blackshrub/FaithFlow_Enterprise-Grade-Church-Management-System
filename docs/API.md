@@ -1101,16 +1101,16 @@ Create new article.
 
 #### GET /api/v1/articles/
 
-List articles with filters and pagination.
+List articles with filters and pagination (Admin/Staff).
 
 **Query Parameters:**
-- `search` - Search title/content
-- `status` - Filter by status (draft/published/archived)
-- `category` - Filter by category ID
-- `tag` - Filter by tag ID
-- `schedule_status` - Filter by schedule status
-- `limit` - Items per page (default 50, max 200)
-- `offset` - Pagination offset
+- `search` – Search in `title` and `content`
+- `status` – Filter by status (`draft` / `published` / `archived`)
+- `category` – Filter by category ID
+- `tag` – Filter by tag ID
+- `schedule_status` – Filter by schedule status (`none` / `scheduled` / ...)
+- `limit` – Items per page (default 50, max 200)
+- `offset` – Pagination offset
 
 **Response:**
 ```json
