@@ -18,8 +18,7 @@ const groupSchema = z.object({
   description: z.string().optional(),
   meeting_schedule: z.string().optional(),
   location: z.string().optional(),
-  leader_name: z.string().min(1),
-  leader_contact: z.string().min(3),
+  leader_member_id: z.string().optional(),
   max_members: z
     .union([z.string().optional(), z.number().optional()])
     .transform((val) => (val === '' || val == null ? undefined : Number(val)))
