@@ -11,6 +11,7 @@ import { Switch } from '../ui/switch';
 import { Label } from '../ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '../ui/form';
+import { LeaderSelector } from './LeaderSelector';
 
 const groupSchema = z.object({
   name: z.string().min(1),
