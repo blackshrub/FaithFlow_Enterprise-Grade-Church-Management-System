@@ -24,6 +24,8 @@ const initialFormData = {
   member_status: '',
   baptism_date: '',
   photo_base64: '',
+  personal_document: '',
+  personal_document_base64: '',
   notes: ''
 };
 
