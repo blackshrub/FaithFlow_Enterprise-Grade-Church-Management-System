@@ -35,6 +35,12 @@ export default function Members() {
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [showIncompleteOnly, setShowIncompleteOnly] = useState(false);
+  const [filters, setFilters] = useState({
+    gender: '',
+    marital_status: '',
+    member_status: '',
+    demographic_category: ''
+  });
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState(null);
