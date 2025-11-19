@@ -24,7 +24,9 @@ class MemberBase(BaseModel):
     household_id: Optional[str] = None
     notes: Optional[str] = None
     demographic_category: Optional[str] = None  # Auto-assigned based on age
-    member_status: Optional[str] = None  # Member status (e.g., Full Member, Visitor)
+    member_status: Optional[str] = None  # Member status name (for backward compatibility)
+    current_status_id: Optional[str] = Field(None, description="FK to member_statuses.id")
+    participate_in_automation: bool = Field(True, description="If false, automation engine skips this member")
     blood_type: Optional[Literal['A', 'B', 'AB', 'O']] = None
     photo_filename: Optional[str] = None  # Profile photo filename for matching
     photo_base64: Optional[str] = None  # Profile photo in base64
