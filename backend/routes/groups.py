@@ -302,4 +302,4 @@ async def upload_group_cover(
         description=f"Uploaded cover image for group: {group['name']}",
     )
 
-    return {"cover_image": image_url}
+    return {"cover_image": cover_image_base64}
