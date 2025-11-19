@@ -145,7 +145,31 @@ async def approve_leave_request(
         description=f"Approved leave request for membership {membership_id}",
     )
 
-    # TODO: send push notification to member
+    # Send WhatsApp notification to member if enabled in church settings
+    church_settings = await db.church_settings.find_one({"church_id": church_id})
+    whatsapp_enabled = (
+        church_settings
+        and church_settings.get("enable_whatsapp_notifications")
+        and church_settings.get("whatsapp_send_group_notifications", True)
+    )
+
+    if whatsapp_enabled:
+        member = await db.members.find_one({"id": membership["member_id"], "church_id": church_id})
+        group = await db.groups.find_one({"id": membership["group_id"], "church_id": church_id})
+
+        if member and member.get("phone_whatsapp") and group:
+            try:
+                message = (
+                    "You have been removed from the group: "
+                    f"{group.get('name', '')}"
+                )
+                await send_whatsapp_message(
+                    phone_number=member["phone_whatsapp"],
+                    message=message,
+                )
+            except Exception:
+                # Do not block approval flow if WhatsApp fails
+                pass
 
     updated = await db.group_memberships.find_one({"id": membership_id}, {"_id": 0})
     return updated
