@@ -42,6 +42,19 @@ async def quick_add_member(
         "is_active": True,
     }
     
+    # Check for duplicate phone number if provided
+    if member_dict['phone_whatsapp']:
+        existing = await db.members.find_one({
+            "church_id": member_data.church_id,
+            "phone_whatsapp": member_dict['phone_whatsapp'],
+            "is_active": True
+        })
+        if existing:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Member with this phone number already exists: {existing.get('full_name', 'Unknown')}"
+            )
+    
     # Split full_name for first/last
     parts = member_data.full_name.strip().split(maxsplit=1)
     member_dict['first_name'] = parts[0] if len(parts) > 0 else member_data.full_name
