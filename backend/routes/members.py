@@ -473,6 +473,101 @@ async def delete_member(
     return None
 
 
+# ============= TRASH BIN ENDPOINTS =============
+
+@router.get("/trash", response_model=List[Member])
+async def list_trash(
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    """List members in trash bin (soft deleted)"""
+    
+    query = {"is_deleted": True}
+    if current_user.get('role') != 'super_admin':
+        query['church_id'] = current_user.get('church_id')
+    
+    members = await db.members.find(query, {"_id": 0}).sort("deleted_at", -1).to_list(1000)
+    
+    # Convert ISO strings
+    for member in members:
+        if isinstance(member.get('created_at'), str):
+            member['created_at'] = datetime.fromisoformat(member['created_at'])
+        if isinstance(member.get('updated_at'), str):
+            member['updated_at'] = datetime.fromisoformat(member['updated_at'])
+        if isinstance(member.get('deleted_at'), str):
+            member['deleted_at'] = datetime.fromisoformat(member['deleted_at'])
+        if member.get('date_of_birth') and isinstance(member['date_of_birth'], str):
+            from datetime import date
+            member['date_of_birth'] = date.fromisoformat(member['date_of_birth'])
+        if member.get('baptism_date') and isinstance(member['baptism_date'], str):
+            from datetime import date
+            member['baptism_date'] = date.fromisoformat(member['baptism_date'])
+    
+    return members
+
+
+@router.post("/{member_id}/restore", status_code=status.HTTP_200_OK)
+async def restore_member(
+    member_id: str,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current_user: dict = Depends(require_admin)
+):
+    """Restore member from trash bin"""
+    
+    member = await db.members.find_one({"id": member_id})
+    if not member:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Member not found")
+    
+    if current_user.get('role') != 'super_admin' and current_user.get('church_id') != member.get('church_id'):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
+    
+    if not member.get('is_deleted'):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Member is not in trash")
+    
+    # Restore member
+    await db.members.update_one(
+        {"id": member_id},
+        {
+            "$set": {
+                "is_deleted": False,
+                "is_active": True,
+                "updated_at": datetime.now().isoformat()
+            },
+            "$unset": {
+                "deleted_at": "",
+                "deleted_by": ""
+            }
+        }
+    )
+    
+    logger.info(f"Member restored from trash: {member.get('full_name')} by {current_user.get('full_name')}")
+    
+    return {"message": "Member restored successfully", "member_id": member_id}
+
+
+@router.delete("/{member_id}/permanent", status_code=status.HTTP_204_NO_CONTENT)
+async def permanent_delete_member(
+    member_id: str,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current_user: dict = Depends(require_admin)
+):
+    """Permanently delete member (cannot be undone)"""
+    
+    member = await db.members.find_one({"id": member_id})
+    if not member:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Member not found")
+    
+    if current_user.get('role') != 'super_admin' and current_user.get('church_id') != member.get('church_id'):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
+    
+    # Permanently delete
+    await db.members.delete_one({"id": member_id})
+    
+    logger.warning(f"Member PERMANENTLY deleted: {member.get('full_name')} by {current_user.get('full_name')}")
+    
+    return None
+
+
 @router.get("/stats/summary")
 async def get_member_stats(
     db: AsyncIOMotorDatabase = Depends(get_db),
