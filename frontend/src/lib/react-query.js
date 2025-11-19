@@ -36,6 +36,7 @@ export const queryKeys = {
     all: (churchId, params = {}) => ['members', { churchId, ...params }],
     detail: (churchId, id) => ['members', churchId, id],
     stats: (churchId) => ['members', 'stats', { churchId }],
+    trash: (churchId) => ['members', 'trash', { churchId }],
   },
   
   // Groups keys
