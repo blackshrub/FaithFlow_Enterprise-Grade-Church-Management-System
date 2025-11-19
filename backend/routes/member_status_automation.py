@@ -290,6 +290,94 @@ async def delete_rule(
     return None
 
 
+@router.post("/simulate")
+async def simulate_rule(
+    rule_data: dict = Body(...),
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    """Simulate a rule against all members before creating it"""
+    
+    church_id = current_user.get('church_id')
+    
+    # Validate rule data
+    if 'conditions' not in rule_data or 'action_status_id' not in rule_data:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="conditions and action_status_id are required"
+        )
+    
+    if not rule_data.get('conditions') or len(rule_data['conditions']) == 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="At least one condition is required"
+        )
+    
+    # Get all active members
+    members = await db.members.find({
+        "church_id": church_id,
+        "is_active": True
+    }).to_list(10000)
+    
+    matched_members = []
+    
+    for member in members:
+        # Check rule type applicability
+        rule_type = rule_data.get('rule_type', 'global')
+        if rule_type == 'status_based':
+            current_status_id = member.get('current_status_id')
+            required_status_id = rule_data.get('current_status_id')
+            
+            if current_status_id != required_status_id:
+                continue
+        
+        # Skip if automation disabled for this member
+        if not member.get('participate_in_automation', True):
+            continue
+        
+        # Evaluate conditions
+        conditions = rule_data.get('conditions', [])
+        if await RuleEngineService.evaluate_conditions_for_member(member, conditions, db):
+            # Calculate age if DOB exists
+            age = None
+            if member.get('date_of_birth'):
+                from dateutil.relativedelta import relativedelta
+                dob = member.get('date_of_birth')
+                if isinstance(dob, str):
+                    try:
+                        dob = datetime.fromisoformat(dob.replace('Z', '+00:00')).date()
+                        today = datetime.now(timezone.utc).date()
+                        age = relativedelta(today, dob).years
+                    except:
+                        pass
+            
+            # Get current status name
+            current_status_name = member.get('member_status')
+            if member.get('current_status_id'):
+                status_doc = await db.member_statuses.find_one({"id": member.get('current_status_id')})
+                if status_doc:
+                    current_status_name = status_doc.get('name')
+            
+            matched_members.append({
+                "id": member.get('id'),
+                "full_name": member.get('full_name'),
+                "current_status": current_status_name,
+                "current_status_id": member.get('current_status_id'),
+                "age": age,
+            })
+    
+    # Get target status name
+    target_status = await db.member_statuses.find_one({"id": rule_data.get('action_status_id')})
+    
+    return {
+        "total_members": len(members),
+        "matched_count": len(matched_members),
+        "matched_members": matched_members[:100],  # Limit to first 100 for performance
+        "target_status_name": target_status.get('name') if target_status else 'Unknown',
+        "message": f"{len(matched_members)} member(s) will be affected by this rule"
+    }
+
+
 # ============= CONFLICTS ENDPOINTS =============
 
 @router.get("/conflicts", response_model=List[RuleEvaluationConflict])
