@@ -173,6 +173,15 @@ async def create_member(
         member_doc['membership_date'] = member_doc['membership_date'].isoformat()
     
     await db.members.insert_one(member_doc)
+    
+    # Trigger webhook: member.created (hybrid: try immediate, fallback to queue)
+    await webhook_service.trigger_member_webhook(
+        db=db,
+        event_type="member.created",
+        member_data=member_doc,
+        church_id=member_data.church_id
+    )
+    
     return member
 
 
