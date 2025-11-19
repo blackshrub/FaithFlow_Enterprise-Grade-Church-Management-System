@@ -1602,7 +1602,8 @@
       "createError": "Failed to create group",
       "updateError": "Failed to update group",
       "deleteError": "Failed to delete group",
-      "loadError": "Failed to load groups"
+      "loadError": "Failed to load groups",
+      "saveError": "Failed to save group"
     },
     "delete": {
       "confirmTitle": "Delete this group?",
@@ -1616,29 +1617,75 @@
       "noMembers": "No members in this group yet",
       "memberCount": "{{count}} members",
       "confirmRemove": "Remove this member from the group?",
-      "searchPlaceholder": "Search for a member..."
+      "searchPlaceholder": "Search for a member...",
+      "subtitle": "Manage group members",
+      "searchResults": "Search results",
+      "emptyStates": {
+        "noMembers": "No members in this group yet"
+      },
+      "actions": {
+        "addMember": "Add Member",
+        "addToGroup": "Add to Group",
+        "remove": "Remove"
+      },
+      "table": {
+        "member": "Member",
+        "contact": "Contact",
+        "status": "Status",
+        "joinedAt": "Joined",
+        "actions": "Actions"
+      },
+      "messages": {
+        "addSuccess": "Member added to group successfully",
+        "addError": "Failed to add member to group",
+        "removeSuccess": "Member removed from group successfully",
+        "removeError": "Failed to remove member from group",
+        "searchError": "Failed to search members"
+      },
+      "delete": {
+        "confirmTitle": "Remove member from group?",
+        "confirmDescription": "This member will be removed from the group."
+      }
     },
     "joinRequests": {
       "title": "Join Requests",
       "pending": "Pending Requests",
       "approve": "Approve",
       "reject": "Reject",
-      "noRequests": "No pending join requests"
+      "noRequests": "No pending join requests",
+      "subtitle": "Manage pending join requests",
+      "table": {
+        "member": "Member",
+        "group": "Group",
+        "message": "Message",
+        "requestedAt": "Requested",
+        "actions": "Actions"
+      }
     },
     "leaveRequests": {
       "title": "Leave Requests",
       "pending": "Pending Leave Requests",
       "approve": "Approve",
-      "noRequests": "No pending leave requests"
+      "noRequests": "No pending leave requests",
+      "subtitle": "Manage pending leave requests",
+      "table": {
+        "member": "Member",
+        "group": "Group",
+        "reason": "Reason",
+        "joinedAt": "Joined",
+        "actions": "Actions"
+      }
     },
     "table": {
       "leader": "Leader",
       "membersCount": "Members",
-      "openForJoin": "Open for Join"
+      "openForJoin": "Open for Join",
+      "noLeader": "No leader assigned"
     },
     "status": {
       "open": "Open",
-      "close": "Closed"
+      "close": "Closed",
+      "closed": "Closed"
     }
   }
 }

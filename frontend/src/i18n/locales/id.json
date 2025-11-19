@@ -1592,7 +1592,8 @@
       "createError": "Gagal membuat kelompok",
       "updateError": "Gagal memperbarui kelompok",
       "deleteError": "Gagal menghapus kelompok",
-      "loadError": "Gagal memuat kelompok"
+      "loadError": "Gagal memuat kelompok",
+      "saveError": "Gagal menyimpan kelompok"
     },
     "delete": {
       "confirmTitle": "Hapus kelompok ini?",
@@ -1606,29 +1607,75 @@
       "noMembers": "Belum ada anggota dalam kelompok ini",
       "memberCount": "{{count}} anggota",
       "confirmRemove": "Hapus anggota ini dari kelompok?",
-      "searchPlaceholder": "Cari anggota..."
+      "searchPlaceholder": "Cari anggota...",
+      "subtitle": "Kelola anggota kelompok",
+      "searchResults": "Hasil pencarian",
+      "emptyStates": {
+        "noMembers": "Belum ada anggota dalam kelompok ini"
+      },
+      "actions": {
+        "addMember": "Tambah Anggota",
+        "addToGroup": "Tambahkan ke Kelompok",
+        "remove": "Hapus"
+      },
+      "table": {
+        "member": "Anggota",
+        "contact": "Kontak",
+        "status": "Status",
+        "joinedAt": "Bergabung",
+        "actions": "Aksi"
+      },
+      "messages": {
+        "addSuccess": "Anggota berhasil ditambahkan ke kelompok",
+        "addError": "Gagal menambahkan anggota ke kelompok",
+        "removeSuccess": "Anggota berhasil dihapus dari kelompok",
+        "removeError": "Gagal menghapus anggota dari kelompok",
+        "searchError": "Gagal mencari anggota"
+      },
+      "delete": {
+        "confirmTitle": "Hapus anggota dari kelompok?",
+        "confirmDescription": "Anggota ini akan dihapus dari kelompok."
+      }
     },
     "joinRequests": {
       "title": "Permintaan Bergabung",
       "pending": "Permintaan Tertunda",
       "approve": "Setujui",
       "reject": "Tolak",
-      "noRequests": "Tidak ada permintaan bergabung tertunda"
+      "noRequests": "Tidak ada permintaan bergabung tertunda",
+      "subtitle": "Kelola permintaan bergabung yang tertunda",
+      "table": {
+        "member": "Anggota",
+        "group": "Kelompok",
+        "message": "Pesan",
+        "requestedAt": "Diminta",
+        "actions": "Aksi"
+      }
     },
     "leaveRequests": {
       "title": "Permintaan Keluar",
       "pending": "Permintaan Keluar Tertunda",
       "approve": "Setujui",
-      "noRequests": "Tidak ada permintaan keluar tertunda"
+      "noRequests": "Tidak ada permintaan keluar tertunda",
+      "subtitle": "Kelola permintaan keluar yang tertunda",
+      "table": {
+        "member": "Anggota",
+        "group": "Kelompok",
+        "reason": "Alasan",
+        "joinedAt": "Bergabung",
+        "actions": "Aksi"
+      }
     },
     "table": {
       "leader": "Pemimpin",
       "membersCount": "Anggota",
-      "openForJoin": "Terbuka untuk Bergabung"
+      "openForJoin": "Terbuka untuk Bergabung",
+      "noLeader": "Belum ada pemimpin"
     },
     "status": {
       "open": "Terbuka",
-      "close": "Tutup"
+      "close": "Tutup",
+      "closed": "Tutup"
     }
   }
 }
