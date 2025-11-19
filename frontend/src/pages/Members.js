@@ -144,15 +144,6 @@ export default function Members() {
     setQrMember(null);
   };
 
-  // Filter members based on search
-  const filteredMembers = searchQuery
-    ? members.filter((m) =>
-        (m.full_name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (m.email || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (m.phone_whatsapp || '').includes(searchQuery)
-      )
-    : members;
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
