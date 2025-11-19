@@ -16,13 +16,11 @@ FaithFlow is a comprehensive, production-ready church management system designed
 - ✅ **Kiosk Mode** - Professional check-in system with QR scanning (10 colorful themes, **fullscreen mode**)
 - ✅ **Devotion CMS** - Daily devotions with 6 Bible versions (186,000+ verses), **calendar view**
 - ✅ **Indonesian TTS** - Professional male voice (Wibowo) with **perfect pronunciation** (g, b, d fixes)
-- ✅ **Member Management** - Complete CRUD, import/export, **personal QR codes**, **QR display modal**
-- ✅ **Personal QR System** - Universal member ID (6-digit code) for check-in at any event
-- ✅ **Accounting System** - **Complete enterprise accounting** with COA (52 Indonesian accounts), double-entry journals, fiscal period locking, budgeting, fixed assets, depreciation, bank reconciliation, year-end closing, financial reports, audit trail
-- ✅ **CMS Articles** - **WordPress-style content management** with TipTap rich editor, scheduling system (APScheduler), categories & tags, comments moderation, draft preview, featured images, public API for mobile apps
-- ✅ **Prayer Requests** - **Pastoral care management** with member linking, 8 prayer categories, status tracking (New/Prayed), pastoral follow-up tracking, internal notes, filters & search
-- ✅ **Group Management** - Comprehensive group system with **configurable categories**, **linked member leaders**, card-based directory UI, member rosters, join/leave request workflows, WhatsApp notifications, and mobile API for group discovery
-- ✅ **Full i18n Support** - English & Indonesian (**650+ translation keys**, zero hardcoded strings)
+- ✅ **Member Management** - Complete CRUD, **CSV/JSON import with photo & document upload**, **phone duplicate validation**, **personal QR codes**, **server-side search**, **pagination (50/page)**
+- ✅ **Personal QR System** - Universal member ID (6-digit code) auto-generated for every member
+- ✅ **Member Import System** - Advanced CSV import wizard with **photo/document matching**, **duplicate phone validation at Step 2**, **default member status**, **real-time validation**
+- ✅ **Group Management** - Comprehensive group system with **configurable categories**, **real-time member leader search with photos**, card-based directory, member rosters, join/leave workflows, **base64 cover images**, WhatsApp notifications
+- ✅ **Full i18n Support** - English & Indonesian (**700+ translation keys**, zero hardcoded strings, **version-based cache busting**)
 - ✅ **Mobile API Ready** - RESTful APIs for mobile apps
 - ✅ **Collapsible Sidebar** - Icon-only mode for focused work
 - ✅ **FaithFlow Branding** - Professional identity with logo, colors, tagline
