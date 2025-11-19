@@ -259,7 +259,11 @@
     "enableWhatsappDesc": "Send automated WhatsApp messages to members",
     "sendRSVPConfirmation": "Send RSVP Confirmation",
     "sendRSVPConfirmationDesc": "Send confirmation message with QR code when member registers for event",
-    "default": "Default"
+    "default": "Default",
+    "groupCategoriesTitle": "Group Categories",
+    "groupCategoriesDesc": "Customize group category labels for your church",
+    "groupCategoryCode": "Category Code",
+    "groupCategoryLabel": "Display Label"
   },
   "events": {
     "title": "Events",

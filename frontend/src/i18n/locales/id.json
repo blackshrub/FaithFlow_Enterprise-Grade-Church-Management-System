@@ -259,7 +259,11 @@
     "enableWhatsappDesc": "Kirim pesan WhatsApp otomatis ke jemaat",
     "sendRSVPConfirmation": "Kirim Konfirmasi RSVP",
     "sendRSVPConfirmationDesc": "Kirim pesan konfirmasi dengan kode QR saat jemaat mendaftar acara",
-    "default": "Default"
+    "default": "Default",
+    "groupCategoriesTitle": "Kategori Kelompok",
+    "groupCategoriesDesc": "Sesuaikan label kategori kelompok untuk gereja Anda",
+    "groupCategoryCode": "Kode Kategori",
+    "groupCategoryLabel": "Label Tampilan"
   },
   "events": {
     "title": "Acara",
