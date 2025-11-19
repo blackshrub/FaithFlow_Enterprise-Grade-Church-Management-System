@@ -292,7 +292,7 @@ Includes detailed steps for:
 ## Multi-Church Support
 
 Every data record is scoped by `church_id`:
-- Members, events, devotions, prayers, accounting
+- Members, events, devotions, prayers, accounting, groups, articles
 - Automatic church isolation
 - Super Admin can view all churches
 - Regular admins see only their church
@@ -300,10 +300,11 @@ Every data record is scoped by `church_id`:
 ## Internationalization (i18n)
 
 - **Languages:** English & Indonesian
-- **500+ translation keys**
+- **650+ translation keys** (including all modules: members, events, groups, prayers, accounting, etc.)
 - **Zero hardcoded strings**
-- Supports interpolation, pluralization
+- Supports interpolation, pluralization, contextual translations
 - Date/time formatting per locale
+- react-i18next for runtime language switching
 
 ## Security
 
