@@ -69,6 +69,7 @@ class MemberUpdate(BaseModel):
     photo_filename: Optional[str] = None
     photo_base64: Optional[str] = None
     personal_document: Optional[str] = None
+    personal_document_base64: Optional[str] = None
     documents: Optional[List[str]] = None
     custom_fields: Optional[Dict[str, Any]] = None
 
