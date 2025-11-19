@@ -12,8 +12,9 @@ class ChurchSettingsBase(BaseModel):
     default_language: Literal['en', 'id'] = 'en'  # Default system language
     
     # WhatsApp Notifications
-    enable_whatsapp_notifications: bool = Field(default=False, description="Enable WhatsApp notifications for RSVPs")
+    enable_whatsapp_notifications: bool = Field(default=False, description="Enable WhatsApp notifications (global switch)")
     whatsapp_send_rsvp_confirmation: bool = Field(default=True, description="Send confirmation when RSVP is registered")
+    whatsapp_send_group_notifications: bool = Field(default=True, description="Send WhatsApp notifications for group join/leave approvals")
 
 
 class ChurchSettingsCreate(ChurchSettingsBase):
