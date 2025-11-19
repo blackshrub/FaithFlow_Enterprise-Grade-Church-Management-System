@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { statusRulesAPI, statusConflictsAPI, statusHistoryAPI } from '../services/api';
+import { statusRulesAPI, statusConflictsAPI, statusHistoryAPI, settingsAPI } from '../services/api';
 import { queryKeys } from '../lib/react-query';
 import { toast } from 'sonner';
 import { useAuth } from '../context/AuthContext';
