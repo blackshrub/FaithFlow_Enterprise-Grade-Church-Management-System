@@ -261,8 +261,8 @@ export default function Members() {
                 {t('members.addMember')}
               </Button>
             </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
               <DialogTitle>{t('members.addNewMember')}</DialogTitle>
               <DialogDescription>
                 {t('members.registerMember')}
