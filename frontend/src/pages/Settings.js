@@ -19,11 +19,12 @@ export default function Settings() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full max-w-3xl grid-cols-4">
+        <TabsList className="grid w-full max-w-4xl grid-cols-5">
           <TabsTrigger value="general">{t('settings.general')}</TabsTrigger>
           <TabsTrigger value="statuses">{t('settings.memberStatuses')}</TabsTrigger>
           <TabsTrigger value="demographics">{t('settings.demographics')}</TabsTrigger>
           <TabsTrigger value="categories">{t('settings.eventCategories')}</TabsTrigger>
+          <TabsTrigger value="webhooks">{t('settings.webhooks.title')}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="general" className="mt-6">
@@ -40,6 +41,10 @@ export default function Settings() {
 
         <TabsContent value="categories" className="mt-6">
           <EventCategoriesTab />
+        </TabsContent>
+
+        <TabsContent value="webhooks" className="mt-6">
+          <WebhooksTab />
         </TabsContent>
       </Tabs>
     </div>
