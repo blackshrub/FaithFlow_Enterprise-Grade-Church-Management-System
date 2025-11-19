@@ -23,7 +23,7 @@ export default function MemberForm({ formData, setFormData, member = null }) {
               <div className="flex items-center gap-3">
                 <img 
                   src={member.photo_base64} 
-                  alt={member.full_name}
+                  alt={member.full_name || 'Member photo'}
                   className="h-16 w-16 rounded-full object-cover border-2 border-gray-200"
                 />
                 <span className="text-sm text-gray-600">{t('members.photoUploaded')}</span>
