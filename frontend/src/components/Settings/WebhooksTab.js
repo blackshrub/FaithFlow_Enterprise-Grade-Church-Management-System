@@ -191,46 +191,119 @@ export default function WebhooksTab() {
           
           {/* API Credentials Section */}
           <div className="pt-4 border-t">
-            <Label className="text-xs text-gray-600 font-semibold">
-              {t('settings.webhooks.apiCredentials')}
-            </Label>
-            <p className="text-xs text-gray-500 mb-3">
-              {t('settings.webhooks.apiCredentialsDesc')}
-            </p>
-            
-            <div className="space-y-3 bg-white p-3 rounded border">
+            <div className="flex items-center justify-between mb-3">
               <div>
-                <Label className="text-xs text-gray-600">{t('settings.webhooks.apiUsername')}</Label>
-                <div className="flex items-center gap-2 mt-1">
-                  <code className="flex-1 px-2 py-1 bg-gray-50 border rounded font-mono text-sm">
-                    api_user@{church?.name?.toLowerCase().replace(/\s+/g, '') || 'church'}.local
-                  </code>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => copyToClipboard(`api_user@${church?.name?.toLowerCase().replace(/\s+/g, '') || 'church'}.local`)}
-                  >
-                    {t('common.copy')}
-                  </Button>
-                </div>
-                <p className="text-xs text-gray-500 mt-1">
-                  {t('settings.webhooks.usernameNote')}
+                <Label className="text-xs text-gray-600 font-semibold">
+                  {t('settings.apiKeys.title')}
+                </Label>
+                <p className="text-xs text-gray-500">
+                  {t('settings.apiKeys.description')}
                 </p>
               </div>
-              
-              <div>
-                <Label className="text-xs text-gray-600">{t('settings.webhooks.apiKey')}</Label>
-                <div className="flex items-center gap-2 mt-1">
-                  <code className="flex-1 px-2 py-1 bg-gray-50 border rounded font-mono text-sm">
-                    {t('settings.webhooks.useAdminCredentials')}
-                  </code>
-                </div>
-                <p className="text-xs text-yellow-700 bg-yellow-50 px-2 py-1 rounded mt-1 text-xs">
-                  ⚠️ {t('settings.webhooks.credentialsNote')}
-                </p>
-              </div>
+              <Button
+                type="button"
+                variant="default"
+                size="sm"
+                onClick={handleCreateAPIKey}
+                disabled={createAPIKey.isPending}
+              >
+                <Key className="h-4 w-4 mr-2" />
+                {createAPIKey.isPending ? t('common.loading') : t('settings.apiKeys.generate')}
+              </Button>
             </div>
+            
+            {apiKeysLoading ? (
+              <div className="text-center py-4">
+                <Loader2 className="h-6 w-6 animate-spin mx-auto text-gray-400" />
+              </div>
+            ) : apiKeys.length === 0 ? (
+              <div className="text-center py-6 bg-gray-50 rounded border border-dashed">
+                <Key className="h-8 w-8 mx-auto text-gray-400 mb-2" />
+                <p className="text-sm text-gray-600">{t('settings.apiKeys.noKeys')}</p>
+                <p className="text-xs text-gray-500 mt-1">{t('settings.apiKeys.noKeysHint')}</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {apiKeys.map((apiKey) => (
+                  <div key={apiKey.id} className="bg-white border rounded p-3">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1 space-y-2">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-sm">{apiKey.name}</span>
+                          {apiKey.is_active ? (
+                            <Badge variant="default" className="bg-green-600 text-xs">Active</Badge>
+                          ) : (
+                            <Badge variant="secondary" className="text-xs">Inactive</Badge>
+                          )}
+                        </div>
+                        
+                        <div>
+                          <Label className="text-xs text-gray-500">Username</Label>
+                          <div className="flex items-center gap-2">
+                            <code className="text-xs font-mono bg-gray-50 px-2 py-1 rounded">
+                              {apiKey.api_username}
+                            </code>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                copyToClipboard(apiKey.api_username);
+                              }}
+                            >
+                              <Copy className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </div>
+                        
+                        <div>
+                          <Label className="text-xs text-gray-500">API Key</Label>
+                          <code className="text-xs text-gray-400">••••••••••••••••••••</code>
+                          <p className="text-xs text-gray-500 mt-1">
+                            {t('settings.apiKeys.keyHidden')}
+                          </p>
+                        </div>
+                        
+                        {apiKey.last_used_at && (
+                          <p className="text-xs text-gray-500">
+                            Last used: {new Date(apiKey.last_used_at).toLocaleString()}
+                          </p>
+                        )}
+                      </div>
+                      
+                      <div className="flex gap-1 ml-4">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleRegenerateAPIKey(apiKey.id)}
+                          disabled={regenerateAPIKey.isPending}
+                          title={t('settings.apiKeys.regenerate')}
+                        >
+                          <RefreshCw className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => handleDeleteAPIKey(apiKey.id)}
+                          disabled={deleteAPIKey.isPending}
+                          title={t('settings.apiKeys.delete')}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            
+            <Alert className="mt-3">
+              <AlertDescription className="text-xs">
+                ⚠️ {t('settings.apiKeys.securityWarning')}
+              </AlertDescription>
+            </Alert>
           </div>
           
           <div>
