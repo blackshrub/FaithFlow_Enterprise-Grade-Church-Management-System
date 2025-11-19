@@ -243,7 +243,7 @@ export default function ConflictReview() {
             </Button>
             <Button
               onClick={handleSubmitResolve}
-              disabled={!selectedStatusId || resolveConflict.isPending}
+              disabled={resolveConflict.isPending}
             >
               {resolveConflict.isPending ? (
                 <>
