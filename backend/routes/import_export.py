@@ -334,18 +334,26 @@ async def import_members(
         resolutions = json.loads(duplicate_resolutions)
         custom_field_defs = json.loads(custom_fields)
         
-        # Retrieve photo data from temp storage if session_id provided
+        # Retrieve photo data from temp file storage if session_id provided
         photo_mapping = {}
         if photo_session_id:
-            temp_photos = await db.temp_photo_uploads.find_one({'session_id': photo_session_id})
-            if temp_photos:
-                photo_mapping = temp_photos.get('photo_data', {})
-                logger.info(f"Retrieved {len(photo_mapping)} photos from temp storage")
+            temp_session = await db.temp_photo_sessions.find_one({'session_id': photo_session_id})
+            if temp_session:
+                temp_dir = temp_session.get('temp_dir')
+                if temp_dir and os.path.exists(temp_dir):
+                    # Read all photo files from temp directory
+                    for photo_file in os.listdir(temp_dir):
+                        if photo_file.endswith('.b64'):
+                            filename_key = photo_file.replace('.b64', '')
+                            filepath = os.path.join(temp_dir, photo_file)
+                            with open(filepath, 'r') as f:
+                                photo_mapping[filename_key] = f.read()
+                    logger.info(f"Retrieved {len(photo_mapping)} photos from temp storage")
         
         # Retrieve document data from temp storage if session_id provided
         document_mapping = {}
         if document_session_id:
-            temp_docs = await db.temp_document_uploads.find_one({'session_id': document_session_id})
+            temp_docs = await db.temp_document_sessions.find_one({'session_id': document_session_id})
             if temp_docs:
                 document_mapping = temp_docs.get('document_data', {})
                 logger.info(f"Retrieved {len(document_mapping)} documents from temp storage")
