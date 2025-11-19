@@ -54,40 +54,40 @@ def setup_scheduler(db: AsyncIOMotorDatabase):
     
     # Add job: Run status automation daily at midnight (configurable per church)
     async def run_status_automation_job():
-        """Check each church's automation settings and run if scheduled"""
+        """Run status automation for all churches with automation enabled"""
         try:
+            logger.info("Starting daily status automation job")
+            
             # Get all churches with automation enabled
             settings = await db.church_settings.find({
                 "status_automation_enabled": True
             }).to_list(1000)
             
-            current_time = datetime.now(timezone.utc)
-            current_hour = current_time.hour
-            current_minute = current_time.minute
+            if not settings:
+                logger.info("No churches with automation enabled")
+                return
+            
+            logger.info(f"Running status automation for {len(settings)} church(es)")
             
             for setting in settings:
-                # Parse schedule (HH:MM format)
-                schedule = setting.get('status_automation_schedule', '00:00')
+                church_id = setting.get('church_id')
                 try:
-                    schedule_hour, schedule_minute = map(int, schedule.split(':'))
-                    
-                    # Check if current time matches schedule (within 1 minute window)
-                    if current_hour == schedule_hour and abs(current_minute - schedule_minute) <= 1:
-                        church_id = setting.get('church_id')
-                        logger.info(f"Running scheduled status automation for church {church_id}")
-                        
-                        stats = await StatusAutomationService.run_automation_for_church(church_id, db)
-                        logger.info(f"Status automation complete for church {church_id}: {stats}")
-                
+                    logger.info(f"Running status automation for church {church_id}")
+                    stats = await StatusAutomationService.run_automation_for_church(church_id, db)
+                    logger.info(f"Status automation complete for church {church_id}: {stats}")
                 except Exception as e:
-                    logger.error(f"Error parsing schedule for church {setting.get('church_id')}: {e}")
+                    logger.error(f"Error running automation for church {church_id}: {e}")
         
         except Exception as e:
             logger.error(f"Error in status automation job: {e}")
     
+    # Schedule to run daily at midnight UTC
+    # Churches can configure their preferred time by setting their timezone in church settings
+    from apscheduler.triggers.cron import CronTrigger
+    
     scheduler.add_job(
         func=lambda: run_status_automation_job(),
-        trigger=IntervalTrigger(minutes=1),  # Check every minute
+        trigger=CronTrigger(hour=0, minute=0),  # Daily at midnight UTC
         id='status_automation',
         name='Member Status Automation',
         replace_existing=True
