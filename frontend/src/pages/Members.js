@@ -230,7 +230,7 @@ export default function Members() {
             <div className="text-center py-12 text-red-500">
               <p>{t('members.loadError')}</p>
             </div>
-          ) : filteredMembers.length === 0 ? (
+          ) : members.length === 0 ? (
             <div className="text-center py-12 text-gray-500">
               <UserX className="h-12 w-12 mx-auto mb-4 text-gray-400" />
               <p>{t('members.noMembers')}</p>
