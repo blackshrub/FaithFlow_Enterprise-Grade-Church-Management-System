@@ -627,7 +627,7 @@ export default function StatusRulesTab() {
                           disabled={simulateRule.isPending}
                           title="Preview affected members"
                         >
-                          <Search className="h-4 w-4" />
+                          <Eye className="h-4 w-4" />
                         </Button>
                         <Button
                           variant="outline"
