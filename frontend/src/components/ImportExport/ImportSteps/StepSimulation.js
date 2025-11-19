@@ -102,6 +102,39 @@ export default function StepSimulation({ wizardData, updateWizardData, simulateI
                 </AlertDescription>
               </Alert>
 
+              {/* Explanation banner for resolution options */}
+              <Alert>
+                <AlertDescription className="text-sm space-y-1">
+                  <div>
+                    <span className="font-semibold">
+                      {t('importExport.duplicateOptionKeepExistingTitle') || 'Keep existing member'}:
+                    </span>{' '}
+                    <span>
+                      {t('importExport.duplicateOptionKeepExistingDesc') ||
+                        'Keep the phone number on the existing member and remove it from the new row.'}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="font-semibold">
+                      {t('importExport.duplicateOptionKeepNewTitle') || 'Keep new record'}:
+                    </span>{' '}
+                    <span>
+                      {t('importExport.duplicateOptionKeepNewDesc') ||
+                        'Keep the phone number on the new row and remove it from the original one.'}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="font-semibold">
+                      {t('importExport.duplicateOptionBlankTitle') || 'Blank phone for both'}:
+                    </span>{' '}
+                    <span>
+                      {t('importExport.duplicateOptionBlankDesc') ||
+                        'Remove the phone number from all rows with this number. You can clean it up later.'}
+                    </span>
+                  </div>
+                </AlertDescription>
+              </Alert>
+
               {simulationResults.duplicate_conflicts?.map((conflict, index) => (
                 <Card key={index} className="border-orange-500">
                   <CardHeader>
