@@ -274,21 +274,23 @@ async def upload_group_cover(
             message="Image must be less than 3MB",
         )
 
-    upload_dir = Path(f"/app/uploads/{church_id}/groups/{group_id}")
-    upload_dir.mkdir(parents=True, exist_ok=True)
-
-    file_ext = Path(file.filename).suffix
-    filename = f"cover{file_ext}"
-    file_path = upload_dir / filename
-
-    async with aiofiles.open(file_path, "wb") as f:
-        await f.write(content)
-
-    image_url = f"/uploads/{church_id}/groups/{group_id}/{filename}"
+    # Convert to base64 instead of saving to file system
+    import base64
+    base64_data = base64.b64encode(content).decode('utf-8')
+    
+    # Determine MIME type
+    mime_types = {
+        'image/jpeg': 'image/jpeg',
+        'image/jpg': 'image/jpeg',
+        'image/png': 'image/png',
+        'image/webp': 'image/webp'
+    }
+    mime_type = mime_types.get(file.content_type, 'image/jpeg')
+    cover_image_base64 = f"data:{mime_type};base64,{base64_data}"
 
     await db.groups.update_one(
         {"id": group_id},
-        {"$set": {"cover_image": image_url, "updated_at": datetime.utcnow()}},
+        {"$set": {"cover_image": cover_image_base64, "updated_at": datetime.utcnow()}},
     )
 
     await audit_service.log_action(
