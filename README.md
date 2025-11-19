@@ -277,12 +277,13 @@ Includes detailed steps for:
 - Public API for mobile apps
 
 ### 10. Prayer Request Management
-- Member-linked prayer requests
-- 8 prayer categories
+- **Member selector** with real-time search and profile photos
+- 8 prayer categories (healing, family, work, guidance, thanksgiving, protection, salvation, other)
 - Status tracking (New/Prayed)
-- Pastoral follow-up tracking
-- Internal staff notes
+- Pastoral follow-up tracking with checkboxes
+- Internal staff notes (private)
 - Advanced filters & search
+- **Consistent member selection UX** (same as groups leader selector)
 
 ### 11. Enterprise Accounting System
 - Complete Chart of Accounts (52 Indonesian accounts)
