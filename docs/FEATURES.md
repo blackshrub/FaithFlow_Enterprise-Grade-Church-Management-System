@@ -12,6 +12,7 @@
 8. [Accounting Module](#accounting-module)
 9. [Prayer Requests](#prayer-requests)
 10. [Settings & Configuration](#settings--configuration)
+11. [Group Management](#group-management)
 
 ---
 
