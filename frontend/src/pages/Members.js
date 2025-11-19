@@ -146,6 +146,10 @@ export default function Members() {
         onSuccess: () => {
           setIsEditDialogOpen(false);
           resetForm();
+        },
+        onError: (error) => {
+          // Error already handled by hook's onError (shows toast)
+          console.error('[ERROR] Update member failed:', error.response?.data);
         }
       }
     );
