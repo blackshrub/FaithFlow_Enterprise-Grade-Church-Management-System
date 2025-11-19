@@ -31,11 +31,11 @@ class RuleEvaluationConflictCreate(RuleEvaluationConflictBase):
 
 
 class RuleEvaluationConflictUpdate(BaseModel):
-    status: Optional[Literal['pending', 'resolved']] = None
-    resolved_by_user_id: Optional[str] = None
-    resolved_by_user_name: Optional[str] = None
-    resolved_status_id: Optional[str] = None
+    status: Optional[Literal['open', 'resolved']] = None
+    resolved_by: Optional[str] = None
     resolved_at: Optional[datetime] = None
+    resolution_status_id: Optional[str] = None
+    resolution_comment: Optional[str] = None
 
 
 class RuleEvaluationConflict(RuleEvaluationConflictBase):
