@@ -11,15 +11,16 @@
 1. [Authentication](#authentication)
 2. [Churches](#churches)
 3. [Members](#members)
-4. [Events & RSVP](#events--rsvp)
-5. [Devotions](#devotions)
-6. [Bible](#bible)
-7. [Settings](#settings)
-8. **[Accounting (v1)](#accounting-v1)** ⭐ NEW
-9. **[Articles (v1)](#articles-v1)** ⭐ NEW
-10. **[Prayer Requests (v1)](#prayer-requests-v1)** ⭐ NEW
-11. **[Groups (v1)](#groups-v1)** ⭐ NEW
-12. [Common Patterns](#common-patterns)
+4. [Import/Export](./IMPORT_EXPORT_API.md) - **Complete import wizard documentation**
+5. [Events & RSVP](#events--rsvp)
+6. [Devotions](#devotions)
+7. [Bible](#bible)
+8. [Settings](#settings)
+9. **[Accounting (v1)](#accounting-v1)** ⭐ NEW
+10. **[Articles (v1)](#articles-v1)** ⭐ NEW
+11. **[Prayer Requests (v1)](#prayer-requests-v1)** ⭐ NEW
+12. **[Groups (v1)](#groups-v1)** ⭐ NEW
+13. [Common Patterns](#common-patterns)
 
 ---
 
