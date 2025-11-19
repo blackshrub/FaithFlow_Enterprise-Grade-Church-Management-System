@@ -109,6 +109,7 @@ export default function Members() {
       gender: member.gender ? member.gender.toLowerCase() : '',
       address: member.address || '',
       marital_status: member.marital_status ? member.marital_status.toLowerCase().replace(/\s+/g, '') : '',
+      member_status: member.member_status || '',
       baptism_date: member.baptism_date || '',
       notes: member.notes || ''
     });
