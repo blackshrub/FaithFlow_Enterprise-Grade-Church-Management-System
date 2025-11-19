@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useGroup, useCreateGroup, useUpdateGroup } from '../../hooks/useGroups';
 import { GroupForm } from '../../components/Groups/GroupForm';
+import { CoverImageUploader } from '../../components/Groups/CoverImageUploader';
 import { useToast } from '../../hooks/use-toast';
 
 export default function GroupEditorPage() {
