@@ -54,10 +54,11 @@ def setup_scheduler(db: AsyncIOMotorDatabase):
     
     # Add job: Run status automation hourly and check which churches need to run
     async def run_status_automation_job():
-        """Run status automation for churches scheduled for current hour"""
+        """Run status automation for churches scheduled for current hour (respecting timezones)"""
         try:
-            current_hour = datetime.now(timezone.utc).hour
-            logger.info(f"Checking status automation for hour {current_hour:02d}:00 UTC")
+            import pytz
+            current_utc = datetime.now(timezone.utc)
+            logger.info(f"Checking status automation at {current_utc.strftime('%Y-%m-%d %H:%M UTC')}")
             
             # Get all churches with automation enabled
             settings = await db.church_settings.find({
@@ -70,29 +71,42 @@ def setup_scheduler(db: AsyncIOMotorDatabase):
             churches_to_process = []
             
             for setting in settings:
-                # Parse schedule (HH:MM format, default 00:00)
-                schedule = setting.get('status_automation_schedule', '00:00')
                 try:
-                    schedule_hour, _ = map(int, schedule.split(':'))
+                    # Get church timezone (default to UTC if not set)
+                    church_tz_name = setting.get('timezone', 'UTC')
+                    church_tz = pytz.timezone(church_tz_name)
                     
-                    # Check if current hour matches
-                    if current_hour == schedule_hour:
-                        churches_to_process.append(setting)
+                    # Get current time in church's timezone
+                    current_local = current_utc.astimezone(church_tz)
+                    current_hour = current_local.hour
+                    current_minute = current_local.minute
+                    
+                    # Parse schedule (HH:MM format in church's local time)
+                    schedule = setting.get('status_automation_schedule', '00:00')
+                    schedule_hour, schedule_minute = map(int, schedule.split(':'))
+                    
+                    # Check if current time matches schedule (within 1 hour window, runs at XX:00)
+                    if current_hour == schedule_hour and current_minute < 5:  # Run in first 5 minutes of the hour
+                        churches_to_process.append({
+                            'church_id': setting.get('church_id'),
+                            'timezone': church_tz_name,
+                            'local_time': current_local.strftime('%H:%M %Z')
+                        })
+                
                 except Exception as e:
-                    logger.error(f"Invalid schedule format for church {setting.get('church_id')}: {schedule}")
+                    logger.error(f"Error parsing schedule for church {setting.get('church_id')}: {e}")
             
             if not churches_to_process:
-                logger.info(f"No churches scheduled for hour {current_hour:02d}:00")
                 return
             
-            logger.info(f"Running status automation for {len(churches_to_process)} church(es) scheduled at {current_hour:02d}:00")
+            logger.info(f"Running status automation for {len(churches_to_process)} church(es)")
             
-            for setting in churches_to_process:
-                church_id = setting.get('church_id')
+            for church_info in churches_to_process:
+                church_id = church_info['church_id']
                 try:
-                    logger.info(f"Running status automation for church {church_id}")
+                    logger.info(f"Running automation for church {church_id} at {church_info['local_time']} ({church_info['timezone']})")
                     stats = await StatusAutomationService.run_automation_for_church(church_id, db)
-                    logger.info(f"Status automation complete for church {church_id}: {stats}")
+                    logger.info(f"Automation complete for church {church_id}: {stats}")
                 except Exception as e:
                     logger.error(f"Error running automation for church {church_id}: {e}")
         
@@ -100,7 +114,7 @@ def setup_scheduler(db: AsyncIOMotorDatabase):
             logger.error(f"Error in status automation job: {e}")
     
     # Schedule to run every hour at minute 0
-    # This checks which churches need automation at this hour
+    # Each church's schedule is converted from their local timezone to UTC
     from apscheduler.triggers.cron import CronTrigger
     
     scheduler.add_job(
