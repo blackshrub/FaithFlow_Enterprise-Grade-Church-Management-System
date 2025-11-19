@@ -251,7 +251,7 @@ export default function Members() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredMembers.map((member) => (
+                    {members.map((member) => (
                       <TableRow key={member.id}>
                         <TableCell>
                           <MemberAvatar 
