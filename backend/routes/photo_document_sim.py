@@ -181,16 +181,19 @@ async def simulate_document_matching(
                         'original_filename': member[document_filename_field]
                     }
         
-        # Match files and store temporarily
-        document_data_map = {}  # {normalized_filename: filename}
-        session_id = str(uuid.uuid4())  # Create session ID for temporary storage
+        # Match files and store temporarily  
+        session_id = str(uuid.uuid4())
+        temp_dir = f"/tmp/document_upload_{session_id}"
+        os.makedirs(temp_dir, exist_ok=True)
+        
+        matched_documents = {}  # {normalized_filename: filepath}
         
         for filename, file_data in extracted_files.items():
             if filename in member_lookup:
                 # Validate document
                 if file_upload_service.validate_document(filename):
-                    # Store filename (documents are just filenames, not base64)
-                    document_data_map[filename] = filename
+                    # Documents are just filenames, store the original filename
+                    matched_documents[filename] = filename
                     
                     matched.append({
                         'filename': filename,
@@ -208,12 +211,11 @@ async def simulate_document_matching(
                     'reason': 'No matching member in CSV'
                 })
         
-        # Store document mapping temporarily
-        if document_data_map:
-            await db.temp_document_uploads.delete_many({})  # Clear old temp data
-            await db.temp_document_uploads.insert_one({
+        # Store document mapping in database (just filenames, very small)
+        if matched_documents:
+            await db.temp_document_sessions.insert_one({
                 'session_id': session_id,
-                'document_data': document_data_map,
+                'document_data': matched_documents,
                 'created_at': datetime.now().isoformat(),
                 'expires_at': (datetime.now() + timedelta(hours=2)).isoformat()
             })
