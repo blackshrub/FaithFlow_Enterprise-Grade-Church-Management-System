@@ -444,6 +444,14 @@ async def import_members(
                 member = Member(**member_data)
                 member_doc = member.model_dump()
                 
+                # Generate personal QR code for member
+                from services.qr_service import generate_member_id_code, generate_member_qr_data
+                member_code = generate_member_id_code()
+                qr_data = generate_member_qr_data(member.id, member_code)
+                member_doc['personal_id_code'] = qr_data['member_code']
+                member_doc['personal_qr_code'] = qr_data['qr_code']
+                member_doc['personal_qr_data'] = qr_data['qr_data']
+                
                 # Convert datetime and date fields to isoformat for MongoDB
                 member_doc['created_at'] = member_doc['created_at'].isoformat()
                 member_doc['updated_at'] = member_doc['updated_at'].isoformat()
