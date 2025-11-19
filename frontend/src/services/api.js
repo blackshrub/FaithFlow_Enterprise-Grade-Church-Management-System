@@ -101,10 +101,13 @@ export const churchesAPI = {
 // Members API
 export const membersAPI = {
   list: (params) => api.get('/members/', { params }),
+  listTrash: () => api.get('/members/trash'),
   get: (id) => api.get(`/members/${id}`),
   create: (data) => api.post('/members/', data),
   update: (id, data) => api.patch(`/members/${id}`, data),
   delete: (id) => api.delete(`/members/${id}`),
+  restore: (id) => api.post(`/members/${id}/restore`),
+  permanentDelete: (id) => api.delete(`/members/${id}/permanent`),
   getStats: () => api.get('/members/stats/summary'),
   quickAdd: (data) => api.post('/members/quick-add', data),
 };
