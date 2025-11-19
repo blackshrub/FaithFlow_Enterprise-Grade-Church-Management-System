@@ -366,6 +366,17 @@ export default function Members() {
                 Clear Filters
               </Button>
             )}
+
+            <div className="ml-auto flex items-center gap-2">
+              <Button
+                variant={showIncompleteOnly ? "default" : "outline"}
+                size="sm"
+                onClick={() => setShowIncompleteOnly(!showIncompleteOnly)}
+              >
+                <AlertCircle className="h-4 w-4 mr-2" />
+                {showIncompleteOnly ? "Showing Incomplete Data" : "Show Incomplete Data"}
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
