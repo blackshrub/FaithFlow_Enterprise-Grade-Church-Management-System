@@ -315,6 +315,25 @@
       "usernameNote": "Use this username for API authentication. This is a system account, not a personal email.",
       "useAdminCredentials": "Use any admin account password",
       "credentialsNote": "Currently using standard authentication. For production, create a dedicated API user account (e.g., api_external@church.com) or contact support for API key generation."
+    },
+    "apiKeys": {
+      "title": "API Keys for External Apps",
+      "description": "Generate secure API keys for system-to-system integration",
+      "generate": "Generate New API Key",
+      "noKeys": "No API keys generated yet",
+      "noKeysHint": "Click 'Generate New API Key' to create credentials for external applications",
+      "username": "API Username",
+      "apiKey": "API Key",
+      "keyHidden": "Hidden for security. Regenerate to get a new key.",
+      "copyNow": "⚠️ Copy this key now! It won't be shown again.",
+      "saveWarning": "Save these credentials securely. The API key will not be displayed again after closing this dialog.",
+      "newKeyTitle": "New API Key Generated",
+      "newKeyWarning": "IMPORTANT: Copy these credentials now. The API key will not be shown again!",
+      "regenerate": "Regenerate Key",
+      "delete": "Delete",
+      "confirmRegenerate": "Regenerate API key? The old key will stop working immediately.",
+      "confirmDelete": "Delete this API key? External apps using it will lose access.",
+      "securityWarning": "API keys have full admin access to your church data. Keep them secure and rotate regularly."
     }
   },
   "events": {

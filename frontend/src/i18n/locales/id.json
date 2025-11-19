@@ -315,6 +315,25 @@
       "usernameNote": "Gunakan nama pengguna ini untuk autentikasi API. Ini adalah akun sistem, bukan email pribadi.",
       "useAdminCredentials": "Gunakan password akun admin mana pun",
       "credentialsNote": "Saat ini menggunakan autentikasi standar. Untuk produksi, buat akun pengguna API khusus (misalnya, api_external@church.com) atau hubungi dukungan untuk pembuatan kunci API."
+    },
+    "apiKeys": {
+      "title": "Kunci API untuk Aplikasi Eksternal",
+      "description": "Generate kunci API yang aman untuk integrasi sistem-ke-sistem",
+      "generate": "Generate Kunci API Baru",
+      "noKeys": "Belum ada kunci API yang di-generate",
+      "noKeysHint": "Klik 'Generate Kunci API Baru' untuk membuat kredensial untuk aplikasi eksternal",
+      "username": "Nama Pengguna API",
+      "apiKey": "Kunci API",
+      "keyHidden": "Disembunyikan untuk keamanan. Generate ulang untuk mendapatkan kunci baru.",
+      "copyNow": "⚠️ Salin kunci ini sekarang! Tidak akan ditampilkan lagi.",
+      "saveWarning": "Simpan kredensial ini dengan aman. Kunci API tidak akan ditampilkan lagi setelah menutup dialog ini.",
+      "newKeyTitle": "Kunci API Baru Di-generate",
+      "newKeyWarning": "PENTING: Salin kredensial ini sekarang. Kunci API tidak akan ditampilkan lagi!",
+      "regenerate": "Generate Ulang Kunci",
+      "delete": "Hapus",
+      "confirmRegenerate": "Generate ulang kunci API? Kunci lama akan berhenti bekerja segera.",
+      "confirmDelete": "Hapus kunci API ini? Aplikasi eksternal yang menggunakannya akan kehilangan akses.",
+      "securityWarning": "Kunci API memiliki akses admin penuh ke data gereja Anda. Simpan dengan aman dan rotasi secara berkala."
     }
   },
   "events": {
