@@ -193,9 +193,13 @@ async def list_members(
     limit: int = Query(100, ge=1, le=1000),
     search: Optional[str] = None,
     is_active: Optional[bool] = None,
-    incomplete_data: Optional[bool] = None
+    incomplete_data: Optional[bool] = None,
+    gender: Optional[str] = Query(None, regex="^(Male|Female)$"),
+    marital_status: Optional[str] = Query(None, regex="^(Married|Not Married|Widow|Widower)$"),
+    member_status: Optional[str] = None,
+    demographic_category: Optional[str] = None
 ):
-    """List all members in current church with pagination and search"""
+    """List all members in current church with pagination, search, and comprehensive filters"""
     
     # Build query - filter by church unless super admin
     query = {}
@@ -216,14 +220,42 @@ async def list_members(
     if is_active is not None:
         query['is_active'] = is_active
     
+    # Add gender filter
+    if gender:
+        query['gender'] = gender
+    
+    # Add marital status filter
+    if marital_status:
+        query['marital_status'] = marital_status
+    
+    # Add member status filter
+    if member_status:
+        query['member_status'] = member_status
+    
+    # Add demographic category filter
+    if demographic_category:
+        query['demographic_category'] = demographic_category
+    
     # Add incomplete data filter
     if incomplete_data is True:
-        query['$or'] = query.get('$or', []) + [
+        incomplete_or = [
             {'gender': {'$in': [None, '']}},
             {'date_of_birth': {'$in': [None, '']}},
             {'address': {'$in': [None, '']}},
             {'phone_whatsapp': {'$in': [None, '']}}
         ]
+        
+        if '$or' in query:
+            # Combine search OR with incomplete OR using AND
+            query = {
+                '$and': [
+                    {'$or': query['$or']},
+                    {'$or': incomplete_or},
+                    {k: v for k, v in query.items() if k != '$or'}
+                ]
+            }
+        else:
+            query['$or'] = incomplete_or
     
     members = await db.members.find(query, {"_id": 0}).skip(skip).limit(limit).to_list(limit)
     
