@@ -2,7 +2,9 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import GeneralSettingsTab from '../components/Settings/GeneralSettingsTab';
-import MemberStatusesTab from '../components/Settings/MemberStatusesTab';
+import MemberStatusesTabNew from '../components/Settings/MemberStatusesTabNew';
+import StatusRulesTab from '../components/Settings/StatusRulesTab';
+import AutomationSettingsTab from '../components/Settings/AutomationSettingsTab';
 import DemographicsTab from '../components/Settings/DemographicsTab';
 import EventCategoriesTab from '../components/Settings/EventCategoriesTab';
 import WebhooksTab from '../components/Settings/WebhooksTab';
@@ -19,9 +21,11 @@ export default function Settings() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full max-w-4xl grid-cols-5">
+        <TabsList className="grid w-full max-w-5xl grid-cols-7">
           <TabsTrigger value="general">{t('settings.general')}</TabsTrigger>
-          <TabsTrigger value="statuses">{t('settings.memberStatuses')}</TabsTrigger>
+          <TabsTrigger value="statuses">Statuses</TabsTrigger>
+          <TabsTrigger value="rules">Rules</TabsTrigger>
+          <TabsTrigger value="automation">Automation</TabsTrigger>
           <TabsTrigger value="demographics">{t('settings.demographics')}</TabsTrigger>
           <TabsTrigger value="categories">{t('settings.eventCategories')}</TabsTrigger>
           <TabsTrigger value="webhooks">{t('settings.webhooks.title')}</TabsTrigger>
@@ -32,7 +36,15 @@ export default function Settings() {
         </TabsContent>
 
         <TabsContent value="statuses" className="mt-6">
-          <MemberStatusesTab />
+          <MemberStatusesTabNew />
+        </TabsContent>
+
+        <TabsContent value="rules" className="mt-6">
+          <StatusRulesTab />
+        </TabsContent>
+
+        <TabsContent value="automation" className="mt-6">
+          <AutomationSettingsTab />
         </TabsContent>
 
         <TabsContent value="demographics" className="mt-6">
