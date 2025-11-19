@@ -319,6 +319,8 @@ async def import_members(
     duplicate_resolutions: str = Form(default='{}'),  # JSON: {phone: row_index_to_keep}
     custom_fields: str = Form(default='[]'),  # JSON array of custom field definitions
     date_format: str = Form(default='DD-MM-YYYY'),
+    photo_matches: str = Form(default='{}'),  # NEW: JSON {normalized_filename: base64_data}
+    document_matches: str = Form(default='{}'),  # NEW: JSON {normalized_filename: filename}
     db: AsyncIOMotorDatabase = Depends(get_db),
     current_user: dict = Depends(require_admin)
 ):
