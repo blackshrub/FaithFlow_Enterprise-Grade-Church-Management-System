@@ -1,8 +1,8 @@
 import api from './api';
 
-export const getGroups = (params) => api.get('/v1/groups', { params });
+export const getGroups = (params) => api.get('/v1/groups/', { params });
 export const getGroupById = (id) => api.get(`/v1/groups/${id}`);
-export const createGroup = (data) => api.post('/v1/groups', data);
+export const createGroup = (data) => api.post('/v1/groups/', data);
 export const updateGroup = (id, data) => api.put(`/v1/groups/${id}`, data);
 export const deleteGroup = (id) => api.delete(`/v1/groups/${id}`);
 export const uploadGroupCover = (id, file) => {
@@ -27,7 +27,7 @@ export const removeGroupMember = (groupId, memberId) =>
   });
 
 export const getJoinRequests = (params) =>
-  api.get('/v1/group-join-requests', { params });
+  api.get('/v1/group-join-requests/', { params });
 
 export const approveJoinRequest = (id) =>
   api.post(`/v1/group-join-requests/${id}/approve`);
@@ -36,7 +36,7 @@ export const rejectJoinRequest = (id) =>
   api.post(`/v1/group-join-requests/${id}/reject`);
 
 export const getLeaveRequests = (params) =>
-  api.get('/v1/group-leave-requests', { params });
+  api.get('/v1/group-leave-requests/', { params });
 
 export const approveLeaveRequest = (membershipId) =>
   api.post(`/v1/group-leave-requests/${membershipId}/approve`);
