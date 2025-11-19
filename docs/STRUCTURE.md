@@ -12,22 +12,18 @@ faithflow/
 │   │   ├── event.py
 │   │   ├── devotion.py
 │   │   ├── bible.py
-│   │   ├── accounting_coa.py           # ⭐ NEW - Chart of Accounts
-│   │   ├── responsibility_center.py    # ⭐ NEW - Ministry tracking
-│   │   ├── journal.py                  # ⭐ NEW - Double-entry journals
-│   │   ├── fiscal_period.py            # ⭐ NEW - Period locking
-│   │   ├── budget.py                   # ⭐ NEW - Budgeting
-│   │   ├── fixed_asset.py              # ⭐ NEW - Asset management
-│   │   ├── asset_depreciation_log.py   # ⭐ NEW - Depreciation
-│   │   ├── bank_account.py             # ⭐ NEW - Bank accounts
-│   │   ├── bank_transaction.py         # ⭐ NEW - Bank transactions
-│   │   ├── bank_import_log.py          # ⭐ NEW - Import tracking
-│   │   ├── beginning_balance.py        # ⭐ NEW - Migration
-│   │   ├── year_end_closing.py         # ⭐ NEW - Year-end
-│   │   ├── file_upload.py              # ⭐ NEW - File attachments
-│   │   ├── audit_log.py                # ⭐ NEW - Audit trail
-│   │   ├── report_template.py          # ⭐ NEW - Report configs
-│   │   ├── export_job.py               # ⭐ NEW - Export jobs
+│   │   ├── accounting_coa.py           # ⭐ Accounting - Chart of Accounts
+│   │   ├── responsibility_center.py    # ⭐ Accounting - Ministry tracking
+│   │   ├── journal.py                  # ⭐ Accounting - Journals
+│   │   ├── fiscal_period.py            # ⭐ Accounting - Period locking
+│   │   ├── budget.py, fixed_asset.py   # ⭐ Accounting - Budgets & Assets
+│   │   ├── bank_*.py, beginning_balance.py # ⭐ Accounting - Bank & Opening
+│   │   ├── year_end_closing.py         # ⭐ Accounting - Year-end
+│   │   ├── audit_log.py, file_upload.py # ⭐ Accounting - Audit & Files
+│   │   ├── article.py                  # ⭐ CMS - Article model
+│   │   ├── article_category.py, article_tag.py # ⭐ CMS - Categories & Tags
+│   │   ├── article_comment.py          # ⭐ CMS - Comments
+│   │   ├── prayer_request.py           # ⭐ Prayer Requests
 │   │   └── ...
 │   ├── routes/              # API endpoints
 │   │   ├── auth.py          # Authentication
