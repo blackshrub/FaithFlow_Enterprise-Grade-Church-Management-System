@@ -1606,7 +1606,8 @@
       "updateError": "Failed to update group",
       "deleteError": "Failed to delete group",
       "loadError": "Failed to load groups",
-      "saveError": "Failed to save group"
+      "saveError": "Failed to save group",
+      "coverRemoved": "Cover image removed successfully"
     },
     "delete": {
       "confirmTitle": "Delete this group?",

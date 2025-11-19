@@ -1596,7 +1596,8 @@
       "updateError": "Gagal memperbarui kelompok",
       "deleteError": "Gagal menghapus kelompok",
       "loadError": "Gagal memuat kelompok",
-      "saveError": "Gagal menyimpan kelompok"
+      "saveError": "Gagal menyimpan kelompok",
+      "coverRemoved": "Gambar sampul berhasil dihapus"
     },
     "delete": {
       "confirmTitle": "Hapus kelompok ini?",
