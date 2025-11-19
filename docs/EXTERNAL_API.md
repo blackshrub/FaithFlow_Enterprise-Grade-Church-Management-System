@@ -4,7 +4,7 @@
 
 This document describes the REST API endpoints available for external systems to integrate with FaithFlow.
 
-**Base URL:** `https://ministry-teams.preview.emergentagent.com/api`
+**Base URL:** `https://faithflow-hub.preview.emergentagent.com/api`
 
 **Authentication:** JWT Bearer token
 
@@ -312,7 +312,7 @@ setInterval(async () => {
 import httpx
 import asyncio
 
-BASE_URL = "https://ministry-teams.preview.emergentagent.com/api"
+BASE_URL = "https://faithflow-hub.preview.emergentagent.com/api"
 EMAIL = "admin@church.com"
 PASSWORD = "your-password"
 
@@ -565,7 +565,7 @@ GET    /api/events/{id}                   # Get single event
 ```javascript
 const axios = require('axios');
 
-const FAITHFLOW_URL = 'https://ministry-teams.preview.emergentagent.com/api';
+const FAITHFLOW_URL = 'https://faithflow-hub.preview.emergentagent.com/api';
 const EMAIL = 'admin@church.com';
 const PASSWORD = 'your-password';
 
@@ -646,7 +646,7 @@ import httpx
 import asyncio
 from datetime import datetime
 
-BASE_URL = "https://ministry-teams.preview.emergentagent.com/api"
+BASE_URL = "https://faithflow-hub.preview.emergentagent.com/api"
 EMAIL = "admin@church.com"
 PASSWORD = "your-password"
 
