@@ -53,14 +53,20 @@ export default function MemberSelector({ value, onChange, selectedMember, placeh
   }, [searchTerm]);
 
   const handleSelect = (member) => {
-    onChange(member.id);
+    // Call onChange with both ID and member data
+    if (typeof onChange === 'function') {
+      // Support both signatures: onChange(id) and onChange(id, memberData)
+      onChange(member.id, member);
+    }
     setCurrentMember(member);
     setResults([]);
     setSearchTerm('');
   };
 
   const handleClear = () => {
-    onChange('');
+    if (typeof onChange === 'function') {
+      onChange('', null);
+    }
     setCurrentMember(null);
     setSearchTerm('');
     setResults([]);
