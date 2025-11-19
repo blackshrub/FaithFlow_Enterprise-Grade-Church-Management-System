@@ -396,6 +396,21 @@ async def import_members(
                     else:
                         member_data['member_status'] = "Visitor"  # Fallback
                 
+                # Merge photo if matched
+                if photo_mapping and member_data.get('photo_filename'):
+                    normalized_filename = file_upload_service.normalize_filename(member_data['photo_filename'])
+                    if normalized_filename in photo_mapping:
+                        member_data['photo_base64'] = photo_mapping[normalized_filename]
+                        logger.info(f"Matched photo for member: {member_data.get('full_name')}")
+                
+                # Merge document if matched
+                if document_mapping and member_data.get('personal_document'):
+                    normalized_filename = file_upload_service.normalize_filename(member_data['personal_document'])
+                    if normalized_filename in document_mapping:
+                        # Document is already a filename, just ensure it's set
+                        member_data['personal_document'] = document_mapping[normalized_filename]
+                        logger.info(f"Matched document for member: {member_data.get('full_name')}")
+                
                 # Auto-assign demographic
                 if member_data.get('date_of_birth'):
                     demographic = await auto_assign_demographic(member_data, db)
