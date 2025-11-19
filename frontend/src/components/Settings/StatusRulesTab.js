@@ -217,6 +217,7 @@ export default function StatusRulesTab() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedRule, setSelectedRule] = useState(null);
+  const [simulationResults, setSimulationResults] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -234,6 +235,7 @@ export default function StatusRulesTab() {
   const updateRule = useUpdateStatusRule();
   const deleteRule = useDeleteStatusRule();
   const evaluateAll = useEvaluateAllRules();
+  const simulateRule = useSimulateRule();
 
   // Fetch event categories (you might need to add this API)
   const eventCategories = [
