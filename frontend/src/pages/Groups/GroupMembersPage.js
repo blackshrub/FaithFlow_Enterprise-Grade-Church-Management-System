@@ -28,6 +28,8 @@ export default function GroupMembersPage() {
   const addMemberMutation = useAddGroupMember();
   const removeMemberMutation = useRemoveGroupMember();
 
+  const [membershipToRemove, setMembershipToRemove] = React.useState(null);
+
   const [searchTerm, setSearchTerm] = React.useState('');
   const [searchResults, setSearchResults] = React.useState([]);
 
