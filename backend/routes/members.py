@@ -133,6 +133,18 @@ async def create_member(
                 detail="Member with this WhatsApp number already exists"
             )
     
+    # Set default member status if not provided
+    if not member_dict.get('member_status'):
+        default_status = await db.member_statuses.find_one({
+            "church_id": member_data.church_id,
+            "is_default_for_new": True,
+            "is_active": True
+        })
+        if default_status:
+            member_dict['member_status'] = default_status.get('name')
+        else:
+            member_dict['member_status'] = "Visitor"  # Fallback if no default set
+    
     member = Member(**member_dict)
     member_doc = member.model_dump()
     
