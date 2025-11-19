@@ -212,7 +212,7 @@ class RuleEngineService:
         if isinstance(dob, str):
             try:
                 dob = datetime.fromisoformat(dob.replace('Z', '+00:00')).date()
-            except:
+            except (ValueError, AttributeError):
                 return False
         
         # Calculate age
