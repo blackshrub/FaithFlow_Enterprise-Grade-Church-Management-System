@@ -1427,6 +1427,700 @@ Delete prayer request.
 
 ---
 
+## Groups (v1)
+
+**Base Path:** `/api/groups/`
+
+**Authentication:** JWT Bearer token (Staff/Admin)
+
+**Mobile Authentication:** Member-specific auth for public endpoints
+
+### Overview
+
+Complete group management system for cell groups, ministry teams, and fellowship activities. Includes staff management endpoints and public/mobile endpoints for member interaction.
+
+### Group Model
+
+```json
+{
+  "id": "group-uuid",
+  "church_id": "church-uuid",
+  "name": "Young Adults Fellowship",
+  "category": "youth_group",
+  "description": "Weekly fellowship for young adults aged 18-30",
+  "leader_member_id": "member-uuid",
+  "leader_name": "John Doe",
+  "leader_contact": "+628123456789",
+  "meeting_schedule": "Every Friday 7:00 PM",
+  "meeting_location": "Room 201, Main Building",
+  "cover_image": "data:image/jpeg;base64,/9j/4AAQSkZJRg...",
+  "max_members": 30,
+  "current_member_count": 15,
+  "is_active": true,
+  "created_at": "2025-01-15T10:30:00Z",
+  "updated_at": "2025-01-20T14:45:00Z"
+}
+```
+
+### Staff Endpoints
+
+#### GET /api/groups/
+
+List all groups for current church.
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Query Parameters:**
+- `category` (optional): Filter by category code
+- `search` (optional): Search by name, description, or leader name
+- `is_active` (optional): Filter by active status (true/false)
+
+**Response:**
+```json
+{
+  "groups": [
+    {
+      "id": "group-uuid",
+      "name": "Young Adults Fellowship",
+      "category": "youth_group",
+      "leader_name": "John Doe",
+      "current_member_count": 15,
+      "max_members": 30,
+      "is_active": true,
+      "cover_image": "data:image/jpeg;base64,...",
+      "meeting_schedule": "Every Friday 7:00 PM"
+    }
+  ],
+  "total": 1
+}
+```
+
+**Status Codes:**
+- 200: Success
+- 401: Unauthorized
+
+---
+
+#### POST /api/groups/
+
+Create a new group.
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Request Body:**
+```json
+{
+  "name": "Young Adults Fellowship",
+  "category": "youth_group",
+  "description": "Weekly fellowship for young adults aged 18-30",
+  "leader_member_id": "member-uuid",
+  "meeting_schedule": "Every Friday 7:00 PM",
+  "meeting_location": "Room 201, Main Building",
+  "cover_image": "data:image/jpeg;base64,/9j/4AAQSkZJRg...",
+  "max_members": 30,
+  "is_active": true
+}
+```
+
+**Required Fields:**
+- `name`
+- `category`
+- `leader_member_id`
+
+**Response:** 201 Created
+```json
+{
+  "id": "group-uuid",
+  "name": "Young Adults Fellowship",
+  "category": "youth_group",
+  "leader_name": "John Doe",
+  "leader_contact": "+628123456789",
+  "current_member_count": 0,
+  "created_at": "2025-01-15T10:30:00Z"
+}
+```
+
+**Status Codes:**
+- 201: Created successfully
+- 400: Validation error (missing required fields)
+- 404: Leader member not found
+- 401: Unauthorized
+
+---
+
+#### GET /api/groups/{group_id}
+
+Get single group details.
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Response:**
+```json
+{
+  "id": "group-uuid",
+  "church_id": "church-uuid",
+  "name": "Young Adults Fellowship",
+  "category": "youth_group",
+  "description": "Weekly fellowship for young adults aged 18-30",
+  "leader_member_id": "member-uuid",
+  "leader_name": "John Doe",
+  "leader_contact": "+628123456789",
+  "meeting_schedule": "Every Friday 7:00 PM",
+  "meeting_location": "Room 201",
+  "cover_image": "data:image/jpeg;base64,...",
+  "max_members": 30,
+  "current_member_count": 15,
+  "is_active": true,
+  "created_at": "2025-01-15T10:30:00Z",
+  "updated_at": "2025-01-20T14:45:00Z"
+}
+```
+
+**Status Codes:**
+- 200: Success
+- 404: Group not found
+- 401: Unauthorized
+
+---
+
+#### PUT /api/groups/{group_id}
+
+Update group details.
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Request Body:**
+```json
+{
+  "name": "Updated Group Name",
+  "category": "ministry_team",
+  "description": "Updated description",
+  "leader_member_id": "new-leader-uuid",
+  "meeting_schedule": "Every Sunday 9:00 AM",
+  "meeting_location": "Main Sanctuary",
+  "cover_image": "data:image/jpeg;base64,...",
+  "max_members": 50,
+  "is_active": true
+}
+```
+
+**Response:** 200 OK
+```json
+{
+  "id": "group-uuid",
+  "name": "Updated Group Name",
+  "updated_at": "2025-01-21T08:15:00Z"
+}
+```
+
+**Status Codes:**
+- 200: Updated successfully
+- 400: Validation error
+- 404: Group or leader not found
+- 401: Unauthorized
+
+---
+
+#### DELETE /api/groups/{group_id}
+
+Delete a group. **Business Rule:** Cannot delete if group has active members.
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Response:** 204 No Content
+
+**Status Codes:**
+- 204: Deleted successfully
+- 400: Cannot delete group with active members
+- 404: Group not found
+- 401: Unauthorized
+
+**Error Example:**
+```json
+{
+  "detail": "Cannot delete group with active members. Please remove all members first."
+}
+```
+
+---
+
+### Group Membership Endpoints
+
+#### GET /api/groups/{group_id}/members
+
+List all members in a group.
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Response:**
+```json
+{
+  "members": [
+    {
+      "id": "membership-uuid",
+      "member_id": "member-uuid",
+      "member_name": "Alice Smith",
+      "member_email": "alice@email.com",
+      "member_phone": "+628123456789",
+      "role": "member",
+      "joined_at": "2025-01-15T10:30:00Z"
+    },
+    {
+      "id": "membership-uuid-2",
+      "member_id": "member-uuid-2",
+      "member_name": "Bob Johnson",
+      "member_email": "bob@email.com",
+      "member_phone": "+628987654321",
+      "role": "assistant",
+      "joined_at": "2025-01-16T11:00:00Z"
+    }
+  ],
+  "total": 2
+}
+```
+
+**Status Codes:**
+- 200: Success
+- 404: Group not found
+- 401: Unauthorized
+
+---
+
+#### POST /api/groups/{group_id}/members
+
+Add a member to a group.
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Request Body:**
+```json
+{
+  "member_id": "member-uuid",
+  "role": "member"
+}
+```
+
+**Role Options:**
+- `member` (default)
+- `assistant`
+
+**Response:** 201 Created
+```json
+{
+  "id": "membership-uuid",
+  "group_id": "group-uuid",
+  "member_id": "member-uuid",
+  "role": "member",
+  "joined_at": "2025-01-21T10:00:00Z"
+}
+```
+
+**Status Codes:**
+- 201: Member added successfully
+- 400: Member already in group or max members reached
+- 404: Group or member not found
+- 401: Unauthorized
+
+---
+
+#### DELETE /api/groups/{group_id}/members/{member_id}
+
+Remove a member from a group.
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Response:** 204 No Content
+
+**Status Codes:**
+- 204: Member removed successfully
+- 404: Membership not found
+- 401: Unauthorized
+
+---
+
+### Join Request Endpoints
+
+#### GET /api/group-join-requests/
+
+List all pending join requests for current church.
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Query Parameters:**
+- `group_id` (optional): Filter by specific group
+- `status` (optional): Filter by status (pending/approved/rejected)
+
+**Response:**
+```json
+{
+  "requests": [
+    {
+      "id": "request-uuid",
+      "group_id": "group-uuid",
+      "group_name": "Young Adults Fellowship",
+      "member_id": "member-uuid",
+      "member_name": "Sarah Johnson",
+      "member_phone": "+628123456789",
+      "message": "I would like to join this fellowship group",
+      "status": "pending",
+      "requested_at": "2025-01-20T14:30:00Z"
+    }
+  ],
+  "total": 1
+}
+```
+
+**Status Codes:**
+- 200: Success
+- 401: Unauthorized
+
+---
+
+#### POST /api/group-join-requests/approve/{request_id}
+
+Approve a join request. Automatically adds member to group and sends WhatsApp notification.
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Response:** 200 OK
+```json
+{
+  "id": "request-uuid",
+  "status": "approved",
+  "processed_at": "2025-01-21T09:00:00Z",
+  "processed_by": "user-uuid",
+  "membership_id": "membership-uuid"
+}
+```
+
+**Side Effects:**
+- Member added to group
+- Join request status set to "approved"
+- WhatsApp notification sent (if enabled)
+
+**Status Codes:**
+- 200: Approved successfully
+- 400: Request already processed or max members reached
+- 404: Request not found
+- 401: Unauthorized
+
+---
+
+#### POST /api/group-join-requests/reject/{request_id}
+
+Reject a join request. Sends WhatsApp notification.
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Response:** 200 OK
+```json
+{
+  "id": "request-uuid",
+  "status": "rejected",
+  "processed_at": "2025-01-21T09:00:00Z",
+  "processed_by": "user-uuid"
+}
+```
+
+**Side Effects:**
+- Join request status set to "rejected"
+- WhatsApp notification sent (if enabled)
+
+**Status Codes:**
+- 200: Rejected successfully
+- 400: Request already processed
+- 404: Request not found
+- 401: Unauthorized
+
+---
+
+### Leave Request Endpoints
+
+#### GET /api/group-leave-requests/
+
+List all pending leave requests for current church.
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Query Parameters:**
+- `group_id` (optional): Filter by specific group
+- `status` (optional): Filter by status (pending/approved)
+
+**Response:**
+```json
+{
+  "requests": [
+    {
+      "id": "request-uuid",
+      "group_id": "group-uuid",
+      "group_name": "Young Adults Fellowship",
+      "member_id": "member-uuid",
+      "member_name": "Tom Wilson",
+      "member_phone": "+628123456789",
+      "reason": "Moving to another city",
+      "status": "pending",
+      "requested_at": "2025-01-20T16:00:00Z"
+    }
+  ],
+  "total": 1
+}
+```
+
+**Status Codes:**
+- 200: Success
+- 401: Unauthorized
+
+---
+
+#### POST /api/group-leave-requests/approve/{request_id}
+
+Approve a leave request. Removes member from group and sends WhatsApp notification.
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Response:** 200 OK
+```json
+{
+  "id": "request-uuid",
+  "status": "approved",
+  "approved_at": "2025-01-21T09:30:00Z",
+  "approved_by": "user-uuid"
+}
+```
+
+**Side Effects:**
+- Member removed from group
+- Leave request status set to "approved"
+- WhatsApp notification sent (if enabled)
+
+**Status Codes:**
+- 200: Approved successfully
+- 400: Request already processed
+- 404: Request not found
+- 401: Unauthorized
+
+---
+
+### Public/Mobile Endpoints
+
+**Base Path:** `/api/groups/public/`
+
+**Authentication:** Member-specific JWT token (not staff token)
+
+#### GET /api/groups/public/
+
+List all active groups for mobile app discovery.
+
+**Headers:** `Authorization: Bearer {member_token}`
+
+**Query Parameters:**
+- `category` (optional): Filter by category code
+- `search` (optional): Search by name or description
+
+**Response:**
+```json
+{
+  "groups": [
+    {
+      "id": "group-uuid",
+      "name": "Young Adults Fellowship",
+      "category": "youth_group",
+      "description": "Weekly fellowship for young adults",
+      "leader_name": "John Doe",
+      "meeting_schedule": "Every Friday 7:00 PM",
+      "meeting_location": "Room 201",
+      "cover_image": "data:image/jpeg;base64,...",
+      "current_member_count": 15,
+      "max_members": 30,
+      "is_full": false
+    }
+  ],
+  "total": 1
+}
+```
+
+**Status Codes:**
+- 200: Success
+- 401: Unauthorized (member not authenticated)
+
+---
+
+#### POST /api/groups/public/{group_id}/join
+
+Request to join a group (member-initiated).
+
+**Headers:** `Authorization: Bearer {member_token}`
+
+**Request Body:**
+```json
+{
+  "message": "I would like to join this fellowship group"
+}
+```
+
+**Response:** 201 Created
+```json
+{
+  "id": "request-uuid",
+  "group_id": "group-uuid",
+  "member_id": "member-uuid",
+  "message": "I would like to join this fellowship group",
+  "status": "pending",
+  "requested_at": "2025-01-20T14:30:00Z"
+}
+```
+
+**Status Codes:**
+- 201: Request created successfully
+- 400: Already a member or pending request exists
+- 404: Group not found or inactive
+- 401: Unauthorized
+
+---
+
+#### POST /api/groups/public/{group_id}/leave
+
+Request to leave a group (member-initiated).
+
+**Headers:** `Authorization: Bearer {member_token}`
+
+**Request Body:**
+```json
+{
+  "reason": "Moving to another city"
+}
+```
+
+**Response:** 201 Created
+```json
+{
+  "id": "request-uuid",
+  "group_id": "group-uuid",
+  "member_id": "member-uuid",
+  "reason": "Moving to another city",
+  "status": "pending",
+  "requested_at": "2025-01-20T16:00:00Z"
+}
+```
+
+**Status Codes:**
+- 201: Request created successfully
+- 400: Not a member or pending request already exists
+- 404: Group not found
+- 401: Unauthorized
+
+---
+
+### Group Categories
+
+Categories are configurable per church in church settings. Default categories:
+
+| Code | Default Label (EN) | Default Label (ID) |
+|------|-------------------|-------------------|
+| `cell_group` | Cell Group | Kelompok Sel |
+| `ministry_team` | Ministry Team | Tim Pelayanan |
+| `prayer_group` | Prayer Group | Kelompok Doa |
+| `youth_group` | Youth Group | Kelompok Pemuda |
+| `worship_team` | Worship Team | Tim Pujian |
+| `service_team` | Service Team | Tim Pelayanan |
+| `other` | Other | Lainnya |
+
+**Configuration Endpoint:** `/api/settings/church/{church_id}`
+
+**Settings Field:** `group_categories`
+
+```json
+{
+  "group_categories": {
+    "cell_group": "Small Group",
+    "ministry_team": "Ministry",
+    "prayer_group": "Prayer & Intercession",
+    "youth_group": "Young Adults",
+    "worship_team": "Worship Ministry",
+    "service_team": "Volunteer Team",
+    "other": "Miscellaneous"
+  }
+}
+```
+
+---
+
+### WhatsApp Notifications
+
+**Configuration:**
+- Global: `whatsapp_enabled` (boolean)
+- Module-specific: `whatsapp_send_group_notifications` (boolean)
+
+**Notification Events:**
+1. Join request approved
+2. Join request rejected
+3. Leave request approved
+
+**Message Template (Join Approved - English):**
+```
+Hello {member_name}, your request to join '{group_name}' has been approved. Welcome!
+```
+
+**Message Template (Join Approved - Indonesian):**
+```
+Halo {member_name}, permintaan Anda untuk bergabung dengan '{group_name}' telah disetujui. Selamat datang!
+```
+
+**Message Template (Join Rejected - English):**
+```
+Hello {member_name}, your request to join '{group_name}' has been declined.
+```
+
+**Message Template (Join Rejected - Indonesian):**
+```
+Halo {member_name}, permintaan Anda untuk bergabung dengan '{group_name}' telah ditolak.
+```
+
+**Message Template (Leave Approved - English):**
+```
+Hello {member_name}, your request to leave '{group_name}' has been approved.
+```
+
+**Message Template (Leave Approved - Indonesian):**
+```
+Halo {member_name}, permintaan Anda untuk keluar dari '{group_name}' telah disetujui.
+```
+
+**Language Selection:** Based on member's `preferred_language` field.
+
+**Delivery:** Asynchronous via `whatsapp_service.py`
+
+---
+
+### Business Rules
+
+1. **Group Deletion:**
+   - Cannot delete a group with active members
+   - Must remove all members first
+   - Returns 400 error with clear message
+
+2. **Maximum Members:**
+   - Optional limit per group
+   - Enforced on join request approval
+   - Join requests rejected if group is full
+
+3. **Linked Leaders:**
+   - Leaders must be existing members
+   - Leader fields denormalized for performance
+   - Validates leader existence on create/update
+
+4. **Request Status:**
+   - Join/leave requests can only be processed once
+   - Status transitions: pending → approved/rejected
+   - Cannot re-process approved/rejected requests
+
+5. **Multi-Tenancy:**
+   - All queries automatically scoped by `church_id`
+   - Members can only join groups in their church
+   - Staff can only manage their church's groups
+
+---
+
 ## Common Patterns
 
 ### Multi-Tenancy
