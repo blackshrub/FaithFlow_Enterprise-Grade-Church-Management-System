@@ -1583,7 +1583,10 @@
       "noLeaderSelected": "No leader selected",
       "searchLeader": "Search for a member...",
       "selectLeader": "Select group leader",
-      "openForJoinHelper": "Allow members to request to join this group via mobile app"
+      "openForJoinHelper": "Allow members to request to join this group via mobile app",
+      "uploadCover": "Upload Cover Image",
+      "removeCover": "Remove Cover",
+      "changeCover": "Change Cover"
     },
     "editor": {
       "createTitle": "Create New Group",
