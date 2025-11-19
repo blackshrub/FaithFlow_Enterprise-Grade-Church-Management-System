@@ -41,6 +41,7 @@ class ChurchSettingsUpdate(BaseModel):
     enable_whatsapp_notifications: Optional[bool] = None
     whatsapp_send_rsvp_confirmation: Optional[bool] = None
     whatsapp_send_group_notifications: Optional[bool] = None
+    group_categories: Optional[dict] = None
 
 
 class ChurchSettings(ChurchSettingsBase):
