@@ -305,7 +305,15 @@
       "externalAppNote": "For External App Developers:",
       "externalAppInstructions": "Use these endpoints to pull member data. See documentation in /app/docs/EXTERNAL_API.md for complete integration guide.",
       "configurationsTitle": "Webhook Configurations",
-      "configurationsDesc": "Configure webhooks to push member data to external applications"
+      "configurationsDesc": "Configure webhooks to push member data to external applications",
+      "apiCredentials": "API Credentials for External Apps",
+      "apiCredentialsDesc": "Use these credentials for API polling/sync (alternative to webhooks)",
+      "apiEmail": "API Email",
+      "apiPassword": "API Password",
+      "useYourPassword": "Use your FaithFlow login password",
+      "passwordNote": "For security, use your actual admin password. External app will authenticate with these credentials.",
+      "exampleUsage": "Example API Usage:",
+      "fullDocumentation": "Full Documentation"
     }
   },
   "events": {

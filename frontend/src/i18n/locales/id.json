@@ -305,7 +305,15 @@
       "externalAppNote": "Untuk Pengembang Aplikasi Eksternal:",
       "externalAppInstructions": "Gunakan endpoint ini untuk mengambil data anggota. Lihat dokumentasi di /app/docs/EXTERNAL_API.md untuk panduan integrasi lengkap.",
       "configurationsTitle": "Konfigurasi Webhook",
-      "configurationsDesc": "Konfigurasi webhook untuk mengirim data anggota ke aplikasi eksternal"
+      "configurationsDesc": "Konfigurasi webhook untuk mengirim data anggota ke aplikasi eksternal",
+      "apiCredentials": "Kredensial API untuk Aplikasi Eksternal",
+      "apiCredentialsDesc": "Gunakan kredensial ini untuk polling/sinkronisasi API (alternatif webhook)",
+      "apiEmail": "Email API",
+      "apiPassword": "Password API",
+      "useYourPassword": "Gunakan password login FaithFlow Anda",
+      "passwordNote": "Untuk keamanan, gunakan password admin Anda yang sebenarnya. Aplikasi eksternal akan autentikasi dengan kredensial ini.",
+      "exampleUsage": "Contoh Penggunaan API:",
+      "fullDocumentation": "Dokumentasi Lengkap"
     }
   },
   "events": {
