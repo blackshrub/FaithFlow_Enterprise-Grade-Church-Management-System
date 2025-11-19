@@ -78,7 +78,8 @@ export default function GroupEditorPage() {
                 try {
                   const { uploadGroupCover } = await import('../../services/groupsApi');
                   await uploadGroupCover(id, file);
-                  // no direct refetch here; react-query will refresh group via invalidation from mutation if added later
+                  // Invalidate group query so cover_image is refreshed
+                  queryClient.invalidateQueries({ queryKey: ['group'], exact: false });
                 } catch (error) {
                   console.error('Failed to upload cover image', error);
                   toast({
