@@ -23,7 +23,9 @@ from routes import (
 # Import articles routes (v1)
 from routes import (
     articles, article_categories, article_tags, article_comments,
-    articles_public, article_preview, prayer_requests
+    articles_public, article_preview, prayer_requests,
+    groups, group_memberships, groups_public,
+    group_join_requests, group_leave_requests
 )
 
 ROOT_DIR = Path(__file__).parent
