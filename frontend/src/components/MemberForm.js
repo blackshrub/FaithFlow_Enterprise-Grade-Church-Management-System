@@ -15,6 +15,12 @@ export default function MemberForm({ formData, setFormData, member = null }) {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  // Debug logging
+  React.useEffect(() => {
+    console.log('[DEBUG] MemberForm - formData.member_status:', formData.member_status);
+    console.log('[DEBUG] MemberForm - available statuses:', memberStatuses.map(s => s.name));
+  }, [formData.member_status, memberStatuses]);
+
   return (
     <div className="space-y-4">
       {/* Show photo and document if editing existing member */}
