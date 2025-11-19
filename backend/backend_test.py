@@ -11,7 +11,7 @@ from datetime import datetime, date
 from typing import Dict, Any, Optional
 
 class AccountingAPITester:
-    def __init__(self, base_url="https://faithflow-6.preview.emergentagent.com"):
+    def __init__(self, base_url="https://ministry-teams.preview.emergentagent.com"):
         self.base_url = base_url
         self.token = None
         self.church_id = None

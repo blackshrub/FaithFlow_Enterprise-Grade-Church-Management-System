@@ -1,87 +1,80 @@
 <analysis>
-The trajectory documents the development of a comprehensive, multi-tenant church management system. The AI engineer began by scaffolding the project (FastAPI backend, React frontend) and implementing core features like authentication and settings. The majority of the effort was then dedicated to building two highly complex, feature-rich modules based on iterative user feedback: **Event & RSVP Management** and a **Devotion CMS**.
+The trajectory details the iterative development and refinement of a large Group Management module for the FaithFlow church management system. The process began with the user providing a comprehensive Product Requirements Document (PRD) for the new module. The AI engineer first scaffolded the entire backend and frontend structure, including FastAPI models, routes, React Query hooks, and UI components.
 
-The Event module evolved to include interactive seat layouts, single/series event types, and an immersive, tablet-friendly Kiosk Mode for check-ins with QR code scanning (both personal and event-specific).
+A significant portion of the work involved refining this initial scaffold based on direct user feedback. Key iterations included:
+1.  **Group Leader:** Refactoring the leader from a free-form text field to a searchable, linked entity from the main member database, ensuring data consistency.
+2.  **Group Categories:** Changing static, hard-coded categories into a configurable list managed by staff in the application's settings page.
+3.  **UI/UX:** Evolving the group directory from a simple table into a more visual, card-based layout with cover image thumbnails, consistent with other parts of the application. The cover image upload UI, initially missing, was also implemented.
+4.  **Workflows:** Implementing robust deletion flows with confirmation dialogs for both groups and group members, including clear error handling for business logic (e.g., not allowing deletion of a group with active members).
+5.  **Integrations:** Wiring up WhatsApp notifications for group-related events (join approval/rejection, leave approval) that respect both global and module-specific settings and are localized based on member language preference.
 
-The Devotion CMS implementation was particularly challenging. It involved sourcing and importing multiple Bible versions into a local MongoDB database, creating a rich-text editor (Tiptap), and integrating a Text-to-Speech (TTS) engine. The TTS feature required extensive debugging of Python dependencies for Coqui TTS and fine-tuning pronunciation for Bahasa Indonesia by implementing several custom text-preprocessing rules (e.g., Unicode character mapping for 'g', softening final 'd' sounds).
-
-Numerous UI/UX refinements were made based on user feedback, such as fixing component alignments, implementing a collapsible sidebar, and addressing a persistent HTTPS mixed-content issue by enforcing trailing slashes on API calls.
-
-The final phase focused on a complete re-branding to FaithFlow and creating extensive, production-ready documentation, including a one-click  script for deployment on a Debian server. The project was concluded with a final documentation update before being handed over. The user's primary language is English, and future interactions should be in English.
+In parallel, the AI engineer debugged a pre-existing, critical bug in the CSV Member Import wizard that was blocking user progress. The final user request was to update all project documentation (, , etc.) to reflect all the new features and changes made to the Groups module. The user's primary language is English.
 </analysis>
 
 <product_requirements>
-The application is an enterprise-grade, multi-tenant Church Management System named FaithFlow, designed for administrative staff.
+The primary goal was to build a Group Management module for the FaithFlow application. This module is designed for church staff to manage various types of groups (Cell Groups, Ministry Teams, etc.) without requiring group leaders to log in to the system.
 
-**Completed Core Modules:**
-1.  **Event & RSVP Management:** Allows creation of single or series events with customizable categories. Features an interactive, visual seat layout editor. Manages RSVPs, including seat selection for specific events. Includes a fullscreen, tablet-optimized Kiosk Mode for attendance tracking via QR code scanning (camera or hardware scanner) or manual search. Supports on-the-spot registration for existing members and quick-add forms for new visitors.
-
-2.  **Devotion CMS:** Enables staff to create, edit, and manage devotional posts. Features a rich-text editor (Tiptap), cover image uploads, and the ability to embed Bible verses fetched from a local database containing 6 different Bible versions (TB, CHS, NIV, NKJV, NLT, ESV).
-
-3.  **Advanced Integrations:**
-    *   **Text-to-Speech (TTS):** Generates high-quality audio for devotionals in Bahasa Indonesia using a locally hosted Coqui TTS model with a custom Wibowo voice, featuring sophisticated text preprocessing for natural pronunciation.
-    *   **Member QR Codes:** Each member profile has a unique, persistent QR code for easy identification and check-in.
-
-4.  **System & Settings:** Includes secure authentication, role-based access, a collapsible navigation sidebar, and a settings panel for managing member statuses and event categories. The entire UI is themed with the FaithFlow brand identity.
+**Core Features Implemented:**
+*   **Group Directory:** A staff-facing dashboard to view, filter, and manage all groups. The UI was iterated from a table to a card-based layout.
+*   **Group & Membership CRUD:** Full create, read, update, and delete functionality for groups and their members, managed exclusively by staff.
+*   **Linked Group Leader:** Group leaders are not free-form text but are linked directly to a record in the member database.
+*   **Configurable Categories:** Group categories (e.g., Cell Group, Ministry Team) are not hard-coded; their labels can be customized by staff in the main settings page.
+*   **Join/Leave Workflows:** Public-facing APIs for mobile app users to request to join or leave a group. These requests appear in a staff-facing queue for approval or rejection.
+*   **WhatsApp Integration:** Automated WhatsApp notifications are sent to members upon approval/rejection of join requests or approval of leave requests, respecting both global and per-church language and notification settings.
 </product_requirements>
 
 <key_technical_concepts>
-- **Backend:** FastAPI, MongoDB (Pydantic for validation), Python 3.11.
-- **Frontend:** React, Tailwind CSS, shadcn/ui, TanStack React Query (server state),  (i18n).
-- **Authentication:** JWT for role-based access (Admin/Staff).
-- **Architecture:** API-first, multi-tenant design (all data scoped by ).
-- **TTS Engine:** Locally hosted Coqui TTS with a custom Indonesian model (Wibowo voice) and  for phoneme conversion.
-- **Bible Data:** Local JSON files for 6 Bible versions (TB, CHS, NIV, NKJV, NLT, ESV) imported into MongoDB for offline access.
-- **Deployment:** Documented for a Debian server using Nginx, systemd, and a comprehensive  script.
+- **Backend:** FastAPI (Python), MongoDB (via ), Pydantic for data validation.
+- **Frontend:** React, Tailwind CSS, , TanStack React Query for server state management,  with Zod for validation.
+- **Architecture:** API-first, multi-tenant (all data scoped by ), modular monorepo.
+- **Authentication:** JWT-based role-based access control using two separate dependencies:  (for staff) and  (for public/mobile APIs).
+- **Integrations:** A  to send transactional messages, respecting church-specific settings.
 </key_technical_concepts>
 
 <code_architecture>
-The project follows a monorepo structure with distinct  and  directories. The backend is a FastAPI application, and the frontend is a Create React App-based application.
+The project is a monorepo with  (FastAPI) and  (React) directories. The architecture is modular, with the new Groups feature being added into its own structured directories, mirroring existing modules like Articles and Prayer Requests.
 
 
-
-**Key File Summaries:**
 
 -   ****
-    -   **Importance:** Contains the highly complex and fine-tuned logic for generating Text-to-Speech audio.
-    -   **Summary of Changes:** This file evolved from using a simple  fallback to implementing a sophisticated local Coqui TTS solution. It now includes extensive text preprocessing rules for natural Indonesian pronunciation, such as replacing 'g' with the Unicode script 'ɡ' (U+0261) and softening final 'd' sounds to 't'. It dynamically loads the local Wibowo voice model.
+    -   **Importance:** Defines the core  data structure.
+    -   **Changes:** Initially created with free-form  and . It was later modified to include  to link the leader to a member record, with  and  becoming denormalized, cached fields.
 
 -   ****
-    -   **Importance:** This is the main UI for the event check-in process, designed for a tablet-first, fullscreen experience.
-    -   **Summary of Changes:** It was completely refactored to be a standalone page outside the main  to achieve a true immersive fullscreen mode. It features a split-screen UI for camera scanning and manual member search, with selectable colorful background themes.
+    -   **Importance:** Contains FastAPI dependencies for handling authentication and authorization.
+    -   **Changes:** A new dependency, , was created to handle authentication for the public-facing mobile APIs, distinct from the existing  used for staff.
 
 -   ****
-    -   **Importance:** The central Axios instance for all frontend API calls.
-    -   **Summary of Changes:** This file was modified multiple times to resolve a critical Mixed Content error. The final solution involves dynamically setting the  using  to ensure protocol consistency (HTTPS). It also standardizes the use of trailing slashes on API endpoints to prevent server-side redirects that were causing issues. A longer timeout was added specifically for TTS generation requests.
+    -   **Importance:** The main directory page for staff to view and manage all groups.
+    -   **Changes:** This page was significantly refactored. The initial table-based layout () was replaced with a more visual, responsive card grid. A robust deletion flow using an  was added to confirm group deletion and handle backend errors gracefully. It was also updated to fetch and use configurable category labels from .
 
 -   ****
-    -   **Importance:** The main application shell containing the sidebar and content area.
-    -   **Summary of Changes:** It was updated to include the FaithFlow brand logo and a collapsible sidebar. The component now manages the  state, adjusting its width and conditionally rendering text labels to provide a more focused user experience.
+    -   **Importance:** The form for creating and editing groups.
+    -   **Changes:** The form was updated to replace the free-text input fields for the group leader with a new  component, which provides a search interface to find and link a member directly.
 
 -   ****
-    -   **Importance:** A critical new file for deployment automation.
-    -   **Summary of Changes:** This is an interactive shell script created to automate the entire setup process on a fresh Debian server, including installing dependencies, setting up environment variables, configuring systemd services, and setting up Nginx.
+    -   **Importance:** This file handles a critical step in the member CSV import wizard where duplicate phone numbers are reconciled.
+    -   **Changes:** A significant pre-existing bug was fixed here. The logic to check if all duplicates were resolved was flawed, preventing users from proceeding. The check was corrected to properly handle all resolution options, unblocking the import process.
 
--   ** directory**
-    -   **Importance:** Contains all project documentation for handover and future maintenance.
-    -   **Summary of Changes:** This entire directory was created in the final stages of the project. It includes a detailed deployment guide (), API reference (), feature descriptions (), and codebase structure ().
+-   ****
+    -   **Importance:** Defines the schema for church-specific settings.
+    -   **Changes:** This model was extended to include  (a dictionary mapping category codes to user-configurable labels) and  (a boolean toggle), making the Groups module more flexible.
 </code_architecture>
 
 <pending_tasks>
-- **New Major Feature: Accounting System.** The user has provided detailed requirements for a comprehensive, enterprise-grade accounting module. This was explicitly deferred to be worked on in a separate project fork. All existing work has been finalized and documented in preparation for this.
+- **i18n File Restoration:** The user needs to restore the original  and  files from version control to fix an issue where most of the UI shows raw translation keys. The AI's task is to merge the new groups translations into these restored files.
+- **Detailed Group API Documentation:** The creation of detailed, module-specific API documentation for the new Groups module in , which was deferred in favor of implementation.
+- **Update All Documentation:** The final user request was to update all project documentation (, , etc.) to reflect the addition and refinement of the Groups module.
 </pending_tasks>
 
 <current_work>
-The work just before this summary request was the **finalization of all project documentation** to ensure the codebase is self-contained, well-documented, and ready for handover and deployment. This was a direct response to the user's request to make sure update all the documentation, including what new feature has been added etc and make sure no miss for any api endpoint, docs, for github purpose.
+The AI engineer was in the middle of executing the user's final request: **please update all the documentation, installation script and etc needed as the most current update.**
 
-Specifically, the AI engineer was in the process of:
-1.  **Updating  and **: These files were being edited to include the most recently added features, such as the collapsible sidebar and event categories, ensuring the documentation accurately reflects the final state of the application.
-2.  **Creating  and **: These crucial documents were created from scratch to provide a complete API reference and a step-by-step guide for deploying the application on a fresh server.
-3.  **Creating an  script**: An interactive installer was built to automate the entire deployment process, and the documentation was updated to highlight this as the primary installation method.
+This task was initiated to bring all project documentation in line with the significant changes introduced by the new Group Management module and the various refinements made. The work involves updating multiple files to reflect the new features, backend dependencies, and code structure.
 
-Essentially, the project was being wrapped up for a clean handoff, with a strong focus on making it easy for a new developer to understand, deploy, and maintain the system. All feature development on the current branch was complete.
+The immediate last action was starting the update of the main project  file. The trajectory shows that the file was read, an edit was successfully performed, and the user prompted the AI to Continue, indicating that the update process for  (and subsequently other documentation files) was multi-step and had just begun. The goal is to provide a comprehensive overview of the system's current state, including the new Groups module, for any developer joining the project.
 </current_work>
 
 <optional_next_step>
-Review the generated documentation files (, , , ) for accuracy and completeness, ensuring they reflect all the final features like the collapsible sidebar and event category enhancements.
+Continue the comprehensive documentation update, starting with finishing the  edits and then moving on to  to detail the new Groups module.
 </optional_next_step>

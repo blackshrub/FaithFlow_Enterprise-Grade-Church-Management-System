@@ -10,7 +10,7 @@ from typing import Optional
 import time
 
 # API Configuration
-BASE_URL = "https://faithflow-6.preview.emergentagent.com/api"
+BASE_URL = "https://ministry-teams.preview.emergentagent.com/api"
 
 # Test credentials
 TEST_CREDENTIALS = {

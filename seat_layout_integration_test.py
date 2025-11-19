@@ -7,7 +7,7 @@ import requests
 import json
 from datetime import datetime
 
-BASE_URL = "https://faithflow-6.preview.emergentagent.com/api"
+BASE_URL = "https://ministry-teams.preview.emergentagent.com/api"
 
 # Test credentials
 TEST_CREDENTIALS = {
