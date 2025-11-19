@@ -362,9 +362,9 @@ git lfs pull  # Ensure all large files downloaded
 - `bible_versions` - Bible metadata
 - `bible_books` - 66 books info
 - `bible_verses` - 186k+ verses
-- `prayer_requests` - Prayer management
+- `prayer_requests` - Prayer management ⭐ NEW
 
-### Accounting Collections ⭐ NEW (16 collections)
+### Accounting Collections ⭐ (16 collections)
 
 - `chart_of_accounts` - Multi-level COA with hierarchy
 - `responsibility_centers` - Ministry/project tracking
@@ -382,6 +382,18 @@ git lfs pull  # Ensure all large files downloaded
 - `audit_logs` - Complete audit trail
 - `report_templates` - Custom report configurations
 - `export_jobs` - Async export job tracking
+- `journal_counters` - Atomic journal numbering
+
+### CMS Collections ⭐ NEW (4 collections)
+
+- `articles` - Article content (title, content, slug, scheduling)
+- `article_categories` - Article categories
+- `article_tags` - Article tags
+- `article_comments` - Comment moderation
+
+### Prayer Requests Collections ⭐ NEW (1 collection)
+
+- `prayer_requests` - Prayer requests with follow-up tracking
 
 ### Import/Export
 
