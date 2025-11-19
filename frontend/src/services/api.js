@@ -1,12 +1,27 @@
 import axios from 'axios';
 
-// Use dynamic origin to always match the frontend's protocol (HTTP/HTTPS)
-// This ensures we don't have mixed content issues
-const API_BASE_URL = `${window.location.origin}/api`;
+// Force HTTPS for API calls to avoid mixed content issues
+// Use environment variable if available, otherwise construct from window.location
+const getAPIBaseURL = () => {
+  // Check if we have explicit backend URL from env
+  const envURL = process.env.REACT_APP_BACKEND_URL;
+  if (envURL) {
+    return `${envURL}/api`;
+  }
+  
+  // Otherwise, force HTTPS (never use HTTP in production)
+  const protocol = window.location.protocol === 'https:' ? 'https:' : 'https:';  // Always HTTPS
+  const host = window.location.host;
+  return `${protocol}//${host}/api`;
+};
+
+const API_BASE_URL = getAPIBaseURL();
 
 // Debug logging
 console.log('🔍 API Configuration:');
 console.log('  window.location.origin:', window.location.origin);
+console.log('  window.location.protocol:', window.location.protocol);
+console.log('  REACT_APP_BACKEND_URL:', process.env.REACT_APP_BACKEND_URL);
 console.log('  API_BASE_URL:', API_BASE_URL);
 
 const api = axios.create({
