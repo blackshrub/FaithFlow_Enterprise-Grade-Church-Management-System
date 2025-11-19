@@ -13,6 +13,7 @@ export default function GroupEditorPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: group, isLoading } = useGroup(id);
   const createMutation = useCreateGroup();
