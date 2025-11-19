@@ -13,7 +13,7 @@ from services.status_rule_engine_v2 import RuleEngineService
 from services.status_automation_service_v2 import StatusAutomationService
 
 logger = logging.getLogger(__name__)
-router = APIRouter(prefix="/api/v1/member-status", tags=["Member Status Automation"])
+router = APIRouter(prefix="/v1/member-status", tags=["Member Status Automation"])
 
 
 # ============= STATUSES ENDPOINTS =============
