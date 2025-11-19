@@ -2,6 +2,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useGroups } from '../../hooks/useGroups';
 import { GroupTable } from '../../components/Groups/GroupTable';
+import { useChurchSettings } from '../../hooks/useSettings';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
