@@ -31,7 +31,7 @@ def setup_scheduler(db: AsyncIOMotorDatabase):
     # Import the job functions
     from services.article_scheduler import publish_scheduled_articles
     from services.webhook_service import webhook_service
-    from services.status_automation_service import StatusAutomationService
+    from services.status_automation_service_v2 import StatusAutomationService
     from datetime import datetime, timezone
     
     # Add job: Publish scheduled articles every 30 seconds
