@@ -47,25 +47,8 @@ export default function PrayerRequestForm() {
         needs_follow_up: existingRequest.needs_follow_up || false,
         follow_up_notes: existingRequest.follow_up_notes || ''
       });
-      
-      // Set search to member name if member linked
-      if (existingRequest.member_id && members.length > 0) {
-        const member = members.find(m => m.id === existingRequest.member_id);
-        if (member) {
-          setMemberSearch(member.full_name);
-        }
-      }
     }
   }, [existingRequest]);
-
-  const handleMemberSelect = (member) => {
-    setFormData({
-      ...formData,
-      member_id: member.id
-    });
-    setMemberSearch(member.full_name);
-    setShowMemberDropdown(false);
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
