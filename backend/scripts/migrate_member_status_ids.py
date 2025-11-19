@@ -72,7 +72,15 @@ async def migrate_member_statuses():
             if updated_count % 100 == 0:
                 print(f"  Migrated {updated_count} members...")
         else:
-            print(f"  WARNING: Status '{member_status_name}' not found for church {member.get('church_id')}")
+            # Status not found - just set participate_in_automation
+            await db.members.update_one(
+                {"id": member.get('id')},
+                {
+                    "$set": {
+                        "participate_in_automation": member.get('participate_in_automation', True)
+                    }
+                }
+            )
             skipped_count += 1
     
     print(f"\n✓ Migration complete:")
