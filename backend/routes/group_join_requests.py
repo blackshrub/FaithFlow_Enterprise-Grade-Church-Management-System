@@ -10,6 +10,7 @@ from models.group_join_request import (
     GroupJoinRequest,
 )
 from utils.dependencies import get_db, get_current_user, get_current_member
+from services.whatsapp_service import send_whatsapp_message
 from utils.tenant_utils import get_current_church_id
 from services import audit_service
 
