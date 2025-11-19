@@ -206,6 +206,9 @@ async def list_members(
     if current_user.get('role') != 'super_admin':
         query['church_id'] = current_user.get('church_id')
     
+    # ALWAYS exclude deleted members from main list
+    query['is_deleted'] = {'$ne': True}
+    
     # Add search filter
     if search:
         query['$or'] = [
