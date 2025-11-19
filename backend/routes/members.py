@@ -9,6 +9,7 @@ from utils.dependencies import get_db, get_current_user
 from utils.demographics import auto_assign_demographic
 from utils.helpers import combine_full_name, normalize_phone_number
 from services.qr_service import generate_member_id_code, generate_member_qr_data
+from services.webhook_service import webhook_service
 
 router = APIRouter(prefix="/members", tags=["Members"])
 
