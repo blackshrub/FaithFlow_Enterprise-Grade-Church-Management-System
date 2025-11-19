@@ -55,6 +55,13 @@ import CommentsModeration from "./pages/Articles/CommentsModeration";
 import PrayerRequestsList from "./pages/PrayerRequests/PrayerRequestsList";
 import PrayerRequestForm from "./pages/PrayerRequests/PrayerRequestForm";
 
+// Groups pages
+import GroupsListPage from "./pages/Groups/GroupsListPage";
+import GroupEditorPage from "./pages/Groups/GroupEditorPage";
+import GroupMembersPage from "./pages/Groups/GroupMembersPage";
+import JoinRequestsPage from "./pages/Groups/JoinRequestsPage";
+import LeaveRequestsPage from "./pages/Groups/LeaveRequestsPage";
+
 import FaithFlowLogo from './components/Branding/FaithFlowLogo';
 
 function App() {
