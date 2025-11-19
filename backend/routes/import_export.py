@@ -218,9 +218,11 @@ async def validate_phone_duplicates(
         
     except Exception as e:
         logger.error(f"Error validating phone duplicates: {str(e)}")
+        import traceback
+        logger.error(f"Traceback: {traceback.format_exc()}")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
+            detail=f"Error validating phone duplicates: {str(e)}"
         )
 
 
