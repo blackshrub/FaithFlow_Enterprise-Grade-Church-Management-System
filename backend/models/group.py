@@ -18,8 +18,15 @@ class GroupBase(BaseModel):
     location: Optional[str] = Field(
         None, max_length=200, description="Location description or address"
     )
-    leader_name: str = Field(..., min_length=1, max_length=200, description="Group leader name")
-    leader_contact: str = Field(..., min_length=3, max_length=50, description="Leader WhatsApp number")
+    leader_member_id: Optional[str] = Field(
+        None, description="Member ID of the group leader (linked to members collection)"
+    )
+    leader_name: Optional[str] = Field(
+        None, min_length=1, max_length=200, description="Cached group leader name"
+    )
+    leader_contact: Optional[str] = Field(
+        None, min_length=3, max_length=50, description="Cached leader WhatsApp number"
+    )
     max_members: Optional[int] = Field(
         None, ge=1, description="Maximum members allowed (None = unlimited)"
     )
