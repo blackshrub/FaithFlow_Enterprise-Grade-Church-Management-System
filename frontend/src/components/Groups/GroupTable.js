@@ -40,54 +40,71 @@ export function GroupTable({
   }
 
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>{t('groups.table.name')}</TableHead>
-          <TableHead>{t('groups.table.category')}</TableHead>
-          <TableHead>{t('groups.table.leader')}</TableHead>
-          <TableHead>{t('groups.table.membersCount')}</TableHead>
-          <TableHead>{t('groups.table.openForJoin')}</TableHead>
-          <TableHead className="w-[160px] text-right">{t('groups.table.actions')}</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {groups.map((group) => (
-          <TableRow key={group.id}>
-            <TableCell className="font-medium">{group.name}</TableCell>
-            <TableCell>
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+      {groups.map((group) => (
+        <Card key={group.id} className="flex flex-col overflow-hidden">
+          <div className="w-full h-32 bg-muted relative overflow-hidden">
+            {group.cover_image ? (
+              <img
+                src={group.cover_image}
+                alt={group.name}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-3xl font-semibold text-muted-foreground">
+                {group.name?.charAt(0) || '?'}
+              </div>
+            )}
+          </div>
+
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center justify-between gap-2">
+              <span className="truncate" title={group.name}>{group.name}</span>
               <Badge variant="outline">
                 {t(categoryLabelKey[group.category] || group.category)}
               </Badge>
-            </TableCell>
-            <TableCell>{group.leader_name}</TableCell>
-            <TableCell>{group.members_count ?? 0}</TableCell>
-            <TableCell>
+            </CardTitle>
+          </CardHeader>
+
+          <CardContent className="pt-0 pb-2 text-sm space-y-1">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">{t('groups.table.leader')}:</span>
+              <span className="font-medium truncate max-w-[60%] text-right">
+                {group.leader_name || t('groups.table.noLeader')}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">{t('groups.table.membersCount')}:</span>
+              <span className="font-medium">{group.members_count ?? 0}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-muted-foreground">{t('groups.table.openForJoin')}:</span>
               {group.is_open_for_join ? (
                 <Badge variant="success">{t('groups.status.open')}</Badge>
               ) : (
                 <Badge variant="secondary">{t('groups.status.closed')}</Badge>
               )}
-            </TableCell>
-            <TableCell className="text-right space-x-2">
-              <Button variant="outline" size="sm" onClick={() => onViewMembers(group)}>
-                {t('groups.actions.viewMembers')}
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => onEdit(group)}>
-                {t('common.edit')}
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-destructive"
-                onClick={() => onDelete(group)}
-              >
-                {t('common.delete')}
-              </Button>
-            </TableCell>
-          </TableRow>
-        ))}
-      </TableBody>
-    </Table>
+            </div>
+          </CardContent>
+
+          <CardFooter className="mt-auto flex justify-end gap-2">
+            <Button variant="outline" size="sm" onClick={() => onViewMembers(group)}>
+              {t('groups.actions.viewMembers')}
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => onEdit(group)}>
+              {t('common.edit')}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-destructive"
+              onClick={() => onDelete(group)}
+            >
+              {t('common.delete')}
+            </Button>
+          </CardFooter>
+        </Card>
+      ))}
+    </div>
   );
 }
