@@ -1398,7 +1398,7 @@ List prayer requests with filters.
 
 Update prayer request.
 
-**Request:**
+**Request (example):**
 ```json
 {
   "category": "spiritual",
@@ -1408,9 +1408,11 @@ Update prayer request.
 }
 ```
 
-**Auto-set Fields:**
-- If `status` changed to "prayed" → sets `prayed_at` to current timestamp
-- If `status` changed back to "new" → clears `prayed_at`
+**Status & Follow-up Behavior:**
+- `status` can be `new` or `prayed`.
+- If `status` changes from anything to `prayed`, the backend sets `prayed_at` to the current timestamp.
+- If `status` changes from `prayed` back to `new`, the backend clears `prayed_at`.
+- `needs_follow_up` + `follow_up_notes` are used by staff to track ongoing pastoral care.
 
 **Response:** 200 OK (updated prayer request)
 
