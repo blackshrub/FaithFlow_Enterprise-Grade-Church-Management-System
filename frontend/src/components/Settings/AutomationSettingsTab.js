@@ -190,37 +190,39 @@ export default function AutomationSettingsTab() {
             </CardContent>
           </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>How It Works</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <h4 className="font-medium">1. Rules Evaluation</h4>
-            <p className="text-sm text-gray-600">
-              The system evaluates all enabled rules against each active member.
-            </p>
-          </div>
-          <div className="space-y-2">
-            <h4 className="font-medium">2. Status Updates</h4>
-            <p className="text-sm text-gray-600">
-              If a member matches a rule's conditions, their status is automatically updated.
-            </p>
-          </div>
-          <div className="space-y-2">
-            <h4 className="font-medium">3. Conflict Detection</h4>
-            <p className="text-sm text-gray-600">
-              If multiple rules match with different target statuses, the system creates a conflict for manual review.
-            </p>
-          </div>
-          <div className="space-y-2">
-            <h4 className="font-medium">4. History Logging</h4>
-            <p className="text-sm text-gray-600">
-              All status changes are logged with timestamps and attribution for audit trail.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>How It Works</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <h4 className="font-medium">1. Rules Evaluation</h4>
+                <p className="text-sm text-gray-600">
+                  The system evaluates all enabled rules against each active member.
+                </p>
+              </div>
+              <div className="space-y-2">
+                <h4 className="font-medium">2. Status Updates</h4>
+                <p className="text-sm text-gray-600">
+                  If a member matches a rule's conditions, their status is automatically updated.
+                </p>
+              </div>
+              <div className="space-y-2">
+                <h4 className="font-medium">3. Conflict Detection</h4>
+                <p className="text-sm text-gray-600">
+                  If multiple rules match with different target statuses, the system creates a conflict for manual review.
+                </p>
+              </div>
+              <div className="space-y-2">
+                <h4 className="font-medium">4. History Logging</h4>
+                <p className="text-sm text-gray-600">
+                  All status changes are logged with timestamps and attribution for audit trail.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </>
+      )}
     </div>
   );
 }
