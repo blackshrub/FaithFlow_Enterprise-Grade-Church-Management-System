@@ -37,6 +37,28 @@ export default function MemberForm({ formData, setFormData, member = null }) {
     handleChange('photo_base64', '');
   };
 
+  const handleDocumentUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setDocumentName(file.name);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64 = reader.result;
+        setDocumentPreview(base64);
+        handleChange('personal_document_base64', base64);
+        handleChange('personal_document', file.name);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeDocument = () => {
+    setDocumentPreview(null);
+    setDocumentName('');
+    handleChange('personal_document_base64', '');
+    handleChange('personal_document', '');
+  };
+
   // Debug logging
   React.useEffect(() => {
     console.log('[DEBUG] MemberForm - formData.member_status:', formData.member_status);
