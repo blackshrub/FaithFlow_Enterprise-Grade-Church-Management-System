@@ -119,7 +119,8 @@
     "downloadDocument": "Download",
     "uploadPhoto": "Upload Photo",
     "photoSelected": "Photo selected",
-    "photoHint": "JPG, PNG max 5MB"
+    "photoHint": "JPG, PNG max 5MB",
+    "documentNotAvailable": "File not available (imported before document storage feature)"
   },
   "common": {
     "cancel": "Cancel",

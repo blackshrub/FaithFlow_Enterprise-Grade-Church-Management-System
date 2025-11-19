@@ -119,7 +119,8 @@
     "downloadDocument": "Unduh",
     "uploadPhoto": "Unggah Foto",
     "photoSelected": "Foto dipilih",
-    "photoHint": "JPG, PNG maks 5MB"
+    "photoHint": "JPG, PNG maks 5MB",
+    "documentNotAvailable": "File tidak tersedia (diimpor sebelum fitur penyimpanan dokumen)"
   },
   "common": {
     "cancel": "Batal",
