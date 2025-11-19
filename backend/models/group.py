@@ -46,8 +46,7 @@ class GroupUpdate(BaseModel):
     cover_image: Optional[str] = None
     meeting_schedule: Optional[str] = Field(None, max_length=200)
     location: Optional[str] = Field(None, max_length=200)
-    leader_name: Optional[str] = Field(None, min_length=1, max_length=200)
-    leader_contact: Optional[str] = Field(None, min_length=3, max_length=50)
+    leader_member_id: Optional[str] = None
     max_members: Optional[int] = Field(None, ge=1)
     is_open_for_join: Optional[bool] = None
 
