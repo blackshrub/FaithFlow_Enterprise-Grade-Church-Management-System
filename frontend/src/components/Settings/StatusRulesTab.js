@@ -7,6 +7,7 @@ import {
   useUpdateStatusRule,
   useDeleteStatusRule,
   useEvaluateAllRules,
+  useSimulateRule,
 } from '../../hooks/useStatusAutomation';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
