@@ -354,10 +354,18 @@ async def import_members(
         # Retrieve document data from temp storage if session_id provided
         document_mapping = {}
         if document_session_id:
-            temp_docs = await db.temp_document_sessions.find_one({'session_id': document_session_id})
-            if temp_docs:
-                document_mapping = temp_docs.get('document_data', {})
-                logger.info(f"Retrieved {len(document_mapping)} documents from temp storage")
+            temp_session = await db.temp_document_sessions.find_one({'session_id': document_session_id})
+            if temp_session:
+                temp_dir = temp_session.get('temp_dir')
+                if temp_dir and os.path.exists(temp_dir):
+                    # Read all document files from temp directory
+                    for doc_file in os.listdir(temp_dir):
+                        if doc_file.endswith('.b64'):
+                            filename_key = doc_file.replace('.b64', '')
+                            filepath = os.path.join(temp_dir, doc_file)
+                            with open(filepath, 'r') as f:
+                                document_mapping[filename_key] = f.read()
+                    logger.info(f"Retrieved {len(document_mapping)} documents from temp storage")
         
         # Parse file
         if file_type == 'csv':
