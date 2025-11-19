@@ -75,6 +75,11 @@ export default function Members() {
       return acc;
     }, {});
 
+    // Ensure full_name is set (required field)
+    if (!cleanData.full_name && (cleanData.first_name || cleanData.last_name)) {
+      cleanData.full_name = `${cleanData.first_name || ''} ${cleanData.last_name || ''}`.trim();
+    }
+
     // Convert lowercase form values back to database format
     if (cleanData.gender) {
       cleanData.gender = cleanData.gender.charAt(0).toUpperCase() + cleanData.gender.slice(1);
@@ -90,6 +95,8 @@ export default function Members() {
       };
       cleanData.marital_status = maritalMap[cleanData.marital_status] || cleanData.marital_status;
     }
+
+    console.log('[DEBUG] Creating member with data:', cleanData);
 
     createMember.mutate(
       { ...cleanData, church_id: church.id },
