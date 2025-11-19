@@ -235,17 +235,21 @@ export default function WebhooksTab() {
           <Alert>
             <AlertDescription className="text-xs space-y-2">
               <strong>{t('settings.webhooks.exampleUsage')}</strong>
-              <pre className="mt-2 p-2 bg-gray-800 text-gray-100 rounded overflow-x-auto">
-{`// Login
+              <pre className="mt-2 p-2 bg-gray-800 text-gray-100 rounded overflow-x-auto text-xs">
+{`// Step 1: Authenticate
 POST ${getAPIBaseURL()}/api/auth/login
-Body: { "email": "${church?.admin_email || 'admin@church.com'}", "password": "your-password" }
+Body: {
+  "email": "api_user@${church?.name?.toLowerCase().replace(/\s+/g, '') || 'church'}.local",
+  "password": "your-admin-password"
+}
+Response: { "access_token": "eyJ..." }
 
-// Get Members
+// Step 2: Fetch Members
 GET ${getAPIBaseURL()}/api/members/?limit=100
 Header: Authorization: Bearer YOUR_TOKEN`}
               </pre>
               <p className="mt-2">
-                📖 {t('settings.webhooks.fullDocumentation')}: <code>/app/docs/EXTERNAL_API.md</code>
+                📖 {t('settings.webhooks.fullDocumentation')}: <code className="bg-gray-100 px-1 py-0.5 rounded">/app/docs/EXTERNAL_API.md</code>
               </p>
             </AlertDescription>
           </Alert>
