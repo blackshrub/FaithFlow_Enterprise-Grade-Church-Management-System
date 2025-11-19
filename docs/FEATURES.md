@@ -1244,6 +1244,8 @@ All accounting endpoints support mobile apps:
 ### Overview
 Complete WordPress-style content management system with rich text editing, scheduling, categories, tags, comments, and mobile API.
 
+> Technical API reference: see `docs/API.md` → **Articles (v1)** section.
+
 ### Features
 
 **Article Management:**
