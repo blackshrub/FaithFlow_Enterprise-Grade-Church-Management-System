@@ -275,6 +275,83 @@ async def test_status_rule(
     }
 
 
+@router.post("/simulate")
+async def simulate_rule(
+    rule_data: dict = Body(...),
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    """Simulate a rule against all members before creating it"""
+    
+    church_id = current_user.get('church_id')
+    
+    # Validate rule data
+    if 'conditions' not in rule_data or 'action_status_id' not in rule_data:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="conditions and action_status_id are required"
+        )
+    
+    # Get all active members
+    members = await db.members.find({
+        "church_id": church_id,
+        "is_active": True
+    }).to_list(10000)
+    
+    matched_members = []
+    
+    for member in members:
+        # Check rule type applicability
+        rule_type = rule_data.get('rule_type', 'global')
+        if rule_type == 'status_based':
+            current_status = member.get('member_status')
+            current_status_id = rule_data.get('current_status_id')
+            
+            if current_status_id:
+                # Get status name from ID
+                status_doc = await db.member_statuses.find_one({"id": current_status_id})
+                if status_doc and status_doc.get('name') != current_status:
+                    continue
+        
+        # Evaluate conditions
+        conditions = rule_data.get('conditions', [])
+        if await RuleEngineService.evaluate_conditions_for_member(member, conditions, db):
+            matched_members.append({
+                "id": member.get('id'),
+                "full_name": member.get('full_name'),
+                "current_status": member.get('member_status'),
+                "age": calculate_age(member.get('date_of_birth')) if member.get('date_of_birth') else None,
+            })
+    
+    # Get target status name
+    target_status = await db.member_statuses.find_one({"id": rule_data.get('action_status_id')})
+    
+    return {
+        "total_members": len(members),
+        "matched_count": len(matched_members),
+        "matched_members": matched_members[:100],  # Limit to first 100 for performance
+        "target_status_name": target_status.get('name') if target_status else 'Unknown',
+        "message": f"{len(matched_members)} member(s) will be affected by this rule"
+    }
+
+
+def calculate_age(date_of_birth):
+    """Helper to calculate age from date of birth"""
+    from datetime import datetime
+    from dateutil.relativedelta import relativedelta
+    
+    if isinstance(date_of_birth, str):
+        try:
+            dob = datetime.fromisoformat(date_of_birth.replace('Z', '+00:00')).date()
+        except:
+            return None
+    else:
+        dob = date_of_birth
+    
+    today = datetime.now().date()
+    return relativedelta(today, dob).years
+
+
 @router.post("/evaluate-all")
 async def evaluate_all_rules(
     db: AsyncIOMotorDatabase = Depends(get_db),
