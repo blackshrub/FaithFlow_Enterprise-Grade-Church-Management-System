@@ -333,8 +333,22 @@ async def import_members(
         defaults = json.loads(default_values)
         resolutions = json.loads(duplicate_resolutions)
         custom_field_defs = json.loads(custom_fields)
-        photo_mapping = json.loads(photo_matches)  # {normalized_filename: base64}
-        document_mapping = json.loads(document_matches)  # {normalized_filename: filename}
+        
+        # Retrieve photo data from temp storage if session_id provided
+        photo_mapping = {}
+        if photo_session_id:
+            temp_photos = await db.temp_photo_uploads.find_one({'session_id': photo_session_id})
+            if temp_photos:
+                photo_mapping = temp_photos.get('photo_data', {})
+                logger.info(f"Retrieved {len(photo_mapping)} photos from temp storage")
+        
+        # Retrieve document data from temp storage if session_id provided
+        document_mapping = {}
+        if document_session_id:
+            temp_docs = await db.temp_document_uploads.find_one({'session_id': document_session_id})
+            if temp_docs:
+                document_mapping = temp_docs.get('document_data', {})
+                logger.info(f"Retrieved {len(document_mapping)} documents from temp storage")
         
         # Parse file
         if file_type == 'csv':
