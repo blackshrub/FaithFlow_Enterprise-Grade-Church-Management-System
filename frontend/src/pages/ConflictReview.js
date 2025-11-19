@@ -10,12 +10,13 @@ import { RadioGroup, RadioGroupItem } from '../components/ui/radio-group';
 import { Label } from '../components/ui/label';
 
 export default function ConflictReview() {
-  const [pendingOnly, setPendingOnly] = useState(true);
+  const [statusFilter, setStatusFilter] = useState('open');
   const [selectedConflict, setSelectedConflict] = useState(null);
   const [selectedStatusId, setSelectedStatusId] = useState('');
+  const [comment, setComment] = useState('');
   const [isResolveDialogOpen, setIsResolveDialogOpen] = useState(false);
 
-  const { data: conflicts = [], isLoading, error } = useStatusConflicts(pendingOnly);
+  const { data: conflicts = [], isLoading, error } = useStatusConflicts(statusFilter);
   const resolveConflict = useResolveConflict();
 
   const handleResolve = (conflict) => {
