@@ -35,6 +35,7 @@ class MemberBase(BaseModel):
     personal_qr_code: Optional[str] = None  # Base64 QR code image
     personal_qr_data: Optional[str] = None  # QR data string: MEMBER|member_id|unique_code
     personal_id_code: Optional[str] = None  # Unique 6-digit code for member
+    preferred_language: Optional[Literal['en', 'id']] = None  # Member's preferred language for communications
 
 
 class MemberCreate(MemberBase):
