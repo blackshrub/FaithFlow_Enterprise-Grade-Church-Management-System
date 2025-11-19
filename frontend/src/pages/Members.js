@@ -265,12 +265,12 @@ export default function Members() {
             </DialogTrigger>
             <DialogContent className="max-w-2xl">
               <DialogHeader>
-              <DialogTitle>{t('members.addNewMember')}</DialogTitle>
-              <DialogDescription>
-                {t('members.registerMember')}
-              </DialogDescription>
-            </DialogHeader>
-            <form onSubmit={handleCreateMember}>
+                <DialogTitle>{t('members.addNewMember')}</DialogTitle>
+                <DialogDescription>
+                  {t('members.registerMember')}
+                </DialogDescription>
+              </DialogHeader>
+              <form onSubmit={handleCreateMember}>
               <MemberForm formData={formData} setFormData={setFormData} />
               <DialogFooter className="mt-6">
                 <Button 
