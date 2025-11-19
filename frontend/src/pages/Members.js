@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '.
 import { Badge } from '../components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '../components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
-import { Plus, Search, Edit, Trash2, UserX, Phone, Mail, Loader2, QrCode, ChevronLeft, ChevronRight, Filter, X } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, UserX, Phone, Mail, Loader2, QrCode, ChevronLeft, ChevronRight, Filter, X, AlertCircle } from 'lucide-react';
 import MemberForm from '../components/MemberForm';
 import MemberAvatar from '../components/MemberAvatar';
 import MemberQRModal from '../components/Members/MemberQRModal';
