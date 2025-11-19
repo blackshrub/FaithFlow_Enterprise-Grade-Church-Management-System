@@ -102,7 +102,7 @@ export default function MemberForm({ formData, setFormData, member = null }) {
       </div>
 
       {/* Document Display (Read-only for imports) */}
-      {member && member.personal_document_base64 && (
+      {member && member.personal_document && (
         <div className="border-b pb-4">
           <Label>{t('members.personalDocument')}</Label>
           <div className="flex items-center gap-4 mt-2">
@@ -110,24 +110,28 @@ export default function MemberForm({ formData, setFormData, member = null }) {
               <FileText className="h-4 w-4 text-gray-600" />
               <span className="font-mono text-gray-700">{member.personal_document}</span>
             </div>
-            <div className="flex gap-3">
-              <a 
-                href={member.personal_document_base64}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-sm text-blue-600 hover:text-blue-800 hover:underline"
-              >
-                {t('members.viewDocument')}
-              </a>
-              <span className="text-gray-300">|</span>
-              <a 
-                href={member.personal_document_base64}
-                download={member.personal_document}
-                className="text-sm text-blue-600 hover:text-blue-800 hover:underline"
-              >
-                {t('members.downloadDocument')}
-              </a>
-            </div>
+            {member.personal_document_base64 ? (
+              <div className="flex gap-3">
+                <a 
+                  href={member.personal_document_base64}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-blue-600 hover:text-blue-800 hover:underline"
+                >
+                  {t('members.viewDocument')}
+                </a>
+                <span className="text-gray-300">|</span>
+                <a 
+                  href={member.personal_document_base64}
+                  download={member.personal_document}
+                  className="text-sm text-blue-600 hover:text-blue-800 hover:underline"
+                >
+                  {t('members.downloadDocument')}
+                </a>
+              </div>
+            ) : (
+              <span className="text-xs text-gray-500">{t('members.documentNotAvailable')}</span>
+            )}
           </div>
         </div>
       )}
