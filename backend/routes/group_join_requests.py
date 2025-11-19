@@ -306,10 +306,14 @@ async def reject_join_request(
 
         if member and member.get("phone_whatsapp") and group:
             try:
-                message = (
-                    "Your join request for "
-                    f"{group.get('name', '')}"
-                    " was not approved."
+                church_settings = church_settings or {}
+                language = church_settings.get("default_language", "en")
+                from services.whatsapp_service import format_group_notification_message
+
+                message = format_group_notification_message(
+                    event="join_rejected",
+                    group_name=group.get("name", ""),
+                    language=language,
                 )
                 await send_whatsapp_message(
                     phone_number=member["phone_whatsapp"],
