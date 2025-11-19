@@ -94,6 +94,25 @@ async def create_group(
     user_id = current_user.get("id")
 
     group_dict = group_data.model_dump()
+
+    # If leader_member_id provided, resolve leader name & contact from members collection
+    leader_member_id = group_dict.get("leader_member_id")
+    if leader_member_id:
+        member = await db.members.find_one(
+            {"id": leader_member_id, "church_id": church_id},
+            {"_id": 0, "full_name": 1, "phone_whatsapp": 1},
+        )
+        if not member:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={
+                    "error_code": "LEADER_MEMBER_NOT_FOUND",
+                    "message": "Selected leader member not found for this church",
+                },
+            )
+        group_dict["leader_name"] = member.get("full_name")
+        group_dict["leader_contact"] = member.get("phone_whatsapp")
+
     group_dict["id"] = str(uuid.uuid4())
     group_dict["church_id"] = church_id
     group_dict["created_at"] = datetime.utcnow()
