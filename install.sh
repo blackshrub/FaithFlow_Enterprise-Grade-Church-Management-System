@@ -590,7 +590,7 @@ INDEXEOF
 
 log_success "Standard database indexes created"
 
-# Create accounting indexes (NEW)
+# Create accounting indexes
 log_info "Creating accounting module indexes..."
 
 su - $APP_USER << ACCTINDEXEOF
@@ -601,6 +601,18 @@ python3 scripts/create_accounting_indexes.py
 ACCTINDEXEOF
 
 log_success "Accounting indexes created (24+ indexes)"
+
+# Create groups indexes
+log_info "Creating groups module indexes..."
+
+su - $APP_USER << GROUPINDEXEOF
+cd $APP_DIR/backend
+source venv/bin/activate
+
+python3 scripts/create_group_indexes.py
+GROUPINDEXEOF
+
+log_success "Groups indexes created"
 
 # Create uploads directory
 log_info "Creating uploads directory for accounting file attachments..."
