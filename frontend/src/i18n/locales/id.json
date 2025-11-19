@@ -114,7 +114,9 @@
     "photoUploaded": "Diunggah melalui import",
     "personalDocument": "Dokumen Pribadi",
     "memberStatus": "Status Keanggotaan",
-    "selectMemberStatus": "Pilih status keanggotaan"
+    "selectMemberStatus": "Pilih status keanggotaan",
+    "viewDocument": "Lihat",
+    "downloadDocument": "Unduh"
   },
   "common": {
     "cancel": "Batal",

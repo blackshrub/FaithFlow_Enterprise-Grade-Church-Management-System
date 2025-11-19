@@ -114,7 +114,9 @@
     "photoUploaded": "Uploaded via import",
     "personalDocument": "Personal Document",
     "memberStatus": "Member Status",
-    "selectMemberStatus": "Select member status"
+    "selectMemberStatus": "Select member status",
+    "viewDocument": "View",
+    "downloadDocument": "Download"
   },
   "common": {
     "cancel": "Cancel",
