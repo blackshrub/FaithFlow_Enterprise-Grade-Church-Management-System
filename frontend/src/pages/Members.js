@@ -177,6 +177,8 @@ export default function Members() {
       member_status: member.member_status || '',
       baptism_date: member.baptism_date || '',
       photo_base64: member.photo_base64 || '',
+      personal_document: member.personal_document || '',
+      personal_document_base64: member.personal_document_base64 || '',
       notes: member.notes || ''
     };
     console.log('[DEBUG] Opening edit dialog for member:', member.full_name);
