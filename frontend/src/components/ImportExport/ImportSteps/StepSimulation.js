@@ -14,7 +14,7 @@ export default function StepSimulation({ wizardData, updateWizardData, simulateI
   const [simulating, setSimulating] = useState(false);
   const [simulationComplete, setSimulationComplete] = useState(false);
   const [showDuplicateResolution, setShowDuplicateResolution] = useState(false);
-  const [localResolutions, setLocalResolutions] = useState({});  // MOVED TO TOP LEVEL!
+  const [localResolutions, setLocalResolutions] = useState({});
 
   const runSimulation = async () => {
     setSimulating(true);
