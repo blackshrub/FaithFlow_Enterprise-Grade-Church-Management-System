@@ -116,7 +116,10 @@
     "memberStatus": "Status Keanggotaan",
     "selectMemberStatus": "Pilih status keanggotaan",
     "viewDocument": "Lihat",
-    "downloadDocument": "Unduh"
+    "downloadDocument": "Unduh",
+    "uploadPhoto": "Unggah Foto",
+    "photoSelected": "Foto dipilih",
+    "photoHint": "JPG, PNG maks 5MB"
   },
   "common": {
     "cancel": "Batal",
@@ -153,7 +156,8 @@
     "showingResults": "Menampilkan {{from}}-{{to}} dari {{total}} hasil",
     "pageOfPages": "Halaman {{page}} dari {{total}}",
     "previous": "Sebelumnya",
-    "next": "Berikutnya"
+    "next": "Berikutnya",
+    "remove": "Hapus"
   },
   "nav": {
     "dashboard": "Dasbor",

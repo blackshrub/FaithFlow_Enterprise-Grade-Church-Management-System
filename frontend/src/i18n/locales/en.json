@@ -116,7 +116,10 @@
     "memberStatus": "Member Status",
     "selectMemberStatus": "Select member status",
     "viewDocument": "View",
-    "downloadDocument": "Download"
+    "downloadDocument": "Download",
+    "uploadPhoto": "Upload Photo",
+    "photoSelected": "Photo selected",
+    "photoHint": "JPG, PNG max 5MB"
   },
   "common": {
     "cancel": "Cancel",
@@ -153,7 +156,8 @@
     "showingResults": "Showing {{from}}-{{to}} of {{total}} results",
     "pageOfPages": "Page {{page}} of {{total}}",
     "previous": "Previous",
-    "next": "Next"
+    "next": "Next",
+    "remove": "Remove"
   },
   "nav": {
     "dashboard": "Dashboard",
