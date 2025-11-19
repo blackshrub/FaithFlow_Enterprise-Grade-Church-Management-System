@@ -52,18 +52,14 @@ faithflow/
 │   │   ├── file_upload.py              # ⭐ NEW - File endpoints
 │   │   └── ...
 │   ├── services/            # Business logic
-│   │   ├── tts_service.py   # Text-to-Speech
-│   │   ├── qr_service.py    # QR code generation
-│   │   ├── whatsapp_service.py  # WhatsApp gateway
-│   │   ├── auth_service.py  # Auth logic
-│   │   ├── accounting_service.py       # ⭐ NEW - Accounting utilities
-│   │   ├── fiscal_period_service.py    # ⭐ NEW - Period management
-│   │   ├── year_end_closing_service.py # ⭐ NEW - Year-end logic
-│   │   ├── audit_service.py            # ⭐ NEW - Audit logging
-│   │   ├── file_service.py             # ⭐ NEW - File management
-│   │   ├── pagination_service.py       # ⭐ NEW - Pagination
-│   │   ├── validation_service.py       # ⭐ NEW - Validation
+│   │   ├── tts_service.py, qr_service.py, auth_service.py
+│   │   ├── accounting_service.py       # ⭐ Accounting utilities
+│   │   ├── fiscal_period_service.py    # ⭐ Fiscal period management
+│   │   ├── year_end_closing_service.py # ⭐ Year-end logic
+│   │   ├── article_service.py          # ⭐ CMS utilities
+│   │   ├── article_scheduler.py        # ⭐ CMS auto-publish worker
 │   │   └── ...
+│   ├── scheduler.py         # ⭐ APScheduler configuration
 │   ├── utils/               # Helper functions
 │   │   ├── dependencies.py  # FastAPI dependencies
 │   │   ├── security.py      # Password hashing
@@ -92,8 +88,10 @@ faithflow/
 │   │   ├── init_db.py       # Database initialization
 │   │   ├── import_tb_chs.py # Import TB & Chinese
 │   │   ├── import_english_bibles.py  # Import English
-│   │   ├── seed_coa.py              # ⭐ NEW - Indonesian COA seeder
-│   │   ├── create_accounting_indexes.py # ⭐ NEW - Accounting indexes
+│   │   ├── create_accounting_indexes.py # ⭐ Accounting indexes
+│   │   ├── create_article_indexes.py    # ⭐ Articles indexes
+│   │   ├── create_prayer_indexes.py     # ⭐ Prayer indexes
+│   │   ├── seed_coa.py                  # ⭐ Indonesian COA seeder
 │   │   └── ...
 │   ├── server.py            # Main FastAPI app
 │   ├── requirements.txt     # Python dependencies
