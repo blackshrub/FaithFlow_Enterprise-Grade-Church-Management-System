@@ -454,12 +454,28 @@ export default function StepFieldMapping({ wizardData, updateWizardData, nextSte
             <ChevronLeft className="h-4 w-4 mr-2" />
             {t('importExport.previous')}
           </Button>
-          <Button onClick={nextStep} disabled={!canProceed()}>
-            {t('importExport.next')}
-            <ChevronRight className="h-4 w-4 ml-2" />
+          <Button onClick={handleNextClick} disabled={!canProceed() || isValidating}>
+            {isValidating ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                {t('importExport.validating')}
+              </>
+            ) : (
+              <>
+                {t('importExport.next')}
+                <ChevronRight className="h-4 w-4 ml-2" />
+              </>
+            )}
           </Button>
         </div>
       </CardContent>
+      
+      {/* Duplicate Phone Modal */}
+      <DuplicatePhoneModal
+        isOpen={showDuplicateModal}
+        onClose={handleCloseDuplicateModal}
+        duplicateData={duplicateData}
+      />
     </Card>
   );
 }
