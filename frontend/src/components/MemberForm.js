@@ -5,7 +5,7 @@ import { Label } from '../components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Textarea } from '../components/ui/textarea';
 
-export default function MemberForm({ formData, setFormData }) {
+export default function MemberForm({ formData, setFormData, member = null }) {
   const { t } = useTranslation();
 
   const handleChange = (field, value) => {
@@ -13,7 +13,37 @@ export default function MemberForm({ formData, setFormData }) {
   };
 
   return (
-    <div className="grid grid-cols-2 gap-4">
+    <div className="space-y-4">
+      {/* Show photo and document if editing existing member */}
+      {member && (member.photo_base64 || member.personal_document) && (
+        <div className="grid grid-cols-2 gap-4 pb-4 border-b">
+          {member.photo_base64 && (
+            <div className="space-y-2">
+              <Label>{t('members.photo')}</Label>
+              <div className="flex items-center gap-3">
+                <img 
+                  src={member.photo_base64} 
+                  alt={member.full_name}
+                  className="h-16 w-16 rounded-full object-cover border-2 border-gray-200"
+                />
+                <span className="text-sm text-gray-600">{t('members.photoUploaded')}</span>
+              </div>
+            </div>
+          )}
+          {member.personal_document && (
+            <div className="space-y-2">
+              <Label>{t('members.personalDocument')}</Label>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-mono bg-gray-100 px-2 py-1 rounded">
+                  {member.personal_document}
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+      
+      <div className="grid grid-cols-2 gap-4">
       <div className="space-y-2">
         <Label htmlFor="first_name">{t('members.firstName')} *</Label>
         <Input
