@@ -1363,7 +1363,9 @@ Pastoral care management system for tracking and managing congregation prayer re
 
 ---
 
-## Prayer Requests
+## Prayer Requests (Legacy)
+
+> Note: This section describes an older prayer request concept. For the current implementation, see **Prayer Requests Module** above and `docs/API.md` → **Prayer Requests (v1)**.
 
 ### Overview
 Manage prayer requests from members and track prayer responses.
