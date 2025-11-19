@@ -211,8 +211,8 @@
     "updateError": "Gagal memperbarui",
     "deleteError": "Gagal menghapus",
     "loadError": "Gagal memuat pengaturan",
-    "defaultForNewVisitors": "Default untuk pengunjung baru",
-    "defaultForNewVisitorsDesc": "Otomatis tetapkan status ini ke pengunjung baru yang ditambahkan di kiosk",
+    "defaultForNewVisitors": "Default untuk Anggota Baru",
+    "defaultForNewVisitorsDesc": "Status ini akan secara otomatis diberikan kepada anggota baru dan anggota yang diimpor tanpa status",
     "eventCategories": "Kategori Acara",
     "eventCategory": "Kategori Acara",
     "addCategory": "Tambah Kategori",
@@ -234,7 +234,8 @@
     "enableWhatsappNotifications": "Aktifkan Notifikasi WhatsApp",
     "enableWhatsappDesc": "Kirim pesan WhatsApp otomatis ke jemaat",
     "sendRSVPConfirmation": "Kirim Konfirmasi RSVP",
-    "sendRSVPConfirmationDesc": "Kirim pesan konfirmasi dengan kode QR saat jemaat mendaftar acara"
+    "sendRSVPConfirmationDesc": "Kirim pesan konfirmasi dengan kode QR saat jemaat mendaftar acara",
+    "default": "Default"
   },
   "events": {
     "title": "Acara",

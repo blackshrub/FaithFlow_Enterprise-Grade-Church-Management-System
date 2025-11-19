@@ -211,8 +211,8 @@
     "updateError": "Failed to update",
     "deleteError": "Failed to delete",
     "loadError": "Failed to load settings",
-    "defaultForNewVisitors": "Default for new visitors",
-    "defaultForNewVisitorsDesc": "Automatically assign this status to new visitors added at kiosk",
+    "defaultForNewVisitors": "Default for New Members",
+    "defaultForNewVisitorsDesc": "This status will be automatically assigned to new members and imported members without a status",
     "eventCategories": "Event Categories",
     "eventCategory": "Event Category",
     "addCategory": "Add Category",
@@ -234,7 +234,8 @@
     "enableWhatsappNotifications": "Enable WhatsApp Notifications",
     "enableWhatsappDesc": "Send automated WhatsApp messages to members",
     "sendRSVPConfirmation": "Send RSVP Confirmation",
-    "sendRSVPConfirmationDesc": "Send confirmation message with QR code when member registers for event"
+    "sendRSVPConfirmationDesc": "Send confirmation message with QR code when member registers for event",
+    "default": "Default"
   },
   "events": {
     "title": "Events",
