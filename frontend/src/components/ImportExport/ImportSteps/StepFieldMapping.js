@@ -10,7 +10,10 @@ import { Badge } from '../../ui/badge';
 import { Alert, AlertDescription } from '../../ui/alert';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '../../ui/dialog';
 import { Switch } from '../../ui/switch';
-import { ChevronRight, ChevronLeft, Plus, Trash2 } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Plus, Trash2, Loader2 } from 'lucide-react';
+import axios from 'axios';
+import { toast } from 'react-hot-toast';
+import DuplicatePhoneModal from '../DuplicatePhoneModal';
 
 const TARGET_FIELDS = [
   { value: 'full_name', label: 'Full Name', required: true, info: 'Only required field - will be split into first and last name' },
