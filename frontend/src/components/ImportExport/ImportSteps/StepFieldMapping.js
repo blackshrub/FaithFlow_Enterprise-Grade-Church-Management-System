@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Switch } from '../../ui/switch';
 import { ChevronRight, ChevronLeft, Plus, Trash2, Loader2 } from 'lucide-react';
 import axios from 'axios';
-import { toast } from 'react-hot-toast';
+import { toast } from 'sonner';
 import DuplicatePhoneModal from '../DuplicatePhoneModal';
 
 const TARGET_FIELDS = [
