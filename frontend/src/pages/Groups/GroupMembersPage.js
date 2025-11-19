@@ -142,8 +142,42 @@ export default function GroupMembersPage() {
         members={memberships}
         isLoading={isLoading}
         onAddMember={() => {}}
-        onRemoveMember={handleRemoveMember}
+        onRemoveMember={(membership) => setMembershipToRemove(membership)}
       />
+
+      <AlertDialog
+        open={!!membershipToRemove}
+        onOpenChange={(open) => !open && setMembershipToRemove(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {t('groups.members.delete.confirmTitle') || 'Remove member from group?'}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('groups.members.delete.confirmDescription', {
+                memberName: membershipToRemove?.member?.full_name ?? '',
+              }) ||
+                'This will mark the member as removed from this group. Their member record will not be deleted.'}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={removeMemberMutation.isLoading}>
+              {t('common.cancel')}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={removeMemberMutation.isLoading}
+              onClick={async () => {
+                if (!membershipToRemove) return;
+                await handleRemoveMember(membershipToRemove);
+                setMembershipToRemove(null);
+              }}
+            >
+              {t('groups.members.actions.remove')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
