@@ -181,7 +181,7 @@ async def simulate_document_matching(
                         'original_filename': member[document_filename_field]
                     }
         
-        # Match files and store temporarily  
+        # Match files and store temporarily as base64
         session_id = str(uuid.uuid4())
         temp_dir = f"/tmp/document_upload_{session_id}"
         os.makedirs(temp_dir, exist_ok=True)
@@ -192,8 +192,29 @@ async def simulate_document_matching(
             if filename in member_lookup:
                 # Validate document
                 if file_upload_service.validate_document(filename):
-                    # Documents are just filenames, store the original filename
-                    matched_documents[filename] = filename
+                    # Convert document to base64 (like photos)
+                    import base64
+                    base64_data = base64.b64encode(file_data).decode('utf-8')
+                    
+                    # Determine MIME type based on extension
+                    ext = filename.lower().split('.')[-1]
+                    mime_types = {
+                        'pdf': 'application/pdf',
+                        'jpg': 'image/jpeg',
+                        'jpeg': 'image/jpeg',
+                        'png': 'image/png',
+                        'doc': 'application/msword',
+                        'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+                    }
+                    mime_type = mime_types.get(ext, 'application/octet-stream')
+                    document_base64 = f"data:{mime_type};base64,{base64_data}"
+                    
+                    # Save to temp file
+                    temp_filepath = os.path.join(temp_dir, f"{filename}.b64")
+                    with open(temp_filepath, 'w') as f:
+                        f.write(document_base64)
+                    
+                    matched_documents[filename] = temp_filepath
                     
                     matched.append({
                         'filename': filename,
@@ -211,11 +232,12 @@ async def simulate_document_matching(
                     'reason': 'No matching member in CSV'
                 })
         
-        # Store document mapping in database (just filenames, very small)
+        # Store metadata in database (not the files themselves)
         if matched_documents:
             await db.temp_document_sessions.insert_one({
                 'session_id': session_id,
-                'document_data': matched_documents,
+                'temp_dir': temp_dir,
+                'document_count': len(matched_documents),
                 'created_at': datetime.now().isoformat(),
                 'expires_at': (datetime.now() + timedelta(hours=2)).isoformat()
             })
