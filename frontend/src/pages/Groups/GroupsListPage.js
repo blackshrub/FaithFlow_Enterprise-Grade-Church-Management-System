@@ -92,6 +92,7 @@ export default function GroupsListPage() {
         onDelete={() => {
           // deletion handled in future enhancement (with confirmation + API)
         }}
+        churchSettings={churchSettings}
       />
     </div>
   );
