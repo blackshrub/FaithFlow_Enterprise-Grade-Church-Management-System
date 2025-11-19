@@ -114,8 +114,8 @@ faithflow/
 │   ├── tailwind.config.js   # Tailwind theme
 │   └── .env                 # Frontend env (not in git)
 ├── docs/                    # Documentation
-│   ├── FEATURES.md          # Feature documentation
-│   ├── API.md               # API reference
+│   ├── FEATURES.md          # Feature documentation (high-level modules & workflows)
+│   ├── API.md               # Single, detailed API reference for all modules (Accounting, Articles CMS, Prayer Requests, etc.)
 │   ├── DEPLOYMENT_DEBIAN.md # Deployment guide
 │   ├── STRUCTURE.md         # This file
 │   └── ...
