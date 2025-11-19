@@ -36,12 +36,46 @@ export default function WebhooksTab() {
   const [selectedWebhook, setSelectedWebhook] = useState(null);
   const [formData, setFormData] = useState(initialFormData);
   const [testResult, setTestResult] = useState(null);
+  const [newAPIKeyData, setNewAPIKeyData] = useState(null);
+  const [isAPIKeyDialogOpen, setIsAPIKeyDialogOpen] = useState(false);
 
   const { data: webhooks = [], isLoading, error } = useWebhooks();
+  const { data: apiKeys = [], isLoading: apiKeysLoading } = useAPIKeys();
   const createWebhook = useCreateWebhook();
   const updateWebhook = useUpdateWebhook();
   const deleteWebhook = useDeleteWebhook();
   const testWebhook = useTestWebhook();
+  const createAPIKey = useCreateAPIKey();
+  const deleteAPIKey = useDeleteAPIKey();
+  const regenerateAPIKey = useRegenerateAPIKey();
+
+  const handleCreateAPIKey = async () => {
+    const result = await createAPIKey.mutateAsync({
+      name: 'External App Integration',
+      church_id: church.id
+    });
+    
+    // Show the generated key (only shown once!)
+    setNewAPIKeyData(result);
+    setIsAPIKeyDialogOpen(true);
+  };
+
+  const handleRegenerateAPIKey = async (keyId) => {
+    if (!window.confirm(t('settings.apiKeys.confirmRegenerate'))) {
+      return;
+    }
+    
+    const result = await regenerateAPIKey.mutateAsync(keyId);
+    setNewAPIKeyData(result);
+    setIsAPIKeyDialogOpen(true);
+  };
+
+  const handleDeleteAPIKey = async (keyId) => {
+    if (!window.confirm(t('settings.apiKeys.confirmDelete'))) {
+      return;
+    }
+    deleteAPIKey.mutate(keyId);
+  };
 
   const handleCreateWebhook = async (e) => {
     e.preventDefault();
