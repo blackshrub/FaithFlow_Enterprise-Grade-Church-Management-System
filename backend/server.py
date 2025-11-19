@@ -9,7 +9,7 @@ from pathlib import Path
 # Import routes
 from routes import (
     auth, churches, members, settings, import_export, photo_document_sim, 
-    seat_layouts, events, bible, devotions, webhooks
+    seat_layouts, events, bible, devotions, webhooks, api_keys
 )
 
 # Import accounting routes (v1)
