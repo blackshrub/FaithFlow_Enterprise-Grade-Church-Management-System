@@ -144,6 +144,35 @@ async def validate_phone_duplicates(
         # Get church_id for database queries
         church_id = current_user.get('church_id')
         
+        # OPTIMIZATION: Fetch all active members with phones once and build normalized lookup
+        # This is critical for proper duplicate detection regardless of phone format
+        logger.info(f"Fetching all active members with phones for church {church_id}")
+        db_members_lookup = {}  # {normalized_phone: member_data}
+        
+        all_members_cursor = db.members.find({
+            'church_id': church_id,
+            'phone_whatsapp': {'$exists': True, '$ne': None, '$ne': ''},
+            'is_active': True
+        })
+        
+        async for member in all_members_cursor:
+            db_phone_raw = member.get('phone_whatsapp')
+            if db_phone_raw:
+                # Normalize database phone number
+                db_phone_normalized = normalize_phone_number(db_phone_raw)
+                if db_phone_normalized and db_phone_normalized.startswith('62'):
+                    # Store normalized phone -> member mapping
+                    # If duplicate normalized phones exist in DB, keep the first one
+                    if db_phone_normalized not in db_members_lookup:
+                        db_members_lookup[db_phone_normalized] = {
+                            'id': str(member.get('id')),
+                            'full_name': member.get('full_name', 'Unknown'),
+                            'email': member.get('email', ''),
+                            'address': member.get('address', '')
+                        }
+        
+        logger.info(f"Found {len(db_members_lookup)} members with valid normalized phone numbers")
+        
         # Track duplicates
         internal_duplicates = []  # Duplicates within CSV
         external_duplicates = []  # Duplicates with existing DB members
