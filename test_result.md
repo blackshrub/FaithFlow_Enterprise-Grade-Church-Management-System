@@ -284,7 +284,7 @@ backend:
     status_history:
       - working: true
         agent: "testing"
-        comment: "GET /api/health endpoint works correctly. Returns status: healthy and database: connected. API is running and accessible at https://church-manager-33.preview.emergentagent.com/api"
+        comment: "GET /api/health endpoint works correctly. Returns status: healthy and database: connected. API is running and accessible at https://faithflow-6.preview.emergentagent.com/api"
 
 frontend:
   - task: "Import/Export Wizard - React Hooks Error Fix"
@@ -368,7 +368,7 @@ metadata:
   test_sequence: 1
   run_ui: false
   test_date: "2025-01-10"
-  api_base_url: "https://church-manager-33.preview.emergentagent.com/api"
+  api_base_url: "https://faithflow-6.preview.emergentagent.com/api"
 
 test_plan:
   current_focus:
@@ -556,7 +556,7 @@ metadata:
   test_sequence: 4
   run_ui: true
   test_date: "2025-01-17"
-  api_base_url: "https://church-manager-33.preview.emergentagent.com/api"
+  api_base_url: "https://faithflow-6.preview.emergentagent.com/api"
   last_ui_test: "2025-01-17"
 
 test_plan:
@@ -1202,7 +1202,7 @@ metadata:
   test_sequence: 7
   run_ui: true
   test_date: "2025-01-18"
-  api_base_url: "https://church-manager-33.preview.emergentagent.com/api"
+  api_base_url: "https://faithflow-6.preview.emergentagent.com/api"
   last_ui_test: "2025-01-18"
   last_comprehensive_test: "2025-01-18"
 
@@ -1742,7 +1742,7 @@ metadata:
   test_sequence: 7
   run_ui: true
   test_date: "2025-01-18"
-  frontend_url: "https://church-manager-33.preview.emergentagent.com"
+  frontend_url: "https://faithflow-6.preview.emergentagent.com"
 
 test_plan:
   current_focus:
@@ -1843,7 +1843,7 @@ metadata:
   test_sequence: 8
   run_ui: false
   test_date: "2025-11-18"
-  api_base_url: "https://church-manager-33.preview.emergentagent.com/api"
+  api_base_url: "https://faithflow-6.preview.emergentagent.com/api"
   last_backend_test: "2025-11-18"
 
 test_plan:
