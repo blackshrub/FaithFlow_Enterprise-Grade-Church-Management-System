@@ -789,6 +789,70 @@ export default function StatusRulesTab() {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Preview Dialog for Existing Rules */}
+      <Dialog open={isPreviewDialogOpen} onOpenChange={setIsPreviewDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Rule Preview</DialogTitle>
+            <DialogDescription>
+              {selectedRule?.name} - Affected members
+            </DialogDescription>
+          </DialogHeader>
+
+          {simulationResults && (
+            <div className="space-y-4">
+              <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="font-semibold text-blue-900">Simulation Results</h4>
+                  <Badge variant="default" className="bg-blue-600">
+                    {simulationResults.matched_count} / {simulationResults.total_members} members
+                  </Badge>
+                </div>
+                <p className="text-sm text-blue-800">
+                  This rule will change <strong>{simulationResults.matched_count}</strong> member(s) to{' '}
+                  <strong>{simulationResults.target_status_name}</strong>
+                </p>
+              </div>
+
+              {simulationResults.matched_members?.length > 0 && (
+                <div className="space-y-2">
+                  <p className="font-medium text-sm">
+                    Preview (showing first {Math.min(10, simulationResults.matched_members.length)}):
+                  </p>
+                  <div className="space-y-1 max-h-60 overflow-y-auto">
+                    {simulationResults.matched_members.slice(0, 10).map((member) => (
+                      <div key={member.id} className="p-3 bg-white rounded border text-sm">
+                        <div className="flex items-center justify-between">
+                          <span className="font-medium">{member.full_name}</span>
+                          <div className="flex items-center gap-2">
+                            {member.current_status && (
+                              <Badge variant="outline" className="text-xs">
+                                Current: {member.current_status}
+                              </Badge>
+                            )}
+                            {member.age !== null && member.age !== undefined && (
+                              <Badge variant="secondary" className="text-xs">
+                                Age: {member.age}
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button onClick={() => setIsPreviewDialogOpen(false)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
