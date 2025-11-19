@@ -156,10 +156,15 @@ async def simulate_document_matching(
                     }
         
         # Match files
+        document_data_map = {}  # {normalized_filename: filename}
+        
         for filename, file_data in extracted_files.items():
             if filename in member_lookup:
                 # Validate document
                 if file_upload_service.validate_document(filename):
+                    # Store filename for later use in import
+                    document_data_map[filename] = filename
+                    
                     matched.append({
                         'filename': filename,
                         'member_name': member_lookup[filename]['full_name'],
