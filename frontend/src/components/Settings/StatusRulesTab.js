@@ -467,6 +467,42 @@ export default function StatusRulesTab() {
                   <Label>Enable Rule</Label>
                 </div>
 
+                {/* Simulation Preview */}
+                {simulationResults && (
+                  <div className="border rounded-lg p-4 bg-blue-50 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-semibold text-blue-900">Simulation Results</h4>
+                      <Badge variant="default" className="bg-blue-600">
+                        {simulationResults.matched_count} / {simulationResults.total_members} members
+                      </Badge>
+                    </div>
+                    <p className="text-sm text-blue-800">
+                      This rule will change <strong>{simulationResults.matched_count}</strong> member(s) to{' '}
+                      <strong>{simulationResults.target_status_name}</strong>
+                    </p>
+                    {simulationResults.matched_members?.length > 0 && (
+                      <div className="space-y-2">
+                        <p className="text-xs font-medium text-blue-900">
+                          Preview (showing first {Math.min(10, simulationResults.matched_members.length)}):
+                        </p>
+                        <div className="space-y-1 max-h-40 overflow-y-auto">
+                          {simulationResults.matched_members.slice(0, 10).map((member) => (
+                            <div key={member.id} className="text-xs bg-white rounded p-2">
+                              <span className="font-medium">{member.full_name}</span>
+                              {member.current_status && (
+                                <span className="text-gray-600"> (Current: {member.current_status})</span>
+                              )}
+                              {member.age !== null && member.age !== undefined && (
+                                <span className="text-gray-500"> • Age: {member.age}</span>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 <DialogFooter>
                   <Button
                     type="button"
@@ -476,6 +512,21 @@ export default function StatusRulesTab() {
                   >
                     Cancel
                   </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={handleSimulate}
+                    disabled={simulateRule.isPending || !formData.action_status_id || formData.conditions.length === 0}
+                  >
+                    {simulateRule.isPending ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Simulating...
+                      </>
+                    ) : (
+                      'Preview Members'
+                    )}
+                  </Button>
                   <Button type="submit" disabled={createRule.isPending}>
                     {createRule.isPending ? (
                       <>
@@ -483,7 +534,7 @@ export default function StatusRulesTab() {
                         Creating...
                       </>
                     ) : (
-                      'Create'
+                      'Create Rule'
                     )}
                   </Button>
                 </DialogFooter>
