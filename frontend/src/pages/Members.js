@@ -374,7 +374,7 @@ export default function Members() {
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleUpdateMember}>
-            <MemberForm formData={formData} setFormData={setFormData} />
+            <MemberForm formData={formData} setFormData={setFormData} member={selectedMember} />
             <DialogFooter className="mt-6">
               <Button 
                 type="button" 
