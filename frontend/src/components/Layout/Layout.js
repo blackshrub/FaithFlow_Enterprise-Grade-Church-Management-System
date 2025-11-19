@@ -125,9 +125,8 @@ export default function Layout() {
   // Note: Removed "churches" from default menu - only added for super admin below
   // Removed: Donations, Spiritual Journey
 
-  if (isSuperAdmin) {
-    menuItems.push({ icon: Church, label: t('nav.churches'), path: '/churches' });
-  }
+  // Note: Churches menu removed per user request
+  // Super admin access churches via direct URL if needed
 
   menuItems.push({ icon: Upload, label: t('nav.importExport'), path: '/import-export' });
   menuItems.push({ icon: Settings, label: t('nav.settings'), path: '/settings' });
