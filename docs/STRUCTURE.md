@@ -26,26 +26,13 @@ faithflow/
 │   │   ├── prayer_request.py           # ⭐ Prayer Requests
 │   │   └── ...
 │   ├── routes/              # API endpoints
-│   │   ├── auth.py          # Authentication
-│   │   ├── members.py       # Member CRUD
-│   │   ├── events.py        # Events & RSVP
-│   │   ├── devotions.py     # Devotion CMS
-│   │   ├── bible.py         # Bible API
-│   │   ├── accounting_coa.py           # ⭐ NEW - COA endpoints
-│   │   ├── responsibility_centers.py   # ⭐ NEW - RC endpoints
-│   │   ├── journals.py                 # ⭐ NEW - Journal endpoints
-│   │   ├── fiscal_periods.py           # ⭐ NEW - Period endpoints
-│   │   ├── quick_entries.py            # ⭐ NEW - Quick forms
-│   │   ├── budgets.py                  # ⭐ NEW - Budget endpoints
-│   │   ├── fixed_assets.py             # ⭐ NEW - Asset endpoints
-│   │   ├── bank_accounts.py            # ⭐ NEW - Bank endpoints
-│   │   ├── bank_transactions.py        # ⭐ NEW - Transaction endpoints
-│   │   ├── beginning_balance.py        # ⭐ NEW - Migration endpoints
-│   │   ├── year_end_closing.py         # ⭐ NEW - Year-end endpoints
-│   │   ├── accounting_reports.py       # ⭐ NEW - Report endpoints
-│   │   ├── audit_logs.py               # ⭐ NEW - Audit endpoints
-│   │   ├── report_templates.py         # ⭐ NEW - Template endpoints
-│   │   ├── file_upload.py              # ⭐ NEW - File endpoints
+│   │   ├── auth.py, members.py, events.py, devotions.py, bible.py
+│   │   ├── accounting_*.py (15 files)  # ⭐ Accounting endpoints
+│   │   ├── articles.py                 # ⭐ CMS - Articles CRUD
+│   │   ├── article_categories.py, article_tags.py # ⭐ CMS - Categories/Tags
+│   │   ├── article_comments.py         # ⭐ CMS - Comments
+│   │   ├── articles_public.py          # ⭐ CMS - Public API
+│   │   ├── prayer_requests.py          # ⭐ Prayer Requests
 │   │   └── ...
 │   ├── services/            # Business logic
 │   │   ├── tts_service.py, qr_service.py, auth_service.py
