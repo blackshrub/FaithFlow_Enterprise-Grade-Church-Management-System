@@ -67,7 +67,7 @@ async def list_member_statuses(
     if current_user.get('role') != 'super_admin':
         query['church_id'] = current_user.get('church_id')
     
-    statuses = await db.member_statuses.find(query, {"_id": 0}).sort("order", 1).to_list(100)
+    statuses = await db.member_statuses.find(query, {"_id": 0}).sort("display_order", 1).to_list(100)
     
     # Convert ISO strings to datetime
     for s in statuses:
