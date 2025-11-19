@@ -263,13 +263,17 @@ source venv/bin/activate
 pip install --upgrade pip
 pip install -r requirements.txt
 
-# This will install:
-# - FastAPI, uvicorn
-# - MongoDB driver (motor)
-# - Coqui TTS + dependencies
-# - gTTS (fallback)
-# - QR code generation
-# - And all other requirements
+# Key dependencies installed:
+# - fastapi, uvicorn (web framework)
+# - motor (async MongoDB driver)
+# - pydantic (data validation)
+# - python-jose, passlib (authentication)
+# - python-multipart (file uploads)
+# - qrcode, pillow (QR code generation)
+# - TTS, g2p-id (Indonesian TTS)
+# - apscheduler (background jobs for accounting & articles)
+# - python-slugify (URL slug generation)
+# - bleach (HTML sanitization)
 
 # Installation may take 10-15 minutes
 ```
