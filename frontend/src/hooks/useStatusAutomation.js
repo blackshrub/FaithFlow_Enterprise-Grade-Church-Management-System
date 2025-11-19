@@ -112,12 +112,12 @@ export const useEvaluateAllRules = () => {
 
 // ============= Status Conflicts Hooks =============
 
-export const useStatusConflicts = (pendingOnly = true) => {
+export const useStatusConflicts = (statusFilter = 'open', memberId = null) => {
   const { church } = useAuth();
   
   return useQuery({
-    queryKey: queryKeys.statusConflicts.list(church?.id, pendingOnly),
-    queryFn: () => statusConflictsAPI.list(pendingOnly).then(res => res.data),
+    queryKey: queryKeys.statusConflicts.list(church?.id, statusFilter, memberId),
+    queryFn: () => statusConflictsAPI.list(statusFilter, memberId).then(res => res.data),
     enabled: !!church?.id,
   });
 };
@@ -127,7 +127,7 @@ export const useResolveConflict = () => {
   const { church } = useAuth();
   
   return useMutation({
-    mutationFn: ({ conflictId, statusId }) => statusConflictsAPI.resolve(conflictId, statusId).then(res => res.data),
+    mutationFn: ({ conflictId, statusId, comment }) => statusConflictsAPI.resolve(conflictId, statusId, comment).then(res => res.data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.statusConflicts.list(church?.id) });
       queryClient.invalidateQueries({ queryKey: queryKeys.members.all });
