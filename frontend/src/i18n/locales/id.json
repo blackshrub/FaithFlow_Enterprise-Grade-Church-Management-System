@@ -163,7 +163,8 @@
     "remove": "Hapus",
     "searching": "Mencari...",
     "clear": "Hapus",
-    "noResults": "Tidak ada hasil"
+    "noResults": "Tidak ada hasil",
+    "copy": "Salin"
   },
   "nav": {
     "dashboard": "Dasbor",
@@ -295,7 +296,16 @@
       "viewLogs": "Lihat Log",
       "deliveryLogs": "Log Pengiriman Webhook",
       "noLogs": "Belum ada log pengiriman",
-      "retries": "Percobaan Ulang"
+      "retries": "Percobaan Ulang",
+      "apiInfo": "Informasi API FaithFlow",
+      "apiInfoDesc": "Bagikan endpoint API ini dengan pengembang aplikasi eksternal Anda",
+      "apiBaseUrl": "URL Dasar API",
+      "authEndpoint": "Endpoint Autentikasi",
+      "membersEndpoint": "Endpoint Anggota",
+      "externalAppNote": "Untuk Pengembang Aplikasi Eksternal:",
+      "externalAppInstructions": "Gunakan endpoint ini untuk mengambil data anggota. Lihat dokumentasi di /app/docs/EXTERNAL_API.md untuk panduan integrasi lengkap.",
+      "configurationsTitle": "Konfigurasi Webhook",
+      "configurationsDesc": "Konfigurasi webhook untuk mengirim data anggota ke aplikasi eksternal"
     }
   },
   "events": {

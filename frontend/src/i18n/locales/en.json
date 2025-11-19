@@ -163,7 +163,8 @@
     "remove": "Remove",
     "searching": "Searching...",
     "clear": "Clear",
-    "noResults": "No results found"
+    "noResults": "No results found",
+    "copy": "Copy"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -295,7 +296,16 @@
       "viewLogs": "View Logs",
       "deliveryLogs": "Webhook Delivery Logs",
       "noLogs": "No delivery logs yet",
-      "retries": "Retries"
+      "retries": "Retries",
+      "apiInfo": "FaithFlow API Information",
+      "apiInfoDesc": "Share these API endpoints with your external application developers",
+      "apiBaseUrl": "API Base URL",
+      "authEndpoint": "Authentication Endpoint",
+      "membersEndpoint": "Members Endpoint",
+      "externalAppNote": "For External App Developers:",
+      "externalAppInstructions": "Use these endpoints to pull member data. See documentation in /app/docs/EXTERNAL_API.md for complete integration guide.",
+      "configurationsTitle": "Webhook Configurations",
+      "configurationsDesc": "Configure webhooks to push member data to external applications"
     }
   },
   "events": {
