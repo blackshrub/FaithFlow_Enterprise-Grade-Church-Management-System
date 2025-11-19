@@ -21,7 +21,7 @@ FaithFlow is a comprehensive, production-ready church management system designed
 - ✅ **Accounting System** - **Complete enterprise accounting** with COA (52 Indonesian accounts), double-entry journals, fiscal period locking, budgeting, fixed assets, depreciation, bank reconciliation, year-end closing, financial reports, audit trail
 - ✅ **CMS Articles** - **WordPress-style content management** with TipTap rich editor, scheduling system (APScheduler), categories & tags, comments moderation, draft preview, featured images, public API for mobile apps
 - ✅ **Prayer Requests** - **Pastoral care management** with member linking, 8 prayer categories, status tracking (New/Prayed), pastoral follow-up tracking, internal notes, filters & search
-- ✅ **Prayer Requests** - Manage and track prayer requests
+- ✅ **Group Management** - Multi-category groups (Cell Groups, Ministry Teams, Activity & Support Groups) with member rosters, join/leave workflows, leader assignment, WhatsApp notifications, and mobile group directory
 - ✅ **Full i18n Support** - English & Indonesian (**535+ translation keys**, zero hardcoded strings)
 - ✅ **Mobile API Ready** - RESTful APIs for mobile apps
 - ✅ **Collapsible Sidebar** - Icon-only mode for focused work
