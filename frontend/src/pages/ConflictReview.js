@@ -22,19 +22,19 @@ export default function ConflictReview() {
   const handleResolve = (conflict) => {
     setSelectedConflict(conflict);
     setSelectedStatusId('');
+    setComment('');
     setIsResolveDialogOpen(true);
   };
 
   const handleSubmitResolve = () => {
-    if (!selectedStatusId) return;
-
     resolveConflict.mutate(
-      { conflictId: selectedConflict.id, statusId: selectedStatusId },
+      { conflictId: selectedConflict.id, statusId: selectedStatusId || null, comment },
       {
         onSuccess: () => {
           setIsResolveDialogOpen(false);
           setSelectedConflict(null);
           setSelectedStatusId('');
+          setComment('');
         },
       }
     );
