@@ -162,7 +162,8 @@
     "next": "Next",
     "remove": "Remove",
     "searching": "Searching...",
-    "clear": "Clear"
+    "clear": "Clear",
+    "noResults": "No results found"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -1535,6 +1536,10 @@
       "requesterNameRequired": "Requester name is required",
       "categoryRequired": "Category is required",
       "memberRequired": "Member must be selected"
+    },
+    "form": {
+      "searchMemberPlaceholder": "Search for a member...",
+      "noMemberSelected": "No member selected yet"
     }
   },
   "groups": {

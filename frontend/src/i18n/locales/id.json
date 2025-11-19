@@ -162,7 +162,8 @@
     "next": "Berikutnya",
     "remove": "Hapus",
     "searching": "Mencari...",
-    "clear": "Hapus"
+    "clear": "Hapus",
+    "noResults": "Tidak ada hasil"
   },
   "nav": {
     "dashboard": "Dasbor",
@@ -1525,6 +1526,10 @@
       "requesterNameRequired": "Nama pemohon diperlukan",
       "categoryRequired": "Kategori diperlukan",
       "memberRequired": "Jemaat harus dipilih"
+    },
+    "form": {
+      "searchMemberPlaceholder": "Cari anggota...",
+      "noMemberSelected": "Belum ada anggota dipilih"
     }
   },
   "groups": {
