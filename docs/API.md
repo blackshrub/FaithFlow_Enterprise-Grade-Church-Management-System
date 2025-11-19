@@ -1037,6 +1037,298 @@ All accounting errors return structured format:
 
 ---
 
+## Articles (v1)
+
+**Base URL:** `/api/v1/articles/`
+
+**Authentication:** Required for admin endpoints, not required for public endpoints
+
+**Multi-Tenant:** All requests automatically filtered by `church_id` from JWT token
+
+---
+
+### Articles Management
+
+#### POST /api/v1/articles/
+
+Create new article.
+
+**Request:**
+```json
+{
+  "title": "Understanding Grace",
+  "content": "<p>Article content with HTML formatting...</p>",
+  "excerpt": "Short description",
+  "category_ids": ["cat-uuid-1", "cat-uuid-2"],
+  "tag_ids": ["tag-uuid-1"],
+  "status": "draft",
+  "allow_comments": true
+}
+```
+
+**Response:** 201 Created
+- Returns created article with auto-generated slug, reading_time, views_count
+
+**Features:**
+- Auto-generates slug from title if not provided
+- Calculates reading time (200 words/min)
+- Ensures slug uniqueness per church
+
+#### GET /api/v1/articles/
+
+List articles with filters and pagination.
+
+**Query Parameters:**
+- `search` - Search title/content
+- `status` - Filter by status (draft/published/archived)
+- `category` - Filter by category ID
+- `tag` - Filter by tag ID
+- `schedule_status` - Filter by schedule status
+- `limit` - Items per page (default 50, max 200)
+- `offset` - Pagination offset
+
+**Response:**
+```json
+{
+  "data": [...articles],
+  "pagination": {
+    "total": 42,
+    "limit": 50,
+    "offset": 0,
+    "has_more": false
+  }
+}
+```
+
+#### POST /api/v1/articles/{id}/upload-featured-image
+
+Upload featured image.
+
+**Request:** multipart/form-data
+- `file` - Image file (max 5MB, jpg/png/webp)
+
+**Response:** 201 Created
+```json
+{
+  "image_url": "/uploads/{church_id}/articles/{article_id}/featured.jpg"
+}
+```
+
+**Validation:**
+- Max 5MB file size
+- Only jpg, png, webp allowed
+
+#### POST /api/v1/articles/{id}/schedule
+
+Schedule article for future publishing.
+
+**Query Parameters:**
+- `scheduled_publish_date` - ISO datetime string
+
+**Validation:**
+- Only draft articles can be scheduled
+- Date must be in the future
+
+**Response:**
+```json
+{
+  "id": "article-uuid",
+  "schedule_status": "scheduled",
+  "scheduled_publish_date": "2025-12-25T10:00:00Z"
+}
+```
+
+#### POST /api/v1/articles/{id}/duplicate
+
+Duplicate existing article.
+
+**Response:** 201 Created
+- Returns new article with suffix "-copy" in slug
+- Status always "draft"
+- Views count reset to 0
+- No schedule
+
+---
+
+### Public API (Mobile App)
+
+#### GET /api/public/articles/
+
+List published articles (no authentication).
+
+**Query Parameters:**
+- `church_id` - Required
+- `limit` - Items per page (max 100)
+- `offset` - Pagination
+- `category` - Filter by category
+- `tag` - Filter by tag
+
+**Response:**
+```json
+{
+  "data": [
+    {
+      "id": "article-uuid",
+      "title": "Article Title",
+      "slug": "article-title",
+      "content": "Sanitized HTML content",
+      "excerpt": "Short excerpt",
+      "featured_image": "/uploads/...",
+      "category_ids": [...],
+      "tag_ids": [...],
+      "publish_date": "2025-01-01T10:00:00Z",
+      "reading_time": 5,
+      "views_count": 120,
+      "allow_comments": true
+    }
+  ],
+  "pagination": {...}
+}
+```
+
+**Filtering:**
+- Only returns `status="published"`
+- Only returns `publish_date <= now()`
+- Excludes scheduled articles (future publish date)
+- Content is sanitized (scripts stripped)
+
+#### GET /api/public/articles/featured
+
+Get featured articles (with images).
+
+**Query Parameters:**
+- `church_id` - Required
+- `limit` - Max 50
+
+**Response:** Array of articles with `featured_image` not null
+
+#### POST /api/v1/articles/{id}/increment-view
+
+Increment article views (public, no auth).
+
+**Response:**
+```json
+{
+  "success": true
+}
+```
+
+---
+
+## Prayer Requests (v1)
+
+**Base URL:** `/api/v1/prayer-requests/`
+
+**Authentication:** Required (admin/staff only)
+
+**Multi-Tenant:** All requests filtered by `church_id`
+
+---
+
+### Prayer Request Management
+
+#### POST /api/v1/prayer-requests/
+
+Create prayer request.
+
+**Request:**
+```json
+{
+  "member_id": "member-uuid",
+  "requester_name": "John Doe",
+  "requester_contact": "+628123456789",
+  "title": "Prayer for healing",
+  "description": "Please pray for my mother's recovery",
+  "category": "healing",
+  "status": "new",
+  "needs_follow_up": true,
+  "follow_up_notes": "Need pastoral counseling",
+  "internal_notes": "Follow up next week"
+}
+```
+
+**Response:** 201 Created
+
+**Categories:**
+- `healing` - Healing/Health
+- `family` - Family matters
+- `work` - Work/Career
+- `financial` - Financial needs
+- `spiritual` - Spiritual growth
+- `guidance` - Guidance/Direction
+- `thanksgiving` - Thanksgiving/Praise
+- `other` - Other requests
+
+#### GET /api/v1/prayer-requests/
+
+List prayer requests with filters.
+
+**Query Parameters:**
+- `search` - Search requester name, title, description
+- `status` - Filter by status (new/prayed)
+- `category` - Filter by category
+- `assigned_to` - Filter by assigned staff
+- `start_date` - Date range start (ISO string)
+- `end_date` - Date range end
+- `limit` - Pagination limit (default 50, max 200)
+- `offset` - Pagination offset
+
+**Response:**
+```json
+{
+  "data": [
+    {
+      "id": "prayer-uuid",
+      "church_id": "church-uuid",
+      "member_id": "member-uuid",
+      "requester_name": "John Doe",
+      "requester_contact": "+628123456789",
+      "title": "Prayer for healing",
+      "description": "...",
+      "category": "healing",
+      "status": "new",
+      "needs_follow_up": true,
+      "follow_up_notes": "...",
+      "internal_notes": "...",
+      "assigned_to_user_id": null,
+      "prayed_at": null,
+      "created_at": "2025-01-01T10:00:00Z"
+    }
+  ],
+  "pagination": {...}
+}
+```
+
+#### PUT /api/v1/prayer-requests/{id}
+
+Update prayer request.
+
+**Request:**
+```json
+{
+  "category": "spiritual",
+  "status": "prayed",
+  "needs_follow_up": true,
+  "internal_notes": "Updated notes"
+}
+```
+
+**Auto-set Fields:**
+- If `status` changed to "prayed" → sets `prayed_at` to current timestamp
+- If `status` changed back to "new" → clears `prayed_at`
+
+**Response:** 200 OK (updated prayer request)
+
+#### DELETE /api/v1/prayer-requests/{id}
+
+Delete prayer request.
+
+**Response:** 204 No Content
+
+**Audit:** All create/update/delete actions logged
+
+---
+
 ## Common Patterns
 
 ### Multi-Tenancy
