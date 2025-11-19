@@ -63,6 +63,7 @@ class MemberUpdate(BaseModel):
     household_id: Optional[str] = None
     notes: Optional[str] = None
     demographic_category: Optional[str] = None
+    member_status: Optional[str] = None
     blood_type: Optional[Literal['A', 'B', 'AB', 'O']] = None
     photo_filename: Optional[str] = None
     photo_base64: Optional[str] = None
