@@ -136,7 +136,7 @@ export default function WebhooksTab() {
           <CardTitle className="text-lg">{t('settings.webhooks.apiInfo')}</CardTitle>
           <CardDescription>{t('settings.webhooks.apiInfoDesc')}</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent className="space-y-4">
           <div>
             <Label className="text-xs text-gray-600">{t('settings.webhooks.apiBaseUrl')}</Label>
             <div className="flex items-center gap-2 mt-1">
@@ -153,6 +153,48 @@ export default function WebhooksTab() {
               </Button>
             </div>
           </div>
+          
+          {/* API Credentials Section */}
+          <div className="pt-4 border-t">
+            <Label className="text-xs text-gray-600 font-semibold">
+              {t('settings.webhooks.apiCredentials')}
+            </Label>
+            <p className="text-xs text-gray-500 mb-3">
+              {t('settings.webhooks.apiCredentialsDesc')}
+            </p>
+            
+            <div className="space-y-3 bg-white p-3 rounded border">
+              <div>
+                <Label className="text-xs text-gray-600">{t('settings.webhooks.apiEmail')}</Label>
+                <div className="flex items-center gap-2 mt-1">
+                  <code className="flex-1 px-2 py-1 bg-gray-50 border rounded font-mono text-sm">
+                    {church?.admin_email || 'admin@church.com'}
+                  </code>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => copyToClipboard(church?.admin_email || 'admin@church.com')}
+                  >
+                    {t('common.copy')}
+                  </Button>
+                </div>
+              </div>
+              
+              <div>
+                <Label className="text-xs text-gray-600">{t('settings.webhooks.apiPassword')}</Label>
+                <div className="flex items-center gap-2 mt-1">
+                  <code className="flex-1 px-2 py-1 bg-gray-50 border rounded font-mono text-sm">
+                    {t('settings.webhooks.useYourPassword')}
+                  </code>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  {t('settings.webhooks.passwordNote')}
+                </p>
+              </div>
+            </div>
+          </div>
+          
           <div>
             <Label className="text-xs text-gray-600">{t('settings.webhooks.authEndpoint')}</Label>
             <div className="flex items-center gap-2 mt-1">
@@ -185,11 +227,23 @@ export default function WebhooksTab() {
               </Button>
             </div>
           </div>
+          
+          {/* Example Usage */}
           <Alert>
-            <AlertDescription className="text-sm">
-              <strong>{t('settings.webhooks.externalAppNote')}</strong>
-              <br />
-              {t('settings.webhooks.externalAppInstructions')}
+            <AlertDescription className="text-xs space-y-2">
+              <strong>{t('settings.webhooks.exampleUsage')}</strong>
+              <pre className="mt-2 p-2 bg-gray-800 text-gray-100 rounded overflow-x-auto">
+{`// Login
+POST ${getAPIBaseURL()}/api/auth/login
+Body: { "email": "${church?.admin_email || 'admin@church.com'}", "password": "your-password" }
+
+// Get Members
+GET ${getAPIBaseURL()}/api/members/?limit=100
+Header: Authorization: Bearer YOUR_TOKEN`}
+              </pre>
+              <p className="mt-2">
+                📖 {t('settings.webhooks.fullDocumentation')}: <code>/app/docs/EXTERNAL_API.md</code>
+              </p>
             </AlertDescription>
           </Alert>
         </CardContent>
