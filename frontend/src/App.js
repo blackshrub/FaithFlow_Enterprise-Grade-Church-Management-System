@@ -10,6 +10,7 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Members from "./pages/Members";
 import Settings from "./pages/Settings";
+import ConflictReview from "./pages/ConflictReview";
 import ImportExport from "./pages/ImportExport";
 import SeatLayouts from "./pages/SeatLayouts";
 import Events from "./pages/Events";
