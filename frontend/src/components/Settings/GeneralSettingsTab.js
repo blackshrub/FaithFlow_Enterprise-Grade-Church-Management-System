@@ -20,6 +20,13 @@ export default function GeneralSettingsTab() {
     default_language: 'en',
     enable_whatsapp_notifications: false,
     whatsapp_send_rsvp_confirmation: true,
+    whatsapp_send_group_notifications: true,
+    group_categories: {
+      cell_group: 'Cell Group / Small Group',
+      ministry_team: 'Ministry Team',
+      activity: 'Activity Group',
+      support_group: 'Support Group',
+    },
   });
 
   useEffect(() => {
