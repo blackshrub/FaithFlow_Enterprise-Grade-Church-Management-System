@@ -221,13 +221,18 @@ Includes detailed steps for:
 - Stored in member profile
 
 ### 5. Member Management
-- Complete member CRUD
-- Bulk import (CSV/JSON)
-- Photo & document management
-- **Personal QR codes** (universal ID)
-- **QR modal** (view, download, print)
-- Demographics & categories
-- Custom fields support
+- **Advanced CSV Import** with 7-step wizard
+- **Photo & document upload** (base64 storage, up to 100MB ZIP)
+- **Phone duplicate validation** (early detection at Step 2, normalized comparison)
+- **Personal QR codes** auto-generated (6-digit universal ID)
+- **Photo upload** in create/edit forms
+- **Personal document upload** with preview/download
+- **Server-side search** across all members (not page-limited)
+- **Pagination** (50 members per page)
+- **Default member status** auto-assignment
+- **Member status management** (configurable in settings)
+- Simplified form (First Name, Last Name, Phone, Gender, Marital, Status, Address, Baptism Date, Notes)
+- **Real-time validation** with user-friendly error toasts
 
 ### 6. Bible Integration
 - **6 Versions:**
