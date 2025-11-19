@@ -37,6 +37,11 @@ faithflow/
 │   │   ├── article_comments.py         # ⭐ CMS - Comments
 │   │   ├── articles_public.py          # ⭐ CMS - Public API
 │   │   ├── prayer_requests.py          # ⭐ Prayer Requests
+│   │   ├── groups.py                   # ⭐ Groups - Staff CRUD
+│   │   ├── groups_public.py            # ⭐ Groups - Mobile API
+│   │   ├── group_memberships.py        # ⭐ Groups - Member management
+│   │   ├── group_join_requests.py      # ⭐ Groups - Join workflows
+│   │   ├── group_leave_requests.py     # ⭐ Groups - Leave workflows
 │   │   └── ...
 │   ├── services/            # Business logic
 │   │   ├── tts_service.py, qr_service.py, auth_service.py
