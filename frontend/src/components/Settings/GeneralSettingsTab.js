@@ -39,6 +39,13 @@ export default function GeneralSettingsTab() {
         default_language: settings.default_language || 'en',
         enable_whatsapp_notifications: settings.enable_whatsapp_notifications || false,
         whatsapp_send_rsvp_confirmation: settings.whatsapp_send_rsvp_confirmation !== false,
+        whatsapp_send_group_notifications: settings.whatsapp_send_group_notifications !== false,
+        group_categories: settings.group_categories || {
+          cell_group: 'Cell Group / Small Group',
+          ministry_team: 'Ministry Team',
+          activity: 'Activity Group',
+          support_group: 'Support Group',
+        },
       });
     }
   }, [settings]);
