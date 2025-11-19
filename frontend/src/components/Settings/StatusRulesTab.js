@@ -319,6 +319,7 @@ export default function StatusRulesTab() {
       priority: 0,
     });
     setSelectedRule(null);
+    setSimulationResults(null);
   };
 
   const handleRunAutomation = () => {
