@@ -12,6 +12,8 @@ export default function MemberForm({ formData, setFormData, member = null }) {
   const { t } = useTranslation();
   const { data: memberStatuses = [], isLoading: statusesLoading } = useMemberStatuses();
   const [photoPreview, setPhotoPreview] = useState(member?.photo_base64 || null);
+  const [documentPreview, setDocumentPreview] = useState(member?.personal_document_base64 || null);
+  const [documentName, setDocumentName] = useState(member?.personal_document || '');
 
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
