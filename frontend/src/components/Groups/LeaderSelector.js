@@ -2,6 +2,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Input } from '../ui/input';
 import { Button } from '../ui/button';
+import { X } from 'lucide-react';
 import { membersAPI } from '../../services/api';
 import MemberAvatar from '../MemberAvatar';
 
@@ -12,19 +13,44 @@ export function LeaderSelector({ value, onChange, selectedLeader }) {
   const [loading, setLoading] = React.useState(false);
   const [currentLeader, setCurrentLeader] = React.useState(selectedLeader || null);
 
-  const handleSearch = async () => {
-    if (!searchTerm) return;
-    setLoading(true);
-    try {
-      const res = await membersAPI.list({ search: searchTerm, limit: 10 });
-      const data = res.data?.data || res.data || [];
-      setResults(data);
-    } catch (e) {
-      console.error('Failed to search members for leader', e);
-    } finally {
-      setLoading(false);
+  // Fetch leader details if we have a leader_member_id but no selectedLeader object
+  React.useEffect(() => {
+    const fetchLeader = async () => {
+      if (value && !currentLeader) {
+        try {
+          const res = await membersAPI.get(value);
+          setCurrentLeader(res.data);
+        } catch (error) {
+          console.error('Failed to fetch leader details:', error);
+        }
+      }
+    };
+    fetchLeader();
+  }, [value, currentLeader]);
+
+  // Real-time search as user types (debounced)
+  React.useEffect(() => {
+    if (!searchTerm || searchTerm.length < 2) {
+      setResults([]);
+      return;
     }
-  };
+
+    const timer = setTimeout(async () => {
+      setLoading(true);
+      try {
+        const res = await membersAPI.list({ search: searchTerm, limit: 10 });
+        const data = res.data?.data || res.data || [];
+        setResults(data);
+      } catch (e) {
+        console.error('Failed to search members for leader', e);
+        setResults([]);
+      } finally {
+        setLoading(false);
+      }
+    }, 300); // Debounce 300ms
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
   const handleSelect = (member) => {
     onChange(member.id);
@@ -36,6 +62,8 @@ export function LeaderSelector({ value, onChange, selectedLeader }) {
   const handleClear = () => {
     onChange('');
     setCurrentLeader(null);
+    setSearchTerm('');
+    setResults([]);
   };
 
   return (
@@ -45,7 +73,8 @@ export function LeaderSelector({ value, onChange, selectedLeader }) {
           <div className="flex items-center gap-2">
             <MemberAvatar
               name={currentLeader.full_name}
-              photoBase64={currentLeader.photo_base64}
+              photo={currentLeader.photo_base64}
+              size="sm"
             />
             <div>
               <div className="font-medium text-sm">{currentLeader.full_name}</div>
@@ -55,7 +84,7 @@ export function LeaderSelector({ value, onChange, selectedLeader }) {
             </div>
           </div>
           <Button variant="ghost" size="sm" onClick={handleClear}>
-            {t('common.clear') || 'Clear'}
+            <X className="h-4 w-4" />
           </Button>
         </div>
       ) : (
@@ -64,15 +93,18 @@ export function LeaderSelector({ value, onChange, selectedLeader }) {
         </div>
       )}
 
-      <div className="flex gap-2">
+      <div>
         <Input
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           placeholder={t('groups.members.searchPlaceholder')}
+          disabled={!!currentLeader}
         />
-        <Button type="button" variant="outline" onClick={handleSearch} disabled={loading}>
-          {loading ? t('common.loading') : t('common.search')}
-        </Button>
+        {loading && searchTerm && (
+          <div className="text-xs text-muted-foreground mt-1">
+            {t('common.searching') || 'Searching...'}
+          </div>
+        )}
       </div>
 
       {results.length > 0 && (
@@ -81,15 +113,28 @@ export function LeaderSelector({ value, onChange, selectedLeader }) {
             <button
               key={m.id}
               type="button"
-              className="w-full flex items-center justify-between px-2 py-1.5 text-left hover:bg-muted/50"
+              className="w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-muted/50 transition-colors"
               onClick={() => handleSelect(m)}
             >
-              <div className="flex items-center gap-2">
-                <span className="font-medium text-sm">{m.full_name}</span>
-                <span className="text-xs text-muted-foreground">{m.phone_whatsapp}</span>
+              <MemberAvatar
+                name={m.full_name}
+                photo={m.photo_base64}
+                size="sm"
+              />
+              <div className="flex-1 min-w-0">
+                <div className="font-medium text-sm truncate">{m.full_name}</div>
+                <div className="text-xs text-muted-foreground truncate">
+                  {m.phone_whatsapp || m.email || 'No contact'}
+                </div>
               </div>
             </button>
           ))}
+        </div>
+      )}
+
+      {searchTerm && results.length === 0 && !loading && (
+        <div className="text-xs text-muted-foreground text-center py-2">
+          {t('groups.form.noMembersFound') || 'No members found'}
         </div>
       )}
     </div>
