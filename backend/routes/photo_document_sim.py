@@ -60,10 +60,15 @@ async def simulate_photo_matching(
             logger.info(f"Sample CSV filenames (normalized): {sample_keys}")
         
         # Match files
+        photo_data_map = {}  # {normalized_filename: base64_data}
+        
         for filename, file_data in extracted_files.items():
             if filename in member_lookup:
                 # Validate photo
                 if file_upload_service.validate_photo(file_data, filename):
+                    # Store base64 data for later use in import
+                    photo_data_map[filename] = file_data
+                    
                     matched.append({
                         'filename': filename,
                         'member_name': member_lookup[filename]['full_name'],
