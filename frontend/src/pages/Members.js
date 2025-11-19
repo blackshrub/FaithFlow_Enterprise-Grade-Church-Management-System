@@ -280,7 +280,7 @@ export default function Members() {
                         <TableCell>
                           {member.marital_status ? (
                             <Badge variant="secondary">
-                              {t(`members.${member.marital_status.toLowerCase().replace(' ', '')}`)}
+                              {t(`members.${member.marital_status.toLowerCase().replace(/\s+/g, '')}`)}
                             </Badge>
                           ) : t('common.na')}
                         </TableCell>
