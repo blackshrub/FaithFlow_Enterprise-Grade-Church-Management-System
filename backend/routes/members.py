@@ -412,6 +412,19 @@ async def delete_member(
         {"id": member_id},
         {"$set": {"is_active": False, "updated_at": datetime.now().isoformat()}}
     )
+    
+    # Trigger webhook: member.deleted
+    await webhook_service.trigger_member_webhook(
+        db=db,
+        event_type="member.deleted",
+        member_data={
+            "id": member["id"],
+            "full_name": member.get("full_name"),
+            "deleted_at": datetime.now().isoformat()
+        },
+        church_id=member.get('church_id')
+    )
+    
     return None
 
 
