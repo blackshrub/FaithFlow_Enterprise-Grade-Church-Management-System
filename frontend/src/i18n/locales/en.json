@@ -106,7 +106,10 @@
     "printQR": "Print QR",
     "viewQR": "View QR Code",
     "universalID": "Universal Member ID",
-    "useForCheckIn": "Use this QR code for check-in at any event"
+    "useForCheckIn": "Use this QR code for check-in at any event",
+    "notmarried": "Not Married",
+    "widow": "Widow",
+    "widower": "Widower"
   },
   "common": {
     "cancel": "Cancel",
