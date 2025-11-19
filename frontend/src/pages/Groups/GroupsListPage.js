@@ -23,10 +23,14 @@ import {
 export default function GroupsListPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const { data: churchSettings } = useChurchSettings();
   const [search, setSearch] = React.useState('');
   const [category, setCategory] = React.useState('all');
   const [openFilter, setOpenFilter] = React.useState('all');
+  const [groupToDelete, setGroupToDelete] = React.useState(null);
+
+  const deleteGroupMutation = useDeleteGroup();
 
   const { data, isLoading } = useGroups({
     search: search || undefined,
