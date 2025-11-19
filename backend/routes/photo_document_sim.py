@@ -132,7 +132,7 @@ async def simulate_photo_matching(
             },
             'matched': matched,
             'unmatched_members': unmatched_members,
-            'session_id': session_id if photo_data_map else None,  # Session ID to retrieve photos during import
+            'session_id': session_id if matched_photos else None,  # Session ID to retrieve photos during import
             'note': 'Photos stored temporarily. Will be embedded during import.'
         }
     
