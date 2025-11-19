@@ -13,6 +13,18 @@ export default function StepResults({ wizardData, updateWizardData, importMember
   const executeImport = async () => {
     setImporting(true);
     try {
+      // Prepare photo matches data
+      const photoMatches = {};
+      if (wizardData.photoSimulation?.photo_data) {
+        Object.assign(photoMatches, wizardData.photoSimulation.photo_data);
+      }
+      
+      // Prepare document matches data
+      const documentMatches = {};
+      if (wizardData.documentSimulation?.document_data) {
+        Object.assign(documentMatches, wizardData.documentSimulation.document_data);
+      }
+      
       const result = await importMembers.mutateAsync({
         file_content: wizardData.fileContent,
         file_type: wizardData.fileType,
@@ -22,6 +34,8 @@ export default function StepResults({ wizardData, updateWizardData, importMember
         duplicate_resolutions: JSON.stringify(wizardData.duplicateResolutions || {}),
         custom_fields: JSON.stringify(wizardData.customFields || []),
         date_format: wizardData.dateFormat,
+        photo_matches: JSON.stringify(photoMatches),
+        document_matches: JSON.stringify(documentMatches),
       });
       
       updateWizardData({ importResults: result });
