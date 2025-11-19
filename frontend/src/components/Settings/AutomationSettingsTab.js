@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useEvaluateAllRules } from '../../hooks/useStatusAutomation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { settingsAPI } from '../../services/api';
+import { automationSettingsAPI } from '../../services/api';
 import { queryKeys } from '../../lib/react-query';
 import { toast } from 'sonner';
 import { Button } from '../ui/button';
@@ -18,17 +18,16 @@ export default function AutomationSettingsTab() {
   const queryClient = useQueryClient();
   const evaluateAll = useEvaluateAllRules();
 
-  // Fetch church settings
-  const { data: churchSettings, isLoading } = useQuery({
-    queryKey: queryKeys.settings.churchSettings(church?.id),
-    queryFn: () => settingsAPI.getChurchSettings().then(res => res.data),
+  // Fetch automation settings
+  const { data: automationSettings, isLoading } = useQuery({
+    queryKey: ['automation-settings', church?.id],
+    queryFn: () => automationSettingsAPI.getSettings().then(res => res.data),
     enabled: !!church?.id,
   });
 
   const [settings, setSettings] = useState({
     enabled: false,
     schedule: '00:00',
-    lastRun: null,
   });
 
   useEffect(() => {
