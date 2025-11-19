@@ -295,6 +295,7 @@ export default function Members() {
             </form>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       <Card>
