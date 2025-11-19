@@ -316,11 +316,11 @@ async def import_members(
     field_mappings: str = Form(...),
     value_mappings: str = Form(default='{}'),
     default_values: str = Form(default='{}'),
-    duplicate_resolutions: str = Form(default='{}'),  # JSON: {phone: row_index_to_keep}
-    custom_fields: str = Form(default='[]'),  # JSON array of custom field definitions
+    duplicate_resolutions: str = Form(default='{}'),
+    custom_fields: str = Form(default='[]'),
     date_format: str = Form(default='DD-MM-YYYY'),
-    photo_matches: str = Form(default='{}'),  # NEW: JSON {normalized_filename: base64_data}
-    document_matches: str = Form(default='{}'),  # NEW: JSON {normalized_filename: filename}
+    photo_session_id: str = Form(default=''),  # Session ID for photo data
+    document_session_id: str = Form(default=''),  # Session ID for document data
     db: AsyncIOMotorDatabase = Depends(get_db),
     current_user: dict = Depends(require_admin)
 ):
