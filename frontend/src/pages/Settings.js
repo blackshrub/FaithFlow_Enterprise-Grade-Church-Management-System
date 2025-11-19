@@ -5,6 +5,7 @@ import GeneralSettingsTab from '../components/Settings/GeneralSettingsTab';
 import MemberStatusesTab from '../components/Settings/MemberStatusesTab';
 import DemographicsTab from '../components/Settings/DemographicsTab';
 import EventCategoriesTab from '../components/Settings/EventCategoriesTab';
+import WebhooksTab from '../components/Settings/WebhooksTab';
 
 export default function Settings() {
   const { t } = useTranslation();
