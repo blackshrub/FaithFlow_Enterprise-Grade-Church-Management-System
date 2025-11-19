@@ -106,6 +106,7 @@ async def simulate_photo_matching(
             },
             'matched': matched,
             'unmatched_members': unmatched_members,  # Members without matching photos
+            'photo_data': photo_data_map,  # NEW: {normalized_filename: base64_data}
             'note': 'Only matched photos will be imported. Unmatched files will be ignored.'
         }
     
