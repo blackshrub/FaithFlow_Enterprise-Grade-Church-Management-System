@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Plus, Edit, Trash2, Loader2, Zap, CheckCircle, XCircle, Eye } from 'lucide-react';
 import { Switch } from '../ui/switch';
 import { Alert, AlertDescription } from '../ui/alert';
+import { toast } from 'sonner';
 
 const initialFormData = {
   name: '',
