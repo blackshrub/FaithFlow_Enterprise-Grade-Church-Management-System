@@ -1222,9 +1222,24 @@ Duplicate existing article.
 
 **Response:** 201 Created
 - Returns new article with suffix "-copy" in slug
-- Status always "draft"
-- Views count reset to 0
-- No schedule
+- Status always `draft`
+- `views_count` reset to 0
+- No schedule (`schedule_status = "none"`, `scheduled_publish_date = null`)
+
+#### POST /api/v1/articles/{id}/generate-preview-link
+
+Generate a draft preview link and token for an article (Admin/Staff).
+
+**Response (example):**
+```json
+{
+  "preview_url": "/public/article-preview/understanding-grace?token=preview-token-uuid",
+  "preview_token": "preview-token-uuid"
+}
+```
+
+- Reuses an existing `preview_token` if present, otherwise generates a new one.
+- The frontend/mobile can use `preview_url` to render a draft article without authentication.
 
 ---
 
