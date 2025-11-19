@@ -7,9 +7,11 @@ import uuid
 class MemberStatusBase(BaseModel):
     name: str = Field(..., min_length=1, max_length=100)
     description: Optional[str] = None
-    order: int = Field(default=0, description="Display order")
+    color: str = Field(default="#3C5AFF", description="Status color for UI badges (hex)")
+    display_order: int = Field(default=0, description="Display order in UI")
     is_active: bool = True
-    is_default_for_new: bool = Field(default=False, description="Default status for new visitors/members")
+    is_default: bool = Field(default=False, description="Default status for new members")
+    is_system: bool = Field(default=False, description="System status (cannot be deleted)")
 
 
 class MemberStatusCreate(MemberStatusBase):
@@ -19,9 +21,11 @@ class MemberStatusCreate(MemberStatusBase):
 class MemberStatusUpdate(BaseModel):
     name: Optional[str] = Field(None, min_length=1, max_length=100)
     description: Optional[str] = None
-    order: Optional[int] = None
+    color: Optional[str] = None
+    display_order: Optional[int] = None
     is_active: Optional[bool] = None
-    is_default_for_new: Optional[bool] = None
+    is_default: Optional[bool] = None
+    # is_system cannot be updated
 
 
 class MemberStatus(MemberStatusBase):
