@@ -287,7 +287,32 @@ async def reject_join_request(
         description=f"Rejected group join request {request_id}",
     )
 
-    # TODO: send push notification to member
+    # Send WhatsApp notification to member if enabled in church settings
+    church_settings = await db.church_settings.find_one({"church_id": church_id})
+    whatsapp_enabled = (
+        church_settings
+        and church_settings.get("enable_whatsapp_notifications")
+        and church_settings.get("whatsapp_send_group_notifications", True)
+    )
+
+    if whatsapp_enabled:
+        member = await db.members.find_one({"id": request_doc["member_id"], "church_id": church_id})
+        group = await db.groups.find_one({"id": request_doc["group_id"], "church_id": church_id})
+
+        if member and member.get("phone_whatsapp") and group:
+            try:
+                message = (
+                    "Your join request for "
+                    f"{group.get('name', '')}"
+                    " was not approved."
+                )
+                await send_whatsapp_message(
+                    phone_number=member["phone_whatsapp"],
+                    message=message,
+                )
+            except Exception:
+                # Do not block rejection flow if WhatsApp fails
+                pass
 
     updated = await db.group_join_requests.find_one({"id": request_id}, {"_id": 0})
     return updated
