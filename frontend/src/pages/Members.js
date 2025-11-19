@@ -75,6 +75,22 @@ export default function Members() {
       return acc;
     }, {});
 
+    // Convert lowercase form values back to database format
+    if (cleanData.gender) {
+      cleanData.gender = cleanData.gender.charAt(0).toUpperCase() + cleanData.gender.slice(1);
+    }
+    
+    if (cleanData.marital_status) {
+      const maritalMap = {
+        'married': 'Married',
+        'notmarried': 'Not Married',
+        'widow': 'Widow',
+        'widower': 'Widower',
+        'single': 'Single'
+      };
+      cleanData.marital_status = maritalMap[cleanData.marital_status] || cleanData.marital_status;
+    }
+
     createMember.mutate(
       { ...cleanData, church_id: church.id },
       {
