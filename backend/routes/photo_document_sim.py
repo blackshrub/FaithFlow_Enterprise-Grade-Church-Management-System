@@ -241,7 +241,7 @@ async def simulate_document_matching(
             },
             'matched': matched,
             'unmatched_members': unmatched_members,
-            'session_id': session_id if document_data_map else None,  # Session ID to retrieve documents
+            'session_id': session_id if matched_documents else None,
             'note': 'Documents stored temporarily. Will be embedded during import.'
         }
     
