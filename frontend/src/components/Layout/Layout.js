@@ -86,10 +86,8 @@ export default function Layout() {
         { label: t('events.kioskMode'), path: '/kiosk' },
       ]
     },
-    { icon: DollarSign, label: t('nav.donations'), path: '/donations' },
     { icon: Heart, label: t('prayerRequests.title'), path: '/prayer-requests' },
     { icon: BookOpen, label: t('nav.content'), path: '/devotions' },
-    { icon: Award, label: t('nav.spiritualJourney'), path: '/spiritual-journey' },
     {
       icon: FileText,
       label: t('articles.title'),
@@ -123,6 +121,9 @@ export default function Layout() {
       ]
     },
   ];
+
+  // Note: Removed "churches" from default menu - only added for super admin below
+  // Removed: Donations, Spiritual Journey
 
   if (isSuperAdmin) {
     menuItems.push({ icon: Church, label: t('nav.churches'), path: '/churches' });
