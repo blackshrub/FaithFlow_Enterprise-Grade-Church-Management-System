@@ -226,74 +226,16 @@ export default function PrayerRequestForm() {
                 <CardTitle>{t('prayerRequests.requesterName')}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="relative">
+                <div>
                   <Label>{t('prayerRequests.selectMember')} *</Label>
-                  <Input
-                    value={memberSearch}
-                    onChange={(e) => {
-                      setMemberSearch(e.target.value);
-                      if (e.target.value.length >= 2) {
-                        setShowMemberDropdown(true);
-                      }
+                  <MemberSelector
+                    value={formData.member_id}
+                    onChange={(memberId) => {
+                      setFormData({ ...formData, member_id: memberId });
                     }}
-                    onFocus={() => {
-                      if (memberSearch.length >= 2) {
-                        setShowMemberDropdown(true);
-                      }
-                    }}
-                    onBlur={() => {
-                      // Delay to allow click on dropdown
-                      setTimeout(() => setShowMemberDropdown(false), 200);
-                    }}
-                    placeholder={t('common.search') + '...'}
-                    required
+                    selectedMember={selectedMemberData}
+                    placeholder={t('prayerRequests.form.searchMemberPlaceholder') || 'Search for a member...'}
                   />
-                  {showMemberDropdown && filteredMembers.length > 0 && (
-                    <div className="absolute z-50 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                      {filteredMembers.map((member) => (
-                        <div
-                          key={member.id}
-                          onClick={() => handleMemberSelect(member)}
-                          className="flex items-center gap-3 px-4 py-3 hover:bg-gray-100 cursor-pointer border-b last:border-b-0"
-                        >
-                          {member.profile_photo ? (
-                            <img
-                              src={member.profile_photo}
-                              alt={member.full_name}
-                              className="w-10 h-10 rounded-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-medium">
-                              {member.full_name?.charAt(0)?.toUpperCase()}
-                            </div>
-                          )}
-                          <div className="flex-1">
-                            <p className="font-medium">{member.full_name}</p>
-                            <p className="text-sm text-gray-600">{member.whatsapp || member.phone || '-'}</p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  {selectedMember && (
-                    <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg flex items-center gap-3">
-                      {selectedMember.profile_photo ? (
-                        <img
-                          src={selectedMember.profile_photo}
-                          alt={selectedMember.full_name}
-                          className="w-12 h-12 rounded-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-12 h-12 rounded-full bg-blue-200 flex items-center justify-center text-blue-700 font-medium text-lg">
-                          {selectedMember.full_name?.charAt(0)?.toUpperCase()}
-                        </div>
-                      )}
-                      <div>
-                        <p className="text-sm font-medium">{selectedMember.full_name}</p>
-                        <p className="text-xs text-gray-600">{selectedMember.whatsapp || selectedMember.phone || '-'}</p>
-                      </div>
-                    </div>
-                  )}
                 </div>
 
                 <div>
