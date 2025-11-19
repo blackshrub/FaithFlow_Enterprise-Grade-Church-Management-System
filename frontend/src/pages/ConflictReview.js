@@ -124,14 +124,16 @@ export default function ConflictReview() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="secondary">{conflict.current_status || 'None'}</Badge>
+                      <Badge variant="secondary">
+                        {getStatusById(conflict.current_status_id)?.name || 'None'}
+                      </Badge>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="outline">{conflict.matched_rules?.length || 0} rules</Badge>
+                      <Badge variant="outline">{conflict.rule_ids?.length || 0} rules</Badge>
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-1 flex-wrap">
-                        {conflict.possible_statuses?.map((status) => (
+                        {getProposedStatuses(conflict).map((status) => (
                           <Badge
                             key={status.id}
                             style={{
@@ -145,14 +147,14 @@ export default function ConflictReview() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      {conflict.status === 'pending' ? (
-                        <Badge variant="destructive">Pending</Badge>
+                      {conflict.status === 'open' ? (
+                        <Badge variant="destructive">Open</Badge>
                       ) : (
                         <Badge variant="default" className="bg-green-600">Resolved</Badge>
                       )}
                     </TableCell>
                     <TableCell className="text-right">
-                      {conflict.status === 'pending' && (
+                      {conflict.status === 'open' && (
                         <Button
                           size="sm"
                           onClick={() => handleResolve(conflict)}
