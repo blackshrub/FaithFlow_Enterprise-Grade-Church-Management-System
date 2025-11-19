@@ -165,31 +165,34 @@ export default function WebhooksTab() {
             
             <div className="space-y-3 bg-white p-3 rounded border">
               <div>
-                <Label className="text-xs text-gray-600">{t('settings.webhooks.apiEmail')}</Label>
+                <Label className="text-xs text-gray-600">{t('settings.webhooks.apiUsername')}</Label>
                 <div className="flex items-center gap-2 mt-1">
                   <code className="flex-1 px-2 py-1 bg-gray-50 border rounded font-mono text-sm">
-                    {church?.admin_email || 'admin@church.com'}
+                    api_user@{church?.name?.toLowerCase().replace(/\s+/g, '') || 'church'}.local
                   </code>
                   <Button
                     type="button"
                     variant="ghost"
                     size="sm"
-                    onClick={() => copyToClipboard(church?.admin_email || 'admin@church.com')}
+                    onClick={() => copyToClipboard(`api_user@${church?.name?.toLowerCase().replace(/\s+/g, '') || 'church'}.local`)}
                   >
                     {t('common.copy')}
                   </Button>
                 </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  {t('settings.webhooks.usernameNote')}
+                </p>
               </div>
               
               <div>
-                <Label className="text-xs text-gray-600">{t('settings.webhooks.apiPassword')}</Label>
+                <Label className="text-xs text-gray-600">{t('settings.webhooks.apiKey')}</Label>
                 <div className="flex items-center gap-2 mt-1">
                   <code className="flex-1 px-2 py-1 bg-gray-50 border rounded font-mono text-sm">
-                    {t('settings.webhooks.useYourPassword')}
+                    {t('settings.webhooks.useAdminCredentials')}
                   </code>
                 </div>
-                <p className="text-xs text-gray-500 mt-1">
-                  {t('settings.webhooks.passwordNote')}
+                <p className="text-xs text-yellow-700 bg-yellow-50 px-2 py-1 rounded mt-1 text-xs">
+                  ⚠️ {t('settings.webhooks.credentialsNote')}
                 </p>
               </div>
             </div>
