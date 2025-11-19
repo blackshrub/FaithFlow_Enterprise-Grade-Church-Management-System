@@ -17,7 +17,7 @@ class UserCreate(UserBase):
 
 
 class UserLogin(BaseModel):
-    email: EmailStr
+    email: str  # Changed from EmailStr to str to support both email and API username formats
     password: str
 
 
