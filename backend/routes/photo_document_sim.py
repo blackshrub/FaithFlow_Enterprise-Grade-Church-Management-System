@@ -232,8 +232,8 @@ async def simulate_document_matching(
             },
             'matched': matched,
             'unmatched_members': unmatched_members,
-            'document_data': document_data_map,  # NEW: {normalized_filename: filename}
-            'note': 'Only matched documents will be imported. Unmatched files will be ignored.'
+            'session_id': session_id if document_data_map else None,  # Session ID to retrieve documents
+            'note': 'Documents stored temporarily. Will be embedded during import.'
         }
     
     except Exception as e:
