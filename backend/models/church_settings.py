@@ -26,6 +26,20 @@ class ChurchSettingsBase(BaseModel):
         },
         description="Mapping of group category code to display label",
     )
+    
+    # Member Status Automation
+    status_automation_enabled: bool = Field(
+        default=False,
+        description="Enable automatic member status updates based on rules"
+    )
+    status_automation_schedule: str = Field(
+        default="00:00",
+        description="Daily time to run automation (24h format: HH:MM)"
+    )
+    last_status_automation_run: Optional[datetime] = Field(
+        None,
+        description="Last time status automation was executed"
+    )
 
 
 class ChurchSettingsCreate(ChurchSettingsBase):
