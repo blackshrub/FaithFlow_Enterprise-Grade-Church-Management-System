@@ -125,40 +125,78 @@ export default function MemberForm({ formData, setFormData, member = null }) {
         </div>
       </div>
 
-      {/* Document Display (Read-only for imports) */}
-      {member && member.personal_document && (
-        <div className="border-b pb-4">
-          <Label>{t('members.personalDocument')}</Label>
-          <div className="flex items-center gap-4 mt-2">
-            <div className="flex items-center gap-2 text-sm">
-              <FileText className="h-4 w-4 text-gray-600" />
-              <span className="font-mono text-gray-700">{member.personal_document}</span>
-            </div>
-            {member.personal_document_base64 ? (
-              <div className="flex gap-3">
-                <a 
-                  href={member.personal_document_base64}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm text-blue-600 hover:text-blue-800 hover:underline"
-                >
-                  {t('members.viewDocument')}
-                </a>
-                <span className="text-gray-300">|</span>
-                <a 
-                  href={member.personal_document_base64}
-                  download={member.personal_document}
-                  className="text-sm text-blue-600 hover:text-blue-800 hover:underline"
-                >
-                  {t('members.downloadDocument')}
-                </a>
+      {/* Document Upload Section */}
+      <div className="border-b pb-4">
+        <Label>{t('members.personalDocument')}</Label>
+        <div className="flex items-center gap-4 mt-2">
+          {documentPreview || documentName ? (
+            <>
+              <div className="flex items-center gap-2">
+                <FileText className="h-8 w-8 text-gray-600" />
+                <div className="flex flex-col">
+                  <span className="text-sm font-mono">{documentName}</span>
+                  {documentPreview && (
+                    <div className="flex gap-2 mt-1">
+                      <a 
+                        href={documentPreview}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-blue-600 hover:text-blue-800 hover:underline"
+                      >
+                        {t('members.viewDocument')}
+                      </a>
+                      <span className="text-gray-300">|</span>
+                      <a 
+                        href={documentPreview}
+                        download={documentName}
+                        className="text-xs text-blue-600 hover:text-blue-800 hover:underline"
+                      >
+                        {t('members.downloadDocument')}
+                      </a>
+                    </div>
+                  )}
+                </div>
               </div>
-            ) : (
-              <span className="text-xs text-gray-500">{t('members.documentNotAvailable')}</span>
-            )}
-          </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={removeDocument}
+              >
+                <X className="h-4 w-4 mr-1" />
+                {t('common.remove')}
+              </Button>
+            </>
+          ) : (
+            <div className="flex items-center gap-4">
+              <div className="h-12 w-12 rounded border-2 border-dashed border-gray-300 flex items-center justify-center bg-gray-50">
+                <FileText className="h-6 w-6 text-gray-400" />
+              </div>
+              <div>
+                <input
+                  type="file"
+                  id="document-upload"
+                  accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                  onChange={handleDocumentUpload}
+                  className="hidden"
+                />
+                <label htmlFor="document-upload">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => document.getElementById('document-upload').click()}
+                  >
+                    <Upload className="h-4 w-4 mr-2" />
+                    {t('members.uploadDocument')}
+                  </Button>
+                </label>
+                <p className="text-xs text-gray-500 mt-1">{t('members.documentHint')}</p>
+              </div>
+            </div>
+          )}
         </div>
-      )}
+      </div>
       
       {/* Form fields */}
       <div className="grid grid-cols-2 gap-4">
