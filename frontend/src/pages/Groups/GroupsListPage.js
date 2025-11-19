@@ -56,10 +56,18 @@ export default function GroupsListPage() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">{t('groups.filters.allCategories')}</SelectItem>
-              <SelectItem value="cell_group">{t('groups.categories.cellGroup')}</SelectItem>
-              <SelectItem value="ministry_team">{t('groups.categories.ministryTeam')}</SelectItem>
-              <SelectItem value="activity">{t('groups.categories.activityGroup')}</SelectItem>
-              <SelectItem value="support_group">{t('groups.categories.supportGroup')}</SelectItem>
+              <SelectItem value="cell_group">
+                {churchSettings?.group_categories?.cell_group || t('groups.categories.cellGroup')}
+              </SelectItem>
+              <SelectItem value="ministry_team">
+                {churchSettings?.group_categories?.ministry_team || t('groups.categories.ministryTeam')}
+              </SelectItem>
+              <SelectItem value="activity">
+                {churchSettings?.group_categories?.activity || t('groups.categories.activityGroup')}
+              </SelectItem>
+              <SelectItem value="support_group">
+                {churchSettings?.group_categories?.support_group || t('groups.categories.supportGroup')}
+              </SelectItem>
             </SelectContent>
           </Select>
 
