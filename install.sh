@@ -416,9 +416,9 @@ NGINX_CONFIG
                 echo -e "${GREEN}   🔒 Your site is now secure with HTTPS!${NC}"
                 
                 # Update frontend .env with HTTPS URL
-                if [ -f "$SCRIPT_DIR/frontend/.env" ]; then
-                    sed -i "s|http://.*|https://$DOMAIN_NAME|g" "$SCRIPT_DIR/frontend/.env"
-                    sed -i "s|REACT_APP_BACKEND_URL=.*|REACT_APP_BACKEND_URL=https://$DOMAIN_NAME|g" "$SCRIPT_DIR/frontend/.env"
+                if [ -f "$INSTALL_DIR/frontend/.env" ]; then
+                    sed -i "s|http://.*|https://$DOMAIN_NAME|g" "$INSTALL_DIR/frontend/.env"
+                    sed -i "s|REACT_APP_BACKEND_URL=.*|REACT_APP_BACKEND_URL=https://$DOMAIN_NAME|g" "$INSTALL_DIR/frontend/.env"
                     info "Updated frontend/.env with HTTPS URL"
                 fi
             else
