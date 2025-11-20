@@ -194,8 +194,8 @@ function App() {
               <Route path="churches" element={<PlaceholderPage title="Churches" />} />
             </Route>
 
-            {/* Catch all */}
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            {/* Catch all - redirect to kiosk home */}
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </BrowserRouter>
         <Toaster />
