@@ -257,7 +257,7 @@ sleep 1
 progress
 echo -e "${MAGENTA}${ROCKET} Step 11/14: Setting up FaithFlow frontend...${NC}"
 progress
-cd "$SCRIPT_DIR/frontend"
+cd "$INSTALL_DIR/frontend"
 
 info "Installing JavaScript packages (this will take 2-3 minutes)..."
 echo -e "${CYAN}   ☕ Grab a coffee while we prepare the beautiful interface...${NC}"
