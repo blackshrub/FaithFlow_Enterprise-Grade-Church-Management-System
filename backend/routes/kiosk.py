@@ -272,3 +272,56 @@ async def join_group_kiosk(
     except Exception as e:
         logger.error(f"Kiosk group join error: {e}")
         raise HTTPException(status_code=500, detail="Failed to create join request")
+
+
+@router.get("/lookup-member")
+async def lookup_member_by_phone(
+    phone: str = Query(..., description="Phone number to lookup"),
+    church_id: str = Query(..., description="Church ID"),
+    db: AsyncIOMotorDatabase = Depends(get_db)
+):
+    """Lookup member by phone (public endpoint for kiosk).
+    
+    Tries multiple phone formats to find match.
+    """
+    try:
+        # Clean phone number
+        clean_phone = phone.replace('+', '').replace('-', '').replace(' ', '')
+        
+        logger.info(f"Kiosk member lookup: {phone} → {clean_phone}")
+        
+        # Try multiple formats
+        phone_variations = [
+            phone,  # Original
+            clean_phone,  # Without +
+            f"+{clean_phone}",  # With +
+        ]
+        
+        # If starts with 0, also try with 62
+        if clean_phone.startswith('0'):
+            phone_variations.append('62' + clean_phone[1:])
+            phone_variations.append('+62' + clean_phone[1:])
+        
+        # Search with regex to match any variation
+        member = await db.members.find_one({
+            "church_id": church_id,
+            "phone_whatsapp": {"$in": phone_variations}
+        }, {"_id": 0})
+        
+        if member:
+            logger.info(f"Member found: {member.get('full_name')}")
+            return {
+                "success": True,
+                "member": member
+            }
+        else:
+            logger.info(f"Member not found for phone: {phone}")
+            return {
+                "success": False,
+                "member": None
+            }
+    
+    except Exception as e:
+        logger.error(f"Member lookup error: {e}")
+        raise HTTPException(status_code=500, detail="Lookup failed")
+
