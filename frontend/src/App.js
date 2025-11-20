@@ -113,16 +113,14 @@ function App() {
               </ProtectedRoute>
             } />
             
-            {/* Protected Routes */}
+            {/* Protected Admin Routes */}
             <Route
-              path="/"
               element={
                 <ProtectedRoute>
                   <Layout />
                 </ProtectedRoute>
               }
             >
-              <Route index element={<Navigate to="/dashboard" replace />} />
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="members" element={<Members />} />
               <Route path="trash" element={<TrashBin />} />
