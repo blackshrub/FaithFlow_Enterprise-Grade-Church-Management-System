@@ -181,16 +181,40 @@ success "Nginx installed!"
 echo ""
 sleep 1
 
-progress
-echo -e "${MAGENTA}${ROCKET} Step 9/12: Setting up FaithFlow backend...${NC}"
+echo -e "${GREEN}Step 9/14: Copying FaithFlow to /opt/faithflow...${NC}"
 progress
 
-# Get current directory (where script is run from)
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-cd "$SCRIPT_DIR"
+INSTALL_DIR="/opt/faithflow"
+
+info "Setting up installation directory..."
+
+# Create /opt/faithflow if doesn't exist
+if [ ! -d "$INSTALL_DIR" ]; then
+    mkdir -p "$INSTALL_DIR"
+    success "Created $INSTALL_DIR"
+fi
+
+# If running from different directory, copy files
+if [ "$SCRIPT_DIR" != "$INSTALL_DIR" ]; then
+    info "Copying files from $SCRIPT_DIR to $INSTALL_DIR..."
+    rsync -a --exclude='.git' --exclude='node_modules' --exclude='__pycache__' --exclude='venv' "$SCRIPT_DIR/" "$INSTALL_DIR/"
+    success "Files copied to $INSTALL_DIR"
+else
+    info "Already in $INSTALL_DIR"
+fi
+
+cd "$INSTALL_DIR"
+success "Working directory: $INSTALL_DIR"
+echo ""
+sleep 1
+
+progress
+echo -e "${MAGENTA}${ROCKET} Step 10/14: Setting up FaithFlow backend...${NC}"
+progress
 
 info "Creating Python virtual environment..."
-cd backend
+cd "$INSTALL_DIR/backend"
 python3.11 -m venv venv > /dev/null 2>&1
 source venv/bin/activate
 info "Installing Python packages (this may take a minute)..."
