@@ -8,6 +8,14 @@ venv/
 env/
 ENV/
 
+# Environment files - ignore local changes but keep committed defaults
+# Note: backend/.env and frontend/.env are committed with placeholder values
+# This prevents local changes from being tracked
+.env
+.env.local
+.env.*.local
+!.env.example
+
 # IDE
 .vscode/
 .idea/
