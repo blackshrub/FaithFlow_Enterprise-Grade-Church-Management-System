@@ -105,7 +105,7 @@ echo ""
 sleep 1
 
 progress
-echo -e "${MAGENTA}${ROCKET} Step 2/12: Installing Python 3.11...${NC}"
+echo -e "${MAGENTA}${ROCKET} Step 2/14: Installing Python 3.11...${NC}"
 progress
 info "Python is the backend engine of FaithFlow..."
 apt install -y python3.11 python3.11-venv python3-pip python3.11-dev build-essential > /dev/null 2>&1
