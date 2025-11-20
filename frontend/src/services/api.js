@@ -31,6 +31,10 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  // Prevent axios from following redirects that might change protocol
+  maxRedirects: 0,
+  // Validate status to treat 307 as error (shouldn't redirect)
+  validateStatus: (status) => status >= 200 && status < 300,
 });
 
 // Add request interceptor for auth and logging
