@@ -192,11 +192,17 @@ const CounselorsPage = () => {
                 {counselors.map((counselor) => (
                   <TableRow key={counselor.id}>
                     <TableCell>
-                      <div>
-                        <div className="font-medium">{counselor.display_name}</div>
-                        {counselor.staff_user_email && (
-                          <div className="text-sm text-gray-500">{counselor.staff_user_email}</div>
-                        )}
+                      <div className="flex items-center gap-3">
+                        <MemberAvatar 
+                          name={counselor.display_name}
+                          size="md"
+                        />
+                        <div>
+                          <div className="font-medium">{counselor.display_name}</div>
+                          {counselor.staff_user_email && (
+                            <div className="text-sm text-gray-500">{counselor.staff_user_email}</div>
+                          )}
+                        </div>
                       </div>
                     </TableCell>
                     <TableCell>{counselor.whatsapp_number || '-'}</TableCell>
