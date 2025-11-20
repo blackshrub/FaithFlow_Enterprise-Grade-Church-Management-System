@@ -460,22 +460,28 @@ echo -e "${YELLOW}│  1️⃣  Configure environment:                          
 echo -e "${YELLOW}│     ${WHITE}nano $SCRIPT_DIR/backend/.env${YELLOW}                                  │${NC}"
 echo -e "${YELLOW}│     Set MONGO_URL and JWT_SECRET_KEY                                    │${NC}"
 echo -e "${YELLOW}│                                                                             │${NC}"
-echo -e "${YELLOW}│  2️⃣  Configure frontend:                                                 │${NC}"
-echo -e "${YELLOW}│     ${WHITE}nano $SCRIPT_DIR/frontend/.env${YELLOW}                                 │${NC}"
-echo -e "${YELLOW}│     Set REACT_APP_BACKEND_URL to your domain                            │${NC}"
-echo -e "${YELLOW}│                                                                             │${NC}"
-echo -e "${YELLOW}│  3️⃣  Create your admin account:                                          │${NC}"
-echo -e "${YELLOW}│     ${WHITE}cd $SCRIPT_DIR/backend${YELLOW}                                         │${NC}"
-echo -e "${YELLOW}│     ${WHITE}source venv/bin/activate${YELLOW}                                       │${NC}"
-echo -e "${YELLOW}│     ${WHITE}python3 add_default_pins.py${YELLOW}                                    │${NC}"
-echo -e "${YELLOW}│     (Then create admin via application)                                 │${NC}"
-echo -e "${YELLOW}│                                                                             │${NC}"
-echo -e "${YELLOW}│  4️⃣  Start services:                                                     │${NC}"
+echo -e "${YELLOW}│  2️⃣  Start services:                                                     │${NC}"
 echo -e "${YELLOW}│     ${WHITE}sudo supervisorctl restart all${YELLOW}                                  │${NC}"
 echo -e "${YELLOW}│                                                                             │${NC}"
-echo -e "${YELLOW}│  5️⃣  Access your application:                                            │${NC}"
-echo -e "${YELLOW}│     ${GREEN}Public Kiosk:${YELLOW} http://localhost${YELLOW}  or  ${GREEN}http://your-domain.com${YELLOW}     │${NC}"
-echo -e "${YELLOW}│     ${GREEN}Admin Panel:${YELLOW}  http://localhost/admin${YELLOW}                           │${NC}"
+echo -e "${YELLOW}│  3️⃣  Access your application:                                            │${NC}"
+
+if [ -n "$DOMAIN_NAME" ]; then
+    if [ "$INSTALL_SSL" = "y" ] || [ "$INSTALL_SSL" = "Y" ]; then
+        echo -e "${YELLOW}│     ${GREEN}Public Kiosk:${YELLOW} https://$DOMAIN_NAME${YELLOW}                           │${NC}"
+        echo -e "${YELLOW}│     ${GREEN}Admin Panel:${YELLOW}  https://$DOMAIN_NAME/admin${YELLOW}                     │${NC}"
+    else
+        echo -e "${YELLOW}│     ${GREEN}Public Kiosk:${YELLOW} http://$DOMAIN_NAME${YELLOW}                            │${NC}"
+        echo -e "${YELLOW}│     ${GREEN}Admin Panel:${YELLOW}  http://$DOMAIN_NAME/admin${YELLOW}                      │${NC}"
+    fi
+else
+    echo -e "${YELLOW}│     ${GREEN}Public Kiosk:${YELLOW} http://localhost${YELLOW}  or  ${GREEN}http://your-server-ip${YELLOW}     │${NC}"
+    echo -e "${YELLOW}│     ${GREEN}Admin Panel:${YELLOW}  http://localhost/admin${YELLOW}                           │${NC}"
+fi
+
+echo -e "${YELLOW}│                                                                             │${NC}"
+echo -e "${YELLOW}│  4️⃣  Login with:                                                         │${NC}"
+echo -e "${YELLOW}│     Create admin via application first visit                            │${NC}"
+echo -e "${YELLOW}│     OR manually via database                                            │${NC}"
 echo -e "${YELLOW}│                                                                             │${NC}"
 echo -e "${YELLOW}╰─────────────────────────────────────────────────────────────────────╯${NC}"
 echo ""
