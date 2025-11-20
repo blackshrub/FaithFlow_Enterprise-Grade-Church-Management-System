@@ -73,6 +73,11 @@ import {
   AppointmentDetailPage
 } from "./pages/Counseling";
 
+// Kiosk pages
+import KioskHome from "./pages/Kiosk/KioskHome";
+import EventRegistrationKiosk from "./pages/Kiosk/EventRegistration";
+import PrayerRequestKiosk from "./pages/Kiosk/PrayerRequest";
+
 import FaithFlowLogo from './components/Branding/FaithFlowLogo';
 
 function App() {
