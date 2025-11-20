@@ -121,10 +121,10 @@ const KioskHome = () => {
           transition={{ duration: 0.4 }}
         >
           <h1 className="text-5xl md:text-6xl font-bold text-gray-900">
-            {t('home.title')}
+            {settings?.home_title || t('home.title')}
           </h1>
           <p className="text-2xl md:text-3xl text-gray-600">
-            {t('home.subtitle')}
+            {settings?.home_subtitle || t('home.subtitle')}
           </p>
         </motion.div>
         
