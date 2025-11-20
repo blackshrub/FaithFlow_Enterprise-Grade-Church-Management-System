@@ -201,7 +201,19 @@ fi
 # If running from different directory, copy files
 if [ "$SCRIPT_DIR" != "$INSTALL_DIR" ]; then
     info "Copying files from $SCRIPT_DIR to $INSTALL_DIR..."
-    rsync -a --exclude='.git' --exclude='node_modules' --exclude='__pycache__' --exclude='venv' "$SCRIPT_DIR/" "$INSTALL_DIR/"
+    # Use rsync with proper flags
+    # -a = archive mode (preserves permissions, timestamps)
+    # -v = verbose (show what's being copied)
+    # --exclude = skip these directories/files
+    rsync -av \
+      --exclude='.git/' \
+      --exclude='node_modules/' \
+      --exclude='backend/__pycache__/' \
+      --exclude='backend/venv/' \
+      --exclude='frontend/node_modules/' \
+      --exclude='frontend/build/' \
+      --exclude='*.log' \
+      "$SCRIPT_DIR/" "$INSTALL_DIR/" > /dev/null
     success "Files copied to $INSTALL_DIR"
 else
     info "Already in $INSTALL_DIR"
