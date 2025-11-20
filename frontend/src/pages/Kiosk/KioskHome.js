@@ -19,10 +19,11 @@ import { motion } from 'framer-motion';
 import KioskLayout from '../../components/Kiosk/KioskLayout';
 import ServiceTile from '../../components/Kiosk/ServiceTile';
 import kioskApi from '../../services/kioskApi';
+import api from '../../services/api';
 
 const KioskHome = () => {
   const navigate = useNavigate();
-  const { t } = useTranslation('kiosk');
+  const { t, i18n } = useTranslation('kiosk');
   const [settings, setSettings] = useState(null);
   const [churchId, setChurchId] = useState(null);
   const [loading, setLoading] = useState(true);
