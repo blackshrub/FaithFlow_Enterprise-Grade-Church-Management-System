@@ -394,6 +394,9 @@ export default function Layout() {
           onClick={() => setSidebarOpen(false)}
         />
       )}
+      
+      {/* Toast Notifications */}
+      <Toaster />
     </div>
   );
 }
