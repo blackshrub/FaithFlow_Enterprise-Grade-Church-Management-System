@@ -433,12 +433,12 @@ NGINX_CONFIG
         fi
         
         # Update frontend .env with domain
-        if [ -f "$SCRIPT_DIR/frontend/.env" ]; then
+        if [ -f "$INSTALL_DIR/frontend/.env" ]; then
             if [ "$INSTALL_SSL" = "y" ] || [ "$INSTALL_SSL" = "Y" ]; then
                 # Already updated above with HTTPS
                 true
             else
-                sed -i "s|REACT_APP_BACKEND_URL=.*|REACT_APP_BACKEND_URL=http://$DOMAIN_NAME|g" "$SCRIPT_DIR/frontend/.env"
+                sed -i "s|REACT_APP_BACKEND_URL=.*|REACT_APP_BACKEND_URL=http://$DOMAIN_NAME|g" "$INSTALL_DIR/frontend/.env"
                 info "Updated frontend/.env with HTTP URL"
             fi
         fi
