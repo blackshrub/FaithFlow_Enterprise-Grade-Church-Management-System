@@ -106,13 +106,13 @@ export default function Layout() {
     },
     {
       icon: MessageCircleHeart,
-      label: t('counseling.title') || 'Counseling & Prayer',
+      label: 'Counseling & Prayer',
       key: 'counseling',
       submenu: [
-        { label: t('counseling.dashboard') || 'Dashboard', path: '/counseling' },
-        { label: t('counseling.counselors') || 'Counselors', path: '/counseling/counselors' },
-        { label: t('counseling.availability') || 'Availability', path: '/counseling/availability' },
-        { label: t('counseling.appointments') || 'Appointments', path: '/counseling/appointments' },
+        { label: 'Dashboard', path: '/counseling' },
+        { label: 'Counselors', path: '/counseling/counselors' },
+        { label: 'Availability', path: '/counseling/availability' },
+        { label: 'Appointments', path: '/counseling/appointments' },
       ]
     },
     {
