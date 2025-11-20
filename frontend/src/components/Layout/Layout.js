@@ -149,7 +149,6 @@ export default function Layout() {
   // Note: Churches menu removed per user request
   // Super admin access churches via direct URL if needed
 
-  menuItems.push({ icon: Upload, label: t('nav.importExport'), path: '/import-export' });
   menuItems.push({ icon: Settings, label: t('nav.settings'), path: '/settings' });
 
   return (
