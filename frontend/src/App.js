@@ -80,6 +80,7 @@ import PrayerRequestKiosk from "./pages/Kiosk/PrayerRequest";
 import CounselingKiosk from "./pages/Kiosk/CounselingAppointment";
 import JoinGroupKiosk from "./pages/Kiosk/JoinGroup";
 import ProfileUpdateKiosk from "./pages/Kiosk/ProfileUpdate";
+import EventCheckinKiosk from "./pages/Kiosk/EventCheckin";
 
 import FaithFlowLogo from './components/Branding/FaithFlowLogo';
 
