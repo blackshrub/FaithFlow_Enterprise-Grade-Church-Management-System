@@ -65,109 +65,99 @@ export default function Layout() {
   useEffect(() => {
     const path = location.pathname;
     if (path.includes('/events') || path.includes('/seat-layouts') || path.includes('/kiosk')) {
-      setExpandedMenus(prev => ({ ...prev, worship: true }));
+      setExpandedMenus(prev => ({ ...prev, events: true }));
     }
-    if (path.includes('/prayer-requests') || path.includes('/counseling')) {
-      setExpandedMenus(prev => ({ ...prev, spiritual: true }));
-      // Also expand counseling submenu
-      if (path.includes('/counseling')) {
-        setExpandedMenus(prev => ({ ...prev, spiritual: true, counseling: true }));
-      }
+    if (path.includes('/counseling')) {
+      setExpandedMenus(prev => ({ ...prev, counseling: true }));
     }
-    if (path.includes('/devotions') || path.includes('/articles')) {
-      setExpandedMenus(prev => ({ ...prev, content: true }));
-      // Also expand articles submenu
-      if (path.includes('/articles')) {
-        setExpandedMenus(prev => ({ ...prev, content: true, articles: true }));
-      }
+    if (path.includes('/articles')) {
+      setExpandedMenus(prev => ({ ...prev, articles: true }));
     }
     if (path.includes('/accounting')) {
       setExpandedMenus(prev => ({ ...prev, finance: true }));
     }
-    if (path.includes('/import-export')) {
-      setExpandedMenus(prev => ({ ...prev, dataAdmin: true }));
-    }
   }, [location.pathname]);
 
   const menuItems = [
+    // Dashboard (no section)
     { icon: LayoutDashboard, label: t('nav.dashboard'), path: '/dashboard' },
+    
+    // People Section
+    { type: 'section', label: 'PEOPLE' },
     { icon: Users, label: t('nav.members'), path: '/members' },
     { icon: UsersRound, label: t('nav.groups'), path: '/groups' },
+    
+    // Worship & Events Section
+    { type: 'section', label: 'WORSHIP & EVENTS' },
     {
       icon: Calendar,
-      label: 'Worship & Events',
-      key: 'worship',
+      label: 'Events',
+      key: 'events',
       submenu: [
-        { label: t('events.event.eventsList') || 'Events', path: '/events' },
-        { label: t('events.seatLayouts') || 'Seat Layouts', path: '/seat-layouts' },
-        { label: t('events.kioskMode') || 'Kiosk Mode', path: '/kiosk' },
+        { label: 'Events List', path: '/events' },
+        { label: 'Seat Layouts', path: '/seat-layouts' },
+        { label: 'Kiosk Mode', path: '/kiosk' },
       ]
     },
+    
+    // Spiritual Care Section
+    { type: 'section', label: 'SPIRITUAL CARE' },
+    { icon: Heart, label: t('prayerRequests.title') || 'Prayer Requests', path: '/prayer-requests' },
     {
-      icon: Heart,
-      label: 'Spiritual Care',
-      key: 'spiritual',
+      icon: MessageCircleHeart,
+      label: 'Counseling & Prayer',
+      key: 'counseling',
       submenu: [
-        { label: t('prayerRequests.title') || 'Prayer Requests', path: '/prayer-requests' },
-        { 
-          label: 'Counseling & Prayer',
-          key: 'counseling',
-          submenu: [
-            { label: 'Dashboard', path: '/counseling' },
-            { label: 'Counselors', path: '/counseling/counselors' },
-            { label: 'Availability', path: '/counseling/availability' },
-            { label: 'Appointments', path: '/counseling/appointments' },
-          ]
-        },
+        { label: 'Dashboard', path: '/counseling' },
+        { label: 'Counselors', path: '/counseling/counselors' },
+        { label: 'Availability', path: '/counseling/availability' },
+        { label: 'Appointments', path: '/counseling/appointments' },
       ]
     },
+    
+    // Content & Communication Section
+    { type: 'section', label: 'CONTENT & COMMUNICATION' },
+    { icon: BookOpen, label: 'Devotion', path: '/devotions' },
     {
       icon: FileText,
-      label: 'Content & Communication',
-      key: 'content',
+      label: t('articles.title') || 'Articles',
+      key: 'articles',
       submenu: [
-        { label: 'Devotion', path: '/devotions' },
-        {
-          label: t('articles.title') || 'Articles',
-          key: 'articles',
-          submenu: [
-            { label: t('articles.allArticles') || 'All Articles', path: '/articles' },
-            { label: t('articles.addNew') || 'Add New', path: '/articles/new' },
-            { label: t('articles.categoriesManagement.title') || 'Categories', path: '/articles/categories' },
-            { label: t('articles.tagsManagement.title') || 'Tags', path: '/articles/tags' },
-            { label: t('articles.comments.title') || 'Comments', path: '/articles/comments' },
-          ]
-        },
+        { label: 'All Articles', path: '/articles' },
+        { label: 'Add New Article', path: '/articles/new' },
+        { label: 'Article Categories', path: '/articles/categories' },
+        { label: 'Article Tags', path: '/articles/tags' },
+        { label: 'Comment Moderation', path: '/articles/comments' },
       ]
     },
+    
+    // Management Section
+    { type: 'section', label: 'MANAGEMENT' },
     {
       icon: Calculator,
       label: 'Finance',
       key: 'finance',
       submenu: [
-        { label: t('accounting.dashboard') || 'Dashboard', path: '/accounting' },
-        { label: t('accounting.coa.title') || 'Chart of Accounts', path: '/accounting/coa' },
-        { label: t('accounting.journal.title') || 'Journals', path: '/accounting/journals' },
-        { label: t('accounting.quickEntry.title') || 'Quick Entry', path: '/accounting/quick-entry' },
-        { label: t('accounting.budget.title') || 'Budgets', path: '/accounting/budgets' },
-        { label: t('accounting.fixedAsset.title') || 'Fixed Assets', path: '/accounting/assets' },
-        { label: t('accounting.bank.title') || 'Bank', path: '/accounting/bank' },
-        { label: t('accounting.beginningBalance.title') || 'Beginning Balance', path: '/accounting/beginning-balance' },
-        { label: t('accounting.fiscalPeriod.title') || 'Fiscal Periods', path: '/accounting/fiscal-periods' },
-        { label: t('accounting.responsibilityCenter.title') || 'Responsibility Centers', path: '/accounting/responsibility-centers' },
-        { label: t('accounting.reports.title') || 'Reports', path: '/accounting/reports' },
-        { label: t('accounting.yearEnd.title') || 'Year-End Closing', path: '/accounting/year-end-closing' },
-        { label: t('accounting.auditLog.title') || 'Audit Logs', path: '/accounting/audit-logs' },
+        { label: 'Accounting Dashboard', path: '/accounting' },
+        { label: 'Chart of Accounts', path: '/accounting/coa' },
+        { label: 'Journals', path: '/accounting/journals' },
+        { label: 'Quick Entry', path: '/accounting/quick-entry' },
+        { label: 'Budgets', path: '/accounting/budgets' },
+        { label: 'Fixed Assets', path: '/accounting/assets' },
+        { label: 'Bank Reconciliation', path: '/accounting/bank' },
+        { label: 'Beginning Balance', path: '/accounting/beginning-balance' },
+        { label: 'Fiscal Periods', path: '/accounting/fiscal-periods' },
+        { label: 'Responsibility Centers', path: '/accounting/responsibility-centers' },
+        { label: 'Reports', path: '/accounting/reports' },
+        { label: 'Year-End Closing', path: '/accounting/year-end-closing' },
+        { label: 'Audit Logs', path: '/accounting/audit-logs' },
       ]
     },
-    {
-      icon: Database,
-      label: 'Data Admin',
-      key: 'dataAdmin',
-      submenu: [
-        { label: t('nav.importExport') || 'Import/Export', path: '/import-export' },
-      ]
-    },
+    
+    // System Section
+    { type: 'section', label: 'SYSTEM' },
+    { icon: Settings, label: t('nav.settings'), path: '/settings' },
+    { icon: Upload, label: 'Import/Export', path: '/import-export' },
   ];
 
   // Note: Removed "churches" from default menu - only added for super admin below
