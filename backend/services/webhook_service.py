@@ -104,18 +104,19 @@ class WebhookService:
         start_time = datetime.now()
         
         try:
-            # Generate HMAC signature
-            payload_json = json.dumps(payload, default=str)
+            # Generate HMAC signature (matching external app format)
+            # Use compact JSON (no spaces), no sorted keys
+            payload_json = json.dumps(payload, separators=(',', ':'), default=str)
             signature = hmac.new(
-                webhook_config["secret_key"].encode(),
-                payload_json.encode(),
+                webhook_config["secret_key"].encode('utf-8'),
+                payload_json.encode('utf-8'),
                 hashlib.sha256
-            ).hexdigest()
+            ).hexdigest()  # Lowercase hex, no prefix
             
             # Prepare headers
             headers = {
                 "Content-Type": "application/json",
-                "X-Webhook-Signature": f"sha256={signature}",
+                "X-Webhook-Signature": signature,  # No "sha256=" prefix
                 "X-Event-ID": event_id,
                 **webhook_config.get("custom_headers", {})
             }
