@@ -518,7 +518,7 @@ echo -e "${YELLOW}╭───────────────────�
 echo -e "${YELLOW}│  ${KEY} Next Steps (Important!):${YELLOW}                                         │${NC}"
 echo -e "${YELLOW}│                                                                             │${NC}"
 echo -e "${YELLOW}│  1️⃣  Configure environment:                                              │${NC}"
-echo -e "${YELLOW}│     ${WHITE}nano $SCRIPT_DIR/backend/.env${YELLOW}                                  │${NC}"
+echo -e "${YELLOW}│     ${WHITE}nano /opt/faithflow/backend/.env${YELLOW}                                  │${NC}"
 echo -e "${YELLOW}│     Set MONGO_URL and JWT_SECRET_KEY                                    │${NC}"
 echo -e "${YELLOW}│                                                                             │${NC}"
 echo -e "${YELLOW}│  2️⃣  Start services:                                                     │${NC}"
