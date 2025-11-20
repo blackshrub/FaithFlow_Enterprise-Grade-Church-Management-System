@@ -34,6 +34,12 @@ const KioskHome = () => {
     try {
       const data = await kioskApi.getKioskSettings();
       setSettings(data);
+      
+      // Set default language if configured
+      if (data?.default_language && !localStorage.getItem('kiosk_language_set')) {
+        i18n.changeLanguage(data.default_language);
+        localStorage.setItem('kiosk_language_set', 'true');
+      }
     } catch (error) {
       console.error('Failed to load kiosk settings:', error);
       // Default to all enabled
@@ -42,8 +48,15 @@ const KioskHome = () => {
         enable_prayer: true,
         enable_counseling: true,
         enable_groups: true,
-        enable_profile_update: true
+        enable_profile_update: true,
+        default_language: 'id'
       });
+      
+      // Set to Indonesian by default
+      if (!localStorage.getItem('kiosk_language_set')) {
+        i18n.changeLanguage('id');
+        localStorage.setItem('kiosk_language_set', 'true');
+      }
     } finally {
       setLoading(false);
     }
