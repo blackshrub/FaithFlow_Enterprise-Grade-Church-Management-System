@@ -48,7 +48,7 @@ export default function Layout() {
 
   const handleLogout = () => {
     logout();
-    navigate('/login');
+    navigate('/'); // Redirect to kiosk home
   };
 
   const changeLanguage = (lng) => {
