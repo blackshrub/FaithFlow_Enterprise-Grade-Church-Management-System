@@ -32,6 +32,7 @@ const KioskSettingsTab = () => {
     enable_profile_update: true,
     home_title: '',
     home_subtitle: '',
+    default_language: 'id', // Default to Indonesian
     previsitor_status_id: '',
     timeout_minutes: 2,
     otp_digits: 4,
