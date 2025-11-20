@@ -296,16 +296,15 @@ export default function Layout() {
             </ul>
           </nav>
 
-          {/* Logout Button */}
-          <div className="p-4 border-t space-y-3">
-            {/* Language Selector */}
-            {!sidebarCollapsed && (
-              <div className="space-y-1">
-                <Label className="text-xs text-gray-500">{t('settings.language')}</Label>
+          {/* Sidebar Footer - Language & Logout */}
+          <div className="p-4 border-t">
+            {!sidebarCollapsed ? (
+              <div className="flex items-center gap-2">
+                {/* Language Selector */}
                 <Select value={i18n.language} onValueChange={changeLanguage}>
-                  <SelectTrigger className="h-9">
+                  <SelectTrigger className="h-9 flex-1">
                     <SelectValue>
-                      {i18n.language === 'en' ? 'English' : 'Bahasa Indonesia'}
+                      {i18n.language === 'en' ? '🇬🇧 EN' : '🇮🇩 ID'}
                     </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
@@ -313,26 +312,29 @@ export default function Layout() {
                     <SelectItem value="id">🇮🇩 Bahasa Indonesia</SelectItem>
                   </SelectContent>
                 </Select>
+                {/* Logout Icon Button */}
+                <Button
+                  onClick={handleLogout}
+                  variant="outline"
+                  size="icon"
+                  className="h-9 w-9"
+                  title={t('auth.logout')}
+                >
+                  <LogOut className="h-4 w-4" />
+                </Button>
               </div>
-            )}
-            <Button
-              onClick={handleLogout}
-              variant="outline"
-              className={`w-full ${sidebarCollapsed ? 'px-2' : ''}`}
-              title={sidebarCollapsed ? t('auth.logout') : ''}
-            >
-              <LogOut className={`h-4 w-4 ${sidebarCollapsed ? '' : 'mr-2'}`} />
-              {!sidebarCollapsed && t('auth.logout')}
-            </Button>
-            
-            {/* Footer */}
-            {!sidebarCollapsed && (
-              <div className="pt-3 border-t">
-                <p className="text-xs text-center text-gray-500">
-                  <span className="font-semibold text-blue-600">{t('app.name')}</span>
-                  <br />
-                  {t('app.tagline').split(',')[0]}
-                </p>
+            ) : (
+              <div className="flex flex-col gap-2">
+                {/* Logout Icon for collapsed sidebar */}
+                <Button
+                  onClick={handleLogout}
+                  variant="outline"
+                  size="icon"
+                  className="w-full"
+                  title={t('auth.logout')}
+                >
+                  <LogOut className="h-4 w-4" />
+                </Button>
               </div>
             )}
           </div>
