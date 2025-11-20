@@ -142,6 +142,11 @@ async def update_prayer_request(
     church_id = get_current_church_id(current_user)
     user_id = current_user.get("id")
     
+    # Debug logging
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.info(f"Prayer request update payload: {prayer_data.model_dump(exclude_unset=True)}")
+    
     existing = await db.prayer_requests.find_one(
         {"id": request_id, "church_id": church_id}
     )
