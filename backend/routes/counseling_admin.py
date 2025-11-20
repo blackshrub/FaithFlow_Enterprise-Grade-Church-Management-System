@@ -695,11 +695,12 @@ async def list_appointments(
         for appointment in appointments:
             member = await db.members.find_one(
                 {"id": appointment["member_id"]},
-                {"_id": 0, "full_name": 1, "email": 1, "phone": 1}
+                {"_id": 0, "full_name": 1, "email": 1, "phone": 1, "photo_base64": 1}
             )
             appointment["member_name"] = member.get("full_name") if member else "Unknown"
             appointment["member_email"] = member.get("email") if member else None
             appointment["member_phone"] = member.get("phone") if member else None
+            appointment["member_photo"] = member.get("photo_base64") if member else None
             
             if appointment.get("counselor_id"):
                 counselor = await db.counselors.find_one(
