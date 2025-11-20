@@ -50,7 +50,7 @@ const AvailabilityPage = () => {
   const { t } = useTranslation();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('rules');
-  const [selectedCounselor, setSelectedCounselor] = useState('');
+  const [selectedCounselor, setSelectedCounselor] = useState('all');
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
 
   // Recurring Rules State
