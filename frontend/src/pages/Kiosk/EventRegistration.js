@@ -144,6 +144,7 @@ const EventRegistrationKiosk = () => {
           </motion.div>
           
           <PhoneStep
+            churchId={churchId}
             onMemberFound={handleMemberFound}
             onMemberNotFound={handleMemberNotFound}
           />
