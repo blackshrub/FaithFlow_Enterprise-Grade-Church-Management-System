@@ -262,6 +262,169 @@ success "Firewall configured! (SSH, HTTP, HTTPS allowed)"
 echo ""
 sleep 1
 
+progress
+echo -e "${MAGENTA}${ROCKET} Step 13/12: Configuring Nginx web server...${NC}"
+progress
+
+echo ""
+echo -e "${CYAN}${GLOBE} Let's configure your domain and SSL certificate!${NC}"
+echo ""
+
+# Ask for domain
+echo -e "${YELLOW}Do you have a domain name for this installation? (y/n)${NC}"
+read -p "Answer: " HAS_DOMAIN
+
+if [ "$HAS_DOMAIN" = "y" ] || [ "$HAS_DOMAIN" = "Y" ]; then
+    echo ""
+    echo -e "${CYAN}Please enter your domain name (e.g., church.example.com):${NC}"
+    read -p "Domain: " DOMAIN_NAME
+    
+    if [ -n "$DOMAIN_NAME" ]; then
+        info "Configuring Nginx for: $DOMAIN_NAME"
+        
+        cat > /etc/nginx/sites-available/faithflow << NGINX_CONFIG
+server {
+    listen 80;
+    server_name $DOMAIN_NAME;
+
+    # Max upload size for photos/documents
+    client_max_body_size 50M;
+
+    # Backend API
+    location /api {
+        proxy_pass http://localhost:8001;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_cache_bypass \$http_upgrade;
+        proxy_read_timeout 300s;
+        proxy_connect_timeout 300s;
+    }
+
+    # Frontend
+    location / {
+        proxy_pass http://localhost:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host \$host;
+        proxy_cache_bypass \$http_upgrade;
+    }
+}
+NGINX_CONFIG
+        
+        ln -sf /etc/nginx/sites-available/faithflow /etc/nginx/sites-enabled/
+        rm -f /etc/nginx/sites-enabled/default
+        
+        nginx -t > /dev/null 2>&1
+        systemctl restart nginx
+        
+        success "Nginx configured for $DOMAIN_NAME"
+        echo ""
+        
+        # Ask about SSL
+        echo -e "${CYAN}${KEY} Would you like to install a FREE SSL certificate? (y/n)${NC}"
+        echo -e "${CYAN}   This uses Let's Encrypt (recommended for production)${NC}"
+        read -p "Install SSL? " INSTALL_SSL
+        
+        if [ "$INSTALL_SSL" = "y" ] || [ "$INSTALL_SSL" = "Y" ]; then
+            echo ""
+            info "Installing Certbot..."
+            apt install -y certbot python3-certbot-nginx > /dev/null 2>&1
+            
+            echo ""
+            echo -e "${YELLOW}⚠️  Important: Make sure your domain DNS is pointing to this server!${NC}"
+            echo -e "${YELLOW}   Domain: $DOMAIN_NAME should resolve to this server's IP${NC}"
+            echo ""
+            echo -e "${CYAN}Press Enter when ready to continue with SSL setup...${NC}"
+            read
+            
+            info "Obtaining SSL certificate from Let's Encrypt..."
+            echo -e "${CYAN}   (You may be asked for your email address)${NC}"
+            echo ""
+            
+            certbot --nginx -d "$DOMAIN_NAME" --non-interactive --agree-tos --register-unsafely-without-email || \
+            certbot --nginx -d "$DOMAIN_NAME"
+            
+            if [ $? -eq 0 ]; then
+                success "SSL certificate installed successfully!"
+                echo -e "${GREEN}   🔒 Your site is now secure with HTTPS!${NC}"
+                
+                # Update frontend .env with HTTPS URL
+                if [ -f "$SCRIPT_DIR/frontend/.env" ]; then
+                    sed -i "s|http://.*|https://$DOMAIN_NAME|g" "$SCRIPT_DIR/frontend/.env"
+                    sed -i "s|REACT_APP_BACKEND_URL=.*|REACT_APP_BACKEND_URL=https://$DOMAIN_NAME|g" "$SCRIPT_DIR/frontend/.env"
+                    info "Updated frontend/.env with HTTPS URL"
+                fi
+            else
+                warn "SSL installation had issues. You can retry later with:"
+                echo -e "${YELLOW}   sudo certbot --nginx -d $DOMAIN_NAME${NC}"
+            fi
+        else
+            info "Skipping SSL installation"
+            echo -e "${YELLOW}   You can install SSL later with:${NC}"
+            echo -e "${YELLOW}   sudo apt install certbot python3-certbot-nginx${NC}"
+            echo -e "${YELLOW}   sudo certbot --nginx -d $DOMAIN_NAME${NC}"
+        fi
+        
+        # Update frontend .env with domain
+        if [ -f "$SCRIPT_DIR/frontend/.env" ]; then
+            if [ "$INSTALL_SSL" = "y" ] || [ "$INSTALL_SSL" = "Y" ]; then
+                # Already updated above with HTTPS
+                true
+            else
+                sed -i "s|REACT_APP_BACKEND_URL=.*|REACT_APP_BACKEND_URL=http://$DOMAIN_NAME|g" "$SCRIPT_DIR/frontend/.env"
+                info "Updated frontend/.env with HTTP URL"
+            fi
+        fi
+        
+    fi
+else
+    info "Skipping domain configuration"
+    echo -e "${YELLOW}   You can configure Nginx later manually${NC}"
+    echo -e "${YELLOW}   See INSTALLATION.md for detailed instructions${NC}"
+    
+    # Configure Nginx for localhost
+    info "Configuring Nginx for localhost access..."
+    
+    cat > /etc/nginx/sites-available/faithflow << NGINX_LOCAL
+server {
+    listen 80 default_server;
+
+    client_max_body_size 50M;
+
+    location /api {
+        proxy_pass http://localhost:8001;
+        proxy_http_version 1.1;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+    }
+
+    location / {
+        proxy_pass http://localhost:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host \$host;
+        proxy_cache_bypass \$http_upgrade;
+    }
+}
+NGINX_LOCAL
+    
+    ln -sf /etc/nginx/sites-available/faithflow /etc/nginx/sites-enabled/
+    rm -f /etc/nginx/sites-enabled/default
+    nginx -t > /dev/null 2>&1 && systemctl restart nginx
+    success "Nginx configured for localhost access"
+fi
+
+echo ""
+sleep 1
+
 echo ""
 echo -e "${GREEN}"
 cat << "EOF"
