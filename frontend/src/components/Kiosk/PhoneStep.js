@@ -57,7 +57,7 @@ const PhoneStep = ({ onMemberFound, onMemberNotFound, onError, churchId }) => {
       if (member) {
         // Existing member - send OTP automatically
         console.log('✅ Member found, sending OTP...');
-        const otpResult = await kioskApi.sendOTP(normalizedPhone);
+        const otpResult = await kioskApi.sendOTP(normalizedPhone, churchId);
         console.log('📨 OTP send result:', otpResult);
         console.log('🔐 OTP CODE (for testing):', otpResult.debug_code);
         
@@ -65,7 +65,7 @@ const PhoneStep = ({ onMemberFound, onMemberNotFound, onError, churchId }) => {
       } else {
         // New member - send OTP automatically
         console.log('⚠️ Member not found, creating new, sending OTP...');
-        const otpResult = await kioskApi.sendOTP(normalizedPhone);
+        const otpResult = await kioskApi.sendOTP(normalizedPhone, churchId);
         console.log('📨 OTP send result:', otpResult);
         console.log('🔐 OTP CODE (for testing):', otpResult.debug_code);
         
