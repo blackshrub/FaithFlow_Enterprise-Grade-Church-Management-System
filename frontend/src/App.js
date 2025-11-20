@@ -92,11 +92,12 @@ function App() {
         <AuthProvider>
           <BrowserRouter>
           <Routes>
-            {/* Public Kiosk Route - Default landing page */}
-            <Route path="/" element={<KioskHome />} />
+            {/* Smart Landing - Kiosk for public, Dashboard for logged-in users */}
+            <Route path="/" element={<SmartLanding />} />
             
             {/* Admin Login Route */}
             <Route path="/admin" element={<Login />} />
+            <Route path="/login" element={<Navigate to="/admin" replace />} />
             
             {/* Kiosk Routes - Public, Full-screen */}
             <Route path="/kiosk" element={<KioskHome />} />
@@ -106,13 +107,6 @@ function App() {
             <Route path="/kiosk/groups/join" element={<JoinGroupKiosk />} />
             <Route path="/kiosk/profile/update" element={<ProfileUpdateKiosk />} />
             <Route path="/kiosk/checkin" element={<EventCheckinKiosk />} />
-            
-            {/* Old Kiosk Mode - Redirect to new kiosk */}
-            <Route path="/kiosk" element={
-              <ProtectedRoute>
-                <KioskMode />
-              </ProtectedRoute>
-            } />
             
             {/* Protected Admin Routes */}
             <Route
