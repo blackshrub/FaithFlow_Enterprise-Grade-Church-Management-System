@@ -91,8 +91,11 @@ function App() {
         <AuthProvider>
           <BrowserRouter>
           <Routes>
-            {/* Public Routes */}
-            <Route path="/login" element={<Login />} />
+            {/* Public Kiosk Route - Default landing page */}
+            <Route path="/" element={<KioskHome />} />
+            
+            {/* Admin Login Route */}
+            <Route path="/admin" element={<Login />} />
             
             {/* Kiosk Routes - Public, Full-screen */}
             <Route path="/kiosk" element={<KioskHome />} />
@@ -103,7 +106,7 @@ function App() {
             <Route path="/kiosk/profile/update" element={<ProfileUpdateKiosk />} />
             <Route path="/kiosk/checkin" element={<EventCheckinKiosk />} />
             
-            {/* Kiosk Mode - Fullscreen (no layout) */}
+            {/* Old Kiosk Mode - Redirect to new kiosk */}
             <Route path="/kiosk" element={
               <ProtectedRoute>
                 <KioskMode />
