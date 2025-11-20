@@ -69,9 +69,17 @@ export default function Layout() {
     }
     if (path.includes('/prayer-requests') || path.includes('/counseling')) {
       setExpandedMenus(prev => ({ ...prev, spiritual: true }));
+      // Also expand counseling submenu
+      if (path.includes('/counseling')) {
+        setExpandedMenus(prev => ({ ...prev, spiritual: true, counseling: true }));
+      }
     }
     if (path.includes('/devotions') || path.includes('/articles')) {
       setExpandedMenus(prev => ({ ...prev, content: true }));
+      // Also expand articles submenu
+      if (path.includes('/articles')) {
+        setExpandedMenus(prev => ({ ...prev, content: true, articles: true }));
+      }
     }
     if (path.includes('/accounting')) {
       setExpandedMenus(prev => ({ ...prev, finance: true }));
