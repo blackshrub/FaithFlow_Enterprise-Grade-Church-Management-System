@@ -29,7 +29,10 @@ import { format, parseISO, addDays, startOfDay } from 'date-fns';
 
 const CounselingKiosk = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { t } = useTranslation('kiosk');
+  
+  const churchId = location.state?.churchId || localStorage.getItem('kiosk_church_id');
   
   const [step, setStep] = useState('phone');
   const [phone, setPhone] = useState('');
