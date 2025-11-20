@@ -13,7 +13,7 @@ import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import kioskApi from '../../services/kioskApi';
 
-const PhoneStep = ({ onMemberFound, onMemberNotFound, onError }) => {
+const PhoneStep = ({ onMemberFound, onMemberNotFound, onError, churchId }) => {
   const { t } = useTranslation('kiosk');
   const [phone, setPhone] = useState('');
   const [loading, setLoading] = useState(false);
