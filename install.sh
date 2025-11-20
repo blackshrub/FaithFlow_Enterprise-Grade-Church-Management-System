@@ -521,22 +521,56 @@ sed -i "s/ADMIN_PHONE_PLACEHOLDER/${ADMIN_PHONE}/g" /tmp/init_output.log 2>/dev/
 sed -i "s/ADMIN_PASSWORD_PLACEHOLDER/${ADMIN_PASSWORD}/g" /tmp/init_output.log 2>/dev/null || true
 
 # Actually run with replacements
-python3 << INIT_SCRIPT2
+# Ensure we're in the correct directory
+cd "$INSTALL_DIR/backend"
+source venv/bin/activate
+
+# Verify we're in the right place
+pwd
+echo "Working from: $(pwd)"
+
+# Export variables for Python to access
+export CHURCH_NAME
+export CHURCH_ADDRESS
+export ADMIN_NAME
+export ADMIN_EMAIL
+export ADMIN_PHONE
+export ADMIN_PASSWORD
+
+# Run Python script from correct directory
+python3 << 'INIT_SCRIPT2'
 import asyncio
 from motor.motor_asyncio import AsyncIOMotorClient
 from datetime import datetime
 import uuid
 import bcrypt
+import os
+import sys
+
+# Print working directory
+print(f"Python working directory: {os.getcwd()}")
 
 async def initialize():
+    # Connect to MongoDB
     client = AsyncIOMotorClient('mongodb://localhost:27017')
     db = client['faithflow_production']
     
+    # Get values from environment (set by shell)
+    church_name = os.environ.get('CHURCH_NAME', 'My Church')
+    church_address = os.environ.get('CHURCH_ADDRESS', '')
+    admin_name = os.environ.get('ADMIN_NAME', 'Admin')
+    admin_email = os.environ.get('ADMIN_EMAIL', 'admin@church.org')
+    admin_phone = os.environ.get('ADMIN_PHONE', '')
+    admin_password = os.environ.get('ADMIN_PASSWORD', 'changeme')
+    
+    print(f"Creating church: {church_name}")
+    
+    # Create church
     church_id = str(uuid.uuid4())
     church = {
         "id": church_id,
-        "name": """${CHURCH_NAME}""",
-        "address": """${CHURCH_ADDRESS}""",
+        "name": church_name,
+        "address": church_address,
         "phone": "",
         "email": "",
         "created_at": datetime.utcnow(),
@@ -545,15 +579,15 @@ async def initialize():
     await db.churches.insert_one(church)
     print(f"✅ Church created: {church['name']}")
     
-    password = """${ADMIN_PASSWORD}"""
-    hashed = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+    # Create admin user
+    hashed = bcrypt.hashpw(admin_password.encode('utf-8'), bcrypt.gensalt())
     
     user = {
         "id": str(uuid.uuid4()),
         "church_id": church_id,
-        "email": """${ADMIN_EMAIL}""",
-        "full_name": """${ADMIN_NAME}""",
-        "phone": """${ADMIN_PHONE}""",
+        "email": admin_email,
+        "full_name": admin_name,
+        "phone": admin_phone,
         "password_hash": hashed.decode('utf-8'),
         "role": "admin",
         "is_active": True,
@@ -563,7 +597,10 @@ async def initialize():
     }
     await db.users.insert_one(user)
     print(f"✅ Admin user created: {user['email']}")
+    print(f"   Name: {user['full_name']}")
+    print(f"   Phone: {user['phone']}")
     
+    # Create Pre-Visitor status
     previsitor_status_id = str(uuid.uuid4())
     previsitor = {
         "id": previsitor_status_id,
@@ -576,7 +613,9 @@ async def initialize():
         "updated_at": datetime.utcnow()
     }
     await db.member_statuses.insert_one(previsitor)
+    print("✅ Pre-Visitor status created")
     
+    # Create church settings
     settings = {
         "id": str(uuid.uuid4()),
         "church_id": church_id,
@@ -606,6 +645,7 @@ async def initialize():
     print("✅ Church settings created")
     
     client.close()
+    print("\n🎉 Database initialization complete!")
 
 asyncio.run(initialize())
 INIT_SCRIPT2
