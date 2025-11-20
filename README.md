@@ -1,348 +1,356 @@
-# FaithFlow - Complete Church Management System
+# FaithFlow - Enterprise Church Management System
 
-**Empowering Churches with Clarity, Care, and Connection**
+![FaithFlow](https://img.shields.io/badge/Status-Production%20Ready-green)
+![Backend](https://img.shields.io/badge/Backend-FastAPI%20%2B%20MongoDB-blue)
+![Frontend](https://img.shields.io/badge/Frontend-React%20%2B%20Tailwind-cyan)
 
-![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
-![License](https://img.shields.io/badge/license-MIT-green.svg)
+**FaithFlow** is a comprehensive, enterprise-grade church management platform designed for multi-site churches. Built with modern technologies and production-ready architecture.
 
-## Overview
+---
 
-FaithFlow is a comprehensive, production-ready church management system designed for multi-church organizations. It provides a complete admin dashboard for church operations and a backend API for mobile applications.
+## 🎯 Features
 
-### Key Features
+### 👥 **Member Management**
+- Complete member profiles with photos & documents
+- Bulk CSV import with duplicate detection
+- Advanced filtering (gender, marital status, demographics, member status)
+- Incomplete data tracking
+- **Soft delete with 14-day trash bin**
+- QR code generation for each member
+- Personal ID codes
+- Multi-language support (EN/ID)
 
-- ✅ **Multi-Tenant Architecture** - Manage multiple churches from one system
-- ✅ **Event & RSVP Management** - Events, seat selection, QR codes, WhatsApp notifications, **event categories**
-- ✅ **Kiosk Mode** - Professional check-in system with QR scanning (10 colorful themes, **fullscreen mode**)
-- ✅ **Devotion CMS** - Daily devotions with 6 Bible versions (186,000+ verses), **calendar view**
-- ✅ **Indonesian TTS** - Professional male voice (Wibowo) with **perfect pronunciation** (g, b, d fixes)
-- ✅ **Member Management** - Complete CRUD, **CSV/JSON import with photo & document upload**, **phone duplicate validation**, **personal QR codes**, **server-side search**, **pagination (50/page)**
-- ✅ **Personal QR System** - Universal member ID (6-digit code) auto-generated for every member
-- ✅ **Member Import System** - Advanced CSV import wizard with **photo/document matching**, **duplicate phone validation at Step 2**, **default member status**, **real-time validation**
-- ✅ **Group Management** - Comprehensive group system with **configurable categories**, **real-time member leader search with photos**, card-based directory, member rosters, join/leave workflows, **base64 cover images**, WhatsApp notifications
-- ✅ **Full i18n Support** - English & Indonesian (**700+ translation keys**, zero hardcoded strings, **version-based cache busting**)
-- ✅ **Mobile API Ready** - RESTful APIs for mobile apps
-- ✅ **Collapsible Sidebar** - Icon-only mode for focused work
-- ✅ **FaithFlow Branding** - Professional identity with logo, colors, tagline
+### 🤖 **Member Status Automation** (NEW!)
+- Define custom member statuses with colors
+- Create automation rules based on:
+  - Age conditions
+  - Attendance patterns (Sunday Service)
+  - Time windows (e.g., last 60 days)
+- Two-phase rule evaluation (global + status-based)
+- **Simulation/preview before applying rules**
+- Automatic conflict detection
+- Conflict review queue with manual resolution
+- Complete audit trail
+- Timezone-aware scheduling
+- Background automation (hourly checks)
 
-### Tech Stack
+### 📅 **Events & Attendance**
+- Single and series events
+- RSVP management with seat selection
+- QR code check-in (kiosk mode)
+- Event categories (Sunday Service is system default)
+- Attendance tracking and reporting
 
-**Backend:**
-- FastAPI (Python 3.11)
-- MongoDB (Database)
-- Coqui TTS (Indonesian voice - Wibowo)
-- gTTS (Fallback TTS)
-- QR Code generation
-- WhatsApp Gateway integration
-- **API Versioning (/api/v1/)** - Future-proof, mobile-ready
-- **MongoDB Transactions** - Atomic operations for accounting
-- **APScheduler** - Background workers for scheduled publishing and depreciation
+### 👥 **Groups Management**
+- Small groups, ministry teams, activities
+- Join/leave request workflows
+- Group leaders and members
+- Cover images and descriptions
+- Public group directory
 
-**Frontend:**
-- React 18
-- TanStack React Query (Server state)
-- Tailwind CSS + shadcn/ui
-- react-i18next (Internationalization)
-- **TipTap** - Rich text editor for articles
-- QR Scanner integration
-- Axios for API calls
+### 🙏 **Prayer Requests**
+- Submit and manage prayer requests
+- Categories and status tracking
+- Public submission form
+- Admin moderation
 
-**Database:**
-- MongoDB 7.0+
-- 186,592 Bible verses (6 versions: TB, CHS, NIV, NKJV, NLT, ESV)
-- Multi-church data isolation
-- **30+ collections** (members, events, accounting, articles, prayer requests, etc.)
-- **50+ database indexes** for performance
-- **Compound unique indexes** for multi-tenancy
+### 📰 **Articles & Devotions**
+- Rich text editor (TipTap)
+- Scheduled publishing
+- Categories and tags
+- Comments moderation
+- Daily devotions
+- Bible integration
 
-## Quick Links
+### 📊 **Accounting Module**
+- Full double-entry accounting
+- Chart of Accounts
+- General Ledger
+- Journals and transactions
+- Budget management
+- Fixed assets and depreciation
+- Bank reconciliation
+- Fiscal periods and year-end closing
+- Comprehensive reports
 
-- 📚 [Complete Features Documentation](./docs/FEATURES.md)
-- 🔌 [API Documentation](./docs/API.md)
-- 📥 [Import/Export API Guide](./docs/IMPORT_EXPORT_API.md) - **Member import wizard**
-- 📊 [Current System State](./docs/CURRENT_STATE.md) - **Latest updates & status**
-- 🏗️ [Codebase Structure](./docs/STRUCTURE.md)
-- 🚀 [Debian Deployment Guide](./docs/DEPLOYMENT_DEBIAN.md)
+### 🔔 **Integrations**
 
-## Project Structure
+#### Webhooks (Outbound)
+- Real-time member data sync to external apps
+- HMAC-SHA256 signature verification
+- Configurable events (member.created/updated/deleted)
+- Retry queue with exponential backoff
+- Delivery logs and monitoring
+- **Includes campus_id for compatibility**
 
-```
-faithflow/
-├── backend/
-│   ├── models/              # Pydantic models
-│   ├── routes/              # API endpoints
-│   ├── services/            # Business logic (TTS, WhatsApp, QR)
-│   ├── utils/               # Helper functions
-│   ├── data/
-│   │   └── bible/          # Bible JSON files (186k verses)
-│   ├── models/
-│   │   └── tts_indonesian/ # Coqui TTS model (329MB + config)
-│   ├── server.py           # Main FastAPI application
-│   └── requirements.txt    # Python dependencies
-├── frontend/
-│   ├── src/
-│   │   ├── components/     # React components
-│   │   ├── pages/          # Page components
-│   │   ├── hooks/          # React Query hooks
-│   │   ├── services/       # API services
-│   │   ├── i18n/           # Translation files
-│   │   └── App.js          # Main React app
-│   ├── public/             # Static assets
-│   └── package.json        # Node dependencies
-├── docs/                   # Documentation
-└── README.md               # This file
-```
+#### API Keys (Inbound)
+- Generate secure API credentials for external apps
+- Username + API key authentication
+- JWT token-based access
+- Full REST API access
+- Multi-tenant scoped automatically
 
-## Quick Start (Development)
+#### Public API
+- Read member status without authentication
+- Mobile app integration ready
+
+---
+
+## 🛠️ Technology Stack
+
+### Backend
+- **Framework:** FastAPI (Python 3.11+)
+- **Database:** MongoDB (Motor async driver)
+- **Authentication:** JWT tokens
+- **Scheduler:** APScheduler (4 background jobs)
+- **Webhooks:** httpx async client with retry queue
+- **Validation:** Pydantic v2
+
+### Frontend
+- **Framework:** React 18 + Create React App
+- **UI Components:** shadcn/ui + Tailwind CSS
+- **State Management:** TanStack React Query
+- **Routing:** React Router v6
+- **Icons:** Lucide React
+- **Forms:** React Hook Form
+- **i18n:** react-i18next (EN/ID)
+
+### Infrastructure
+- **Multi-tenant:** church_id scoping on all data
+- **Soft delete:** 14-day trash bin for members
+- **Background jobs:** 4 scheduled tasks
+- **CORS:** Configurable origins
+- **Security:** Strong JWT secrets, API key hashing
+
+---
+
+## 🚀 Quick Start
 
 ### Prerequisites
-
 - Python 3.11+
 - Node.js 18+
-- MongoDB 7.0+
-- Git LFS (for large model files)
+- MongoDB 5.0+
+- Yarn package manager
 
----
-
-## Production Deployment
-
-**Two Options:**
-
-### Option 1: One-Click Automated Installer (Recommended)
-
-**For fresh Debian 12 server:**
+### Installation
 
 ```bash
-# Copy installer to server
-scp install.sh root@yourserver:/root/
+# Clone repository
+git clone <repository-url>
+cd faithflow
 
-# SSH and run
-ssh root@yourserver
-sudo bash install.sh
+# Backend setup
+cd backend
+pip install -r requirements.txt
+cp .env.example .env  # Configure environment variables
+python scripts/init_event_categories.py  # Initialize default data
 
-# Follow interactive prompts
-# Installation takes 15-20 minutes
-# Everything automated!
+# Frontend setup
+cd ../frontend
+yarn install
+cp .env.example .env  # Configure environment variables
+
+# Start services (use supervisor in production)
+cd backend && uvicorn server:app --reload  # Backend on :8001
+cd frontend && yarn start  # Frontend on :3000
 ```
 
-**The installer handles:**
-- ✅ All system dependencies
-- ✅ MongoDB installation (or uses your managed DB)
-- ✅ Backend setup (venv, packages, .env)
-- ✅ Frontend build
-- ✅ Nginx configuration
-- ✅ SSL certificate (Let's Encrypt)
-- ✅ Systemd services
-- ✅ Bible data import (186k verses)
-- ✅ Admin user creation
-- ✅ Database indexes
-- ✅ Backup scheduling
-- ✅ Firewall setup
-- ✅ Health verification
+### Environment Variables
 
-**After installation:**
-- Open `https://yourdomain.com`
-- Login with your admin credentials
-- System ready to use!
+**Backend (.env):**
+```env
+MONGO_URL=mongodb://localhost:27017
+DB_NAME=church_management
+CORS_ORIGINS=*
+JWT_SECRET_KEY=<generate-strong-random-key>
+```
 
-### Option 2: Manual Step-by-Step Deployment
-
-**For production deployment on Debian server, follow the complete guide:**
-
-👉 **[Manual Deployment Guide](./docs/DEPLOYMENT_DEBIAN.md)**
-
-Includes detailed steps for:
-- Server setup
-- Database configuration
-- Nginx reverse proxy
-- SSL/HTTPS setup
-- Systemd services
-- Bible data initialization
-- TTS model setup
-
-## Documentation
-
-### For Developers
-
-- [API Documentation](./docs/API.md) - Complete REST API reference
-- [Codebase Structure](./docs/STRUCTURE.md) - Directory layout and architecture
-- [Database Schema](./docs/DATABASE.md) - MongoDB collections and models
-
-### For Administrators
-
-- [Features Guide](./docs/FEATURES.md) - Complete feature documentation
-- [User Manual](./docs/USER_MANUAL.md) - How to use each module
-- [Configuration Guide](./docs/CONFIGURATION.md) - System settings
-
-### For DevOps
-
-- [Deployment Guide](./docs/DEPLOYMENT_DEBIAN.md) - Production deployment
-- [Backup & Restore](./docs/BACKUP.md) - Data backup procedures
-- [Troubleshooting](./docs/TROUBLESHOOTING.md) - Common issues
-
-## Key Features
-
-### 1. Event Management
-- Create single or series events
-- **Event categories** (Sunday Service, Prayer Meeting, etc.)
-- Seat layout editor (visual grid)
-- Cinema-style seat selection
-- RSVP with QR codes (4-digit confirmation)
-- **Personal QR codes** (6-digit universal member ID)
-- WhatsApp confirmations (delivery tracking)
-- Attendance tracking
-
-### 2. Kiosk Mode
-- **Fullscreen tablet-optimized UI** (no sidebar)
-- Split-screen (camera + manual search)
-- 10 colorful themes
-- **Dual QR support** (personal + event RSVP)
-- Onsite RSVP flow
-- Quick visitor registration (3s photo countdown)
-- **Enhanced check-in** (accepts both QR types)
-
-### 3. Devotion CMS
-- Daily devotion posts
-- Rich text editor (Tiptap)
-- 6 Bible versions (186,592 verses)
-- Verse picker with auto-fetch
-- **Indonesian TTS** (Wibowo voice - perfect pronunciation)
-- **Pronunciation normalization** (g→ɡ, b→p, d→t automatic fixes)
-- Version history tracking
-- Schedule publishing
-- **Bulk operations** (select multiple, publish/delete)
-- **Calendar view** (monthly overview with color-coded status)
-
-### 4. Personal QR System
-- Auto-generated on member creation
-- 6-digit unique code
-- **QR display modal** (download, print)
-- Works for universal check-in
-- Stored in member profile
-
-### 5. Member Management
-- **Advanced CSV Import** with 7-step wizard
-- **Photo & document upload** (base64 storage, up to 100MB ZIP)
-- **Phone duplicate validation** (early detection at Step 2, normalized comparison)
-- **Personal QR codes** auto-generated (6-digit universal ID)
-- **Photo upload** in create/edit forms
-- **Personal document upload** with preview/download
-- **Server-side search** across all members (not page-limited)
-- **Pagination** (50 members per page)
-- **Default member status** auto-assignment
-- **Member status management** (configurable in settings)
-- Simplified form (First Name, Last Name, Phone, Gender, Marital, Status, Address, Baptism Date, Notes)
-- **Real-time validation** with user-friendly error toasts
-
-### 6. Bible Integration
-- **6 Versions:**
-  - TB (Terjemahan Baru - Indonesian)
-  - CHS (Chinese Union Simplified)
-  - NIV, NKJV, NLT, ESV (English)
-- 186,592 verses stored locally
-- Fast verse lookup API
-- **Language-appropriate book names** (respects Bible version)
-
-### 7. Text-to-Speech
-- Coqui TTS with Wibowo voice (male, Indonesian)
-- **Perfect pronunciation** with automatic fixes:
-  - Unicode script ɡ (U+0261) for 'g' sounds
-  - 'b' → 'p' at word end & before consonants
-  - 'd' → 't' at word end & before consonants
-- Preview before saving
-- 120s timeout for generation
-- gTTS fallback
-
-### 8. Group Management
-- **Configurable categories** (editable labels in church settings)
-- **Real-time leader search** with profile photos (300ms debounce, server-side)
-- **Cover image upload** (base64 storage, preview, remove button)
-- **Card-based directory UI** with cover thumbnails
-- Member roster management (add/remove with real-time search)
-- **Join/Leave request workflows** (mobile API + staff approval)
-- WhatsApp notifications for approvals/rejections
-- Filter by category and open/closed status
-- Meeting schedule and location tracking
-- Maximum member limits with enforcement
-- Mobile API for group discovery
-- **No 307 redirects** (proper API paths)
-
-### 9. Articles & Content Management
-- WordPress-style CMS with TipTap rich editor
-- Scheduled publishing (APScheduler)
-- Categories & tags taxonomy
-- Comment moderation system
-- Draft preview before publishing
-- Featured images support
-- Public API for mobile apps
-
-### 10. Prayer Request Management
-- **Member selector** with real-time search and profile photos
-- 8 prayer categories (healing, family, work, guidance, thanksgiving, protection, salvation, other)
-- Status tracking (New/Prayed)
-- Pastoral follow-up tracking with checkboxes
-- Internal staff notes (private)
-- Advanced filters & search
-- **Consistent member selection UX** (same as groups leader selector)
-
-### 11. Enterprise Accounting System
-- Complete Chart of Accounts (52 Indonesian accounts)
-- Double-entry bookkeeping
-- Fiscal period locking
-- Budget management
-- Fixed assets & depreciation
-- Bank reconciliation
-- Year-end closing procedures
-- Financial reports & audit trail
-- MongoDB transactions for atomicity
-
-## Multi-Church Support
-
-Every data record is scoped by `church_id`:
-- Members, events, devotions, prayers, accounting, groups, articles
-- Automatic church isolation
-- Super Admin can view all churches
-- Regular admins see only their church
-
-## Internationalization (i18n)
-
-- **Languages:** English & Indonesian
-- **650+ translation keys** (including all modules: members, events, groups, prayers, accounting, etc.)
-- **Zero hardcoded strings**
-- Supports interpolation, pluralization, contextual translations
-- Date/time formatting per locale
-- react-i18next for runtime language switching
-
-## Security
-
-- JWT-based authentication
-- Role-based access (Admin, Staff, Super Admin)
-- Church-level data isolation
-- HTTPS required in production
-- Environment-based secrets
-
-## Browser Support
-
-- Chrome/Edge (recommended)
-- Firefox
-- Safari
-- Mobile browsers (for kiosk mode)
-
-## License
-
-MIT License - See LICENSE file
-
-## Support
-
-For issues, questions, or contributions, please refer to the documentation or open an issue on GitHub.
-
-## Credits
-
-- **TTS Model:** Wikidepia Indonesian-TTS (Wibowo voice)
-- **Bible Data:** Bible SuperSearch (TB, CHS) + Community sources (NIV, NKJV, NLT, ESV)
-- **UI Components:** shadcn/ui
-- **Icons:** Lucide React
+**Frontend (.env):**
+```env
+REACT_APP_BACKEND_URL=https://your-domain.com
+```
 
 ---
 
-**Built with ❤️ for churches worldwide**
+## 📚 Documentation
+
+- **[API Documentation](docs/API.md)** - Complete REST API reference
+- **[External API Guide](docs/EXTERNAL_API.md)** - Integration guide for external apps
+- **[Import/Export API](docs/IMPORT_EXPORT_API.md)** - Bulk data operations
+- **[Features Guide](docs/FEATURES.md)** - Detailed feature documentation
+- **[Deployment Guide](docs/DEPLOYMENT_DEBIAN.md)** - Production deployment
+- **[PyTorch/TTS Guide](PYTORCH_DEPLOYMENT_GUIDE.md)** - Optional TTS configuration
+- **[API Key Testing](API_KEY_TESTING_GUIDE.md)** - External authentication testing
+
+---
+
+## 🔐 Security Features
+
+- JWT authentication with strong secrets
+- API key authentication for external apps
+- HMAC-SHA256 webhook signatures
+- Multi-tenant data isolation (church_id)
+- Role-based access control (super_admin, admin, staff)
+- Password hashing (bcrypt)
+- CORS protection
+- Soft delete with trash bin
+- Audit trails for status changes
+
+---
+
+## 🔄 Background Jobs
+
+**4 Scheduled Tasks:**
+1. **Article Publishing** - Every 30 seconds
+2. **Webhook Queue Processing** - Every 10 seconds
+3. **Member Status Automation** - Hourly (checks church schedules)
+4. **Trash Bin Cleanup** - Daily at 2 AM (deletes >14 days old)
+
+---
+
+## 🌐 Multi-Language Support
+
+- English (en)
+- Indonesian (id)
+- Complete i18n for all UI text
+- Member preferred language tracking
+
+---
+
+## 📦 Key Collections (MongoDB)
+
+### Core
+- `churches` - Multi-tenant organizations
+- `users` - Admin/staff accounts
+- `members` - Church members (807 active, 2 in trash)
+- `church_settings` - Per-church configuration
+
+### Events
+- `events` - Single and series events
+- `event_categories` - Event types (Sunday Service is system default)
+
+### Status Automation
+- `member_statuses` - Custom statuses with colors
+- `member_status_rules` - Automation rules with conditions
+- `rule_evaluation_conflicts` - Conflict review queue
+- `member_status_history` - Complete audit trail
+
+### Groups
+- `groups` - Small groups and ministries
+- `group_memberships` - Member assignments
+- `group_join_requests` - Join request workflow
+
+### Content
+- `articles` - Articles and sermons
+- `devotions` - Daily devotions
+- `prayer_requests` - Prayer request tracking
+
+### Integrations
+- `webhook_configs` - Webhook configurations
+- `webhook_queue` - Retry queue
+- `webhook_delivery_logs` - Delivery history
+- `api_keys` - External app credentials
+
+### Accounting
+- `coa` - Chart of accounts
+- `journals` - Journal entries
+- `fiscal_periods` - Financial periods
+- `budgets` - Budget tracking
+- And 10+ more accounting collections
+
+---
+
+## 💻 API Endpoints
+
+### Authentication
+```
+POST   /api/auth/login          # JWT token (supports email or API username)
+GET    /api/auth/me             # Current user info
+```
+
+### Members
+```
+GET    /api/members/            # List (with filters: gender, marital, status, demographics)
+POST   /api/members/            # Create
+PATCH  /api/members/{id}        # Update (triggers webhook)
+DELETE /api/members/{id}        # Soft delete (to trash)
+GET    /api/members/trash       # List deleted members
+POST   /api/members/{id}/restore  # Restore from trash
+```
+
+### Member Status Automation
+```
+GET    /api/v1/member-status/statuses      # List statuses
+POST   /api/v1/member-status/statuses      # Create status
+GET    /api/v1/member-status/rules         # List rules
+POST   /api/v1/member-status/rules         # Create rule
+POST   /api/v1/member-status/simulate      # Preview affected members
+POST   /api/v1/member-status/run-once      # Manual trigger
+GET    /api/v1/member-status/conflicts     # List conflicts
+POST   /api/v1/member-status/conflicts/{id}/resolve  # Resolve conflict
+GET    /api/v1/member-status/members/{id}/history    # Status change history
+```
+
+### External Integration
+```
+POST   /api/webhooks/           # Create webhook
+GET    /api/api-keys/           # List API keys
+GET    /api/public/members/{id}/status  # Public member status (no auth)
+```
+
+**See [API.md](docs/API.md) and [EXTERNAL_API.md](docs/EXTERNAL_API.md) for complete reference.**
+
+---
+
+## 📊 Stats
+
+- **807** Active members
+- **2** Members in trash
+- **1** Church (multi-tenant ready)
+- **8** API keys generated
+- **15+** Collections
+- **100+** API endpoints
+- **2** Languages supported
+- **4** Background jobs running
+
+---
+
+## 👥 Contributing
+
+This is an enterprise church management system. For feature requests or bug reports, please contact the development team.
+
+---
+
+## 📝 License
+
+Proprietary - All rights reserved
+
+---
+
+## 🚀 Deployment
+
+**Production Ready!**
+- ✅ Optimized for Kubernetes deployment
+- ✅ Resource efficient (<1Gi memory)
+- ✅ All dependencies lightweight
+- ✅ Environment variable configured
+- ✅ CORS and security hardened
+- ✅ Background jobs stable
+
+**See [DEPLOYMENT_DEBIAN.md](docs/DEPLOYMENT_DEBIAN.md) for deployment guide.**
+
+---
+
+## 🎉 Recent Updates
+
+### November 2025
+- ✅ **Member Status Automation System** - Complete automation with rules and conflict detection
+- ✅ **Trash Bin System** - Soft delete with 14-day auto-cleanup
+- ✅ **Enhanced Member Filters** - Gender, marital, status, demographics
+- ✅ **Webhook Improvements** - campus_id support, signature format updates
+- ✅ **API Key Authentication** - Non-email username support
+- ✅ **Deployment Ready** - All blockers resolved
+
+---
+
+**Built with ❤️ for church communities worldwide**
