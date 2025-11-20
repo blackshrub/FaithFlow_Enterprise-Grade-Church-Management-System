@@ -12,7 +12,7 @@ ENV/
 .env.local
 .env.*.local
 
-# But ALLOW .env.example files explicitly
+# Explicitly ALLOW .env.example files
 !.env.example
 !backend/.env.example
 !frontend/.env.example
@@ -65,19 +65,3 @@ backend/models/tts_indonesian/checkpoint.pth
 # - .env files contain actual values (COMMITTED for deployment)
 # - .env.local files are for local overrides (IGNORED)
 frontend/node_modules/.cache/default-development/27.pack
--e 
-# Environment files
-*.env
-*.env.*
--e 
-# Environment files
-*.env
-*.env.*
--e 
-# Environment files
-*.env
-*.env.*
--e 
-# Environment files
-*.env
-*.env.*
