@@ -268,7 +268,15 @@ const AppointmentDetailPage = () => {
               </div>
               <div>
                 <div className="text-sm text-gray-500">{t('counseling.counselor')}</div>
-                <div className="font-medium">{appointment.counselor_info?.display_name || 'To Be Assigned'}</div>
+                <div className="flex items-center gap-2 mt-1">
+                  {appointment.counselor_info && (
+                    <MemberAvatar 
+                      name={appointment.counselor_info.display_name}
+                      size="sm"
+                    />
+                  )}
+                  <div className="font-medium">{appointment.counselor_info?.display_name || 'To Be Assigned'}</div>
+                </div>
               </div>
               {appointment.counselor_info?.whatsapp_number && (
                 <div>
