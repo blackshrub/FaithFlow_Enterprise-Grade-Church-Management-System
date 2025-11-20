@@ -20,15 +20,12 @@ export const kioskApi = {
 
   // Send OTP (using existing WhatsApp gateway)
   sendOTP: async (phone) => {
-    // TODO: Call existing OTP send endpoint
-    // For now, assume backend auto-sends OTP when phone not found
     const response = await api.post('/kiosk/send-otp', { phone });
     return response.data;
   },
 
   // Verify OTP
   verifyOTP: async (phone, code) => {
-    // TODO: Call existing OTP verify endpoint
     const response = await api.post('/kiosk/verify-otp', { phone, code });
     return response.data;
   },
