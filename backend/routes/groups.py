@@ -238,10 +238,12 @@ async def delete_group(
         {"church_id": church_id, "group_id": group_id, "status": "active"}
     )
     if active_members > 0:
-        error_response(
-            error_code="GROUP_HAS_ACTIVE_MEMBERS",
-            message="Cannot delete group with active members",
+        raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "error_code": "GROUP_HAS_ACTIVE_MEMBERS",
+                "message": f"Cannot delete group with {active_members} active member(s). Please remove all members first."
+            }
         )
 
     await db.groups.delete_one({"id": group_id})
