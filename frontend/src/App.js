@@ -64,6 +64,15 @@ import GroupMembersPage from "./pages/Groups/GroupMembersPage";
 import JoinRequestsPage from "./pages/Groups/JoinRequestsPage";
 import LeaveRequestsPage from "./pages/Groups/LeaveRequestsPage";
 
+// Counseling pages
+import {
+  CounselingDashboard,
+  CounselorsPage,
+  AvailabilityPage,
+  AppointmentsListPage,
+  AppointmentDetailPage
+} from "./pages/Counseling";
+
 import FaithFlowLogo from './components/Branding/FaithFlowLogo';
 
 function App() {
