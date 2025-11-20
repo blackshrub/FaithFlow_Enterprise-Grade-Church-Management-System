@@ -30,6 +30,8 @@ const KioskSettingsTab = () => {
     enable_counseling: true,
     enable_groups: true,
     enable_profile_update: true,
+    home_title: '',
+    home_subtitle: '',
     previsitor_status_id: '',
     timeout_minutes: 2,
     otp_digits: 4,
