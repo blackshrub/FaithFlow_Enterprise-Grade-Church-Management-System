@@ -41,15 +41,35 @@ const api = axios.create({
 // Add request interceptor for auth and logging
 api.interceptors.request.use(
   (config) => {
-    // FORCE HTTPS - Replace any http:// with https://
-    if (config.baseURL && config.baseURL.startsWith('http://')) {
+    // AGGRESSIVE HTTPS ENFORCEMENT - Replace any http:// with https://
+    if (config.baseURL && config.baseURL.includes('http://')) {
+      const originalURL = config.baseURL;
       config.baseURL = config.baseURL.replace('http://', 'https://');
-      console.warn('⚠️ Forced HTTP → HTTPS:', config.baseURL);
+      console.warn('⚠️ FORCED HTTP → HTTPS in baseURL:', originalURL, '→', config.baseURL);
+    }
+    
+    // Also check the full URL
+    if (config.url && config.url.includes('http://')) {
+      const originalURL = config.url;
+      config.url = config.url.replace('http://', 'https://');
+      console.warn('⚠️ FORCED HTTP → HTTPS in URL:', originalURL, '→', config.url);
     }
     
     // Log the actual URL being requested
     const fullURL = config.baseURL + (config.url || '');
     console.log('📡 API Request:', config.method?.toUpperCase(), fullURL);
+    
+    // Verify it's HTTPS
+    if (fullURL.startsWith('http://')) {
+      console.error('🚨 CRITICAL: Still using HTTP after forcing HTTPS!', fullURL);
+      // Last resort: reconstruct the URL with HTTPS
+      const httpsURL = fullURL.replace('http://', 'https://');
+      const urlParts = httpsURL.split('/api');
+      if (urlParts.length > 1) {
+        config.baseURL = urlParts[0] + '/api';
+        config.url = urlParts[1] || '';
+      }
+    }
     
     const token = localStorage.getItem('access_token');
     if (token) {
