@@ -26,7 +26,7 @@ import MemberAvatar from '../../components/MemberAvatar';
 import kioskApi from '../../services/kioskApi';
 import { useAuth } from '../../context/AuthContext';
 import Webcam from 'react-webcam';
-import jsQR from 'jsqr';
+import jsQR from 'jsQR';
 
 const EventCheckinKiosk = () => {
   const navigate = useNavigate();
