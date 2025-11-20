@@ -11,10 +11,31 @@ import api from './api';
 export const kioskApi = {
   // Phone lookup
   lookupMemberByPhone: async (phone) => {
-    const response = await api.get('/members/', {
+    // Try with + prefix first
+    let response = await api.get('/members/', {
       params: { phone_whatsapp: phone, limit: 1 }
     });
-    const members = response.data?.data || [];
+    let members = response.data?.data || [];
+    
+    // If not found and phone has +, try without +
+    if (members.length === 0 && phone.startsWith('+')) {
+      const phoneWithoutPlus = phone.substring(1);
+      response = await api.get('/members/', {
+        params: { phone_whatsapp: phoneWithoutPlus, limit: 1 }
+      });
+      members = response.data?.data || [];
+    }
+    
+    // If still not found and phone doesn't have +62, try with 62
+    if (members.length === 0 && !phone.startsWith('62') && !phone.startsWith('+62')) {
+      const phoneWith62 = '62' + (phone.startsWith('0') ? phone.substring(1) : phone);
+      response = await api.get('/members/', {
+        params: { phone_whatsapp: phoneWith62, limit: 1 }
+      });
+      members = response.data?.data || [];
+    }
+    
+    console.log('🔍 Phone lookup attempts:', phone, '→', members.length > 0 ? 'FOUND' : 'NOT FOUND');
     return members.length > 0 ? members[0] : null;
   },
 
