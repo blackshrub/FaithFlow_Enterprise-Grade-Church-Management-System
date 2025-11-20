@@ -53,6 +53,8 @@ class WebhookService:
                 "event_id": event_id,
                 "event_type": event_type,
                 "timestamp": datetime.now(timezone.utc).isoformat(),
+                "church_id": church_id,
+                "campus_id": church_id,  # Alias for external apps
                 "church": {
                     "id": church_id,
                     "name": church.get("name") if church else "Unknown"
