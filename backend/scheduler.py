@@ -154,7 +154,52 @@ def setup_scheduler(db: AsyncIOMotorDatabase):
         replace_existing=True
     )
     
-    logger.info("APScheduler configured with article publishing, webhook processing, status automation, and trash cleanup jobs")
+    # Add job: Generate counseling slots for all churches
+    async def generate_counseling_slots():
+        """Generate counseling slots for all churches based on their settings"""
+        try:
+            from services.counseling_availability_service import CounselingAvailabilityService
+            
+            logger.info("Generating counseling slots for all churches")
+            
+            # Get all churches with counseling enabled
+            settings = await db.church_settings.find({
+                "counseling_enabled": True
+            }).to_list(1000)
+            
+            if not settings:
+                logger.info("No churches with counseling enabled")
+                return
+            
+            availability_service = CounselingAvailabilityService(db)
+            
+            for setting in settings:
+                church_id = setting.get('church_id')
+                # Get days_ahead setting (default 60, or 365 for "forever")
+                days_ahead = setting.get('counseling_slot_generation_days', 60)
+                
+                try:
+                    logger.info(f"Generating slots for church {church_id} ({days_ahead} days ahead)")
+                    result = await availability_service.generate_slots_for_all_counselors(
+                        church_id,
+                        days_ahead
+                    )
+                    logger.info(f"Slot generation complete for church {church_id}: {result}")
+                except Exception as e:
+                    logger.error(f"Error generating slots for church {church_id}: {e}")
+        
+        except Exception as e:
+            logger.error(f"Error in counseling slot generation job: {e}")
+    
+    scheduler.add_job(
+        func=lambda: generate_counseling_slots(),
+        trigger=CronTrigger(hour=2, minute=30),  # Daily at 2:30 AM
+        id='generate_counseling_slots',
+        name='Generate Counseling Slots',
+        replace_existing=True
+    )
+    
+    logger.info("APScheduler configured with article publishing, webhook processing, status automation, trash cleanup, and counseling slot generation jobs")
     
     return scheduler
 
