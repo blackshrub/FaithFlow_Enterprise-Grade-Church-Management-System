@@ -118,15 +118,38 @@ export default function WebhooksTab() {
       
       // Show detailed toast
       if (result.success) {
-        toast.success(`Webhook test successful! Status: ${result.status_code}`);
+        toast.success(`Webhook test successful! Status: ${result.status_code}`, {
+          description: result.response_body,
+          duration: 8000,
+        });
       } else {
-        toast.error(`Webhook test failed: ${result.error || result.message || 'Unknown error'}`, {
-          description: result.response_body ? `Response: ${result.response_body.substring(0, 100)}` : undefined,
-          duration: 10000,
+        // Build detailed error message
+        let errorMsg = result.error || result.message || 'Unknown error';
+        let description = '';
+        
+        if (result.debug_info) {
+          description = `Algorithm: ${result.debug_info.signature_algorithm || 'HMAC-SHA256'}\n`;
+          description += `Secret key length: ${result.debug_info.secret_key_length} chars\n`;
+          if (result.response_body) {
+            description += `\nResponse: ${result.response_body}`;
+          }
+        }
+        
+        toast.error(`Webhook test failed: ${errorMsg}`, {
+          description: description || result.response_body?.substring(0, 150),
+          duration: 15000,
+        });
+        
+        // Also log to console for debugging
+        console.error('🔴 Webhook Test Failed:', {
+          error: errorMsg,
+          statusCode: result.status_code,
+          responseBody: result.response_body,
+          debugInfo: result.debug_info
         });
       }
       
-      setTimeout(() => setTestResult(null), 10000);
+      setTimeout(() => setTestResult(null), 15000);
     } catch (error) {
       const errorMsg = error.response?.data?.detail || error.message || 'Network error';
       toast.error('Webhook test failed', {
