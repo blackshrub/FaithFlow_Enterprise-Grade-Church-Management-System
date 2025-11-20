@@ -59,12 +59,14 @@ const EventRegistrationKiosk = () => {
   };
   
   const handleMemberFound = (foundMember, foundPhone) => {
+    console.log('✅ handleMemberFound called:', foundMember?.full_name);
     setMember(foundMember);
     setPhone(foundPhone);
     setStep('otp_existing');
   };
   
   const handleMemberNotFound = (foundPhone) => {
+    console.log('⚠️ handleMemberNotFound called:', foundPhone);
     setPhone(foundPhone);
     setStep('otp_new');
   };
