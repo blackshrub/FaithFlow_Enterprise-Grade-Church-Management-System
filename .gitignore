@@ -8,10 +8,9 @@ venv/
 env/
 ENV/
 
-# Environment files - ignore local changes but keep committed defaults
-# Note: backend/.env and frontend/.env are committed with placeholder values
-# This prevents local changes from being tracked
-.env
+# Environment files - .env files will be committed for deployment
+# Note: TEMPORARILY allowing .env files to be committed
+# After deployment, add .env back to ignore local changes
 .env.local
 .env.*.local
 !.env.example
