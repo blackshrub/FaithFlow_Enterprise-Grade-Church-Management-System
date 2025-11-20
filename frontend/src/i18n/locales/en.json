@@ -1571,12 +1571,16 @@
     },
     "categories": {
       "healing": "Healing",
+      "health": "Health",
       "family": "Family",
-      "work": "Work",
+      "work": "Work & Career",
       "financial": "Financial",
-      "spiritual": "Spiritual",
+      "provision": "Provision",
+      "spiritual": "Spiritual Growth",
       "guidance": "Guidance",
       "thanksgiving": "Thanksgiving",
+      "comfort": "Comfort & Grief",
+      "salvation": "Salvation",
       "other": "Other"
     },
     "sources": {
