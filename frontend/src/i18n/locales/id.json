@@ -1999,5 +1999,46 @@
     "error_counselor_not_found": "Konselor Tidak Ditemukan",
     "error_appointment_not_found": "Janji Temu Tidak Ditemukan",
     "error_appointment_already_processed": "Janji Temu Ini Sudah Diproses"
+  },
+  "groups": {
+    "title": "Kelompok",
+    "subtitle": "Kelola kelompok dan komunitas gereja",
+    "members": {
+      "title": "Anggota Kelompok",
+      "subtitle": "Kelola anggota kelompok",
+      "searchPlaceholder": "Cari anggota...",
+      "searchResults": "Hasil Pencarian",
+      "emptyStates": {
+        "noMembers": "Belum Ada Anggota"
+      },
+      "statuses": {
+        "active": "Aktif",
+        "pending_leave": "Menunggu Keluar",
+        "removed": "Dihapus"
+      },
+      "table": {
+        "member": "Anggota",
+        "contact": "Kontak",
+        "joinedAt": "Bergabung Pada",
+        "status": "Status",
+        "actions": "Aksi"
+      },
+      "actions": {
+        "addMember": "Tambah Anggota",
+        "addToGroup": "Tambah ke Kelompok",
+        "remove": "Hapus"
+      },
+      "messages": {
+        "searchError": "Gagal mencari anggota",
+        "addSuccess": "Anggota berhasil ditambahkan",
+        "addError": "Gagal menambahkan anggota",
+        "removeSuccess": "Anggota berhasil dihapus",
+        "removeError": "Gagal menghapus anggota"
+      },
+      "delete": {
+        "confirmTitle": "Hapus Anggota dari Kelompok?",
+        "confirmDescription": "Ini akan menghapus {{memberName}} dari kelompok ini. Mereka dapat bergabung kembali nanti jika diperlukan."
+      }
+    }
   }
 }
