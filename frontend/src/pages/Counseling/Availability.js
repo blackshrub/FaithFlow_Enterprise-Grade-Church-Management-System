@@ -396,7 +396,7 @@ const AvailabilityPage = () => {
                   <SelectValue placeholder="All Counselors" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Counselors</SelectItem>
+                  <SelectItem value="all">All Counselors</SelectItem>
                   {counselors.map((c) => (
                     <SelectItem key={c.id} value={c.id}>{c.display_name}</SelectItem>
                   ))}
