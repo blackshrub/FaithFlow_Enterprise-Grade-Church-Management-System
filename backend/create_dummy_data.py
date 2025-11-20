@@ -128,7 +128,8 @@ async def create_dummy_data():
             "id": str(uuid.uuid4()),
             "church_id": church_id,
             "member_id": member["id"],
-            "member_name": "Anonymous" if pr_data["is_anonymous"] else member["full_name"],
+            "member_name": member["full_name"],  # Always use real name in DB
+            "requester_name": member["full_name"],  # Add requester_name field
             **pr_data,
             "created_at": datetime.utcnow() - timedelta(days=random.randint(0, 7)),
             "updated_at": datetime.utcnow(),
