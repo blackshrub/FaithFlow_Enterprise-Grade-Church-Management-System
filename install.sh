@@ -100,6 +100,8 @@ echo -e "${MAGENTA}${ROCKET} Step 1/14: Preparing your system...${NC}"
 progress
 info "Updating package lists and upgrading system..."
 apt update > /dev/null 2>&1 && apt upgrade -y > /dev/null 2>&1
+info "Installing essential tools (rsync)..."
+apt install -y rsync > /dev/null 2>&1
 success "System updated successfully!"
 echo ""
 sleep 1
