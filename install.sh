@@ -728,8 +728,9 @@ fi
 
 echo -e "${YELLOW}│                                                                             │${NC}"
 echo -e "${YELLOW}│  4️⃣  Login with:                                                         │${NC}"
-echo -e "${YELLOW}│     Create admin via application first visit                            │${NC}"
-echo -e "${YELLOW}│     OR manually via database                                            │${NC}"
+echo -e "${YELLOW}│     ${GREEN}Email:${YELLOW}    ${WHITE}${ADMIN_EMAIL}${YELLOW}                                        │${NC}"
+echo -e "${YELLOW}│     ${GREEN}Password:${YELLOW} (the one you entered during installation)                │${NC}"
+echo -e "${YELLOW}│     ${GREEN}Church:${YELLOW}   ${WHITE}${CHURCH_NAME}${YELLOW}                                        │${NC}"
 echo -e "${YELLOW}│                                                                             │${NC}"
 echo -e "${YELLOW}╰─────────────────────────────────────────────────────────────────────╯${NC}"
 echo ""
