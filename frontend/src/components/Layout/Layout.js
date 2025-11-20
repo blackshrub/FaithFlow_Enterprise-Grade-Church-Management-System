@@ -101,10 +101,16 @@ export default function Layout() {
       key: 'spiritual',
       submenu: [
         { label: t('prayerRequests.title') || 'Prayer Requests', path: '/prayer-requests' },
-        { label: 'Counseling & Prayer', path: '/counseling' },
-        { label: 'Counselors', path: '/counseling/counselors' },
-        { label: 'Availability', path: '/counseling/availability' },
-        { label: 'Appointments', path: '/counseling/appointments' },
+        { 
+          label: 'Counseling & Prayer',
+          key: 'counseling',
+          submenu: [
+            { label: 'Dashboard', path: '/counseling' },
+            { label: 'Counselors', path: '/counseling/counselors' },
+            { label: 'Availability', path: '/counseling/availability' },
+            { label: 'Appointments', path: '/counseling/appointments' },
+          ]
+        },
       ]
     },
     {
@@ -113,11 +119,17 @@ export default function Layout() {
       key: 'content',
       submenu: [
         { label: 'Devotion', path: '/devotions' },
-        { label: t('articles.title') || 'Articles', path: '/articles' },
-        { label: t('articles.addNew') || 'Add New Article', path: '/articles/new' },
-        { label: t('articles.categoriesManagement.title') || 'Categories', path: '/articles/categories' },
-        { label: t('articles.tagsManagement.title') || 'Tags', path: '/articles/tags' },
-        { label: t('articles.comments.title') || 'Comments', path: '/articles/comments' },
+        {
+          label: t('articles.title') || 'Articles',
+          key: 'articles',
+          submenu: [
+            { label: t('articles.allArticles') || 'All Articles', path: '/articles' },
+            { label: t('articles.addNew') || 'Add New', path: '/articles/new' },
+            { label: t('articles.categoriesManagement.title') || 'Categories', path: '/articles/categories' },
+            { label: t('articles.tagsManagement.title') || 'Tags', path: '/articles/tags' },
+            { label: t('articles.comments.title') || 'Comments', path: '/articles/comments' },
+          ]
+        },
       ]
     },
     {
