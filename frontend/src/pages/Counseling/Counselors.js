@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent } from '../../components/ui/card';
@@ -39,6 +40,7 @@ import {
 } from '../../hooks/useCounseling';
 
 const CounselorsPage = () => {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -95,13 +97,13 @@ const CounselorsPage = () => {
           data: formData
         });
         toast({
-          title: t('success_counselor_updated'),
+          title: t('counseling.success_counselor_updated'),
           variant: 'default'
         });
       } else {
         await createMutation.mutateAsync(formData);
         toast({
-          title: t('success_counselor_created'),
+          title: t('counseling.success_counselor_created'),
           variant: 'default'
         });
       }
@@ -119,7 +121,7 @@ const CounselorsPage = () => {
     try {
       await deleteMutation.mutateAsync(deletingCounselor.id);
       toast({
-        title: t('success_counselor_deleted'),
+        title: t('counseling.success_counselor_deleted'),
         variant: 'default'
       });
       setIsDeleteDialogOpen(false);
@@ -155,12 +157,12 @@ const CounselorsPage = () => {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">{t('counselors')}</h1>
-          <p className="text-gray-500 mt-1">Manage counselor profiles and availability</p>
+          <h1 className="text-3xl font-bold">{t('counseling.counselors')}</h1>
+          <p className="text-gray-500 mt-1">Manage Counselor Profiles and Availability</p>
         </div>
         <Button onClick={() => handleOpenForm()}>
           <Plus className="mr-2 h-4 w-4" />
-          {t('add_counselor')}
+          {t('counseling.add_counselor')}
         </Button>
       </div>
 
@@ -171,17 +173,17 @@ const CounselorsPage = () => {
             <div className="text-center py-8 text-gray-500">Loading...</div>
           ) : counselors.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
-              {t('no_counselors')}
+              {t('counseling.no_counselors')}
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>{t('counselor_name')}</TableHead>
-                  <TableHead>{t('whatsapp_number')}</TableHead>
-                  <TableHead>{t('specialties')}</TableHead>
-                  <TableHead>{t('max_daily_appointments')}</TableHead>
-                  <TableHead>{t('status')}</TableHead>
+                  <TableHead>{t('counseling.counselor_name')}</TableHead>
+                  <TableHead>{t('counseling.whatsapp_number')}</TableHead>
+                  <TableHead>{t('counseling.specialties')}</TableHead>
+                  <TableHead>{t('counseling.max_daily_appointments')}</TableHead>
+                  <TableHead>{t('counseling.status')}</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -214,7 +216,7 @@ const CounselorsPage = () => {
                     <TableCell>{counselor.max_daily_appointments || '-'}</TableCell>
                     <TableCell>
                       <Badge variant={counselor.is_active ? 'default' : 'secondary'}>
-                        {counselor.is_active ? t('active') : t('inactive')}
+                        {counselor.is_active ? t('counseling.active') : t('counseling.inactive')}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
@@ -251,7 +253,7 @@ const CounselorsPage = () => {
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>
-              {editingCounselor ? t('edit_counselor') : t('add_counselor')}
+              {editingCounselor ? t('counseling.edit_counselor') : t('counseling.add_counselor')}
             </DialogTitle>
             <DialogDescription>
               Configure counselor profile and availability settings.
@@ -260,14 +262,14 @@ const CounselorsPage = () => {
           <form onSubmit={handleSubmit}>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label htmlFor="staff_user_id">{t('select_staff_user')} *</Label>
+                <Label htmlFor="staff_user_id">{t('counseling.select_staff_user')} *</Label>
                 <Select
                   value={formData.staff_user_id}
                   onValueChange={(value) => setFormData({ ...formData, staff_user_id: value })}
                   disabled={!!editingCounselor}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder={t('select_staff_user')} />
+                    <SelectValue placeholder={t('counseling.select_staff_user')} />
                   </SelectTrigger>
                   <SelectContent>
                     {staffUsers.map((user) => (
@@ -280,7 +282,7 @@ const CounselorsPage = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="display_name">{t('display_name')} *</Label>
+                <Label htmlFor="display_name">{t('counseling.display_name')} *</Label>
                 <Input
                   id="display_name"
                   value={formData.display_name}
@@ -291,7 +293,7 @@ const CounselorsPage = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="whatsapp_number">{t('whatsapp_number')}</Label>
+                <Label htmlFor="whatsapp_number">{t('counseling.whatsapp_number')}</Label>
                 <Input
                   id="whatsapp_number"
                   value={formData.whatsapp_number}
@@ -301,7 +303,7 @@ const CounselorsPage = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="max_daily_appointments">{t('max_daily_appointments')}</Label>
+                <Label htmlFor="max_daily_appointments">{t('counseling.max_daily_appointments')}</Label>
                 <Input
                   id="max_daily_appointments"
                   type="number"
@@ -313,7 +315,7 @@ const CounselorsPage = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="bio">{t('bio')}</Label>
+                <Label htmlFor="bio">{t('counseling.bio')}</Label>
                 <Textarea
                   id="bio"
                   value={formData.bio}
@@ -324,7 +326,7 @@ const CounselorsPage = () => {
               </div>
 
               <div className="space-y-2">
-                <Label>{t('specialties')}</Label>
+                <Label>{t('counseling.specialties')}</Label>
                 <div className="flex gap-2">
                   <Input
                     value={specialtyInput}
@@ -368,7 +370,7 @@ const CounselorsPage = () => {
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{t('confirm_delete_counselor')}</DialogTitle>
+            <DialogTitle>{t('counseling.confirm_delete_counselor')}</DialogTitle>
             <DialogDescription>
               This will deactivate the counselor. They will no longer appear in the counselors list.
             </DialogDescription>
