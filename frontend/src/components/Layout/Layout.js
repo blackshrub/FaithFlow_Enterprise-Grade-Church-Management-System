@@ -71,6 +71,9 @@ export default function Layout() {
     if (path.includes('/articles')) {
       setExpandedMenus(prev => ({ ...prev, articles: true }));
     }
+    if (path.includes('/counseling')) {
+      setExpandedMenus(prev => ({ ...prev, counseling: true }));
+    }
   }, [location.pathname]);
 
   const menuItems = [
