@@ -18,10 +18,12 @@ import { Button } from '../ui/button';
 import { motion } from 'framer-motion';
 import { useKioskInactivity } from '../../hooks/useKioskInactivity';
 
-const KioskLayout = ({ children, showBack = false, showHome = true, onBack = null }) => {
+const KioskLayout = ({ children, showBack = false, showHome = true, onBack = null, showChangeChurch = true }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { i18n, t } = useTranslation('kiosk');
+  
+  const churchName = localStorage.getItem('kiosk_church_name') || '';
   
   // Apply inactivity timeout (except for staff check-in)
   useKioskInactivity(2); // 2 minutes default
