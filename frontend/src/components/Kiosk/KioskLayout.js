@@ -96,7 +96,7 @@ const KioskLayout = ({ children, showBack = false, showHome = true, onBack = nul
             className="h-14 px-6 text-lg rounded-2xl"
           >
             <Globe className="mr-2 h-5 w-5" />
-            {i18n.language === 'en' ? 'ID' : 'EN'}
+            {i18n.language === 'en' ? 'EN' : 'ID'}
           </Button>
         </motion.div>
       </div>
