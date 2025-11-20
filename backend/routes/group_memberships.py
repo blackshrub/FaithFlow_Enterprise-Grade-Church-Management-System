@@ -23,8 +23,12 @@ async def list_group_members(
     church_id = get_current_church_id(current_user)
 
     query = {"church_id": church_id, "group_id": group_id}
+    
+    # Default to active members only unless status filter specified
     if status_filter:
         query["status"] = status_filter
+    else:
+        query["status"] = "active"  # Default: show only active members
 
     cursor = db.group_memberships.find(query, {"_id": 0})
     memberships = await cursor.to_list(length=None)
