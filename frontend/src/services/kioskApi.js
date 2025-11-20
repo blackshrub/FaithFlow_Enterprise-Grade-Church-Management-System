@@ -71,10 +71,9 @@ export const kioskApi = {
   },
 
   registerForEvent: async (event_id, member_id) => {
-    // TODO: Use existing RSVP endpoint
-    const response = await api.post(`/events/${event_id}/rsvp`, {
-      member_id,
-      source: 'kiosk'
+    const response = await api.post('/kiosk/register-event', {
+      event_id,
+      member_id
     });
     return response.data;
   },
