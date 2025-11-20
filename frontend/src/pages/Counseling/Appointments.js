@@ -38,7 +38,15 @@ const AppointmentsListPage = () => {
     date_to: ''
   });
 
-  const { data: appointments = [], isLoading } = useAppointments(filters);
+  const { data: appointments = [], isLoading } = useAppointments(
+    // Convert "all" back to empty string for API
+    {
+      ...filters,
+      status: filters.status === 'all' ? '' : filters.status,
+      counselor_id: filters.counselor_id === 'all' ? '' : filters.counselor_id,
+      urgency: filters.urgency === 'all' ? '' : filters.urgency,
+    }
+  );
   const { data: counselors = [] } = useCounselors();
 
   const getUrgencyColor = (urgency) => {
