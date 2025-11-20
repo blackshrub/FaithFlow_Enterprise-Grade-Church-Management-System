@@ -82,11 +82,27 @@ export const kioskApi = {
   getUpcomingEvents: async () => {
     const response = await api.get('/events/', {
       params: {
-        is_active: true,
-        limit: 20
+        limit: 50
       }
     });
-    return response.data?.data || [];
+    
+    console.log('🎯 Raw events response:', response.data);
+    
+    const events = response.data?.data || [];
+    console.log('🎯 Events array:', events);
+    console.log('🎯 Events count:', events.length);
+    
+    // Filter for future events only
+    const now = new Date();
+    const futureEvents = events.filter(event => {
+      if (!event.event_date) return false;
+      const eventDate = new Date(event.event_date);
+      return eventDate >= now;
+    });
+    
+    console.log('🎯 Future events count:', futureEvents.length);
+    
+    return futureEvents;
   },
 
   registerForEvent: async (event_id, member_id) => {
