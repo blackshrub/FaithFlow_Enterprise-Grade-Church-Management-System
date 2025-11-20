@@ -73,6 +73,19 @@ progress
 echo -e "${MAGENTA}🚀 Step 1/8: Checking current status...${NC}"
 progress
 
+# Set standard installation directory
+INSTALL_DIR="/opt/faithflow"
+
+# Check if directory exists
+if [ ! -d "$INSTALL_DIR" ]; then
+    echo -e "${RED}❌ FaithFlow not found in $INSTALL_DIR${NC}"
+    echo -e "${YELLOW}   Please run install.sh first${NC}"
+    exit 1
+fi
+
+cd "$INSTALL_DIR"
+info "Working directory: $INSTALL_DIR"
+
 # Check if services are running
 info "Checking FaithFlow services..."
 if supervisorctl status faithflow:backend > /dev/null 2>&1; then
