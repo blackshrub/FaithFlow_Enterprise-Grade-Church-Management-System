@@ -15,6 +15,9 @@ class ChurchSettingsBase(BaseModel):
     enable_whatsapp_notifications: bool = Field(default=False, description="Enable WhatsApp notifications (global switch)")
     whatsapp_send_rsvp_confirmation: bool = Field(default=True, description="Send confirmation when RSVP is registered")
     whatsapp_send_group_notifications: bool = Field(default=True, description="Send WhatsApp notifications for group join/leave approvals")
+    whatsapp_api_url: str = Field(default='', description="WhatsApp API Gateway URL")
+    whatsapp_username: str = Field(default='', description="WhatsApp API Username")
+    whatsapp_password: str = Field(default='', description="WhatsApp API Password")
     
     # Group module configuration
     group_categories: dict = Field(
