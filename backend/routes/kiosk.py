@@ -34,6 +34,7 @@ class PINVerifyRequest(BaseModel):
 @router.post("/send-otp")
 async def send_otp(
     request: OTPSendRequest,
+    church_id: str = Query(..., description="Church ID"),
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """Send OTP to phone via WhatsApp."""
@@ -54,15 +55,15 @@ async def send_otp(
         logger.info(f"OTP for {phone}: {code}")
         print(f"\n🔐 OTP for {phone}: {code}\n")
         
-        # Get WhatsApp config from settings (not env variables)
-        settings = await db.church_settings.find_one({}, {"_id": 0})
+        # Get WhatsApp config from settings for THIS church
+        settings = await db.church_settings.find_one({"church_id": church_id}, {"_id": 0})
         
         if settings:
             whatsapp_url = settings.get('whatsapp_api_url', '').strip()
             whatsapp_user = settings.get('whatsapp_username', '').strip()
             whatsapp_pass = settings.get('whatsapp_password', '').strip()
             
-            print(f"📱 WhatsApp Config from DB:")
+            print(f"📱 WhatsApp Config from DB (Church: {church_id}):")
             print(f"   URL: '{whatsapp_url}'")
             print(f"   Username: '{whatsapp_user}'")
             print(f"   Password: {'***' if whatsapp_pass else '(empty)'}")
