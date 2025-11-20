@@ -237,6 +237,10 @@ const CounselingDashboard = () => {
                 >
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
+                      <MemberAvatar 
+                        name={appointment.member_name}
+                        size="sm"
+                      />
                       <span className="font-medium">{appointment.member_name}</span>
                       <Badge variant={getStatusColor(appointment.status)}>
                         {getStatusLabel(appointment.status)}
