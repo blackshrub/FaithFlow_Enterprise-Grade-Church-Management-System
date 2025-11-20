@@ -25,14 +25,14 @@ import { Card } from '../../components/ui/card';
 import MemberAvatar from '../../components/MemberAvatar';
 import kioskApi from '../../services/kioskApi';
 import { useAuth } from '../../context/AuthContext';
-import Webcam from 'react-webcam';
-import jsQR from 'jsqr';
+import QrScanner from 'qr-scanner';
 
 const EventCheckinKiosk = () => {
   const navigate = useNavigate();
   const { t } = useTranslation('kiosk');
   const { church } = useAuth();
-  const webcamRef = useRef(null);
+  const videoRef = useRef(null);
+  const qrScannerRef = useRef(null);
   
   const [step, setStep] = useState('pin'); // pin, select_event, scan_or_search, confirm
   const [pin, setPin] = useState('');
@@ -48,47 +48,42 @@ const EventCheckinKiosk = () => {
   const [selectedMember, setSelectedMember] = useState(null);
   const [scanning, setScanning] = useState(false);
   
-  // QR scanning
+  // QR scanning with qr-scanner library
   useEffect(() => {
-    if (mode === 'scan' && step === 'scan_or_search' && scanning) {
-      const interval = setInterval(() => {
-        captureAndDecode();
-      }, 500);
-      return () => clearInterval(interval);
-    }
-  }, [mode, step, scanning]);
-  
-  const captureAndDecode = () => {
-    if (!webcamRef.current) return;
-    
-    const imageSrc = webcamRef.current.getScreenshot();
-    if (!imageSrc) return;
-    
-    const img = new Image();
-    img.src = imageSrc;
-    img.onload = () => {
-      const canvas = document.createElement('canvas');
-      canvas.width = img.width;
-      canvas.height = img.height;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0);
-      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const code = jsQR(imageData.data, imageData.width, imageData.height);
+    if (scanning && videoRef.current) {
+      qrScannerRef.current = new QrScanner(
+        videoRef.current,
+        result => handleQRScanned(result.data),
+        {
+          highlightScanRegion: true,
+          highlightCodeOutline: true,
+        }
+      );
       
-      if (code) {
-        handleQRScanned(code.data);
-      }
-    };
-  };
+      qrScannerRef.current.start();
+      
+      return () => {
+        if (qrScannerRef.current) {
+          qrScannerRef.current.stop();
+          qrScannerRef.current.destroy();
+        }
+      };
+    }
+  }, [scanning]);
   
   const handleQRScanned = async (qrData) => {
+    if (qrScannerRef.current) {
+      qrScannerRef.current.stop();
+    }
     setScanning(false);
+    
     // Extract member ID from QR
     try {
       const memberId = qrData; // Assume QR contains member ID
       // Fetch member and check in
       // TODO: Call check-in API
       console.log('Scanned member:', memberId);
+      alert(`Scanned: ${memberId}`);
     } catch (error) {
       console.error('QR scan error:', error);
     }
