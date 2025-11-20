@@ -27,7 +27,7 @@ import { format, parseISO } from 'date-fns';
 import AppointmentDetailPage from './AppointmentDetail';
 
 const AppointmentsListPage = () => {
-  const { t } = useTranslation('counseling');
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { appointmentId } = useParams();
   const [filters, setFilters] = useState({
@@ -72,12 +72,12 @@ const AppointmentsListPage = () => {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">{t('appointments')}</h1>
-          <p className="text-gray-500 mt-1">Manage counseling and prayer appointments</p>
+          <h1 className="text-3xl font-bold">{t('counseling.appointments')}</h1>
+          <p className="text-gray-500 mt-1">Manage Counseling and Prayer Appointments</p>
         </div>
         <Button onClick={() => navigate('/counseling/appointments/new')}>
           <Plus className="mr-2 h-4 w-4" />
-          {t('create_appointment')}
+          {t('counseling.create_appointment')}
         </Button>
       </div>
 
@@ -86,7 +86,7 @@ const AppointmentsListPage = () => {
         <CardContent className="pt-6">
           <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
             <div className="space-y-2">
-              <Label>{t('status')}</Label>
+              <Label>{t('counseling.status')}</Label>
               <Select
                 value={filters.status}
                 onValueChange={(value) => setFilters({ ...filters, status: value })}
@@ -96,17 +96,17 @@ const AppointmentsListPage = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="">All Status</SelectItem>
-                  <SelectItem value="pending">{t('status_pending')}</SelectItem>
-                  <SelectItem value="approved">{t('status_approved')}</SelectItem>
-                  <SelectItem value="rejected">{t('status_rejected')}</SelectItem>
-                  <SelectItem value="canceled">{t('status_canceled')}</SelectItem>
-                  <SelectItem value="completed">{t('status_completed')}</SelectItem>
+                  <SelectItem value="pending">{t('counseling.status_pending')}</SelectItem>
+                  <SelectItem value="approved">{t('counseling.status_approved')}</SelectItem>
+                  <SelectItem value="rejected">{t('counseling.status_rejected')}</SelectItem>
+                  <SelectItem value="canceled">{t('counseling.status_canceled')}</SelectItem>
+                  <SelectItem value="completed">{t('counseling.status_completed')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div className="space-y-2">
-              <Label>{t('counselor')}</Label>
+              <Label>{t('counseling.counselor')}</Label>
               <Select
                 value={filters.counselor_id}
                 onValueChange={(value) => setFilters({ ...filters, counselor_id: value })}
@@ -124,7 +124,7 @@ const AppointmentsListPage = () => {
             </div>
 
             <div className="space-y-2">
-              <Label>{t('urgency')}</Label>
+              <Label>{t('counseling.urgency')}</Label>
               <Select
                 value={filters.urgency}
                 onValueChange={(value) => setFilters({ ...filters, urgency: value })}
@@ -134,10 +134,10 @@ const AppointmentsListPage = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="">All Urgency</SelectItem>
-                  <SelectItem value="low">{t('urgency_low')}</SelectItem>
-                  <SelectItem value="normal">{t('urgency_normal')}</SelectItem>
-                  <SelectItem value="high">{t('urgency_high')}</SelectItem>
-                  <SelectItem value="crisis">{t('urgency_crisis')}</SelectItem>
+                  <SelectItem value="low">{t('counseling.urgency_low')}</SelectItem>
+                  <SelectItem value="normal">{t('counseling.urgency_normal')}</SelectItem>
+                  <SelectItem value="high">{t('counseling.urgency_high')}</SelectItem>
+                  <SelectItem value="crisis">{t('counseling.urgency_crisis')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -182,19 +182,19 @@ const AppointmentsListPage = () => {
             <div className="text-center py-8 text-gray-500">Loading...</div>
           ) : appointments.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
-              {t('no_appointments')}
+              {t('counseling.no_appointments')}
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Date & Time</TableHead>
-                  <TableHead>{t('member')}</TableHead>
-                  <TableHead>{t('counselor')}</TableHead>
-                  <TableHead>{t('type')}</TableHead>
-                  <TableHead>{t('topic')}</TableHead>
-                  <TableHead>{t('urgency')}</TableHead>
-                  <TableHead>{t('status')}</TableHead>
+                  <TableHead>{t('counseling.member')}</TableHead>
+                  <TableHead>{t('counseling.counselor')}</TableHead>
+                  <TableHead>{t('counseling.type')}</TableHead>
+                  <TableHead>{t('counseling.topic')}</TableHead>
+                  <TableHead>{t('counseling.urgency')}</TableHead>
+                  <TableHead>{t('counseling.status')}</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -231,17 +231,17 @@ const AppointmentsListPage = () => {
                     </TableCell>
                     <TableCell>{appointment.counselor_name}</TableCell>
                     <TableCell>
-                      <Badge variant="outline">{t(`type_${appointment.type}`)}</Badge>
+                      <Badge variant="outline">{t(`counseling.type_${appointment.type}`)}</Badge>
                     </TableCell>
                     <TableCell className="max-w-xs truncate">{appointment.topic}</TableCell>
                     <TableCell>
                       <Badge variant={getUrgencyColor(appointment.urgency)}>
-                        {t(`urgency_${appointment.urgency}`)}
+                        {t(`counseling.urgency_${appointment.urgency}`)}
                       </Badge>
                     </TableCell>
                     <TableCell>
                       <Badge variant={getStatusColor(appointment.status)}>
-                        {t(`status_${appointment.status}`)}
+                        {t(`counseling.status_${appointment.status}`)}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
