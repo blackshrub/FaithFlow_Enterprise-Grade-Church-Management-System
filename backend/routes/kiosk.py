@@ -149,8 +149,12 @@ async def verify_otp(
         phone = request.phone
         code = request.code
         
+        print(f"🔍 Verifying OTP for phone: {phone}, code: {code}")
+        print(f"🔍 OTP store has phones: {list(otp_store.keys())}")
+        
         # Check if OTP exists
         if phone not in otp_store:
+            print(f"❌ No OTP found for {phone}")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail={"error_code": "OTP_NOT_FOUND", "message": "No OTP found"}
@@ -160,6 +164,7 @@ async def verify_otp(
         
         # Check expiry
         if datetime.utcnow() > stored['expires_at']:
+            print(f"❌ OTP expired for {phone}")
             del otp_store[phone]
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -168,6 +173,7 @@ async def verify_otp(
         
         # Check attempts
         if stored['attempts'] >= 3:
+            print(f"❌ Too many attempts for {phone}")
             del otp_store[phone]
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -177,10 +183,12 @@ async def verify_otp(
         # Verify code
         if stored['code'] != code:
             stored['attempts'] += 1
+            print(f"❌ Wrong code for {phone}. Expected: {stored['code']}, Got: {code}, Attempts: {stored['attempts']}")
             return {"success": False, "message": "Invalid OTP"}
         
         # Success - remove OTP
         del otp_store[phone]
+        print(f"✅ OTP verified successfully for {phone}")
         
         return {"success": True, "message": "OTP verified"}
     
@@ -188,6 +196,8 @@ async def verify_otp(
         raise
     except Exception as e:
         logger.error(f"Error verifying OTP: {e}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail="Failed to verify OTP")
 
 
