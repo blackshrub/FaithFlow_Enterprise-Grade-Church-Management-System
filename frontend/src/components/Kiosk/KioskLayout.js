@@ -43,9 +43,38 @@ const KioskLayout = ({ children, showBack = false, showHome = true, onBack = nul
     i18n.changeLanguage(newLang);
   };
   
+  const handleChangeChurch = () => {
+    localStorage.removeItem('kiosk_church_id');
+    localStorage.removeItem('kiosk_church_name');
+    localStorage.removeItem('kiosk_church_data');
+    navigate('/kiosk', { replace: true });
+  };
+  
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex flex-col">
-      {/* Top Navigation */}
+      {/* Top Bar */}
+      <div className="bg-white border-b shadow-sm">
+        <div className="p-4 flex items-center justify-between max-w-7xl mx-auto">
+          {/* Church Name */}
+          <div className="flex items-center gap-3">
+            <Church className="h-6 w-6 text-blue-600" />
+            <span className="text-xl font-semibold text-gray-900">{churchName}</span>
+          </div>
+          
+          {/* Change Church Button */}
+          {showChangeChurch && (
+            <Button
+              variant="outline"
+              onClick={handleChangeChurch}
+              className="h-12 px-6 text-lg rounded-xl"
+            >
+              {i18n.language === 'en' ? 'Change Church' : 'Ganti Gereja'}
+            </Button>
+          )}
+        </div>
+      </div>
+      
+      {/* Navigation */}
       <div className="p-6 flex items-center justify-between">
         <div className="flex gap-4">
           {showBack && !isHome && (
