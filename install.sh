@@ -115,7 +115,7 @@ echo ""
 sleep 1
 
 progress
-echo -e "${MAGENTA}${ROCKET} Step 3/12: Installing Node.js 20.x...${NC}"
+echo -e "${MAGENTA}${ROCKET} Step 3/14: Installing Node.js 20.x...${NC}"
 progress
 info "Node.js powers the beautiful frontend..."
 curl -fsSL https://deb.nodesource.com/setup_20.x | bash - > /dev/null 2>&1
