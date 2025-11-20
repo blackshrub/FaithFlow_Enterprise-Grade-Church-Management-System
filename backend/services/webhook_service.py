@@ -78,6 +78,7 @@ class WebhookService:
             
             # Try delivering to each webhook
             for webhook_config in webhooks:
+                logger.info(f"Attempting webhook delivery to: {webhook_config.get('name')} ({webhook_config.get('webhook_url')})")
                 try:
                     # HYBRID: Try immediate delivery with 2-second timeout
                     await WebhookService._send_webhook_immediate(
@@ -86,10 +87,11 @@ class WebhookService:
                         event_id=event_id,
                         db=db
                     )
+                    logger.info(f"✓ Webhook delivered immediately to {webhook_config.get('name')}")
                     
                 except Exception as e:
                     # Failed - queue for retry
-                    logger.warning(f"Immediate webhook failed, queueing: {str(e)}")
+                    logger.warning(f"Immediate webhook failed for {webhook_config.get('name')}, queueing: {str(e)}")
                     await WebhookService._queue_webhook(
                         webhook_config_id=webhook_config["id"],
                         event_type=event_type,
