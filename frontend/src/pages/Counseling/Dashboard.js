@@ -6,6 +6,7 @@ import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
 import { useAppointments } from '../../hooks/useCounseling';
 import { format, parseISO, isAfter, startOfDay } from 'date-fns';
+import MemberAvatar from '../../components/MemberAvatar';
 
 const CounselingDashboard = () => {
   const navigate = useNavigate();
