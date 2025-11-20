@@ -24,25 +24,42 @@ const KioskHome = () => {
   const navigate = useNavigate();
   const { t } = useTranslation('kiosk');
   const [settings, setSettings] = useState(null);
+  const [churchId, setChurchId] = useState(null);
   const [loading, setLoading] = useState(true);
   
   useEffect(() => {
-    loadSettings();
+    loadChurchAndSettings();
   }, []);
   
-  const loadSettings = async () => {
+  const loadChurchAndSettings = async () => {
     try {
-      const data = await kioskApi.getKioskSettings();
-      setSettings(data);
+      // Get church ID from public API
+      const churchResponse = await api.get('/churches/public/list');
+      const churches = churchResponse.data || [];
       
-      // Set default language if configured
-      if (data?.default_language && !localStorage.getItem('kiosk_language_set')) {
-        i18n.changeLanguage(data.default_language);
-        localStorage.setItem('kiosk_language_set', 'true');
+      if (churches.length > 0) {
+        const church = churches[0];
+        setChurchId(church.id);
+        localStorage.setItem('kiosk_church_id', church.id);
+        
+        // Load settings
+        const settingsData = await kioskApi.getKioskSettings();
+        setSettings(settingsData);
+        
+        // Set default language
+        if (settingsData?.default_language && !localStorage.getItem('kiosk_language_set')) {
+          i18n.changeLanguage(settingsData.default_language);
+          localStorage.setItem('kiosk_language_set', 'true');
+        }
       }
     } catch (error) {
-      console.error('Failed to load kiosk settings:', error);
-      // Default to all enabled
+      console.error('Failed to load church/settings:', error);
+      // Try from localStorage
+      const storedChurchId = localStorage.getItem('kiosk_church_id');
+      if (storedChurchId) {
+        setChurchId(storedChurchId);
+      }
+      // Default settings
       setSettings({
         enable_event_registration: true,
         enable_prayer: true,
@@ -51,12 +68,6 @@ const KioskHome = () => {
         enable_profile_update: true,
         default_language: 'id'
       });
-      
-      // Set to Indonesian by default
-      if (!localStorage.getItem('kiosk_language_set')) {
-        i18n.changeLanguage('id');
-        localStorage.setItem('kiosk_language_set', 'true');
-      }
     } finally {
       setLoading(false);
     }
