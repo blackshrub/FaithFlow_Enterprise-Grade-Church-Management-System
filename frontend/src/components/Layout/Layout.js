@@ -65,16 +65,19 @@ export default function Layout() {
   useEffect(() => {
     const path = location.pathname;
     if (path.includes('/events') || path.includes('/seat-layouts') || path.includes('/kiosk')) {
-      setExpandedMenus(prev => ({ ...prev, events: true }));
+      setExpandedMenus(prev => ({ ...prev, worship: true }));
+    }
+    if (path.includes('/prayer-requests') || path.includes('/counseling')) {
+      setExpandedMenus(prev => ({ ...prev, spiritual: true }));
+    }
+    if (path.includes('/devotions') || path.includes('/articles')) {
+      setExpandedMenus(prev => ({ ...prev, content: true }));
     }
     if (path.includes('/accounting')) {
-      setExpandedMenus(prev => ({ ...prev, accounting: true }));
+      setExpandedMenus(prev => ({ ...prev, finance: true }));
     }
-    if (path.includes('/articles')) {
-      setExpandedMenus(prev => ({ ...prev, articles: true }));
-    }
-    if (path.includes('/counseling')) {
-      setExpandedMenus(prev => ({ ...prev, counseling: true }));
+    if (path.includes('/import-export')) {
+      setExpandedMenus(prev => ({ ...prev, dataAdmin: true }));
     }
   }, [location.pathname]);
 
@@ -84,57 +87,58 @@ export default function Layout() {
     { icon: UsersRound, label: t('nav.groups'), path: '/groups' },
     {
       icon: Calendar,
-      label: t('nav.events'),
-      key: 'events',
+      label: 'Worship & Events',
+      key: 'worship',
       submenu: [
-        { label: t('events.event.eventsList'), path: '/events' },
-        { label: t('events.seatLayouts'), path: '/seat-layouts' },
-        { label: t('events.kioskMode'), path: '/kiosk' },
+        { label: t('events.event.eventsList') || 'Events', path: '/events' },
+        { label: t('events.seatLayouts') || 'Seat Layouts', path: '/seat-layouts' },
+        { label: t('events.kioskMode') || 'Kiosk Mode', path: '/kiosk' },
       ]
     },
-    { icon: Heart, label: t('prayerRequests.title'), path: '/prayer-requests' },
-    { icon: BookOpen, label: t('nav.content'), path: '/devotions' },
+    {
+      icon: Heart,
+      label: 'Spiritual Care',
+      key: 'spiritual',
+      submenu: [
+        { label: t('prayerRequests.title') || 'Prayer Requests', path: '/prayer-requests' },
+        { label: 'Counseling & Prayer', path: '/counseling' },
+      ]
+    },
     {
       icon: FileText,
-      label: t('articles.title'),
-      key: 'articles',
+      label: 'Content & Communication',
+      key: 'content',
       submenu: [
-        { label: t('articles.allArticles'), path: '/articles' },
-        { label: t('articles.addNew'), path: '/articles/new' },
-        { label: t('articles.categoriesManagement.title'), path: '/articles/categories' },
-        { label: t('articles.tagsManagement.title'), path: '/articles/tags' },
-        { label: t('articles.comments.title'), path: '/articles/comments' },
-      ]
-    },
-    {
-      icon: MessageCircleHeart,
-      label: 'Counseling & Prayer',
-      key: 'counseling',
-      submenu: [
-        { label: 'Dashboard', path: '/counseling' },
-        { label: 'Counselors', path: '/counseling/counselors' },
-        { label: 'Availability', path: '/counseling/availability' },
-        { label: 'Appointments', path: '/counseling/appointments' },
+        { label: 'Devotion', path: '/devotions' },
+        { label: t('articles.title') || 'Articles', path: '/articles' },
       ]
     },
     {
       icon: Calculator,
-      label: t('accounting.title'),
-      key: 'accounting',
+      label: 'Finance',
+      key: 'finance',
       submenu: [
-        { label: t('accounting.dashboard'), path: '/accounting' },
-        { label: t('accounting.coa.title'), path: '/accounting/coa' },
-        { label: t('accounting.journal.title'), path: '/accounting/journals' },
-        { label: t('accounting.quickEntry.title'), path: '/accounting/quick-entry' },
-        { label: t('accounting.budget.title'), path: '/accounting/budgets' },
-        { label: t('accounting.fixedAsset.title'), path: '/accounting/assets' },
-        { label: t('accounting.bank.title'), path: '/accounting/bank' },
-        { label: t('accounting.beginningBalance.title'), path: '/accounting/beginning-balance' },
-        { label: t('accounting.fiscalPeriod.title'), path: '/accounting/fiscal-periods' },
-        { label: t('accounting.responsibilityCenter.title'), path: '/accounting/responsibility-centers' },
-        { label: t('accounting.reports.title'), path: '/accounting/reports' },
-        { label: t('accounting.yearEnd.title'), path: '/accounting/year-end-closing' },
-        { label: t('accounting.auditLog.title'), path: '/accounting/audit-logs' },
+        { label: t('accounting.dashboard') || 'Dashboard', path: '/accounting' },
+        { label: t('accounting.coa.title') || 'Chart of Accounts', path: '/accounting/coa' },
+        { label: t('accounting.journal.title') || 'Journals', path: '/accounting/journals' },
+        { label: t('accounting.quickEntry.title') || 'Quick Entry', path: '/accounting/quick-entry' },
+        { label: t('accounting.budget.title') || 'Budgets', path: '/accounting/budgets' },
+        { label: t('accounting.fixedAsset.title') || 'Fixed Assets', path: '/accounting/assets' },
+        { label: t('accounting.bank.title') || 'Bank', path: '/accounting/bank' },
+        { label: t('accounting.beginningBalance.title') || 'Beginning Balance', path: '/accounting/beginning-balance' },
+        { label: t('accounting.fiscalPeriod.title') || 'Fiscal Periods', path: '/accounting/fiscal-periods' },
+        { label: t('accounting.responsibilityCenter.title') || 'Responsibility Centers', path: '/accounting/responsibility-centers' },
+        { label: t('accounting.reports.title') || 'Reports', path: '/accounting/reports' },
+        { label: t('accounting.yearEnd.title') || 'Year-End Closing', path: '/accounting/year-end-closing' },
+        { label: t('accounting.auditLog.title') || 'Audit Logs', path: '/accounting/audit-logs' },
+      ]
+    },
+    {
+      icon: Database,
+      label: 'Data Admin',
+      key: 'dataAdmin',
+      submenu: [
+        { label: t('nav.importExport') || 'Import/Export', path: '/import-export' },
       ]
     },
   ];
