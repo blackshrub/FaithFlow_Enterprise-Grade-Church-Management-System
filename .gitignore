@@ -8,14 +8,14 @@ venv/
 env/
 ENV/
 
-# Environment
+# Environment - Block all .env files EXCEPT .env.example
 .env
 .env.local
 .env.*.local
-
-# IMPORTANT: Allow .env.example files (needed for deployment)
+*.env
 !.env.example
-!**/.env.example
+!backend/.env.example
+!frontend/.env.example
 
 # IDE
 .vscode/
