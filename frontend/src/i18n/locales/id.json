@@ -1561,12 +1561,16 @@
     },
     "categories": {
       "healing": "Kesembuhan",
+      "health": "Kesehatan",
       "family": "Keluarga",
-      "work": "Pekerjaan",
+      "work": "Pekerjaan & Karir",
       "financial": "Keuangan",
-      "spiritual": "Spiritual",
+      "provision": "Penyediaan",
+      "spiritual": "Pertumbuhan Spiritual",
       "guidance": "Bimbingan",
       "thanksgiving": "Syukur",
+      "comfort": "Penghiburan & Dukacita",
+      "salvation": "Keselamatan",
       "other": "Lainnya"
     },
     "sources": {
