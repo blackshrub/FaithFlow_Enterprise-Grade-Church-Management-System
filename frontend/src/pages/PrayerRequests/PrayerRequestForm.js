@@ -113,10 +113,38 @@ export default function PrayerRequestForm() {
     } catch (error) {
       console.error('❌ Prayer Request Error:', error);
       console.error('   Response:', error.response?.data);
+      console.error('   Response detail:', JSON.stringify(error.response?.data, null, 2));
+      
+      // Extract detailed error message
+      let errorMessage = 'Failed to save prayer request';
+      
+      if (error.response?.data?.detail) {
+        const detail = error.response.data.detail;
+        
+        // Handle Pydantic validation errors (array of errors)
+        if (Array.isArray(detail)) {
+          const errors = detail.map(err => {
+            const field = err.loc ? err.loc.join('.') : 'unknown';
+            return `${field}: ${err.msg}`;
+          }).join(', ');
+          errorMessage = `Validation error: ${errors}`;
+        } 
+        // Handle string error
+        else if (typeof detail === 'string') {
+          errorMessage = detail;
+        }
+        // Handle object with message
+        else if (detail.message) {
+          errorMessage = detail.message;
+        }
+      }
+      
+      console.error('   Final error message:', errorMessage);
+      
       toast({
         variant: "destructive",
         title: t('common.error'),
-        description: error.response?.data?.detail || error.message
+        description: errorMessage
       });
     }
   };
