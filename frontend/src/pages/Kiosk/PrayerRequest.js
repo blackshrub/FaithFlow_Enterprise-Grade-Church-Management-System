@@ -89,21 +89,27 @@ const PrayerRequestKiosk = () => {
     
     setSubmitting(true);
     
+    const payload = {
+      member_id: member.id,
+      requester_name: member.full_name,
+      requester_contact: phone,
+      title: prayerData.request.slice(0, 100),
+      description: prayerData.request,
+      category: prayerData.category,
+      status: 'new',
+      needs_follow_up: prayerData.needs_followup
+    };
+    
+    console.log('🙏 Prayer request payload:', payload);
+    
     try {
-      await kioskApi.submitPrayerRequest({
-        member_id: member.id,
-        requester_name: member.full_name,
-        requester_contact: phone,
-        title: prayerData.request.slice(0, 100),
-        description: prayerData.request,
-        category: prayerData.category,
-        status: 'new',
-        needs_follow_up: prayerData.needs_followup
-      });
+      const result = await kioskApi.submitPrayerRequest(payload);
+      console.log('🙏 Prayer request result:', result);
       
       setStep('success');
     } catch (error) {
-      console.error('Prayer submission error:', error);
+      console.error('❌ Prayer submission error:', error);
+      console.error('❌ Error response:', error.response?.data);
       alert(t('errors.generic'));
     } finally {
       setSubmitting(false);
