@@ -164,7 +164,7 @@ echo ""
 sleep 1
 
 progress
-echo -e "${MAGENTA}${ROCKET} Step 7/12: Installing Supervisor...${NC}"
+echo -e "${MAGENTA}${ROCKET} Step 7/14: Installing Supervisor...${NC}"
 progress
 info "Supervisor manages your services automatically..."
 apt install -y supervisor > /dev/null 2>&1
