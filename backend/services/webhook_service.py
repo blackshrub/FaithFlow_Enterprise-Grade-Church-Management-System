@@ -64,11 +64,12 @@ class WebhookService:
                 "timestamp": datetime.now(timezone.utc).isoformat(),
                 "church_id": church_id,
                 "campus_id": church_id,  # Alias for external apps
+                "member_id": member_data.get("id"),  # Add member_id at top level for easy access
                 "church": {
                     "id": church_id,
                     "name": church.get("name") if church else "Unknown"
                 },
-                "data": member_data
+                "data": member_data  # Full member object
             }
             
             # Add changes for update events
