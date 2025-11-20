@@ -122,6 +122,7 @@ api_router.include_router(articles_public.router)
 api_router.include_router(article_preview.router)
 api_router.include_router(groups_public.router)
 api_router.include_router(counseling_public.router)
+api_router.include_router(kiosk.router)
 
 # Include the API router in the main app
 app.include_router(api_router)
