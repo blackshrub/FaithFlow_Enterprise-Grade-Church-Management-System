@@ -74,6 +74,7 @@ import {
 } from "./pages/Counseling";
 
 // Kiosk pages
+import ChurchSelector from "./components/Kiosk/ChurchSelector";
 import KioskHome from "./pages/Kiosk/KioskHome";
 import EventRegistrationKiosk from "./pages/Kiosk/EventRegistration";
 import PrayerRequestKiosk from "./pages/Kiosk/PrayerRequest";
