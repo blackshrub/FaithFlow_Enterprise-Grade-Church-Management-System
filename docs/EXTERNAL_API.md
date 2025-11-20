@@ -788,6 +788,86 @@ asyncio.run(sync())
 
 ---
 
+## Webhook Payload Specification
+
+### Complete Payload Structure
+
+```json
+{
+  "event_id": "550e8400-e29b-41d4-a716-446655440000",
+  "event_type": "member.updated",
+  "church_id": "3880a17d-f858-4622-87c2-96eaa7b25c83",
+  "campus_id": "3880a17d-f858-4622-87c2-96eaa7b25c83",
+  "member_id": "abc-123-member-uuid",
+  "timestamp": "2025-11-19T10:30:00.000Z",
+  "church": {
+    "id": "3880a17d-f858-4622-87c2-96eaa7b25c83",
+    "name": "GKBJ Taman Kencana"
+  },
+  "data": {
+    "id": "abc-123-member-uuid",
+    "church_id": "3880a17d-f858-4622-87c2-96eaa7b25c83",
+    "full_name": "John Doe",
+    "first_name": "John",
+    "last_name": "Doe",
+    "phone_whatsapp": "628123456789",
+    "email": "john@example.com",
+    "gender": "Male",
+    "date_of_birth": "1990-01-15",
+    "marital_status": "Married",
+    "address": "123 Main St",
+    "member_status": "Full Member",
+    "current_status_id": "status-uuid",
+    "demographic_category": "Adult",
+    "photo_base64": "data:image/jpeg;base64,...",
+    "is_active": true,
+    "participate_in_automation": true,
+    "created_at": "2025-01-01T00:00:00Z",
+    "updated_at": "2025-11-19T10:30:00Z"
+  },
+  "changes": {
+    "gender": "Male",
+    "updated_at": "2025-11-19T10:30:00Z"
+  }
+}
+```
+
+### Signature Verification
+
+**Algorithm:** HMAC-SHA256
+**Header:** `X-Webhook-Signature` (no prefix, just hex hash)
+**Encoding:** UTF-8
+**JSON Format:** Compact (no spaces), natural key order
+
+```python
+import hmac
+import hashlib
+
+# Verify signature
+def verify_webhook_signature(body_bytes, signature_header, secret_key):
+    expected = hmac.new(
+        secret_key.encode('utf-8'),
+        body_bytes,
+        hashlib.sha256
+    ).hexdigest()  # Lowercase hex
+    
+    return signature_header == expected
+
+# Usage
+@app.post(\"/webhook\")
+async def receive(request: Request):
+    body = await request.body()
+    signature = request.headers.get(\"X-Webhook-Signature\")
+    
+    if not verify_webhook_signature(body, signature, \"YOUR_SECRET\"):
+        raise HTTPException(401, \"Invalid signature\")
+    
+    payload = json.loads(body)
+    # Process payload...
+```
+
+---
+
 ## Security Best Practices
 
 **Token Management:**
