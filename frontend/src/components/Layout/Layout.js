@@ -105,6 +105,17 @@ export default function Layout() {
       ]
     },
     {
+      icon: MessageCircleHeart,
+      label: t('counseling.title') || 'Counseling & Prayer',
+      key: 'counseling',
+      submenu: [
+        { label: t('counseling.dashboard') || 'Dashboard', path: '/counseling' },
+        { label: t('counseling.counselors') || 'Counselors', path: '/counseling/counselors' },
+        { label: t('counseling.availability') || 'Availability', path: '/counseling/availability' },
+        { label: t('counseling.appointments') || 'Appointments', path: '/counseling/appointments' },
+      ]
+    },
+    {
       icon: Calculator,
       label: t('accounting.title'),
       key: 'accounting',
