@@ -50,16 +50,16 @@ const PhoneStep = ({ onMemberFound, onMemberNotFound, onError }) => {
     setLoading(true);
     
     try {
-      const member = await kioskApi.lookupMemberByPhone(phone);
+      const member = await kioskApi.lookupMemberByPhone(normalizedPhone);
       
       if (member) {
         // Existing member - send OTP automatically
-        await kioskApi.sendOTP(phone);
-        onMemberFound(member, phone);
+        await kioskApi.sendOTP(normalizedPhone);
+        onMemberFound(member, normalizedPhone);
       } else {
         // New member - send OTP automatically
-        await kioskApi.sendOTP(phone);
-        onMemberNotFound(phone);
+        await kioskApi.sendOTP(normalizedPhone);
+        onMemberNotFound(normalizedPhone);
       }
     } catch (err) {
       console.error('Phone lookup error:', err);
