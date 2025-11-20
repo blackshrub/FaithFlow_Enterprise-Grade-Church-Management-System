@@ -1,5 +1,4 @@
 import React from 'react';
-import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { Calendar, Clock, Users, AlertCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
@@ -9,7 +8,6 @@ import { useAppointments } from '../../hooks/useCounseling';
 import { format, parseISO, isAfter, startOfDay } from 'date-fns';
 
 const CounselingDashboard = () => {
-  const { t } = useTranslation('counseling');
   const navigate = useNavigate();
   const today = startOfDay(new Date()).toISOString().split('T')[0];
   const nextWeek = new Date();
