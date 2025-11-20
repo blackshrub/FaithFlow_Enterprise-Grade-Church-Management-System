@@ -13,7 +13,7 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Home, ArrowLeft, Globe } from 'lucide-react';
+import { Home, ArrowLeft, Globe, Church } from 'lucide-react';
 import { Button } from '../ui/button';
 import { motion } from 'framer-motion';
 import { useKioskInactivity } from '../../hooks/useKioskInactivity';
