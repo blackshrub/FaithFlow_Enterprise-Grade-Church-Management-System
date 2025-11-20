@@ -172,7 +172,7 @@ async def verify_otp(
             )
         
         # Check attempts
-        if stored['attempts'] >= 3:
+        if stored['attempts'] >= 5:  # Increased from 3 to 5
             print(f"❌ Too many attempts for {phone}")
             del otp_store[phone]
             raise HTTPException(
