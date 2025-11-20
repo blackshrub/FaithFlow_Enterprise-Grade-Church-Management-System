@@ -53,6 +53,15 @@ async def list_groups(
     )
     groups = await cursor.to_list(length=limit)
 
+    # Add member count for each group
+    for group in groups:
+        member_count = await db.group_memberships.count_documents({
+            "church_id": church_id,
+            "group_id": group["id"],
+            "status": "active"
+        })
+        group["members_count"] = member_count
+
     return {
         "data": groups,
         "pagination": {
