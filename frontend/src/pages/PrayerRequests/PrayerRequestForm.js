@@ -71,7 +71,15 @@ export default function PrayerRequestForm() {
       return;
     }
 
-    const payload = {
+    const payload = isEdit ? {
+      // For update: only send fields allowed in PrayerRequestUpdate model
+      category: formData.category,
+      status: formData.status,
+      internal_notes: formData.internal_notes,
+      needs_follow_up: formData.needs_follow_up,
+      follow_up_notes: formData.follow_up_notes
+    } : {
+      // For create: send all fields
       member_id: formData.member_id,
       requester_name: selectedMemberData?.full_name || '',
       requester_contact: selectedMemberData?.phone_whatsapp || selectedMemberData?.email || '',
