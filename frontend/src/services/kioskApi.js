@@ -121,12 +121,10 @@ export const kioskApi = {
   },
 
   createGroupJoinRequest: async (group_id, member_id, message) => {
-    // TODO: Use existing group join request endpoint
-    const response = await api.post('/v1/group-join-requests/', {
+    const response = await api.post('/kiosk/join-group', {
       group_id,
       member_id,
-      message,
-      source: 'kiosk'
+      message
     });
     return response.data;
   },
