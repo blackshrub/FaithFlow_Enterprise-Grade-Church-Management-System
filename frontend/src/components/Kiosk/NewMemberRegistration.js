@@ -195,20 +195,32 @@ const NewMemberRegistration = ({ phone, onComplete, onError, preVisitorStatusId 
                   className="w-full rounded-2xl"
                   videoConstraints={{ facingMode: 'user' }}
                 />
+                {countdown > 0 && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50">
+                    <div className="text-9xl font-bold text-white">
+                      {countdown}
+                    </div>
+                  </div>
+                )}
               </div>
               <div className="flex gap-4">
                 <Button
                   variant="outline"
-                  onClick={() => setShowCamera(false)}
+                  onClick={() => {
+                    setShowCamera(false);
+                    setCountdown(0);
+                  }}
                   className="flex-1 h-14 text-xl rounded-xl"
+                  disabled={countdown > 0}
                 >
                   Cancel
                 </Button>
                 <Button
                   onClick={capturePhoto}
                   className="flex-1 h-14 text-xl rounded-xl"
+                  disabled={countdown > 0}
                 >
-                  Capture
+                  {countdown > 0 ? 'Capturing...' : 'Capture'}
                 </Button>
               </div>
             </div>
