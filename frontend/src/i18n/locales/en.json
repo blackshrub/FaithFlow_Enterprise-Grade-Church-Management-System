@@ -1984,11 +1984,80 @@
   },
   "groups": {
     "title": "Groups",
-    "subtitle": "Manage church groups and communities",
+    "subtitle": "Manage Church Groups and Communities",
+    "actions": {
+      "create": "Create Group",
+      "viewMembers": "View Members"
+    },
+    "categories": {
+      "cellGroup": "Cell Group",
+      "ministryTeam": "Ministry Team",
+      "activityGroup": "Activity Group",
+      "supportGroup": "Support Group"
+    },
+    "status": {
+      "open": "Open",
+      "closed": "Closed"
+    },
+    "table": {
+      "leader": "Leader",
+      "membersCount": "Members",
+      "noLeader": "No Leader",
+      "openForJoin": "Open for Join"
+    },
+    "filters": {
+      "searchPlaceholder": "Search groups...",
+      "categoryPlaceholder": "Filter by category",
+      "allCategories": "All Categories",
+      "openStatusPlaceholder": "Filter by open status",
+      "openStatus": {
+        "all": "All Groups",
+        "open": "Open for Join",
+        "closed": "Closed"
+      }
+    },
+    "emptyStates": {
+      "noGroups": "No Groups Found"
+    },
+    "editor": {
+      "createTitle": "Create New Group",
+      "editTitle": "Edit Group",
+      "subtitle": "Group Information"
+    },
+    "form": {
+      "name": "Group Name",
+      "description": "Description",
+      "category": "Category",
+      "selectCategory": "Select Category",
+      "leaderName": "Leader",
+      "noLeaderSelected": "No Leader Selected",
+      "noMembersFound": "No Members Found",
+      "location": "Meeting Location",
+      "meetingSchedule": "Meeting Schedule",
+      "maxMembers": "Maximum Members",
+      "maxMembersPlaceholder": "Leave empty for unlimited",
+      "openForJoin": "Open for Join Requests",
+      "openForJoinHelper": "Allow members to request to join this group",
+      "coverImageHelper": "Upload a cover image for the group",
+      "noCoverImage": "No Cover Image",
+      "uploadCover": "Upload Cover",
+      "changeCover": "Change Cover"
+    },
+    "messages": {
+      "createSuccess": "Group Created Successfully",
+      "updateSuccess": "Group Updated Successfully",
+      "deleteSuccess": "Group Deleted Successfully",
+      "deleteError": "Failed to Delete Group",
+      "saveError": "Failed to Save Group",
+      "coverRemoved": "Cover Image Removed"
+    },
+    "delete": {
+      "confirmTitle": "Delete This Group?"
+    },
     "members": {
       "title": "Group Members",
-      "subtitle": "Manage group members",
-      "searchPlaceholder": "Search members...",
+      "subtitle": "Manage Group Members",
+      "searchPlaceholder": "Search Members...",
       "searchResults": "Search Results",
       "emptyStates": {
         "noMembers": "No Members Yet"
@@ -2011,15 +2080,65 @@
         "remove": "Remove"
       },
       "messages": {
-        "searchError": "Failed to search members",
-        "addSuccess": "Member added successfully",
-        "addError": "Failed to add member",
-        "removeSuccess": "Member removed successfully",
-        "removeError": "Failed to remove member"
+        "searchError": "Failed to Search Members",
+        "addSuccess": "Member Added Successfully",
+        "addError": "Failed to Add Member",
+        "removeSuccess": "Member Removed Successfully",
+        "removeError": "Failed to Remove Member"
       },
       "delete": {
         "confirmTitle": "Remove Member from Group?",
         "confirmDescription": "This will remove {{memberName}} from this group. They can rejoin later if needed."
+      }
+    },
+    "joinRequests": {
+      "title": "Join Requests",
+      "subtitle": "Manage Join Requests",
+      "emptyStates": {
+        "noRequests": "No Join Requests"
+      },
+      "table": {
+        "member": "Member",
+        "group": "Group",
+        "message": "Message",
+        "submittedAt": "Submitted At",
+        "actions": "Actions"
+      },
+      "actions": {
+        "approve": "Approve",
+        "reject": "Reject"
+      },
+      "messages": {
+        "approveSuccess": "Request Approved",
+        "approveError": "Failed to Approve",
+        "rejectSuccess": "Request Rejected",
+        "rejectError": "Failed to Reject"
+      },
+      "confirmation": {
+        "title": "Approve Join Request?",
+        "message": "This will add the member to the group",
+        "confirmButton": "Approve"
+      }
+    },
+    "leaveRequests": {
+      "title": "Leave Requests",
+      "subtitle": "Manage Leave Requests",
+      "emptyStates": {
+        "noRequests": "No Leave Requests"
+      },
+      "table": {
+        "member": "Member",
+        "group": "Group",
+        "reason": "Reason",
+        "joinedAt": "Joined At",
+        "actions": "Actions"
+      },
+      "actions": {
+        "approve": "Approve"
+      },
+      "messages": {
+        "approveSuccess": "Request Approved",
+        "approveError": "Failed to Approve"
       }
     }
   }
