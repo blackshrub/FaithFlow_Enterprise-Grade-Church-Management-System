@@ -31,6 +31,12 @@ const NewMemberRegistration = ({ phone, onComplete, onError, preVisitorStatusId 
   const [verifying, setVerifying] = useState(false);
   const [otpError, setOtpError] = useState('');
   const [showCamera, setShowCamera] = useState(false);
+  const [countdown, setCountdown] = useState(0);
+  
+  // Check if form is complete (required fields filled)
+  const isFormComplete = formData.full_name.trim() && 
+                         formData.gender && 
+                         formData.date_of_birth;
   
   const capturePhoto = () => {
     const imageSrc = webcamRef.current.getScreenshot();
