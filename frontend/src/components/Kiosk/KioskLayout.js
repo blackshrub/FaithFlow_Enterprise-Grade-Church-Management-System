@@ -54,7 +54,17 @@ const KioskLayout = ({ children, showBack = false, showHome = true, onBack = nul
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex flex-col">
       {/* Top Navigation */}
       <div className="p-6 flex items-center justify-between">
-        <div className="flex gap-4">
+        {/* Left: Church name + Navigation buttons */}
+        <div className="flex items-center gap-4">
+          {/* Church Name */}
+          {churchName && (
+            <div className="flex items-center gap-2 text-xl font-semibold text-gray-700">
+              <Church className="h-6 w-6 text-blue-600" />
+              <span>{churchName}</span>
+            </div>
+          )}
+          
+          {/* Back button */}
           {showBack && !isHome && (
             <motion.div
               initial={{ opacity: 0, x: -20 }}
@@ -73,6 +83,7 @@ const KioskLayout = ({ children, showBack = false, showHome = true, onBack = nul
             </motion.div>
           )}
           
+          {/* Back to Start button */}
           {showHome && !isHome && (
             <motion.div
               initial={{ opacity: 0, x: -20 }}
@@ -92,14 +103,18 @@ const KioskLayout = ({ children, showBack = false, showHome = true, onBack = nul
           )}
         </div>
         
-        {/* Right side: Church name + Language + Change Church */}
+        {/* Right: Change Church + Language */}
         <div className="flex items-center gap-4">
-          {/* Church Name */}
-          {churchName && (
-            <div className="flex items-center gap-2 text-lg font-medium text-gray-700">
-              <Church className="h-5 w-5 text-blue-600" />
-              <span>{churchName}</span>
-            </div>
+          {/* Change Church Button */}
+          {showChangeChurch && churchName && (
+            <Button
+              variant="outline"
+              size="lg"
+              onClick={handleChangeChurch}
+              className="h-14 px-6 text-lg rounded-2xl"
+            >
+              {i18n.language === 'en' ? 'Change Church' : 'Ganti Gereja'}
+            </Button>
           )}
           
           {/* Language Toggle */}
@@ -118,18 +133,6 @@ const KioskLayout = ({ children, showBack = false, showHome = true, onBack = nul
               {i18n.language === 'en' ? 'EN' : 'ID'}
             </Button>
           </motion.div>
-          
-          {/* Change Church Button */}
-          {showChangeChurch && churchName && (
-            <Button
-              variant="outline"
-              size="lg"
-              onClick={handleChangeChurch}
-              className="h-14 px-6 text-lg rounded-2xl"
-            >
-              {i18n.language === 'en' ? 'Change Church' : 'Ganti Gereja'}
-            </Button>
-          )}
         </div>
       </div>
       
