@@ -55,57 +55,85 @@ async def send_otp(
         print(f"\n🔐 OTP for {phone}: {code}\n")
         
         # Get WhatsApp config from settings (not env variables)
-        # Try to get church settings to use configured WhatsApp
         settings = await db.church_settings.find_one({}, {"_id": 0})
         
-        whatsapp_url = settings.get('whatsapp_api_url') if settings else None
-        whatsapp_user = settings.get('whatsapp_username') if settings else None
-        whatsapp_pass = settings.get('whatsapp_password') if settings else None
-        
-        # Send via WhatsApp if configured
-        if whatsapp_url and whatsapp_user:
-            whatsapp_phone = phone.replace('+', '')  # Remove + for gateway
-            message = f"Your verification code is: {code}\\n\\nThis code will expire in 5 minutes."
+        if settings:
+            whatsapp_url = settings.get('whatsapp_api_url', '').strip()
+            whatsapp_user = settings.get('whatsapp_username', '').strip()
+            whatsapp_pass = settings.get('whatsapp_password', '').strip()
             
-            # Use configured credentials
-            import os
-            os.environ['WHATSAPP_API_URL'] = whatsapp_url
-            os.environ['WHATSAPP_USERNAME'] = whatsapp_user
-            os.environ['WHATSAPP_PASSWORD'] = whatsapp_pass or ''
+            print(f"📱 WhatsApp Config from DB:")
+            print(f"   URL: '{whatsapp_url}'")
+            print(f"   Username: '{whatsapp_user}'")
+            print(f"   Password: {'***' if whatsapp_pass else '(empty)'}")
             
-            whatsapp_result = await send_whatsapp_message(whatsapp_phone, message)
-            
-            if whatsapp_result.get('success'):
-                logger.info(f"WhatsApp OTP sent successfully to {phone}")
-                print(f"✅ WhatsApp sent to {phone}")
+            # Send via WhatsApp if URL is configured
+            if whatsapp_url:
+                whatsapp_phone = phone.replace('+', '')  # Remove + for gateway
+                message = f"Your verification code is: {code}\\n\\nThis code will expire in 5 minutes."
+                
+                print(f"📨 Attempting WhatsApp send to: {whatsapp_phone}")
+                
+                # Temporarily set env vars (for whatsapp_service to use)
+                import os
+                old_url = os.environ.get('WHATSAPP_API_URL')
+                old_user = os.environ.get('WHATSAPP_USERNAME')
+                old_pass = os.environ.get('WHATSAPP_PASSWORD')
+                
+                os.environ['WHATSAPP_API_URL'] = whatsapp_url
+                os.environ['WHATSAPP_USERNAME'] = whatsapp_user
+                os.environ['WHATSAPP_PASSWORD'] = whatsapp_pass
+                
+                try:
+                    whatsapp_result = await send_whatsapp_message(whatsapp_phone, message)
+                    
+                    print(f"📨 WhatsApp Result: {whatsapp_result}")
+                    
+                    if whatsapp_result.get('success'):
+                        logger.info(f"✅ WhatsApp OTP sent successfully to {phone}")
+                        print(f"✅ WhatsApp OTP delivered to {phone}")
+                    else:
+                        logger.warning(f"⚠️ WhatsApp failed: {whatsapp_result.get('message')}")
+                        print(f"⚠️ WhatsApp send failed: {whatsapp_result.get('message')}")
+                    
+                    return {
+                        "success": True,
+                        "message": "OTP sent successfully",
+                        "debug_code": code,
+                        "whatsapp_status": whatsapp_result.get('delivery_status', 'unknown'),
+                        "whatsapp_sent": whatsapp_result.get('success', False)
+                    }
+                finally:
+                    # Restore old env vars
+                    if old_url:
+                        os.environ['WHATSAPP_API_URL'] = old_url
+                    if old_user:
+                        os.environ['WHATSAPP_USERNAME'] = old_user
+                    if old_pass:
+                        os.environ['WHATSAPP_PASSWORD'] = old_pass
             else:
-                logger.warning(f"WhatsApp OTP failed: {whatsapp_result.get('message')}")
-                print(f"⚠️ WhatsApp failed: {whatsapp_result.get('message')}")
-            
-            return {
-                "success": True,
-                "message": "OTP sent successfully",
-                "debug_code": code,
-                "whatsapp_status": whatsapp_result.get('delivery_status', 'unknown')
-            }
+                print("⚠️ WhatsApp URL not configured in settings")
         else:
-            logger.warning("WhatsApp not configured in settings")
-            print("⚠️ WhatsApp not configured - using console OTP")
+            print("⚠️ No church settings found")
         
         return {
             "success": True,
             "message": "OTP generated (WhatsApp not configured)",
-            "debug_code": code
+            "debug_code": code,
+            "whatsapp_sent": False
         }
     
     except Exception as e:
-        logger.error(f"Error sending OTP: {e}")
+        logger.error(f"❌ Error sending OTP: {e}")
+        import traceback
+        traceback.print_exc()
         # Still return success with console OTP
-        code = str(random.randint(1000, 9999))
+        code = str(random.randint(1000, 9999)) if 'code' not in locals() else code
         return {
             "success": True,
             "message": "OTP generated (error occurred)",
-            "debug_code": code
+            "debug_code": code,
+            "whatsapp_sent": False
         }
 
 
