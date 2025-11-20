@@ -76,14 +76,10 @@ export const useTestWebhook = () => {
   return useMutation({
     mutationFn: (webhookId) => webhooksAPI.test(webhookId).then(res => res.data),
     onSuccess: (data) => {
-      if (data.success) {
-        toast.success('Test webhook sent successfully');
-      } else {
-        toast.error(data.message || 'Test webhook failed');
-      }
+      // Don't show toast here - let component handle it with full details
     },
     onError: (error) => {
-      toast.error(error.response?.data?.detail || 'Failed to send test webhook');
+      // Don't show toast here - let component handle it with full details
     },
   });
 };
