@@ -55,7 +55,7 @@ export const kioskApi = {
   },
 
   updateKioskSettings: async (settings) => {
-    const response = await api.put('/settings/church-settings', {
+    const response = await api.patch('/settings/church-settings', {
       kiosk_settings: settings
     });
     return response.data;
