@@ -35,6 +35,12 @@ const api = axios.create({
 // Add request interceptor for auth and logging
 api.interceptors.request.use(
   (config) => {
+    // FORCE HTTPS - Replace any http:// with https://
+    if (config.baseURL && config.baseURL.startsWith('http://')) {
+      config.baseURL = config.baseURL.replace('http://', 'https://');
+      console.warn('⚠️ Forced HTTP → HTTPS:', config.baseURL);
+    }
+    
     // Log the actual URL being requested
     const fullURL = config.baseURL + (config.url || '');
     console.log('📡 API Request:', config.method?.toUpperCase(), fullURL);
