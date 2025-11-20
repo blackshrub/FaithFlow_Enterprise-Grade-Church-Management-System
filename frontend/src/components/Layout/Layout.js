@@ -166,8 +166,6 @@ export default function Layout() {
   // Note: Churches menu removed per user request
   // Super admin access churches via direct URL if needed
 
-  menuItems.push({ icon: Settings, label: t('nav.settings'), path: '/settings' });
-
   return (
     <div className="flex h-screen bg-gray-100">
       {/* Sidebar */}
