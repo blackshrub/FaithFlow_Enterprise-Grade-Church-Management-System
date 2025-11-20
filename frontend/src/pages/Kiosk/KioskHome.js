@@ -45,46 +45,39 @@ const KioskHome = () => {
     loadSettings();
   }, []);
   
-  const loadChurchAndSettings = async () => {
+  const loadSettings = async () => {
     try {
-      // Get church ID from public API
-      const churchResponse = await api.get('/churches/public/list');
-      const churches = churchResponse.data || [];
+      const data = await kioskApi.getKioskSettings();
+      setSettings(data);
       
-      if (churches.length > 0) {
-        const church = churches[0];
-        setChurchId(church.id);
-        localStorage.setItem('kiosk_church_id', church.id);
-        
-        // Load settings
-        const settingsData = await kioskApi.getKioskSettings();
-        setSettings(settingsData);
-        
-        // Set default language
-        if (settingsData?.default_language && !localStorage.getItem('kiosk_language_set')) {
-          i18n.changeLanguage(settingsData.default_language);
-          localStorage.setItem('kiosk_language_set', 'true');
-        }
+      // Set default language if configured
+      if (data?.default_language && !localStorage.getItem('kiosk_language_set')) {
+        i18n.changeLanguage(data.default_language);
       }
     } catch (error) {
-      console.error('Failed to load church/settings:', error);
-      // Try from localStorage
-      const storedChurchId = localStorage.getItem('kiosk_church_id');
-      if (storedChurchId) {
-        setChurchId(storedChurchId);
-      }
-      // Default settings
+      console.error('Failed to load kiosk settings:', error);
+      // Default to all enabled
       setSettings({
         enable_event_registration: true,
         enable_prayer: true,
         enable_counseling: true,
         enable_groups: true,
-        enable_profile_update: true,
-        default_language: 'id'
+        enable_profile_update: true
       });
     } finally {
       setLoading(false);
     }
+  };
+  
+  const handleChangeChurch = () => {
+    // Clear church selection
+    localStorage.removeItem('kiosk_church_id');
+    localStorage.removeItem('kiosk_church_name');
+    localStorage.removeItem('kiosk_church_data');
+    localStorage.removeItem('kiosk_language_set');
+    
+    // Redirect to church selector
+    navigate('/kiosk', { replace: true });
   };
   
   if (loading) {
