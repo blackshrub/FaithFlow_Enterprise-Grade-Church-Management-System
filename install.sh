@@ -568,7 +568,7 @@ cat << "EOF"
 │                                                                             │
 │  📚  Need Help?                                                              │
 │                                                                             │
-│  Documentation: $SCRIPT_DIR/INSTALLATION.md                                │
+│  Documentation: /opt/faithflow/INSTALLATION.md                            │
 │  Logs: tail -f /var/log/supervisor/backend.out.log                        │
 │  Status: sudo supervisorctl status                                        │
 │  Restart: sudo supervisorctl restart all                                  │
