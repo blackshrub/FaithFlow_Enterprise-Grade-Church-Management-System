@@ -102,6 +102,9 @@ export default function Layout() {
       submenu: [
         { label: t('prayerRequests.title') || 'Prayer Requests', path: '/prayer-requests' },
         { label: 'Counseling & Prayer', path: '/counseling' },
+        { label: 'Counselors', path: '/counseling/counselors' },
+        { label: 'Availability', path: '/counseling/availability' },
+        { label: 'Appointments', path: '/counseling/appointments' },
       ]
     },
     {
