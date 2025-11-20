@@ -26,7 +26,7 @@ import {
 import { format, parseISO } from 'date-fns';
 
 const AppointmentDetailPage = () => {
-  const { t } = useTranslation('counseling');
+  const { t } = useTranslation();
   const { toast } = useToast();
   const navigate = useNavigate();
   const { appointmentId } = useParams();
@@ -48,7 +48,7 @@ const AppointmentDetailPage = () => {
   const handleApprove = async () => {
     try {
       await approveMutation.mutateAsync({ id: appointmentId, admin_notes: adminNotes });
-      toast({ title: t('success_appointment_approved') });
+      toast({ title: t('counseling.success_appointment_approved') });
       setIsApproveDialogOpen(false);
     } catch (error) {
       toast({
@@ -70,7 +70,7 @@ const AppointmentDetailPage = () => {
     }
     try {
       await rejectMutation.mutateAsync({ id: appointmentId, reason: rejectReason });
-      toast({ title: t('success_appointment_rejected') });
+      toast({ title: t('counseling.success_appointment_rejected') });
       setIsRejectDialogOpen(false);
     } catch (error) {
       toast({
@@ -84,7 +84,7 @@ const AppointmentDetailPage = () => {
   const handleCancel = async () => {
     try {
       await cancelMutation.mutateAsync({ id: appointmentId, reason: cancelReason });
-      toast({ title: t('success_appointment_canceled') });
+      toast({ title: t('counseling.success_appointment_canceled') });
       setIsCancelDialogOpen(false);
     } catch (error) {
       toast({
@@ -106,7 +106,7 @@ const AppointmentDetailPage = () => {
     }
     try {
       await completeMutation.mutateAsync({ id: appointmentId, outcome_notes: outcomeNotes });
-      toast({ title: t('success_appointment_completed') });
+      toast({ title: t('counseling.success_appointment_completed') });
       setIsCompleteDialogOpen(false);
     } catch (error) {
       toast({
@@ -149,7 +149,7 @@ const AppointmentDetailPage = () => {
   if (!appointment) {
     return (
       <div className="p-6">
-        <div className="text-center py-8 text-gray-500">Appointment not found</div>
+        <div className="text-center py-8 text-gray-500">Appointment Not Found</div>
       </div>
     );
   }
@@ -163,7 +163,7 @@ const AppointmentDetailPage = () => {
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
-            <h1 className="text-3xl font-bold">{t('appointment_details')}</h1>
+            <h1 className="text-3xl font-bold">{t('counseling.appointment_details')}</h1>
             <p className="text-gray-500 mt-1">
               {format(parseISO(appointment.date), 'EEEE, MMMM dd, yyyy')} at {appointment.start_time}
             </p>
@@ -174,11 +174,11 @@ const AppointmentDetailPage = () => {
             <>
               <Button variant="default" onClick={() => setIsApproveDialogOpen(true)}>
                 <CheckCircle className="mr-2 h-4 w-4" />
-                {t('approve')}
+                {t('counseling.approve')}
               </Button>
               <Button variant="destructive" onClick={() => setIsRejectDialogOpen(true)}>
                 <XCircle className="mr-2 h-4 w-4" />
-                {t('reject')}
+                {t('counseling.reject')}
               </Button>
             </>
           )}
@@ -186,11 +186,11 @@ const AppointmentDetailPage = () => {
             <>
               <Button variant="outline" onClick={() => setIsCancelDialogOpen(true)}>
                 <Ban className="mr-2 h-4 w-4" />
-                {t('cancel')}
+                {t('counseling.cancel')}
               </Button>
               <Button variant="default" onClick={() => setIsCompleteDialogOpen(true)}>
                 <CheckCircle className="mr-2 h-4 w-4" />
-                {t('complete')}
+                {t('counseling.complete')}
               </Button>
             </>
           )}
@@ -200,13 +200,13 @@ const AppointmentDetailPage = () => {
       {/* Status and Urgency */}
       <div className="flex gap-2">
         <Badge variant={getStatusColor(appointment.status)} className="text-sm">
-          {t(`status_${appointment.status}`)}
+          {t(`counseling.status_${appointment.status}`)}
         </Badge>
         <Badge variant={getUrgencyColor(appointment.urgency)} className="text-sm">
-          {t(`urgency_${appointment.urgency}`)}
+          {t(`counseling.urgency_${appointment.urgency}`)}
         </Badge>
         <Badge variant="outline" className="text-sm">
-          {t(`type_${appointment.type}`)}
+          {t(`counseling.type_${appointment.type}`)}
         </Badge>
       </div>
 
@@ -218,7 +218,7 @@ const AppointmentDetailPage = () => {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <User className="h-5 w-5" />
-                {t('member')}
+                {t('counseling.member')}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -259,7 +259,7 @@ const AppointmentDetailPage = () => {
                 <div className="font-medium">{appointment.start_time} - {appointment.end_time}</div>
               </div>
               <div>
-                <div className="text-sm text-gray-500">{t('counselor')}</div>
+                <div className="text-sm text-gray-500">{t('counseling.counselor')}</div>
                 <div className="font-medium">{appointment.counselor_info?.display_name || 'To Be Assigned'}</div>
               </div>
               {appointment.counselor_info?.whatsapp_number && (
@@ -270,13 +270,13 @@ const AppointmentDetailPage = () => {
               )}
               {appointment.preferred_channel && (
                 <div>
-                  <div className="text-sm text-gray-500">{t('preferred_channel')}</div>
-                  <div className="font-medium">{t(`channel_${appointment.preferred_channel}`)}</div>
+                  <div className="text-sm text-gray-500">{t('counseling.preferred_channel')}</div>
+                  <div className="font-medium">{t(`counseling.channel_${appointment.preferred_channel}`)}</div>
                 </div>
               )}
               {appointment.preferred_location && (
                 <div>
-                  <div className="text-sm text-gray-500">{t('preferred_location')}</div>
+                  <div className="text-sm text-gray-500">{t('counseling.preferred_location')}</div>
                   <div className="font-medium">{appointment.preferred_location}</div>
                 </div>
               )}
@@ -296,11 +296,11 @@ const AppointmentDetailPage = () => {
             </CardHeader>
             <CardContent className="space-y-3">
               <div>
-                <div className="text-sm text-gray-500">{t('topic')}</div>
+                <div className="text-sm text-gray-500">{t('counseling.topic')}</div>
                 <div className="font-medium text-lg">{appointment.topic}</div>
               </div>
               <div>
-                <div className="text-sm text-gray-500">{t('description')}</div>
+                <div className="text-sm text-gray-500">{t('counseling.description')}</div>
                 <div className="text-gray-700 whitespace-pre-wrap">{appointment.description}</div>
               </div>
               <div>
@@ -317,7 +317,7 @@ const AppointmentDetailPage = () => {
           {appointment.admin_notes && (
             <Card>
               <CardHeader>
-                <CardTitle>{t('admin_notes')}</CardTitle>
+                <CardTitle>{t('counseling.admin_notes')}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-gray-700 whitespace-pre-wrap">{appointment.admin_notes}</div>
@@ -341,7 +341,7 @@ const AppointmentDetailPage = () => {
           {appointment.outcome_notes && (
             <Card>
               <CardHeader>
-                <CardTitle>{t('outcome_notes')}</CardTitle>
+                <CardTitle>{t('counseling.outcome_notes')}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-gray-700 whitespace-pre-wrap">{appointment.outcome_notes}</div>
@@ -355,13 +355,13 @@ const AppointmentDetailPage = () => {
       <Dialog open={isApproveDialogOpen} onOpenChange={setIsApproveDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{t('confirm_approve')}</DialogTitle>
+            <DialogTitle>{t('counseling.confirm_approve')}</DialogTitle>
             <DialogDescription>
               This will approve the appointment and notify the member.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-2">
-            <Label>{t('admin_notes')} (Optional)</Label>
+            <Label>{t('counseling.admin_notes')} (Optional)</Label>
             <Textarea
               value={adminNotes}
               onChange={(e) => setAdminNotes(e.target.value)}
@@ -372,7 +372,7 @@ const AppointmentDetailPage = () => {
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsApproveDialogOpen(false)}>Cancel</Button>
             <Button onClick={handleApprove} disabled={approveMutation.isPending}>
-              {t('approve')}
+              {t('counseling.approve')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -382,13 +382,13 @@ const AppointmentDetailPage = () => {
       <Dialog open={isRejectDialogOpen} onOpenChange={setIsRejectDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{t('confirm_reject')}</DialogTitle>
+            <DialogTitle>{t('counseling.confirm_reject')}</DialogTitle>
             <DialogDescription>
               This will reject the appointment and free the time slot.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-2">
-            <Label>{t('reason')} *</Label>
+            <Label>{t('counseling.reason')} *</Label>
             <Textarea
               value={rejectReason}
               onChange={(e) => setRejectReason(e.target.value)}
@@ -400,7 +400,7 @@ const AppointmentDetailPage = () => {
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsRejectDialogOpen(false)}>Cancel</Button>
             <Button variant="destructive" onClick={handleReject} disabled={rejectMutation.isPending}>
-              {t('reject')}
+              {t('counseling.reject')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -410,13 +410,13 @@ const AppointmentDetailPage = () => {
       <Dialog open={isCancelDialogOpen} onOpenChange={setIsCancelDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{t('confirm_cancel')}</DialogTitle>
+            <DialogTitle>{t('counseling.confirm_cancel')}</DialogTitle>
             <DialogDescription>
               This will cancel the appointment.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-2">
-            <Label>{t('reason')} (Optional)</Label>
+            <Label>{t('counseling.reason')} (Optional)</Label>
             <Textarea
               value={cancelReason}
               onChange={(e) => setCancelReason(e.target.value)}
@@ -427,7 +427,7 @@ const AppointmentDetailPage = () => {
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsCancelDialogOpen(false)}>Cancel</Button>
             <Button variant="destructive" onClick={handleCancel} disabled={cancelMutation.isPending}>
-              {t('cancel')}
+              {t('counseling.cancel')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -437,13 +437,13 @@ const AppointmentDetailPage = () => {
       <Dialog open={isCompleteDialogOpen} onOpenChange={setIsCompleteDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{t('confirm_complete')}</DialogTitle>
+            <DialogTitle>{t('counseling.confirm_complete')}</DialogTitle>
             <DialogDescription>
               Mark this appointment as completed and add outcome notes.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-2">
-            <Label>{t('outcome_notes')} *</Label>
+            <Label>{t('counseling.outcome_notes')} *</Label>
             <Textarea
               value={outcomeNotes}
               onChange={(e) => setOutcomeNotes(e.target.value)}
@@ -455,7 +455,7 @@ const AppointmentDetailPage = () => {
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsCompleteDialogOpen(false)}>Cancel</Button>
             <Button onClick={handleComplete} disabled={completeMutation.isPending}>
-              {t('complete')}
+              {t('counseling.complete')}
             </Button>
           </DialogFooter>
         </DialogContent>
