@@ -8,14 +8,6 @@ venv/
 env/
 ENV/
 
-# Environment - Block all .env files EXCEPT .env.example
-.env
-.env.local
-.env.*.local
-!.env.example
-!backend/.env.example
-!frontend/.env.example
-
 # IDE
 .vscode/
 .idea/
@@ -50,29 +42,11 @@ frontend/dist/
 backups/
 *.backup
 
-# DO NOT IGNORE - THESE ARE NEEDED:
-# !backend/data/bible/*.json
-# !backend/models/tts_indonesian/*.pth
-# !backend/models/tts_indonesian/*.json
-frontend/node_modules/.cache/default-development/9.pack
-frontend/node_modules/.cache/default-development/16.pack
+# Node cache files
+frontend/node_modules/.cache/
+
+# TTS model checkpoints (large files)
 backend/models/tts_indonesian/checkpoint.pth
-frontend/node_modules/.cache/default-development/8.pack
-frontend/node_modules/.cache/default-development/3.pack
-frontend/node_modules/.cache/default-development/7.pack
-frontend/node_modules/.cache/default-development/2.pack
-frontend/node_modules/.cache/default-development/5.pack
 frontend/node_modules/.cache/default-development/13.pack
-frontend/node_modules/.cache/default-development/15.pack
-frontend/node_modules/.cache/default-development/17.pack
-# Environment files
-frontend/node_modules/.cache/default-development/1.pack_
-# Environment files
-# Environment files
-# Environment files
-# Environment files
--e 
-# Environment files
-*.env
-*.env.*
+frontend/node_modules/.cache/default-development/8.pack
 frontend/node_modules/.cache/default-development/0.pack
