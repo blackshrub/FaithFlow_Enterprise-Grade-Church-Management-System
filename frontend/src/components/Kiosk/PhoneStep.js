@@ -50,7 +50,7 @@ const PhoneStep = ({ onMemberFound, onMemberNotFound, onError, churchId }) => {
     setLoading(true);
     
     try {
-      const member = await kioskApi.lookupMemberByPhone(normalizedPhone);
+      const member = await kioskApi.lookupMemberByPhone(normalizedPhone, churchId);
       
       console.log('👤 Member lookup result:', member);
       
