@@ -31,7 +31,7 @@ from utils.dependencies import get_current_user
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/v1/counseling", tags=["Counseling (Admin)"])
+router = APIRouter(prefix="/counseling", tags=["Counseling (Admin)"])
 
 
 def get_db():
