@@ -181,7 +181,8 @@ success "Nginx installed!"
 echo ""
 sleep 1
 
-echo -e "${GREEN}Step 9/14: Copying FaithFlow to /opt/faithflow...${NC}"
+progress
+echo -e "${MAGENTA}${ROCKET} Step 9/14: Copying FaithFlow to /opt/faithflow...${NC}"
 progress
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
