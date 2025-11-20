@@ -60,12 +60,17 @@ export default function GroupMembersPage() {
       const response = await api.get('/members', {
         params: { search: searchTerm, limit: 10 }
       });
+      
+      console.log('Search API response:', response.data);
+      
       const members = response.data?.data || response.data || [];
+      console.log('Members found:', members.length);
       
       // Filter out members already in the group
       const currentMemberIds = (membersData || []).map(m => m.member_id);
       const availableMembers = members.filter(m => !currentMemberIds.includes(m.id));
       
+      console.log('Available members (after filtering):', availableMembers.length);
       setSearchResults(availableMembers);
     } catch (error) {
       console.error('Search error:', error);
@@ -74,6 +79,7 @@ export default function GroupMembersPage() {
         description: 'Failed to search members',
         variant: 'destructive',
       });
+      setSearchResults([]);
     } finally {
       setIsSearching(false);
     }
