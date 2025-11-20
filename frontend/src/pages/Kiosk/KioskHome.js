@@ -166,7 +166,7 @@ const KioskHome = () => {
                 icon={service.icon}
                 title={service.title}
                 description={service.description}
-                onClick={() => navigate(service.path)}
+                onClick={() => navigate(service.path, { state: { churchId } })}
               />
             </motion.div>
           ))}
