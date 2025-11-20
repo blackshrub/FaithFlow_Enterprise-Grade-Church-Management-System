@@ -225,7 +225,14 @@ const AppointmentDetailPage = () => {
             <CardContent className="space-y-3">
               <div>
                 <div className="text-sm text-gray-500">Name</div>
-                <div className="font-medium text-lg">{appointment.member_info?.full_name}</div>
+                <div className="flex items-center gap-3 mt-1">
+                  <MemberAvatar 
+                    name={appointment.member_info?.full_name}
+                    photo={appointment.member_info?.photo_base64}
+                    size="md"
+                  />
+                  <div className="font-medium text-lg">{appointment.member_info?.full_name}</div>
+                </div>
               </div>
               {appointment.member_info?.email && (
                 <div>
