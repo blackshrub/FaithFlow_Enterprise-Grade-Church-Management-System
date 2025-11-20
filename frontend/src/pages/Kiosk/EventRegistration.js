@@ -148,7 +148,35 @@ const EventRegistrationKiosk = () => {
     );
   }
   
-  // STEP: OTP for Existing Member
+  // STEP: New Member Registration (otp_new)
+  if (step === 'otp_new') {
+    console.log('🎨 Rendering new member registration');
+    console.log('📞 Phone for new member:', phone);
+    
+    return (
+      <KioskLayout showBack showHome onBack={() => setStep('phone')}>
+        <div className="space-y-8">
+          <div className="text-center">
+            <h1 className="text-4xl font-bold mb-2">New Member Registration</h1>
+            <p className="text-xl text-gray-600">Please fill in your details</p>
+          </div>
+          
+          <NewMemberRegistration
+            phone={phone}
+            onComplete={(newMember) => {
+              console.log('✅ New member created:', newMember);
+              setMember(newMember);
+              setStep('select_event');
+            }}
+            onError={(error) => {
+              console.error('❌ New member error:', error);
+            }}
+            preVisitorStatusId=\"pre-visitor-id\"
+          />
+        </div>
+      </KioskLayout>
+    );
+  }
   if (step === 'otp_existing') {
     return (
       <KioskLayout showBack showHome onBack={() => setStep('phone')}>
