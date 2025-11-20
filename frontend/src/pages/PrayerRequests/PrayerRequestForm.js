@@ -94,12 +94,14 @@ export default function PrayerRequestForm() {
 
     try {
       if (isEdit) {
+        console.log('🔍 UPDATE Prayer Request - Payload:', payload);
         await updateMutation.mutateAsync({ id, data: payload });
         toast({
           title: t('common.success'),
           description: t('prayerRequests.messages.updateSuccess')
         });
       } else {
+        console.log('🔍 CREATE Prayer Request - Payload:', payload);
         await createMutation.mutateAsync(payload);
         toast({
           title: t('common.success'),
@@ -109,10 +111,12 @@ export default function PrayerRequestForm() {
 
       navigate('/prayer-requests');
     } catch (error) {
+      console.error('❌ Prayer Request Error:', error);
+      console.error('   Response:', error.response?.data);
       toast({
         variant: "destructive",
         title: t('common.error'),
-        description: error.message
+        description: error.response?.data?.detail || error.message
       });
     }
   };
