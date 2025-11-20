@@ -233,7 +233,11 @@ export default function GroupMembersPage() {
       <GroupMembersPanel
         members={memberships}
         isLoading={isLoading}
-        onAddMember={() => {}}
+        onAddMember={() => {
+          // Scroll to search box and focus it
+          searchInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          searchInputRef.current?.focus();
+        }}
         onRemoveMember={(membership) => setMembershipToRemove(membership)}
       />
 
