@@ -59,9 +59,10 @@ async def send_whatsapp_message(
                 image_base64 = image_base64.split(',')[1]
             payload['image'] = image_base64
         
-        # Send request
+        # Send request to WhatsApp gateway
+        # Using go-whatsapp-web-multidevice API format
         response = requests.post(
-            f"{whatsapp_url}/send",
+            f"{whatsapp_url}/send/message",  # Changed from /send to /send/message
             json=payload,
             auth=(whatsapp_user, whatsapp_pass) if whatsapp_user else None,
             timeout=15
