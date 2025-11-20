@@ -35,8 +35,11 @@ export const kioskApi = {
   },
 
   // Send OTP (using existing WhatsApp gateway)
-  sendOTP: async (phone) => {
-    const response = await api.post('/kiosk/send-otp', { phone });
+  sendOTP: async (phone, church_id) => {
+    const response = await api.post('/kiosk/send-otp', 
+      { phone },
+      { params: { church_id } }
+    );
     return response.data;
   },
 
