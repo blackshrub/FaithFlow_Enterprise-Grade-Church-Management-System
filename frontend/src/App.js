@@ -90,6 +90,11 @@ function App() {
             {/* Public Routes */}
             <Route path="/login" element={<Login />} />
             
+            {/* Kiosk Routes - Public, Full-screen */}
+            <Route path="/kiosk" element={<KioskHome />} />
+            <Route path="/kiosk/events/register" element={<EventRegistrationKiosk />} />
+            <Route path="/kiosk/prayer" element={<PrayerRequestKiosk />} />
+            
             {/* Kiosk Mode - Fullscreen (no layout) */}
             <Route path="/kiosk" element={
               <ProtectedRoute>
