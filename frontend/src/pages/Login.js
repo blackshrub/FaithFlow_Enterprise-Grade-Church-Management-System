@@ -158,6 +158,18 @@ export default function Login() {
             <p className="text-sm text-center text-gray-600">
               {t('auth.demoCredentials')}
             </p>
+            
+            {/* Link to Kiosk Mode */}
+            <div className="pt-4 border-t">
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={() => navigate('/kiosk')}
+              >
+                Go to Public Kiosk
+              </Button>
+            </div>
           </CardFooter>
         </form>
       </Card>
