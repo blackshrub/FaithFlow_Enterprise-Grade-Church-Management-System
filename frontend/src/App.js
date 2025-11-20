@@ -77,6 +77,9 @@ import {
 import KioskHome from "./pages/Kiosk/KioskHome";
 import EventRegistrationKiosk from "./pages/Kiosk/EventRegistration";
 import PrayerRequestKiosk from "./pages/Kiosk/PrayerRequest";
+import CounselingKiosk from "./pages/Kiosk/CounselingAppointment";
+import JoinGroupKiosk from "./pages/Kiosk/JoinGroup";
+import ProfileUpdateKiosk from "./pages/Kiosk/ProfileUpdate";
 
 import FaithFlowLogo from './components/Branding/FaithFlowLogo';
 
