@@ -111,6 +111,10 @@ export default function Layout() {
       submenu: [
         { label: 'Devotion', path: '/devotions' },
         { label: t('articles.title') || 'Articles', path: '/articles' },
+        { label: t('articles.addNew') || 'Add New Article', path: '/articles/new' },
+        { label: t('articles.categoriesManagement.title') || 'Categories', path: '/articles/categories' },
+        { label: t('articles.tagsManagement.title') || 'Tags', path: '/articles/tags' },
+        { label: t('articles.comments.title') || 'Comments', path: '/articles/comments' },
       ]
     },
     {
