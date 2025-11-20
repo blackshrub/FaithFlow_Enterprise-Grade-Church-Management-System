@@ -58,10 +58,6 @@ backups/
 frontend/node_modules/.cache/default-development/9.pack
 frontend/node_modules/.cache/default-development/16.pack
 backend/models/tts_indonesian/checkpoint.pth
--e 
-# Environment files
-*.env
-*.env.*
 frontend/node_modules/.cache/default-development/8.pack
 frontend/node_modules/.cache/default-development/3.pack
 frontend/node_modules/.cache/default-development/7.pack
