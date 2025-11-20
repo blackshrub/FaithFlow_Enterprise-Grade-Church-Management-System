@@ -42,12 +42,14 @@ const PrayerRequestKiosk = () => {
   const [submitting, setSubmitting] = useState(false);
   
   const handleMemberFound = (foundMember, foundPhone) => {
+    console.log('✅ PrayerRequest - Member found:', foundMember?.full_name);
     setMember(foundMember);
     setPhone(foundPhone);
     setStep('otp_existing');
   };
   
   const handleMemberNotFound = (foundPhone) => {
+    console.log('⚠️ PrayerRequest - Member not found:', foundPhone);
     setPhone(foundPhone);
     setStep('otp_new');
   };
