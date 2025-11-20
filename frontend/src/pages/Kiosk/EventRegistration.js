@@ -16,6 +16,7 @@ import { motion } from 'framer-motion';
 import KioskLayout from '../../components/Kiosk/KioskLayout';
 import PhoneStep from '../../components/Kiosk/PhoneStep';
 import OTPInput from '../../components/Kiosk/OTPInput';
+import NewMemberRegistration from '../../components/Kiosk/NewMemberRegistration';
 import { Button } from '../../components/ui/button';
 import { Card } from '../../components/ui/card';
 import MemberAvatar from '../../components/MemberAvatar';
