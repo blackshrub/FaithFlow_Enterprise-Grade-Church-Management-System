@@ -84,7 +84,7 @@ const AvailabilityPage = () => {
   const { data: recurringRules = [] } = useRecurringRules();
   const { data: overrides = [] } = useOverrides();
   const { data: slots = [] } = useTimeSlots({ 
-    counselor_id: selectedCounselor || undefined,
+    counselor_id: selectedCounselor === 'all' ? undefined : selectedCounselor,
     date_from: selectedDate,
     date_to: selectedDate 
   });
