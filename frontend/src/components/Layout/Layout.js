@@ -201,15 +201,6 @@ export default function Layout() {
             </div>
           </div>
 
-          {/* User Info */}
-          {!sidebarCollapsed && (
-            <div className="p-4 border-b bg-gray-50">
-              <div className="text-sm font-semibold">{user?.full_name}</div>
-              <div className="text-xs text-gray-600">{user?.role.replace('_', ' ').toUpperCase()}</div>
-              <div className="text-xs text-gray-500 mt-1">{church?.name}</div>
-            </div>
-          )}
-
           {/* Navigation */}
           <nav className="flex-1 overflow-y-auto p-4">
             <ul className="space-y-1">
