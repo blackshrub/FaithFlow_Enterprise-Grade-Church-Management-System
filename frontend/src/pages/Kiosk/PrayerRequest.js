@@ -8,7 +8,7 @@
  */
 
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Heart, Check } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -25,7 +25,10 @@ import kioskApi from '../../services/kioskApi';
 
 const PrayerRequestKiosk = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { t } = useTranslation('kiosk');
+  
+  const churchId = location.state?.churchId || localStorage.getItem('kiosk_church_id');
   
   const [step, setStep] = useState('phone');
   const [phone, setPhone] = useState('');
