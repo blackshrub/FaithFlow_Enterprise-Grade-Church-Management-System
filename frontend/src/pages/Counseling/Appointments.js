@@ -229,7 +229,10 @@ const AppointmentsListPage = () => {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <User className="h-4 w-4 text-gray-400" />
+                        <MemberAvatar 
+                          name={appointment.member_name}
+                          size="sm"
+                        />
                         <div>
                           <div className="font-medium">{appointment.member_name}</div>
                           {appointment.member_phone && (
