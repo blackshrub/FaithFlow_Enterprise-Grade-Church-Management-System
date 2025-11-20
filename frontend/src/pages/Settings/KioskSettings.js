@@ -121,6 +121,23 @@ const KioskSettingsTab = () => {
                 />
                 <p className="text-sm text-gray-500">Leave empty to use default translation</p>
               </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="default_language">Default Language</Label>
+                <Select
+                  value={settings.default_language}
+                  onValueChange={(value) => setSettings({ ...settings, default_language: value })}
+                >
+                  <SelectTrigger id="default_language">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="id">Bahasa Indonesia</SelectItem>
+                    <SelectItem value="en">English</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-sm text-gray-500">Language shown when kiosk first loads</p>
+              </div>
             </CardContent>
           </Card>
           
