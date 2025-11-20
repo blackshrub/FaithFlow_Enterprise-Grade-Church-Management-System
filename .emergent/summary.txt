@@ -1,82 +1,76 @@
 <analysis>
-The trajectory documents an extensive and iterative development process, primarily focused on bug-fixing and implementing new, complex features for the FaithFlow application. The work can be segmented into several key phases.
+The trajectory chronicles the work of an AI engineer evolving the FaithFlow application. The work began with fixing a bug in API key authentication where usernames were incorrectly validated as emails. The primary focus then shifted to a large, user-specified feature: the Member Status Automation System. This involved creating new backend models, a complex rule engine, a background scheduler, and a multi-tabbed frontend UI for configuration and conflict resolution.
 
-Initially, the AI engineer addressed documentation and internationalization (i18n), fixing corrupted translation files and comprehensively updating all project-related documents (, , etc.) to reflect the state of the new Groups module.
+A critical point was a mid-project specification update from the user, which forced a major refactoring of the backend routes and logic to align with the new, more detailed requirements. The development process was highly iterative, marked by frequent user feedback and subsequent bug fixes. Key challenges included: a data recovery operation after an overly broad cleanup script deleted user-created statuses; a persistent Mixed Content error on the frontend, eventually traced to trailing slash inconsistencies between frontend API calls and backend routes; and debugging a complex webhook integration, which required adapting the payload signature format to match a specific third-party service.
 
-The subsequent phase involved a deep dive into the Member CSV Import wizard. The user requested a major change in the duplicate phone number validation logic, moving it from the end to an earlier step. This led to a cascade of debugging, including fixing incorrect component imports, handling API authentication token mismatches, and crucially, implementing a robust backend validation endpoint.
-
-A significant portion of the work was a rapid-fire bug-fixing spree based on user feedback. This included resolving React hook rule violations, fixing UI data loading issues caused by API trailing slashes, correcting data inconsistencies (e.g., ensuring phone number normalization on all member CRUD operations), and a particularly complex fix for the photo/document import. The photo import problem required evolving the solution from passing large base64 strings (which failed) to using a temporary file-based storage system to handle large uploads without violating MongoDB document size limits.
-
-The final major feature implemented was a comprehensive system for external integrations, including a hybrid webhook system (immediate trigger with a queued background processor) for pushing member data changes, and a secure, random API key generation and management system for external applications to pull data via the API.
-
-The user's primary language is English. The next agent must respond in English.
+The final phase focused on resolving deployment failures. The AI troubleshot issues with  files being gitignored and a missing supervisor configuration file, creating  files and a root  to make the project compliant with the deployment environment. The user's primary language is English; the next agent must respond in English.
 </analysis>
+
 <product_requirements>
-The goal was to enhance the FaithFlow church management system with new features and improve the robustness of existing ones.
+The initial goal was to build a comprehensive **Member Status Automation System**. This system needed to allow church administrators to define custom member statuses (e.g., Full Member, New Visitor) and create rules to automatically change a member's status based on conditions like age and event attendance (Sunday Service). Key requirements included handling rule conflicts by flagging them for manual admin review, running the automation via a configurable background job, and providing a full audit history.
 
-**1. Member Data Import & Management:**
-The initial requirement was to overhaul the CSV Member Import wizard. The duplicate phone number check was moved from a post-import resolution step to a pre-import validation step, checking against both the CSV and existing database records. The system now displays a modal with conflicting records and blocks the import. This led to ensuring that phone number normalization and duplicate validation are consistently applied across all member creation and update operations, not just during import. The member form was simplified by removing non-essential default fields and adding the ability to upload profile photos and personal documents directly in the form.
-
-**2. External System Integration (Webhooks & API Keys):**
-A major new requirement was to enable one-way data synchronization with external applications.
-*   **Webhooks:** A hybrid webhook system was built. Changes to member data (create, update, delete) trigger an event. This event is sent to registered webhook URLs immediately, but also added to a persistent queue. A background worker retries failed deliveries. Webhook endpoints are configurable in the settings UI, with HMAC-SHA256 signature verification for security.
-*   **API Keys:** To allow external systems to pull data, a secure API Key management system was created. Staff can generate random, non-human-readable API usernames and keys. These keys can be used for Bearer token authentication to access protected API endpoints. The UI provides a secure way to view the generated key once.
+During development, new requirements were added:
+1.  **Rule Simulation:** A feature to let admins preview the impact of a rule on members before saving it.
+2.  **Advanced Member Filtering:** Enhance the main members list with filters for gender, marital status, membership status, and a new demographic column.
+3.  **Incomplete Data View:** A toggle on the members page to show only members with missing data fields (e.g., birthdate, gender).
+4.  **Soft Delete & Trash Bin:** Deleted members should be moved to a trash bin, hidden from APIs, and automatically purged after 14 days. A UI is required to view the trash and restore members.
+5.  **External API & Webhook Debugging:** Ensure API key authentication works for non-email usernames and that webhooks for member updates are delivered successfully to an external system, which involved fixing signature validation and payload content.
 </product_requirements>
+
 <key_technical_concepts>
-- **Backend:** FastAPI, MongoDB (Motor), Pydantic.
-- **Frontend:** React, Tailwind CSS, , TanStack React Query (for server state),  (for toasts).
-- **Architecture:** API-first monorepo. Multi-tenant ( scoping).
-- **Integrations:**
-    - **Hybrid Webhook System:** Immediate trigger with a queued, persistent background job () for retries.
-    - **HMAC-SHA256:** Used for signing webhook payloads to ensure integrity.
-- **Authentication:**
-    - Standard JWT for staff users.
-    - API Key-based authentication for external systems.
-- **File Handling:** Temporary file-based storage () for processing large ZIP file uploads during member import to overcome MongoDB's 16MB document size limit.
+- **Backend:** FastAPI, MongoDB (with Motor), Pydantic for data modeling.
+- **Frontend:** React, Tailwind CSS, , TanStack React Query for server state.
+- **Architecture:** API-first monorepo, multi-tenant design ().
+- **Automation:** APScheduler for running background jobs (status automation, trash cleanup).
+- **Authentication:** JWT for users, and a custom API Key system (using Bearer tokens) for external apps.
+- **Integrations:** A hybrid webhook system with HMAC-SHA256 signature generation, customized to match a specific third-party's requirements (no prefix on signature).
+- **Data Integrity:** Soft-delete pattern ( timestamp) and data migration scripts for schema changes.
 </key_technical_concepts>
+
 <code_architecture>
-The project is a standard monorepo containing a  (FastAPI) and a  (React) application. The codebase is modular, with features like members, groups, and the new webhooks and api_keys separated into their own routes, services, and components.
+The project is a monorepo with distinct  and  directories. The backend follows a modular structure with routes, services, and models separated by feature.
 
 
-
--   ** & **
-    -   **Importance:** These files manage the complex multi-step member import process.
-    -   **Summary of Changes:** Major refactoring to handle large file uploads (photos/documents). The logic was changed from passing base64 data in the request body to saving files to a temporary directory on the server, passing a  to the frontend, and then retrieving the files using that ID during the final import step. A new endpoint, , was added to check for duplicate phone numbers early in the process.
 
 -   ****
-    -   **Importance:** Defines the core CRUD API for members.
-    -   **Summary of Changes:** Enhanced to ensure data integrity. Duplicate phone number validation and normalization were added to the  (update) and  (create) endpoints. The Pydantic model was updated to include  and . Crucially, calls to  were injected after create, update, and delete operations to support external integrations.
-
--   ** & **
-    -   **Importance:** These new files form the core of the webhook system.
-    -   **Summary of Changes:**  contains the logic for queuing events, signing payloads with HMAC, and sending requests.  provides the API endpoints for staff to manage webhook configurations (CRUD).
-
--   ** & **
-    -   **Importance:** New files that implement a secure API credential system.
-    -   **Summary of Changes:** Provides endpoints to create, list, and revoke API keys. The system generates a cryptographically secure random username and key, hashes the key for storage, and provides endpoints for API-key-based authentication.
+    -   **Importance:** Handles user authentication and authorization for API endpoints.
+    -   **Summary of Changes:** The  function was significantly modified to handle a hybrid authentication scheme. It now checks for a standard user JWT first, and if that fails, it attempts to validate an API key from the  collection, allowing both internal users and external applications to access the API through the same protected endpoints.
 
 -   ****
-    -   **Importance:** The main UI for viewing and managing members.
-    -   **Summary of Changes:** Refactored to support server-side search and pagination to handle large datasets. Client-side filtering was removed. Error handling for create/update mutations was improved to show user-friendly toast notifications instead of crashing the page.
+    -   **Importance:** Contains the core CRUD API for members.
+    -   **Summary of Changes:** This file was heavily modified. The  endpoint was changed from a hard delete to a soft delete by setting a  timestamp. The main  endpoint was updated to exclude soft-deleted members by default and to accept numerous new filter parameters (gender, marital status, etc.). New endpoints for the trash bin (, , ) were added. The route order was fixed, moving  before  to resolve a path matching conflict.
 
 -   ****
-    -   **Importance:** A new UI component for managing all external integrations.
-    --   **Summary of Changes:** This tab was created from scratch. It provides a complete UI for staff to add, view, and delete webhook configurations. It also includes a section for generating and managing API keys, with a modal to securely display the new credentials one time.
+    -   **Importance:** Contains all logic for sending webhooks to external systems.
+    -   **Summary of Changes:** This service was iteratively debugged and refactored to match a specific external API's requirements. The signature generation was changed to produce a raw hexadecimal HMAC-SHA256 hash without a  prefix. Payloads were updated to include a top-level  and . Verbose logging was added to aid in debugging signature mismatches.
+
+-   ****
+    -   **Importance:** The primary UI for staff to manage church members.
+    -   **Summary of Changes:** The page was enhanced with a new row of filter dropdowns for gender, marital status, and membership status. A  component was added to toggle a view showing only members with incomplete data. A new button was added to the header linking to the  page.
+
+-   **, , , **
+    -   **Importance:** These files were created/modified at the end to resolve deployment failures.
+    -   **Summary of Changes:** The  file was cleaned up to correctly ignore  files while allowing  files to be committed. The  files were created to serve as templates for the production environment. A  file was created in the project root so the deployment process could find it.
 </code_architecture>
+
 <pending_tasks>
-- All major user-requested features and bug fixes from the trajectory have been implemented. The primary pending action is to await user testing and feedback on the latest implementations.
+- Confirm that the recent fixes to , and the addition of  and , have resolved the  error and that the application can be successfully deployed.
+- Awaiting user feedback on the newly implemented Trash Bin UI and the enhanced Member filters.
 </pending_tasks>
+
 <current_work>
-The most recent task was to fix a  that occurred when a user tried to generate a new API key.
+The most recent work focused on resolving a persistent deployment failure reported as . The Deployer Agent repeatedly indicated that essential  files were missing.
 
-The root cause was identified as a classic trailing slash issue. The frontend was making a  request to , but the FastAPI backend router was configured to listen on  (with a trailing slash), resulting in a 307 Temporary Redirect which the browser's fetch API handles poorly for POST requests, causing a generic network error.
+The root cause was identified: the project's  file was configured to ignore all  files, preventing the necessary configuration templates from being included in the git repository for the build process.
 
-The fix was applied in  by updating the  object to include the trailing slash in its endpoint paths.
+The resolution involved several steps:
+1.  Creating  and  files to act as templates for the deployment environment.
+2.  Creating a  file in the project's root directory, as the deployment process was not finding the system-level one.
+3.  Thoroughly refactoring the  file to remove confusing and duplicate entries. The final version explicitly ignores  and  but negates the ignore for  () to ensure it gets committed to the repository.
 
-/api-keys//
-
-After applying this change, the frontend was confirmed to compile successfully. The system is now awaiting user confirmation that the API key generation works as expected.
+The AI verified with  that the  and  files were no longer being ignored. The system is now believed to be fully compliant with the deployment agent's requirements, awaiting another deployment attempt.
 </current_work>
+
 <optional_next_step>
-Await user confirmation that the Network Error on API key generation is resolved and that they can successfully create and view a new API key.
+Call the Deployer Agent again to run a health check and confirm the deployment readiness issues are resolved, then proceed with deployment.
 </optional_next_step>
