@@ -8,6 +8,7 @@ import AutomationSettingsTab from '../components/Settings/AutomationSettingsTab'
 import DemographicsTab from '../components/Settings/DemographicsTab';
 import EventCategoriesTab from '../components/Settings/EventCategoriesTab';
 import WebhooksTab from '../components/Settings/WebhooksTab';
+import KioskSettingsTab from './Settings/KioskSettings';
 
 export default function Settings() {
   const { t } = useTranslation();
@@ -21,7 +22,7 @@ export default function Settings() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full max-w-5xl grid-cols-7">
+        <TabsList className="grid w-full max-w-5xl grid-cols-8">
           <TabsTrigger value="general">{t('settings.general')}</TabsTrigger>
           <TabsTrigger value="statuses">Statuses</TabsTrigger>
           <TabsTrigger value="rules">Rules</TabsTrigger>
@@ -29,6 +30,7 @@ export default function Settings() {
           <TabsTrigger value="demographics">{t('settings.demographics')}</TabsTrigger>
           <TabsTrigger value="categories">{t('settings.eventCategories')}</TabsTrigger>
           <TabsTrigger value="webhooks">{t('settings.webhooks.title')}</TabsTrigger>
+          <TabsTrigger value="kiosk">Kiosk</TabsTrigger>
         </TabsList>
 
         <TabsContent value="general" className="mt-6">
@@ -57,6 +59,10 @@ export default function Settings() {
 
         <TabsContent value="webhooks" className="mt-6">
           <WebhooksTab />
+        </TabsContent>
+        
+        <TabsContent value="kiosk" className="mt-6">
+          <KioskSettingsTab />
         </TabsContent>
       </Tabs>
     </div>
