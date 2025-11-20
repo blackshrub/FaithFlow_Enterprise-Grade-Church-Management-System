@@ -173,7 +173,7 @@ echo ""
 sleep 1
 
 progress
-echo -e "${MAGENTA}${ROCKET} Step 8/12: Installing Nginx web server...${NC}"
+echo -e "${MAGENTA}${ROCKET} Step 8/14: Installing Nginx web server...${NC}"
 progress
 info "Nginx will serve your application to the world..."
 apt install -y nginx > /dev/null 2>&1
