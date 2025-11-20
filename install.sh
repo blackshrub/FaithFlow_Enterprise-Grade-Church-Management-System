@@ -292,7 +292,7 @@ echo ""
 sleep 1
 
 progress
-echo -e "${MAGENTA}${ROCKET} Step 11/12: Configuring services...${NC}"
+echo -e "${MAGENTA}${ROCKET} Step 12/14: Configuring services...${NC}"
 progress
 
 info "Setting up Supervisor to manage FaithFlow..."
