@@ -31,9 +31,9 @@ const AppointmentsListPage = () => {
   const navigate = useNavigate();
   const { appointmentId } = useParams();
   const [filters, setFilters] = useState({
-    status: '',
-    counselor_id: '',
-    urgency: '',
+    status: 'all',
+    counselor_id: 'all',
+    urgency: 'all',
     date_from: '',
     date_to: ''
   });
