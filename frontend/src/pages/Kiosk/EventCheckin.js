@@ -172,10 +172,6 @@ const EventCheckinKiosk = () => {
                 {pinError}
               </motion.p>
             )}
-            
-            <p className="text-center text-gray-500 text-lg">
-              Default PIN: 000000
-            </p>
           </div>
         </motion.div>
       </KioskLayout>
