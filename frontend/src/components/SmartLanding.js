@@ -2,12 +2,12 @@
  * Smart Landing Page
  * 
  * - If logged in → Redirect to /dashboard
- * - If not logged in → Show Kiosk Home
+ * - If not logged in → Show Church Selector
  */
 
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import KioskHome from '../pages/Kiosk/KioskHome';
+import ChurchSelector from './Kiosk/ChurchSelector';
 
 const SmartLanding = () => {
   const { user } = useAuth();
@@ -17,8 +17,8 @@ const SmartLanding = () => {
     return <Navigate to="/dashboard" replace />;
   }
   
-  // Otherwise show kiosk home
-  return <KioskHome />;
+  // Otherwise show church selector
+  return <ChurchSelector />;
 };
 
 export default SmartLanding;
