@@ -35,6 +35,14 @@ const EventRegistrationKiosk = () => {
   const [events, setEvents] = useState([]);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const [renderError, setRenderError] = useState(null);
+  
+  // Catch rendering errors
+  useEffect(() => {
+    console.log('📍 Current step:', step);
+    console.log('📍 Member:', member?.full_name);
+    console.log('📍 Phone:', phone);
+  }, [step, member, phone]);
   
   useEffect(() => {
     if (step === 'select_event') {
