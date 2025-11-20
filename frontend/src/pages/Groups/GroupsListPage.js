@@ -134,15 +134,20 @@ export default function GroupsListPage() {
                     title: t('common.success'),
                     description: t('groups.messages.deleteSuccess'),
                   });
+                  setGroupToDelete(null);
                 } catch (error) {
+                  console.error('❌ Group Delete Error:', error);
+                  console.error('   Response:', error.response?.data);
                   const message =
-                    error?.response?.data?.detail?.message || t('groups.messages.deleteError');
+                    error?.response?.data?.detail?.message || 
+                    error?.response?.data?.detail ||
+                    t('groups.messages.deleteError');
+                  console.log('   Error message to show:', message);
                   toast({
                     title: t('common.error'),
                     description: message,
                     variant: 'destructive',
                   });
-                } finally {
                   setGroupToDelete(null);
                 }
               }}
