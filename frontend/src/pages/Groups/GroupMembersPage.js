@@ -1,12 +1,15 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { UserPlus } from 'lucide-react';
 import { useGroup, useGroupMembers, useAddGroupMember, useRemoveGroupMember } from '../../hooks/useGroups';
 import { GroupMembersPanel } from '../../components/Groups/GroupMembersPanel';
 import { useToast } from '../../hooks/use-toast';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
-import { membersAPI } from '../../services/api';
+import { Card, CardContent } from '../../components/ui/card';
+import { Badge } from '../../components/ui/badge';
+import api from '../../services/api';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,37 +32,75 @@ export default function GroupMembersPage() {
   const removeMemberMutation = useRemoveGroupMember();
 
   const [membershipToRemove, setMembershipToRemove] = React.useState(null);
-
   const [searchTerm, setSearchTerm] = React.useState('');
   const [searchResults, setSearchResults] = React.useState([]);
+  const [isSearching, setIsSearching] = React.useState(false);
+
+  // Real-time search with debounce
+  useEffect(() => {
+    const delaySearch = setTimeout(() => {
+      if (searchTerm.trim().length >= 2) {
+        handleSearchMembers();
+      } else {
+        setSearchResults([]);
+      }
+    }, 300); // 300ms debounce
+
+    return () => clearTimeout(delaySearch);
+  }, [searchTerm]);
 
   const handleSearchMembers = async () => {
-    if (!searchTerm) return;
+    if (!searchTerm.trim()) {
+      setSearchResults([]);
+      return;
+    }
+    
+    setIsSearching(true);
     try {
-      const res = await membersAPI.list({ search: searchTerm, limit: 10 });
-      setSearchResults(res.data?.data || res.data || []);
+      const response = await api.get('/members', {
+        params: { search: searchTerm, limit: 10 }
+      });
+      const members = response.data?.data || response.data || [];
+      
+      // Filter out members already in the group
+      const currentMemberIds = (membersData || []).map(m => m.member_id);
+      const availableMembers = members.filter(m => !currentMemberIds.includes(m.id));
+      
+      setSearchResults(availableMembers);
     } catch (error) {
+      console.error('Search error:', error);
       toast({
-        title: t('common.error'),
-        description: t('groups.members.messages.searchError'),
+        title: 'Search Error',
+        description: 'Failed to search members',
         variant: 'destructive',
       });
+    } finally {
+      setIsSearching(false);
     }
   };
 
   const handleAddMember = async (member) => {
+    console.log('Adding member:', member.id, 'to group:', groupId);
     try {
-      await addMemberMutation.mutateAsync({ groupId, memberId: member.id });
-      toast({
-        title: t('common.success'),
-        description: t('groups.members.messages.addSuccess'),
+      await addMemberMutation.mutateAsync({ 
+        groupId: groupId, 
+        memberId: member.id 
       });
+      toast({
+        title: 'Success',
+        description: `${member.full_name} added to group`,
+      });
+      // Clear search after successful add
       setSearchResults([]);
       setSearchTerm('');
     } catch (error) {
+      console.error('Add member error:', error);
+      const errorMessage = error.response?.data?.detail?.message || 
+                          error.response?.data?.detail || 
+                          'Failed to add member';
       toast({
-        title: t('common.error'),
-        description: t('groups.members.messages.addError'),
+        title: 'Error',
+        description: errorMessage,
         variant: 'destructive',
       });
     }
@@ -72,13 +113,13 @@ export default function GroupMembersPage() {
         memberId: membership.member_id,
       });
       toast({
-        title: t('common.success'),
-        description: t('groups.members.messages.removeSuccess'),
+        title: 'Success',
+        description: 'Member removed from group',
       });
     } catch (error) {
       toast({
-        title: t('common.error'),
-        description: t('groups.members.messages.removeError'),
+        title: 'Error',
+        description: 'Failed to remove member',
         variant: 'destructive',
       });
     }
@@ -90,54 +131,98 @@ export default function GroupMembersPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">
-          {group?.name || t('groups.members.title')}
+          {group?.name || 'Group Members'}
         </h1>
         <p className="text-muted-foreground text-sm">
-          {t('groups.members.subtitle')}
+          Manage group members
         </p>
       </div>
 
-      <div className="space-y-4">
-        <div className="flex flex-col md:flex-row gap-2 md:items-center">
-          <div className="flex-1 flex gap-2">
-            <Input
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder={t('groups.members.searchPlaceholder')}
-            />
-            <Button variant="outline" onClick={handleSearchMembers}>
-              {t('common.search')}
-            </Button>
-          </div>
-        </div>
-
-        {searchResults.length > 0 && (
-          <div className="border rounded-lg p-3 space-y-2 bg-muted/30">
-            <div className="text-xs font-medium text-muted-foreground">
-              {t('groups.members.searchResults')}
+      {/* Search and Add Members */}
+      <Card>
+        <CardContent className="pt-6">
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <UserPlus className="h-5 w-5 text-gray-400" />
+              <h3 className="font-semibold">Add Members</h3>
             </div>
-            <div className="space-y-1 max-h-60 overflow-y-auto">
-              {searchResults.map((m) => (
-                <div
-                  key={m.id}
-                  className="flex items-center justify-between py-1 px-2 rounded-md hover:bg-background cursor-pointer"
-                >
-                  <div className="flex items-center space-x-2">
-                    <span className="font-medium">{m.full_name}</span>
-                    <span className="text-xs text-muted-foreground">
-                      {m.phone_whatsapp}
-                    </span>
-                  </div>
-                  <Button size="sm" variant="outline" onClick={() => handleAddMember(m)}>
-                    {t('groups.members.actions.addToGroup')}
-                  </Button>
+            
+            <div className="flex gap-2">
+              <Input
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search members by name or phone..."
+                className="flex-1"
+              />
+              {isSearching && (
+                <div className="flex items-center px-3 text-sm text-gray-500">
+                  Searching...
                 </div>
-              ))}
+              )}
             </div>
-          </div>
-        )}
-      </div>
 
+            {searchResults.length > 0 && (
+              <div className="border rounded-lg p-3 space-y-2 bg-gray-50">
+                <div className="text-xs font-medium text-gray-500">
+                  {searchResults.length} member(s) found
+                </div>
+                <div className="space-y-2 max-h-60 overflow-y-auto">
+                  {searchResults.map((member) => (
+                    <div
+                      key={member.id}
+                      className="flex items-center justify-between py-2 px-3 rounded-md bg-white border hover:border-blue-300 transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        {member.photo_base64 ? (
+                          <img
+                            src={member.photo_base64}
+                            alt={member.full_name}
+                            className="w-10 h-10 rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                            <span className="text-sm font-semibold text-blue-600">
+                              {member.full_name?.charAt(0)?.toUpperCase()}
+                            </span>
+                          </div>
+                        )}
+                        <div>
+                          <div className="font-medium">{member.full_name}</div>
+                          <div className="text-xs text-gray-500">
+                            {member.phone_whatsapp || member.email || 'No contact'}
+                          </div>
+                        </div>
+                      </div>
+                      <Button 
+                        size="sm" 
+                        onClick={() => handleAddMember(member)}
+                        disabled={addMemberMutation.isPending}
+                      >
+                        <UserPlus className="h-4 w-4 mr-1" />
+                        Add
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {searchTerm.trim().length >= 2 && searchResults.length === 0 && !isSearching && (
+              <div className="text-sm text-gray-500 text-center py-4">
+                No members found. Try a different search term.
+              </div>
+            )}
+
+            {searchTerm.trim().length > 0 && searchTerm.trim().length < 2 && (
+              <div className="text-xs text-gray-400">
+                Type at least 2 characters to search...
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Current Members List */}
       <GroupMembersPanel
         members={memberships}
         isLoading={isLoading}
@@ -145,6 +230,7 @@ export default function GroupMembersPage() {
         onRemoveMember={(membership) => setMembershipToRemove(membership)}
       />
 
+      {/* Remove Confirmation Dialog */}
       <AlertDialog
         open={!!membershipToRemove}
         onOpenChange={(open) => !open && setMembershipToRemove(null)}
@@ -152,28 +238,26 @@ export default function GroupMembersPage() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {t('groups.members.delete.confirmTitle') || 'Remove member from group?'}
+              Remove Member from Group?
             </AlertDialogTitle>
             <AlertDialogDescription>
-              {t('groups.members.delete.confirmDescription', {
-                memberName: membershipToRemove?.member?.full_name ?? '',
-              }) ||
-                'This will mark the member as removed from this group. Their member record will not be deleted.'}
+              This will remove {membershipToRemove?.member?.full_name} from this group. 
+              They can rejoin later if needed.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={removeMemberMutation.isLoading}>
-              {t('common.cancel')}
+            <AlertDialogCancel disabled={removeMemberMutation.isPending}>
+              Cancel
             </AlertDialogCancel>
             <AlertDialogAction
-              disabled={removeMemberMutation.isLoading}
+              disabled={removeMemberMutation.isPending}
               onClick={async () => {
                 if (!membershipToRemove) return;
                 await handleRemoveMember(membershipToRemove);
                 setMembershipToRemove(null);
               }}
             >
-              {t('groups.members.actions.remove')}
+              Remove
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
