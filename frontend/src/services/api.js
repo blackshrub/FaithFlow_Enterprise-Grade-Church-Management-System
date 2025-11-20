@@ -186,10 +186,10 @@ export const automationSettingsAPI = {
 // Webhooks API
 export const webhooksAPI = {
   list: () => api.get('/webhooks/'),
-  get: (id) => api.get(`/webhooks/${id}/`),
+  get: (id) => api.get(`/webhooks/${id}`),
   create: (data) => api.post('/webhooks/', data),
-  update: (id, data) => api.patch(`/webhooks/${id}/`, data),
-  delete: (id) => api.delete(`/webhooks/${id}/`),
+  update: (id, data) => api.patch(`/webhooks/${id}`, data),
+  delete: (id) => api.delete(`/webhooks/${id}`),
   test: (id) => api.post(`/webhooks/${id}/test`),
   getLogs: (id, params) => api.get(`/webhooks/${id}/logs`, { params }),
   getQueueStatus: () => api.get('/webhooks/queue/status'),
