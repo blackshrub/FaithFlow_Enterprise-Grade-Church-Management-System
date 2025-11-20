@@ -45,9 +45,16 @@ const EventRegistrationKiosk = () => {
   const loadEvents = async () => {
     try {
       const data = await kioskApi.getUpcomingEvents();
-      setEvents(data);
+      console.log('📅 Events API response:', data);
+      
+      // Handle both array and object response
+      const eventList = Array.isArray(data) ? data : (data?.data || []);
+      console.log('📅 Events to display:', eventList.length);
+      
+      setEvents(eventList);
     } catch (error) {
       console.error('Failed to load events:', error);
+      setEvents([]);
     }
   };
   
