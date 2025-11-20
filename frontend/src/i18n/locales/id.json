@@ -2002,11 +2002,80 @@
   },
   "groups": {
     "title": "Kelompok",
-    "subtitle": "Kelola kelompok dan komunitas gereja",
+    "subtitle": "Kelola Kelompok dan Komunitas Gereja",
+    "actions": {
+      "create": "Buat Kelompok",
+      "viewMembers": "Lihat Anggota"
+    },
+    "categories": {
+      "cellGroup": "Kelompok Sel",
+      "ministryTeam": "Tim Pelayanan",
+      "activityGroup": "Kelompok Aktivitas",
+      "supportGroup": "Kelompok Dukungan"
+    },
+    "status": {
+      "open": "Terbuka",
+      "closed": "Tertutup"
+    },
+    "table": {
+      "leader": "Pemimpin",
+      "membersCount": "Anggota",
+      "noLeader": "Tanpa Pemimpin",
+      "openForJoin": "Terbuka untuk Bergabung"
+    },
+    "filters": {
+      "searchPlaceholder": "Cari kelompok...",
+      "categoryPlaceholder": "Filter berdasarkan kategori",
+      "allCategories": "Semua Kategori",
+      "openStatusPlaceholder": "Filter berdasarkan status",
+      "openStatus": {
+        "all": "Semua Kelompok",
+        "open": "Terbuka untuk Bergabung",
+        "closed": "Tertutup"
+      }
+    },
+    "emptyStates": {
+      "noGroups": "Tidak Ada Kelompok"
+    },
+    "editor": {
+      "createTitle": "Buat Kelompok Baru",
+      "editTitle": "Edit Kelompok",
+      "subtitle": "Informasi Kelompok"
+    },
+    "form": {
+      "name": "Nama Kelompok",
+      "description": "Deskripsi",
+      "category": "Kategori",
+      "selectCategory": "Pilih Kategori",
+      "leaderName": "Pemimpin",
+      "noLeaderSelected": "Belum Ada Pemimpin",
+      "noMembersFound": "Anggota Tidak Ditemukan",
+      "location": "Lokasi Pertemuan",
+      "meetingSchedule": "Jadwal Pertemuan",
+      "maxMembers": "Maksimum Anggota",
+      "maxMembersPlaceholder": "Kosongkan untuk tidak terbatas",
+      "openForJoin": "Terbuka untuk Permintaan Bergabung",
+      "openForJoinHelper": "Izinkan anggota meminta bergabung dengan kelompok ini",
+      "coverImageHelper": "Unggah gambar sampul untuk kelompok",
+      "noCoverImage": "Tanpa Gambar Sampul",
+      "uploadCover": "Unggah Sampul",
+      "changeCover": "Ubah Sampul"
+    },
+    "messages": {
+      "createSuccess": "Kelompok Berhasil Dibuat",
+      "updateSuccess": "Kelompok Berhasil Diperbarui",
+      "deleteSuccess": "Kelompok Berhasil Dihapus",
+      "deleteError": "Gagal Menghapus Kelompok",
+      "saveError": "Gagal Menyimpan Kelompok",
+      "coverRemoved": "Gambar Sampul Dihapus"
+    },
+    "delete": {
+      "confirmTitle": "Hapus Kelompok Ini?"
+    },
     "members": {
       "title": "Anggota Kelompok",
-      "subtitle": "Kelola anggota kelompok",
-      "searchPlaceholder": "Cari anggota...",
+      "subtitle": "Kelola Anggota Kelompok",
+      "searchPlaceholder": "Cari Anggota...",
       "searchResults": "Hasil Pencarian",
       "emptyStates": {
         "noMembers": "Belum Ada Anggota"
@@ -2029,15 +2098,65 @@
         "remove": "Hapus"
       },
       "messages": {
-        "searchError": "Gagal mencari anggota",
-        "addSuccess": "Anggota berhasil ditambahkan",
-        "addError": "Gagal menambahkan anggota",
-        "removeSuccess": "Anggota berhasil dihapus",
-        "removeError": "Gagal menghapus anggota"
+        "searchError": "Gagal Mencari Anggota",
+        "addSuccess": "Anggota Berhasil Ditambahkan",
+        "addError": "Gagal Menambahkan Anggota",
+        "removeSuccess": "Anggota Berhasil Dihapus",
+        "removeError": "Gagal Menghapus Anggota"
       },
       "delete": {
         "confirmTitle": "Hapus Anggota dari Kelompok?",
         "confirmDescription": "Ini akan menghapus {{memberName}} dari kelompok ini. Mereka dapat bergabung kembali nanti jika diperlukan."
+      }
+    },
+    "joinRequests": {
+      "title": "Permintaan Bergabung",
+      "subtitle": "Kelola Permintaan Bergabung",
+      "emptyStates": {
+        "noRequests": "Tidak Ada Permintaan"
+      },
+      "table": {
+        "member": "Anggota",
+        "group": "Kelompok",
+        "message": "Pesan",
+        "submittedAt": "Diajukan Pada",
+        "actions": "Aksi"
+      },
+      "actions": {
+        "approve": "Setujui",
+        "reject": "Tolak"
+      },
+      "messages": {
+        "approveSuccess": "Permintaan Disetujui",
+        "approveError": "Gagal Menyetujui",
+        "rejectSuccess": "Permintaan Ditolak",
+        "rejectError": "Gagal Menolak"
+      },
+      "confirmation": {
+        "title": "Setujui Permintaan Bergabung?",
+        "message": "Ini akan menambahkan anggota ke kelompok",
+        "confirmButton": "Setujui"
+      }
+    },
+    "leaveRequests": {
+      "title": "Permintaan Keluar",
+      "subtitle": "Kelola Permintaan Keluar",
+      "emptyStates": {
+        "noRequests": "Tidak Ada Permintaan"
+      },
+      "table": {
+        "member": "Anggota",
+        "group": "Kelompok",
+        "reason": "Alasan",
+        "joinedAt": "Bergabung Pada",
+        "actions": "Aksi"
+      },
+      "actions": {
+        "approve": "Setujui"
+      },
+      "messages": {
+        "approveSuccess": "Permintaan Disetujui",
+        "approveError": "Gagal Menyetujui"
       }
     }
   }
