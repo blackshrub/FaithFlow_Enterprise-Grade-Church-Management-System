@@ -27,6 +27,7 @@ class UserUpdate(BaseModel):
     role: Optional[Literal['super_admin', 'admin', 'staff']] = None
     is_active: Optional[bool] = None
     password: Optional[str] = Field(None, min_length=6)
+    kiosk_pin: Optional[str] = Field(None, min_length=6, max_length=6, pattern="^[0-9]{6}$")
 
 
 class User(UserBase):
