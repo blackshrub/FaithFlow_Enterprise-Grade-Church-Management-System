@@ -413,7 +413,7 @@ class WebhookService:
         
         try:
             # Generate signature
-            payload_json = json.dumps(test_payload)
+            payload_json = json.dumps(test_payload, sort_keys=True)
             signature = hmac.new(
                 webhook_config["secret_key"].encode(),
                 payload_json.encode(),
@@ -437,18 +437,31 @@ class WebhookService:
                     timeout=timeout
                 )
             
+            # Return detailed response including signature info
             return {
                 "success": response.status_code in [200, 201, 202],
                 "status_code": response.status_code,
                 "response_body": response.text[:500],
-                "message": "Test webhook sent successfully" if response.status_code in [200, 201, 202] else "Test webhook failed"
+                "message": "Test webhook sent successfully" if response.status_code in [200, 201, 202] else "Test webhook failed",
+                "debug_info": {
+                    "payload": test_payload,
+                    "signature": f"sha256={signature}",
+                    "signature_algorithm": "HMAC-SHA256",
+                    "payload_json": payload_json[:200] + "..." if len(payload_json) > 200 else payload_json,
+                    "secret_key_length": len(webhook_config["secret_key"]),
+                    "headers_sent": {k: v for k, v in headers.items() if k != "X-Webhook-Signature"}
+                }
             }
         
         except Exception as e:
             return {
                 "success": False,
                 "error": str(e),
-                "message": f"Failed to send test webhook: {str(e)}"
+                "message": f"Failed to send test webhook: {str(e)}",
+                "debug_info": {
+                    "payload": test_payload,
+                    "secret_key_length": len(webhook_config["secret_key"])
+                }
             }
 
 
