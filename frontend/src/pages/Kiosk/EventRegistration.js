@@ -171,7 +171,7 @@ const EventRegistrationKiosk = () => {
             onError={(error) => {
               console.error('❌ New member error:', error);
             }}
-            preVisitorStatusId=\"pre-visitor-id\"
+            preVisitorStatusId="pre-visitor-id"
           />
         </div>
       </KioskLayout>
