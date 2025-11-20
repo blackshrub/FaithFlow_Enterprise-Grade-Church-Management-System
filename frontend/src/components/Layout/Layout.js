@@ -215,7 +215,24 @@ export default function Layout() {
           {/* Navigation */}
           <nav className="flex-1 overflow-y-auto p-4">
             <ul className="space-y-1">
-              {menuItems.map((item) => {
+              {menuItems.map((item, index) => {
+                // Render section header
+                if (item.type === 'section') {
+                  return (
+                    <li key={`section-${index}`} className="mt-4 mb-2 first:mt-0">
+                      {!sidebarCollapsed && (
+                        <div className="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                          {item.label}
+                        </div>
+                      )}
+                      {sidebarCollapsed && (
+                        <div className="border-t border-gray-200 my-2"></div>
+                      )}
+                    </li>
+                  );
+                }
+                
+                // Render regular menu item
                 const Icon = item.icon;
                 const isActive = window.location.pathname === item.path;
                 const hasSubmenu = item.submenu && item.submenu.length > 0;
@@ -263,66 +280,22 @@ export default function Layout() {
                       <ul className="mt-1 ml-9 space-y-1">
                         {item.submenu.map((subItem) => {
                           const isSubActive = window.location.pathname === subItem.path;
-                          const hasSubSubmenu = subItem.submenu && subItem.submenu.length > 0;
-                          const isSubExpanded = expandedMenus[subItem.key];
-                          const isAnySubChildActive = hasSubSubmenu && subItem.submenu.some(
-                            subSub => window.location.pathname === subSub.path
-                          );
-                          
                           return (
-                            <li key={subItem.path || subItem.key}>
+                            <li key={subItem.path}>
                               <button
                                 onClick={() => {
-                                  if (hasSubSubmenu) {
-                                    toggleSubmenu(subItem.key);
-                                  } else {
-                                    navigate(subItem.path);
-                                    setSidebarOpen(false);
-                                  }
+                                  navigate(subItem.path);
+                                  setSidebarOpen(false);
                                 }}
                                 className={`flex items-center w-full p-2 pl-4 rounded-lg text-sm transition-colors ${
-                                  isSubActive || isAnySubChildActive
+                                  isSubActive
                                     ? 'bg-blue-50 text-blue-600 font-medium'
                                     : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                                 }`}
                               >
                                 <span className="w-1.5 h-1.5 rounded-full bg-current mr-3 opacity-50"></span>
                                 {subItem.label}
-                                {hasSubSubmenu && (
-                                  isSubExpanded ? (
-                                    <ChevronDown className="h-3 w-3 ml-auto" />
-                                  ) : (
-                                    <ChevronRight className="h-3 w-3 ml-auto" />
-                                  )
-                                )}
                               </button>
-                              
-                              {/* Level 3 submenu */}
-                              {hasSubSubmenu && isSubExpanded && (
-                                <ul className="mt-1 ml-6 space-y-1">
-                                  {subItem.submenu.map((subSubItem) => {
-                                    const isSubSubActive = window.location.pathname === subSubItem.path;
-                                    return (
-                                      <li key={subSubItem.path}>
-                                        <button
-                                          onClick={() => {
-                                            navigate(subSubItem.path);
-                                            setSidebarOpen(false);
-                                          }}
-                                          className={`flex items-center w-full p-2 pl-4 rounded-lg text-xs transition-colors ${
-                                            isSubSubActive
-                                              ? 'bg-blue-50 text-blue-600 font-medium'
-                                              : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
-                                          }`}
-                                        >
-                                          <span className="w-1 h-1 rounded-full bg-current mr-2 opacity-50"></span>
-                                          {subSubItem.label}
-                                        </button>
-                                      </li>
-                                    );
-                                  })}
-                                </ul>
-                              )}
                             </li>
                           );
                         })}
