@@ -135,7 +135,7 @@ echo ""
 sleep 1
 
 progress
-echo -e "${MAGENTA}${ROCKET} Step 5/12: Installing MongoDB 7.0...${NC}"
+echo -e "${MAGENTA}${ROCKET} Step 5/14: Installing MongoDB 7.0...${NC}"
 progress
 info "MongoDB will store all your church data securely..."
 apt-get install -y gnupg curl > /dev/null 2>&1
