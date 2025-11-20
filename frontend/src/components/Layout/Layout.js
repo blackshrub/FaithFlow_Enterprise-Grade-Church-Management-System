@@ -346,16 +346,33 @@ export default function Layout() {
         {/* Header */}
         <header className="bg-white shadow-sm z-10">
           <div className="flex items-center justify-between px-4 py-3">
+            {/* Left: Mobile Menu Button */}
             <button
               onClick={() => setSidebarOpen(true)}
               className="lg:hidden"
             >
               <Menu className="h-6 w-6" />
             </button>
-            <div className="flex items-center space-x-4">
-              <div className="text-sm">
-                <span className="text-gray-600">Church:</span>
-                <span className="font-semibold ml-2">{church?.name}</span>
+            
+            {/* Right: User Info */}
+            <div className="flex items-center gap-4 ml-auto">
+              {/* Church Name */}
+              <div className="hidden md:flex items-center gap-2 text-sm">
+                <Church className="h-4 w-4 text-gray-400" />
+                <span className="text-gray-600">{church?.name}</span>
+              </div>
+              
+              {/* User Info */}
+              <div className="flex items-center gap-3 px-3 py-1.5 bg-gray-50 rounded-lg">
+                <div className="text-right">
+                  <div className="text-sm font-semibold text-gray-900">{user?.full_name}</div>
+                  <div className="text-xs text-gray-500">{user?.role?.replace('_', ' ').toUpperCase()}</div>
+                </div>
+                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                  <span className="text-sm font-semibold text-blue-600">
+                    {user?.full_name?.charAt(0).toUpperCase()}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
