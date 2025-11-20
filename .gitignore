@@ -8,12 +8,9 @@ venv/
 env/
 ENV/
 
-# Environment files - .env files will be committed for deployment
-# Note: TEMPORARILY allowing .env files to be committed
-# After deployment, add .env back to ignore local changes
+# Environment files - local overrides only
 .env.local
 .env.*.local
-!.env.example
 
 # IDE
 .vscode/
@@ -54,39 +51,15 @@ frontend/node_modules/.cache/
 
 # TTS model checkpoints (large files)
 backend/models/tts_indonesian/checkpoint.pth
-frontend/node_modules/.cache/default-development/13.pack
-frontend/node_modules/.cache/default-development/8.pack
-frontend/node_modules/.cache/default-development/0.pack
-frontend/node_modules/.cache/default-development/1.pack
-frontend/node_modules/.cache/default-development/2.pack
-frontend/node_modules/.cache/default-development/3.pack
-frontend/node_modules/.cache/default-development/4.pack
-frontend/node_modules/.cache/default-development/6.pack
-frontend/node_modules/.cache/default-development/7.pack
-frontend/node_modules/.cache/default-development/9.pack
-frontend/node_modules/.cache/default-development/10.pack
-frontend/node_modules/.cache/default-development/11.pack
-frontend/node_modules/.cache/default-development/12.pack
-frontend/node_modules/.cache/default-development/14.pack
-frontend/node_modules/.cache/default-development/15.pack
-frontend/node_modules/.cache/default-development/5.pack
-frontend/node_modules/.cache/default-development/16.pack
-frontend/node_modules/.cache/default-development/17.pack
-frontend/node_modules/.cache/default-development/18.pack
-frontend/node_modules/.cache/default-development/20.pack
-frontend/node_modules/.cache/default-development/21.pack
-frontend/node_modules/.cache/default-development/22.pack
-frontend/node_modules/.cache/default-development/23.pack
-frontend/node_modules/.cache/default-development/24.pack
-frontend/node_modules/.cache/default-development/25.pack
-frontend/node_modules/.cache/default-development/26.pack
-frontend/node_modules/.cache/default-development/28.pack
--e 
-# Environment files
-*.env
-*.env.*
+
+# Git
+.git/
+
+# Deployment will use:
+# - Root .env.example (template for all environments)
+# - backend/.env (created from .env.example, contains actual values)
+# - frontend/.env (created from .env.example, contains actual values)
+# 
+# .env files with actual values are committed for deployment
+# .env.local files are for local development overrides (ignored)
 frontend/node_modules/.cache/default-development/27.pack
--e 
-# Environment files
-*.env
-*.env.*
