@@ -1,21 +1,24 @@
 /**
  * Church Selector - First screen for kiosk
  * 
- * User selects their church before accessing kiosk services
+ * User selects their church from dropdown before accessing kiosk
  */
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Church, Globe } from 'lucide-react';
+import { Church, Globe, ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Button } from '../ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { Label } from '../ui/label';
 import api from '../../services/api';
 
 const ChurchSelector = () => {
   const navigate = useNavigate();
   const { i18n } = useTranslation('kiosk');
   const [churches, setChurches] = useState([]);
+  const [selectedChurch, setSelectedChurch] = useState('');
   const [loading, setLoading] = useState(true);
   
   useEffect(() => {
@@ -25,7 +28,13 @@ const ChurchSelector = () => {
   const loadChurches = async () => {
     try {
       const response = await api.get('/churches/public/list');
-      setChurches(response.data || []);
+      const churchList = response.data || [];
+      setChurches(churchList);
+      
+      // Auto-select if only one church
+      if (churchList.length === 1) {
+        setSelectedChurch(churchList[0].id);
+      }
     } catch (error) {
       console.error('Failed to load churches:', error);
     } finally {
@@ -33,14 +42,19 @@ const ChurchSelector = () => {
     }
   };
   
-  const selectChurch = (church) => {
-    // Store selected church
-    localStorage.setItem('kiosk_church_id', church.id);
-    localStorage.setItem('kiosk_church_name', church.name);
-    localStorage.setItem('kiosk_church_data', JSON.stringify(church));
+  const handleContinue = () => {
+    if (!selectedChurch) return;
     
-    // Navigate to kiosk home
-    navigate('/kiosk/home');
+    const church = churches.find(c => c.id === selectedChurch);
+    if (church) {
+      // Store selected church
+      localStorage.setItem('kiosk_church_id', church.id);
+      localStorage.setItem('kiosk_church_name', church.name);
+      localStorage.setItem('kiosk_church_data', JSON.stringify(church));
+      
+      // Navigate to kiosk home
+      navigate('/kiosk/home');
+    }
   };
   
   const toggleLanguage = () => {
@@ -58,7 +72,7 @@ const ChurchSelector = () => {
   
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex flex-col">
-      {/* Language Toggle */}
+      {/* Language Toggle - Top Right */}
       <div className="p-6 flex justify-end">
         <Button
           variant="outline"
@@ -73,71 +87,66 @@ const ChurchSelector = () => {
       
       {/* Main Content */}
       <div className="flex-1 flex items-center justify-center p-6">
-        <div className="w-full max-w-4xl">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-            className="space-y-12"
-          >
-            {/* Header */}
-            <div className="text-center space-y-4">
-              <motion.div
-                className="w-32 h-32 bg-blue-100 rounded-full flex items-center justify-center mx-auto"
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ duration: 0.5, delay: 0.2 }}
-              >
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+          className="w-full max-w-2xl"
+        >
+          <div className="bg-white rounded-3xl shadow-2xl p-12 space-y-8">
+            {/* Icon */}
+            <motion.div
+              className="flex justify-center"
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+            >
+              <div className="w-32 h-32 bg-blue-100 rounded-full flex items-center justify-center">
                 <Church className="w-16 h-16 text-blue-600" />
-              </motion.div>
-              
-              <h1 className="text-5xl md:text-6xl font-bold text-gray-900">
+              </div>
+            </motion.div>
+            
+            {/* Title */}
+            <div className="text-center space-y-3">
+              <h1 className="text-5xl font-bold text-gray-900">
                 {i18n.language === 'en' ? 'Welcome' : 'Selamat Datang'}
               </h1>
-              <p className="text-2xl md:text-3xl text-gray-600">
+              <p className="text-2xl text-gray-600">
                 {i18n.language === 'en' ? 'Please select your church' : 'Silakan pilih gereja Anda'}
               </p>
             </div>
             
-            {/* Church List */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {churches.map((church, index) => (
-                <motion.button
-                  key={church.id}
-                  onClick={() => selectChurch(church)}
-                  className="bg-white rounded-3xl p-8 shadow-lg hover:shadow-2xl transition-all text-left group"
-                  whileHover={{ scale: 1.03 }}
-                  whileTap={{ scale: 0.98 }}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3, delay: index * 0.1 }}
-                >
-                  <div className="flex items-center gap-6">
-                    <div className="w-20 h-20 bg-blue-100 rounded-2xl flex items-center justify-center group-hover:bg-blue-200 transition-colors">
-                      <Church className="w-10 h-10 text-blue-600" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="text-3xl font-bold text-gray-900 mb-2">
-                        {church.name}
-                      </h3>
-                      {church.address && (
-                        <p className="text-lg text-gray-600">
-                          {church.address}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </motion.button>
-              ))}
+            {/* Church Dropdown */}
+            <div className="space-y-4">
+              <Label className="text-2xl font-medium text-gray-700">
+                {i18n.language === 'en' ? 'Church' : 'Gereja'}
+              </Label>
+              <Select value={selectedChurch} onValueChange={setSelectedChurch}>
+                <SelectTrigger className="h-16 text-2xl rounded-xl">
+                  <SelectValue placeholder={i18n.language === 'en' ? 'Select church...' : 'Pilih gereja...'} />
+                </SelectTrigger>
+                <SelectContent>
+                  {churches.map(church => (
+                    <SelectItem key={church.id} value={church.id} className="text-xl py-4">
+                      {church.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             
-            {churches.length === 0 && (
-              <div className="text-center text-2xl text-gray-500 py-12">
-                No churches available
-              </div>
-            )}
-          </motion.div>
-        </div>
+            {/* Continue Button */}
+            <Button
+              onClick={handleContinue}
+              disabled={!selectedChurch}
+              className="w-full h-16 text-xl rounded-xl"
+              size="lg"
+            >
+              {i18n.language === 'en' ? 'Continue' : 'Lanjut'}
+              <ArrowRight className="ml-2 h-6 w-6" />
+            </Button>
+          </div>
+        </motion.div>
       </div>
     </div>
   );
