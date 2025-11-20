@@ -141,7 +141,7 @@ const AppointmentsListPage = () => {
                   <SelectValue placeholder="All Urgency" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Urgency</SelectItem>
+                  <SelectItem value="all">All Urgency</SelectItem>
                   <SelectItem value="low">{t('counseling.urgency_low')}</SelectItem>
                   <SelectItem value="normal">{t('counseling.urgency_normal')}</SelectItem>
                   <SelectItem value="high">{t('counseling.urgency_high')}</SelectItem>
