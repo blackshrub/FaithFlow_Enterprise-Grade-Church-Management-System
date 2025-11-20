@@ -256,11 +256,17 @@ const EventCheckinKiosk = () => {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  <div className="relative rounded-2xl overflow-hidden">
-                    <Webcam ref={webcamRef} className="w-full" />
+                  <div className="relative rounded-2xl overflow-hidden bg-black">
+                    <video ref={videoRef} className="w-full" />
                     <div className="absolute inset-0 border-4 border-blue-500 rounded-2xl pointer-events-none" />
                   </div>
-                  <Button variant="outline" onClick={() => setScanning(false)} className="w-full h-14 text-xl rounded-xl">
+                  <p className="text-center text-lg text-gray-600">Point camera at QR code</p>
+                  <Button variant="outline" onClick={() => {
+                    setScanning(false);
+                    if (qrScannerRef.current) {
+                      qrScannerRef.current.stop();
+                    }
+                  }} className="w-full h-14 text-xl rounded-xl">
                     Stop Scanning
                   </Button>
                 </div>
