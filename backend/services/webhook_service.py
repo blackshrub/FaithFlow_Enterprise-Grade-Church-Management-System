@@ -33,14 +33,23 @@ class WebhookService:
         """
         try:
             # Find active webhooks for this church that subscribe to this event
+            logger.info(f"Searching webhooks for event_type={event_type}, church_id={church_id}")
+            
             webhooks = await db.webhook_configs.find({
                 "church_id": church_id,
                 "is_active": True,
                 "events": event_type
             }).to_list(100)
             
+            logger.info(f"Found {len(webhooks)} active webhook(s) for {event_type}")
+            
             if not webhooks:
-                logger.debug(f"No active webhooks found for {event_type} in church {church_id}")
+                # Log all webhooks for this church to debug
+                all_webhooks = await db.webhook_configs.find({"church_id": church_id}).to_list(100)
+                logger.warning(f"No active webhooks found for {event_type} in church {church_id}")
+                logger.debug(f"Total webhooks for church: {len(all_webhooks)}")
+                for wh in all_webhooks:
+                    logger.debug(f"  Webhook '{wh.get('name')}': active={wh.get('is_active')}, events={wh.get('events')}")
                 return
             
             logger.info(f"Triggering {len(webhooks)} webhook(s) for {event_type}")
