@@ -101,7 +101,8 @@ function App() {
             <Route path="/login" element={<Navigate to="/admin" replace />} />
             
             {/* Kiosk Routes - Public, Full-screen */}
-            <Route path="/kiosk" element={<KioskHome />} />
+            <Route path="/kiosk" element={<ChurchSelector />} />
+            <Route path="/kiosk/home" element={<KioskHome />} />
             <Route path="/kiosk/events/register" element={<EventRegistrationKiosk />} />
             <Route path="/kiosk/prayer" element={<PrayerRequestKiosk />} />
             <Route path="/kiosk/counseling" element={<CounselingKiosk />} />
