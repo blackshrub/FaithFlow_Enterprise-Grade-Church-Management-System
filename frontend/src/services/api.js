@@ -1,25 +1,20 @@
 import axios from 'axios';
 
 // Force HTTPS for API calls to avoid mixed content issues
-// Use environment variable if available, otherwise construct from window.location
+// CRITICAL: Always use current window.location to avoid mixed content
 const getAPIBaseURL = () => {
-  // Check if we have explicit backend URL from env
-  const envURL = process.env.REACT_APP_BACKEND_URL;
-  console.log('🔍 Raw REACT_APP_BACKEND_URL:', envURL);
+  // ALWAYS use window.location.origin to ensure same protocol
+  const origin = window.location.origin;
+  console.log('🔍 window.location.origin:', origin);
+  console.log('🔍 window.location.protocol:', window.location.protocol);
   
-  if (envURL) {
-    // Force HTTPS even if env has HTTP
-    const secureURL = envURL.replace('http://', 'https://');
-    const finalURL = `${secureURL}/api`;
-    console.log('✅ Using env URL (forced HTTPS):', finalURL);
-    return finalURL;
-  }
+  // Ensure HTTPS
+  const secureOrigin = origin.replace('http://', 'https://');
+  const finalURL = `${secureOrigin}/api`;
   
-  // Otherwise, always use HTTPS with current host
-  const host = window.location.host;
-  const fallbackURL = `https://${host}/api`;
-  console.log('✅ Using fallback URL:', fallbackURL);
-  return fallbackURL;
+  console.log('✅ Final API Base URL:', finalURL);
+  
+  return finalURL;
 };
 
 const API_BASE_URL = getAPIBaseURL();
