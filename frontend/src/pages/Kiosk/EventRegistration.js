@@ -25,7 +25,10 @@ import { format, parseISO } from 'date-fns';
 
 const EventRegistrationKiosk = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { t } = useTranslation('kiosk');
+  
+  const churchId = location.state?.churchId || localStorage.getItem('kiosk_church_id');
   
   const [step, setStep] = useState('phone'); // phone, otp_existing, otp_new, select_event, confirm, success
   const [phone, setPhone] = useState('');
