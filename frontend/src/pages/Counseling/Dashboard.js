@@ -184,6 +184,7 @@ const CounselingDashboard = () => {
                     <div className="flex items-center gap-2">
                       <MemberAvatar 
                         name={appointment.member_name}
+                        photo={appointment.member_photo}
                         size="sm"
                       />
                       <span className="font-medium">{appointment.member_name}</span>
