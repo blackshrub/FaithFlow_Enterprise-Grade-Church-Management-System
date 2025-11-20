@@ -9,36 +9,29 @@ import api from './api';
 // ==================== IDENTITY & AUTH ====================
 
 export const kioskApi = {
-  // Phone lookup
-  lookupMemberByPhone: async (phone) => {
-    // Remove + and other formatting for search
-    const cleanPhone = phone.replace(/[\+\-\s\(\)]/g, '');
-    
-    console.log('🔍 Looking up phone:', phone, '→ Clean:', cleanPhone);
-    
-    // Search by phone using 'search' parameter (backend uses regex)
-    const response = await api.get('/members/', {
-      params: { 
-        search: cleanPhone,
-        limit: 5
-      }
-    });
-    
-    const members = response.data?.data || [];
-    console.log('🔍 Search results:', members.length, 'members found');
-    
-    if (members.length > 0) {
-      // Find exact match
-      const exactMatch = members.find(m => {
-        const memberPhone = (m.phone_whatsapp || '').replace(/[\+\-\s\(\)]/g, '');
-        return memberPhone === cleanPhone || memberPhone.endsWith(cleanPhone.replace(/^0/, ''));
+  // Phone lookup - PUBLIC endpoint for kiosk
+  lookupMemberByPhone: async (phone, church_id) => {
+    try {
+      const response = await api.get('/kiosk/lookup-member', {
+        params: { 
+          phone: phone,
+          church_id: church_id
+        }
       });
       
-      console.log('🔍 Exact match:', exactMatch ? exactMatch.full_name : 'None');
-      return exactMatch || members[0]; // Return exact match or first result
+      console.log('🔍 Kiosk member lookup response:', response.data);
+      
+      if (response.data?.success && response.data?.member) {
+        console.log('✅ Member found:', response.data.member.full_name);
+        return response.data.member;
+      } else {
+        console.log('⚠️ Member not found');
+        return null;
+      }
+    } catch (error) {
+      console.error('❌ Member lookup error:', error);
+      return null;
     }
-    
-    return null;
   },
 
   // Send OTP (using existing WhatsApp gateway)
