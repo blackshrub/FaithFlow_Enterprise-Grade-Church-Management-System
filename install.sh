@@ -96,7 +96,7 @@ warn() {
 }
 
 progress
-echo -e "${MAGENTA}${ROCKET} Step 1/12: Preparing your system...${NC}"
+echo -e "${MAGENTA}${ROCKET} Step 1/14: Preparing your system...${NC}"
 progress
 info "Updating package lists and upgrading system..."
 apt update > /dev/null 2>&1 && apt upgrade -y > /dev/null 2>&1
