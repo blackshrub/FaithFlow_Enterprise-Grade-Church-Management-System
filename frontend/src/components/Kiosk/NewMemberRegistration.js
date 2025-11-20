@@ -39,9 +39,22 @@ const NewMemberRegistration = ({ phone, onComplete, onError, preVisitorStatusId 
                          formData.date_of_birth;
   
   const capturePhoto = () => {
-    const imageSrc = webcamRef.current.getScreenshot();
-    setFormData({ ...formData, photo_base64: imageSrc });
-    setShowCamera(false);
+    // Start 3-second countdown
+    setCountdown(3);
+    
+    const countdownInterval = setInterval(() => {
+      setCountdown(prev => {
+        if (prev <= 1) {
+          clearInterval(countdownInterval);
+          // Capture photo
+          const imageSrc = webcamRef.current.getScreenshot();
+          setFormData({ ...formData, photo_base64: imageSrc });
+          setShowCamera(false);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
   };
   
   const handleOtpComplete = async (code) => {
