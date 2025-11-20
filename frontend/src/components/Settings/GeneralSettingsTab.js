@@ -57,7 +57,22 @@ export default function GeneralSettingsTab() {
   }, [settings]);
 
   const handleSave = () => {
-    updateSettings.mutate(formData);
+    console.log('💾 Saving settings:', formData);
+    console.log('📱 WhatsApp config:', {
+      url: formData.whatsapp_api_url,
+      username: formData.whatsapp_username,
+      password: formData.whatsapp_password ? '***' : '(empty)'
+    });
+    updateSettings.mutate(formData, {
+      onSuccess: (data) => {
+        console.log('✅ Settings saved, response:', data);
+        console.log('📱 WhatsApp in response:', {
+          url: data?.whatsapp_api_url,
+          username: data?.whatsapp_username,
+          password: data?.whatsapp_password ? '***' : '(empty)'
+        });
+      }
+    });
   };
 
   if (isLoading) {
