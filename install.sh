@@ -387,20 +387,17 @@ info "Creating church and admin account..."
 cd "$INSTALL_DIR/backend"
 source venv/bin/activate
 
-python3 << INIT_SCRIPT
+python3 << 'INIT_SCRIPT'
 import asyncio
 from motor.motor_asyncio import AsyncIOMotorClient
 from datetime import datetime
 import uuid
 import bcrypt
-import os
-from dotenv import load_dotenv
-
-load_dotenv()
 
 async def initialize():
-    client = AsyncIOMotorClient(os.environ.get('MONGO_URL', 'mongodb://localhost:27017'))
-    db = client[os.environ.get('DB_NAME', 'faithflow_production')]
+    # Use default MongoDB (installer runs before .env is configured)
+    client = AsyncIOMotorClient('mongodb://localhost:27017')
+    db = client['faithflow_production']
     
     # Check if church already exists
     existing_church = await db.churches.find_one({})
@@ -412,8 +409,8 @@ async def initialize():
         church_id = str(uuid.uuid4())
         church = {
             "id": church_id,
-            "name": "${CHURCH_NAME}",
-            "address": "${CHURCH_ADDRESS}",
+            "name": "CHURCH_NAME_PLACEHOLDER",
+            "address": "CHURCH_ADDRESS_PLACEHOLDER",
             "phone": "",
             "email": "",
             "created_at": datetime.utcnow(),
@@ -423,20 +420,20 @@ async def initialize():
         print(f"✅ Church created: {church['name']}")
     
     # Check if admin exists
-    existing_admin = await db.users.find_one({"email": "${ADMIN_EMAIL}"})
+    existing_admin = await db.users.find_one({"email": "ADMIN_EMAIL_PLACEHOLDER"})
     if existing_admin:
         print("⚠️  Admin user already exists, skipping creation...")
     else:
         # Create admin user
-        password = "${ADMIN_PASSWORD}"
+        password = "ADMIN_PASSWORD_PLACEHOLDER"
         hashed = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
         
         user = {
             "id": str(uuid.uuid4()),
             "church_id": church_id,
-            "email": "${ADMIN_EMAIL}",
-            "full_name": "${ADMIN_NAME}",
-            "phone": "${ADMIN_PHONE}",
+            "email": "ADMIN_EMAIL_PLACEHOLDER",
+            "full_name": "ADMIN_NAME_PLACEHOLDER",
+            "phone": "ADMIN_PHONE_PLACEHOLDER",
             "password_hash": hashed.decode('utf-8'),
             "role": "admin",
             "is_active": True,
@@ -498,10 +495,108 @@ async def initialize():
         print("✅ Church settings created")
     
     client.close()
-    print("\\n🎉 Database initialization complete!")
+    print("\n🎉 Database initialization complete!")
 
 asyncio.run(initialize())
 INIT_SCRIPT
+
+# Replace placeholders with actual values using sed
+sed -i "s/CHURCH_NAME_PLACEHOLDER/${CHURCH_NAME}/g" /tmp/init_output.log 2>/dev/null || true
+sed -i "s/CHURCH_ADDRESS_PLACEHOLDER/${CHURCH_ADDRESS}/g" /tmp/init_output.log 2>/dev/null || true
+sed -i "s/ADMIN_EMAIL_PLACEHOLDER/${ADMIN_EMAIL}/g" /tmp/init_output.log 2>/dev/null || true
+sed -i "s/ADMIN_NAME_PLACEHOLDER/${ADMIN_NAME}/g" /tmp/init_output.log 2>/dev/null || true
+sed -i "s/ADMIN_PHONE_PLACEHOLDER/${ADMIN_PHONE}/g" /tmp/init_output.log 2>/dev/null || true
+sed -i "s/ADMIN_PASSWORD_PLACEHOLDER/${ADMIN_PASSWORD}/g" /tmp/init_output.log 2>/dev/null || true
+
+# Actually run with replacements
+python3 << INIT_SCRIPT2
+import asyncio
+from motor.motor_asyncio import AsyncIOMotorClient
+from datetime import datetime
+import uuid
+import bcrypt
+
+async def initialize():
+    client = AsyncIOMotorClient('mongodb://localhost:27017')
+    db = client['faithflow_production']
+    
+    church_id = str(uuid.uuid4())
+    church = {
+        "id": church_id,
+        "name": """${CHURCH_NAME}""",
+        "address": """${CHURCH_ADDRESS}""",
+        "phone": "",
+        "email": "",
+        "created_at": datetime.utcnow(),
+        "updated_at": datetime.utcnow()
+    }
+    await db.churches.insert_one(church)
+    print(f"✅ Church created: {church['name']}")
+    
+    password = """${ADMIN_PASSWORD}"""
+    hashed = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+    
+    user = {
+        "id": str(uuid.uuid4()),
+        "church_id": church_id,
+        "email": """${ADMIN_EMAIL}""",
+        "full_name": """${ADMIN_NAME}""",
+        "phone": """${ADMIN_PHONE}""",
+        "password_hash": hashed.decode('utf-8'),
+        "role": "admin",
+        "is_active": True,
+        "kiosk_pin": "000000",
+        "created_at": datetime.utcnow(),
+        "updated_at": datetime.utcnow()
+    }
+    await db.users.insert_one(user)
+    print(f"✅ Admin user created: {user['email']}")
+    
+    previsitor_status_id = str(uuid.uuid4())
+    previsitor = {
+        "id": previsitor_status_id,
+        "church_id": church_id,
+        "name": "Pre-Visitor",
+        "description": "Person registered via kiosk",
+        "color": "#FFA500",
+        "is_active": True,
+        "created_at": datetime.utcnow(),
+        "updated_at": datetime.utcnow()
+    }
+    await db.member_statuses.insert_one(previsitor)
+    
+    settings = {
+        "id": str(uuid.uuid4()),
+        "church_id": church_id,
+        "date_format": "DD-MM-YYYY",
+        "time_format": "24h",
+        "currency": "IDR",
+        "timezone": "Asia/Jakarta",
+        "default_language": "id",
+        "enable_whatsapp_notifications": False,
+        "whatsapp_api_url": "",
+        "whatsapp_username": "",
+        "whatsapp_password": "",
+        "kiosk_settings": {
+            "enable_kiosk": True,
+            "enable_event_registration": True,
+            "enable_prayer": True,
+            "enable_counseling": True,
+            "enable_groups": True,
+            "enable_profile_update": True,
+            "previsitor_status_id": previsitor_status_id,
+            "timeout_minutes": 2
+        },
+        "created_at": datetime.utcnow(),
+        "updated_at": datetime.utcnow()
+    }
+    await db.church_settings.insert_one(settings)
+    print("✅ Church settings created")
+    
+    client.close()
+
+asyncio.run(initialize())
+INIT_SCRIPT2
 
 if [ $? -eq 0 ]; then
     success "Church and admin account created successfully!"
