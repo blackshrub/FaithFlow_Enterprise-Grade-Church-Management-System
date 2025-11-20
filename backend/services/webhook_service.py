@@ -402,6 +402,8 @@ class WebhookService:
         test_payload = {
             "event_id": str(uuid.uuid4()),
             "event_type": "test",
+            "church_id": webhook_config.get("church_id"),
+            "campus_id": webhook_config.get("church_id"),  # Alias for external apps
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "message": "This is a test webhook from FaithFlow",
             "webhook_name": webhook_config["name"]
