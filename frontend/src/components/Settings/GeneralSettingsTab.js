@@ -21,6 +21,9 @@ export default function GeneralSettingsTab() {
     enable_whatsapp_notifications: false,
     whatsapp_send_rsvp_confirmation: true,
     whatsapp_send_group_notifications: true,
+    whatsapp_api_url: '',
+    whatsapp_username: '',
+    whatsapp_password: '',
     group_categories: {
       cell_group: 'Cell Group / Small Group',
       ministry_team: 'Ministry Team',
@@ -40,6 +43,9 @@ export default function GeneralSettingsTab() {
         enable_whatsapp_notifications: settings.enable_whatsapp_notifications || false,
         whatsapp_send_rsvp_confirmation: settings.whatsapp_send_rsvp_confirmation !== false,
         whatsapp_send_group_notifications: settings.whatsapp_send_group_notifications !== false,
+        whatsapp_api_url: settings.whatsapp_api_url || '',
+        whatsapp_username: settings.whatsapp_username || '',
+        whatsapp_password: settings.whatsapp_password || '',
         group_categories: settings.group_categories || {
           cell_group: 'Cell Group / Small Group',
           ministry_team: 'Ministry Team',
