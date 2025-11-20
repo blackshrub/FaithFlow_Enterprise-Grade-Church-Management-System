@@ -241,8 +241,24 @@ yarn install > /dev/null 2>&1
 
 # Create .env if doesn't exist
 if [ ! -f .env ]; then
-    cp .env.example .env
-    success "Created frontend/.env from template"
+    if [ -f .env.example ]; then
+        cp .env.example .env
+        success "Created frontend/.env from template"
+    else
+        warn "frontend/.env.example not found, creating basic .env..."
+        cat > .env << 'FRONTEND_ENV'
+# Backend API URL
+REACT_APP_BACKEND_URL=http://localhost
+
+# WebSocket configuration
+WDS_SOCKET_PORT=443
+
+# Feature flags
+REACT_APP_ENABLE_VISUAL_EDITS=false
+ENABLE_HEALTH_CHECK=false
+FRONTEND_ENV
+        success "Created frontend/.env with defaults"
+    fi
 else
     info "frontend/.env already exists, keeping it"
 fi
