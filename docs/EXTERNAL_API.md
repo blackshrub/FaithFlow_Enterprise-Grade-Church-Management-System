@@ -412,22 +412,58 @@ asyncio.run(full_member_sync())
 
 ```python
 # 1. Do initial full sync (above)
-# 2. Configure webhook in FaithFlow Settings
+# 2. Configure webhook in FaithFlow Settings → Webhooks
 # 3. Receive real-time updates via webhook
 # 4. No polling needed!
 
-@app.post("/api/webhooks/members")
+import hmac
+import hashlib
+import json
+
+@app.post("/api/webhooks/faithflow")
 async def receive_member_webhook(request: Request):
-    payload = await request.json()
+    # Get raw body for signature verification
+    body_bytes = await request.body()
+    body_text = body_bytes.decode('utf-8')
+    payload = json.loads(body_text)
     
-    if payload["event_type"] == "member.created":
-        await create_local_member(payload["data"])
-    elif payload["event_type"] == "member.updated":
-        await update_local_member(payload["data"])
-    elif payload["event_type"] == "member.deleted":
-        await delete_local_member(payload["data"])
+    # STEP 1: Verify signature (CRITICAL for security!)
+    signature_header = request.headers.get("X-Webhook-Signature")
+    secret_key = "YOUR_WEBHOOK_SECRET"  # From FaithFlow webhook config
     
-    return {"status": "success"}
+    expected_signature = hmac.new(
+        secret_key.encode('utf-8'),
+        body_bytes,
+        hashlib.sha256
+    ).hexdigest()
+    
+    if signature_header != expected_signature:
+        raise HTTPException(status_code=401, detail="Invalid webhook signature")
+    
+    # STEP 2: Process event
+    event_type = payload["event_type"]
+    member_data = payload["data"]
+    member_id = payload.get("member_id")  # Top-level member_id
+    
+    if event_type == "member.created":
+        await create_local_member(member_data)
+        logger.info(f"Member created: {member_data['full_name']}")
+    
+    elif event_type == "member.updated":
+        # Use member_id to find and update
+        await update_local_member(member_id, member_data)
+        logger.info(f"Member updated: {member_data['full_name']}")
+        
+        # Optional: Check what changed
+        if "changes" in payload:
+            logger.info(f"Fields changed: {payload['changes'].keys()}")
+    
+    elif event_type == "member.deleted":
+        await delete_local_member(member_id)
+        logger.info(f"Member deleted: {member_id}")
+    
+    return {"success": true, "message": "Webhook processed"}
+
 ```
 
 ---
