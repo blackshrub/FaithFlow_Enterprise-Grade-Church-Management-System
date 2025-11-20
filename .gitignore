@@ -13,6 +13,10 @@ ENV/
 .env.local
 .env.*.local
 
+# IMPORTANT: Allow .env.example files (needed for deployment)
+!.env.example
+!**/.env.example
+
 # IDE
 .vscode/
 .idea/
