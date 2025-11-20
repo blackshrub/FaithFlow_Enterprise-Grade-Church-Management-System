@@ -28,6 +28,25 @@ const PhoneStep = ({ onMemberFound, onMemberNotFound, onError }) => {
       return;
     }
     
+    // Normalize phone number for WhatsApp (Indonesia)
+    let normalizedPhone = phone.trim();
+    
+    // Remove any spaces, dashes, or special characters
+    normalizedPhone = normalizedPhone.replace(/[\s\-\(\)]/g, '');
+    
+    // If starts with 0, replace with 62 (Indonesia country code)
+    if (normalizedPhone.startsWith('0')) {
+      normalizedPhone = '62' + normalizedPhone.substring(1);
+    }
+    
+    // If doesn't start with +, add it
+    if (!normalizedPhone.startsWith('+')) {
+      normalizedPhone = '+' + normalizedPhone;
+    }
+    
+    console.log('Original phone:', phone);
+    console.log('Normalized phone:', normalizedPhone);
+    
     setLoading(true);
     
     try {
