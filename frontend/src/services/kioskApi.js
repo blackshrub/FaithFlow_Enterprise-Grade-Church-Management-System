@@ -11,32 +11,34 @@ import api from './api';
 export const kioskApi = {
   // Phone lookup
   lookupMemberByPhone: async (phone) => {
-    // Try with + prefix first
-    let response = await api.get('/members/', {
-      params: { phone_whatsapp: phone, limit: 1 }
+    // Remove + and other formatting for search
+    const cleanPhone = phone.replace(/[\+\-\s\(\)]/g, '');
+    
+    console.log('🔍 Looking up phone:', phone, '→ Clean:', cleanPhone);
+    
+    // Search by phone using 'search' parameter (backend uses regex)
+    const response = await api.get('/members/', {
+      params: { 
+        search: cleanPhone,
+        limit: 5
+      }
     });
-    let members = response.data?.data || [];
     
-    // If not found and phone has +, try without +
-    if (members.length === 0 && phone.startsWith('+')) {
-      const phoneWithoutPlus = phone.substring(1);
-      response = await api.get('/members/', {
-        params: { phone_whatsapp: phoneWithoutPlus, limit: 1 }
+    const members = response.data?.data || [];
+    console.log('🔍 Search results:', members.length, 'members found');
+    
+    if (members.length > 0) {
+      // Find exact match
+      const exactMatch = members.find(m => {
+        const memberPhone = (m.phone_whatsapp || '').replace(/[\+\-\s\(\)]/g, '');
+        return memberPhone === cleanPhone || memberPhone.endsWith(cleanPhone.replace(/^0/, ''));
       });
-      members = response.data?.data || [];
+      
+      console.log('🔍 Exact match:', exactMatch ? exactMatch.full_name : 'None');
+      return exactMatch || members[0]; // Return exact match or first result
     }
     
-    // If still not found and phone doesn't have +62, try with 62
-    if (members.length === 0 && !phone.startsWith('62') && !phone.startsWith('+62')) {
-      const phoneWith62 = '62' + (phone.startsWith('0') ? phone.substring(1) : phone);
-      response = await api.get('/members/', {
-        params: { phone_whatsapp: phoneWith62, limit: 1 }
-      });
-      members = response.data?.data || [];
-    }
-    
-    console.log('🔍 Phone lookup attempts:', phone, '→', members.length > 0 ? 'FOUND' : 'NOT FOUND');
-    return members.length > 0 ? members[0] : null;
+    return null;
   },
 
   // Send OTP (using existing WhatsApp gateway)
