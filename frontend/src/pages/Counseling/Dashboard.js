@@ -54,16 +54,46 @@ const CounselingDashboard = () => {
     }
   };
 
+  const getUrgencyLabel = (urgency) => {
+    const labels = {
+      crisis: 'Crisis',
+      high: 'High',
+      normal: 'Normal',
+      low: 'Low'
+    };
+    return labels[urgency] || urgency;
+  };
+
+  const getStatusLabel = (status) => {
+    const labels = {
+      approved: 'Approved',
+      pending: 'Pending',
+      completed: 'Completed',
+      rejected: 'Rejected',
+      canceled: 'Canceled'
+    };
+    return labels[status] || status;
+  };
+
+  const getTypeLabel = (type) => {
+    const labels = {
+      counseling: 'Counseling',
+      prayer: 'Prayer',
+      pastoral_visit: 'Pastoral Visit'
+    };
+    return labels[type] || type;
+  };
+
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">{t('title')}</h1>
-          <p className="text-gray-500 mt-1">{t('dashboard')}</p>
+          <h1 className="text-3xl font-bold">Counseling & Prayer</h1>
+          <p className="text-gray-500 mt-1">Dashboard</p>
         </div>
         <Button onClick={() => navigate('/counseling/appointments/new')}>
-          {t('create_appointment')}
+          Create Appointment
         </Button>
       </div>
 
@@ -72,14 +102,14 @@ const CounselingDashboard = () => {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              {t('upcoming_appointments')}
+              Upcoming Appointments
             </CardTitle>
             <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.upcoming}</div>
             <p className="text-xs text-muted-foreground">
-              Next 7 days
+              Next 7 Days
             </p>
           </CardContent>
         </Card>
@@ -87,14 +117,14 @@ const CounselingDashboard = () => {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              {t('pending_approvals')}
+              Pending Approvals
             </CardTitle>
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.pending}</div>
             <p className="text-xs text-muted-foreground">
-              Awaiting review
+              Awaiting Review
             </p>
           </CardContent>
         </Card>
@@ -109,7 +139,7 @@ const CounselingDashboard = () => {
           <CardContent>
             <div className="text-2xl font-bold text-orange-500">{stats.high_urgency}</div>
             <p className="text-xs text-muted-foreground">
-              Needs attention
+              Needs Attention
             </p>
           </CardContent>
         </Card>
@@ -124,7 +154,7 @@ const CounselingDashboard = () => {
           <CardContent>
             <div className="text-2xl font-bold text-red-500">{stats.crisis}</div>
             <p className="text-xs text-muted-foreground">
-              Immediate action required
+              Immediate Action Required
             </p>
           </CardContent>
         </Card>
@@ -135,9 +165,9 @@ const CounselingDashboard = () => {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
-              <span>{t('pending_approvals')}</span>
+              <span>Pending Approvals</span>
               <Button variant="ghost" size="sm" onClick={() => navigate('/counseling/appointments?status=pending')}>
-                {t('view_all')}
+                View All
               </Button>
             </CardTitle>
           </CardHeader>
@@ -153,7 +183,7 @@ const CounselingDashboard = () => {
                     <div className="flex items-center gap-2">
                       <span className="font-medium">{appointment.member_name}</span>
                       <Badge variant={getUrgencyColor(appointment.urgency)}>
-                        {t(`urgency_${appointment.urgency}`)}
+                        {getUrgencyLabel(appointment.urgency)}
                       </Badge>
                     </div>
                     <div className="text-sm text-gray-500 mt-1">
@@ -162,10 +192,10 @@ const CounselingDashboard = () => {
                   </div>
                   <div className="flex gap-2">
                     <Button size="sm" variant="outline">
-                      {t('approve')}
+                      Approve
                     </Button>
                     <Button size="sm" variant="ghost">
-                      {t('reject')}
+                      Reject
                     </Button>
                   </div>
                 </div>
@@ -179,9 +209,9 @@ const CounselingDashboard = () => {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
-            <span>{t('upcoming_appointments')}</span>
+            <span>Upcoming Appointments</span>
             <Button variant="ghost" size="sm" onClick={() => navigate('/counseling/appointments')}>
-              {t('view_all')}
+              View All
             </Button>
           </CardTitle>
         </CardHeader>
@@ -190,7 +220,7 @@ const CounselingDashboard = () => {
             <div className="text-center py-8 text-gray-500">Loading...</div>
           ) : upcomingAppointments.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
-              {t('no_appointments')}
+              No Appointments Found
             </div>
           ) : (
             <div className="space-y-3">
@@ -204,10 +234,10 @@ const CounselingDashboard = () => {
                     <div className="flex items-center gap-2">
                       <span className="font-medium">{appointment.member_name}</span>
                       <Badge variant={getStatusColor(appointment.status)}>
-                        {t(`status_${appointment.status}`)}
+                        {getStatusLabel(appointment.status)}
                       </Badge>
                       <Badge variant="outline">
-                        {t(`type_${appointment.type}`)}
+                        {getTypeLabel(appointment.type)}
                       </Badge>
                     </div>
                     <div className="text-sm text-gray-500 mt-1">
