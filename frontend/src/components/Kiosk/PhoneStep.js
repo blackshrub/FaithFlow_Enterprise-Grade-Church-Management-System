@@ -52,17 +52,28 @@ const PhoneStep = ({ onMemberFound, onMemberNotFound, onError }) => {
     try {
       const member = await kioskApi.lookupMemberByPhone(normalizedPhone);
       
+      console.log('👤 Member lookup result:', member);
+      
       if (member) {
         // Existing member - send OTP automatically
-        await kioskApi.sendOTP(normalizedPhone);
+        console.log('✅ Member found, sending OTP...');
+        const otpResult = await kioskApi.sendOTP(normalizedPhone);
+        console.log('📨 OTP send result:', otpResult);
+        console.log('🔐 OTP CODE (for testing):', otpResult.debug_code);
+        
         onMemberFound(member, normalizedPhone);
       } else {
         // New member - send OTP automatically
-        await kioskApi.sendOTP(normalizedPhone);
+        console.log('⚠️ Member not found, creating new, sending OTP...');
+        const otpResult = await kioskApi.sendOTP(normalizedPhone);
+        console.log('📨 OTP send result:', otpResult);
+        console.log('🔐 OTP CODE (for testing):', otpResult.debug_code);
+        
         onMemberNotFound(normalizedPhone);
       }
     } catch (err) {
-      console.error('Phone lookup error:', err);
+      console.error('❌ Phone lookup error:', err);
+      console.error('❌ Error response:', err.response?.data);
       setError(t('phone.lookup_error'));
       if (onError) onError(err);
     } finally {
