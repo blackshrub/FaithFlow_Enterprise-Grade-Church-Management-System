@@ -2197,12 +2197,150 @@ Example: `/api/members/?skip=0&limit=50`
 
 ---
 
-## Webhooks (Future)
+## Member Status Automation API
 
-Not implemented yet. Planned for:
-- RSVP confirmations
-- Event reminders
-- Payment notifications
+### List Member Statuses
+**GET** `/api/v1/member-status/statuses`
+
+Returns all member statuses for current church (sorted by display_order).
+
+### Create Member Status
+**POST** `/api/v1/member-status/statuses`
+
+Create a new member status with color, description, and display order.
+
+### List Status Rules
+**GET** `/api/v1/member-status/rules`
+
+Returns all automation rules (sorted by priority).
+
+### Create Status Rule
+**POST** `/api/v1/member-status/rules`
+
+Create automation rule with age/attendance conditions.
+
+### Simulate Rule
+**POST** `/api/v1/member-status/simulate`
+
+Preview which members will be affected by a rule before creating it.
+
+**Request:**
+```json
+{
+  "rule_type": "global",
+  "conditions": [
+    {"type": "age", "operator": "<", "value": 15}
+  ],
+  "action_status_id": "status-uuid"
+}
+```
+
+**Response:**
+```json
+{
+  "total_members": 807,
+  "matched_count": 15,
+  "matched_members": [{...}],
+  "target_status_name": "NextGen"
+}
+```
+
+### Run Automation
+**POST** `/api/v1/member-status/run-once`
+
+Manually trigger status automation for all members.
+
+### List Conflicts
+**GET** `/api/v1/member-status/conflicts?status=open`
+
+Get members with conflicting rules.
+
+### Resolve Conflict
+**POST** `/api/v1/member-status/conflicts/{id}/resolve`
+
+Manually resolve a conflict by selecting target status.
+
+### Member Status History
+**GET** `/api/v1/member-status/members/{id}/history`
+
+Get complete audit trail of status changes for a member.
+
+---
+
+## Trash Bin API
+
+### List Trash
+**GET** `/api/members/trash`
+
+Returns soft-deleted members (auto-purged after 14 days).
+
+### Restore Member
+**POST** `/api/members/{id}/restore`
+
+Restore a deleted member from trash bin.
+
+### Permanent Delete
+**DELETE** `/api/members/{id}/permanent`
+
+Permanently delete member (cannot be undone).
+
+---
+
+## Webhooks
+
+### Create Webhook
+**POST** `/api/webhooks/`
+
+Configure webhook for real-time member data sync.
+
+**Request:**
+```json
+{
+  "name": "External Sync",
+  "webhook_url": "https://external-app.com/api/webhook",
+  "secret_key": "your-secret-key",
+  "events": ["member.created", "member.updated", "member.deleted"],
+  "is_active": true
+}
+```
+
+### Webhook Payload Format
+
+**Signature:** HMAC-SHA256, no prefix
+**Header:** `X-Webhook-Signature: {hex_hash}`
+**JSON:** Compact (no spaces), natural key order
+
+```json
+{
+  "event_id": "uuid",
+  "event_type": "member.updated",
+  "church_id": "uuid",
+  "campus_id": "uuid",
+  "member_id": "uuid",
+  "timestamp": "2025-11-19T10:00:00Z",
+  "church": {"id": "uuid", "name": "Church Name"},
+  "data": { /* full member object */ },
+  "changes": { /* for updates only */ }
+}
+```
+
+---
+
+## Public API (No Authentication)
+
+### Get Member Status
+**GET** `/api/public/members/{id}/status`
+
+Returns member's current status without authentication (for mobile apps).
+
+**Response:**
+```json
+{
+  "status_id": "uuid",
+  "status_name": "Full Member",
+  "tag": "nextgen"  // Optional derived tag
+}
+```
 
 ---
 
