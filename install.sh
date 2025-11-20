@@ -150,7 +150,7 @@ echo ""
 sleep 1
 
 progress
-echo -e "${MAGENTA}${ROCKET} Step 6/12: Starting MongoDB...${NC}"
+echo -e "${MAGENTA}${ROCKET} Step 6/14: Starting MongoDB...${NC}"
 progress
 systemctl start mongod
 systemctl enable mongod > /dev/null 2>&1
