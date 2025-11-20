@@ -111,12 +111,16 @@ export default function PrayerRequestsList() {
               <SelectContent>
                 <SelectItem value="all">{t('common.all')}</SelectItem>
                 <SelectItem value="healing">{t('prayerRequests.categories.healing')}</SelectItem>
+                <SelectItem value="health">{t('prayerRequests.categories.health')}</SelectItem>
                 <SelectItem value="family">{t('prayerRequests.categories.family')}</SelectItem>
                 <SelectItem value="work">{t('prayerRequests.categories.work')}</SelectItem>
                 <SelectItem value="financial">{t('prayerRequests.categories.financial')}</SelectItem>
+                <SelectItem value="provision">{t('prayerRequests.categories.provision')}</SelectItem>
                 <SelectItem value="spiritual">{t('prayerRequests.categories.spiritual')}</SelectItem>
                 <SelectItem value="guidance">{t('prayerRequests.categories.guidance')}</SelectItem>
                 <SelectItem value="thanksgiving">{t('prayerRequests.categories.thanksgiving')}</SelectItem>
+                <SelectItem value="comfort">{t('prayerRequests.categories.comfort')}</SelectItem>
+                <SelectItem value="salvation">{t('prayerRequests.categories.salvation')}</SelectItem>
                 <SelectItem value="other">{t('prayerRequests.categories.other')}</SelectItem>
               </SelectContent>
             </Select>
