@@ -311,7 +311,7 @@ echo ""
 sleep 1
 
 progress
-echo -e "${MAGENTA}${ROCKET} Step 12/12: Configuring firewall...${NC}"
+echo -e "${MAGENTA}${ROCKET} Step 13/14: Configuring firewall...${NC}"
 progress
 info "Installing and configuring UFW firewall..."
 apt install -y ufw > /dev/null 2>&1
