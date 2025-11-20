@@ -350,7 +350,168 @@ echo ""
 sleep 1
 
 progress
-echo -e "${MAGENTA}${ROCKET} Step 14/14: Configuring Nginx web server...${NC}"
+echo -e "${MAGENTA}${ROCKET} Step 14/16: Creating your church and admin account...${NC}"
+progress
+
+echo ""
+echo -e "${CYAN}${CHURCH} Let's set up your church and admin account!${NC}"
+echo ""
+
+# Church information
+echo -e "${YELLOW}Church Information:${NC}"
+echo ""
+read -p "Church Name: " CHURCH_NAME
+read -p "Church Address: " CHURCH_ADDRESS
+read -p "Church Phone: " CHURCH_PHONE
+read -p "Church Email: " CHURCH_EMAIL
+
+echo ""
+echo -e "${YELLOW}Admin Account:${NC}"
+echo ""
+read -p "Admin Full Name: " ADMIN_NAME
+read -p "Admin Email: " ADMIN_EMAIL
+while true; do
+    read -s -p "Admin Password: " ADMIN_PASSWORD
+    echo ""
+    read -s -p "Confirm Password: " ADMIN_PASSWORD2
+    echo ""
+    if [ "$ADMIN_PASSWORD" = "$ADMIN_PASSWORD2" ]; then
+        break
+    else
+        echo -e "${RED}Passwords don't match. Try again.${NC}"
+    fi
+done
+
+# Create initialization script
+info "Creating church and admin account..."
+
+cd "$INSTALL_DIR/backend"
+source venv/bin/activate
+
+python3 << INIT_SCRIPT
+import asyncio
+from motor.motor_asyncio import AsyncIOMotorClient
+from datetime import datetime
+import uuid
+import bcrypt
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+async def initialize():
+    client = AsyncIOMotorClient(os.environ.get('MONGO_URL', 'mongodb://localhost:27017'))
+    db = client[os.environ.get('DB_NAME', 'faithflow_production')]
+    
+    # Check if church already exists
+    existing_church = await db.churches.find_one({})
+    if existing_church:
+        print("⚠️  Church already exists, skipping creation...")
+        church_id = existing_church['id']
+    else:
+        # Create church
+        church_id = str(uuid.uuid4())
+        church = {
+            "id": church_id,
+            "name": "${CHURCH_NAME}",
+            "address": "${CHURCH_ADDRESS}",
+            "phone": "${CHURCH_PHONE}",
+            "email": "${CHURCH_EMAIL}",
+            "created_at": datetime.utcnow(),
+            "updated_at": datetime.utcnow()
+        }
+        await db.churches.insert_one(church)
+        print(f"✅ Church created: {church['name']}")
+    
+    # Check if admin exists
+    existing_admin = await db.users.find_one({"email": "${ADMIN_EMAIL}"})
+    if existing_admin:
+        print("⚠️  Admin user already exists, skipping creation...")
+    else:
+        # Create admin user
+        password = "${ADMIN_PASSWORD}"
+        hashed = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+        
+        user = {
+            "id": str(uuid.uuid4()),
+            "church_id": church_id,
+            "email": "${ADMIN_EMAIL}",
+            "full_name": "${ADMIN_NAME}",
+            "password_hash": hashed.decode('utf-8'),
+            "role": "admin",
+            "is_active": True,
+            "kiosk_pin": "000000",
+            "created_at": datetime.utcnow(),
+            "updated_at": datetime.utcnow()
+        }
+        await db.users.insert_one(user)
+        print(f"✅ Admin user created: {user['email']}")
+    
+    # Create default church settings
+    existing_settings = await db.church_settings.find_one({"church_id": church_id})
+    if not existing_settings:
+        # Create default member status
+        previsitor_status_id = str(uuid.uuid4())
+        previsitor_status = {
+            "id": previsitor_status_id,
+            "church_id": church_id,
+            "name": "Pre-Visitor",
+            "description": "Person registered via kiosk, not yet a member",
+            "color": "#FFA500",
+            "is_active": True,
+            "created_at": datetime.utcnow(),
+            "updated_at": datetime.utcnow()
+        }
+        await db.member_statuses.insert_one(previsitor_status)
+        
+        settings = {
+            "id": str(uuid.uuid4()),
+            "church_id": church_id,
+            "date_format": "DD-MM-YYYY",
+            "time_format": "24h",
+            "currency": "IDR",
+            "timezone": "Asia/Jakarta",
+            "default_language": "id",
+            "enable_whatsapp_notifications": False,
+            "whatsapp_api_url": "",
+            "whatsapp_username": "",
+            "whatsapp_password": "",
+            "kiosk_settings": {
+                "enable_kiosk": True,
+                "enable_event_registration": True,
+                "enable_prayer": True,
+                "enable_counseling": True,
+                "enable_groups": True,
+                "enable_profile_update": True,
+                "home_title": "",
+                "home_subtitle": "",
+                "default_language": "id",
+                "previsitor_status_id": previsitor_status_id,
+                "timeout_minutes": 2
+            },
+            "created_at": datetime.utcnow(),
+            "updated_at": datetime.utcnow()
+        }
+        await db.church_settings.insert_one(settings)
+        print("✅ Church settings created")
+    
+    client.close()
+    print("\\n🎉 Database initialization complete!")
+
+asyncio.run(initialize())
+INIT_SCRIPT
+
+if [ $? -eq 0 ]; then
+    success "Church and admin account created successfully!"
+else
+    warn "Database initialization had issues. You may need to create admin manually."
+fi
+
+echo ""
+sleep 1
+
+progress
+echo -e "${MAGENTA}${ROCKET} Step 15/16: Configuring Nginx web server...${NC}"
 progress
 
 echo ""
