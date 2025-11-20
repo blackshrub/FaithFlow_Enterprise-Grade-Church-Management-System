@@ -159,11 +159,11 @@ export default function GroupMembersPage() {
                 ref={searchInputRef}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder=\"Search members by name or phone...\"
-                className=\"flex-1\"
+                placeholder="Search members by name or phone..."
+                className="flex-1"
               />
               {isSearching && (
-                <div className=\"flex items-center px-3 text-sm text-gray-500\">
+                <div className="flex items-center px-3 text-sm text-gray-500">
                   Searching...
                 </div>
               )}
