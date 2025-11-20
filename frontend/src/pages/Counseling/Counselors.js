@@ -39,7 +39,6 @@ import {
 } from '../../hooks/useCounseling';
 
 const CounselorsPage = () => {
-  const { t } = useTranslation('counseling');
   const { toast } = useToast();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
