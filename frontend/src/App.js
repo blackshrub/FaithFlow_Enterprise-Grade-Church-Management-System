@@ -160,6 +160,13 @@ function App() {
               <Route path="groups/join-requests" element={<JoinRequestsPage />} />
               <Route path="groups/leave-requests" element={<LeaveRequestsPage />} />
               
+              {/* Counseling Routes */}
+              <Route path="counseling" element={<CounselingDashboard />} />
+              <Route path="counseling/counselors" element={<CounselorsPage />} />
+              <Route path="counseling/availability" element={<AvailabilityPage />} />
+              <Route path="counseling/appointments" element={<AppointmentsListPage />} />
+              <Route path="counseling/appointments/:appointmentId" element={<AppointmentDetailPage />} />
+              
               {/* Placeholder routes - will be implemented in next phases */}
               <Route path="donations" element={<PlaceholderPage title="Donations" />} />
               <Route path="prayers" element={<PlaceholderPage title="Prayer Requests" />} />
