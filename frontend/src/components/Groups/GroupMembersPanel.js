@@ -63,7 +63,7 @@ export function GroupMembersPanel({
                   <div className="flex items-center space-x-2">
                     <MemberAvatar
                       name={m.member?.full_name}
-                      photoBase64={m.member?.photo_base64}
+                      photo={m.member?.photo_base64}
                     />
                     <div>
                       <div className="font-medium">{m.member?.full_name}</div>
