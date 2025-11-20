@@ -52,29 +52,7 @@ const KioskLayout = ({ children, showBack = false, showHome = true, onBack = nul
   
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex flex-col">
-      {/* Top Bar */}
-      <div className="bg-white border-b shadow-sm">
-        <div className="p-4 flex items-center justify-between max-w-7xl mx-auto">
-          {/* Church Name */}
-          <div className="flex items-center gap-3">
-            <Church className="h-6 w-6 text-blue-600" />
-            <span className="text-xl font-semibold text-gray-900">{churchName}</span>
-          </div>
-          
-          {/* Change Church Button */}
-          {showChangeChurch && (
-            <Button
-              variant="outline"
-              onClick={handleChangeChurch}
-              className="h-12 px-6 text-lg rounded-xl"
-            >
-              {i18n.language === 'en' ? 'Change Church' : 'Ganti Gereja'}
-            </Button>
-          )}
-        </div>
-      </div>
-      
-      {/* Navigation */}
+      {/* Top Navigation */}
       <div className="p-6 flex items-center justify-between">
         <div className="flex gap-4">
           {showBack && !isHome && (
@@ -104,7 +82,7 @@ const KioskLayout = ({ children, showBack = false, showHome = true, onBack = nul
               <Button
                 variant="outline"
                 size="lg"
-                onClick={() => navigate('/kiosk')}
+                onClick={() => navigate('/kiosk/home')}
                 className="h-14 px-6 text-lg rounded-2xl"
               >
                 <Home className="mr-2 h-5 w-5" />
@@ -114,22 +92,45 @@ const KioskLayout = ({ children, showBack = false, showHome = true, onBack = nul
           )}
         </div>
         
-        {/* Language Toggle */}
-        <motion.div
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.3 }}
-        >
-          <Button
-            variant="outline"
-            size="lg"
-            onClick={toggleLanguage}
-            className="h-14 px-6 text-lg rounded-2xl"
+        {/* Right side: Church name + Language + Change Church */}
+        <div className="flex items-center gap-4">
+          {/* Church Name */}
+          {churchName && (
+            <div className="flex items-center gap-2 text-lg font-medium text-gray-700">
+              <Church className="h-5 w-5 text-blue-600" />
+              <span>{churchName}</span>
+            </div>
+          )}
+          
+          {/* Language Toggle */}
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.3 }}
           >
-            <Globe className="mr-2 h-5 w-5" />
-            {i18n.language === 'en' ? 'EN' : 'ID'}
-          </Button>
-        </motion.div>
+            <Button
+              variant="outline"
+              size="lg"
+              onClick={toggleLanguage}
+              className="h-14 px-6 text-lg rounded-2xl"
+            >
+              <Globe className="mr-2 h-5 w-5" />
+              {i18n.language === 'en' ? 'EN' : 'ID'}
+            </Button>
+          </motion.div>
+          
+          {/* Change Church Button */}
+          {showChangeChurch && churchName && (
+            <Button
+              variant="outline"
+              size="lg"
+              onClick={handleChangeChurch}
+              className="h-14 px-6 text-lg rounded-2xl"
+            >
+              {i18n.language === 'en' ? 'Change Church' : 'Ganti Gereja'}
+            </Button>
+          )}
+        </div>
       </div>
       
       {/* Main Content */}
