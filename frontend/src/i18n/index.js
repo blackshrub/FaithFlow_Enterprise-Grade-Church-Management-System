@@ -4,9 +4,11 @@ import LanguageDetector from 'i18next-browser-languagedetector';
 
 import enTranslations from './locales/en.json';
 import idTranslations from './locales/id.json';
+import enKiosk from './locales/en/kiosk.json';
+import idKiosk from './locales/id/kiosk.json';
 
 // Force cache bust for translations
-const TRANSLATION_VERSION = '1.6.0';
+const TRANSLATION_VERSION = '1.7.0';
 
 i18n
   .use(LanguageDetector)
@@ -15,13 +17,16 @@ i18n
     resources: {
       en: {
         translation: enTranslations,
+        kiosk: enKiosk,
       },
       id: {
         translation: idTranslations,
+        kiosk: idKiosk,
       },
     },
     fallbackLng: 'en',
     lng: localStorage.getItem('i18nextLng') || 'en',
+    defaultNS: 'translation',
     debug: false,
     interpolation: {
       escapeValue: false,
