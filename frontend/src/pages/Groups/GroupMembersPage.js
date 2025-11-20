@@ -58,7 +58,8 @@ export default function GroupMembersPage() {
     
     setIsSearching(true);
     try {
-      const response = await api.get('/members', {
+      // IMPORTANT: Include trailing slash to avoid 307 redirect
+      const response = await api.get('/members/', {
         params: { search: searchTerm, limit: 10 }
       });
       
