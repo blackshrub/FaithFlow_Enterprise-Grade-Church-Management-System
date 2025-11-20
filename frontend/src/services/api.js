@@ -5,15 +5,21 @@ import axios from 'axios';
 const getAPIBaseURL = () => {
   // Check if we have explicit backend URL from env
   const envURL = process.env.REACT_APP_BACKEND_URL;
+  console.log('🔍 Raw REACT_APP_BACKEND_URL:', envURL);
+  
   if (envURL) {
     // Force HTTPS even if env has HTTP
     const secureURL = envURL.replace('http://', 'https://');
-    return `${secureURL}/api`;
+    const finalURL = `${secureURL}/api`;
+    console.log('✅ Using env URL (forced HTTPS):', finalURL);
+    return finalURL;
   }
   
   // Otherwise, always use HTTPS with current host
   const host = window.location.host;
-  return `https://${host}/api`;
+  const fallbackURL = `https://${host}/api`;
+  console.log('✅ Using fallback URL:', fallbackURL);
+  return fallbackURL;
 };
 
 const API_BASE_URL = getAPIBaseURL();
