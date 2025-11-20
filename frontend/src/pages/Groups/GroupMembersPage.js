@@ -33,8 +33,8 @@ export default function GroupMembersPage() {
 
   const [membershipToRemove, setMembershipToRemove] = React.useState(null);
   const [searchTerm, setSearchTerm] = React.useState('');
-  const [searchResults, setSearchResults] = React.useState([]);
-  const [isSearching, setIsSearching] = React.useState(false);
+  const [searchResults, setSearchResults] = React.useState([]);\n  const [isSearching, setIsSearching] = React.useState(false);
+  const searchInputRef = React.useRef(null);
 
   // Real-time search with debounce
   useEffect(() => {
