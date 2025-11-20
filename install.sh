@@ -199,8 +199,29 @@ pip install -r requirements.txt > /dev/null 2>&1
 
 # Create .env if doesn't exist
 if [ ! -f .env ]; then
-    cp .env.example .env
-    success "Created backend/.env from template"
+    if [ -f .env.example ]; then
+        cp .env.example .env
+        success "Created backend/.env from template"
+    else
+        warn "backend/.env.example not found, creating basic .env..."
+        cat > .env << 'BACKEND_ENV'
+# MongoDB Configuration
+MONGO_URL=mongodb://localhost:27017
+DB_NAME=faithflow_production
+
+# CORS Configuration
+CORS_ORIGINS=*
+
+# JWT Secret Key (CHANGE THIS!)
+JWT_SECRET_KEY=change-this-to-a-secure-random-string
+
+# WhatsApp API (Configure in admin panel)
+WHATSAPP_API_URL=
+WHATSAPP_USERNAME=
+WHATSAPP_PASSWORD=
+BACKEND_ENV
+        success "Created backend/.env with defaults"
+    fi
 else
     info "backend/.env already exists, keeping it"
 fi
