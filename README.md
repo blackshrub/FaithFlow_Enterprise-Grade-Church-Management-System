@@ -1,356 +1,196 @@
-# FaithFlow - Enterprise Church Management System
+# FaithFlow - Church Management System
 
-![FaithFlow](https://img.shields.io/badge/Status-Production%20Ready-green)
-![Backend](https://img.shields.io/badge/Backend-FastAPI%20%2B%20MongoDB-blue)
-![Frontend](https://img.shields.io/badge/Frontend-React%20%2B%20Tailwind-cyan)
+## 🎯 Overview
 
-**FaithFlow** is a comprehensive, enterprise-grade church management platform designed for multi-site churches. Built with modern technologies and production-ready architecture.
+FaithFlow is an enterprise-grade, multi-tenant church management system designed for modern churches. It combines comprehensive admin tools with a public-facing kiosk system for visitor and member self-service.
 
----
+## ✨ Key Features
 
-## 🎯 Features
+### **Member Management**
+- Complete CRUD with advanced filtering
+- Import/Export (Excel, CSV)
+- Photo management with base64 storage
+- QR code generation for check-in
+- Automated status updates with rule engine
+- Soft delete with trash bin (14-day retention)
+- Demographics tracking
+- Document management
 
-### 👥 **Member Management**
-- Complete member profiles with photos & documents
-- Bulk CSV import with duplicate detection
-- Advanced filtering (gender, marital status, demographics, member status)
-- Incomplete data tracking
-- **Soft delete with 14-day trash bin**
-- QR code generation for each member
-- Personal ID codes
-- Multi-language support (EN/ID)
+### **Events & Worship**
+- Event creation and management
+- RSVP system with seat assignments
+- QR code ticketing
+- Event check-in (web + kiosk)
+- Seat layout designer
+- Photo uploads for events
+- Calendar view (list + grid)
+- Attendance tracking
 
-### 🤖 **Member Status Automation** (NEW!)
-- Define custom member statuses with colors
-- Create automation rules based on:
-  - Age conditions
-  - Attendance patterns (Sunday Service)
-  - Time windows (e.g., last 60 days)
-- Two-phase rule evaluation (global + status-based)
-- **Simulation/preview before applying rules**
-- Automatic conflict detection
-- Conflict review queue with manual resolution
-- Complete audit trail
-- Timezone-aware scheduling
-- Background automation (hourly checks)
+### **Spiritual Care**
+- Prayer request management
+- Counseling appointment system
+  - Counselor profiles
+  - Recurring availability rules
+  - Time slot generation
+  - Appointment workflows (pending → approved → completed)
+  - Calendar view
 
-### 📅 **Events & Attendance**
-- Single and series events
-- RSVP management with seat selection
-- QR code check-in (kiosk mode)
-- Event categories (Sunday Service is system default)
-- Attendance tracking and reporting
+### **Groups & Community**
+- Small group management
+- Group categories (Cell, Ministry, Activity, Support)
+- Member management
+- Join/Leave request workflows
+- Group directory
 
-### 👥 **Groups Management**
-- Small groups, ministry teams, activities
-- Join/leave request workflows
-- Group leaders and members
-- Cover images and descriptions
-- Public group directory
+### **Content & Communication**
+- Devotional management
+- Article publishing system
+  - Categories and tags
+  - Comment moderation
+  - Scheduled publishing
+  - Preview links
+- WhatsApp notifications
 
-### 🙏 **Prayer Requests**
-- Submit and manage prayer requests
-- Categories and status tracking
-- Public submission form
-- Admin moderation
-
-### 📰 **Articles & Devotions**
-- Rich text editor (TipTap)
-- Scheduled publishing
-- Categories and tags
-- Comments moderation
-- Daily devotions
-- Bible integration
-
-### 📊 **Accounting Module**
-- Full double-entry accounting
-- Chart of Accounts
-- General Ledger
-- Journals and transactions
-- Budget management
-- Fixed assets and depreciation
+### **Finance**
+- Full accounting system (Chart of Accounts, Journals, Budgets)
+- Fixed assets management
 - Bank reconciliation
-- Fiscal periods and year-end closing
-- Comprehensive reports
+- Fiscal periods
+- Responsibility centers
+- Reports and year-end closing
+- Audit logs
 
-### 🔔 **Integrations**
+### **Public Kiosk System** 🆕
+- Full-screen public interface
+- Event registration
+- Prayer request submission
+- Counseling appointment booking
+- Group join requests
+- Member profile updates
+- Staff event check-in (PIN-protected)
+- Multi-tenant church selector
+- Phone + OTP authentication via WhatsApp
+- Auto Pre-Visitor creation
+- Inactivity timeout
+- Multi-language (EN + ID)
+- Framer Motion animations
 
-#### Webhooks (Outbound)
-- Real-time member data sync to external apps
-- HMAC-SHA256 signature verification
-- Configurable events (member.created/updated/deleted)
-- Retry queue with exponential backoff
-- Delivery logs and monitoring
-- **Includes campus_id for compatibility**
+### **Admin Features**
+- Multi-tenant with church_id scoping
+- Role-based access (Super Admin, Admin, Staff)
+- JWT authentication
+- Webhook system
+- API key management
+- Import/Export tools
+- Comprehensive settings
+- Audit trails
 
-#### API Keys (Inbound)
-- Generate secure API credentials for external apps
-- Username + API key authentication
-- JWT token-based access
-- Full REST API access
-- Multi-tenant scoped automatically
+## 🏗️ Tech Stack
 
-#### Public API
-- Read member status without authentication
-- Mobile app integration ready
-
----
-
-## 🛠️ Technology Stack
-
-### Backend
-- **Framework:** FastAPI (Python 3.11+)
+### **Backend**
+- **Framework:** FastAPI (Python)
 - **Database:** MongoDB (Motor async driver)
-- **Authentication:** JWT tokens
-- **Scheduler:** APScheduler (4 background jobs)
-- **Webhooks:** httpx async client with retry queue
-- **Validation:** Pydantic v2
+- **Authentication:** JWT
+- **Scheduler:** APScheduler
+- **Process Manager:** Supervisor
 
-### Frontend
-- **Framework:** React 18 + Create React App
-- **UI Components:** shadcn/ui + Tailwind CSS
+### **Frontend**
+- **Framework:** React + Vite
+- **UI Library:** shadcn/ui + Tailwind CSS
 - **State Management:** TanStack React Query
 - **Routing:** React Router v6
-- **Icons:** Lucide React
+- **Animations:** Framer Motion
+- **i18n:** react-i18next (English + Indonesian)
 - **Forms:** React Hook Form
-- **i18n:** react-i18next (EN/ID)
+- **Icons:** Lucide React
 
-### Infrastructure
-- **Multi-tenant:** church_id scoping on all data
-- **Soft delete:** 14-day trash bin for members
-- **Background jobs:** 4 scheduled tasks
-- **CORS:** Configurable origins
-- **Security:** Strong JWT secrets, API key hashing
+### **Infrastructure**
+- **Deployment:** Kubernetes (Emergent platform)
+- **Build:** Kaniko
+- **Process Management:** Supervisord
+- **Database:** MongoDB Atlas (production) / Local MongoDB (development)
 
----
+## 🌍 Multi-Language Support
 
-## 🚀 Quick Start
-
-### Prerequisites
-- Python 3.11+
-- Node.js 18+
-- MongoDB 5.0+
-- Yarn package manager
-
-### Installation
-
-```bash
-# Clone repository
-git clone <repository-url>
-cd faithflow
-
-# Backend setup
-cd backend
-pip install -r requirements.txt
-cp .env.example .env  # Configure environment variables
-python scripts/init_event_categories.py  # Initialize default data
-
-# Frontend setup
-cd ../frontend
-yarn install
-cp .env.example .env  # Configure environment variables
-
-# Start services (use supervisor in production)
-cd backend && uvicorn server:app --reload  # Backend on :8001
-cd frontend && yarn start  # Frontend on :3000
-```
-
-### Environment Variables
-
-**Backend (.env):**
-```env
-MONGO_URL=mongodb://localhost:27017
-DB_NAME=church_management
-CORS_ORIGINS=*
-JWT_SECRET_KEY=<generate-strong-random-key>
-```
-
-**Frontend (.env):**
-```env
-REACT_APP_BACKEND_URL=https://your-domain.com
-```
-
----
-
-## 📚 Documentation
-
-- **[API Documentation](docs/API.md)** - Complete REST API reference
-- **[External API Guide](docs/EXTERNAL_API.md)** - Integration guide for external apps
-- **[Import/Export API](docs/IMPORT_EXPORT_API.md)** - Bulk data operations
-- **[Features Guide](docs/FEATURES.md)** - Detailed feature documentation
-- **[Deployment Guide](docs/DEPLOYMENT_DEBIAN.md)** - Production deployment
-- **[PyTorch/TTS Guide](PYTORCH_DEPLOYMENT_GUIDE.md)** - Optional TTS configuration
-- **[API Key Testing](API_KEY_TESTING_GUIDE.md)** - External authentication testing
-
----
+- **English (en)**
+- **Bahasa Indonesia (id)**
+- All UI elements translated
+- Admin and kiosk interfaces
+- 2000+ translation keys
 
 ## 🔐 Security Features
 
-- JWT authentication with strong secrets
-- API key authentication for external apps
-- HMAC-SHA256 webhook signatures
-- Multi-tenant data isolation (church_id)
-- Role-based access control (super_admin, admin, staff)
-- Password hashing (bcrypt)
-- CORS protection
-- Soft delete with trash bin
-- Audit trails for status changes
+- JWT-based authentication
+- Role-based access control
+- API key system for external integrations
+- 6-digit PIN for staff kiosk access
+- OTP verification via WhatsApp (4-digit)
+- Multi-tenant data isolation
+- Audit logging for all actions
+- Webhook signature verification
 
----
+## 📊 Architecture
 
-## 🔄 Background Jobs
+### **Multi-Tenant Design**
+- All data scoped by `church_id`
+- Complete data isolation
+- Church selector for public kiosk
+- Separate settings per church
 
-**4 Scheduled Tasks:**
-1. **Article Publishing** - Every 30 seconds
-2. **Webhook Queue Processing** - Every 10 seconds
-3. **Member Status Automation** - Hourly (checks church schedules)
-4. **Trash Bin Cleanup** - Daily at 2 AM (deletes >14 days old)
+### **API-First**
+- RESTful API design
+- OpenAPI/Swagger documentation
+- Public and protected endpoints
+- Ready for mobile app integration
 
----
-
-## 🌐 Multi-Language Support
-
-- English (en)
-- Indonesian (id)
-- Complete i18n for all UI text
-- Member preferred language tracking
-
----
-
-## 📦 Key Collections (MongoDB)
-
-### Core
-- `churches` - Multi-tenant organizations
-- `users` - Admin/staff accounts
-- `members` - Church members (807 active, 2 in trash)
-- `church_settings` - Per-church configuration
-
-### Events
-- `events` - Single and series events
-- `event_categories` - Event types (Sunday Service is system default)
-
-### Status Automation
-- `member_statuses` - Custom statuses with colors
-- `member_status_rules` - Automation rules with conditions
-- `rule_evaluation_conflicts` - Conflict review queue
-- `member_status_history` - Complete audit trail
-
-### Groups
-- `groups` - Small groups and ministries
-- `group_memberships` - Member assignments
-- `group_join_requests` - Join request workflow
-
-### Content
-- `articles` - Articles and sermons
-- `devotions` - Daily devotions
-- `prayer_requests` - Prayer request tracking
-
-### Integrations
-- `webhook_configs` - Webhook configurations
-- `webhook_queue` - Retry queue
-- `webhook_delivery_logs` - Delivery history
-- `api_keys` - External app credentials
-
-### Accounting
-- `coa` - Chart of accounts
-- `journals` - Journal entries
-- `fiscal_periods` - Financial periods
-- `budgets` - Budget tracking
-- And 10+ more accounting collections
-
----
-
-## 💻 API Endpoints
-
-### Authentication
+### **Modular Structure**
 ```
-POST   /api/auth/login          # JWT token (supports email or API username)
-GET    /api/auth/me             # Current user info
+/app/
+├── backend/
+│   ├── models/          # Pydantic models
+│   ├── routes/          # API endpoints
+│   ├── services/        # Business logic
+│   ├── utils/           # Utilities
+│   └── server.py        # FastAPI app
+└── frontend/
+    ├── src/
+    │   ├── components/  # React components
+    │   ├── pages/       # Page components
+    │   ├── hooks/       # Custom hooks
+    │   ├── services/    # API services
+    │   └── i18n/        # Translations
+    └── public/
 ```
 
-### Members
-```
-GET    /api/members/            # List (with filters: gender, marital, status, demographics)
-POST   /api/members/            # Create
-PATCH  /api/members/{id}        # Update (triggers webhook)
-DELETE /api/members/{id}        # Soft delete (to trash)
-GET    /api/members/trash       # List deleted members
-POST   /api/members/{id}/restore  # Restore from trash
-```
+## 📱 Mobile App Ready
 
-### Member Status Automation
-```
-GET    /api/v1/member-status/statuses      # List statuses
-POST   /api/v1/member-status/statuses      # Create status
-GET    /api/v1/member-status/rules         # List rules
-POST   /api/v1/member-status/rules         # Create rule
-POST   /api/v1/member-status/simulate      # Preview affected members
-POST   /api/v1/member-status/run-once      # Manual trigger
-GET    /api/v1/member-status/conflicts     # List conflicts
-POST   /api/v1/member-status/conflicts/{id}/resolve  # Resolve conflict
-GET    /api/v1/member-status/members/{id}/history    # Status change history
-```
+- Public API endpoints for mobile
+- Member authentication ready
+- RESTful API design
+- JSON responses
+- Ready for React Native integration
 
-### External Integration
-```
-POST   /api/webhooks/           # Create webhook
-GET    /api/api-keys/           # List API keys
-GET    /api/public/members/{id}/status  # Public member status (no auth)
-```
+## 🚀 Getting Started
 
-**See [API.md](docs/API.md) and [EXTERNAL_API.md](docs/EXTERNAL_API.md) for complete reference.**
+See [INSTALLATION.md](INSTALLATION.md) for detailed setup instructions.
 
----
+## 📖 Documentation
 
-## 📊 Stats
+- [Installation Guide](INSTALLATION.md) - Fresh Debian 12 installation
+- [Deployment Guide](DEPLOYMENT.md) - Production deployment
+- [Configuration Guide](CONFIGURATION.md) - System configuration
+- [Kiosk Setup](KIOSK_SETUP.md) - Public kiosk deployment
+- [API Documentation](API.md) - API endpoints reference
+- [Troubleshooting](TROUBLESHOOTING.md) - Common issues
 
-- **807** Active members
-- **2** Members in trash
-- **1** Church (multi-tenant ready)
-- **8** API keys generated
-- **15+** Collections
-- **100+** API endpoints
-- **2** Languages supported
-- **4** Background jobs running
+## 👥 Team
 
----
+Built with ❤️ for churches worldwide
 
-## 👥 Contributing
-
-This is an enterprise church management system. For feature requests or bug reports, please contact the development team.
-
----
-
-## 📝 License
+## 📄 License
 
 Proprietary - All rights reserved
 
----
+## 🆘 Support
 
-## 🚀 Deployment
-
-**Production Ready!**
-- ✅ Optimized for Kubernetes deployment
-- ✅ Resource efficient (<1Gi memory)
-- ✅ All dependencies lightweight
-- ✅ Environment variable configured
-- ✅ CORS and security hardened
-- ✅ Background jobs stable
-
-**See [DEPLOYMENT_DEBIAN.md](docs/DEPLOYMENT_DEBIAN.md) for deployment guide.**
-
----
-
-## 🎉 Recent Updates
-
-### November 2025
-- ✅ **Member Status Automation System** - Complete automation with rules and conflict detection
-- ✅ **Trash Bin System** - Soft delete with 14-day auto-cleanup
-- ✅ **Enhanced Member Filters** - Gender, marital, status, demographics
-- ✅ **Webhook Improvements** - campus_id support, signature format updates
-- ✅ **API Key Authentication** - Non-email username support
-- ✅ **Deployment Ready** - All blockers resolved
-
----
-
-**Built with ❤️ for church communities worldwide**
+For support, please contact your administrator.
