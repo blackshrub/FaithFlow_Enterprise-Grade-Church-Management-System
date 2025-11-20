@@ -281,18 +281,19 @@ class WebhookService:
             
             start_time = datetime.now()
             
-            # Generate signature
-            payload_json = json.dumps(queue_item["payload"], default=str)
+            # Generate signature (matching external app format)
+            # Use compact JSON (no spaces), no sorted keys
+            payload_json = json.dumps(queue_item["payload"], separators=(',', ':'), default=str)
             signature = hmac.new(
-                webhook_config["secret_key"].encode(),
-                payload_json.encode(),
+                webhook_config["secret_key"].encode('utf-8'),
+                payload_json.encode('utf-8'),
                 hashlib.sha256
-            ).hexdigest()
+            ).hexdigest()  # Lowercase hex, no prefix
             
             # Prepare headers
             headers = {
                 "Content-Type": "application/json",
-                "X-Webhook-Signature": f"sha256={signature}",
+                "X-Webhook-Signature": signature,  # No "sha256=" prefix
                 "X-Event-ID": queue_item["payload"].get("event_id"),
                 **webhook_config.get("custom_headers", {})
             }
