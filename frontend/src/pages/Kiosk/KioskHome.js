@@ -62,7 +62,7 @@ const KioskHome = () => {
       id: 'event_registration',
       icon: Calendar,
       title: t('home.event_registration'),
-      description: 'Register for upcoming church events',
+      description: t('home.event_registration_desc'),
       path: '/kiosk/events/register',
       enabled: settings?.enable_event_registration !== false
     },
@@ -70,7 +70,7 @@ const KioskHome = () => {
       id: 'prayer',
       icon: Heart,
       title: t('home.prayer_request'),
-      description: 'Share your prayer needs with us',
+      description: t('home.prayer_request_desc'),
       path: '/kiosk/prayer',
       enabled: settings?.enable_prayer !== false
     },
@@ -78,7 +78,7 @@ const KioskHome = () => {
       id: 'counseling',
       icon: MessageCircleHeart,
       title: t('home.counseling'),
-      description: 'Request a counseling appointment',
+      description: t('home.counseling_desc'),
       path: '/kiosk/counseling',
       enabled: settings?.enable_counseling !== false
     },
@@ -86,7 +86,7 @@ const KioskHome = () => {
       id: 'groups',
       icon: Users,
       title: t('home.join_group'),
-      description: 'Join a small group or ministry',
+      description: t('home.join_group_desc'),
       path: '/kiosk/groups/join',
       enabled: settings?.enable_groups !== false
     },
@@ -94,7 +94,7 @@ const KioskHome = () => {
       id: 'profile',
       icon: UserCog,
       title: t('home.update_profile'),
-      description: 'Update your contact information',
+      description: t('home.update_profile_desc'),
       path: '/kiosk/profile/update',
       enabled: settings?.enable_profile_update !== false
     },
@@ -102,7 +102,7 @@ const KioskHome = () => {
       id: 'checkin',
       icon: ClipboardCheck,
       title: t('home.event_checkin'),
-      description: 'For staff: Event attendance',
+      description: t('home.event_checkin_desc'),
       path: '/kiosk/checkin',
       enabled: true // Always available
     },
