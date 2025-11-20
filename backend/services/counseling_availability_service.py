@@ -57,7 +57,7 @@ class CounselingAvailabilityService:
         # Step 3: Generate base slots from recurring rules
         base_slots = []
         for rule in recurring_rules:
-            slots = self._generate_slots_from_rule(date_str, rule)
+            slots = self._generate_slots_from_rule(date_str, rule, church_id, counselor_id)
             base_slots.extend(slots)
         
         # Step 4: Apply overrides
@@ -77,7 +77,9 @@ class CounselingAvailabilityService:
                     override["start_time"],
                     override["end_time"],
                     60,  # default 1-hour slots
-                    "override_add"
+                    "override_add",
+                    church_id,
+                    counselor_id
                 )
                 add_extra_slots.extend(extra_slots)
         
