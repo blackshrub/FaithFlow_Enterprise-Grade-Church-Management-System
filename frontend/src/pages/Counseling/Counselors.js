@@ -38,6 +38,7 @@ import {
   useDeleteCounselor,
   useStaffUsers
 } from '../../hooks/useCounseling';
+import MemberAvatar from '../../components/MemberAvatar';
 
 const CounselorsPage = () => {
   const { t } = useTranslation();
