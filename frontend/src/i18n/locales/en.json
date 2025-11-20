@@ -1981,5 +1981,46 @@
     "error_counselor_not_found": "Counselor Not Found",
     "error_appointment_not_found": "Appointment Not Found",
     "error_appointment_already_processed": "This Appointment Has Already Been Processed"
+  },
+  "groups": {
+    "title": "Groups",
+    "subtitle": "Manage church groups and communities",
+    "members": {
+      "title": "Group Members",
+      "subtitle": "Manage group members",
+      "searchPlaceholder": "Search members...",
+      "searchResults": "Search Results",
+      "emptyStates": {
+        "noMembers": "No Members Yet"
+      },
+      "statuses": {
+        "active": "Active",
+        "pending_leave": "Pending Leave",
+        "removed": "Removed"
+      },
+      "table": {
+        "member": "Member",
+        "contact": "Contact",
+        "joinedAt": "Joined At",
+        "status": "Status",
+        "actions": "Actions"
+      },
+      "actions": {
+        "addMember": "Add Member",
+        "addToGroup": "Add to Group",
+        "remove": "Remove"
+      },
+      "messages": {
+        "searchError": "Failed to search members",
+        "addSuccess": "Member added successfully",
+        "addError": "Failed to add member",
+        "removeSuccess": "Member removed successfully",
+        "removeError": "Failed to remove member"
+      },
+      "delete": {
+        "confirmTitle": "Remove Member from Group?",
+        "confirmDescription": "This will remove {{memberName}} from this group. They can rejoin later if needed."
+      }
+    }
   }
 }
