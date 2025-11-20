@@ -111,6 +111,9 @@ api_v1_router.include_router(group_memberships.router)
 api_v1_router.include_router(group_join_requests.router)
 api_v1_router.include_router(group_leave_requests.router)
 
+# Include counseling routes (v1)
+api_v1_router.include_router(counseling_admin.router)
+
 # Include v1 router in main API router
 api_router.include_router(api_v1_router)
 
@@ -118,6 +121,7 @@ api_router.include_router(api_v1_router)
 api_router.include_router(articles_public.router)
 api_router.include_router(article_preview.router)
 api_router.include_router(groups_public.router)
+api_router.include_router(counseling_public.router)
 
 # Include the API router in the main app
 app.include_router(api_router)
