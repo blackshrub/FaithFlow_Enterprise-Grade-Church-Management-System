@@ -112,9 +112,34 @@ export default function WebhooksTab() {
 
   const handleTestWebhook = async (webhookId) => {
     setTestResult(null);
-    const result = await testWebhook.mutateAsync(webhookId);
-    setTestResult(result);
-    setTimeout(() => setTestResult(null), 5000);
+    try {
+      const result = await testWebhook.mutateAsync(webhookId);
+      setTestResult(result);
+      
+      // Show detailed toast
+      if (result.success) {
+        toast.success(`Webhook test successful! Status: ${result.status_code}`);
+      } else {
+        toast.error(`Webhook test failed: ${result.error || result.message || 'Unknown error'}`, {
+          description: result.response_body ? `Response: ${result.response_body.substring(0, 100)}` : undefined,
+          duration: 10000,
+        });
+      }
+      
+      setTimeout(() => setTestResult(null), 10000);
+    } catch (error) {
+      const errorMsg = error.response?.data?.detail || error.message || 'Network error';
+      toast.error('Webhook test failed', {
+        description: errorMsg,
+        duration: 10000,
+      });
+      setTestResult({
+        success: false,
+        error: errorMsg,
+        message: 'Failed to send test webhook'
+      });
+      setTimeout(() => setTestResult(null), 10000);
+    }
   };
 
   const openEditDialog = (webhook) => {
