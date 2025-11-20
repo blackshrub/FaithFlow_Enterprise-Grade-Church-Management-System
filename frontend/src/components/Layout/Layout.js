@@ -217,7 +217,7 @@ export default function Layout() {
                 // Render section header
                 if (item.type === 'section') {
                   return (
-                    <li key={`section-${index}`} className="mt-4 mb-2 first:mt-0">
+                    <li key={`section-${index}`} className="pt-6 pb-2 first:pt-0">
                       {!sidebarCollapsed && (
                         <div className="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">
                           {item.label}
@@ -251,7 +251,7 @@ export default function Layout() {
                           setSidebarOpen(false);
                         }
                       }}
-                      className={`flex items-center ${sidebarCollapsed ? 'justify-center' : 'space-x-3'} w-full p-3 rounded-lg transition-colors ${
+                      className={`flex items-center justify-start ${sidebarCollapsed ? '' : 'space-x-3'} w-full p-3 rounded-lg transition-colors ${
                         isActive || isAnyChildActive
                           ? 'bg-blue-50 text-blue-600'
                           : 'text-gray-700 hover:bg-gray-100'
@@ -261,15 +261,15 @@ export default function Layout() {
                       <Icon className="h-5 w-5 flex-shrink-0" />
                       {!sidebarCollapsed && (
                         <>
-                          <span className="text-sm font-medium">{item.label}</span>
+                          <span className="text-sm font-medium flex-1 text-left">{item.label}</span>
+                          {hasSubmenu && (
+                            isExpanded ? (
+                              <ChevronDown className="h-4 w-4" />
+                            ) : (
+                              <ChevronRight className="h-4 w-4" />
+                            )
+                          )}
                         </>
-                      )}
-                      {!sidebarCollapsed && hasSubmenu && (
-                        isExpanded ? (
-                          <ChevronDown className="h-4 w-4 ml-auto" />
-                        ) : (
-                          <ChevronRight className="h-4 w-4 ml-auto" />
-                        )
                       )}
                     </button>
 
@@ -285,14 +285,14 @@ export default function Layout() {
                                   navigate(subItem.path);
                                   setSidebarOpen(false);
                                 }}
-                                className={`flex items-center w-full p-2 pl-4 rounded-lg text-sm transition-colors ${
+                                className={`flex items-center justify-start w-full p-2 pl-4 rounded-lg text-sm transition-colors ${
                                   isSubActive
                                     ? 'bg-blue-50 text-blue-600 font-medium'
                                     : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                                 }`}
                               >
-                                <span className="w-1.5 h-1.5 rounded-full bg-current mr-3 opacity-50"></span>
-                                {subItem.label}
+                                <span className="w-1.5 h-1.5 rounded-full bg-current mr-3 opacity-50 flex-shrink-0"></span>
+                                <span className="text-left">{subItem.label}</span>
                               </button>
                             </li>
                           );
