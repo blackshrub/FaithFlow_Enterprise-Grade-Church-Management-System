@@ -256,14 +256,16 @@ class CounselingAvailabilityService:
         
         return slots
     
-    def _generate_slots_from_rule(self, date_str: str, rule: dict) -> list:
+    def _generate_slots_from_rule(self, date_str: str, rule: dict, church_id: str, counselor_id: str) -> list:
         """Generate slots from a recurring rule."""
         return self._generate_slots_from_time_range(
             date_str,
             rule["start_time"],
             rule["end_time"],
             rule["slot_length_minutes"],
-            "recurring"
+            "recurring",
+            church_id,
+            counselor_id
         )
     
     def _generate_slots_from_time_range(
@@ -272,7 +274,9 @@ class CounselingAvailabilityService:
         start_time_str: str,
         end_time_str: str,
         slot_length_minutes: int,
-        source: str
+        source: str,
+        church_id: str,
+        counselor_id: str
     ) -> list:
         """Generate individual time slots from a time range."""
         import uuid
@@ -294,6 +298,8 @@ class CounselingAvailabilityService:
             
             slots.append({
                 "id": str(uuid.uuid4()),
+                "church_id": church_id,
+                "counselor_id": counselor_id,
                 "date": date_str,
                 "start_time": slot_start.isoformat(timespec='minutes'),
                 "end_time": slot_end.isoformat(timespec='minutes'),
