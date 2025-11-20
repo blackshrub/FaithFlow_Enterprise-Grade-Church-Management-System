@@ -98,9 +98,17 @@ const EventCheckinKiosk = () => {
   const loadEvents = async () => {
     try {
       const data = await kioskApi.getUpcomingEvents();
-      setEvents(data);
+      console.log('📅 Events API response:', data);
+      console.log('📅 Events array:', Array.isArray(data) ? data : data?.data);
+      
+      // Handle both array and object response
+      const eventList = Array.isArray(data) ? data : (data?.data || []);
+      console.log('📅 Final events:', eventList);
+      
+      setEvents(eventList);
     } catch (error) {
       console.error('Failed to load events:', error);
+      setEvents([]);
     }
   };
   
