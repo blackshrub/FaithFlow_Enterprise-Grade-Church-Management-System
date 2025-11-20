@@ -92,6 +92,37 @@ const KioskSettingsTab = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column - Settings */}
         <div className="lg:col-span-2 space-y-6">
+          {/* Home Page Customization */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Home Page Text</CardTitle>
+              <CardDescription>Customize welcome message on kiosk home</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="home_title">Home Title</Label>
+                <Input
+                  id="home_title"
+                  value={settings.home_title}
+                  onChange={(e) => setSettings({ ...settings, home_title: e.target.value })}
+                  placeholder="Welcome"
+                />
+                <p className="text-sm text-gray-500">Leave empty to use default translation</p>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="home_subtitle">Home Subtitle</Label>
+                <Input
+                  id="home_subtitle"
+                  value={settings.home_subtitle}
+                  onChange={(e) => setSettings({ ...settings, home_subtitle: e.target.value })}
+                  placeholder="How can we help you today?"
+                />
+                <p className="text-sm text-gray-500">Leave empty to use default translation</p>
+              </div>
+            </CardContent>
+          </Card>
+          
           {/* Service Toggles */}
           <Card>
             <CardHeader>
