@@ -296,7 +296,7 @@ echo -e "${MAGENTA}${ROCKET} Step 12/14: Configuring services...${NC}"
 progress
 
 info "Setting up Supervisor to manage FaithFlow..."
-cp "$SCRIPT_DIR/supervisord.conf" /etc/supervisor/conf.d/faithflow.conf
+cp "$INSTALL_DIR/supervisord.conf" /etc/supervisor/conf.d/faithflow.conf
 
 mkdir -p /var/log/supervisor
 touch /var/log/supervisor/backend.out.log
