@@ -97,6 +97,9 @@ function App() {
             <Route path="/kiosk" element={<KioskHome />} />
             <Route path="/kiosk/events/register" element={<EventRegistrationKiosk />} />
             <Route path="/kiosk/prayer" element={<PrayerRequestKiosk />} />
+            <Route path="/kiosk/counseling" element={<CounselingKiosk />} />
+            <Route path="/kiosk/groups/join" element={<JoinGroupKiosk />} />
+            <Route path="/kiosk/profile/update" element={<ProfileUpdateKiosk />} />
             
             {/* Kiosk Mode - Fullscreen (no layout) */}
             <Route path="/kiosk" element={
