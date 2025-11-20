@@ -26,10 +26,23 @@ const KioskHome = () => {
   const { t, i18n } = useTranslation('kiosk');
   const [settings, setSettings] = useState(null);
   const [churchId, setChurchId] = useState(null);
+  const [churchName, setChurchName] = useState('');
   const [loading, setLoading] = useState(true);
   
   useEffect(() => {
-    loadChurchAndSettings();
+    // Check if church is selected
+    const storedChurchId = localStorage.getItem('kiosk_church_id');
+    const storedChurchName = localStorage.getItem('kiosk_church_name');
+    
+    if (!storedChurchId) {
+      // No church selected, redirect to church selector
+      navigate('/kiosk', { replace: true });
+      return;
+    }
+    
+    setChurchId(storedChurchId);
+    setChurchName(storedChurchName || '');
+    loadSettings();
   }, []);
   
   const loadChurchAndSettings = async () => {
