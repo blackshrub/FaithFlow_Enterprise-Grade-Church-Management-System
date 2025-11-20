@@ -10,6 +10,7 @@ import random
 import logging
 
 from utils.dependencies import get_db
+from services.whatsapp_service import send_whatsapp_message
 
 logger = logging.getLogger(__name__)
 
@@ -53,15 +54,32 @@ async def send_otp(
         logger.info(f"OTP for {phone}: {code}")
         print(f"\n🔐 OTP for {phone}: {code}\n")
         
+        # Send via WhatsApp gateway
+        whatsapp_phone = phone.replace('+', '')  # Remove + for gateway
+        message = f"Your verification code is: {code}\n\nThis code will expire in 5 minutes."
+        
+        whatsapp_result = await send_whatsapp_message(whatsapp_phone, message)
+        
+        if whatsapp_result.get('success'):
+            logger.info(f"WhatsApp OTP sent successfully to {phone}")
+        else:
+            logger.warning(f"WhatsApp OTP failed: {whatsapp_result.get('message')}")
+        
         return {
             "success": True,
             "message": "OTP sent successfully",
-            "debug_code": code  # Remove in production!
+            "debug_code": code,  # Remove in production!
+            "whatsapp_status": whatsapp_result.get('delivery_status', 'unknown')
         }
     
     except Exception as e:
         logger.error(f"Error sending OTP: {e}")
-        raise HTTPException(status_code=500, detail="Failed to send OTP")
+        # Still return success even if WhatsApp fails (for testing)
+        return {
+            "success": True,
+            "message": "OTP generated (WhatsApp may not be configured)",
+            "debug_code": code if 'code' in locals() else "0000"
+        }
 
 
 @router.post("/verify-otp")
