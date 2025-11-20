@@ -47,7 +47,7 @@ import {
 import { format } from 'date-fns';
 
 const AvailabilityPage = () => {
-  const { t } = useTranslation('counseling');
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('rules');
   const [selectedCounselor, setSelectedCounselor] = useState('');
@@ -96,8 +96,6 @@ const AvailabilityPage = () => {
   const updateOverrideMutation = useUpdateOverride();
   const deleteOverrideMutation = useDeleteOverride();
 
-  const dayNames = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
-
   // Recurring Rules Handlers
   const handleOpenRuleForm = (rule = null) => {
     if (rule) {
@@ -130,10 +128,10 @@ const AvailabilityPage = () => {
           id: editingRule.id,
           data: ruleFormData
         });
-        toast({ title: t('success_rule_updated') });
+        toast({ title: t('counseling.success_rule_updated') });
       } else {
         await createRuleMutation.mutateAsync(ruleFormData);
-        toast({ title: t('success_rule_created') });
+        toast({ title: t('counseling.success_rule_created') });
       }
       setIsRuleFormOpen(false);
     } catch (error) {
@@ -148,7 +146,7 @@ const AvailabilityPage = () => {
   const handleDeleteRule = async () => {
     try {
       await deleteRuleMutation.mutateAsync(deletingRule.id);
-      toast({ title: t('success_rule_deleted') });
+      toast({ title: t('counseling.success_rule_deleted') });
       setIsDeleteRuleDialogOpen(false);
     } catch (error) {
       toast({
@@ -193,10 +191,10 @@ const AvailabilityPage = () => {
           id: editingOverride.id,
           data: overrideFormData
         });
-        toast({ title: t('success_override_updated') });
+        toast({ title: t('counseling.success_override_updated') });
       } else {
         await createOverrideMutation.mutateAsync(overrideFormData);
-        toast({ title: t('success_override_created') });
+        toast({ title: t('counseling.success_override_created') });
       }
       setIsOverrideFormOpen(false);
     } catch (error) {
@@ -211,7 +209,7 @@ const AvailabilityPage = () => {
   const handleDeleteOverride = async () => {
     try {
       await deleteOverrideMutation.mutateAsync(deletingOverride.id);
-      toast({ title: t('success_override_deleted') });
+      toast({ title: t('counseling.success_override_deleted') });
       setIsDeleteOverrideDialogOpen(false);
     } catch (error) {
       toast({
@@ -225,15 +223,15 @@ const AvailabilityPage = () => {
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">{t('availability')}</h1>
-        <p className="text-gray-500 mt-1">Manage counselor availability and schedules</p>
+        <h1 className="text-3xl font-bold">{t('counseling.availability')}</h1>
+        <p className="text-gray-500 mt-1">Manage Counselor Availability and Schedules</p>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
-          <TabsTrigger value="rules">{t('recurring_rules')}</TabsTrigger>
-          <TabsTrigger value="overrides">{t('overrides')}</TabsTrigger>
-          <TabsTrigger value="calendar">{t('calendar_view')}</TabsTrigger>
+          <TabsTrigger value="rules">{t('counseling.recurring_rules')}</TabsTrigger>
+          <TabsTrigger value="overrides">{t('counseling.overrides')}</TabsTrigger>
+          <TabsTrigger value="calendar">{t('counseling.calendar_view')}</TabsTrigger>
         </TabsList>
 
         {/* Recurring Rules Tab */}
@@ -244,7 +242,7 @@ const AvailabilityPage = () => {
             </p>
             <Button onClick={() => handleOpenRuleForm()}>
               <Plus className="mr-2 h-4 w-4" />
-              {t('add_rule')}
+              {t('counseling.add_rule')}
             </Button>
           </div>
 
@@ -252,18 +250,18 @@ const AvailabilityPage = () => {
             <CardContent className="pt-6">
               {recurringRules.length === 0 ? (
                 <div className="text-center py-8 text-gray-500">
-                  No recurring rules configured.
+                  No Recurring Rules Configured.
                 </div>
               ) : (
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>{t('counselor')}</TableHead>
-                      <TableHead>{t('day_of_week')}</TableHead>
-                      <TableHead>{t('start_time')}</TableHead>
-                      <TableHead>{t('end_time')}</TableHead>
-                      <TableHead>{t('slot_length')}</TableHead>
-                      <TableHead>{t('status')}</TableHead>
+                      <TableHead>{t('counseling.counselor')}</TableHead>
+                      <TableHead>{t('counseling.day_of_week')}</TableHead>
+                      <TableHead>{t('counseling.start_time')}</TableHead>
+                      <TableHead>{t('counseling.end_time')}</TableHead>
+                      <TableHead>{t('counseling.slot_length')}</TableHead>
+                      <TableHead>{t('counseling.status')}</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -273,7 +271,7 @@ const AvailabilityPage = () => {
                         <TableCell>{rule.counselor_name}</TableCell>
                         <TableCell>
                           <Badge variant="outline">
-                            {t(dayNames[rule.day_of_week])}
+                            {t(`counseling.${['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'][rule.day_of_week]}`)}
                           </Badge>
                         </TableCell>
                         <TableCell>{rule.start_time}</TableCell>
@@ -281,7 +279,7 @@ const AvailabilityPage = () => {
                         <TableCell>{rule.slot_length_minutes} min</TableCell>
                         <TableCell>
                           <Badge variant={rule.is_active ? 'default' : 'secondary'}>
-                            {rule.is_active ? t('active') : t('inactive')}
+                            {rule.is_active ? t('counseling.active') : t('counseling.inactive')}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
@@ -322,7 +320,7 @@ const AvailabilityPage = () => {
             </p>
             <Button onClick={() => handleOpenOverrideForm()}>
               <Plus className="mr-2 h-4 w-4" />
-              {t('add_override')}
+              {t('counseling.add_override')}
             </Button>
           </div>
 
@@ -330,18 +328,18 @@ const AvailabilityPage = () => {
             <CardContent className="pt-6">
               {overrides.length === 0 ? (
                 <div className="text-center py-8 text-gray-500">
-                  No overrides configured.
+                  No Overrides Configured.
                 </div>
               ) : (
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>{t('counselor')}</TableHead>
-                      <TableHead>{t('date')}</TableHead>
-                      <TableHead>{t('start_time')}</TableHead>
-                      <TableHead>{t('end_time')}</TableHead>
-                      <TableHead>{t('action')}</TableHead>
-                      <TableHead>{t('reason')}</TableHead>
+                      <TableHead>{t('counseling.counselor')}</TableHead>
+                      <TableHead>{t('counseling.date')}</TableHead>
+                      <TableHead>{t('counseling.start_time')}</TableHead>
+                      <TableHead>{t('counseling.end_time')}</TableHead>
+                      <TableHead>{t('counseling.action')}</TableHead>
+                      <TableHead>{t('counseling.reason')}</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -354,7 +352,7 @@ const AvailabilityPage = () => {
                         <TableCell>{override.end_time}</TableCell>
                         <TableCell>
                           <Badge variant={override.action === 'block' ? 'destructive' : 'default'}>
-                            {t(`action_${override.action}`)}
+                            {t(`counseling.action_${override.action}`)}
                           </Badge>
                         </TableCell>
                         <TableCell className="max-w-xs truncate">{override.reason || '-'}</TableCell>
@@ -392,7 +390,7 @@ const AvailabilityPage = () => {
         <TabsContent value="calendar" className="space-y-4">
           <div className="flex gap-4">
             <div className="flex-1">
-              <Label>{t('select_counselor')}</Label>
+              <Label>{t('counseling.select_counselor')}</Label>
               <Select value={selectedCounselor} onValueChange={setSelectedCounselor}>
                 <SelectTrigger>
                   <SelectValue placeholder="All Counselors" />
@@ -406,7 +404,7 @@ const AvailabilityPage = () => {
               </Select>
             </div>
             <div className="flex-1">
-              <Label>{t('select_date')}</Label>
+              <Label>{t('counseling.select_date')}</Label>
               <Input
                 type="date"
                 value={selectedDate}
@@ -419,7 +417,7 @@ const AvailabilityPage = () => {
             <CardContent className="pt-6">
               {slots.length === 0 ? (
                 <div className="text-center py-8 text-gray-500">
-                  {t('no_slots_available')}
+                  {t('counseling.no_slots_available')}
                 </div>
               ) : (
                 <div className="grid grid-cols-4 gap-2">
@@ -434,7 +432,7 @@ const AvailabilityPage = () => {
                     >
                       <div className="text-sm font-medium">{slot.start_time}</div>
                       <Badge variant="outline" className="mt-1 text-xs">
-                        {t(`slot_status_${slot.status}`)}
+                        {t(`counseling.slot_status_${slot.status}`)}
                       </Badge>
                       {slot.appointment_info && (
                         <div className="text-xs text-gray-600 mt-1">
@@ -454,12 +452,12 @@ const AvailabilityPage = () => {
       <Dialog open={isRuleFormOpen} onOpenChange={setIsRuleFormOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editingRule ? t('edit_rule') : t('add_rule')}</DialogTitle>
+            <DialogTitle>{editingRule ? t('counseling.edit_rule') : t('counseling.add_rule')}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmitRule}>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label>{t('counselor')} *</Label>
+                <Label>{t('counseling.counselor')} *</Label>
                 <Select
                   value={ruleFormData.counselor_id}
                   onValueChange={(value) => setRuleFormData({ ...ruleFormData, counselor_id: value })}
@@ -476,7 +474,7 @@ const AvailabilityPage = () => {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>{t('day_of_week')} *</Label>
+                <Label>{t('counseling.day_of_week')} *</Label>
                 <Select
                   value={ruleFormData.day_of_week.toString()}
                   onValueChange={(value) => setRuleFormData({ ...ruleFormData, day_of_week: parseInt(value) })}
@@ -485,15 +483,15 @@ const AvailabilityPage = () => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {dayNames.map((day, idx) => (
-                      <SelectItem key={idx} value={idx.toString()}>{t(day)}</SelectItem>
+                    {['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'].map((day, idx) => (
+                      <SelectItem key={idx} value={idx.toString()}>{t(`counseling.${day}`)}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>{t('start_time')} *</Label>
+                  <Label>{t('counseling.start_time')} *</Label>
                   <Input
                     type="time"
                     value={ruleFormData.start_time}
@@ -502,7 +500,7 @@ const AvailabilityPage = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>{t('end_time')} *</Label>
+                  <Label>{t('counseling.end_time')} *</Label>
                   <Input
                     type="time"
                     value={ruleFormData.end_time}
@@ -512,7 +510,7 @@ const AvailabilityPage = () => {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label>{t('slot_length')}</Label>
+                <Label>{t('counseling.slot_length')}</Label>
                 <Input
                   type="number"
                   min="15"
@@ -537,12 +535,12 @@ const AvailabilityPage = () => {
       <Dialog open={isOverrideFormOpen} onOpenChange={setIsOverrideFormOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editingOverride ? t('edit_override') : t('add_override')}</DialogTitle>
+            <DialogTitle>{editingOverride ? t('counseling.edit_override') : t('counseling.add_override')}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmitOverride}>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label>{t('counselor')} *</Label>
+                <Label>{t('counseling.counselor')} *</Label>
                 <Select
                   value={overrideFormData.counselor_id}
                   onValueChange={(value) => setOverrideFormData({ ...overrideFormData, counselor_id: value })}
@@ -559,7 +557,7 @@ const AvailabilityPage = () => {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>{t('date')} *</Label>
+                <Label>{t('counseling.date')} *</Label>
                 <Input
                   type="date"
                   value={overrideFormData.date}
@@ -569,7 +567,7 @@ const AvailabilityPage = () => {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>{t('start_time')} *</Label>
+                  <Label>{t('counseling.start_time')} *</Label>
                   <Input
                     type="time"
                     value={overrideFormData.start_time}
@@ -578,7 +576,7 @@ const AvailabilityPage = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>{t('end_time')} *</Label>
+                  <Label>{t('counseling.end_time')} *</Label>
                   <Input
                     type="time"
                     value={overrideFormData.end_time}
@@ -588,7 +586,7 @@ const AvailabilityPage = () => {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label>{t('action')} *</Label>
+                <Label>{t('counseling.action')} *</Label>
                 <Select
                   value={overrideFormData.action}
                   onValueChange={(value) => setOverrideFormData({ ...overrideFormData, action: value })}
@@ -597,13 +595,13 @@ const AvailabilityPage = () => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="block">{t('action_block')}</SelectItem>
-                    <SelectItem value="add_extra">{t('action_add_extra')}</SelectItem>
+                    <SelectItem value="block">{t('counseling.action_block')}</SelectItem>
+                    <SelectItem value="add_extra">{t('counseling.action_add_extra')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>{t('reason')}</Label>
+                <Label>{t('counseling.reason')}</Label>
                 <Textarea
                   value={overrideFormData.reason}
                   onChange={(e) => setOverrideFormData({ ...overrideFormData, reason: e.target.value })}
@@ -626,7 +624,7 @@ const AvailabilityPage = () => {
       <Dialog open={isDeleteRuleDialogOpen} onOpenChange={setIsDeleteRuleDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{t('confirm_delete_rule')}</DialogTitle>
+            <DialogTitle>{t('counseling.confirm_delete_rule')}</DialogTitle>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsDeleteRuleDialogOpen(false)}>Cancel</Button>
@@ -638,7 +636,7 @@ const AvailabilityPage = () => {
       <Dialog open={isDeleteOverrideDialogOpen} onOpenChange={setIsDeleteOverrideDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{t('confirm_delete_override')}</DialogTitle>
+            <DialogTitle>{t('counseling.confirm_delete_override')}</DialogTitle>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsDeleteOverrideDialogOpen(false)}>Cancel</Button>
