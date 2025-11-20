@@ -24,6 +24,7 @@ import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { useAppointments, useCounselors } from '../../hooks/useCounseling';
 import { format, parseISO } from 'date-fns';
+import MemberAvatar from '../../components/MemberAvatar';
 import AppointmentDetailPage from './AppointmentDetail';
 
 const AppointmentsListPage = () => {
