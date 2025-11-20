@@ -299,7 +299,30 @@ echo -e "${MAGENTA}${ROCKET} Step 12/14: Configuring services...${NC}"
 progress
 
 info "Setting up Supervisor to manage FaithFlow..."
-cp "$INSTALL_DIR/supervisord.conf" /etc/supervisor/conf.d/faithflow.conf
+
+# Create supervisord.conf with correct paths
+cat > /etc/supervisor/conf.d/faithflow.conf << SUPERVISOR_CONF
+[supervisord]
+nodaemon=false
+
+[program:backend]
+command=/opt/faithflow/backend/venv/bin/uvicorn server:app --host 0.0.0.0 --port 8001
+directory=/opt/faithflow/backend
+autostart=true
+autorestart=true
+stdout_logfile=/var/log/supervisor/backend.out.log
+stderr_logfile=/var/log/supervisor/backend.err.log
+environment=PYTHONUNBUFFERED="1"
+
+[program:frontend]
+command=/usr/bin/yarn start
+directory=/opt/faithflow/frontend
+autostart=true
+autorestart=true
+stdout_logfile=/var/log/supervisor/frontend.out.log
+stderr_logfile=/var/log/supervisor/frontend.err.log
+environment=PORT="3000",HOST="0.0.0.0"
+SUPERVISOR_CONF
 
 mkdir -p /var/log/supervisor
 touch /var/log/supervisor/backend.out.log
@@ -309,7 +332,7 @@ touch /var/log/supervisor/frontend.err.log
 
 supervisorctl reread > /dev/null 2>&1
 supervisorctl update > /dev/null 2>&1
-success "Supervisor configured!"
+success "Supervisor configured with /opt/faithflow paths!"
 echo ""
 sleep 1
 
