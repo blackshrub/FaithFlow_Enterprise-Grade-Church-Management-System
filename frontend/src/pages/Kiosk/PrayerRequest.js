@@ -123,6 +123,7 @@ const PrayerRequestKiosk = () => {
           </div>
           
           <PhoneStep
+            churchId={churchId}
             onMemberFound={handleMemberFound}
             onMemberNotFound={handleMemberNotFound}
           />
