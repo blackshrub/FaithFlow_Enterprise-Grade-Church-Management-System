@@ -3,7 +3,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Users, Check } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -18,6 +18,8 @@ import MemberAvatar from '../../components/MemberAvatar';
 import kioskApi from '../../services/kioskApi';
 
 const JoinGroupKiosk = () => {
+  const location = useLocation();
+  const churchId = location.state?.churchId || localStorage.getItem('kiosk_church_id');
   const navigate = useNavigate();
   const { t } = useTranslation('kiosk');
   
@@ -104,7 +106,7 @@ const JoinGroupKiosk = () => {
             <h1 className="text-4xl font-bold mb-2">{t('groups.title')}</h1>
             <p className="text-xl text-gray-600">Step 1 of 2: {t('phone.title')}</p>
           </div>
-          <PhoneStep onMemberFound={handleMemberFound} onMemberNotFound={handleMemberNotFound} />
+          <PhoneStep churchId={churchId} onMemberFound={handleMemberFound} onMemberNotFound={handleMemberNotFound} />
         </div>
       </KioskLayout>
     );
