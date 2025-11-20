@@ -245,35 +245,46 @@ const NewMemberRegistration = ({ phone, onComplete, onError, preVisitorStatusId 
         </div>
       </div>
       
-      {/* OTP Section */}
-      <div className="border-t pt-8 space-y-6">
-        <div className="text-center space-y-3">
-          <p className="text-xl font-medium text-gray-700">
-            {t('new_profile.otp_info')}
-          </p>
-          <p className="text-lg text-gray-600">
-            {t('new_profile.otp_help')}
+      {/* OTP Section - Only show when form is complete */}
+      {isFormComplete && (
+        <div className="border-t pt-8 space-y-6">
+          <div className="text-center space-y-3">
+            <p className="text-xl font-medium text-gray-700">
+              {t('new_profile.otp_info')}
+            </p>
+            <p className="text-lg text-gray-600">
+              {t('new_profile.otp_help')}
+            </p>
+          </div>
+          
+          <OTPInput
+            length={4}
+            value={otp}
+            onChange={setOtp}
+            onComplete={handleOtpComplete}
+            disabled={verifying}
+          />
+          
+          {otpError && (
+            <motion.p
+              className="text-center text-lg text-red-600"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+            >
+              {otpError}
+            </motion.p>
+          )}
+        </div>
+      )}
+      
+      {/* Helper text when form incomplete */}
+      {!isFormComplete && (
+        <div className="border-t pt-8">
+          <p className="text-center text-xl text-gray-500">
+            Please fill in all required fields above to continue.
           </p>
         </div>
-        
-        <OTPInput
-          length={4}
-          value={otp}
-          onChange={setOtp}
-          onComplete={handleOtpComplete}
-          disabled={verifying || !formData.full_name || !formData.gender || !formData.date_of_birth}
-        />
-        
-        {otpError && (
-          <motion.p
-            className="text-center text-lg text-red-600"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-          >
-            {otpError}
-          </motion.p>
-        )}
-      </div>
+      )}
     </motion.div>
   );
 };
