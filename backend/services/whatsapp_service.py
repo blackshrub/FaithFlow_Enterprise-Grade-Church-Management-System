@@ -13,7 +13,10 @@ WHATSAPP_PASSWORD = os.environ.get('WHATSAPP_PASSWORD', '')
 async def send_whatsapp_message(
     phone_number: str,
     message: str,
-    image_base64: Optional[str] = None
+    image_base64: Optional[str] = None,
+    api_url: Optional[str] = None,
+    api_username: Optional[str] = None,
+    api_password: Optional[str] = None
 ) -> dict:
     """
     Send WhatsApp message via gateway and check delivery status
@@ -22,11 +25,19 @@ async def send_whatsapp_message(
         phone_number: Recipient phone number (format: 628xxxxx)
         message: Text message to send
         image_base64: Optional base64 encoded image (for QR code)
+        api_url: Optional WhatsApp API URL (overrides env)
+        api_username: Optional WhatsApp API username (overrides env)
+        api_password: Optional WhatsApp API password (overrides env)
     
     Returns:
         dict with success status, message, and delivery_status
     """
-    if not WHATSAPP_API_URL:
+    # Use parameters if provided, otherwise use env variables
+    whatsapp_url = api_url or WHATSAPP_API_URL
+    whatsapp_user = api_username or WHATSAPP_USERNAME
+    whatsapp_pass = api_password or WHATSAPP_PASSWORD
+    
+    if not whatsapp_url:
         logger.warning("WhatsApp API URL not configured")
         return {
             'success': False, 
