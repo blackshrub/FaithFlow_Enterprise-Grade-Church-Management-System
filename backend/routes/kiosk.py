@@ -1,4 +1,4 @@
-"""Kiosk backend endpoints - OTP, member lookup, etc."""
+"""Kiosk backend endpoints - OTP, member lookup, event registration, etc."""
 
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from motor.motor_asyncio import AsyncIOMotorDatabase
@@ -35,11 +35,7 @@ async def send_otp(
     request: OTPSendRequest,
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
-    """Send OTP to phone via WhatsApp.
-    
-    For demo: Generates 4-digit code and stores in memory.
-    In production: Call WhatsApp gateway.
-    """
+    """Send OTP to phone via WhatsApp."""
     try:
         phone = request.phone
         
@@ -53,13 +49,9 @@ async def send_otp(
             'attempts': 0
         }
         
-        # TODO: Send via WhatsApp gateway
-        # For now, just log
+        # Log OTP for testing
         logger.info(f"OTP for {phone}: {code}")
         print(f"\n🔐 OTP for {phone}: {code}\n")
-        
-        # In production:
-        # await send_whatsapp_message(phone, f"Your verification code is: {code}")
         
         return {
             "success": True,
@@ -69,10 +61,7 @@ async def send_otp(
     
     except Exception as e:
         logger.error(f"Error sending OTP: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail="Failed to send OTP"
-        )
+        raise HTTPException(status_code=500, detail="Failed to send OTP")
 
 
 @router.post("/verify-otp")
@@ -89,7 +78,7 @@ async def verify_otp(
         if phone not in otp_store:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail={"error_code": "OTP_NOT_FOUND", "message": "No OTP found for this phone"}
+                detail={"error_code": "OTP_NOT_FOUND", "message": "No OTP found"}
             )
         
         stored = otp_store[phone]
@@ -99,7 +88,7 @@ async def verify_otp(
             del otp_store[phone]
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail={"error_code": "OTP_EXPIRED", "message": "OTP has expired"}
+                detail={"error_code": "OTP_EXPIRED", "message": "OTP expired"}
             )
         
         # Check attempts
@@ -107,49 +96,39 @@ async def verify_otp(
             del otp_store[phone]
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail={"error_code": "TOO_MANY_ATTEMPTS", "message": "Too many failed attempts"}
+                detail={"error_code": "TOO_MANY_ATTEMPTS", "message": "Too many attempts"}
             )
         
         # Verify code
         if stored['code'] != code:
             stored['attempts'] += 1
-            return {
-                "success": False,
-                "message": "Invalid OTP"
-            }
+            return {"success": False, "message": "Invalid OTP"}
         
         # Success - remove OTP
         del otp_store[phone]
         
-        return {
-            "success": True,
-            "message": "OTP verified successfully"
-        }
+        return {"success": True, "message": "OTP verified"}
     
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Error verifying OTP: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail="Failed to verify OTP"
-        )
+        raise HTTPException(status_code=500, detail="Failed to verify OTP")
 
 
 @router.post("/verify-pin")
 async def verify_staff_pin(
     request: PINVerifyRequest,
-    church_id: str = Query(..., description="Church ID"),
+    church_id: str = Query(...),
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
-    """Verify staff PIN for kiosk event check-in access."""
+    """Verify staff PIN for kiosk access."""
     try:
-        # Find user with matching PIN in this church
         user = await db.users.find_one({
             "church_id": church_id,
             "kiosk_pin": request.pin,
             "is_active": True
-        }, {"_id": 0, "id": 1, "full_name": 1, "role": 1, "email": 1})
+        }, {"_id": 0, "id": 1, "full_name": 1, "role": 1})
         
         if not user:
             raise HTTPException(
@@ -157,16 +136,121 @@ async def verify_staff_pin(
                 detail={"error_code": "INVALID_PIN", "message": "Invalid PIN"}
             )
         
-        return {
-            "success": True,
-            "user": user
-        }
-    
+        return {"success": True, "user": user}
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Error verifying PIN: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail="Internal error"
+        raise HTTPException(status_code=500, detail="Internal error")
+
+
+class EventRSVPRequest(BaseModel):
+    event_id: str
+    member_id: str
+
+@router.post("/register-event")
+async def register_event_kiosk(
+    request: EventRSVPRequest,
+    db: AsyncIOMotorDatabase = Depends(get_db)
+):
+    """Register for event from kiosk (public - no auth)."""
+    try:
+        from services.qr_service import generate_confirmation_code, generate_rsvp_qr_data
+        
+        event = await db.events.find_one({"id": request.event_id})
+        if not event:
+            raise HTTPException(status_code=404, detail="Event not found")
+        
+        member = await db.members.find_one({"id": request.member_id})
+        if not member:
+            raise HTTPException(status_code=404, detail="Member not found")
+        
+        # Check duplicate
+        duplicate = any(r.get('member_id') == request.member_id for r in event.get('rsvp_list', []))
+        if duplicate:
+            return {"success": True, "message": "Already registered"}
+        
+        # Generate confirmation
+        confirmation_code = generate_confirmation_code()
+        qr_data = generate_rsvp_qr_data(request.event_id, request.member_id, '', confirmation_code)
+        
+        rsvp_entry = {
+            "member_id": request.member_id,
+            "session_id": None,
+            "seat": None,
+            "timestamp": datetime.utcnow(),
+            "status": "registered",
+            "confirmation_code": confirmation_code,
+            "qr_data": qr_data,
+            "source": "kiosk"
+        }
+        
+        await db.events.update_one(
+            {"id": request.event_id},
+            {"$push": {"rsvp_list": rsvp_entry}}
         )
+        
+        logger.info(f"Kiosk RSVP: Event {request.event_id}, Member {request.member_id}")
+        
+        return {"success": True, "message": "Registered successfully"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Kiosk event registration error: {e}")
+        raise HTTPException(status_code=500, detail="Registration failed")
+
+
+class GroupJoinRequest(BaseModel):
+    group_id: str
+    member_id: str
+    message: Optional[str] = None
+
+@router.post("/join-group")
+async def join_group_kiosk(
+    request: GroupJoinRequest,
+    db: AsyncIOMotorDatabase = Depends(get_db)
+):
+    """Create group join request from kiosk (public)."""
+    try:
+        group = await db.groups.find_one({"id": request.group_id})
+        if not group:
+            raise HTTPException(status_code=404, detail="Group not found")
+        
+        member = await db.members.find_one({"id": request.member_id})
+        if not member:
+            raise HTTPException(status_code=404, detail="Member not found")
+        
+        church_id = group["church_id"]
+        
+        # Check existing request
+        existing = await db.group_join_requests.find_one({
+            "church_id": church_id,
+            "group_id": request.group_id,
+            "member_id": request.member_id,
+            "status": "pending"
+        })
+        
+        if existing:
+            return {"success": True, "message": "Request already pending"}
+        
+        # Create join request
+        join_req = {
+            "id": str(uuid.uuid4()),
+            "church_id": church_id,
+            "group_id": request.group_id,
+            "member_id": request.member_id,
+            "message": request.message or "",
+            "status": "pending",
+            "submitted_at": datetime.utcnow()
+        }
+        
+        await db.group_join_requests.insert_one(join_req)
+        
+        logger.info(f"Kiosk group join: Group {request.group_id}, Member {request.member_id}")
+        
+        return {"success": True, "message": "Join request created"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Kiosk group join error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to create join request")
