@@ -361,15 +361,14 @@ echo ""
 echo -e "${YELLOW}Church Information:${NC}"
 echo ""
 read -p "Church Name: " CHURCH_NAME
-read -p "Church Address: " CHURCH_ADDRESS
-read -p "Church Phone: " CHURCH_PHONE
-read -p "Church Email: " CHURCH_EMAIL
+read -p "Church Address (optional): " CHURCH_ADDRESS
 
 echo ""
 echo -e "${YELLOW}Admin Account:${NC}"
 echo ""
 read -p "Admin Full Name: " ADMIN_NAME
 read -p "Admin Email: " ADMIN_EMAIL
+read -p "Admin Phone Number: " ADMIN_PHONE
 while true; do
     read -s -p "Admin Password: " ADMIN_PASSWORD
     echo ""
@@ -415,8 +414,8 @@ async def initialize():
             "id": church_id,
             "name": "${CHURCH_NAME}",
             "address": "${CHURCH_ADDRESS}",
-            "phone": "${CHURCH_PHONE}",
-            "email": "${CHURCH_EMAIL}",
+            "phone": "",
+            "email": "",
             "created_at": datetime.utcnow(),
             "updated_at": datetime.utcnow()
         }
@@ -437,6 +436,7 @@ async def initialize():
             "church_id": church_id,
             "email": "${ADMIN_EMAIL}",
             "full_name": "${ADMIN_NAME}",
+            "phone": "${ADMIN_PHONE}",
             "password_hash": hashed.decode('utf-8'),
             "role": "admin",
             "is_active": True,
@@ -446,6 +446,8 @@ async def initialize():
         }
         await db.users.insert_one(user)
         print(f"✅ Admin user created: {user['email']}")
+        print(f"   Name: {user['full_name']}")
+        print(f"   Phone: {user['phone']}")
     
     # Create default church settings
     existing_settings = await db.church_settings.find_one({"church_id": church_id})
