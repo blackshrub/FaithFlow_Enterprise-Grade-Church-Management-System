@@ -324,7 +324,7 @@ echo ""
 sleep 1
 
 progress
-echo -e "${MAGENTA}${ROCKET} Step 13/12: Configuring Nginx web server...${NC}"
+echo -e "${MAGENTA}${ROCKET} Step 14/14: Configuring Nginx web server...${NC}"
 progress
 
 echo ""
