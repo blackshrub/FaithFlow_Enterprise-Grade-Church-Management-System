@@ -165,6 +165,7 @@ NGINX_EOF
 fi
 
 echo -e "${GREEN}Step 15: Configuring firewall...${NC}"
+apt install -y ufw
 ufw allow 22/tcp
 ufw allow 80/tcp
 ufw allow 443/tcp
