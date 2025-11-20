@@ -134,7 +134,7 @@ progress
 echo -e "${MAGENTA}🚀 Step 3/8: Updating backend dependencies...${NC}"
 progress
 
-cd "$SCRIPT_DIR/backend"
+cd "$INSTALL_DIR/backend"
 
 if [ -d "venv" ]; then
     info "Checking for new Python packages..."
@@ -156,7 +156,7 @@ progress
 echo -e "${MAGENTA}🚀 Step 4/8: Updating frontend dependencies...${NC}"
 progress
 
-cd "$SCRIPT_DIR/frontend"
+cd "$INSTALL_DIR/frontend"
 
 info "Checking for new JavaScript packages..."
 echo -e "${CYAN}   ☕ This might take a moment...${NC}"
@@ -169,7 +169,7 @@ progress
 echo -e "${MAGENTA}🚀 Step 5/8: Running database migrations...${NC}"
 progress
 
-cd "$SCRIPT_DIR/backend"
+cd "$INSTALL_DIR/backend"
 source venv/bin/activate
 
 # Check for migration scripts
@@ -189,19 +189,29 @@ echo -e "${MAGENTA}🚀 Step 6/8: Checking configuration...${NC}"
 progress
 
 # Check if .env files exist
-if [ -f "$SCRIPT_DIR/backend/.env" ]; then
+if [ -f "$INSTALL_DIR/backend/.env" ]; then
     success "Backend configuration exists"
 else
     warn "backend/.env not found. Creating from template..."
-    cp "$SCRIPT_DIR/backend/.env.example" "$SCRIPT_DIR/backend/.env"
+    cp "$INSTALL_DIR/backend/.env.example" "$INSTALL_DIR/backend/.env" 2>/dev/null || \
+    cat > "$INSTALL_DIR/backend/.env" << 'BACKEND_ENV'
+MONGO_URL=mongodb://localhost:27017
+DB_NAME=faithflow_production
+JWT_SECRET_KEY=change-this-in-production
+CORS_ORIGINS=*
+BACKEND_ENV
     echo -e "${YELLOW}   Please configure backend/.env before starting services!${NC}"
 fi
 
-if [ -f "$SCRIPT_DIR/frontend/.env" ]; then
+if [ -f "$INSTALL_DIR/frontend/.env" ]; then
     success "Frontend configuration exists"
 else
     warn "frontend/.env not found. Creating from template..."
-    cp "$SCRIPT_DIR/frontend/.env.example" "$SCRIPT_DIR/frontend/.env"
+    cp "$INSTALL_DIR/frontend/.env.example" "$INSTALL_DIR/frontend/.env" 2>/dev/null || \
+    cat > "$INSTALL_DIR/frontend/.env" << 'FRONTEND_ENV'
+REACT_APP_BACKEND_URL=http://localhost
+WDS_SOCKET_PORT=443
+FRONTEND_ENV
     echo -e "${YELLOW}   Please configure frontend/.env before starting services!${NC}"
 fi
 echo ""
