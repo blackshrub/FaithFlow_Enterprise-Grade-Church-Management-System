@@ -89,6 +89,14 @@ async def get_group(
             detail={"error_code": "NOT_FOUND", "message": "Group not found"},
         )
 
+    # Add member count
+    member_count = await db.group_memberships.count_documents({
+        "church_id": church_id,
+        "group_id": group_id,
+        "status": "active"
+    })
+    group["members_count"] = member_count
+
     return group
 
 
