@@ -215,6 +215,7 @@ export default function PrayerRequestForm() {
                     }}
                     selectedMember={selectedMemberData}
                     placeholder={t('prayerRequests.form.searchMemberPlaceholder') || 'Search for a member...'}
+                    disabled={isEdit}
                   />
                 </div>
 
