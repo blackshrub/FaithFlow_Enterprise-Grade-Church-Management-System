@@ -169,12 +169,12 @@ const AppointmentsListPage = () => {
             </div>
           </div>
 
-          {(filters.status || filters.counselor_id || filters.urgency || filters.date_from || filters.date_to) && (
+          {(filters.status !== 'all' || filters.counselor_id !== 'all' || filters.urgency !== 'all' || filters.date_from || filters.date_to) && (
             <div className="mt-4">
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setFilters({ status: '', counselor_id: '', urgency: '', date_from: '', date_to: '' })}
+                onClick={() => setFilters({ status: 'all', counselor_id: 'all', urgency: 'all', date_from: '', date_to: '' })}
               >
                 Clear Filters
               </Button>
