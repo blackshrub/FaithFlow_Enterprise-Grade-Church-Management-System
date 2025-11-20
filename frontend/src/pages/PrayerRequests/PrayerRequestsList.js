@@ -166,7 +166,7 @@ export default function PrayerRequestsList() {
                         )}
                       </div>
                     </TableCell>
-                    <TableCell>{request.requester_name}</TableCell>
+                    <TableCell>{request.member_name || 'Anonymous'}</TableCell>
                     <TableCell>{t(`prayerRequests.categories.${request.category}`)}</TableCell>
                     <TableCell>
                       <PrayerRequestStatusBadge status={request.status} />
