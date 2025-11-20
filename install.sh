@@ -255,7 +255,7 @@ echo ""
 sleep 1
 
 progress
-echo -e "${MAGENTA}${ROCKET} Step 10/12: Setting up FaithFlow frontend...${NC}"
+echo -e "${MAGENTA}${ROCKET} Step 11/14: Setting up FaithFlow frontend...${NC}"
 progress
 cd "$SCRIPT_DIR/frontend"
 
