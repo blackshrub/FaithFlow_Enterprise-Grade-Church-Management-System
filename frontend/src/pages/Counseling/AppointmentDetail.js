@@ -24,6 +24,7 @@ import {
   useCompleteAppointment
 } from '../../hooks/useCounseling';
 import { format, parseISO } from 'date-fns';
+import MemberAvatar from '../../components/MemberAvatar';
 
 const AppointmentDetailPage = () => {
   const { t } = useTranslation();
