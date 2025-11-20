@@ -446,11 +446,13 @@ class WebhookService:
                 "message": "Test webhook sent successfully" if response.status_code in [200, 201, 202] else "Test webhook failed",
                 "debug_info": {
                     "payload": test_payload,
-                    "signature": f"sha256={signature}",
+                    "signature": signature,  # Raw hex, no prefix
                     "signature_algorithm": "HMAC-SHA256",
                     "payload_json": payload_json[:200] + "..." if len(payload_json) > 200 else payload_json,
                     "secret_key_length": len(webhook_config["secret_key"]),
-                    "headers_sent": {k: v for k, v in headers.items() if k != "X-Webhook-Signature"}
+                    "headers_sent": {k: v for k, v in headers.items() if k != "X-Webhook-Signature"},
+                    "signature_format": "No prefix, lowercase hex",
+                    "json_format": "Compact (no spaces), unsorted keys"
                 }
             }
         
