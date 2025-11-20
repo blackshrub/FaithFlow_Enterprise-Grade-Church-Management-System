@@ -126,7 +126,7 @@ echo ""
 sleep 1
 
 progress
-echo -e "${MAGENTA}${ROCKET} Step 4/12: Installing Yarn package manager...${NC}"
+echo -e "${MAGENTA}${ROCKET} Step 4/14: Installing Yarn package manager...${NC}"
 progress
 npm install -g yarn > /dev/null 2>&1
 success "Yarn installed!"
