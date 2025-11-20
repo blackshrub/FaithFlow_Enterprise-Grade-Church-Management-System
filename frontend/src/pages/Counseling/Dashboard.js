@@ -93,8 +93,9 @@ const CounselingDashboard = () => {
           <h1 className="text-3xl font-bold">Counseling & Prayer</h1>
           <p className="text-gray-500 mt-1">Dashboard</p>
         </div>
-        <Button onClick={() => navigate('/counseling/appointments/new')}>
+        <Button onClick={() => navigate('/counseling/appointments/new')} disabled>
           Create Appointment
+          <span className="ml-2 text-xs opacity-70">(Coming Soon)</span>
         </Button>
       </div>
 
