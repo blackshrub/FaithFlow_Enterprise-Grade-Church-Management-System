@@ -412,17 +412,18 @@ class WebhookService:
         }
         
         try:
-            # Generate signature
-            payload_json = json.dumps(test_payload, sort_keys=True)
+            # Generate signature (matching external app format)
+            # Use compact JSON (no spaces) and NO sorted keys
+            payload_json = json.dumps(test_payload, separators=(',', ':'))
             signature = hmac.new(
-                webhook_config["secret_key"].encode(),
-                payload_json.encode(),
+                webhook_config["secret_key"].encode('utf-8'),
+                payload_json.encode('utf-8'),
                 hashlib.sha256
-            ).hexdigest()
+            ).hexdigest()  # Lowercase hex, no prefix
             
             headers = {
                 "Content-Type": "application/json",
-                "X-Webhook-Signature": f"sha256={signature}",
+                "X-Webhook-Signature": signature,  # No "sha256=" prefix
                 **webhook_config.get("custom_headers", {})
             }
             
