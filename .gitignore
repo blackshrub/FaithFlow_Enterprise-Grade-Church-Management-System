@@ -12,6 +12,11 @@ ENV/
 .env.local
 .env.*.local
 
+# But ALLOW .env.example files explicitly
+!.env.example
+!backend/.env.example
+!frontend/.env.example
+
 # IDE
 .vscode/
 .idea/
@@ -55,23 +60,8 @@ backend/models/tts_indonesian/checkpoint.pth
 # Git
 .git/
 
-# Deployment will use:
-# - Root .env.example (template for all environments)
-# - backend/.env (created from .env.example, contains actual values)
-# - frontend/.env (created from .env.example, contains actual values)
-# 
-# .env files with actual values are committed for deployment
-# .env.local files are for local development overrides (ignored)
+# Deployment Strategy:
+# - .env.example files are templates (COMMITTED)
+# - .env files contain actual values (COMMITTED for deployment)
+# - .env.local files are for local overrides (IGNORED)
 frontend/node_modules/.cache/default-development/27.pack
--e 
-# Environment files
-*.env
-*.env.*
--e 
-# Environment files
-*.env
-*.env.*
--e 
-# Environment files
-*.env
-*.env.*
