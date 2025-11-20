@@ -61,9 +61,9 @@ async def send_whatsapp_message(
         
         # Send request
         response = requests.post(
-            f"{WHATSAPP_API_URL}/send",
+            f"{whatsapp_url}/send",
             json=payload,
-            auth=(WHATSAPP_USERNAME, WHATSAPP_PASSWORD) if WHATSAPP_USERNAME else None,
+            auth=(whatsapp_user, whatsapp_pass) if whatsapp_user else None,
             timeout=15
         )
         
@@ -76,8 +76,8 @@ async def send_whatsapp_message(
             if message_id:
                 try:
                     status_response = requests.get(
-                        f"{WHATSAPP_API_URL}/message-status/{message_id}",
-                        auth=(WHATSAPP_USERNAME, WHATSAPP_PASSWORD) if WHATSAPP_USERNAME else None,
+                        f"{whatsapp_url}/message-status/{message_id}",
+                        auth=(whatsapp_user, whatsapp_pass) if whatsapp_user else None,
                         timeout=5
                     )
                     if status_response.status_code == 200:
