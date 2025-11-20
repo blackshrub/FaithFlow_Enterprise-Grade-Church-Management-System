@@ -1,0 +1,57 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+
+# Environment files - ignore local changes but keep committed defaults
+# Note: backend/.env and frontend/.env are committed with placeholder values
+# This prevents local changes from being tracked
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# React build
+frontend/build/
+frontend/dist/
+
+# Temporary files
+*.tmp
+*.temp
+/tmp/
+
+# Backups
+backups/
+*.backup
+
+# Node cache files
+frontend/node_modules/.cache/
+
+# TTS model checkpoints (large files)
+backend/models/tts_indonesian/checkpoint.pth
