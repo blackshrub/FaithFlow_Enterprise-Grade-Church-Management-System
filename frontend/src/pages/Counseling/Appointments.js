@@ -103,7 +103,7 @@ const AppointmentsListPage = () => {
                   <SelectValue placeholder="All Status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Status</SelectItem>
+                  <SelectItem value="all">All Status</SelectItem>
                   <SelectItem value="pending">{t('counseling.status_pending')}</SelectItem>
                   <SelectItem value="approved">{t('counseling.status_approved')}</SelectItem>
                   <SelectItem value="rejected">{t('counseling.status_rejected')}</SelectItem>
