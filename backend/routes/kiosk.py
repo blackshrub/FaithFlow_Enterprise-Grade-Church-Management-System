@@ -86,7 +86,13 @@ async def send_otp(
                 os.environ['WHATSAPP_PASSWORD'] = whatsapp_pass
                 
                 try:
-                    whatsapp_result = await send_whatsapp_message(whatsapp_phone, message)
+                    whatsapp_result = await send_whatsapp_message(
+                        whatsapp_phone, 
+                        message,
+                        api_url=whatsapp_url,
+                        api_username=whatsapp_user if whatsapp_user else None,
+                        api_password=whatsapp_pass if whatsapp_pass else None
+                    )
                     
                     print(f"📨 WhatsApp Result: {whatsapp_result}")
                     
@@ -105,13 +111,8 @@ async def send_otp(
                         "whatsapp_sent": whatsapp_result.get('success', False)
                     }
                 finally:
-                    # Restore old env vars
-                    if old_url:
-                        os.environ['WHATSAPP_API_URL'] = old_url
-                    if old_user:
-                        os.environ['WHATSAPP_USERNAME'] = old_user
-                    if old_pass:
-                        os.environ['WHATSAPP_PASSWORD'] = old_pass
+                    # No need to restore env vars since we're passing as parameters
+                    pass
             else:
                 print("⚠️ WhatsApp URL not configured in settings")
         else:
