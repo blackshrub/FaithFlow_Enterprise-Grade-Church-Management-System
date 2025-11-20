@@ -1,0 +1,66 @@
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Documentation
+*.md
+DOCS/
+docs/
+DEPLOYMENT_FIXES.md
+GITHUB_COMMIT_WORKFLOW.md
+
+# IDE and Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Node modules (will be reinstalled)
+node_modules/
+frontend/node_modules/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Build artifacts
+frontend/build/
+frontend/dist/
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+/tmp/
+*.backup
+backups/
+
+# Test files
+*.test.js
+*.spec.js
+__tests__/
+tests/
+
+# Large model files (if any)
+backend/models/tts_indonesian/checkpoint.pth
+
+# Environment files (will be provided by platform)
+# .env files are committed but changes should not trigger rebuilds
+.env.local
+.env.*.local
+
+# Emergent metadata
+.emergent/summary.txt
+
+# Misc
+yarn-error.log
+npm-debug.log
+.cache/
