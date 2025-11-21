@@ -135,7 +135,15 @@ async def get_current_user(
             detail="User account is inactive"
         )
     
-    return user
+    # CRITICAL: Merge JWT payload with DB user
+    # JWT payload contains session_church_id which MUST be preserved!
+    merged_user = {
+        **user,              # DB user fields
+        **payload,           # JWT payload OVERRIDES (includes session_church_id!)
+        "db_user": user,     # Keep original DB user for reference
+    }
+    
+    return merged_user
 
 
 async def require_admin(
