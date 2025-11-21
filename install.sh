@@ -729,14 +729,18 @@ server {
         proxy_connect_timeout 300s;
     }
 
-    # Frontend
+    # Frontend - Serve static build files
     location / {
-        proxy_pass http://localhost:3000;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade \$http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host \$host;
-        proxy_cache_bypass \$http_upgrade;
+        root /opt/faithflow/frontend/build;
+        try_files \$uri \$uri/ /index.html;
+        add_header Cache-Control "no-cache, must-revalidate";
+    }
+
+    # Static assets with caching
+    location ~* \\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
+        root /opt/faithflow/frontend/build;
+        expires 1y;
+        add_header Cache-Control "public, immutable";
     }
 }
 NGINX_CONFIG
