@@ -86,22 +86,28 @@ class AuthService:
             
             # Get church info (skip for super_admin)
             church = None
-            if user.get('role') != 'super_admin' and user.get('church_id'):
+            if user.get('role') != 'super_admin':
+                # Regular users need a church
+                if not user.get('church_id'):
+                    logger.warning(f"Login failed: User {login_data.email} has no church_id")
+                    return None
+                
                 church = await db.churches.find_one({"id": user.get('church_id')}, {"_id": 0})
                 if not church:
                     logger.warning(f"Login failed: Church not found for user {login_data.email}")
                     return None
-            elif user.get('role') == 'super_admin':
-                # Super admin - no church restriction
-                # Get church from login request if provided
-                if login_data.church_id:
-                    church = await db.churches.find_one({"id": login_data.church_id}, {"_id": 0})
-                # If no church specified or not found, that's OK for super admin
-                logger.info(f"Super admin {login_data.email} logging in (church: {church['name'] if church else 'all'})")
+            else:
+                # Super admin - no church required, can access all
+                logger.info(f"Super admin {login_data.email} logging in (can access all churches)")
             
             # Create access token
             access_token = create_access_token(
-                data={"sub": user['id'], "email": user['email'], "role": user['role'], "church_id": church['id'] if church else None}
+                data={
+                    "sub": user['id'], 
+                    "email": user['email'], 
+                    "role": user['role'],
+                    "church_id": user.get('church_id')  # Will be None for super_admin
+                }
             )
             
             # Remove sensitive data
