@@ -114,7 +114,13 @@ api.interceptors.response.use(
 
 // Auth API
 export const authAPI = {
-  login: (email, password) => api.post('/auth/login', { email, password }),
+  login: (email, password, church_id = null) => {
+    const payload = { email, password };
+    if (church_id) {
+      payload.church_id = church_id;  // Include church_id for super admin
+    }
+    return api.post('/auth/login', payload);
+  },
   register: (userData) => api.post('/auth/register', userData),
   getCurrentUser: () => api.get('/auth/me'),
   listUsers: () => api.get('/auth/users'),
