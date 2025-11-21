@@ -13,6 +13,8 @@
     "password": "Kata Sandi",
     "church": "Gereja",
     "selectChurch": "Pilih gereja",
+    "selectChurchHelp": "Super Admin harus memilih gereja yang ingin dikelola",
+    "errorChurchRequired": "Silakan pilih gereja untuk melanjutkan",
     "signingIn": "Sedang masuk...",
     "demoCredentials": "Kredensial demo: admin@gkbjtamankencana.org / admin123",
     "invalidCredentials": "Email atau kata sandi tidak valid"
