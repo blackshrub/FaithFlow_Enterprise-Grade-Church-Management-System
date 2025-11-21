@@ -23,7 +23,7 @@ async def create_member_status(
     """Create a new member status (admin only)"""
     
     # Verify user has access to this church
-    if current_user.get('role') != 'super_admin' and current_user.get('church_id') != status_data.church_id:
+    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') or current_user.get('church_id') != status_data.church_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Access denied"
@@ -65,7 +65,7 @@ async def list_member_statuses(
     
     query = {}
     if current_user.get('role') != 'super_admin':
-        query['church_id'] = current_user.get('church_id')
+        query['church_id'] = current_user.get('session_church_id') or current_user.get('church_id')
     
     statuses = await db.member_statuses.find(query, {"_id": 0}).sort("display_order", 1).to_list(100)
     
@@ -95,7 +95,7 @@ async def get_member_status(
         )
     
     # Check access
-    if current_user.get('role') != 'super_admin' and current_user.get('church_id') != status.get('church_id'):
+    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') or current_user.get('church_id') != status.get('church_id'):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Access denied"
@@ -127,7 +127,7 @@ async def update_member_status(
         )
     
     # Check access
-    if current_user.get('role') != 'super_admin' and current_user.get('church_id') != status.get('church_id'):
+    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') or current_user.get('church_id') != status.get('church_id'):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Access denied"
@@ -178,7 +178,7 @@ async def delete_member_status(
         )
     
     # Check access
-    if current_user.get('role') != 'super_admin' and current_user.get('church_id') != status.get('church_id'):
+    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') or current_user.get('church_id') != status.get('church_id'):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Access denied"
@@ -215,7 +215,7 @@ async def reorder_member_statuses(
 ):
     """Reorder member statuses by providing ordered list of IDs"""
     
-    church_id = current_user.get('church_id')
+    church_id = current_user.get('session_church_id') or current_user.get('church_id')
     
     # Update display_order for each status
     for index, status_id in enumerate(status_ids):
@@ -238,7 +238,7 @@ async def create_demographic_preset(
     """Create a new demographic preset (admin only)"""
     
     # Verify user has access to this church
-    if current_user.get('role') != 'super_admin' and current_user.get('church_id') != preset_data.church_id:
+    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') or current_user.get('church_id') != preset_data.church_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Access denied"
@@ -280,7 +280,7 @@ async def list_demographic_presets(
     
     query = {}
     if current_user.get('role') != 'super_admin':
-        query['church_id'] = current_user.get('church_id')
+        query['church_id'] = current_user.get('session_church_id') or current_user.get('church_id')
     
     presets = await db.demographic_presets.find(query, {"_id": 0}).sort("order", 1).to_list(100)
     
@@ -310,7 +310,7 @@ async def get_demographic_preset(
         )
     
     # Check access
-    if current_user.get('role') != 'super_admin' and current_user.get('church_id') != preset.get('church_id'):
+    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') or current_user.get('church_id') != preset.get('church_id'):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Access denied"
@@ -342,7 +342,7 @@ async def update_demographic_preset(
         )
     
     # Check access
-    if current_user.get('role') != 'super_admin' and current_user.get('church_id') != preset.get('church_id'):
+    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') or current_user.get('church_id') != preset.get('church_id'):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Access denied"
@@ -396,7 +396,7 @@ async def delete_demographic_preset(
         )
     
     # Check access
-    if current_user.get('role') != 'super_admin' and current_user.get('church_id') != preset.get('church_id'):
+    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') or current_user.get('church_id') != preset.get('church_id'):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Access denied"
@@ -415,7 +415,7 @@ async def get_church_settings(
 ):
     """Get church settings for current user's church"""
     
-    church_id = current_user.get('church_id')
+    church_id = current_user.get('session_church_id') or current_user.get('church_id')
     settings = await db.church_settings.find_one({"church_id": church_id}, {"_id": 0})
     
     if not settings:
@@ -441,7 +441,7 @@ async def create_church_settings(
     """Create church settings (admin only)"""
     
     # Verify user has access to this church
-    if current_user.get('role') != 'super_admin' and current_user.get('church_id') != settings_data.church_id:
+    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') or current_user.get('church_id') != settings_data.church_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Access denied"
@@ -522,7 +522,7 @@ async def list_event_categories(
     """List all event categories"""
     query = {}
     if current_user.get('role') != 'super_admin':
-        query['church_id'] = current_user.get('church_id')
+        query['church_id'] = current_user.get('session_church_id') or current_user.get('church_id')
     
     categories = await db.event_categories.find(query, {"_id": 0}).sort("order", 1).to_list(100)
     
@@ -542,7 +542,7 @@ async def create_event_category(
     current_user: dict = Depends(require_admin)
 ):
     """Create event category"""
-    if current_user.get('role') != 'super_admin' and current_user.get('church_id') != category_data.church_id:
+    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') or current_user.get('church_id') != category_data.church_id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
     
     category = EventCategory(**category_data.model_dump())
@@ -566,7 +566,7 @@ async def update_event_category(
     if not category:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Category not found")
     
-    if current_user.get('role') != 'super_admin' and current_user.get('church_id') != category.get('church_id'):
+    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') or current_user.get('church_id') != category.get('church_id'):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
     
     update_data = category_data.model_dump(exclude_unset=True)
@@ -597,7 +597,7 @@ async def delete_event_category(
     if category.get('is_system'):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Cannot delete system category")
     
-    if current_user.get('role') != 'super_admin' and current_user.get('church_id') != category.get('church_id'):
+    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') or current_user.get('church_id') != category.get('church_id'):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
     
     await db.event_categories.delete_one({"id": category_id})
