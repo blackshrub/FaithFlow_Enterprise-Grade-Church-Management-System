@@ -335,11 +335,25 @@ progress
 echo -e "${MAGENTA}${ROCKET} Step 12/14: Configuring services...${NC}"
 progress
 
-info "Setting up Supervisor to manage FaithFlow..."
+# Ask for backend port
+echo ""
+echo -e "${CYAN}📡 Backend API Configuration:${NC}"
+echo ""
+read -p "Backend port [8001]: " BACKEND_PORT
+BACKEND_PORT=${BACKEND_PORT:-8001}
 
-# Create supervisord.conf with correct paths
+# Validate port
+if ! [[ "$BACKEND_PORT" =~ ^[0-9]+$ ]] || [ "$BACKEND_PORT" -lt 1024 ] || [ "$BACKEND_PORT" -gt 65535 ]; then
+    warn "Invalid port. Using default 8001"
+    BACKEND_PORT=8001
+fi
+
+info "Setting up Supervisor to manage FaithFlow..."
+echo -e "${CYAN}   Backend will run on port: ${WHITE}$BACKEND_PORT${NC}"
+
+# Create supervisord.conf with correct paths and port
 # Note: Frontend is static files served by Nginx, only backend needs supervisor
-cat > /etc/supervisor/conf.d/faithflow.conf << 'SUPERVISOR_CONF'
+cat > /etc/supervisor/conf.d/faithflow.conf << SUPERVISOR_CONF
 [supervisord]
 nodaemon=false
 
@@ -354,7 +368,7 @@ serverurl=unix:///var/run/supervisor.sock
 supervisor.rpcinterface_factory = supervisor.rpcinterface:make_main_rpcinterface
 
 [program:backend]
-command=/opt/faithflow/backend/venv/bin/uvicorn server:app --host 0.0.0.0 --port 8001
+command=/opt/faithflow/backend/venv/bin/uvicorn server:app --host 0.0.0.0 --port $BACKEND_PORT
 directory=/opt/faithflow/backend
 autostart=true
 autorestart=true
