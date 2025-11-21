@@ -7,7 +7,7 @@ from decimal import Decimal
 import uuid
 
 from utils.dependencies import get_db, get_current_user
-from utils.tenant_utils import get_session_church_id
+from utils.dependencies import get_session_church_id
 from services import accounting_service, audit_service
 from models.journal import JournalLine
 

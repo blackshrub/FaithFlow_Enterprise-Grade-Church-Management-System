@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from utils.dependencies import get_db, require_admin, get_current_user
-from utils.tenant_utils import get_session_church_id
+from utils.dependencies import get_session_church_id
 from services import year_end_closing_service, audit_service
 
 router = APIRouter(prefix="/accounting/year-end", tags=["Year-End Closing"])

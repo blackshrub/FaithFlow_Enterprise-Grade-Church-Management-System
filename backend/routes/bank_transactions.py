@@ -7,7 +7,7 @@ import csv
 import io
 
 from utils.dependencies import get_db, get_current_user
-from utils.tenant_utils import get_session_church_id
+from utils.dependencies import get_session_church_id
 from services import pagination_service, audit_service
 
 router = APIRouter(prefix="/accounting/bank-transactions", tags=["Bank Transactions"])

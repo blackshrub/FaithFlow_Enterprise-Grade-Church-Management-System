@@ -5,7 +5,7 @@ import uuid
 
 from models.article_category import ArticleCategoryBase, ArticleCategoryUpdate
 from utils.dependencies import get_db, get_current_user
-from utils.tenant_utils import get_session_church_id
+from utils.dependencies import get_session_church_id
 from utils.error_response import error_response
 from services import article_service, audit_service
 

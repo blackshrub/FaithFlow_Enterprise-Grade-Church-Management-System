@@ -4,7 +4,7 @@ from typing import Optional
 from datetime import date
 
 from utils.dependencies import get_db, require_admin
-from utils.tenant_utils import get_session_church_id
+from utils.dependencies import get_session_church_id
 from services import pagination_service
 
 router = APIRouter(prefix="/accounting/audit-logs", tags=["Audit Logs"])

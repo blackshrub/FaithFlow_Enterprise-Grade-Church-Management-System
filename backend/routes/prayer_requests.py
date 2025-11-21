@@ -6,7 +6,7 @@ import uuid
 
 from models.prayer_request import PrayerRequestBase, PrayerRequestUpdate
 from utils.dependencies import get_db, get_current_user
-from utils.tenant_utils import get_session_church_id
+from utils.dependencies import get_session_church_id
 from services import audit_service
 
 router = APIRouter(prefix="/prayer-requests", tags=["Prayer Requests"])

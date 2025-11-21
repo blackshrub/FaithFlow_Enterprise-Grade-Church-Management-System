@@ -6,7 +6,7 @@ import uuid
 
 from models.group_membership import GroupMembership, GroupMembershipCreate, GroupMembershipUpdate
 from utils.dependencies import get_db, get_current_user
-from utils.tenant_utils import get_session_church_id
+from utils.dependencies import get_session_church_id
 from services import audit_service
 
 router = APIRouter(prefix="/groups", tags=["Group Memberships"])

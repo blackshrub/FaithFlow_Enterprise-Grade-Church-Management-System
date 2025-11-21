@@ -5,7 +5,7 @@ from datetime import datetime
 
 from models.responsibility_center import ResponsibilityCenterCreate, ResponsibilityCenterUpdate
 from utils.dependencies import get_db, get_current_user
-from utils.tenant_utils import get_session_church_id
+from utils.dependencies import get_session_church_id
 from utils import error_codes
 from utils.error_response import error_response
 from services import audit_service

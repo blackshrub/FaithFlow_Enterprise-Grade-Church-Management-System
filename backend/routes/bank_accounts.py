@@ -6,7 +6,7 @@ import uuid
 
 from models.bank_account import BankAccountCreate, BankAccountUpdate
 from utils.dependencies import get_db, get_current_user
-from utils.tenant_utils import get_session_church_id
+from utils.dependencies import get_session_church_id
 from services import audit_service
 
 router = APIRouter(prefix="/accounting/bank-accounts", tags=["Bank Accounts"])

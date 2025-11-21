@@ -8,7 +8,7 @@ import uuid
 
 from models.beginning_balance import BeginningBalanceBase, BeginningBalanceUpdate, BeginningBalanceEntry
 from utils.dependencies import get_db, get_current_user
-from utils.tenant_utils import get_session_church_id
+from utils.dependencies import get_session_church_id
 from utils import error_codes
 from utils.error_response import error_response
 from services import accounting_service, audit_service, fiscal_period_service

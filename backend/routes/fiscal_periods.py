@@ -3,7 +3,7 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 from typing import Optional
 
 from utils.dependencies import get_db, get_current_user, require_admin
-from utils.tenant_utils import get_session_church_id
+from utils.dependencies import get_session_church_id
 from services import fiscal_period_service, audit_service
 
 router = APIRouter(prefix="/accounting/fiscal-periods", tags=["Fiscal Periods"])

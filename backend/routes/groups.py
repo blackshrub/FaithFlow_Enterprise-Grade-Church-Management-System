@@ -9,7 +9,7 @@ import aiofiles
 from models.group import GroupBase, GroupUpdate, Group
 from models.member import Member
 from utils.dependencies import get_db, get_current_user
-from utils.tenant_utils import get_session_church_id
+from utils.dependencies import get_session_church_id
 from services import audit_service
 from utils.error_response import error_response
 
