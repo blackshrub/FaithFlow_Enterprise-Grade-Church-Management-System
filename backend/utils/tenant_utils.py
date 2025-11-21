@@ -7,30 +7,35 @@ logger = logging.getLogger(__name__)
 
 
 def get_current_church_id(current_user: dict) -> str:
+    """Get church_id from current user (for backward compatibility).
+    
+    Deprecated: Use get_session_church_id instead for session-scoped access.
     """
-    Extract church_id from current authenticated user.
+    return current_user.get("church_id") or current_user.get("session_church_id")
+
+
+def get_session_church_id(current_user: dict) -> str:
+    """Get session-scoped church_id from JWT token.
     
-    Args:
-        current_user: User dict from JWT token
+    This is the church the user is currently operating in:
+    - For super_admin: The church they selected at login
+    - For regular users: Their assigned church_id
     
-    Returns:
-        church_id string
-    
-    Raises:
-        HTTPException: If church_id not found
+    Use this instead of get_current_church_id for all tenant filtering.
     """
-    church_id = current_user.get('church_id')
+    session_church_id = current_user.get("session_church_id")
     
-    if not church_id:
+    if not session_church_id:
+        # Fallback for backward compatibility
+        session_church_id = current_user.get("church_id")
+    
+    if not session_church_id:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail={
-                "error_code": "CHURCH_ACCESS_DENIED",
-                "message": "Church ID not found in user token"
-            }
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="No active church context"
         )
     
-    return church_id
+    return session_church_id
 
 
 async def validate_church_access(
