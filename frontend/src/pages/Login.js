@@ -42,28 +42,21 @@ export default function Login() {
     setError('');
 
     if (!selectedChurch) {
-      setError('Please select a church');
+      setError(t('auth.selectChurch') || 'Please select a church');
       return;
     }
 
     setLoading(true);
 
-    const result = await login(email, password);
+    // Pass church_id for super admin, backend will use it for session_church_id
+    const result = await login(email, password, selectedChurch);
     
     if (result.success) {
-      // Verify user belongs to selected church
-      const userChurchId = result.user?.church_id;
-      if (userChurchId !== selectedChurch && result.user?.role !== 'super_admin') {
-        setError('You do not have access to the selected church');
-        setLoading(false);
-        return;
-      }
       navigate('/dashboard');
     } else {
-      setError(result.error);
+      setError(result.error || t('auth.invalidCredentials'));
+      setLoading(false);
     }
-    
-    setLoading(false);
   };
 
   if (loadingChurches) {
