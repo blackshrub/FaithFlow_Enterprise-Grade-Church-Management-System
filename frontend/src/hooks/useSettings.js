@@ -139,12 +139,17 @@ export const useDeleteDemographic = () => {
 // ============= Church Settings Hooks =============
 
 export const useChurchSettings = () => {
-  const { church } = useAuth();
+  const { user } = useAuth();
+  
+  // Extract session_church_id from JWT (via user context)
+  // For super admin: The church they selected at login
+  // For regular user: Their assigned church_id
+  const sessionChurchId = user?.session_church_id || user?.church_id;
   
   return useQuery({
-    queryKey: queryKeys.settings.churchSettings(church?.id),
+    queryKey: ['church-settings', sessionChurchId],  // Cache per church
     queryFn: () => settingsAPI.getChurchSettings().then(res => res.data),
-    enabled: !!church?.id,
+    enabled: !!sessionChurchId,  // Only run when we have a church context
   });
 };
 
