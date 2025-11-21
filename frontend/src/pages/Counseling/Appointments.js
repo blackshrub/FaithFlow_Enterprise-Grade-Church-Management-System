@@ -26,11 +26,13 @@ import { useAppointments, useCounselors } from '../../hooks/useCounseling';
 import { format, parseISO } from 'date-fns';
 import MemberAvatar from '../../components/MemberAvatar';
 import AppointmentDetailPage from './AppointmentDetail';
+import CreateAppointmentModal from '../../components/Counseling/CreateAppointmentModal';
 
 const AppointmentsListPage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { appointmentId } = useParams();
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [filters, setFilters] = useState({
     status: 'all',
     counselor_id: 'all',
