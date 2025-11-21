@@ -162,9 +162,6 @@ async def require_super_admin(
     return current_user
 
 
-from utils.tenant_utils import get_session_church_id_from_user
-
-
 def get_session_church_id(current_user: dict = Depends(get_current_user)) -> str:
     """Get session-scoped church_id from JWT token.
     
