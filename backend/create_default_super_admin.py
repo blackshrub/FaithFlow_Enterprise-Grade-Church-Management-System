@@ -33,7 +33,11 @@ DEFAULT_SUPER_ADMIN = {
 
 
 async def create_default_super_admin():
-    """Create default super admin if none exists."""
+    """Create default super admin if none exists.
+    
+    CRITICAL: Super admin MUST have a church_id (even though they can access all churches).
+    We assign them to the first available church.
+    """
     
     try:
         # Connect to MongoDB
@@ -43,11 +47,11 @@ async def create_default_super_admin():
         client = AsyncIOMotorClient(mongo_url)
         db = client[db_name]
         
-        # Create default church if none exists
+        # STEP 1: Ensure a church exists (create default if needed)
         existing_church = await db.churches.find_one({})
         
         if not existing_church:
-            print("⛪ Creating default church...")
+            print("⛪ No church found, creating default church...")
             
             church_id = str(uuid.uuid4())
             church = {
@@ -61,7 +65,7 @@ async def create_default_super_admin():
                 "updated_at": datetime.utcnow()
             }
             await db.churches.insert_one(church)
-            print("✅ Default church created: GKBJ Taman Kencana")
+            print(f"✅ Default church created: {church['name']}")
             
             # Create Pre-Visitor status for this church
             previsitor_status_id = str(uuid.uuid4())
@@ -107,19 +111,30 @@ async def create_default_super_admin():
             await db.church_settings.insert_one(settings)
             print("✅ Church settings created")
         else:
+            church_id = existing_church['id']
             print(f"ℹ️  Church already exists: {existing_church['name']}")
         
-        # Check if any super admin exists
+        # STEP 2: Create super admin with church_id assigned
         existing_super = await db.users.find_one({"role": "super_admin"})
         
         if existing_super:
             print("ℹ️  Super admin already exists:")
             print(f"   Email: {existing_super['email']}")
             print(f"   Name: {existing_super['full_name']}")
+            
+            # CRITICAL: Ensure existing super admin has church_id
+            if not existing_super.get('church_id'):
+                print("⚠️  Super admin missing church_id, fixing...")
+                await db.users.update_one(
+                    {"id": existing_super['id']},
+                    {"$set": {"church_id": church_id}}
+                )
+                print(f"✅ Assigned church_id to super admin")
+            
             client.close()
             return
         
-        # Create default super admin
+        # Create default super admin WITH church_id
         print("\n🔑 Creating default super admin...")
         
         password = DEFAULT_SUPER_ADMIN["password"]
@@ -135,11 +150,11 @@ async def create_default_super_admin():
         
         user = {
             "id": str(uuid.uuid4()),
-            "church_id": None,  # No church - can access all
+            "church_id": church_id,  # ✅ CRITICAL: Assign first church!
             "email": DEFAULT_SUPER_ADMIN["email"],
             "full_name": DEFAULT_SUPER_ADMIN["full_name"],
             "phone": DEFAULT_SUPER_ADMIN["phone"],
-            "hashed_password": password_hash_str,  # Correct field name for auth service
+            "hashed_password": password_hash_str,
             "role": DEFAULT_SUPER_ADMIN["role"],
             "is_active": True,
             "kiosk_pin": DEFAULT_SUPER_ADMIN["kiosk_pin"],
@@ -156,6 +171,7 @@ async def create_default_super_admin():
         print(f"  Email:    {DEFAULT_SUPER_ADMIN['email']}")
         print(f"  Password: {DEFAULT_SUPER_ADMIN['password']}")
         print(f"  Role:     {DEFAULT_SUPER_ADMIN['role']} (access all churches)")
+        print(f"  Church:   {church['name']} (home church)")
         print(f"  PIN:      {DEFAULT_SUPER_ADMIN['kiosk_pin']}")
         print("=" * 60)
         print("\n⚠️  IMPORTANT: Change password after first login!\n")
