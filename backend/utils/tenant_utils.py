@@ -14,7 +14,7 @@ def get_current_church_id(current_user: dict) -> str:
     return current_user.get("church_id") or current_user.get("session_church_id")
 
 
-def get_session_church_id(current_user: dict) -> str:
+def get_session_church_id(current_user: dict = Depends(get_current_user)) -> str:
     """Get session-scoped church_id from JWT token.
     
     This is the church the user is currently operating in:
@@ -32,7 +32,7 @@ def get_session_church_id(current_user: dict) -> str:
     if not session_church_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="No active church context"
+            detail="No active church context. Please logout and login again to refresh your session."
         )
     
     return session_church_id
