@@ -103,26 +103,27 @@ class AuthService:
                 session_church_id = login_data.church_id
                 logger.info(f"Super admin {login_data.email} logging in to church: {church['name']}")
             else:
-                # Regular users - use their assigned church_id
-                if not user.get('church_id'):
-                    logger.warning(f"Login failed: User {login_data.email} has no church_id")
+                # Regular users - MUST have church_id in database
+                user_church_id = user.get('church_id')
+                if not user_church_id:
+                    logger.error(f"Login failed: User {login_data.email} (role: {user.get('role')}) has no church_id in database!")
                     return None
                 
-                church = await db.churches.find_one({"id": user.get('church_id')}, {"_id": 0})
+                church = await db.churches.find_one({"id": user_church_id}, {"_id": 0})
                 if not church:
-                    logger.warning(f"Login failed: Church {user.get('church_id')} not found")
+                    logger.warning(f"Login failed: Church {user_church_id} not found")
                     return None
                 
-                session_church_id = user.get('church_id')
+                session_church_id = user_church_id
                 logger.info(f"User {login_data.email} logging in to church: {church['name']}")
             
-            # Create access token with session_church_id
+            # Create access token - ONLY session_church_id, NO user.church_id
             access_token = create_access_token(
                 data={
                     "sub": user['id'], 
                     "email": user['email'], 
                     "role": user['role'],
-                    "session_church_id": session_church_id  # NEW - session-scoped church
+                    "session_church_id": session_church_id  # ONLY this field for church context
                 }
             )
             
