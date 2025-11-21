@@ -84,29 +84,45 @@ class AuthService:
                 logger.warning(f"Login failed: User {login_data.email} is inactive")
                 return None
             
-            # Get church info (skip for super_admin)
+            # Determine session church ID
+            session_church_id = None
             church = None
-            if user.get('role') != 'super_admin':
-                # Regular users need a church
+            
+            if user.get('role') == 'super_admin':
+                # Super admin MUST select a church at login
+                if not login_data.church_id:
+                    logger.warning(f"Login failed: Super admin {login_data.email} must select a church")
+                    return None
+                
+                # Verify selected church exists
+                church = await db.churches.find_one({"id": login_data.church_id}, {"_id": 0})
+                if not church:
+                    logger.warning(f"Login failed: Selected church {login_data.church_id} not found")
+                    return None
+                
+                session_church_id = login_data.church_id
+                logger.info(f"Super admin {login_data.email} logging in to church: {church['name']}")
+            else:
+                # Regular users - use their assigned church_id
                 if not user.get('church_id'):
                     logger.warning(f"Login failed: User {login_data.email} has no church_id")
                     return None
                 
                 church = await db.churches.find_one({"id": user.get('church_id')}, {"_id": 0})
                 if not church:
-                    logger.warning(f"Login failed: Church not found for user {login_data.email}")
+                    logger.warning(f"Login failed: Church {user.get('church_id')} not found")
                     return None
-            else:
-                # Super admin - no church required, can access all
-                logger.info(f"Super admin {login_data.email} logging in (can access all churches)")
+                
+                session_church_id = user.get('church_id')
+                logger.info(f"User {login_data.email} logging in to church: {church['name']}")
             
-            # Create access token
+            # Create access token with session_church_id
             access_token = create_access_token(
                 data={
                     "sub": user['id'], 
                     "email": user['email'], 
                     "role": user['role'],
-                    "church_id": user.get('church_id')  # Will be None for super_admin
+                    "session_church_id": session_church_id  # NEW - session-scoped church
                 }
             )
             
