@@ -30,7 +30,7 @@ async def create_import_template(
 ):
     """Create an import template for reuse"""
     
-    if current_user.get('role') != 'super_admin' and current_user.get('church_id') != template_data.church_id:
+    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') or current_user.get('church_id') != template_data.church_id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
     
     template = ImportTemplate(**template_data.model_dump())
@@ -51,7 +51,7 @@ async def list_import_templates(
     
     query = {}
     if current_user.get('role') != 'super_admin':
-        query['church_id'] = current_user.get('church_id')
+        query['church_id'] = current_user.get('session_church_id') or current_user.get('church_id')
     
     templates = await db.import_templates.find(query, {"_id": 0}).to_list(100)
     
@@ -143,7 +143,7 @@ async def validate_phone_duplicates(
         mapped_data = import_export_service.apply_field_mapping(data, field_map, defaults)
         
         # Get church_id for database queries
-        church_id = current_user.get('church_id')
+        church_id = current_user.get('session_church_id') or current_user.get('church_id')
         
         # OPTIMIZATION: Fetch all active members with phones once and build normalized lookup
         # This is critical for proper duplicate detection regardless of phone format
@@ -284,7 +284,7 @@ async def simulate_import(
         transformed_data = import_export_service.apply_value_mapping(mapped_data, value_map)
         
         # Validate data
-        church_id = current_user.get('church_id')
+        church_id = current_user.get('session_church_id') or current_user.get('church_id')
         valid_data, errors, duplicate_conflicts = await import_export_service.validate_member_data(
             transformed_data, 
             church_id, 
@@ -391,7 +391,7 @@ async def import_members(
                     row['phone_whatsapp'] = None
         
         # Validate data
-        church_id = current_user.get('church_id')
+        church_id = current_user.get('session_church_id') or current_user.get('church_id')
         valid_data, errors, duplicate_conflicts = await import_export_service.validate_member_data(
             transformed_data, 
             church_id, 
@@ -532,7 +532,7 @@ async def export_members(
     # Build query
     query = {}
     if current_user.get('role') != 'super_admin':
-        query['church_id'] = current_user.get('church_id')
+        query['church_id'] = current_user.get('session_church_id') or current_user.get('church_id')
     
     if status_filter:
         query['is_active'] = status_filter == 'active'
@@ -579,7 +579,7 @@ async def list_import_logs(
     
     query = {}
     if current_user.get('role') != 'super_admin':
-        query['church_id'] = current_user.get('church_id')
+        query['church_id'] = current_user.get('session_church_id') or current_user.get('church_id')
     
     logs = await db.import_logs.find(query, {"_id": 0}).sort("created_at", -1).to_list(100)
     
@@ -610,7 +610,7 @@ async def upload_photos(
         extracted_files = file_upload_service.extract_archive(archive_content, archive.filename)
         
         # Get all members with photo_filename for current church
-        church_id = current_user.get('church_id')
+        church_id = current_user.get('session_church_id') or current_user.get('church_id')
         members = await db.members.find(
             {
                 "church_id": church_id,
@@ -680,7 +680,7 @@ async def upload_documents(
         extracted_files = file_upload_service.extract_archive(archive_content, archive.filename)
         
         # Get all members with personal_document for current church
-        church_id = current_user.get('church_id')
+        church_id = current_user.get('session_church_id') or current_user.get('church_id')
         members = await db.members.find(
             {
                 "church_id": church_id,
@@ -748,7 +748,7 @@ async def cleanup_temp_uploads(
     """
     
     try:
-        church_id = current_user.get('church_id')
+        church_id = current_user.get('session_church_id') or current_user.get('church_id')
         
         # Clear photos and documents for specified members
         result = await db.members.update_many(

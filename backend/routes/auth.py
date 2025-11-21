@@ -83,7 +83,7 @@ async def list_users(
     # Super admin can see all users, others only see their church
     query = {}
     if current_user.get('role') != 'super_admin':
-        query['church_id'] = current_user.get('church_id')
+        query['church_id'] = current_user.get('session_church_id') or current_user.get('church_id')
     
     users = await db.users.find(query, {"_id": 0, "hashed_password": 0}).to_list(1000)
     

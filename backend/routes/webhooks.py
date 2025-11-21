@@ -19,7 +19,7 @@ async def list_webhooks(
     
     query = {}
     if current_user.get('role') != 'super_admin':
-        query['church_id'] = current_user.get('church_id')
+        query['church_id'] = current_user.get('session_church_id') or current_user.get('church_id')
     
     webhooks = await db.webhook_configs.find(query, {"_id": 0}).to_list(100)
     
@@ -42,7 +42,7 @@ async def create_webhook(
     """Create a new webhook configuration"""
     
     # Verify access
-    if current_user.get('role') != 'super_admin' and current_user.get('church_id') != webhook_data.church_id:
+    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') or current_user.get('church_id') != webhook_data.church_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Access denied"
@@ -82,7 +82,7 @@ async def get_webhook(
         )
     
     # Check access
-    if current_user.get('role') != 'super_admin' and current_user.get('church_id') != webhook.get('church_id'):
+    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') or current_user.get('church_id') != webhook.get('church_id'):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Access denied"
@@ -115,7 +115,7 @@ async def update_webhook(
         )
     
     # Check access
-    if current_user.get('role') != 'super_admin' and current_user.get('church_id') != webhook.get('church_id'):
+    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') or current_user.get('church_id') != webhook.get('church_id'):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Access denied"
@@ -168,7 +168,7 @@ async def delete_webhook(
         )
     
     # Check access
-    if current_user.get('role') != 'super_admin' and current_user.get('church_id') != webhook.get('church_id'):
+    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') or current_user.get('church_id') != webhook.get('church_id'):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Access denied"
@@ -201,7 +201,7 @@ async def test_webhook(
         )
     
     # Check access
-    if current_user.get('role') != 'super_admin' and current_user.get('church_id') != webhook.get('church_id'):
+    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') or current_user.get('church_id') != webhook.get('church_id'):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Access denied"
@@ -231,7 +231,7 @@ async def get_webhook_logs(
         )
     
     # Check access
-    if current_user.get('role') != 'super_admin' and current_user.get('church_id') != webhook.get('church_id'):
+    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') or current_user.get('church_id') != webhook.get('church_id'):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Access denied"
@@ -257,7 +257,7 @@ async def get_queue_status(
     
     # Filter by church if not super admin
     if current_user.get('role') != 'super_admin':
-        church_id = current_user.get('church_id')
+        church_id = current_user.get('session_church_id') or current_user.get('church_id')
         # Get webhook IDs for this church
         webhooks = await db.webhook_configs.find(
             {"church_id": church_id},

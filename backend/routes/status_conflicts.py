@@ -22,7 +22,7 @@ async def list_conflicts(
     
     query = {}
     if current_user.get('role') != 'super_admin':
-        query['church_id'] = current_user.get('church_id')
+        query['church_id'] = current_user.get('session_church_id') or current_user.get('church_id')
     
     if pending_only:
         query['status'] = 'pending'
@@ -60,7 +60,7 @@ async def get_conflict(
         )
     
     # Check access
-    if current_user.get('role') != 'super_admin' and current_user.get('church_id') != conflict.get('church_id'):
+    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') or current_user.get('church_id') != conflict.get('church_id'):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Access denied"
@@ -94,7 +94,7 @@ async def resolve_conflict(
         )
     
     # Check access
-    if current_user.get('role') != 'super_admin' and current_user.get('church_id') != conflict.get('church_id'):
+    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') or current_user.get('church_id') != conflict.get('church_id'):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Access denied"
@@ -173,7 +173,7 @@ async def delete_conflict(
         )
     
     # Check access
-    if current_user.get('role') != 'super_admin' and current_user.get('church_id') != conflict.get('church_id'):
+    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') or current_user.get('church_id') != conflict.get('church_id'):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Access denied"

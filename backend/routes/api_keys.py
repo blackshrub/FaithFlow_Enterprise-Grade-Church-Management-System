@@ -18,7 +18,7 @@ async def list_api_keys(
     
     query = {}
     if current_user.get('role') != 'super_admin':
-        query['church_id'] = current_user.get('church_id')
+        query['church_id'] = current_user.get('session_church_id') or current_user.get('church_id')
     
     # Exclude sensitive fields: api_key (plain text) and api_key_hash
     api_keys = await db.api_keys.find(query, {"_id": 0, "api_key": 0, "api_key_hash": 0}).to_list(100)
@@ -44,7 +44,7 @@ async def create_api_key(
     """Create a new API key with random username and key"""
     
     # Verify access
-    if current_user.get('role') != 'super_admin' and current_user.get('church_id') != api_key_data.church_id:
+    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') or current_user.get('church_id') != api_key_data.church_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Access denied"
@@ -98,7 +98,7 @@ async def update_api_key(
         )
     
     # Check access
-    if current_user.get('role') != 'super_admin' and current_user.get('church_id') != api_key.get('church_id'):
+    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') or current_user.get('church_id') != api_key.get('church_id'):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Access denied"
@@ -141,7 +141,7 @@ async def delete_api_key(
         )
     
     # Check access
-    if current_user.get('role') != 'super_admin' and current_user.get('church_id') != api_key.get('church_id'):
+    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') or current_user.get('church_id') != api_key.get('church_id'):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Access denied"
@@ -169,7 +169,7 @@ async def regenerate_api_key(
         )
     
     # Check access
-    if current_user.get('role') != 'super_admin' and current_user.get('church_id') != api_key.get('church_id'):
+    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') or current_user.get('church_id') != api_key.get('church_id'):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Access denied"
