@@ -123,7 +123,15 @@ async def create_default_super_admin():
         print("\n🔑 Creating default super admin...")
         
         password = DEFAULT_SUPER_ADMIN["password"]
-        hashed = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+        # Generate bcrypt hash properly
+        salt = bcrypt.gensalt()
+        hashed = bcrypt.hashpw(password.encode('utf-8'), salt)
+        # Store as string (decode bytes to utf-8)
+        password_hash_str = hashed.decode('utf-8')
+        
+        # Verify hash works before storing
+        test_verify = bcrypt.checkpw(password.encode('utf-8'), hashed)
+        print(f"   Password hash verification test: {'✅ PASS' if test_verify else '❌ FAIL'}")
         
         user = {
             "id": str(uuid.uuid4()),
@@ -131,7 +139,7 @@ async def create_default_super_admin():
             "email": DEFAULT_SUPER_ADMIN["email"],
             "full_name": DEFAULT_SUPER_ADMIN["full_name"],
             "phone": DEFAULT_SUPER_ADMIN["phone"],
-            "password_hash": hashed.decode('utf-8'),
+            "password_hash": password_hash_str,
             "role": DEFAULT_SUPER_ADMIN["role"],
             "is_active": True,
             "kiosk_pin": DEFAULT_SUPER_ADMIN["kiosk_pin"],
