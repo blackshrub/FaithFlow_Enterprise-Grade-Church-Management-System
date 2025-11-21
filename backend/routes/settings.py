@@ -427,11 +427,8 @@ async def get_church_settings(
     settings = await db.church_settings.find_one({"church_id": church_id}, {"_id": 0})
     
     if not settings:
-        logger.info(f"   No settings found, creating default for church: {church_id}")
-        
         # CRITICAL: Validate church_id before creating
         if not church_id or church_id == 'None':
-            logger.error(f"   ❌ Cannot create default settings with church_id={church_id}")
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="No active church context. Please logout and login again to refresh your session."
@@ -439,7 +436,6 @@ async def get_church_settings(
         
         # Return default settings if not found
         default_settings = ChurchSettings(church_id=church_id)
-        logger.info("   ✅ Default settings created")
         return default_settings
     
     # Convert ISO strings
