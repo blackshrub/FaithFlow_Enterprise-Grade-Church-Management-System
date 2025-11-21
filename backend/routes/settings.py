@@ -7,8 +7,7 @@ from models.member_status import MemberStatus, MemberStatusCreate, MemberStatusU
 from models.demographic_preset import DemographicPreset, DemographicPresetCreate, DemographicPresetUpdate
 from models.church_settings import ChurchSettings, ChurchSettingsCreate, ChurchSettingsUpdate
 from models.event_category import EventCategory, EventCategoryCreate, EventCategoryUpdate
-from utils.dependencies import get_db, require_admin, get_current_user
-from utils.tenant_utils import get_session_church_id
+from utils.dependencies import get_db, require_admin, get_current_user, get_session_church_id
 
 router = APIRouter(prefix="/settings", tags=["Settings"])
 
