@@ -19,6 +19,7 @@ class UserCreate(UserBase):
 class UserLogin(BaseModel):
     email: str  # Changed from EmailStr to str to support both email and API username formats
     password: str
+    church_id: Optional[str] = None  # Required for super_admin, ignored for regular users
 
 
 class UserUpdate(BaseModel):
