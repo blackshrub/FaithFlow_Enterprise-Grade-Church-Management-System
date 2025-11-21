@@ -109,15 +109,18 @@ async def get_current_user(
                 detail="API key is inactive"
             )
         
-        # Return API key as user object
+        # Return API key as user object - merge with payload
         return {
+            **payload,           # Keep JWT fields (exp, iat, etc.)
             "id": api_key.get("id"),
             "email": api_key.get("api_username"),
             "full_name": f"API: {api_key.get('name')}",
             "role": "admin",  # API keys have admin access
             "church_id": api_key.get("church_id"),
+            "session_church_id": api_key.get("church_id"),  # API keys use their assigned church
             "type": "api_key",
-            "is_active": True
+            "is_active": True,
+            "db_user": api_key
         }
     
     # Handle regular user authentication
