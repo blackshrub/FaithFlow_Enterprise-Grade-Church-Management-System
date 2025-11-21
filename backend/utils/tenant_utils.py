@@ -1,8 +1,7 @@
-from fastapi import Request, HTTPException, status, Depends
+from fastapi import Request, HTTPException, status
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from typing import Optional, Dict, Any
 import logging
-from utils.dependencies import get_current_user
 
 logger = logging.getLogger(__name__)
 
@@ -10,19 +9,17 @@ logger = logging.getLogger(__name__)
 def get_current_church_id(current_user: dict) -> str:
     """Get church_id from current user (for backward compatibility).
     
-    Deprecated: Use get_session_church_id instead for session-scoped access.
+    Deprecated: Use get_session_church_id_from_user instead for session-scoped access.
     """
     return current_user.get("church_id") or current_user.get("session_church_id")
 
 
-def get_session_church_id(current_user: dict = Depends(get_current_user)) -> str:
-    """Get session-scoped church_id from JWT token.
+def get_session_church_id_from_user(current_user: dict) -> str:
+    """Extract session_church_id from user dict.
     
     This is the church the user is currently operating in:
     - For super_admin: The church they selected at login
     - For regular users: Their assigned church_id
-    
-    Use this instead of get_current_church_id for all tenant filtering.
     """
     session_church_id = current_user.get("session_church_id")
     
