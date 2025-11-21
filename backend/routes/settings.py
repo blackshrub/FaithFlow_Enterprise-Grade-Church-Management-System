@@ -421,7 +421,7 @@ async def get_church_settings(
     # Debug logging
     import logging
     logger = logging.getLogger(__name__)
-    logger.info(f"\ud83d\udcca GET church-settings called")
+    logger.info("\ud83d\udcca GET church-settings called")
     logger.info(f"   User: {current_user.get('email')}")
     logger.info(f"   Role: {current_user.get('role')}")
     logger.info(f"   session_church_id from JWT: {current_user.get('session_church_id')}")
@@ -451,7 +451,7 @@ async def get_church_settings(
         
         # Return default settings if not found
         default_settings = ChurchSettings(church_id=church_id)
-        logger.info(f"   ✅ Default settings created")
+        logger.info("   ✅ Default settings created")
         return default_settings
     
     # Convert ISO strings
