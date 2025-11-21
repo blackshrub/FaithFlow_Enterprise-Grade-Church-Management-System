@@ -2,14 +2,9 @@ from fastapi import Request, HTTPException, status, Depends
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from typing import Optional, Dict, Any
 import logging
+from utils.dependencies import get_current_user
 
 logger = logging.getLogger(__name__)
-
-# Import get_current_user (avoiding circular import)
-def get_current_user():
-    from utils.dependencies import get_current_user as _get_current_user
-    return _get_current_user
-
 
 
 def get_current_church_id(current_user: dict) -> str:
