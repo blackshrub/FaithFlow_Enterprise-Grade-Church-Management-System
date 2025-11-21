@@ -338,6 +338,7 @@ progress
 info "Setting up Supervisor to manage FaithFlow..."
 
 # Create supervisord.conf with correct paths
+# Note: Frontend is static files served by Nginx, only backend needs supervisor
 cat > /etc/supervisor/conf.d/faithflow.conf << 'SUPERVISOR_CONF'
 [supervisord]
 nodaemon=false
@@ -360,15 +361,6 @@ autorestart=true
 stdout_logfile=/var/log/supervisor/backend.out.log
 stderr_logfile=/var/log/supervisor/backend.err.log
 environment=PYTHONUNBUFFERED="1"
-
-[program:frontend]
-command=/usr/bin/yarn start
-directory=/opt/faithflow/frontend
-autostart=true
-autorestart=true
-stdout_logfile=/var/log/supervisor/frontend.out.log
-stderr_logfile=/var/log/supervisor/frontend.err.log
-environment=PORT="3000",HOST="0.0.0.0"
 SUPERVISOR_CONF
 
 mkdir -p /var/log/supervisor
