@@ -8,7 +8,7 @@ import uuid
 
 from models.beginning_balance import BeginningBalanceBase, BeginningBalanceUpdate, BeginningBalanceEntry
 from utils.dependencies import get_db, get_current_user
-from utils.tenant_utils import get_current_church_id
+from utils.tenant_utils import get_session_church_id
 from utils import error_codes
 from utils.error_response import error_response
 from services import accounting_service, audit_service, fiscal_period_service
@@ -23,7 +23,7 @@ async def list_beginning_balances(
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """List all beginning balance entries."""
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     
     query = {"church_id": church_id}
     if status:
@@ -42,7 +42,7 @@ async def get_beginning_balance(
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """Get single beginning balance entry."""
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     
     balance = await db.beginning_balances.find_one(
         {"id": balance_id, "church_id": church_id},
@@ -65,7 +65,7 @@ async def create_beginning_balance(
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """Create beginning balance entry."""
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     user_id = current_user.get("id")
     
     balance_dict = balance_data.model_dump()
@@ -112,7 +112,7 @@ async def post_beginning_balance(
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """Post beginning balance (generates opening journal)."""
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     user_id = current_user.get("id")
     
     balance = await db.beginning_balances.find_one(
@@ -224,7 +224,7 @@ async def delete_beginning_balance(
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """Delete beginning balance (only if draft)."""
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     user_id = current_user.get("id")
     
     balance = await db.beginning_balances.find_one(

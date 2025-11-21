@@ -6,7 +6,7 @@ import uuid
 
 from models.article import ArticleBase, ArticleUpdate
 from utils.dependencies import get_db, get_current_user
-from utils.tenant_utils import get_current_church_id
+from utils.tenant_utils import get_session_church_id
 from utils.error_response import error_response
 from services import article_service, audit_service
 import logging
@@ -29,7 +29,7 @@ async def list_articles(
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """List articles with filters and pagination."""
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     
     query = {"church_id": church_id}
     
@@ -73,7 +73,7 @@ async def get_recent_articles(
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """Get recent articles for mobile homepage."""
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     
     cursor = db.articles.find(
         {"church_id": church_id, "status": "published"},
@@ -91,7 +91,7 @@ async def get_article(
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """Get single article."""
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     
     article = await db.articles.find_one(
         {"id": article_id, "church_id": church_id},
@@ -114,7 +114,7 @@ async def create_article(
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """Create new article."""
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     user_id = current_user.get("id")
     
     article_dict = article_data.model_dump()
@@ -162,7 +162,7 @@ async def update_article(
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """Update article."""
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     user_id = current_user.get("id")
     
     existing = await db.articles.find_one(
@@ -215,7 +215,7 @@ async def delete_article(
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """Soft delete article (archive)."""
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     user_id = current_user.get("id")
     
     article = await db.articles.find_one(
@@ -261,7 +261,7 @@ async def upload_featured_image(
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """Upload featured image for article."""
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     user_id = current_user.get("id")
     
     # Validate article exists
@@ -326,7 +326,7 @@ async def generate_preview_link(
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """Generate preview link for draft article."""
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     user_id = current_user.get("id")
     
     article = await db.articles.find_one({"id": article_id, "church_id": church_id})
@@ -367,7 +367,7 @@ async def schedule_article(
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """Schedule article for future publishing."""
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     user_id = current_user.get("id")
     
     article = await db.articles.find_one({"id": article_id, "church_id": church_id})
@@ -422,7 +422,7 @@ async def unschedule_article(
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """Remove schedule from article."""
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     user_id = current_user.get("id")
     
     article = await db.articles.find_one({"id": article_id, "church_id": church_id})
@@ -461,7 +461,7 @@ async def duplicate_article(
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """Duplicate an existing article."""
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     user_id = current_user.get("id")
     
     new_article = await article_service.duplicate_article(

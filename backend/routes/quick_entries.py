@@ -7,7 +7,7 @@ from decimal import Decimal
 import uuid
 
 from utils.dependencies import get_db, get_current_user
-from utils.tenant_utils import get_current_church_id
+from utils.tenant_utils import get_session_church_id
 from services import accounting_service, audit_service
 from models.journal import JournalLine
 
@@ -41,7 +41,7 @@ async def create_weekly_giving(
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """Create weekly giving entry (auto-generates balanced journal)."""
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     user_id = current_user.get("id")
     
     # Validate fiscal period
@@ -119,7 +119,7 @@ async def create_outgoing_money(
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """Create outgoing money entry (auto-generates balanced journal)."""
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     user_id = current_user.get("id")
     
     # Validate fiscal period

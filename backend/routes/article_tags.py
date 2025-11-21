@@ -5,7 +5,7 @@ import uuid
 
 from models.article_tag import ArticleTagBase, ArticleTagUpdate
 from utils.dependencies import get_db, get_current_user
-from utils.tenant_utils import get_current_church_id
+from utils.tenant_utils import get_session_church_id
 from utils.error_response import error_response
 from services import article_service, audit_service
 
@@ -18,7 +18,7 @@ async def list_tags(
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """List all article tags."""
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     
     cursor = db.article_tags.find({"church_id": church_id}, {"_id": 0}).sort("name", 1)
     tags = await cursor.to_list(length=None)
@@ -41,7 +41,7 @@ async def create_tag(
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """Create new tag."""
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     user_id = current_user.get("id")
     
     tag_dict = tag_data.model_dump()
@@ -75,7 +75,7 @@ async def update_tag(
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """Update tag."""
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     user_id = current_user.get("id")
     
     existing = await db.article_tags.find_one(
@@ -117,7 +117,7 @@ async def delete_tag(
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """Delete tag (fail if used)."""
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     user_id = current_user.get("id")
     
     tag = await db.article_tags.find_one(

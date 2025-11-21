@@ -5,7 +5,7 @@ from datetime import datetime
 import uuid
 
 from utils.dependencies import get_db, get_current_user, get_current_member
-from utils.tenant_utils import get_current_church_id
+from utils.tenant_utils import get_session_church_id
 from services import audit_service
 from services.whatsapp_service import send_whatsapp_message
 
@@ -69,7 +69,7 @@ async def list_leave_requests(
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     """List leave requests (memberships with status=pending_leave) for staff."""
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
 
     query = {"church_id": church_id, "status": "pending_leave"}
 
@@ -113,7 +113,7 @@ async def approve_leave_request(
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     """Approve leave request (staff). Marks membership as removed."""
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     user_id = current_user.get("id")
 
     membership = await db.group_memberships.find_one(

@@ -9,7 +9,7 @@ import aiofiles
 from models.group import GroupBase, GroupUpdate, Group
 from models.member import Member
 from utils.dependencies import get_db, get_current_user
-from utils.tenant_utils import get_current_church_id
+from utils.tenant_utils import get_session_church_id
 from services import audit_service
 from utils.error_response import error_response
 
@@ -27,7 +27,7 @@ async def list_groups(
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     """List groups for current church (staff)."""
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
 
     query = {"church_id": church_id}
 
@@ -80,7 +80,7 @@ async def get_group(
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     """Get single group details (staff)."""
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
 
     group = await db.groups.find_one({"id": group_id, "church_id": church_id}, {"_id": 0})
     if not group:
@@ -107,7 +107,7 @@ async def create_group(
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     """Create new group (staff)."""
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     user_id = current_user.get("id")
 
     group_dict = group_data.model_dump()
@@ -159,7 +159,7 @@ async def update_group(
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     """Update existing group (staff)."""
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     user_id = current_user.get("id")
 
     existing = await db.groups.find_one({"id": group_id, "church_id": church_id})
@@ -223,7 +223,7 @@ async def delete_group(
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     """Delete group (staff)."""
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     user_id = current_user.get("id")
 
     existing = await db.groups.find_one({"id": group_id, "church_id": church_id})
@@ -269,7 +269,7 @@ async def upload_group_cover(
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     """Upload cover image for group (staff)."""
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     user_id = current_user.get("id")
 
     group = await db.groups.find_one({"id": group_id, "church_id": church_id})

@@ -6,7 +6,7 @@ import uuid
 
 from models.group_membership import GroupMembership, GroupMembershipCreate, GroupMembershipUpdate
 from utils.dependencies import get_db, get_current_user
-from utils.tenant_utils import get_current_church_id
+from utils.tenant_utils import get_session_church_id
 from services import audit_service
 
 router = APIRouter(prefix="/groups", tags=["Group Memberships"])
@@ -20,7 +20,7 @@ async def list_group_members(
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     """List members of a group (staff)."""
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
 
     query = {"church_id": church_id, "group_id": group_id}
     
@@ -58,7 +58,7 @@ async def add_group_member(
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     """Add member to group manually (staff)."""
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     user_id = current_user.get("id")
 
     # Ensure group exists
@@ -121,7 +121,7 @@ async def remove_group_member(
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     """Remove member from group (staff)."""
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     user_id = current_user.get("id")
 
     membership = await db.group_memberships.find_one(

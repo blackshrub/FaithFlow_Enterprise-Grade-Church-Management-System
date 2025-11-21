@@ -5,7 +5,7 @@ from datetime import date, datetime
 from decimal import Decimal
 
 from utils.dependencies import get_db, get_current_user
-from utils.tenant_utils import get_current_church_id
+from utils.tenant_utils import get_session_church_id
 from services import accounting_service
 
 router = APIRouter(prefix="/accounting/reports", tags=["Reports"])
@@ -20,7 +20,7 @@ async def general_ledger_report(
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """Generate General Ledger report."""
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     
     # Convert date to datetime for MongoDB compatibility
     start_datetime = datetime.combine(start_date, datetime.min.time())
@@ -48,7 +48,7 @@ async def trial_balance_report(
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """Generate Trial Balance report."""
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     
     # Get all accounts
     accounts = await db.chart_of_accounts.find(
@@ -106,7 +106,7 @@ async def income_statement_report(
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """Generate Income Statement (P&L) report."""
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     
     # Get income and expense accounts
     income_accounts = await db.chart_of_accounts.find(
@@ -166,7 +166,7 @@ async def balance_sheet_report(
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """Generate Balance Sheet report."""
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     
     # Get assets, liabilities, equity accounts
     assets = await db.chart_of_accounts.find(

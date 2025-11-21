@@ -4,7 +4,7 @@ from typing import Optional
 from datetime import date
 
 from utils.dependencies import get_db, require_admin
-from utils.tenant_utils import get_current_church_id
+from utils.tenant_utils import get_session_church_id
 from services import pagination_service
 
 router = APIRouter(prefix="/accounting/audit-logs", tags=["Audit Logs"])
@@ -23,7 +23,7 @@ async def list_audit_logs(
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """List audit logs (Admin only) with mandatory pagination."""
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     
     # Validate pagination
     limit, offset = pagination_service.validate_pagination_params(limit, offset)
@@ -65,7 +65,7 @@ async def get_audit_log(
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """Get single audit log with full before/after data."""
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     
     log = await db.audit_logs.find_one(
         {"id": log_id, "church_id": church_id},

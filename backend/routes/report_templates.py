@@ -5,7 +5,7 @@ import uuid
 
 from models.report_template import ReportTemplateCreate, ReportTemplateUpdate
 from utils.dependencies import get_db, get_current_user
-from utils.tenant_utils import get_current_church_id
+from utils.tenant_utils import get_session_church_id
 
 router = APIRouter(prefix="/accounting/report-templates", tags=["Report Templates"])
 
@@ -16,7 +16,7 @@ async def list_templates(
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """List all report templates."""
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     
     cursor = db.report_templates.find({"church_id": church_id}, {"_id": 0}).sort("created_at", -1)
     templates = await cursor.to_list(length=None)
@@ -31,7 +31,7 @@ async def create_template(
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """Create new report template."""
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     user_id = current_user.get("id")
     
     template_dict = template_data.model_dump()

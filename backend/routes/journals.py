@@ -5,7 +5,7 @@ from datetime import datetime, date
 
 from models.journal import JournalBase, JournalUpdate
 from utils.dependencies import get_db, get_current_user
-from utils.tenant_utils import get_current_church_id
+from utils.tenant_utils import get_session_church_id
 from utils import error_codes
 from utils.error_response import error_response
 from services import accounting_service, audit_service, pagination_service
@@ -26,7 +26,7 @@ async def list_journals(
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """List journals with pagination (REQUIRED)."""
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     
     # Validate pagination
     limit, offset = pagination_service.validate_pagination_params(limit, offset)
@@ -63,7 +63,7 @@ async def get_journal(
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """Get single journal."""
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     
     journal = await db.journals.find_one(
         {"id": journal_id, "church_id": church_id},
@@ -86,7 +86,7 @@ async def create_journal(
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """Create new journal entry."""
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     user_id = current_user.get("id")
     
     journal_dict = journal_data.model_dump()
@@ -153,7 +153,7 @@ async def update_journal(
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """Update journal (only if draft)."""
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     user_id = current_user.get("id")
     
     existing = await db.journals.find_one(
@@ -233,7 +233,7 @@ async def approve_journal(
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """Approve journal."""
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     user_id = current_user.get("id")
     
     journal = await db.journals.find_one(
@@ -301,7 +301,7 @@ async def delete_journal(
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """Delete journal (only if draft)."""
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     user_id = current_user.get("id")
     
     journal = await db.journals.find_one(

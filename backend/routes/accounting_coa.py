@@ -5,7 +5,7 @@ from datetime import datetime
 
 from models.accounting_coa import ChartOfAccountCreate, ChartOfAccountUpdate, ChartOfAccount
 from utils.dependencies import get_db, get_current_user
-from utils.tenant_utils import get_current_church_id
+from utils.tenant_utils import get_session_church_id
 from utils.error_response import error_response
 from utils import error_codes
 from services import accounting_service, audit_service
@@ -27,7 +27,7 @@ async def list_coa(
     """
     List all Chart of Accounts.
     """
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     
     query = {"church_id": church_id}
     
@@ -57,7 +57,7 @@ async def get_coa_tree(
     """
     Get COA as tree structure with hierarchy.
     """
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     
     tree = await accounting_service.get_coa_hierarchy(db, church_id)
     
@@ -73,7 +73,7 @@ async def get_coa(
     """
     Get single Chart of Account.
     """
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     
     account = await db.chart_of_accounts.find_one(
         {"id": account_id, "church_id": church_id},
@@ -98,7 +98,7 @@ async def create_coa(
     """
     Create new Chart of Account.
     """
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     user_id = current_user.get("id")
     
     # Override church_id from token
@@ -157,7 +157,7 @@ async def update_coa(
     Update Chart of Account.
     Protected fields (account_type, normal_balance, parent_id) cannot be updated if account is used in journals.
     """
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     user_id = current_user.get("id")
     
     # Get existing account
@@ -222,7 +222,7 @@ async def delete_coa(
     """
     Delete Chart of Account (only if not used in journals).
     """
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     user_id = current_user.get("id")
     
     # Get existing account
@@ -272,7 +272,7 @@ async def seed_default_coa(
     Seed default Indonesian church Chart of Accounts.
     Only works if no accounts exist for this church.
     """
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     user_id = current_user.get("id")
     
     # Check if accounts already exist

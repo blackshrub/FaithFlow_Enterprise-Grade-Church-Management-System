@@ -4,7 +4,7 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 from typing import List, Optional
 
 from utils.dependencies import get_db, get_current_user
-from utils.tenant_utils import get_current_church_id
+from utils.tenant_utils import get_session_church_id
 from services import file_service
 import logging
 
@@ -28,7 +28,7 @@ async def upload_file(
     - **reference_type**: Entity type (journal, asset, budget, etc.)
     - **reference_id**: Entity ID (optional, can be attached later)
     """
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     user_id = current_user.get("id")
     
     if not reference_type:
@@ -62,7 +62,7 @@ async def get_file_metadata(
     """
     Get file metadata.
     """
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     
     file_record = await db.file_uploads.find_one({
         "id": file_id,
@@ -87,7 +87,7 @@ async def download_file(
     """
     Download a file.
     """
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     
     file_path = await file_service.get_file_path(db, file_id, church_id)
     
@@ -117,7 +117,7 @@ async def delete_file(
     """
     Delete a file.
     """
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     
     success = await file_service.delete_file(db, file_id, church_id)
     
@@ -140,7 +140,7 @@ async def list_files_by_reference(
     """
     List all files for a specific entity.
     """
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     
     files = await file_service.get_files_by_reference(
         db=db,

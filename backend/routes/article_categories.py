@@ -5,7 +5,7 @@ import uuid
 
 from models.article_category import ArticleCategoryBase, ArticleCategoryUpdate
 from utils.dependencies import get_db, get_current_user
-from utils.tenant_utils import get_current_church_id
+from utils.tenant_utils import get_session_church_id
 from utils.error_response import error_response
 from services import article_service, audit_service
 
@@ -18,7 +18,7 @@ async def list_categories(
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """List all article categories."""
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     
     cursor = db.article_categories.find({"church_id": church_id}, {"_id": 0}).sort("name", 1)
     categories = await cursor.to_list(length=None)
@@ -41,7 +41,7 @@ async def get_category(
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """Get single category."""
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     
     category = await db.article_categories.find_one(
         {"id": category_id, "church_id": church_id},
@@ -64,7 +64,7 @@ async def create_category(
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """Create new category."""
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     user_id = current_user.get("id")
     
     category_dict = category_data.model_dump()
@@ -103,7 +103,7 @@ async def update_category(
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """Update category."""
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     user_id = current_user.get("id")
     
     existing = await db.article_categories.find_one(
@@ -145,7 +145,7 @@ async def delete_category(
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """Delete category (fail if used in articles)."""
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     user_id = current_user.get("id")
     
     category = await db.article_categories.find_one(

@@ -5,7 +5,7 @@ from datetime import datetime
 
 from models.responsibility_center import ResponsibilityCenterCreate, ResponsibilityCenterUpdate
 from utils.dependencies import get_db, get_current_user
-from utils.tenant_utils import get_current_church_id
+from utils.tenant_utils import get_session_church_id
 from utils import error_codes
 from utils.error_response import error_response
 from services import audit_service
@@ -22,7 +22,7 @@ async def list_responsibility_centers(
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """List all responsibility centers."""
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     
     query = {"church_id": church_id}
     if type:
@@ -43,7 +43,7 @@ async def get_responsibility_center(
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """Get single responsibility center."""
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     
     center = await db.responsibility_centers.find_one(
         {"id": center_id, "church_id": church_id},
@@ -66,7 +66,7 @@ async def create_responsibility_center(
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """Create new responsibility center."""
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     user_id = current_user.get("id")
     
     center_dict = center_data.model_dump()
@@ -115,7 +115,7 @@ async def update_responsibility_center(
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """Update responsibility center."""
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     user_id = current_user.get("id")
     
     existing = await db.responsibility_centers.find_one(
@@ -159,7 +159,7 @@ async def delete_responsibility_center(
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """Delete responsibility center."""
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     user_id = current_user.get("id")
     
     existing = await db.responsibility_centers.find_one(

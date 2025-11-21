@@ -6,7 +6,7 @@ import uuid
 
 from models.prayer_request import PrayerRequestBase, PrayerRequestUpdate
 from utils.dependencies import get_db, get_current_user
-from utils.tenant_utils import get_current_church_id
+from utils.tenant_utils import get_session_church_id
 from services import audit_service
 
 router = APIRouter(prefix="/prayer-requests", tags=["Prayer Requests"])
@@ -26,7 +26,7 @@ async def list_prayer_requests(
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """List prayer requests with filters."""
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     
     query = {"church_id": church_id}
     
@@ -75,7 +75,7 @@ async def get_prayer_request(
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """Get single prayer request."""
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     
     prayer_request = await db.prayer_requests.find_one(
         {"id": request_id, "church_id": church_id},
@@ -106,7 +106,7 @@ async def create_prayer_request(
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """Create new prayer request."""
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     user_id = current_user.get("id")
     
     prayer_dict = prayer_data.model_dump()
@@ -139,7 +139,7 @@ async def update_prayer_request(
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """Update prayer request."""
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     user_id = current_user.get("id")
     
     # Debug logging
@@ -197,7 +197,7 @@ async def delete_prayer_request(
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """Delete prayer request."""
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     user_id = current_user.get("id")
     
     prayer_request = await db.prayer_requests.find_one(

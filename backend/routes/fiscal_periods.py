@@ -3,7 +3,7 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 from typing import Optional
 
 from utils.dependencies import get_db, get_current_user, require_admin
-from utils.tenant_utils import get_current_church_id
+from utils.tenant_utils import get_session_church_id
 from services import fiscal_period_service, audit_service
 
 router = APIRouter(prefix="/accounting/fiscal-periods", tags=["Fiscal Periods"])
@@ -17,7 +17,7 @@ async def list_fiscal_periods(
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """List all fiscal periods."""
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     
     query = {"church_id": church_id}
     if year:
@@ -38,7 +38,7 @@ async def get_current_period(
 ):
     """Get current period status."""
     from datetime import date
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     
     today = date.today()
     period = await fiscal_period_service.get_or_create_period(
@@ -57,7 +57,7 @@ async def close_period(
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """Close a fiscal period."""
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     user_id = current_user.get("id")
     
     success, error_code, updated_period = await fiscal_period_service.close_period(
@@ -89,7 +89,7 @@ async def lock_period(
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """Lock a fiscal period."""
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     user_id = current_user.get("id")
     
     success, error_code, updated_period = await fiscal_period_service.lock_period(
@@ -121,7 +121,7 @@ async def unlock_period(
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """Unlock a fiscal period (Admin only)."""
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     user_id = current_user.get("id")
     
     success, error_code, updated_period = await fiscal_period_service.unlock_period(

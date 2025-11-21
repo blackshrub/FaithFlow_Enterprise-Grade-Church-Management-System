@@ -5,7 +5,7 @@ from datetime import datetime, date
 
 from models.fixed_asset import FixedAssetBase, FixedAssetUpdate
 from utils.dependencies import get_db, get_current_user
-from utils.tenant_utils import get_current_church_id
+from utils.tenant_utils import get_session_church_id
 from utils.error_response import error_response
 from services import audit_service, accounting_service, fiscal_period_service
 import uuid
@@ -20,7 +20,7 @@ async def list_assets(
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """List all fixed assets."""
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     
     query = {"church_id": church_id}
     if is_active is not None:
@@ -39,7 +39,7 @@ async def get_asset(
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """Get single fixed asset."""
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     
     asset = await db.fixed_assets.find_one(
         {"id": asset_id, "church_id": church_id},
@@ -62,7 +62,7 @@ async def create_asset(
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """Create new fixed asset."""
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     user_id = current_user.get("id")
     
     asset_dict = asset_data.model_dump()
@@ -109,7 +109,7 @@ async def update_asset(
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """Update fixed asset."""
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     user_id = current_user.get("id")
     
     existing = await db.fixed_assets.find_one(
@@ -151,7 +151,7 @@ async def deactivate_asset(
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """Deactivate fixed asset."""
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     user_id = current_user.get("id")
     
     existing = await db.fixed_assets.find_one(
@@ -188,7 +188,7 @@ async def run_monthly_depreciation(
     """Run depreciation for all active assets for a specific month."""
     from decimal import Decimal
     
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     user_id = current_user.get("id")
     
     # Check fiscal period
@@ -312,7 +312,7 @@ async def get_depreciation_schedule(
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """Get depreciation schedule for an asset."""
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     
     asset = await db.fixed_assets.find_one(
         {"id": asset_id, "church_id": church_id}

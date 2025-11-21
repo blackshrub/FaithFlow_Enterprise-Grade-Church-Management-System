@@ -7,7 +7,7 @@ import uuid
 
 from models.article_comment import ArticleCommentBase, ArticleCommentUpdate
 from utils.dependencies import get_db, get_current_user
-from utils.tenant_utils import get_current_church_id
+from utils.tenant_utils import get_session_church_id
 from services import audit_service
 
 router = APIRouter(prefix="/articles", tags=["Article Comments"])
@@ -26,7 +26,7 @@ async def list_comments(
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """List comments for an article."""
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     
     query = {"church_id": church_id, "article_id": article_id}
     if comment_status:
@@ -45,7 +45,7 @@ async def get_comment(
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """Get single comment."""
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     
     comment = await db.article_comments.find_one(
         {"id": comment_id, "church_id": church_id},
@@ -69,7 +69,7 @@ async def create_comment(
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """Create comment (staff manual entry)."""
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     user_id = current_user.get("id")
     
     # Verify article exists
@@ -107,7 +107,7 @@ async def update_comment(
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """Update comment or change status."""
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     user_id = current_user.get("id")
     
     existing = await db.article_comments.find_one(
@@ -149,7 +149,7 @@ async def delete_comment(
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """Delete comment."""
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     user_id = current_user.get("id")
     
     comment = await db.article_comments.find_one(
@@ -180,7 +180,7 @@ async def bulk_comment_action(
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """Bulk action on comments (approve, spam, trash)."""
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     user_id = current_user.get("id")
     
     valid_actions = ["approve", "spam", "trash"]

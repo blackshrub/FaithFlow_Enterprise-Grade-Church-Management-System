@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from utils.dependencies import get_db, require_admin, get_current_user
-from utils.tenant_utils import get_current_church_id
+from utils.tenant_utils import get_session_church_id
 from services import year_end_closing_service, audit_service
 
 router = APIRouter(prefix="/accounting/year-end", tags=["Year-End Closing"])
@@ -16,7 +16,7 @@ async def close_year(
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """Run year-end closing process."""
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     user_id = current_user.get("id")
     
     success, error_code, closing = await year_end_closing_service.execute_year_end_closing(
@@ -46,7 +46,7 @@ async def get_closing_status(
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """Get year-end closing status."""
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     
     closing = await db.year_end_closings.find_one(
         {"church_id": church_id, "fiscal_year": year},

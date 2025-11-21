@@ -7,7 +7,7 @@ import csv
 import io
 
 from utils.dependencies import get_db, get_current_user
-from utils.tenant_utils import get_current_church_id
+from utils.tenant_utils import get_session_church_id
 from services import pagination_service, audit_service
 
 router = APIRouter(prefix="/accounting/bank-transactions", tags=["Bank Transactions"])
@@ -25,7 +25,7 @@ async def list_bank_transactions(
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """List bank transactions with pagination."""
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     
     limit, offset = pagination_service.validate_pagination_params(limit, offset)
     
@@ -60,7 +60,7 @@ async def import_bank_transactions(
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """Import bank transactions from CSV."""
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     user_id = current_user.get("id")
     
     content = await file.read()
@@ -131,7 +131,7 @@ async def match_transaction(
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """Match bank transaction to journal."""
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     user_id = current_user.get("id")
     
     await db.bank_transactions.update_one(

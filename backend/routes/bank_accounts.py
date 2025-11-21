@@ -6,7 +6,7 @@ import uuid
 
 from models.bank_account import BankAccountCreate, BankAccountUpdate
 from utils.dependencies import get_db, get_current_user
-from utils.tenant_utils import get_current_church_id
+from utils.tenant_utils import get_session_church_id
 from services import audit_service
 
 router = APIRouter(prefix="/accounting/bank-accounts", tags=["Bank Accounts"])
@@ -19,7 +19,7 @@ async def list_bank_accounts(
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """List all bank accounts."""
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     
     query = {"church_id": church_id}
     if is_active is not None:
@@ -38,7 +38,7 @@ async def create_bank_account(
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """Create new bank account."""
-    church_id = get_current_church_id(current_user)
+    church_id = get_session_church_id(current_user)
     user_id = current_user.get("id")
     
     account_dict = account_data.model_dump()
