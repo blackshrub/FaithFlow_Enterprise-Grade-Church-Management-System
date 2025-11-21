@@ -15,22 +15,22 @@ def get_current_church_id(current_user: dict) -> str:
 
 
 def get_session_church_id_from_user(current_user: dict) -> str:
-    """Extract session_church_id from user dict.
+    """Extract session_church_id from JWT payload.
     
-    This is the church the user is currently operating in:
+    CRITICAL: Only uses session_church_id from JWT.
+    NO fallback to user.church_id - clean session-based architecture.
+    
+    Returns the church the user is currently operating in:
     - For super_admin: The church they selected at login
-    - For regular users: Their assigned church_id
+    - For regular users: Their assigned church (from database, passed via JWT)
     """
     session_church_id = current_user.get("session_church_id")
     
-    if not session_church_id:
-        # Fallback for backward compatibility
-        session_church_id = current_user.get("church_id")
-    
+    # NO FALLBACK - must be in JWT
     if not session_church_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="No active church context. Please logout and login again to refresh your session."
+            detail="No active church context. Please logout and login again to select a church."
         )
     
     return session_church_id
