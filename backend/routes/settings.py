@@ -479,7 +479,7 @@ async def create_church_settings(
     return church_settings
 
 
-@router.patch("/church-settings", response_model=ChurchSettings)
+@router.patch("/church-settings")  # Removed response_model
 async def update_church_settings(
     settings_data: ChurchSettingsUpdate,
     db: AsyncIOMotorDatabase = Depends(get_db),
