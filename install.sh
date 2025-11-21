@@ -642,8 +642,8 @@ echo -e "${YELLOW}│  1️⃣  Configure environment:                          
 echo -e "${YELLOW}│     ${WHITE}nano /opt/faithflow/backend/.env${YELLOW}                                  │${NC}"
 echo -e "${YELLOW}│     Set MONGO_URL and JWT_SECRET_KEY                                    │${NC}"
 echo -e "${YELLOW}│                                                                             │${NC}"
-echo -e "${YELLOW}│  2️⃣  Start services:                                                     │${NC}"
-echo -e "${YELLOW}│     ${WHITE}sudo supervisorctl restart all${YELLOW}                                  │${NC}"
+echo -e "${YELLOW}│  2️⃣  Restart services to apply configuration:                            │${NC}"
+echo -e "${YELLOW}│     ${WHITE}sudo supervisorctl restart backend${YELLOW}                                 │${NC}"
 echo -e "${YELLOW}│                                                                             │${NC}"
 echo -e "${YELLOW}│  3️⃣  Access your application:                                            │${NC}"
 
