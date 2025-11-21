@@ -167,7 +167,23 @@ def get_session_church_id(current_user: dict = Depends(get_current_user)) -> str
     
     Wrapper around get_session_church_id_from_user that works with FastAPI Depends.
     """
-    return get_session_church_id_from_user(current_user)
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    logger.info(f"\ud83d\udd0d get_session_church_id called")
+    logger.info(f"   current_user type: {type(current_user)}")
+    logger.info(f"   current_user keys: {list(current_user.keys()) if isinstance(current_user, dict) else 'NOT A DICT'}")
+    logger.info(f"   session_church_id: {current_user.get('session_church_id') if isinstance(current_user, dict) else 'N/A'}")
+    logger.info(f"   church_id: {current_user.get('church_id') if isinstance(current_user, dict) else 'N/A'}")
+    logger.info(f"   role: {current_user.get('role') if isinstance(current_user, dict) else 'N/A'}")
+    
+    try:
+        result = get_session_church_id_from_user(current_user)
+        logger.info(f"   \u2705 Returning: {result}")
+        return result
+    except Exception as e:
+        logger.error(f"   \u274c Error in get_session_church_id_from_user: {e}")
+        raise
 
 
 # Alias for backward compatibility
