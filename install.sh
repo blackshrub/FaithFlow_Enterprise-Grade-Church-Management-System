@@ -327,9 +327,19 @@ progress
 info "Setting up Supervisor to manage FaithFlow..."
 
 # Create supervisord.conf with correct paths
-cat > /etc/supervisor/conf.d/faithflow.conf << SUPERVISOR_CONF
+cat > /etc/supervisor/conf.d/faithflow.conf << 'SUPERVISOR_CONF'
 [supervisord]
 nodaemon=false
+
+[unix_http_server]
+file=/var/run/supervisor.sock
+chmod=0700
+
+[supervisorctl]
+serverurl=unix:///var/run/supervisor.sock
+
+[rpcinterface:supervisor]
+supervisor.rpcinterface_factory = supervisor.rpcinterface:make_main_rpcinterface
 
 [program:backend]
 command=/opt/faithflow/backend/venv/bin/uvicorn server:app --host 0.0.0.0 --port 8001
