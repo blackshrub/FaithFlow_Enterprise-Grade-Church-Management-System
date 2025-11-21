@@ -4,12 +4,14 @@
 #                                                                              #
 #                      🔄 FaithFlow Update Script 🔄                          #
 #                                                                              #
-#                Run after 'git pull' to update dependencies                  #
-#                      and restart services safely                            #
+#           Run after 'git pull' to sync and restart services                 #
+#                                                                              #
+#  Usage: sudo ./update.sh [source-directory]                                 #
+#  Example: sudo ./update.sh /root/faithflow                                  #
 #                                                                              #
 ################################################################################
 
-set -e  # Exit on error
+set -e
 
 # Colors
 RED='\033[0;31m'
@@ -61,59 +63,82 @@ warn() {
     echo -e "${YELLOW}⚠️  $1${NC}"
 }
 
-# Set standard installation directory
-INSTALL_DIR="/opt/faithflow"
+# Determine source directory
+if [ -n "$1" ]; then
+    SOURCE_DIR="$1"
+else
+    # Try to detect source directory
+    SOURCE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+fi
 
-# Check if directory exists
-if [ ! -d "$INSTALL_DIR" ]; then
-    echo -e "${RED}❌ FaithFlow not found in $INSTALL_DIR${NC}"
+# Destination is always /opt/faithflow
+DEST_DIR="/opt/faithflow"
+
+echo -e "${CYAN}📍 Source directory: ${WHITE}$SOURCE_DIR${NC}"
+echo -e "${CYAN}📍 Destination directory: ${WHITE}$DEST_DIR${NC}"
+echo ""
+
+# Verify source exists
+if [ ! -d "$SOURCE_DIR" ]; then
+    echo -e "${RED}❌ Source directory not found: $SOURCE_DIR${NC}"
+    echo -e "${YELLOW}   Run: sudo ./update.sh /path/to/your/git/repo${NC}"
+    exit 1
+fi
+
+# Verify destination exists
+if [ ! -d "$DEST_DIR" ]; then
+    echo -e "${RED}❌ FaithFlow not found in $DEST_DIR${NC}"
     echo -e "${YELLOW}   Please run install.sh first${NC}"
     exit 1
 fi
 
-cd "$INSTALL_DIR"
-echo -e "${CYAN}📍 Working directory: ${WHITE}$INSTALL_DIR${NC}"
+sleep 1
+
+progress
+echo -e "${MAGENTA}🚀 Step 1/8: Syncing files from git to deployment...${NC}"
+progress
+
+info "Copying updated files to $DEST_DIR..."
+rsync -a \
+  --exclude='.git/' \
+  --exclude='node_modules/' \
+  --exclude='backend/__pycache__/' \
+  --exclude='backend/venv/' \
+  --exclude='frontend/node_modules/' \
+  --exclude='frontend/build/' \
+  --exclude='*.log' \
+  "$SOURCE_DIR/" "$DEST_DIR/" > /dev/null
+
+success "Files synced to $DEST_DIR"
 echo ""
 sleep 1
 
 progress
-echo -e "${MAGENTA}🚀 Step 1/9: Checking current status...${NC}"
+echo -e "${MAGENTA}🚀 Step 2/8: Checking installation...${NC}"
 progress
 
-info "Checking FaithFlow services..."
+cd "$DEST_DIR"
+
+info "Verifying critical files..."
+if [ -f "backend/server.py" ] && [ -f "frontend/package.json" ]; then
+    success "Core files present"
+else
+    warn "Some files may be missing. Installation may be incomplete."
+fi
+
 if supervisorctl status backend > /dev/null 2>&1; then
-    success "Backend is running"
+    success "Backend service exists"
 else
-    warn "Backend is not running (will start after update)"
+    warn "Backend service not configured"
 fi
 echo ""
 sleep 1
 
 progress
-echo -e "${MAGENTA}🚀 Step 2/9: Pulling latest changes...${NC}"
+echo -e "${MAGENTA}🚀 Step 3/8: Updating backend dependencies...${NC}"
 progress
 
-info "Getting latest code from repository..."
-git fetch --all
-LOCAL=$(git rev-parse @)
-REMOTE=$(git rev-parse @{u})
-
-if [ $LOCAL = $REMOTE ]; then
-    success "Already up to date! (No changes to pull)"
-    echo -e "${CYAN}   Your FaithFlow is running the latest version.${NC}"
-else
-    info "New updates available! Pulling changes..."
-    git pull
-    success "Code updated to latest version!"
-fi
-echo ""
-sleep 1
-
-progress
-echo -e "${MAGENTA}🚀 Step 3/9: Updating backend dependencies...${NC}"
-progress
-
-cd "$INSTALL_DIR/backend"
+cd "$DEST_DIR/backend"
 
 if [ -d "venv" ]; then
     info "Checking for new Python packages..."
@@ -132,10 +157,10 @@ echo ""
 sleep 1
 
 progress
-echo -e "${MAGENTA}🚀 Step 4/9: Updating frontend dependencies...${NC}"
+echo -e "${MAGENTA}🚀 Step 4/8: Updating frontend dependencies...${NC}"
 progress
 
-cd "$INSTALL_DIR/frontend"
+cd "$DEST_DIR/frontend"
 
 info "Checking for new JavaScript packages..."
 echo -e "${CYAN}   ☕ This might take a moment...${NC}"
@@ -145,11 +170,11 @@ echo ""
 sleep 1
 
 progress
-echo -e "${MAGENTA}🚀 Step 5/9: Building production frontend...${NC}"
+echo -e "${MAGENTA}🚀 Step 5/8: Building production frontend...${NC}"
 progress
 
 info "Creating optimized production build..."
-echo -e "${CYAN}   🏭 This may take 2-3 minutes...${NC}"
+echo -e "${CYAN}   🏗️  This may take 2-3 minutes...${NC}"
 yarn build > /dev/null 2>&1
 
 if [ -d "build" ] && [ -f "build/index.html" ]; then
@@ -162,10 +187,10 @@ echo ""
 sleep 1
 
 progress
-echo -e "${MAGENTA}🚀 Step 6/9: Running database migrations...${NC}"
+echo -e "${MAGENTA}🚀 Step 6/8: Running database migrations...${NC}"
 progress
 
-cd "$INSTALL_DIR/backend"
+cd "$DEST_DIR/backend"
 source venv/bin/activate
 
 # Check for migration scripts
@@ -174,53 +199,18 @@ if [ -f "add_default_pins.py" ]; then
     python3 add_default_pins.py > /dev/null 2>&1 || true
 fi
 
-# Add other migrations here as needed
+# Check for super admin creation
+if [ -f "create_default_super_admin.py" ]; then
+    info "Ensuring super admin exists..."
+    python3 create_default_super_admin.py > /dev/null 2>&1 || true
+fi
 
-success "Database migrations complete!"
+success "Migrations complete!"
 echo ""
 sleep 1
 
 progress
-echo -e "${MAGENTA}🚀 Step 7/9: Checking configuration...${NC}"
-progress
-
-# Check if .env files exist
-if [ -f "$INSTALL_DIR/backend/.env" ]; then
-    success "Backend configuration exists"
-else
-    warn "backend/.env not found. Creating from template..."
-    if [ -f "$INSTALL_DIR/backend/.env.example" ]; then
-        cp "$INSTALL_DIR/backend/.env.example" "$INSTALL_DIR/backend/.env"
-    else
-        cat > "$INSTALL_DIR/backend/.env" << 'BACKEND_ENV'
-MONGO_URL=mongodb://localhost:27017
-DB_NAME=faithflow_production
-JWT_SECRET_KEY=change-this-in-production
-CORS_ORIGINS=*
-BACKEND_ENV
-    fi
-    echo -e "${YELLOW}   Please configure backend/.env before starting services!${NC}"
-fi
-
-if [ -f "$INSTALL_DIR/frontend/.env" ]; then
-    success "Frontend configuration exists"
-else
-    warn "frontend/.env not found. Creating from template..."
-    if [ -f "$INSTALL_DIR/frontend/.env.example" ]; then
-        cp "$INSTALL_DIR/frontend/.env.example" "$INSTALL_DIR/frontend/.env"
-    else
-        cat > "$INSTALL_DIR/frontend/.env" << 'FRONTEND_ENV'
-REACT_APP_BACKEND_URL=http://localhost
-WDS_SOCKET_PORT=443
-FRONTEND_ENV
-    fi
-    echo -e "${YELLOW}   Please configure frontend/.env before rebuilding!${NC}"
-fi
-echo ""
-sleep 1
-
-progress
-echo -e "${MAGENTA}🚀 Step 8/9: Reloading Nginx...${NC}"
+echo -e "${MAGENTA}🚀 Step 7/8: Reloading Nginx...${NC}"
 progress
 
 info "Reloading Nginx to serve updated files..."
@@ -235,7 +225,7 @@ echo ""
 sleep 1
 
 progress
-echo -e "${MAGENTA}🚀 Step 9/9: Restarting backend service...${NC}"
+echo -e "${MAGENTA}🚀 Step 8/8: Restarting backend service...${NC}"
 progress
 
 info "Stopping backend service..."
@@ -250,7 +240,7 @@ if supervisorctl status backend | grep -q "RUNNING"; then
     success "Backend restarted successfully!"
     echo -e "${GREEN}   ✅ New code is now active!${NC}"
 else
-    warn "Backend may not be running. Check: sudo supervisorctl status"
+    warn "Backend may not be running. Check: sudo supervisorctl status backend"
 fi
 
 echo ""
@@ -269,49 +259,27 @@ echo -e "${NC}"
 
 echo ""
 echo -e "${CYAN}╭─────────────────────────────────────────────────────────────────────╮${NC}"
-echo -e "${CYAN}│  ${WHITE}Service Status:${CYAN}                                                      │${NC}"
+echo -e "${CYAN}│  ${WHITE}What Was Updated:${CYAN}                                                   │${NC}"
 echo -e "${CYAN}│                                                                     │${NC}"
-
-# Show backend status
-if supervisorctl status backend | grep -q "RUNNING"; then
-    echo -e "${CYAN}│  ${GREEN}✅ Backend:  RUNNING${CYAN}                                                 │${NC}"
-else
-    echo -e "${CYAN}│  ${YELLOW}⚠️  Backend:  STOPPED${CYAN}                                                 │${NC}"
-fi
-
-# Frontend is static files
-if [ -f "$INSTALL_DIR/frontend/build/index.html" ]; then
-    echo -e "${CYAN}│  ${GREEN}✅ Frontend: Static build ready${CYAN}                                      │${NC}"
-else
-    echo -e "${CYAN}│  ${YELLOW}⚠️  Frontend: Build missing${CYAN}                                          │${NC}"
-fi
-
+echo -e "${CYAN}│  ✅ Files synced from git to /opt/faithflow                          │${NC}"
+echo -e "${CYAN}│  ✅ Python packages updated                                          │${NC}"
+echo -e "${CYAN}│  ✅ JavaScript packages updated                                      │${NC}"
+echo -e "${CYAN}│  ✅ Production build created                                         │${NC}"
+echo -e "${CYAN}│  ✅ Database migrations applied                                      │${NC}"
+echo -e "${CYAN}│  ✅ Backend service restarted                                        │${NC}"
+echo -e "${CYAN}│  ✅ Nginx reloaded                                                   │${NC}"
 echo -e "${CYAN}│                                                                     │${NC}"
 echo -e "${CYAN}╰─────────────────────────────────────────────────────────────────────╯${NC}"
-
-echo ""
-echo -e "${YELLOW}╭─────────────────────────────────────────────────────────────────────╮${NC}"
-echo -e "${YELLOW}│  ${WHITE}What Was Updated:${YELLOW}                                                   │${NC}"
-echo -e "${YELLOW}│                                                                     │${NC}"
-echo -e "${YELLOW}│  ✅ Latest code from repository                                     │${NC}"
-echo -e "${YELLOW}│  ✅ Python packages updated                                         │${NC}"
-echo -e "${YELLOW}│  ✅ JavaScript packages updated                                     │${NC}"
-echo -e "${YELLOW}│  ✅ Production build created                                        │${NC}"
-echo -e "${YELLOW}│  ✅ Database migrations applied                                     │${NC}"
-echo -e "${YELLOW}│  ✅ Backend service restarted                                       │${NC}"
-echo -e "${YELLOW}│  ✅ Nginx reloaded                                                  │${NC}"
-echo -e "${YELLOW}│                                                                     │${NC}"
-echo -e "${YELLOW}╰─────────────────────────────────────────────────────────────────────╯${NC}"
 
 echo ""
 echo -e "${CYAN}╭─────────────────────────────────────────────────────────────────────╮${NC}"
 echo -e "${CYAN}│  ${WHITE}Useful Commands:${CYAN}                                                    │${NC}"
 echo -e "${CYAN}│                                                                     │${NC}"
 echo -e "${CYAN}│  📊 View logs:       ${WHITE}tail -f /var/log/supervisor/backend.out.log${CYAN}  │${NC}"
-echo -e "${CYAN}│  🔍 Check status:    ${WHITE}sudo supervisorctl status${CYAN}                    │${NC}"
+echo -e "${CYAN}│  🔍 Check status:    ${WHITE}sudo supervisorctl status backend${CYAN}            │${NC}"
 echo -e "${CYAN}│  🔄 Restart backend: ${WHITE}sudo supervisorctl restart backend${CYAN}          │${NC}"
 echo -e "${CYAN}│  🔄 Reload Nginx:    ${WHITE}sudo systemctl reload nginx${CYAN}                  │${NC}"
-echo -e "${CYAN}│  🌐 Access app:      ${WHITE}http://localhost${CYAN}  or  ${WHITE}https://your-domain${CYAN}  │${NC}"
+echo -e "${CYAN}│  🌐 Access app:      ${WHITE}https://your-domain${CYAN}                          │${NC}"
 echo -e "${CYAN}│                                                                     │${NC}"
 echo -e "${CYAN}╰─────────────────────────────────────────────────────────────────────╯${NC}"
 
@@ -319,15 +287,15 @@ echo ""
 echo -e "${MAGENTA}╭─────────────────────────────────────────────────────────────────────╮${NC}"
 echo -e "${MAGENTA}│  ${WHITE}💡 Pro Tip:${MAGENTA}                                                         │${NC}"
 echo -e "${MAGENTA}│                                                                     │${NC}"
-echo -e "${MAGENTA}│  After updates, clear browser cache for best experience:           │${NC}"
-echo -e "${MAGENTA}│  • Chrome/Edge: Ctrl+Shift+R                                          │${NC}"
-echo -e "${MAGENTA}│  • Firefox: Ctrl+F5                                                   │${NC}"
-echo -e "${MAGENTA}│  • Safari: Cmd+Shift+R                                                │${NC}"
+echo -e "${MAGENTA}│  After updates, clear browser cache:                                │${NC}"
+echo -e "${MAGENTA}│  • Chrome/Edge: Ctrl+Shift+R                                        │${NC}"
+echo -e "${MAGENTA}│  • Firefox: Ctrl+F5                                                 │${NC}"
+echo -e "${MAGENTA}│  • Safari: Cmd+Shift+R                                              │${NC}"
 echo -e "${MAGENTA}│                                                                     │${NC}"
-echo -e "${MAGENTA}│  Test critical flows after update:                                 │${NC}"
-echo -e "${MAGENTA}│  1️⃣  Login to admin panel                                           │${NC}"
-echo -e "${MAGENTA}│  2️⃣  Test kiosk services                                             │${NC}"
-echo -e "${MAGENTA}│  3️⃣  Check any new settings                                          │${NC}"
+echo -e "${MAGENTA}│  Test critical flows:                                               │${NC}"
+echo -e "${MAGENTA}│  1️⃣  Login as super admin                                          │${NC}"
+echo -e "${MAGENTA}│  2️⃣  Test member management                                         │${NC}"
+echo -e "${MAGENTA}│  3️⃣  Test kiosk services                                            │${NC}"
 echo -e "${MAGENTA}│                                                                     │${NC}"
 echo -e "${MAGENTA}╰─────────────────────────────────────────────────────────────────────╯${NC}"
 
