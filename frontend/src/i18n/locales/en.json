@@ -13,6 +13,8 @@
     "password": "Password",
     "church": "Church",
     "selectChurch": "Select a church",
+    "selectChurchHelp": "Super Admin must choose which church to manage",
+    "errorChurchRequired": "Please select a church to continue",
     "signingIn": "Signing in...",
     "demoCredentials": "Demo credentials: admin@gkbjtamankencana.org / admin123",
     "invalidCredentials": "Invalid email or password"
