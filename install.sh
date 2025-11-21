@@ -203,9 +203,8 @@ if [ "$SCRIPT_DIR" != "$INSTALL_DIR" ]; then
     info "Copying files from $SCRIPT_DIR to $INSTALL_DIR..."
     # Use rsync with proper flags
     # -a = archive mode (preserves permissions, timestamps)
-    # -v = verbose (show what's being copied)
     # --exclude = skip these directories/files
-    rsync -av \
+    rsync -a \
       --exclude='.git/' \
       --exclude='node_modules/' \
       --exclude='backend/__pycache__/' \
@@ -215,6 +214,21 @@ if [ "$SCRIPT_DIR" != "$INSTALL_DIR" ]; then
       --exclude='*.log' \
       "$SCRIPT_DIR/" "$INSTALL_DIR/" > /dev/null
     success "Files copied to $INSTALL_DIR"
+    
+    # Verify critical files exist
+    if [ ! -f "$INSTALL_DIR/frontend/public/index.html" ]; then
+        warn "public/index.html missing after rsync, copying manually..."
+        mkdir -p "$INSTALL_DIR/frontend/public"
+        cp -r "$SCRIPT_DIR/frontend/public/"* "$INSTALL_DIR/frontend/public/" 2>/dev/null || true
+    fi
+    
+    # Verify public folder
+    if [ -f "$INSTALL_DIR/frontend/public/index.html" ]; then
+        success "Verified: public/index.html exists"
+    else
+        warn "Critical: public/index.html still missing!"
+        echo -e "${YELLOW}   Please manually copy: cp -r $SCRIPT_DIR/frontend/public /opt/faithflow/frontend/${NC}"
+    fi
 else
     info "Already in $INSTALL_DIR"
 fi
