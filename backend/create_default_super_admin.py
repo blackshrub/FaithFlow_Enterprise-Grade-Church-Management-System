@@ -114,27 +114,28 @@ async def create_default_super_admin():
             church_id = existing_church['id']
             print(f"ℹ️  Church already exists: {existing_church['name']}")
         
-        # STEP 2: Create super admin with church_id assigned
+        # STEP 2: Create super admin with church_id = None
         existing_super = await db.users.find_one({"role": "super_admin"})
         
         if existing_super:
             print("ℹ️  Super admin already exists:")
             print(f"   Email: {existing_super['email']}")
             print(f"   Name: {existing_super['full_name']}")
+            print(f"   church_id: {existing_super.get('church_id')}")
             
-            # CRITICAL: Ensure existing super admin has church_id
-            if not existing_super.get('church_id'):
-                print("⚠️  Super admin missing church_id, fixing...")
+            # CRITICAL: Ensure super admin has church_id = None
+            if existing_super.get('church_id') is not None:
+                print("⚠️  Super admin should NOT have church_id, fixing...")
                 await db.users.update_one(
                     {"id": existing_super['id']},
-                    {"$set": {"church_id": church_id}}
+                    {"$set": {"church_id": None}}
                 )
-                print(f"✅ Assigned church_id to super admin")
+                print("✅ Set church_id to None for super admin")
             
             client.close()
             return
         
-        # Create default super admin WITH church_id
+        # Create default super admin WITH church_id = None
         print("\n🔑 Creating default super admin...")
         
         password = DEFAULT_SUPER_ADMIN["password"]
@@ -150,7 +151,7 @@ async def create_default_super_admin():
         
         user = {
             "id": str(uuid.uuid4()),
-            "church_id": church_id,  # ✅ CRITICAL: Assign first church!
+            "church_id": None,  # ✅ CRITICAL: Super admin has NO church_id!
             "email": DEFAULT_SUPER_ADMIN["email"],
             "full_name": DEFAULT_SUPER_ADMIN["full_name"],
             "phone": DEFAULT_SUPER_ADMIN["phone"],
@@ -171,7 +172,7 @@ async def create_default_super_admin():
         print(f"  Email:    {DEFAULT_SUPER_ADMIN['email']}")
         print(f"  Password: {DEFAULT_SUPER_ADMIN['password']}")
         print(f"  Role:     {DEFAULT_SUPER_ADMIN['role']} (access all churches)")
-        print(f"  Church:   {church['name']} (home church)")
+        print(f"  church_id: None (selects church at login)")
         print(f"  PIN:      {DEFAULT_SUPER_ADMIN['kiosk_pin']}")
         print("=" * 60)
         print("\n⚠️  IMPORTANT: Change password after first login!\n")
