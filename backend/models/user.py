@@ -47,7 +47,7 @@ class UserResponse(BaseModel):
     email: str
     full_name: str
     role: str
-    church_id: str
+    church_id: Optional[str] = None  # None for super_admin
     is_active: bool
     created_at: datetime
     updated_at: datetime
