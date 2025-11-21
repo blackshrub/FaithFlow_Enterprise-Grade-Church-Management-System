@@ -611,6 +611,7 @@ async def initialize():
         "address": church_address,
         "phone": "",
         "email": "",
+        "is_active": True,
         "created_at": datetime.utcnow(),
         "updated_at": datetime.utcnow()
     }
