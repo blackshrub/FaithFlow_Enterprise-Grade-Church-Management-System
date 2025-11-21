@@ -43,6 +43,72 @@ async def create_default_super_admin():
         client = AsyncIOMotorClient(mongo_url)
         db = client[db_name]
         
+        # Create default church if none exists
+        existing_church = await db.churches.find_one({})
+        
+        if not existing_church:
+            print("⛪ Creating default church...")
+            
+            church_id = str(uuid.uuid4())
+            church = {
+                "id": church_id,
+                "name": "GKBJ Taman Kencana",
+                "address": "",
+                "phone": "",
+                "email": "",
+                "is_active": True,
+                "created_at": datetime.utcnow(),
+                "updated_at": datetime.utcnow()
+            }
+            await db.churches.insert_one(church)
+            print("✅ Default church created: GKBJ Taman Kencana")
+            
+            # Create Pre-Visitor status for this church
+            previsitor_status_id = str(uuid.uuid4())
+            previsitor = {
+                "id": previsitor_status_id,
+                "church_id": church_id,
+                "name": "Pre-Visitor",
+                "description": "Person registered via kiosk",
+                "color": "#FFA500",
+                "is_active": True,
+                "created_at": datetime.utcnow(),
+                "updated_at": datetime.utcnow()
+            }
+            await db.member_statuses.insert_one(previsitor)
+            print("✅ Pre-Visitor status created")
+            
+            # Create church settings
+            settings = {
+                "id": str(uuid.uuid4()),
+                "church_id": church_id,
+                "date_format": "DD-MM-YYYY",
+                "time_format": "24h",
+                "currency": "IDR",
+                "timezone": "Asia/Jakarta",
+                "default_language": "id",
+                "enable_whatsapp_notifications": False,
+                "whatsapp_api_url": "",
+                "whatsapp_username": "",
+                "whatsapp_password": "",
+                "kiosk_settings": {
+                    "enable_kiosk": True,
+                    "enable_event_registration": True,
+                    "enable_prayer": True,
+                    "enable_counseling": True,
+                    "enable_groups": True,
+                    "enable_profile_update": True,
+                    "previsitor_status_id": previsitor_status_id,
+                    "timeout_minutes": 2
+                },
+                "created_at": datetime.utcnow(),
+                "updated_at": datetime.utcnow()
+            }
+            await db.church_settings.insert_one(settings)
+            print("✅ Church settings created")
+        else:
+            print(f"ℹ️  Church already exists: {existing_church['name']}")
+        
         # Check if any super admin exists
         existing_super = await db.users.find_one({"role": "super_admin"})
         
@@ -54,7 +120,7 @@ async def create_default_super_admin():
             return
         
         # Create default super admin
-        print("🔑 Creating default super admin...")
+        print("\n🔑 Creating default super admin...")
         
         password = DEFAULT_SUPER_ADMIN["password"]
         hashed = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
