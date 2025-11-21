@@ -548,23 +548,34 @@ sed -i "s/ADMIN_PHONE_PLACEHOLDER/${ADMIN_PHONE}/g" /tmp/init_output.log 2>/dev/
 sed -i "s/ADMIN_PASSWORD_PLACEHOLDER/${ADMIN_PASSWORD}/g" /tmp/init_output.log 2>/dev/null || true
 
 # Actually run with replacements
-# Ensure we're in the correct directory
-cd "$INSTALL_DIR/backend"
+# CRITICAL: Ensure we're in /opt/faithflow/backend
+echo -e "${CYAN}📍 Changing to: /opt/faithflow/backend${NC}"
+cd /opt/faithflow/backend
+
+# Verify location
+CURRENT_DIR=$(pwd)
+echo -e "${CYAN}📍 Current directory: $CURRENT_DIR${NC}"
+
+if [ "$CURRENT_DIR" != "/opt/faithflow/backend" ]; then
+    warn "Wrong directory! Expected /opt/faithflow/backend, got $CURRENT_DIR"
+    echo -e "${RED}Attempting to fix...${NC}"
+    cd /opt/faithflow/backend || exit 1
+fi
+
+# Activate virtual environment
 source venv/bin/activate
 
-# Verify we're in the right place
-pwd
-echo "Working from: $(pwd)"
-
-# Export variables for Python to access
+# Export variables for Python
 export CHURCH_NAME
 export CHURCH_ADDRESS
 export ADMIN_NAME
-export ADMIN_EMAIL
+export ADMIN_EMAIL  
 export ADMIN_PHONE
 export ADMIN_PASSWORD
 
-# Run Python script from correct directory
+echo -e "${CYAN}🔧 Running database initialization from: $(pwd)${NC}"
+
+# Run Python initialization
 python3 << 'INIT_SCRIPT2'
 import asyncio
 from motor.motor_asyncio import AsyncIOMotorClient
