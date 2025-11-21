@@ -284,7 +284,7 @@ echo ""
 sleep 1
 
 progress
-echo -e "${MAGENTA}${ROCKET} Step 11/14: Setting up FaithFlow frontend...${NC}"
+echo -e "${MAGENTA}${ROCKET} Step 11/16: Setting up FaithFlow frontend...${NC}"
 progress
 cd "$INSTALL_DIR/frontend"
 
@@ -314,6 +314,17 @@ FRONTEND_ENV
     fi
 else
     info "frontend/.env already exists, keeping it"
+fi
+
+info "Building production frontend (this may take 3-5 minutes)..."
+echo -e "${CYAN}   🏗️  Creating optimized production build...${NC}"
+yarn build > /dev/null 2>&1
+
+if [ -d "build" ] && [ -f "build/index.html" ]; then
+    success "Frontend built successfully!"
+    echo -e "${GREEN}   📦 Production build ready in frontend/build/${NC}"
+else
+    warn "Frontend build may have issues. Check logs if site doesn't work."
 fi
 
 success "Frontend setup complete!"
