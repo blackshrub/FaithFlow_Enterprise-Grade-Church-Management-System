@@ -386,6 +386,18 @@ touch /var/log/supervisor/frontend.err.log
 supervisorctl reread > /dev/null 2>&1
 supervisorctl update > /dev/null 2>&1
 success "Supervisor configured with /opt/faithflow paths!"
+
+# Start backend service
+info "Starting backend service..."
+supervisorctl start backend > /dev/null 2>&1 || supervisorctl restart backend > /dev/null 2>&1
+sleep 3
+
+if supervisorctl status backend | grep -q "RUNNING"; then
+    success "Backend service started successfully!"
+else
+    warn "Backend may need manual start. Check: sudo supervisorctl status"
+fi
+
 echo ""
 sleep 1
 
