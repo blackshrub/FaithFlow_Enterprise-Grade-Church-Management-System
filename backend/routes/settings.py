@@ -415,10 +415,31 @@ async def get_church_settings(
 ):
     """Get church settings for current user's church"""
     
-    church_id = current_user.get('session_church_id') or current_user.get('session_church_id') or current_user.get('church_id')
+    # Extract church_id with proper fallback
+    church_id = current_user.get('session_church_id') or current_user.get('church_id')
+    
+    # Debug logging
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.info(f"\ud83d\udcca GET church-settings called")
+    logger.info(f"   User: {current_user.get('email')}")
+    logger.info(f"   Role: {current_user.get('role')}")
+    logger.info(f"   session_church_id from JWT: {current_user.get('session_church_id')}")
+    logger.info(f"   church_id from JWT: {current_user.get('church_id')}")
+    logger.info(f"   Final church_id to use: {church_id}")
+    
+    # Validate church_id
+    if not church_id:
+        logger.error(f"   \u274c No church_id found for user {current_user.get('email')}")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="No active church context. Please logout and login again, then select a church."
+        )
+    
     settings = await db.church_settings.find_one({"church_id": church_id}, {"_id": 0})
     
     if not settings:
+        logger.info(f"   Creating default settings for church: {church_id}")
         # Return default settings if not found
         default_settings = ChurchSettings(church_id=church_id)
         return default_settings
