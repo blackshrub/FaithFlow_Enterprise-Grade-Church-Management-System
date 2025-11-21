@@ -86,12 +86,17 @@ const AppointmentsListPage = () => {
           <h1 className="text-3xl font-bold">{t('counseling.appointments')}</h1>
           <p className="text-gray-500 mt-1">Manage Counseling and Prayer Appointments</p>
         </div>
-        <Button onClick={() => {}} disabled>
+        <Button onClick={() => setIsCreateModalOpen(true)}>
           <Plus className="mr-2 h-4 w-4" />
           {t('counseling.create_appointment')}
-          <span className="ml-2 text-xs opacity-70">(Coming Soon)</span>
         </Button>
       </div>
+
+      {/* Create Appointment Modal */}
+      <CreateAppointmentModal
+        open={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+      />
 
       {/* Filters */}
       <Card>
