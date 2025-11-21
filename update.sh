@@ -238,12 +238,17 @@ progress
 echo -e "${MAGENTA}🚀 Step 9/9: Restarting backend service...${NC}"
 progress
 
-info "Restarting backend (frontend is static files)..."
-supervisorctl restart backend > /dev/null 2>&1 || true
-sleep 3
+info "Stopping backend service..."
+supervisorctl stop backend > /dev/null 2>&1 || true
+sleep 2
+
+info "Starting backend service with updated code..."
+supervisorctl start backend > /dev/null 2>&1 || supervisorctl restart backend > /dev/null 2>&1
+sleep 5
 
 if supervisorctl status backend | grep -q "RUNNING"; then
     success "Backend restarted successfully!"
+    echo -e "${GREEN}   ✅ New code is now active!${NC}"
 else
     warn "Backend may not be running. Check: sudo supervisorctl status"
 fi
