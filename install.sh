@@ -571,7 +571,7 @@ server {
     client_max_body_size 50M;
 
     location /api {
-        proxy_pass http://localhost:8001;
+        proxy_pass http://localhost:$BACKEND_PORT;
         proxy_http_version 1.1;
         proxy_set_header Host \$host;
         proxy_set_header X-Real-IP \$remote_addr;
