@@ -139,7 +139,7 @@ async def create_default_super_admin():
             "email": DEFAULT_SUPER_ADMIN["email"],
             "full_name": DEFAULT_SUPER_ADMIN["full_name"],
             "phone": DEFAULT_SUPER_ADMIN["phone"],
-            "password_hash": password_hash_str,
+            "hashed_password": password_hash_str,  # Correct field name for auth service
             "role": DEFAULT_SUPER_ADMIN["role"],
             "is_active": True,
             "kiosk_pin": DEFAULT_SUPER_ADMIN["kiosk_pin"],
