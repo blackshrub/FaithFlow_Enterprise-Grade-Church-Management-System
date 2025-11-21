@@ -468,11 +468,18 @@ async def create_church_settings(
 async def update_church_settings(
     settings_data: ChurchSettingsUpdate,
     db: AsyncIOMotorDatabase = Depends(get_db),
+    church_id: str = Depends(get_session_church_id),
     current_user: dict = Depends(require_admin)
 ):
     """Update church settings for current user's church"""
     
-    church_id = current_user.get('church_id')
+    # Validate church_id
+    if not church_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="No active church context. Please logout and login again to refresh your session."
+        )
+    
     settings = await db.church_settings.find_one({"church_id": church_id})
     
     # Create settings if they don't exist
