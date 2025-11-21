@@ -26,7 +26,7 @@ async def list_statuses(
     """List all member statuses for current church"""
     query = {}
     if current_user.get('role') != 'super_admin':
-        query['church_id'] = current_user.get('session_church_id') or current_user.get('church_id')
+        query['church_id'] = current_user.get('session_church_id')
     
     statuses = await db.member_statuses.find(query, {"_id": 0}).sort("display_order", 1).to_list(100)
     
@@ -46,7 +46,7 @@ async def create_status(
     current_user: dict = Depends(require_admin)
 ):
     """Create a new member status"""
-    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') or current_user.get('church_id') != status_data.church_id:
+    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') != status_data.church_id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
     
     # Check uniqueness
@@ -88,7 +88,7 @@ async def update_status(
     if not status_obj:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Status not found")
     
-    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') or current_user.get('church_id') != status_obj.get('church_id'):
+    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') != status_obj.get('church_id'):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
     
     # Prevent editing name of system status
@@ -133,7 +133,7 @@ async def delete_status(
     if not status_obj:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Status not found")
     
-    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') or current_user.get('church_id') != status_obj.get('church_id'):
+    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') != status_obj.get('church_id'):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
     
     if status_obj.get('is_system'):
@@ -168,7 +168,7 @@ async def list_rules(
     """List all status rules for current church"""
     query = {}
     if current_user.get('role') != 'super_admin':
-        query['church_id'] = current_user.get('session_church_id') or current_user.get('church_id')
+        query['church_id'] = current_user.get('session_church_id')
     
     rules = await db.member_status_rules.find(query, {"_id": 0}).sort("priority", -1).to_list(1000)
     
@@ -188,7 +188,7 @@ async def create_rule(
     current_user: dict = Depends(require_admin)
 ):
     """Create a new status rule"""
-    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') or current_user.get('church_id') != rule_data.church_id:
+    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') != rule_data.church_id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
     
     # Validate
@@ -242,7 +242,7 @@ async def update_rule(
     if not rule:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Rule not found")
     
-    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') or current_user.get('church_id') != rule.get('church_id'):
+    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') != rule.get('church_id'):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
     
     update_data = rule_data.model_dump(exclude_unset=True)
@@ -283,7 +283,7 @@ async def delete_rule(
     if not rule:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Rule not found")
     
-    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') or current_user.get('church_id') != rule.get('church_id'):
+    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') != rule.get('church_id'):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
     
     await db.member_status_rules.delete_one({"id": rule_id})
@@ -298,7 +298,7 @@ async def simulate_rule(
 ):
     """Simulate a rule against all members before creating it"""
     
-    church_id = current_user.get('session_church_id') or current_user.get('church_id')
+    church_id = current_user.get('session_church_id')
     
     # Validate rule data
     if 'conditions' not in rule_data or 'action_status_id' not in rule_data:
@@ -390,7 +390,7 @@ async def list_conflicts(
     """List conflicts"""
     query = {}
     if current_user.get('role') != 'super_admin':
-        query['church_id'] = current_user.get('session_church_id') or current_user.get('church_id')
+        query['church_id'] = current_user.get('session_church_id')
     
     if status:
         query['status'] = status
@@ -423,7 +423,7 @@ async def resolve_conflict(
     if not conflict:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conflict not found")
     
-    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') or current_user.get('church_id') != conflict.get('church_id'):
+    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') != conflict.get('church_id'):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
     
     if conflict.get('status') == 'resolved':
@@ -478,7 +478,7 @@ async def get_member_history(
     if not member:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Member not found")
     
-    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') or current_user.get('church_id') != member.get('church_id'):
+    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') != member.get('church_id'):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
     
     history = await db.member_status_history.find(
@@ -501,7 +501,7 @@ async def get_automation_settings(
     current_user: dict = Depends(get_current_user)
 ):
     """Get automation settings for current church"""
-    church_id = current_user.get('session_church_id') or current_user.get('church_id')
+    church_id = current_user.get('session_church_id')
     
     settings = await db.church_settings.find_one({"church_id": church_id}, {"_id": 0})
     
@@ -520,7 +520,7 @@ async def update_automation_settings(
     current_user: dict = Depends(require_admin)
 ):
     """Update automation settings"""
-    church_id = current_user.get('session_church_id') or current_user.get('church_id')
+    church_id = current_user.get('session_church_id')
     
     await db.church_settings.update_one(
         {"church_id": church_id},
@@ -542,7 +542,7 @@ async def run_automation_once(
     current_user: dict = Depends(require_admin)
 ):
     """Manually trigger automation for current church"""
-    church_id = current_user.get('session_church_id') or current_user.get('church_id')
+    church_id = current_user.get('session_church_id')
     
     logger.info(f"Manual automation triggered by {current_user.get('full_name')} for church {church_id}")
     

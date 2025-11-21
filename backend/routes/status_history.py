@@ -26,7 +26,7 @@ async def get_member_status_history(
         )
     
     # Check access
-    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') or current_user.get('church_id') != member.get('church_id'):
+    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') != member.get('church_id'):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Access denied"

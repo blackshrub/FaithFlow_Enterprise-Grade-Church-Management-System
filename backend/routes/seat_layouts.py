@@ -18,7 +18,7 @@ async def create_seat_layout(
 ):
     """Create a new seat layout"""
     
-    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') or current_user.get('church_id') != layout_data.church_id:
+    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') != layout_data.church_id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
     
     # Generate default seat map (all available)
@@ -49,7 +49,7 @@ async def list_seat_layouts(
     
     query = {}
     if current_user.get('role') != 'super_admin':
-        query['church_id'] = current_user.get('session_church_id') or current_user.get('church_id')
+        query['church_id'] = current_user.get('session_church_id')
     
     layouts = await db.seat_layouts.find(query, {"_id": 0}).to_list(100)
     
@@ -74,7 +74,7 @@ async def get_seat_layout(
     if not layout:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Seat layout not found")
     
-    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') or current_user.get('church_id') != layout.get('church_id'):
+    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') != layout.get('church_id'):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
     
     if isinstance(layout.get('created_at'), str):
@@ -98,7 +98,7 @@ async def update_seat_layout(
     if not layout:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Seat layout not found")
     
-    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') or current_user.get('church_id') != layout.get('church_id'):
+    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') != layout.get('church_id'):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
     
     update_data = layout_data.model_dump(exclude_unset=True)
@@ -127,7 +127,7 @@ async def delete_seat_layout(
     if not layout:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Seat layout not found")
     
-    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') or current_user.get('church_id') != layout.get('church_id'):
+    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') != layout.get('church_id'):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
     
     await db.seat_layouts.delete_one({"id": layout_id})

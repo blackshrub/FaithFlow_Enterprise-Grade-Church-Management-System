@@ -21,7 +21,7 @@ async def create_event(
 ):
     """Create a new event"""
     
-    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') or current_user.get('church_id') != event_data.church_id:
+    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') != event_data.church_id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
     
     # Validate event type requirements
@@ -81,7 +81,7 @@ async def list_events(
     
     query = {}
     if current_user.get('role') != 'super_admin':
-        query['church_id'] = current_user.get('session_church_id') or current_user.get('church_id')
+        query['church_id'] = current_user.get('session_church_id')
     
     if event_type:
         query['event_type'] = event_type
@@ -119,7 +119,7 @@ async def get_event(
     if not event:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
     
-    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') or current_user.get('church_id') != event.get('church_id'):
+    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') != event.get('church_id'):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
     
     # Convert datetime fields
@@ -148,7 +148,7 @@ async def update_event(
     if not event:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
     
-    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') or current_user.get('church_id') != event.get('church_id'):
+    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') != event.get('church_id'):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
     
     update_data = event_data.model_dump(exclude_unset=True)
@@ -186,7 +186,7 @@ async def delete_event(
     if not event:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
     
-    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') or current_user.get('church_id') != event.get('church_id'):
+    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') != event.get('church_id'):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
     
     await db.events.delete_one({"id": event_id})
@@ -526,7 +526,7 @@ async def get_event_rsvps(
     if not event:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
     
-    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') or current_user.get('church_id') != event.get('church_id'):
+    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') != event.get('church_id'):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
     
     all_rsvps = event.get('rsvp_list', [])
@@ -715,7 +715,7 @@ async def get_event_attendance(
     if not event:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
     
-    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') or current_user.get('church_id') != event.get('church_id'):
+    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') != event.get('church_id'):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
     
     all_attendance = event.get('attendance_list', [])

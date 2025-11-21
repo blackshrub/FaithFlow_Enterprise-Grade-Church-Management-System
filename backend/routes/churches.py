@@ -51,7 +51,7 @@ async def list_churches(
         churches = await db.churches.find({}, {"_id": 0}).to_list(1000)
     else:
         churches = await db.churches.find(
-            {"id": current_user.get('session_church_id') or current_user.get('church_id')},
+            {"id": current_user.get('session_church_id')},
             {"_id": 0}
         ).to_list(1)
     
@@ -76,7 +76,7 @@ async def get_church(
     """Get church by ID"""
     
     # Non-super admins can only access their own church
-    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') or current_user.get('church_id') != church_id:
+    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') != church_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Access denied"

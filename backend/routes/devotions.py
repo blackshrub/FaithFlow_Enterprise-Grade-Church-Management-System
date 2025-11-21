@@ -24,7 +24,7 @@ async def list_devotions(
     
     query = {}
     if current_user.get('role') != 'super_admin':
-        query['church_id'] = current_user.get('session_church_id') or current_user.get('church_id')
+        query['church_id'] = current_user.get('session_church_id')
     
     if status_filter:
         query['status'] = status_filter
@@ -62,7 +62,7 @@ async def get_devotion_by_date(
     
     devotion = await db.devotions.find_one(
         {
-            'church_id': current_user.get('session_church_id') or current_user.get('church_id'),
+            'church_id': current_user.get('session_church_id'),
             'date': {'$gte': f"{date}T00:00:00", '$lt': f"{date}T23:59:59"},
             'status': 'published'
         },
@@ -84,7 +84,7 @@ async def get_today_devotion(
     
     today = datetime.now(timezone.utc).date()
     query = {
-        'church_id': current_user.get('session_church_id') or current_user.get('church_id'),
+        'church_id': current_user.get('session_church_id'),
         'status': 'published'
     }
     
@@ -108,7 +108,7 @@ async def get_devotion(
     if not devotion:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Devotion not found")
     
-    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') or current_user.get('church_id') != devotion.get('church_id'):
+    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') != devotion.get('church_id'):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
     
     # Convert datetime fields
@@ -132,7 +132,7 @@ async def create_devotion(
 ):
     """Create a new devotion"""
     
-    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') or current_user.get('church_id') != devotion_data.church_id:
+    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') != devotion_data.church_id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
     
     devotion = Devotion(**devotion_data.model_dump(), created_by=current_user.get('id'))
@@ -164,7 +164,7 @@ async def update_devotion(
     if not devotion:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Devotion not found")
     
-    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') or current_user.get('church_id') != devotion.get('church_id'):
+    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') != devotion.get('church_id'):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
     
     # Save current version to history
@@ -223,7 +223,7 @@ async def delete_devotion(
     if not devotion:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Devotion not found")
     
-    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') or current_user.get('church_id') != devotion.get('church_id'):
+    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') != devotion.get('church_id'):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
     
     await db.devotions.delete_one({"id": devotion_id})
@@ -244,7 +244,7 @@ async def duplicate_devotion(
     if not original:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Devotion not found")
     
-    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') or current_user.get('church_id') != original.get('church_id'):
+    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') != original.get('church_id'):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
     
     # Create new devotion from original
@@ -290,20 +290,20 @@ async def bulk_devotion_action(
     if action == "delete":
         result = await db.devotions.delete_many({
             "id": {"$in": devotion_ids},
-            "church_id": current_user.get('session_church_id') or current_user.get('church_id')
+            "church_id": current_user.get('session_church_id')
         })
         return {"success": True, "deleted": result.deleted_count}
     
     elif action == "publish":
         result = await db.devotions.update_many(
-            {"id": {"$in": devotion_ids}, "church_id": current_user.get('session_church_id') or current_user.get('church_id')},
+            {"id": {"$in": devotion_ids}, "church_id": current_user.get('session_church_id')},
             {"$set": {"status": "published", "updated_at": datetime.now(timezone.utc).isoformat()}}
         )
         return {"success": True, "updated": result.modified_count}
     
     elif action == "unpublish":
         result = await db.devotions.update_many(
-            {"id": {"$in": devotion_ids}, "church_id": current_user.get('session_church_id') or current_user.get('church_id')},
+            {"id": {"$in": devotion_ids}, "church_id": current_user.get('session_church_id')},
             {"$set": {"status": "draft", "updated_at": datetime.now(timezone.utc).isoformat()}}
         )
         return {"success": True, "updated": result.modified_count}
@@ -352,7 +352,7 @@ async def generate_audio(
     if not devotion:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Devotion not found")
     
-    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') or current_user.get('church_id') != devotion.get('church_id'):
+    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') != devotion.get('church_id'):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
     
     try:
@@ -393,7 +393,7 @@ async def restore_version(
     if not devotion:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Devotion not found")
     
-    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') or current_user.get('church_id') != devotion.get('church_id'):
+    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') != devotion.get('church_id'):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
     
     version_history = devotion.get('version_history', [])

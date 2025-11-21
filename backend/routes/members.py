@@ -22,7 +22,7 @@ async def quick_add_member(
 ):
     """Quick add member for kiosk check-in (minimal fields)"""
     
-    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') or current_user.get('church_id') != member_data.church_id:
+    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') != member_data.church_id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
     
     # Get default member status for new visitors
@@ -97,7 +97,7 @@ async def create_member(
     """Create a new member"""
     
     # Verify user has access to this church
-    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') or current_user.get('church_id') != member_data.church_id:
+    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') != member_data.church_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Access denied"
@@ -204,7 +204,7 @@ async def list_members(
     # Build query - filter by church unless super admin
     query = {}
     if current_user.get('role') != 'super_admin':
-        query['church_id'] = current_user.get('session_church_id') or current_user.get('church_id')
+        query['church_id'] = current_user.get('session_church_id')
     
     # ALWAYS exclude deleted members from main list
     query['is_deleted'] = {'$ne': True}
@@ -292,7 +292,7 @@ async def list_trash(
     
     query = {"is_deleted": True}
     if current_user.get('role') != 'super_admin':
-        query['church_id'] = current_user.get('session_church_id') or current_user.get('church_id')
+        query['church_id'] = current_user.get('session_church_id')
     
     members = await db.members.find(query, {"_id": 0}).sort("deleted_at", -1).to_list(1000)
     
@@ -330,7 +330,7 @@ async def get_member(
         )
     
     # Check access
-    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') or current_user.get('church_id') != member.get('church_id'):
+    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') != member.get('church_id'):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Access denied"
@@ -371,7 +371,7 @@ async def update_member(
         )
     
     # Check access
-    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') or current_user.get('church_id') != member.get('church_id'):
+    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') != member.get('church_id'):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Access denied"
@@ -469,7 +469,7 @@ async def delete_member(
         )
     
     # Check access
-    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') or current_user.get('church_id') != member.get('church_id'):
+    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') != member.get('church_id'):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Access denied"
@@ -518,7 +518,7 @@ async def restore_member(
     if not member:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Member not found")
     
-    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') or current_user.get('church_id') != member.get('church_id'):
+    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') != member.get('church_id'):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
     
     if not member.get('is_deleted'):
@@ -557,7 +557,7 @@ async def permanent_delete_member(
     if not member:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Member not found")
     
-    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') or current_user.get('church_id') != member.get('church_id'):
+    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') != member.get('church_id'):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
     
     # Permanently delete
@@ -577,7 +577,7 @@ async def get_member_stats(
     
     query = {}
     if current_user.get('role') != 'super_admin':
-        query['church_id'] = current_user.get('session_church_id') or current_user.get('church_id')
+        query['church_id'] = current_user.get('session_church_id')
     
     total_members = await db.members.count_documents({**query, 'is_active': True})
     total_inactive = await db.members.count_documents({**query, 'is_active': False})

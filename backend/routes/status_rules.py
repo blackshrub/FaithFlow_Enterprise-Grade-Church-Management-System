@@ -22,7 +22,7 @@ async def create_status_rule(
     """Create a new member status rule"""
     
     # Verify access
-    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') or current_user.get('church_id') != rule_data.church_id:
+    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') != rule_data.church_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Access denied"
@@ -91,7 +91,7 @@ async def list_status_rules(
     
     query = {}
     if current_user.get('role') != 'super_admin':
-        query['church_id'] = current_user.get('session_church_id') or current_user.get('church_id')
+        query['church_id'] = current_user.get('session_church_id')
     
     rules = await db.member_status_rules.find(query, {"_id": 0}).sort("priority", -1).to_list(1000)
     
@@ -121,7 +121,7 @@ async def get_status_rule(
         )
     
     # Check access
-    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') or current_user.get('church_id') != rule.get('church_id'):
+    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') != rule.get('church_id'):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Access denied"
@@ -153,7 +153,7 @@ async def update_status_rule(
         )
     
     # Check access
-    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') or current_user.get('church_id') != rule.get('church_id'):
+    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') != rule.get('church_id'):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Access denied"
@@ -218,7 +218,7 @@ async def delete_status_rule(
         )
     
     # Check access
-    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') or current_user.get('church_id') != rule.get('church_id'):
+    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') != rule.get('church_id'):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Access denied"
@@ -245,7 +245,7 @@ async def test_status_rule(
         )
     
     # Check access
-    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') or current_user.get('church_id') != rule.get('church_id'):
+    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') != rule.get('church_id'):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Access denied"
@@ -283,7 +283,7 @@ async def simulate_rule(
 ):
     """Simulate a rule against all members before creating it"""
     
-    church_id = current_user.get('session_church_id') or current_user.get('church_id')
+    church_id = current_user.get('session_church_id')
     
     # Validate rule data
     if 'conditions' not in rule_data or 'action_status_id' not in rule_data:
@@ -359,7 +359,7 @@ async def evaluate_all_rules(
 ):
     """Manually trigger rule evaluation for all members in current church"""
     
-    church_id = current_user.get('session_church_id') or current_user.get('church_id')
+    church_id = current_user.get('session_church_id')
     
     logger.info(f"Manual rule evaluation triggered by {current_user.get('full_name')} for church {church_id}")
     
