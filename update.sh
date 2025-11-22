@@ -253,7 +253,7 @@ echo ""
 sleep 1
 
 progress
-echo -e "${MAGENTA}🚀 Step 7/8: Reloading Nginx...${NC}"
+echo -e "${MAGENTA}🚀 Step 8/10: Reloading Nginx...${NC}"
 progress
 
 info "Reloading Nginx to serve updated files..."
