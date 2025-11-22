@@ -230,7 +230,7 @@ echo ""
 sleep 1
 
 progress
-echo -e "${MAGENTA}🚀 Step 6/8: Running database migrations...${NC}"
+echo -e "${MAGENTA}🚀 Step 7/10: Running database migrations...${NC}"
 progress
 
 cd "$DEST_DIR/backend"
