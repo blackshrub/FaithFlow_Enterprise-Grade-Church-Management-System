@@ -33,27 +33,22 @@ export default function GeneralSettingsTab() {
   });
 
   useEffect(() => {
-    // Only hydrate form when query successfully loads data
     if (isSuccess && settings) {
-      console.log('🔄 Hydrating form with fresh settings:', settings);
+      console.log('🔥 Hydrating form with EXACT backend settings:', settings);
+
       setFormData({
-        date_format: settings.date_format ?? 'DD-MM-YYYY',
-        time_format: settings.time_format ?? '24h',
-        currency: settings.currency ?? 'USD',
-        timezone: settings.timezone ?? 'UTC',
-        default_language: settings.default_language ?? 'en',
-        enable_whatsapp_notifications: settings.enable_whatsapp_notifications ?? false,
-        whatsapp_send_rsvp_confirmation: settings.whatsapp_send_rsvp_confirmation ?? false,
-        whatsapp_send_group_notifications: settings.whatsapp_send_group_notifications ?? false,
-        whatsapp_api_url: settings.whatsapp_api_url ?? '',
-        whatsapp_username: settings.whatsapp_username ?? '',
-        whatsapp_password: settings.whatsapp_password ?? '',
-        group_categories: settings.group_categories ?? {
-          cell_group: 'Cell Group / Small Group',
-          ministry_team: 'Ministry Team',
-          activity: 'Activity Group',
-          support_group: 'Support Group',
-        },
+        date_format: settings.date_format,
+        time_format: settings.time_format,
+        currency: settings.currency,
+        timezone: settings.timezone,
+        default_language: settings.default_language,
+        enable_whatsapp_notifications: settings.enable_whatsapp_notifications,
+        whatsapp_send_rsvp_confirmation: settings.whatsapp_send_rsvp_confirmation,
+        whatsapp_send_group_notifications: settings.whatsapp_send_group_notifications,
+        whatsapp_api_url: settings.whatsapp_api_url,
+        whatsapp_username: settings.whatsapp_username,
+        whatsapp_password: settings.whatsapp_password,
+        group_categories: settings.group_categories,
       });
     }
   }, [isSuccess, settings]);
