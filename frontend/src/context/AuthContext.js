@@ -12,20 +12,27 @@ export const AuthProvider = ({ children }) => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    // Check if user is logged in
     const token = localStorage.getItem('access_token');
-    const savedUser = localStorage.getItem('user');
-    const savedChurch = localStorage.getItem('church');
-
-    if (token && savedUser && savedChurch) {
+    if (token) {
       try {
-        setUser(JSON.parse(savedUser));
-        setChurch(JSON.parse(savedChurch));
-        
-        // Load church settings to get default language
+        const payload = JSON.parse(atob(token.split('.')[1]));
+
+        // Rebuild fresh user object from JWT
+        const rebuiltUser = {
+          id: payload.sub,
+          email: payload.email,
+          full_name: payload.full_name,
+          role: payload.role,
+          church_id: payload.church_id ?? null,
+          session_church_id: payload.session_church_id ?? null
+        };
+
+        setUser(rebuiltUser);
+        setChurch({ id: rebuiltUser.session_church_id }); // single source of truth
+
         loadChurchSettings();
-      } catch (e) {
-        console.error('Error parsing saved user data:', e);
+      } catch (err) {
+        console.error("JWT parse error:", err);
         logout();
       }
     }
