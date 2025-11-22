@@ -1,113 +1,61 @@
-from fastapi import Request, HTTPException, status
-from motor.motor_asyncio import AsyncIOMotorDatabase
-from typing import Optional, Dict, Any
-import logging
+from fastapi import HTTPException, status
+from typing import Dict, Any, Optional
 import unicodedata
-
-logger = logging.getLogger(__name__)
 
 
 def normalize_church_id(church_id: str) -> str:
-    """Normalize church_id to prevent hidden character mismatches.
-    
-    Removes:
-    - Zero-width characters
-    - Unicode variations
-    - Leading/trailing whitespace
-    
-    This prevents MongoDB query failures due to invisible character differences.
-    """
+    """Normalize church_id to prevent hidden character mismatches."""
     if not church_id:
         return church_id
-    
-    # Normalize unicode (NFKC = compatibility decomposition + canonical composition)
     normalized = unicodedata.normalize("NFKC", church_id)
-    
-    # Strip whitespace
     normalized = normalized.strip()
-    
     return normalized
 
 
-def get_current_church_id(current_user: dict) -> str:
-    """Get church_id from current user (for backward compatibility).
-    
-    Deprecated: Use get_session_church_id_from_user instead for session-scoped access.
+def get_session_church_id_from_user(user: Dict[str, Any]) -> str:
     """
-    return current_user.get("church_id") or current_user.get("session_church_id")
+    Centralized logic to resolve the effective church context (session_church_id).
 
-
-def get_session_church_id_from_user(current_user: dict) -> str:
-    """Extract session_church_id from JWT payload.
-    
-    CRITICAL: Only uses session_church_id from JWT.
-    NO fallback to user.church_id - clean session-based architecture.
-    
-    Returns the church the user is currently operating in:
-    - For super_admin: The church they selected at login
-    - For regular users: Their assigned church (from database, passed via JWT)
+    Rules:
+    - For normal admin users:
+        - user["church_id"] must be a non-empty string
+        - session_church_id should default to that
+    - For super_admin:
+        - session_church_id MUST be provided in JWT
+        - user["church_id"] is expected to be None
+    - If no valid church context can be resolved → 403
     """
-    session_church_id = current_user.get("session_church_id")
-    
-    # NO FALLBACK - must be in JWT
-    if not session_church_id:
+    if not isinstance(user, dict):
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="No active church context. Please logout and login again to select a church."
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid user object in context",
         )
-    
-    # Normalize to prevent hidden character issues
-    session_church_id = normalize_church_id(session_church_id)
-    
-    return session_church_id
 
+    role = user.get("role")
+    raw_session = user.get("session_church_id")
+    raw_church = user.get("church_id")
 
-async def validate_church_access(
-    user_id: str,
-    church_id: str,
-    database: AsyncIOMotorDatabase
-) -> bool:
-    """
-    Validate that a user has access to a specific church.
-    
-    Args:
-        user_id: User ID
-        church_id: Church ID to validate
-        database: MongoDB database instance
-    
-    Returns:
-        True if user has access, False otherwise
-    """
-    user = await database.users.find_one({"id": user_id}, {"_id": 0})
-    
-    if not user:
-        return False
-    
-    # Super admin can access all churches
-    if user.get("role") == "super_admin":
-        return True
-    
-    # Regular users can only access their own church
-    return user.get("church_id") == church_id
+    # Super admin: MUST use session_church_id
+    if role == "super_admin":
+        if not raw_session or not isinstance(raw_session, str):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="No active church context. Please logout and login again selecting a church.",
+            )
+        return normalize_church_id(raw_session)
 
+    # Non-super admin: must have a fixed church_id
+    if raw_church and isinstance(raw_church, str):
+        # If session_church_id exists, it MUST match church_id
+        if raw_session and normalize_church_id(raw_session) != normalize_church_id(raw_church):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Invalid church context in session.",
+            )
+        return normalize_church_id(raw_church)
 
-def ensure_church_filter(query: Dict[str, Any], church_id: str) -> Dict[str, Any]:
-    """
-    Add church_id filter to a MongoDB query to ensure multi-tenant isolation.
-    
-    Args:
-        query: Existing query dict
-        church_id: Church ID to filter by
-    
-    Returns:
-        Updated query dict with church_id filter
-    """
-    query["church_id"] = church_id
-    return query
-
-
-def is_super_admin(current_user: dict) -> bool:
-    """
-    Check if current user is a super admin.
-    """
-    return current_user.get("role") == "super_admin"
+    # Fallback – no valid context
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail="No valid church context for this user.",
+    )
