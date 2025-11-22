@@ -50,11 +50,27 @@ async def list_articles(
     
     if schedule_status:
         query["schedule_status"] = schedule_status
-    
-    total = await db.articles.count_documents(query)
-    cursor = db.articles.find(query, {"_id": 0}).sort("created_at", -1).skip(offset).limit(limit)
-    articles = await cursor.to_list(length=limit)
-    
+
+    # Use aggregation to get count and data in single query
+    pipeline = [
+        {"$match": query},
+        {"$sort": {"created_at": -1}},
+        {
+            "$facet": {
+                "metadata": [{"$count": "total"}],
+                "data": [
+                    {"$skip": offset},
+                    {"$limit": limit},
+                    {"$project": {"_id": 0}}
+                ]
+            }
+        }
+    ]
+
+    result = await db.articles.aggregate(pipeline).to_list(length=1)
+    total = result[0]["metadata"][0]["total"] if result[0]["metadata"] else 0
+    articles = result[0]["data"] if result else []
+
     return {
         "data": articles,
         "pagination": {
