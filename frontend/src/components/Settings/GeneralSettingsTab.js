@@ -33,7 +33,9 @@ export default function GeneralSettingsTab() {
   });
 
   useEffect(() => {
-    if (settings) {
+    // Only hydrate form when query successfully loads data
+    if (isSuccess && settings) {
+      console.log('🔄 Hydrating form with fresh settings:', settings);
       setFormData({
         date_format: settings.date_format || 'DD-MM-YYYY',
         time_format: settings.time_format || '24h',
@@ -54,7 +56,7 @@ export default function GeneralSettingsTab() {
         },
       });
     }
-  }, [settings]);
+  }, [isSuccess, settings]);
 
   const handleSave = () => {
     console.log('💾 Saving settings:', formData);
