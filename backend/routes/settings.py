@@ -558,6 +558,16 @@ async def get_church_settings(
 
     logger.warning(f"   Returning settings for church: {session_church_id}")
 
+    # Sanitize response: remove _id and convert datetime fields
+    if doc:
+        # Remove MongoDB _id field
+        doc.pop('_id', None)
+
+        # Convert datetime objects to ISO strings
+        for field in ['created_at', 'updated_at']:
+            if field in doc and hasattr(doc[field], 'isoformat'):
+                doc[field] = doc[field].isoformat()
+
     return doc
 
 
@@ -669,6 +679,13 @@ async def update_church_settings(
     )
 
     logger.warning(f"📄 Document after update = {updated}")
+
+    # Sanitize response: convert datetime fields
+    if updated:
+        for field in ['created_at', 'updated_at']:
+            if field in updated and hasattr(updated[field], 'isoformat'):
+                updated[field] = updated[field].isoformat()
+
     logger.warning("════════════ END PATCH /church-settings DIAGNOSTICS ═════════════")
 
     return updated
