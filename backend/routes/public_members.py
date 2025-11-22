@@ -1,16 +1,21 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from utils.dependencies import get_db
+from utils.rate_limit import moderate_rate_limit
 
 router = APIRouter(prefix="/api/public/members", tags=["Public Member API"])
 
 
-@router.get("/{member_id}/status")
+@router.get("/{member_id}/status", dependencies=[Depends(moderate_rate_limit)])
 async def get_member_status(
     member_id: str,
+    request: Request,
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
-    """Get member's current status (public, no auth required)"""
+    """Get member's current status (public, no auth required)
+
+    Rate limited to 20 requests per minute per IP to prevent abuse.
+    """
     
     member = await db.members.find_one({"id": member_id}, {"_id": 0, "current_status_id": 1, "member_status": 1, "church_id": 1})
     if not member:

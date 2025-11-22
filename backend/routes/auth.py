@@ -1,10 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from typing import List
 
 from models.user import User, UserCreate, UserLogin, UserResponse
 from services.auth_service import auth_service
 from utils.dependencies import get_db, get_current_user, require_admin
+from utils.rate_limit import strict_rate_limit
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -34,12 +35,16 @@ async def register(
     return user
 
 
-@router.post("/login")
+@router.post("/login", dependencies=[Depends(strict_rate_limit)])
 async def login(
     login_data: UserLogin,
+    request: Request,
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
-    """Login and get access token (supports both user and API key authentication)"""
+    """Login and get access token (supports both user and API key authentication)
+
+    Rate limited to 5 requests per minute per IP to prevent brute force attacks.
+    """
     
     # Try API key authentication first (if email looks like api username)
     if login_data.email.startswith('api_'):
