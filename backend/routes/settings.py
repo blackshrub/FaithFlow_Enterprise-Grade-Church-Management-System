@@ -485,66 +485,66 @@ async def create_church_settings(
     return church_settings
 
 
-@router.patch("/church-settings")  # Removed response_model
+@router.patch("/church-settings")  # No response_model - return raw dict
 async def update_church_settings(
     settings_data: ChurchSettingsUpdate,
     db: AsyncIOMotorDatabase = Depends(get_db),
     church_id: str = Depends(get_session_church_id),
     current_user: dict = Depends(require_admin)
 ):
-    """Update church settings for current user's church"""
+    """Update church settings - returns raw MongoDB document"""
     
     # DEBUG LOGGING
     print("\n📌 PATCH /church-settings called")
     print(f"   session_church_id = {church_id}")
-    print(f"   user email = {current_user.get('email')}")
     print(f"   Raw incoming data = {settings_data.model_dump(exclude_unset=True)}")
     
-    # Validate church_id
     if not church_id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="No active church context. Please logout and login again to refresh your session."
-        )
+        raise HTTPException(status_code=403, detail="No church context")
     
     settings = await db.church_settings.find_one({"church_id": church_id})
     
-    # Create settings if they don't exist
     if not settings:
-        default_settings = ChurchSettings(church_id=church_id)
-        settings_doc = default_settings.model_dump()
-        settings_doc['created_at'] = settings_doc['created_at'].isoformat()
-        settings_doc['updated_at'] = settings_doc['updated_at'].isoformat()
-        await db.church_settings.insert_one(settings_doc)
-        settings = settings_doc
+        # Create if doesn't exist
+        from datetime import datetime
+        import uuid
+        settings = {
+            "id": str(uuid.uuid4()),
+            "church_id": church_id,
+            "created_at": datetime.utcnow(),
+            "updated_at": datetime.utcnow()
+        }
+        await db.church_settings.insert_one(settings)
     
-    # Update only provided fields
-    update_data = settings_data.model_dump(exclude_unset=True)
+    # Get ALL fields from Pydantic (not just changed ones)
+    update_data = settings_data.model_dump()
     
-    # CRITICAL: Remove empty strings to prevent overwriting real values
+    # Remove None values (but keep empty strings if explicitly set)
     update_data = {
         k: v for k, v in update_data.items()
-        if v not in ("", None)  # Filter out empty strings and None
+        if v is not None
     }
     
-    print(f"   Cleaned update_data = {update_data}")
-    print(f"   Updating church: {church_id}")
+    print(f"   Update data (full) = {update_data}")
     
     if update_data:
-        update_data['updated_at'] = datetime.now().isoformat()
-        await db.church_settings.update_one(
+        from datetime import datetime
+        update_data['updated_at'] = datetime.utcnow()
+        
+        result = await db.church_settings.update_one(
             {"church_id": church_id},
             {"$set": update_data}
         )
+        
+        print(f"   MongoDB updated: {result.modified_count} documents")
     
-    # Get updated settings
-    updated_settings = await db.church_settings.find_one({"church_id": church_id}, {"_id": 0})
+    # Return fresh data from DB (raw dict)
+    updated_settings = await db.church_settings.find_one(
+        {"church_id": church_id},
+        {"_id": 0}
+    )
     
-    # Convert ISO strings
-    if isinstance(updated_settings.get('created_at'), str):
-        updated_settings['created_at'] = datetime.fromisoformat(updated_settings['created_at'])
-    if isinstance(updated_settings.get('updated_at'), str):
-        updated_settings['updated_at'] = datetime.fromisoformat(updated_settings['updated_at'])
+    print(f"   Returning fresh data from DB")
     
     return updated_settings
 
