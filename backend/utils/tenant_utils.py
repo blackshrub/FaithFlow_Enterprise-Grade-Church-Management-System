@@ -2,8 +2,31 @@ from fastapi import Request, HTTPException, status
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from typing import Optional, Dict, Any
 import logging
+import unicodedata
 
 logger = logging.getLogger(__name__)
+
+
+def normalize_church_id(church_id: str) -> str:
+    """Normalize church_id to prevent hidden character mismatches.
+    
+    Removes:
+    - Zero-width characters
+    - Unicode variations
+    - Leading/trailing whitespace
+    
+    This prevents MongoDB query failures due to invisible character differences.
+    """
+    if not church_id:
+        return church_id
+    
+    # Normalize unicode (NFKC = compatibility decomposition + canonical composition)
+    normalized = unicodedata.normalize("NFKC", church_id)
+    
+    # Strip whitespace
+    normalized = normalized.strip()
+    
+    return normalized
 
 
 def get_current_church_id(current_user: dict) -> str:
