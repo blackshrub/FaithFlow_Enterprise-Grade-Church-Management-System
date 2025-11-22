@@ -559,60 +559,53 @@ async def create_church_settings(
     return church_settings
 
 
-@router.patch("/church-settings")  # STAGING DEBUG VERSION
+@router.patch("/church-settings")
 async def update_church_settings(
     settings_data: ChurchSettingsUpdate,
     db: AsyncIOMotorDatabase = Depends(get_db),
     session_church_id: str = Depends(get_session_church_id),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_admin)
 ):
-    """Update church settings - STAGING DEBUG VERSION"""
+    """
+    Update current church settings (only allowed fields).
+    Uses session_church_id as filter.
+    """
     import logging
     logger = logging.getLogger("settings-debug")
-
-    logger.warning("\n" + "="*60)
-    logger.warning("📌 [PATCH] /church-settings CALLED")
-    logger.warning("="*60)
-    logger.warning(f"   session_church_id = '{session_church_id}'")
-    logger.warning(f"   session_church_id length = {len(session_church_id)}")
-    logger.warning(f"   current_user email = {current_user.get('email')}")
-    logger.warning(f"   current_user role = {current_user.get('role')}")
-    logger.warning(f"   DB NAME = {db.name}")
-    logger.warning(f"   incoming settings_data = {settings_data.model_dump()}")
-
-    # Prepare update
-    incoming_raw = settings_data.model_dump()
-
-    # Filter out None values but KEEP empty strings and False values
-    update_data = {k: v for k, v in incoming_raw.items() if v is not None}
-
-    logger.warning(f"[SETTINGS-PATCH] incoming_raw = {incoming_raw}")
-    logger.warning(f"[SETTINGS-PATCH] final update_data = {update_data}")
-    update_data = {k: v for k, v in update_data.items() if v is not None}
     
-    logger.warning(f"   update_data (cleaned) = {update_data}")
-    logger.warning(f"   MongoDB query = {{'church_id': '{session_church_id}'}}")
-
-    from datetime import datetime
-    update_data['updated_at'] = datetime.utcnow()
-
-    # Execute update
-    logger.warning(f"[SETTINGS-PATCH] Running update_one for church_id = {session_church_id}")
-    result = await db.church_settings.update_one(
-        {"church_id": session_church_id},
-        {"$set": update_data}
-    )
-
-    logger.warning(f"   MongoDB matched_count = {result.matched_count}")
-    logger.warning(f"   MongoDB modified_count = {result.modified_count}")
-
-    # Read back from DB
-    logger.warning(f"[SETTINGS-PATCH] modified_count = {result.modified_count}, matched_count = {result.matched_count}")
+    logger.info("📌 PATCH /church-settings called")
+    logger.info(f"   session_church_id = {session_church_id}")
+    
+    # Get or create base doc
+    await _ensure_settings_for_church(db, session_church_id)
+    
+    # Get update data (exclude unset to only update provided fields)
+    update_data = settings_data.model_dump(exclude_unset=True)
+    
+    # Remove identity fields
+    for key in ["id", "church_id", "created_at"]:
+        update_data.pop(key, None)
+    
+    logger.info(f"   update_data = {update_data}")
+    
+    if update_data:
+        from datetime import datetime
+        update_data["updated_at"] = datetime.utcnow()
+        
+        result = await db.church_settings.update_one(
+            {"church_id": session_church_id},
+            {"$set": update_data}
+        )
+        
+        logger.info(f"   MongoDB matched={result.matched_count}, modified={result.modified_count}")
+    
+    # Return fresh doc
     updated = await db.church_settings.find_one(
         {"church_id": session_church_id},
         {"_id": 0}
     )
-    logger.warning(f"[SETTINGS-PATCH] DB returned after update: {updated}")
+    
+    logger.info(f"   Returning updated settings")
     
     return updated
 
