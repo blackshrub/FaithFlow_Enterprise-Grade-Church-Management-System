@@ -157,31 +157,74 @@ echo ""
 sleep 1
 
 progress
-echo -e "${MAGENTA}🚀 Step 4/8: Updating frontend dependencies...${NC}"
+echo -e "${MAGENTA}🚀 Step 4/9: Checking what changed...${NC}"
 progress
 
-cd "$DEST_DIR/frontend"
+# Detect what changed to optimize rebuild
+BACKEND_CHANGED=false
+FRONTEND_CHANGED=false
 
-info "Checking for new JavaScript packages..."
-echo -e "${CYAN}   ☕ This might take a moment...${NC}"
-yarn install > /dev/null 2>&1
-success "Frontend dependencies updated!"
+if [ -d "$SOURCE_DIR/.git" ]; then
+    # Check git diff to see what changed
+    cd "$SOURCE_DIR"
+    
+    if git diff HEAD@{1} HEAD --name-only 2>/dev/null | grep -q "^backend/"; then
+        BACKEND_CHANGED=true
+        info "Backend files changed"
+    fi
+    
+    if git diff HEAD@{1} HEAD --name-only 2>/dev/null | grep -q "^frontend/"; then
+        FRONTEND_CHANGED=true
+        info "Frontend files changed"
+    fi
+    
+    cd "$DEST_DIR"
+else
+    # Not a git repo, assume both changed
+    BACKEND_CHANGED=true
+    FRONTEND_CHANGED=true
+    info "Unable to detect changes, updating all"
+fi
+
 echo ""
 sleep 1
 
 progress
-echo -e "${MAGENTA}🚀 Step 5/8: Building production frontend...${NC}"
+echo -e "${MAGENTA}🚀 Step 5/10: Updating frontend dependencies...${NC}"
 progress
 
-info "Creating optimized production build..."
-echo -e "${CYAN}   🏗️  This may take 2-3 minutes...${NC}"
-yarn build > /dev/null 2>&1
-
-if [ -d "build" ] && [ -f "build/index.html" ]; then
-    success "Production build created successfully!"
-    echo -e "${GREEN}   📦 Static files ready in frontend/build/${NC}"
+if [ "$FRONTEND_CHANGED" = true ]; then
+    cd "$DEST_DIR/frontend"
+    
+    info "Checking for new JavaScript packages..."
+    echo -e "${CYAN}   ☕ This might take a moment...${NC}"
+    yarn install > /dev/null 2>&1
+    success "Frontend dependencies updated!"
 else
-    warn "Build may have issues. Check logs if site doesn't work."
+    info "Frontend unchanged, skipping dependency update"
+fi
+echo ""
+sleep 1
+
+progress
+echo -e "${MAGENTA}🚀 Step 6/10: Building production frontend...${NC}"
+progress
+
+if [ "$FRONTEND_CHANGED" = true ]; then
+    cd "$DEST_DIR/frontend"
+    
+    info "Creating optimized production build..."
+    echo -e "${CYAN}   🏗️  This may take 2-3 minutes...${NC}"
+    yarn build > /dev/null 2>&1
+    
+    if [ -d "build" ] && [ -f "build/index.html" ]; then
+        success "Production build created successfully!"
+        echo -e "${GREEN}   📦 Static files ready in frontend/build/${NC}"
+    else
+        warn "Build may have issues. Check logs if site doesn't work."
+    fi
+else
+    info "Frontend unchanged, skipping build (saves 2-3 minutes!)"
 fi
 echo ""
 sleep 1
