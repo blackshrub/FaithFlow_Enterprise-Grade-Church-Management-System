@@ -494,6 +494,12 @@ async def update_church_settings(
 ):
     """Update church settings for current user's church"""
     
+    # DEBUG LOGGING
+    print("\n📌 PATCH /church-settings called")
+    print(f"   session_church_id = {church_id}")
+    print(f"   user email = {current_user.get('email')}")
+    print(f"   Raw incoming data = {settings_data.model_dump(exclude_unset=True)}")
+    
     # Validate church_id
     if not church_id:
         raise HTTPException(
@@ -520,6 +526,9 @@ async def update_church_settings(
         k: v for k, v in update_data.items()
         if v not in ("", None)  # Filter out empty strings and None
     }
+    
+    print(f"   Cleaned update_data = {update_data}")
+    print(f"   Updating church: {church_id}")
     
     if update_data:
         update_data['updated_at'] = datetime.now().isoformat()
