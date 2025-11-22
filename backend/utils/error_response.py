@@ -53,3 +53,55 @@ def validation_error(
         details={"field": field},
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY
     )
+
+
+def not_found_error(resource: str, identifier: str = None):
+    """Standardized 404 error response."""
+    message = f"{resource} not found"
+    if identifier:
+        message += f": {identifier}"
+
+    return error_response(
+        error_code="NOT_FOUND",
+        message=message,
+        details={"resource": resource, "identifier": identifier} if identifier else {"resource": resource},
+        status_code=status.HTTP_404_NOT_FOUND
+    )
+
+
+def forbidden_error(message: str = "Access forbidden"):
+    """Standardized 403 error response."""
+    return error_response(
+        error_code="FORBIDDEN",
+        message=message,
+        status_code=status.HTTP_403_FORBIDDEN
+    )
+
+
+def conflict_error(resource: str, message: str = None):
+    """Standardized 409 conflict error response."""
+    return error_response(
+        error_code="CONFLICT",
+        message=message or f"{resource} already exists",
+        details={"resource": resource},
+        status_code=status.HTTP_409_CONFLICT
+    )
+
+
+def unauthorized_error(message: str = "Unauthorized"):
+    """Standardized 401 error response."""
+    return error_response(
+        error_code="UNAUTHORIZED",
+        message=message,
+        status_code=status.HTTP_401_UNAUTHORIZED
+    )
+
+
+def bad_request_error(message: str, details: Optional[Dict[str, Any]] = None):
+    """Standardized 400 bad request error response."""
+    return error_response(
+        error_code="BAD_REQUEST",
+        message=message,
+        details=details,
+        status_code=status.HTTP_400_BAD_REQUEST
+    )
