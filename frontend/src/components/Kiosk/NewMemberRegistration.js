@@ -49,13 +49,42 @@ const NewMemberRegistration = ({ phone, onComplete, onError, preVisitorStatusId 
           clearInterval(countdownInterval);
           // Capture photo
           const imageSrc = webcamRef.current.getScreenshot();
-          setFormData({ ...formData, photo_base64: imageSrc });
+          
+          // If using front camera (mirrored view), flip the image back
+          if (facingMode === 'user') {
+            // Create canvas to flip image
+            const img = new Image();
+            img.onload = () => {
+              const canvas = document.createElement('canvas');
+              canvas.width = img.width;
+              canvas.height = img.height;
+              const ctx = canvas.getContext('2d');
+              
+              // Flip horizontally
+              ctx.translate(canvas.width, 0);
+              ctx.scale(-1, 1);
+              ctx.drawImage(img, 0, 0);
+              
+              // Get flipped image
+              const flippedImage = canvas.toDataURL('image/jpeg');
+              setFormData({ ...formData, photo_base64: flippedImage });
+            };
+            img.src = imageSrc;
+          } else {
+            // Back camera - no flip needed
+            setFormData({ ...formData, photo_base64: imageSrc });
+          }
+          
           setShowCamera(false);
           return 0;
         }
         return prev - 1;
       });
     }, 1000);
+  };
+  
+  const switchCamera = () => {
+    setFacingMode(prev => prev === 'user' ? 'environment' : 'user');
   };
   
   const handleOtpComplete = async (code) => {
