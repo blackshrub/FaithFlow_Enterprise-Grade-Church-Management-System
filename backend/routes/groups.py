@@ -44,23 +44,56 @@ async def list_groups(
             {"leader_name": {"$regex": search, "$options": "i"}},
         ]
 
-    total = await db.groups.count_documents(query)
-    cursor = (
-        db.groups.find(query, {"_id": 0})
-        .sort("name", 1)
-        .skip(offset)
-        .limit(limit)
-    )
-    groups = await cursor.to_list(length=limit)
+    # Use aggregation to get member counts in single query (eliminates N+1 problem)
+    pipeline = [
+        {"$match": query},
+        {"$sort": {"name": 1}},
+        {
+            "$facet": {
+                "metadata": [{"$count": "total"}],
+                "data": [
+                    {"$skip": offset},
+                    {"$limit": limit},
+                    {
+                        "$lookup": {
+                            "from": "group_memberships",
+                            "let": {"group_id": "$id", "church_id": "$church_id"},
+                            "pipeline": [
+                                {
+                                    "$match": {
+                                        "$expr": {
+                                            "$and": [
+                                                {"$eq": ["$group_id", "$$group_id"]},
+                                                {"$eq": ["$church_id", "$$church_id"]},
+                                                {"$eq": ["$status", "active"]}
+                                            ]
+                                        }
+                                    }
+                                },
+                                {"$count": "count"}
+                            ],
+                            "as": "membership_count"
+                        }
+                    },
+                    {
+                        "$addFields": {
+                            "members_count": {
+                                "$ifNull": [
+                                    {"$arrayElemAt": ["$membership_count.count", 0]},
+                                    0
+                                ]
+                            }
+                        }
+                    },
+                    {"$project": {"_id": 0, "membership_count": 0}}
+                ]
+            }
+        }
+    ]
 
-    # Add member count for each group
-    for group in groups:
-        member_count = await db.group_memberships.count_documents({
-            "church_id": church_id,
-            "group_id": group["id"],
-            "status": "active"
-        })
-        group["members_count"] = member_count
+    result = await db.groups.aggregate(pipeline).to_list(length=1)
+    total = result[0]["metadata"][0]["total"] if result[0]["metadata"] else 0
+    groups = result[0]["data"] if result else []
 
     return {
         "data": groups,
