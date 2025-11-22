@@ -47,9 +47,33 @@ const NewMemberRegistration = ({ phone, onComplete, onError, preVisitorStatusId 
       setCountdown(prev => {
         if (prev <= 1) {
           clearInterval(countdownInterval);
-          // Capture photo - WYSIWYG (what you see is what you get)
+          // Capture photo
           const imageSrc = webcamRef.current.getScreenshot();
-          setFormData({ ...formData, photo_base64: imageSrc });
+          
+          // If front camera (mirrored preview), un-mirror the saved photo
+          if (facingMode === 'user') {
+            const img = new Image();
+            img.onload = () => {
+              const canvas = document.createElement('canvas');
+              canvas.width = img.width;
+              canvas.height = img.height;
+              const ctx = canvas.getContext('2d');
+              
+              // Flip horizontally to un-mirror
+              ctx.translate(canvas.width, 0);
+              ctx.scale(-1, 1);
+              ctx.drawImage(img, 0, 0);
+              
+              // Save un-mirrored photo
+              const unMirroredImage = canvas.toDataURL('image/jpeg');
+              setFormData({ ...formData, photo_base64: unMirroredImage });
+            };
+            img.src = imageSrc;
+          } else {
+            // Back camera - save as-is
+            setFormData({ ...formData, photo_base64: imageSrc });
+          }
+          
           setShowCamera(false);
           return 0;
         }
