@@ -158,10 +158,21 @@ export const useUpdateChurchSettings = () => {
   const { church } = useAuth();
   
   return useMutation({
-    mutationFn: (settingsData) => settingsAPI.updateChurchSettings(settingsData).then(res => res.data),
+    mutationFn: (settingsData) => {
+      // Clean payload - remove empty strings and null values
+      const cleanPayload = Object.fromEntries(
+        Object.entries(settingsData).filter(
+          ([key, value]) => value !== "" && value !== null && value !== undefined
+        )
+      );
+      
+      console.log('🧹 Cleaned payload (removed empty strings):', cleanPayload);
+      
+      return settingsAPI.updateChurchSettings(cleanPayload).then(res => res.data);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ 
-        queryKey: queryKeys.settings.churchSettings(church?.id) 
+        queryKey: ['church-settings']
       });
       toast.success('Church settings updated successfully');
     },
