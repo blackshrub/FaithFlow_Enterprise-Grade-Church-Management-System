@@ -114,6 +114,9 @@ api_v1_router.include_router(group_leave_requests.router)
 # Include counseling routes (v1)
 api_v1_router.include_router(counseling_admin.router)
 
+# Include user management routes (v1)
+api_v1_router.include_router(user_management.router)
+
 # Include v1 router in main API router
 api_router.include_router(api_v1_router)
 
