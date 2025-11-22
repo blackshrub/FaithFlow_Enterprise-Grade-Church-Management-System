@@ -268,7 +268,7 @@ echo ""
 sleep 1
 
 progress
-echo -e "${MAGENTA}🚀 Step 8/8: Restarting backend service...${NC}"
+echo -e "${MAGENTA}🚀 Step 9/10: Restarting backend service...${NC}"
 progress
 
 info "Stopping backend service..."
