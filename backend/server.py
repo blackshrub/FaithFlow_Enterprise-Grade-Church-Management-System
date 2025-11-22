@@ -11,7 +11,7 @@ from routes import (
     auth, churches, members, settings, import_export, photo_document_sim, 
     seat_layouts, events, bible, devotions, webhooks, api_keys,
     status_rules, status_conflicts, status_history, member_status_automation, public_members,
-    counseling_admin, counseling_public, kiosk
+    counseling_admin, counseling_public, kiosk, user_management
 )
 
 # Import accounting routes (v1)
