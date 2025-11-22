@@ -408,6 +408,101 @@ async def delete_demographic_preset(
 
 # ============= Church Settings Routes =============
 
+# ============= Church Settings Routes with Normalization =============
+
+async def _ensure_settings_for_church(
+    db: AsyncIOMotorDatabase,
+    church_id: str,
+) -> dict:
+    """
+    Guarantee that there is exactly one ChurchSettings document for this church_id.
+    
+    - If none: create with defaults.
+    - If exists: normalize fields (add defaults for missing keys).
+    Returns the normalized document.
+    """
+    existing = await db.church_settings.find_one({"church_id": church_id})
+    
+    if not existing:
+        from datetime import datetime
+        import uuid
+        
+        doc = {
+            "id": str(uuid.uuid4()),
+            "church_id": church_id,
+            "date_format": "DD-MM-YYYY",
+            "time_format": "24h",
+            "currency": "IDR",
+            "timezone": "Asia/Jakarta",
+            "default_language": "id",
+            "enable_whatsapp_notifications": False,
+            "whatsapp_send_rsvp_confirmation": False,
+            "whatsapp_send_group_notifications": False,
+            "whatsapp_api_url": "",
+            "whatsapp_username": "",
+            "whatsapp_password": "",
+            "group_categories": {
+                "cell_group": "Cell Group / Small Group",
+                "ministry_team": "Ministry Team",
+                "activity": "Activity Group",
+                "support_group": "Support Group",
+            },
+            "created_at": datetime.utcnow(),
+            "updated_at": datetime.utcnow(),
+        }
+        await db.church_settings.insert_one(doc)
+        return doc
+    
+    # Normalize existing doc (ensure all keys exist)
+    changed = False
+    defaults = {
+        "date_format": "DD-MM-YYYY",
+        "time_format": "24h",
+        "currency": "IDR",
+        "timezone": "Asia/Jakarta",
+        "default_language": "id",
+        "enable_whatsapp_notifications": False,
+        "whatsapp_send_rsvp_confirmation": False,
+        "whatsapp_send_group_notifications": False,
+        "whatsapp_api_url": "",
+        "whatsapp_username": "",
+        "whatsapp_password": "",
+        "group_categories": {
+            "cell_group": "Cell Group / Small Group",
+            "ministry_team": "Ministry Team",
+            "activity": "Activity Group",
+            "support_group": "Support Group",
+        },
+    }
+    
+    for key, default_value in defaults.items():
+        if key not in existing:
+            existing[key] = default_value
+            changed = True
+    
+    if "id" not in existing:
+        import uuid
+        existing["id"] = str(uuid.uuid4())
+        changed = True
+    
+    if "created_at" not in existing:
+        from datetime import datetime
+        existing["created_at"] = datetime.utcnow()
+        changed = True
+    
+    from datetime import datetime
+    existing["updated_at"] = datetime.utcnow()
+    changed = True
+    
+    if changed:
+        await db.church_settings.update_one(
+            {"_id": existing["_id"]},
+            {"$set": existing},
+        )
+    
+    return existing
+
+
 @router.get("/church-settings")
 async def get_church_settings(
     db: AsyncIOMotorDatabase = Depends(get_db),
