@@ -121,6 +121,7 @@ export const authAPI = {
     }
     return api.post('/auth/login', payload);
   },
+  switchChurch: (church_id) => api.post('/auth/switch-church', { church_id }),
   register: (userData) => api.post('/auth/register', userData),
   getCurrentUser: () => api.get('/auth/me'),
   listUsers: () => api.get('/auth/users'),
