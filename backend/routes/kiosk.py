@@ -204,16 +204,20 @@ async def verify_otp(
 @router.post("/verify-pin")
 async def verify_staff_pin(
     request: PINVerifyRequest,
-    church_id: str = Query(...),
+    church_id: str = Query(..., description="Church ID"),
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
-    """Verify staff PIN for kiosk access."""
+    """Verify staff PIN for kiosk access.
+    
+    Note: Super admin has church_id=None, so we don't filter by church.
+    We verify PIN first, then check if user has access to selected church.
+    """
     try:
+        # Find user with matching PIN (don't filter by church yet)
         user = await db.users.find_one({
-            "church_id": church_id,
             "kiosk_pin": request.pin,
             "is_active": True
-        }, {"_id": 0, "id": 1, "full_name": 1, "role": 1})
+        }, {"_id": 0, "id": 1, "full_name": 1, "role": 1, "church_id": 1})
         
         if not user:
             raise HTTPException(
@@ -221,12 +225,32 @@ async def verify_staff_pin(
                 detail={"error_code": "INVALID_PIN", "message": "Invalid PIN"}
             )
         
-        return {"success": True, "user": user}
+        # Validate church access
+        # Super admin can access any church
+        # Regular users must match church_id
+        if user['role'] != 'super_admin':
+            if user.get('church_id') != church_id:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail={"error_code": "WRONG_CHURCH", "message": "You don't have access to this church"}
+                )
+        
+        return {
+            "success": True,
+            "user": {
+                "id": user['id'],
+                "full_name": user['full_name'],
+                "role": user['role']
+            }
+        }
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Error verifying PIN: {e}")
-        raise HTTPException(status_code=500, detail="Internal error")
+        raise HTTPException(
+            status_code=500,
+            detail="Internal error"
+        )
 
 
 class EventRSVPRequest(BaseModel):
