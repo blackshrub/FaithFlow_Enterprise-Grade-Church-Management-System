@@ -83,6 +83,7 @@ import JoinGroupKiosk from "./pages/Kiosk/JoinGroup";
 import ProfileUpdateKiosk from "./pages/Kiosk/ProfileUpdate";
 import EventCheckinKiosk from "./pages/Kiosk/EventCheckin";
 import SmartLanding from "./components/SmartLanding";
+import UserManagement from "./pages/System/UserManagement";
 
 import FaithFlowLogo from './components/Branding/FaithFlowLogo';
 
