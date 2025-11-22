@@ -408,48 +408,48 @@ async def delete_demographic_preset(
 
 # ============= Church Settings Routes =============
 
-@router.get("/church-settings")  # Removed response_model - let FastAPI infer from return
+@router.get("/church-settings")  # No response_model - return raw dict
 async def get_church_settings(
     db: AsyncIOMotorDatabase = Depends(get_db),
     current_user: dict = Depends(get_current_user)
 ):
-    """Get church settings for current user's church"""
+    """Get church settings - returns raw MongoDB document"""
     
-    # Extract church_id with fallback
-    church_id = current_user.get('session_church_id')
+    # Extract church_id
+    church_id = current_user.get('session_church_id') or current_user.get('church_id')
     
     # DEBUG LOGGING
     print("\n📌 GET /church-settings called")
     print(f"   session_church_id = {church_id}")
-    print(f"   user email = {current_user.get('email')}")
-    print(f"   user role = {current_user.get('role')}")
     
     if not church_id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="No active church context"
-        )
+        raise HTTPException(status_code=403, detail="No church context")
     
-    settings = await db.church_settings.find_one({"church_id": church_id}, {"_id": 0})
+    # Get raw document from MongoDB (exclude _id)
+    settings = await db.church_settings.find_one(
+        {"church_id": church_id}, 
+        {"_id": 0}
+    )
     
     if not settings:
-        # CRITICAL: Validate church_id before creating
-        if not church_id or church_id == 'None':
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="No active church context. Please logout and login again to refresh your session."
-            )
-        
-        # Return default settings if not found
-        default_settings = ChurchSettings(church_id=church_id)
-        return default_settings
+        # Return minimal defaults if not found
+        from datetime import datetime
+        import uuid
+        default = {
+            "id": str(uuid.uuid4()),
+            "church_id": church_id,
+            "date_format": "DD-MM-YYYY",
+            "time_format": "24h",
+            "currency": "IDR",
+            "timezone": "Asia/Jakarta",
+            "default_language": "id",
+            "created_at": datetime.utcnow(),
+            "updated_at": datetime.utcnow()
+        }
+        await db.church_settings.insert_one(default)
+        settings = default
     
-    # Convert ISO strings
-    if isinstance(settings.get('created_at'), str):
-        settings['created_at'] = datetime.fromisoformat(settings['created_at'])
-    if isinstance(settings.get('updated_at'), str):
-        settings['updated_at'] = datetime.fromisoformat(settings['updated_at'])
-    
+    # Return raw dict (no Pydantic model!)
     return settings
 
 
