@@ -56,6 +56,9 @@ def get_session_church_id_from_user(current_user: dict) -> str:
             detail="No active church context. Please logout and login again to select a church."
         )
     
+    # Normalize to prevent hidden character issues
+    session_church_id = normalize_church_id(session_church_id)
+    
     return session_church_id
 
 
