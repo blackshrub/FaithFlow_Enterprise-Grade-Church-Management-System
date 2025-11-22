@@ -57,19 +57,29 @@ export const AuthProvider = ({ children }) => {
     try {
       setError(null);
       const response = await authAPI.login(email, password, church_id);
-      const { access_token, user, church } = response.data;
+      const { access_token } = response.data;
 
+      // Store only the token
       localStorage.setItem('access_token', access_token);
-      localStorage.setItem('user', JSON.stringify(user));
-      localStorage.setItem('church', JSON.stringify(church));
 
-      setUser(user);
-      setChurch(church);
+      // Rebuild user from fresh JWT
+      const payload = JSON.parse(atob(access_token.split('.')[1]));
+      const rebuiltUser = {
+        id: payload.sub,
+        email: payload.email,
+        full_name: payload.full_name,
+        role: payload.role,
+        church_id: payload.church_id ?? null,
+        session_church_id: payload.session_church_id ?? null
+      };
+
+      setUser(rebuiltUser);
+      setChurch({ id: rebuiltUser.session_church_id });
       
       // Load church settings to apply default language
       await loadChurchSettings();
 
-      return { success: true, user };
+      return { success: true, user: rebuiltUser };
     } catch (err) {
       const errorMessage = err.response?.data?.detail || 'Login failed. Please check your credentials.';
       setError(errorMessage);
