@@ -513,7 +513,13 @@ async def update_church_settings(
     logger.warning(f"   incoming settings_data = {settings_data.model_dump()}")
 
     # Prepare update
-    update_data = settings_data.model_dump()
+    incoming_raw = settings_data.model_dump()
+
+    # Filter out None values but KEEP empty strings and False values
+    update_data = {k: v for k, v in incoming_raw.items() if v is not None}
+
+    logger.warning(f"[SETTINGS-PATCH] incoming_raw = {incoming_raw}")
+    logger.warning(f"[SETTINGS-PATCH] final update_data = {update_data}")
     update_data = {k: v for k, v in update_data.items() if v is not None}
     
     logger.warning(f"   update_data (cleaned) = {update_data}")
