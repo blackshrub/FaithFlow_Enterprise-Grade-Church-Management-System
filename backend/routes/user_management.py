@@ -9,8 +9,7 @@ import uuid
 import bcrypt
 import logging
 
-from utils.dependencies import get_db, require_admin, get_current_user
-from utils.tenant_utils import get_session_church_id
+from utils.dependencies import get_db, require_admin, get_current_user, get_session_church_id
 from models.user import UserResponse
 
 logger = logging.getLogger(__name__)
