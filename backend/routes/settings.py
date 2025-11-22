@@ -508,6 +508,13 @@ async def update_church_settings(
     
     # Update only provided fields
     update_data = settings_data.model_dump(exclude_unset=True)
+    
+    # CRITICAL: Remove empty strings to prevent overwriting real values
+    update_data = {
+        k: v for k, v in update_data.items()
+        if v not in ("", None)  # Filter out empty strings and None
+    }
+    
     if update_data:
         update_data['updated_at'] = datetime.now().isoformat()
         await db.church_settings.update_one(
