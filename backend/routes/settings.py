@@ -491,68 +491,56 @@ async def create_church_settings(
     return church_settings
 
 
-@router.patch("/church-settings")  # No response_model - return raw dict
+@router.patch("/church-settings")  # STAGING DEBUG VERSION
 async def update_church_settings(
     settings_data: ChurchSettingsUpdate,
     db: AsyncIOMotorDatabase = Depends(get_db),
-    church_id: str = Depends(get_session_church_id),
-    current_user: dict = Depends(require_admin)
+    session_church_id: str = Depends(get_session_church_id),
+    current_user: dict = Depends(get_current_user),
 ):
-    """Update church settings - returns raw MongoDB document"""
-    
-    # DEBUG LOGGING
-    print("\n📌 PATCH /church-settings called")
-    print(f"   session_church_id = {church_id}")
-    print(f"   Raw incoming data = {settings_data.model_dump(exclude_unset=True)}")
-    
-    if not church_id:
-        raise HTTPException(status_code=403, detail="No church context")
-    
-    settings = await db.church_settings.find_one({"church_id": church_id})
-    
-    if not settings:
-        # Create if doesn't exist
-        from datetime import datetime
-        import uuid
-        settings = {
-            "id": str(uuid.uuid4()),
-            "church_id": church_id,
-            "created_at": datetime.utcnow(),
-            "updated_at": datetime.utcnow()
-        }
-        await db.church_settings.insert_one(settings)
-    
-    # Get ALL fields from Pydantic (not just changed ones)
+    """Update church settings - STAGING DEBUG VERSION"""
+    import logging
+    logger = logging.getLogger("settings-debug")
+
+    logger.warning("\n" + "="*60)
+    logger.warning("📌 [PATCH] /church-settings CALLED")
+    logger.warning("="*60)
+    logger.warning(f"   session_church_id = '{session_church_id}'")
+    logger.warning(f"   session_church_id length = {len(session_church_id)}")
+    logger.warning(f"   current_user email = {current_user.get('email')}")
+    logger.warning(f"   current_user role = {current_user.get('role')}")
+    logger.warning(f"   DB NAME = {db.name}")
+    logger.warning(f"   incoming settings_data = {settings_data.model_dump()}")
+
+    # Prepare update
     update_data = settings_data.model_dump()
+    update_data = {k: v for k, v in update_data.items() if v is not None}
     
-    # Remove None values (but keep empty strings if explicitly set)
-    update_data = {
-        k: v for k, v in update_data.items()
-        if v is not None
-    }
-    
-    print(f"   Update data (full) = {update_data}")
-    
-    if update_data:
-        from datetime import datetime
-        update_data['updated_at'] = datetime.utcnow()
-        
-        result = await db.church_settings.update_one(
-            {"church_id": church_id},
-            {"$set": update_data}
-        )
-        
-        print(f"   MongoDB updated: {result.modified_count} documents")
-    
-    # Return fresh data from DB (raw dict)
-    updated_settings = await db.church_settings.find_one(
-        {"church_id": church_id},
+    logger.warning(f"   update_data (cleaned) = {update_data}")
+    logger.warning(f"   MongoDB query = {{'church_id': '{session_church_id}'}}")
+
+    from datetime import datetime
+    update_data['updated_at'] = datetime.utcnow()
+
+    # Execute update
+    result = await db.church_settings.update_one(
+        {"church_id": session_church_id},
+        {"$set": update_data}
+    )
+
+    logger.warning(f"   MongoDB matched_count = {result.matched_count}")
+    logger.warning(f"   MongoDB modified_count = {result.modified_count}")
+
+    # Read back from DB
+    updated = await db.church_settings.find_one(
+        {"church_id": session_church_id},
         {"_id": 0}
     )
     
-    print("   Returning fresh data from DB")
-    
-    return updated_settings
+    logger.warning(f"   UPDATED DB RESULT = {updated}")
+    logger.warning("="*60 + "\n")
+
+    return updated
 
 
 # ============= Event Category Routes =============
