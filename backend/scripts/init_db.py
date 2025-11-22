@@ -80,26 +80,58 @@ async def init_database():
         print(f"✓ Super admin already exists: {super_admin_email}")
     
     # Create indexes for better performance
+    print("Creating database indexes...")
+
+    # User indexes
     await db.users.create_index("email", unique=True)
     await db.users.create_index("church_id")
+
+    # Church indexes
     await db.churches.create_index("id", unique=True)
+
+    # Member indexes - optimized for filtering and queries
     await db.members.create_index("church_id")
     await db.members.create_index("email")
     await db.members.create_index("phone_whatsapp")
+    await db.members.create_index([("church_id", 1), ("is_deleted", 1), ("is_active", 1)])  # For active member lists
+    await db.members.create_index([("church_id", 1), ("member_status", 1)])  # For status filtering
+    await db.members.create_index([("church_id", 1), ("demographic_category", 1)])  # For demographic filtering
+
+    # Group indexes
     await db.groups.create_index("church_id")
+    await db.group_memberships.create_index([("church_id", 1), ("group_id", 1), ("status", 1)])  # For membership queries
+
+    # Event indexes
     await db.events.create_index("church_id")
+    await db.events.create_index([("church_id", 1), ("event_type", 1)])  # For event type filtering
+
+    # Article indexes
+    await db.articles.create_index([("church_id", 1), ("status", 1)])  # For published/draft filtering
+    await db.articles.create_index([("church_id", 1), ("schedule_status", 1)])  # For scheduled articles
+    await db.articles.create_index([("church_id", 1), ("created_at", -1)])  # For date sorting
+
+    # Prayer request indexes
+    await db.prayer_requests.create_index("church_id")
+    await db.prayer_requests.create_index([("church_id", 1), ("status", 1), ("created_at", -1)])  # For status filtering with date sort
+
+    # Donation indexes
     await db.donations.create_index("church_id")
     await db.donations.create_index("member_id")
-    await db.prayer_requests.create_index("church_id")
+
+    # Content indexes
     await db.content.create_index("church_id")
+
+    # Spiritual journey indexes
     await db.spiritual_journeys.create_index("church_id")
     await db.spiritual_journeys.create_index("member_id")
+
+    # Settings indexes
     await db.member_statuses.create_index([("church_id", 1), ("name", 1)], unique=True)
     await db.member_statuses.create_index([("church_id", 1), ("order", 1)])
     await db.demographic_presets.create_index([("church_id", 1), ("name", 1)], unique=True)
     await db.demographic_presets.create_index([("church_id", 1), ("order", 1)])
-    
-    print("✓ Created database indexes")
+
+    print("✓ Created database indexes (including performance optimizations)")
     
     # Create default member statuses
     default_statuses = [

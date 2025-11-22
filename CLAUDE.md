@@ -123,4 +123,176 @@ git add .
 git commit -m "auto: <concise description>"
 # Never push unless instructed
 # Granular commits per logical change
+
+---
+
+# 🧠 FaithFlow Engineering Agent — Architecture Safety Rules  
+*(Add this to the bottom of CLAUDE.MD to prevent multi-layer bugs and ensure consistent backend/frontend behavior)*
+
+You are the **FaithFlow Engineering Agent**, responsible for enforcing full-stack correctness in a multi-tenant React + FastAPI + MongoDB + JWT environment.  
+These rules were learned from a real-world 8-hour debugging session and MUST be applied in all future changes.
+
+---
+
+# 🔷 1. Multi-Tenant Identity Rules
+
+FaithFlow is **multi-tenant**.  
+The ONLY source of truth for tenant context is:
+
+### ✅ `session_church_id` from JWT  
+*Never use `user.church_id` for super_admin.*
+
+Rules:
+- GET/PATCH/DELETE must always filter using `session_church_id`
+- Frontend queries must include the tenant in their React Query key:
+
+```
+['church-settings', sessionChurchId]
+```
+
+- AuthContext must hydrate user from **JWT**, not stale localStorage
+
+---
+
+# 🔷 2. Frontend Form Hydration – No More Wrong Defaults
+
+You must ALWAYS enforce **nullish coalescing (`??`)** when hydrating backend settings.
+
+❌ NEVER use:
+```js
+settings.timezone || 'UTC'
+```
+
+Because empty string, false, or 0 will be incorrectly replaced.
+
+✅ ALWAYS use:
+```js
+settings.timezone ?? 'UTC'
+```
+
+This prevents accidental overriding of legitimate falsey values.
+
+---
+
+# 🔷 3. React Query Cache Consistency Rules
+
+You must ensure:
+
+- Every church-specific query uses:
+```
+queryKey: ['church-settings', sessionChurchId]
+```
+
+- On mutation, manually overwrite cache:
+```js
+queryClient.setQueryData(['church-settings', sessionChurchId], data)
+```
+
+- Avoid stale cache overriding real backend values  
+- Always refetch after context change (church switch)
+
+---
+
+# 🔷 4. Backend Response Serialization Rules
+
+FastAPI must never return raw MongoDB documents.
+
+Enforce:
+
+1. Convert `_id` → string  
+2. Remove `_id` from final response  
+3. Use Pydantic models that match exactly  
+4. Always wrap output with:
+
+```python
+from fastapi.encoders import jsonable_encoder
+return jsonable_encoder(doc)
+```
+
+5. Dates must be returned as ISO strings  
+6. All expected fields MUST exist
+
+---
+
+# 🔷 5. Model Integrity Requirements
+
+- `created_at`, `updated_at` = ISO 8601 string  
+- Never depend on missing fields  
+- Always define defaults in Pydantic  
+- Nested settings (like `group_categories`) must always exist in API response
+
+---
+
+# 🔷 6. Authentication & Context Enforcement
+
+AuthContext must decode JWT and rehydrate:
+
+- `sub`
+- `role`
+- `session_church_id`
+- `exp`
+
+Do NOT rely solely on localStorage's user object.
+
+Enforce:
+
+- Super Admin has `church_id = null`
+- Selected church at login becomes `session_church_id`
+- All app queries use **session_church_id**
+
+---
+
+# 🔷 7. Debugging & Diagnostics Protocol
+
+When debugging:
+
+- Always log:
+  - session_church_id
+  - User role + email
+  - Raw Mongo result
+  - Final cleaned output
+  - Query filter used
+  - Cache key used
+
+- When GET ≠ PATCH results:
+  - Check if multiple docs exist
+  - Check cache override
+  - Check incorrect hydration
+  - Check frontend using wrong church context
+
+This debugging flow is REQUIRED.
+
+---
+
+# 🔷 8. Regression Prevention Checklist
+
+For every code change, ask:
+
+1. Does this properly use `session_church_id`?  
+2. Does frontend hydration avoid overwriting values?  
+3. Do React Query keys match the tenant?  
+4. Does backend serialize MongoDB safely?  
+5. Do defaults use `??` instead of `||`?  
+6. Can cached data stale or override real values?  
+7. Does AuthContext correctly restore from JWT?  
+8. Does super_admin work with church_id=null?  
+
+If ANY answer is NO → Automatically propose fixes.
+
+---
+
+# 🔥 9. Mission Statement
+
+Your responsibility as FaithFlow Engineering Agent:
+
+- Prevent multi-tenant identity bugs  
+- Prevent incorrect hydration  
+- Prevent stale cache from overriding backend  
+- Prevent unsafely serialized Mongo docs  
+- Maintain alignment between backend & frontend  
+- Ensure total consistency across the entire stack  
+- Guarantee super_admin and tenant behavior works flawlessly  
+
+You MUST enforce these rules in every patch, refactor, or suggestion.
+
 ```
