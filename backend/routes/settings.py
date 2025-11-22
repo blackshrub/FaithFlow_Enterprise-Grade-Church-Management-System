@@ -408,55 +408,72 @@ async def delete_demographic_preset(
 
 # ============= Church Settings Routes =============
 
-@router.get("/church-settings")  # STAGING DEBUG VERSION
+@router.get("/church-settings")
 async def get_church_settings(
     db: AsyncIOMotorDatabase = Depends(get_db),
     session_church_id: str = Depends(get_session_church_id),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_admin)
 ):
-    """Get church settings - STAGING DEBUG VERSION"""
+    """
+    Fetch church settings for the active session church.
+    """
+
     import logging
     logger = logging.getLogger("settings-debug")
 
-    logger.warning("\n" + "="*60)
-    logger.warning("📌 [GET] /church-settings CALLED")
-    logger.warning("="*60)
-    logger.warning(f"   session_church_id = '{session_church_id}'")
-    logger.warning(f"   session_church_id length = {len(session_church_id) if session_church_id else 0}")
-    logger.warning(f"   current_user email = {current_user.get('email')}")
-    logger.warning(f"   current_user role = {current_user.get('role')}")
-    logger.warning(f"   current_user session_church_id = {current_user.get('session_church_id')}")
-    logger.warning(f"   current_user church_id = {current_user.get('church_id')}")
-    logger.warning(f"   DB NAME = {db.name}")
-    
-    # Log the exact query
-    query = {"church_id": session_church_id}
-    logger.warning(f"   MongoDB query = {query}")
+    logger.info("📌 GET /church-settings called")
+    logger.info(f"   session_church_id = {session_church_id}")
+    logger.info(f"   user email = {current_user.get('email')}")
+    logger.info(f"   user role = {current_user.get('role')}")
 
-    # Execute query and log raw result
-    raw = await db.church_settings.find_one(
-        {"church_id": session_church_id},
-        {"_id": 0}
-    )
-    
-    logger.warning(f"   RAW DB RESULT = {raw}")
-    logger.warning(f"   Result is None: {raw is None}")
-    
-    if raw:
-        logger.warning(f"   Result church_id = '{raw.get('church_id')}'")
-        logger.warning(f"   Result whatsapp_api_url = '{raw.get('whatsapp_api_url')}'")
-        logger.warning(f"   Result timezone = '{raw.get('timezone')}'")
-    
-    logger.warning("="*60 + "\n")
-    
-    return raw if raw else {
-        "church_id": session_church_id,
-        "date_format": "DD-MM-YYYY",
-        "time_format": "24h",
-        "currency": "IDR",
-        "timezone": "Asia/Jakarta",
-        "default_language": "id"
-    }
+    selector = {"church_id": session_church_id}
+    logger.info(f"   MongoDB selector = {selector}")
+
+    settings = await db.church_settings.find_one(selector)
+
+    logger.info(f"   Raw fetched settings = {settings}")
+
+    # If settings missing, create a new record
+    if not settings:
+        logger.warning("⚠ church_settings missing for this church → creating new one.")
+        
+        from datetime import datetime
+        import uuid
+        
+        new_settings = {
+            "id": str(uuid.uuid4()),
+            "church_id": session_church_id,
+            "date_format": "DD-MM-YYYY",
+            "time_format": "24h",
+            "currency": "IDR",
+            "timezone": "Asia/Jakarta",
+            "default_language": "id",
+            "enable_whatsapp_notifications": False,
+            "whatsapp_send_rsvp_confirmation": False,
+            "whatsapp_send_group_notifications": False,
+            "whatsapp_api_url": "",
+            "whatsapp_username": "",
+            "whatsapp_password": "",
+            "group_categories": {
+                "cell_group": "Cell Group / Small Group",
+                "ministry_team": "Ministry Team",
+                "activity": "Activity Group",
+                "support_group": "Support Group"
+            },
+            "created_at": datetime.utcnow(),
+            "updated_at": datetime.utcnow()
+        }
+
+        await db.church_settings.insert_one(new_settings)
+        logger.info("✅ Inserted new default church settings")
+        return new_settings
+
+    # Normalize ObjectId
+    if "_id" in settings:
+        settings["_id"] = str(settings["_id"])
+
+    logger.info("✅ Returning settings to client")
+    return settings
 
 
 @router.post("/church-settings", response_model=ChurchSettings, status_code=status.HTTP_201_CREATED)
