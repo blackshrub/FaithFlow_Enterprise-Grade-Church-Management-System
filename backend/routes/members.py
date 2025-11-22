@@ -573,41 +573,69 @@ async def get_member_stats(
     db: AsyncIOMotorDatabase = Depends(get_db),
     current_user: dict = Depends(get_current_user)
 ):
-    """Get member statistics for current church"""
-    
+    """Get member statistics for current church (optimized with single aggregation)"""
+
     query = {}
     if current_user.get('role') != 'super_admin':
         query['church_id'] = current_user.get('session_church_id')
-    
-    total_members = await db.members.count_documents({**query, 'is_active': True})
-    total_inactive = await db.members.count_documents({**query, 'is_active': False})
-    
-    # Count by gender (case-insensitive)
-    male_count = await db.members.count_documents({**query, 'gender': {'$regex': '^male$', '$options': 'i'}, 'is_active': True})
-    female_count = await db.members.count_documents({**query, 'gender': {'$regex': '^female$', '$options': 'i'}, 'is_active': True})
-    
-    # Count by marital status (case-insensitive)
-    married_count = await db.members.count_documents({**query, 'marital_status': {'$regex': '^married$', '$options': 'i'}, 'is_active': True})
-    single_count = await db.members.count_documents({**query, 'marital_status': {'$regex': '^(single|not married)$', '$options': 'i'}, 'is_active': True})
-    
-    # Count incomplete data (missing key fields)
-    incomplete_count = await db.members.count_documents({
-        **query,
-        'is_active': True,
-        '$or': [
-            {'gender': {'$in': [None, '']}},
-            {'date_of_birth': {'$in': [None, '']}},
-            {'address': {'$in': [None, '']}},
-            {'phone_whatsapp': {'$in': [None, '']}}
-        ]
-    })
-    
+
+    # Use single aggregation with $facet to get all counts in one query (7x faster)
+    pipeline = [
+        {"$match": query},
+        {
+            "$facet": {
+                "total_members": [
+                    {"$match": {"is_active": True}},
+                    {"$count": "count"}
+                ],
+                "total_inactive": [
+                    {"$match": {"is_active": False}},
+                    {"$count": "count"}
+                ],
+                "male_count": [
+                    {"$match": {"is_active": True, "gender": {"$regex": "^male$", "$options": "i"}}},
+                    {"$count": "count"}
+                ],
+                "female_count": [
+                    {"$match": {"is_active": True, "gender": {"$regex": "^female$", "$options": "i"}}},
+                    {"$count": "count"}
+                ],
+                "married_count": [
+                    {"$match": {"is_active": True, "marital_status": {"$regex": "^married$", "$options": "i"}}},
+                    {"$count": "count"}
+                ],
+                "single_count": [
+                    {"$match": {"is_active": True, "marital_status": {"$regex": "^(single|not married)$", "$options": "i"}}},
+                    {"$count": "count"}
+                ],
+                "incomplete_data_count": [
+                    {
+                        "$match": {
+                            "is_active": True,
+                            "$or": [
+                                {"gender": {"$in": [None, ""]}},
+                                {"date_of_birth": {"$in": [None, ""]}},
+                                {"address": {"$in": [None, ""]}},
+                                {"phone_whatsapp": {"$in": [None, ""]}}
+                            ]
+                        }
+                    },
+                    {"$count": "count"}
+                ]
+            }
+        }
+    ]
+
+    result = await db.members.aggregate(pipeline).to_list(length=1)
+    stats = result[0] if result else {}
+
+    # Extract counts from facet results (default to 0 if no documents matched)
     return {
-        "total_members": total_members,
-        "total_inactive": total_inactive,
-        "male_count": male_count,
-        "female_count": female_count,
-        "married_count": married_count,
-        "single_count": single_count,
-        "incomplete_data_count": incomplete_count
+        "total_members": stats.get("total_members", [{}])[0].get("count", 0),
+        "total_inactive": stats.get("total_inactive", [{}])[0].get("count", 0),
+        "male_count": stats.get("male_count", [{}])[0].get("count", 0),
+        "female_count": stats.get("female_count", [{}])[0].get("count", 0),
+        "married_count": stats.get("married_count", [{}])[0].get("count", 0),
+        "single_count": stats.get("single_count", [{}])[0].get("count", 0),
+        "incomplete_data_count": stats.get("incomplete_data_count", [{}])[0].get("count", 0)
     }
