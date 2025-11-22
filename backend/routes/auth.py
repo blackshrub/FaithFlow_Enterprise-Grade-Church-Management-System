@@ -96,3 +96,61 @@ async def list_users(
             user['updated_at'] = datetime.fromisoformat(user['updated_at'])
     
     return users
+
+
+@router.post("/switch-church")
+async def switch_church(
+    church_id: str,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Switch current church context WITHOUT re-entering password.
+    
+    - Only super_admin may switch churches.
+    - Returns a new access_token with updated session_church_id.
+    """
+    if current_user.get("role") != "super_admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only super admin can switch church context",
+        )
+    
+    # Validate church exists
+    church = await db.churches.find_one({"id": church_id}, {"_id": 0})
+    if not church:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Selected church not found",
+        )
+    
+    # Build new JWT payload
+    from utils.security import create_access_token
+    
+    token_payload = {
+        "sub": current_user["id"],
+        "email": current_user["email"],
+        "role": current_user["role"],
+        "church_id": current_user.get("church_id"),
+        "session_church_id": church_id,
+    }
+    
+    access_token = create_access_token(data=token_payload)
+    
+    user_data = {
+        "id": current_user["id"],
+        "email": current_user["email"],
+        "full_name": current_user.get("full_name", ""),
+        "phone": current_user.get("phone", ""),
+        "role": current_user.get("role"),
+        "is_active": current_user.get("is_active", True),
+        "church_id": current_user.get("church_id"),
+        "session_church_id": church_id,
+    }
+    
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user": user_data,
+        "church": church,
+    }
