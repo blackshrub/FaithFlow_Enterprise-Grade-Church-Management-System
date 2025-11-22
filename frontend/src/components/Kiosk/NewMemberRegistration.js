@@ -223,9 +223,12 @@ const NewMemberRegistration = ({ phone, onComplete, onError, preVisitorStatusId 
                   ref={webcamRef}
                   screenshotFormat="image/jpeg"
                   className="w-full rounded-2xl"
-                  videoConstraints={{ facingMode: 'user' }}
-                  mirrored={true}
-                  style={{ transform: 'scaleX(-1)' }}
+                  videoConstraints={{ 
+                    facingMode: facingMode,
+                    width: 1280,
+                    height: 720
+                  }}
+                  style={{ transform: facingMode === 'user' ? 'scaleX(-1)' : 'none' }}
                 />
                 {countdown > 0 && (
                   <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50">
@@ -234,6 +237,18 @@ const NewMemberRegistration = ({ phone, onComplete, onError, preVisitorStatusId 
                     </div>
                   </div>
                 )}
+                
+                {/* Switch Camera Button */}
+                <button
+                  onClick={switchCamera}
+                  disabled={countdown > 0}
+                  className="absolute top-4 right-4 bg-white/90 hover:bg-white p-3 rounded-full shadow-lg transition-all disabled:opacity-50"
+                  title="Switch Camera"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                </button>
               </div>
               <div className="flex gap-4">
                 <Button
