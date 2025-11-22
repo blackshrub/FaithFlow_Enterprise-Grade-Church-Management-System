@@ -544,7 +544,7 @@ async def update_church_settings(
         {"_id": 0}
     )
     
-    print(f"   Returning fresh data from DB")
+    print("   Returning fresh data from DB")
     
     return updated_settings
 
