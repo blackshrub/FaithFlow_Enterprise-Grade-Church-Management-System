@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useChurchSettings, useUpdateChurchSettings } from '../../hooks/useSettings';
+import { useToast } from '../../hooks/use-toast';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Label } from '../ui/label';
@@ -9,6 +10,7 @@ import { Loader2, Save } from 'lucide-react';
 
 export default function GeneralSettingsTab() {
   const { t } = useTranslation();
+  const { toast } = useToast();
   const { data: settings, isLoading, isSuccess } = useChurchSettings();
   const updateSettings = useUpdateChurchSettings();
   
@@ -67,6 +69,17 @@ export default function GeneralSettingsTab() {
           url: data?.whatsapp_api_url,
           username: data?.whatsapp_username,
           password: data?.whatsapp_password ? '***' : '(empty)'
+        });
+        toast({
+          title: t('settings.settingsSaved') || 'Settings saved successfully',
+          variant: 'default'
+        });
+      },
+      onError: (error) => {
+        toast({
+          title: 'Error',
+          description: error.response?.data?.detail || 'Failed to save settings',
+          variant: 'destructive'
         });
       }
     });
