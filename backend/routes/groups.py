@@ -12,6 +12,7 @@ from utils.dependencies import get_db, get_current_user
 from utils.dependencies import get_session_church_id
 from services import audit_service
 from utils.error_response import error_response
+from utils.validation import sanitize_regex_pattern
 
 router = APIRouter(prefix="/groups", tags=["Groups"])
 
@@ -38,10 +39,12 @@ async def list_groups(
         query["is_open_for_join"] = is_open_for_join
 
     if search:
+        # Sanitize search pattern to prevent ReDoS attacks
+        safe_pattern = sanitize_regex_pattern(search)
         query["$or"] = [
-            {"name": {"$regex": search, "$options": "i"}},
-            {"description": {"$regex": search, "$options": "i"}},
-            {"leader_name": {"$regex": search, "$options": "i"}},
+            {"name": {"$regex": safe_pattern, "$options": "i"}},
+            {"description": {"$regex": safe_pattern, "$options": "i"}},
+            {"leader_name": {"$regex": safe_pattern, "$options": "i"}},
         ]
 
     # Use aggregation to get member counts in single query (eliminates N+1 problem)
