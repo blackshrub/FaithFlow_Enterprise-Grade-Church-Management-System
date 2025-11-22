@@ -65,6 +65,18 @@ const UserManagement = () => {
   const createMutation = useCreateUser();
   const updateMutation = useUpdateUser();
   const deactivateMutation = useDeactivateUser();
+  
+  // Count super admins
+  const superAdminCount = users.filter(u => u.role === 'super_admin' && u.is_active).length;
+  
+  // Check if user can be deactivated
+  const canDeactivateUser = (user) => {
+    // Can't deactivate last super admin
+    if (user.role === 'super_admin' && superAdminCount <= 1) {
+      return false;
+    }
+    return true;
+  };
 
   const handleOpenCreate = () => {
     setFormData({
