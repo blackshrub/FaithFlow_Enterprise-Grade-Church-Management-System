@@ -4,7 +4,15 @@
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(find:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(git -C /Users/tesarg/FaithFlow_Enterprise-Grade-Church-Management-System log --oneline -20 -- backend_test.py)",
+      "Bash(git -C /Users/tesarg/FaithFlow_Enterprise-Grade-Church-Management-System log --oneline -20 -- en_temp.json id_temp.json)",
+      "Bash(git -C /Users/tesarg/FaithFlow_Enterprise-Grade-Church-Management-System log --oneline -10 -- backend/utils/dependencies.py.bak)",
+      "Bash(git -C /Users/tesarg/FaithFlow_Enterprise-Grade-Church-Management-System log --oneline -5)",
+      "Bash(git -C /Users/tesarg/FaithFlow_Enterprise-Grade-Church-Management-System status --short)",
+      "Bash(xargs basename:*)",
+      "Bash(git mv:*)",
+      "Bash(git rm:*)"
     ],
     "deny": [],
     "ask": []
