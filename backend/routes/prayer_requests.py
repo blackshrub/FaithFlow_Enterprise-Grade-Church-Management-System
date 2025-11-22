@@ -7,6 +7,7 @@ import uuid
 from models.prayer_request import PrayerRequestBase, PrayerRequestUpdate
 from utils.dependencies import get_db, get_current_user
 from utils.dependencies import get_session_church_id
+from utils.validation import sanitize_regex_pattern
 from services import audit_service
 
 router = APIRouter(prefix="/prayer-requests", tags=["Prayer Requests"])
@@ -29,12 +30,14 @@ async def list_prayer_requests(
     church_id = get_session_church_id(current_user)
     
     query = {"church_id": church_id}
-    
+
     if search:
+        # Sanitize regex pattern to prevent ReDoS attacks
+        safe_pattern = sanitize_regex_pattern(search)
         query["$or"] = [
-            {"title": {"$regex": search, "$options": "i"}},
-            {"requester_name": {"$regex": search, "$options": "i"}},
-            {"description": {"$regex": search, "$options": "i"}}
+            {"title": {"$regex": safe_pattern, "$options": "i"}},
+            {"requester_name": {"$regex": safe_pattern, "$options": "i"}},
+            {"description": {"$regex": safe_pattern, "$options": "i"}}
         ]
     
     if status:

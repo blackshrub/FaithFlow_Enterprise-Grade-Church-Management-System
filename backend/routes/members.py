@@ -8,6 +8,7 @@ from models.quick_member import QuickAddMember
 from utils.dependencies import get_db, get_current_user, require_admin
 from utils.demographics import auto_assign_demographic
 from utils.helpers import combine_full_name, normalize_phone_number
+from utils.validation import sanitize_regex_pattern
 from services.qr_service import generate_member_id_code, generate_member_qr_data
 from services.webhook_service import webhook_service
 
@@ -211,12 +212,14 @@ async def list_members(
     
     # Add search filter
     if search:
+        # Sanitize regex pattern to prevent ReDoS attacks
+        safe_pattern = sanitize_regex_pattern(search)
         query['$or'] = [
-            {'first_name': {'$regex': search, '$options': 'i'}},
-            {'last_name': {'$regex': search, '$options': 'i'}},
-            {'full_name': {'$regex': search, '$options': 'i'}},
-            {'email': {'$regex': search, '$options': 'i'}},
-            {'phone_whatsapp': {'$regex': search, '$options': 'i'}}
+            {'first_name': {'$regex': safe_pattern, '$options': 'i'}},
+            {'last_name': {'$regex': safe_pattern, '$options': 'i'}},
+            {'full_name': {'$regex': safe_pattern, '$options': 'i'}},
+            {'email': {'$regex': safe_pattern, '$options': 'i'}},
+            {'phone_whatsapp': {'$regex': safe_pattern, '$options': 'i'}}
         ]
     
     # Add active filter

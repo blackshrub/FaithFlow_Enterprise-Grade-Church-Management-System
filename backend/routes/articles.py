@@ -8,6 +8,7 @@ from models.article import ArticleBase, ArticleUpdate
 from utils.dependencies import get_db, get_current_user
 from utils.dependencies import get_session_church_id
 from utils.error_response import error_response
+from utils.validation import sanitize_regex_pattern
 from services import article_service, audit_service
 import logging
 
@@ -32,11 +33,13 @@ async def list_articles(
     church_id = get_session_church_id(current_user)
     
     query = {"church_id": church_id}
-    
+
     if search:
+        # Sanitize regex pattern to prevent ReDoS attacks
+        safe_pattern = sanitize_regex_pattern(search)
         query["$or"] = [
-            {"title": {"$regex": search, "$options": "i"}},
-            {"content": {"$regex": search, "$options": "i"}}
+            {"title": {"$regex": safe_pattern, "$options": "i"}},
+            {"content": {"$regex": safe_pattern, "$options": "i"}}
         ]
     
     if status:
