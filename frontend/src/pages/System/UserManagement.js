@@ -224,6 +224,8 @@ const UserManagement = () => {
                             setDeactivatingUser(user);
                             setIsDeactivateDialogOpen(true);
                           }}
+                          disabled={!canDeactivateUser(user)}
+                          title={!canDeactivateUser(user) ? 'Cannot deactivate the last super admin' : ''}
                         >
                           <UserX className="h-4 w-4 text-red-500" />
                         </Button>
