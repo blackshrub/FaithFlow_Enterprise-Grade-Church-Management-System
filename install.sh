@@ -415,29 +415,38 @@ echo ""
 sleep 1
 
 progress
-echo -e "${MAGENTA}${ROCKET} Step 14/16: Creating default super admin account...${NC}"
+echo -e "${MAGENTA}${ROCKET} Step 14/16: Initializing database with indexes and default data...${NC}"
 progress
 
 echo ""
-info "Creating default super admin with known credentials..."
+info "Running database initialization (creates indexes + super admin + default church)..."
 
 cd "$INSTALL_DIR/backend"
 source venv/bin/activate
 
-# Run the default super admin creation script
-python3 create_default_super_admin.py
+# Run the database initialization script (includes indexes, super admin, default data)
+python3 scripts/init_db.py
 
 if [ $? -eq 0 ]; then
-    success "Super admin account ready!"
+    success "Database initialized successfully!"
     echo ""
     echo -e "${GREEN}═══════════════════════════════════════════${NC}"
-    echo -e "${GREEN}  📧 Email:    ${WHITE}admin@gkbj.church${NC}"
+    echo -e "${GREEN}  What was created:${NC}"
+    echo -e "${GREEN}  ✅ Database indexes (performance optimized)${NC}"
+    echo -e "${GREEN}  ✅ Super admin account${NC}"
+    echo -e "${GREEN}  ✅ Default church (GKBJ Taman Kencana)${NC}"
+    echo -e "${GREEN}  ✅ Default member statuses${NC}"
+    echo -e "${GREEN}  ✅ Default demographics${NC}"
+    echo ""
+    echo -e "${GREEN}═══════════════════════════════════════════${NC}"
+    echo -e "${GREEN}  📧 Email:    ${WHITE}admin@gkbjtamankencana.org${NC}"
     echo -e "${GREEN}  🔑 Password: ${WHITE}admin123${NC}"
     echo -e "${GREEN}  👑 Role:     ${WHITE}Super Admin (all churches)${NC}"
     echo -e "${GREEN}═══════════════════════════════════════════${NC}"
     echo ""
+    warn "⚠️  IMPORTANT: Change the password after first login!"
 else
-    warn "Super admin creation may have issues."
+    warn "Database initialization may have issues. Check logs."
 fi
 
 echo ""

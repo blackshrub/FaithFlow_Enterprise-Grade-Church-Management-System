@@ -236,16 +236,18 @@ progress
 cd "$DEST_DIR/backend"
 source venv/bin/activate
 
-# Check for migration scripts
-if [ -f "add_default_pins.py" ]; then
-    info "Running PIN migration (if needed)..."
-    python3 add_default_pins.py > /dev/null 2>&1 || true
-fi
-
-# Check for super admin creation
-if [ -f "create_default_super_admin.py" ]; then
-    info "Ensuring super admin exists..."
-    python3 create_default_super_admin.py > /dev/null 2>&1 || true
+# Run database migrations (indexes, schema updates, etc.)
+info "Running database migrations..."
+if [ -f "scripts/migrate.py" ]; then
+    python3 scripts/migrate.py
+    if [ $? -eq 0 ]; then
+        success "  ✅ Database indexes updated (performance optimized)"
+        success "  ✅ Schema migrations applied"
+    else
+        warning "  ⚠️  Migration script encountered issues (check logs)"
+    fi
+else
+    warning "  ⚠️  scripts/migrate.py not found, skipping migrations"
 fi
 
 success "Migrations complete!"
