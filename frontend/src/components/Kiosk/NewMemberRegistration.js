@@ -32,6 +32,7 @@ const NewMemberRegistration = ({ phone, onComplete, onError, preVisitorStatusId 
   const [otpError, setOtpError] = useState('');
   const [showCamera, setShowCamera] = useState(false);
   const [countdown, setCountdown] = useState(0);
+  const [facingMode, setFacingMode] = useState('user'); // 'user' for front, 'environment' for back
   
   // Check if form is complete (required fields filled)
   const isFormComplete = formData.full_name.trim() && 
