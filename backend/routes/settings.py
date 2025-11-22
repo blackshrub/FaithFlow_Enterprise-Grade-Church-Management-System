@@ -605,7 +605,7 @@ async def update_church_settings(
         {"_id": 0}
     )
     
-    logger.info(f"   Returning updated settings")
+    logger.info("   Returning updated settings")
     
     return updated
 
