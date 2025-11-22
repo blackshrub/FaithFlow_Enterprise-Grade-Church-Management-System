@@ -632,13 +632,18 @@ async def get_member_stats(
     result = await db.members.aggregate(pipeline).to_list(length=1)
     stats = result[0] if result else {}
 
+    # Helper to safely extract count from facet result (handles empty arrays)
+    def get_count(facet_name):
+        facet_result = stats.get(facet_name, [])
+        return facet_result[0].get("count", 0) if facet_result else 0
+
     # Extract counts from facet results (default to 0 if no documents matched)
     return {
-        "total_members": stats.get("total_members", [{}])[0].get("count", 0),
-        "total_inactive": stats.get("total_inactive", [{}])[0].get("count", 0),
-        "male_count": stats.get("male_count", [{}])[0].get("count", 0),
-        "female_count": stats.get("female_count", [{}])[0].get("count", 0),
-        "married_count": stats.get("married_count", [{}])[0].get("count", 0),
-        "single_count": stats.get("single_count", [{}])[0].get("count", 0),
-        "incomplete_data_count": stats.get("incomplete_data_count", [{}])[0].get("count", 0)
+        "total_members": get_count("total_members"),
+        "total_inactive": get_count("total_inactive"),
+        "male_count": get_count("male_count"),
+        "female_count": get_count("female_count"),
+        "married_count": get_count("married_count"),
+        "single_count": get_count("single_count"),
+        "incomplete_data_count": get_count("incomplete_data_count")
     }
