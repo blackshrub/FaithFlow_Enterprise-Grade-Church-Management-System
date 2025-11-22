@@ -7,7 +7,7 @@ const AuthContext = createContext(null);
 export const AuthProvider = ({ children }) => {
   const { i18n } = useTranslation();
   const [user, setUser] = useState(null);
-  const [church, setChurch] = useState(null);
+  const [church, setChurch] = useState(null); // derived from JWT/session only
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
