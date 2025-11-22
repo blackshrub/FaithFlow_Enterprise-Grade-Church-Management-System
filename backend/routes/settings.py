@@ -510,65 +510,21 @@ async def get_church_settings(
     current_user: dict = Depends(require_admin)
 ):
     """
-    Fetch church settings for the active session church.
+    Return normalized church settings for the current church context.
+    Uses session_church_id from JWT.
     """
-
     import logging
     logger = logging.getLogger("settings-debug")
-
+    
     logger.info("📌 GET /church-settings called")
     logger.info(f"   session_church_id = {session_church_id}")
-    logger.info(f"   user email = {current_user.get('email')}")
     logger.info(f"   user role = {current_user.get('role')}")
-
-    selector = {"church_id": session_church_id}
-    logger.info(f"   MongoDB selector = {selector}")
-
-    settings = await db.church_settings.find_one(selector)
-
-    logger.info(f"   Raw fetched settings = {settings}")
-
-    # If settings missing, create a new record
-    if not settings:
-        logger.warning("⚠ church_settings missing for this church → creating new one.")
-        
-        from datetime import datetime
-        import uuid
-        
-        new_settings = {
-            "id": str(uuid.uuid4()),
-            "church_id": session_church_id,
-            "date_format": "DD-MM-YYYY",
-            "time_format": "24h",
-            "currency": "IDR",
-            "timezone": "Asia/Jakarta",
-            "default_language": "id",
-            "enable_whatsapp_notifications": False,
-            "whatsapp_send_rsvp_confirmation": False,
-            "whatsapp_send_group_notifications": False,
-            "whatsapp_api_url": "",
-            "whatsapp_username": "",
-            "whatsapp_password": "",
-            "group_categories": {
-                "cell_group": "Cell Group / Small Group",
-                "ministry_team": "Ministry Team",
-                "activity": "Activity Group",
-                "support_group": "Support Group"
-            },
-            "created_at": datetime.utcnow(),
-            "updated_at": datetime.utcnow()
-        }
-
-        await db.church_settings.insert_one(new_settings)
-        logger.info("✅ Inserted new default church settings")
-        return new_settings
-
-    # Normalize ObjectId
-    if "_id" in settings:
-        settings["_id"] = str(settings["_id"])
-
-    logger.info("✅ Returning settings to client")
-    return settings
+    
+    doc = await _ensure_settings_for_church(db, session_church_id)
+    
+    logger.info(f"   Returning settings for church: {session_church_id}")
+    
+    return doc
 
 
 @router.post("/church-settings", response_model=ChurchSettings, status_code=status.HTTP_201_CREATED)
