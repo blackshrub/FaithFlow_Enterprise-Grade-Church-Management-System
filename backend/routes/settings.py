@@ -539,7 +539,9 @@ async def update_church_settings(
     logger.warning(f"   MongoDB modified_count = {result.modified_count}")
 
     # Read back from DB
-    updated = await db.church_settings.find_one(
+    logger.warning(f"[SETTINGS-PATCH] modified_count = {result.modified_count}, matched_count = {result.matched_count}")
+    updated = await db.church_settings.find_one({"church_id": session_church_id})
+    logger.warning(f"[SETTINGS-PATCH] DB returned after update: {updated}")
         {"church_id": session_church_id},
         {"_id": 0}
     )
