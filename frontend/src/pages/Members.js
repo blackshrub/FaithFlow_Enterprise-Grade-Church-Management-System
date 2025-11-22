@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -86,9 +86,16 @@ export default function Members() {
   const updateMember = useUpdateMember();
   const deleteMember = useDeleteMember();
 
-  // Get unique values for filters
-  const uniqueStatuses = [...new Set(members.map(m => m.member_status).filter(Boolean))];
-  const hasActiveFilters = filters.gender || filters.marital_status || filters.member_status || filters.demographic_category;
+  // Get unique values for filters (memoized to prevent recalculation on every render)
+  const uniqueStatuses = useMemo(
+    () => [...new Set(members.map(m => m.member_status).filter(Boolean))],
+    [members]
+  );
+
+  const hasActiveFilters = useMemo(
+    () => filters.gender || filters.marital_status || filters.member_status || filters.demographic_category,
+    [filters]
+  );
 
   const clearFilters = () => {
     setFilters({
@@ -99,9 +106,12 @@ export default function Members() {
     });
   };
 
-  // Calculate total pages
+  // Calculate total pages (memoized)
   const totalMembers = stats?.total_members || 0;
-  const totalPages = Math.ceil(totalMembers / membersPerPage);
+  const totalPages = useMemo(
+    () => Math.ceil(totalMembers / membersPerPage),
+    [totalMembers, membersPerPage]
+  );
 
   const handleCreateMember = async (e) => {
     e.preventDefault();
