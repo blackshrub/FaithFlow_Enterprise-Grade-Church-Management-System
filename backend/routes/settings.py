@@ -408,49 +408,55 @@ async def delete_demographic_preset(
 
 # ============= Church Settings Routes =============
 
-@router.get("/church-settings")  # No response_model - return raw dict
+@router.get("/church-settings")  # STAGING DEBUG VERSION
 async def get_church_settings(
     db: AsyncIOMotorDatabase = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    session_church_id: str = Depends(get_session_church_id),
+    current_user: dict = Depends(get_current_user),
 ):
-    """Get church settings - returns raw MongoDB document"""
+    """Get church settings - STAGING DEBUG VERSION"""
+    import logging
+    logger = logging.getLogger("settings-debug")
+
+    logger.warning("\n" + "="*60)
+    logger.warning("📌 [GET] /church-settings CALLED")
+    logger.warning("="*60)
+    logger.warning(f"   session_church_id = '{session_church_id}'")
+    logger.warning(f"   session_church_id length = {len(session_church_id) if session_church_id else 0}")
+    logger.warning(f"   current_user email = {current_user.get('email')}")
+    logger.warning(f"   current_user role = {current_user.get('role')}")
+    logger.warning(f"   current_user session_church_id = {current_user.get('session_church_id')}")
+    logger.warning(f"   current_user church_id = {current_user.get('church_id')}")
+    logger.warning(f"   DB NAME = {db.name}")
     
-    # Extract church_id
-    church_id = current_user.get('session_church_id') or current_user.get('church_id')
-    
-    # DEBUG LOGGING
-    print("\n📌 GET /church-settings called")
-    print(f"   session_church_id = {church_id}")
-    
-    if not church_id:
-        raise HTTPException(status_code=403, detail="No church context")
-    
-    # Get raw document from MongoDB (exclude _id)
-    settings = await db.church_settings.find_one(
-        {"church_id": church_id}, 
+    # Log the exact query
+    query = {"church_id": session_church_id}
+    logger.warning(f"   MongoDB query = {query}")
+
+    # Execute query and log raw result
+    raw = await db.church_settings.find_one(
+        {"church_id": session_church_id},
         {"_id": 0}
     )
     
-    if not settings:
-        # Return minimal defaults if not found
-        from datetime import datetime
-        import uuid
-        default = {
-            "id": str(uuid.uuid4()),
-            "church_id": church_id,
-            "date_format": "DD-MM-YYYY",
-            "time_format": "24h",
-            "currency": "IDR",
-            "timezone": "Asia/Jakarta",
-            "default_language": "id",
-            "created_at": datetime.utcnow(),
-            "updated_at": datetime.utcnow()
-        }
-        await db.church_settings.insert_one(default)
-        settings = default
+    logger.warning(f"   RAW DB RESULT = {raw}")
+    logger.warning(f"   Result is None: {raw is None}")
     
-    # Return raw dict (no Pydantic model!)
-    return settings
+    if raw:
+        logger.warning(f"   Result church_id = '{raw.get('church_id')}'")
+        logger.warning(f"   Result whatsapp_api_url = '{raw.get('whatsapp_api_url')}'")
+        logger.warning(f"   Result timezone = '{raw.get('timezone')}'")
+    
+    logger.warning("="*60 + "\n")
+    
+    return raw if raw else {
+        "church_id": session_church_id,
+        "date_format": "DD-MM-YYYY",
+        "time_format": "24h",
+        "currency": "IDR",
+        "timezone": "Asia/Jakarta",
+        "default_language": "id"
+    }
 
 
 @router.post("/church-settings", response_model=ChurchSettings, status_code=status.HTTP_201_CREATED)
