@@ -184,6 +184,9 @@ function App() {
               <Route path="counseling/appointments" element={<AppointmentsListPage />} />
               <Route path="counseling/appointments/:appointmentId" element={<AppointmentDetailPage />} />
               
+              {/* System Routes */}
+              <Route path="users/management" element={<UserManagement />} />
+              
               {/* Placeholder routes - will be implemented in next phases */}
               <Route path="donations" element={<PlaceholderPage title="Donations" />} />
               <Route path="prayers" element={<PlaceholderPage title="Prayer Requests" />} />
