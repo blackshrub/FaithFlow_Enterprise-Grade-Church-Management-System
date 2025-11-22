@@ -194,6 +194,8 @@ const NewMemberRegistration = ({ phone, onComplete, onError, preVisitorStatusId 
                   screenshotFormat="image/jpeg"
                   className="w-full rounded-2xl"
                   videoConstraints={{ facingMode: 'user' }}
+                  mirrored={true}
+                  style={{ transform: 'scaleX(-1)' }}
                 />
                 {countdown > 0 && (
                   <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50">
