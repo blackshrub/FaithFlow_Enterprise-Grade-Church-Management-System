@@ -157,26 +157,21 @@ export const useChurchSettings = () => {
 
 export const useUpdateChurchSettings = () => {
   const queryClient = useQueryClient();
-  const { church } = useAuth();
+  const { user } = useAuth();
+  const sessionChurchId = user?.session_church_id || user?.church_id;
   
   return useMutation({
     mutationFn: (settingsData) => {
-      // Clean payload - remove empty strings and null values
-      const cleanPayload = Object.fromEntries(
-        Object.entries(settingsData).filter(
-          ([key, value]) => value !== "" && value !== null && value !== undefined
-        )
-      );
-      
-      console.log('🧹 Cleaned payload (removed empty strings):', cleanPayload);
-      
-      return settingsAPI.updateChurchSettings(cleanPayload).then(res => res.data);
+      console.log('💾 PATCH payload being sent:', settingsData);
+      return settingsAPI.updateChurchSettings(settingsData).then(res => res.data);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ 
-        queryKey: ['church-settings']
-      });
-      toast.success('Church settings updated successfully');
+    onSuccess: (data) => {
+      console.log('✅ PATCH response from server:', data);
+      
+      // Overwrite cache with exact server response
+      queryClient.setQueryData(['church-settings', sessionChurchId], data);
+      
+      console.log('✅ Cache updated with server response');
     },
     onError: (error) => {
       toast.error(error.response?.data?.detail || 'Failed to update church settings');
