@@ -150,6 +150,8 @@ export const useChurchSettings = () => {
     queryKey: ['church-settings', sessionChurchId],  // Cache per church
     queryFn: () => settingsAPI.getChurchSettings().then(res => res.data),
     enabled: !!sessionChurchId,  // Only run when we have a church context
+    refetchOnWindowFocus: true,  // Refetch when window regains focus
+    staleTime: 0,  // Always consider data stale
   });
 };
 
