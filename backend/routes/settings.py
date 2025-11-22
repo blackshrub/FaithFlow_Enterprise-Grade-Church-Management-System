@@ -418,6 +418,12 @@ async def get_church_settings(
     # Extract church_id with fallback
     church_id = current_user.get('session_church_id')
     
+    # DEBUG LOGGING
+    print("\n📌 GET /church-settings called")
+    print(f"   session_church_id = {church_id}")
+    print(f"   user email = {current_user.get('email')}")
+    print(f"   user role = {current_user.get('role')}")
+    
     if not church_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
