@@ -89,8 +89,7 @@ export const AuthProvider = ({ children }) => {
 
   const logout = () => {
     localStorage.removeItem('access_token');
-    localStorage.removeItem('user');
-    localStorage.removeItem('church');
+    // Don't store user/church separately - JWT is single source of truth
     setUser(null);
     setChurch(null);
     setError(null);
