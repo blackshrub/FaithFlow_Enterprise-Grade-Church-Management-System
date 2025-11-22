@@ -15,10 +15,14 @@ _db_instance = None
 
 
 async def get_db() -> AsyncIOMotorDatabase:
-    """Get database instance (lazy-loaded)"""
+    """Get database instance (lazy-loaded) - STAGING DEBUG VERSION"""
     global _db_instance
     if _db_instance is None:
         mongo_url = os.environ.get('MONGO_URL', 'mongodb://localhost:27017')
+        import logging
+        logger = logging.getLogger("settings-debug")
+        logger.warning(f"🗄 get_db(): connecting to MONGO_URL={mongo_url!r}")
+        logger.warning(f"🗄 get_db(): DB_NAME env={os.environ.get('DB_NAME')!r}")
         client = AsyncIOMotorClient(mongo_url)
         _db_instance = client[os.environ.get('DB_NAME', 'church_management')]
     return _db_instance
