@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../context/AuthContext';
 import * as groupsApi from '../services/groupsApi';
+import { toast } from 'sonner';
 
 export const useGroups = (params = {}) => {
   const { user } = useAuth();
@@ -38,7 +39,14 @@ export const useCreateGroup = () => {
   return useMutation({
     mutationFn: groupsApi.createGroup,
     onSuccess: () => {
-      queryClient.invalidateQueries(['groups', churchId]);
+      queryClient.invalidateQueries({
+        queryKey: ['groups', churchId],
+        refetchType: 'active'
+      });
+      toast.success('Group created successfully');
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.detail || 'Failed to create group');
     },
   });
 };
@@ -50,9 +58,21 @@ export const useUpdateGroup = () => {
 
   return useMutation({
     mutationFn: ({ id, data }) => groupsApi.updateGroup(id, data),
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries(['groups', churchId]);
-      queryClient.invalidateQueries(['group', churchId, variables.id]);
+    onSuccess: (updatedGroup, variables) => {
+      // Optimistic update
+      queryClient.setQueryData(
+        ['group', churchId, variables.id],
+        updatedGroup
+      );
+
+      queryClient.invalidateQueries({
+        queryKey: ['groups', churchId],
+        refetchType: 'active'
+      });
+      toast.success('Group updated successfully');
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.detail || 'Failed to update group');
     },
   });
 };
@@ -65,7 +85,14 @@ export const useDeleteGroup = () => {
   return useMutation({
     mutationFn: groupsApi.deleteGroup,
     onSuccess: () => {
-      queryClient.invalidateQueries(['groups', churchId]);
+      queryClient.invalidateQueries({
+        queryKey: ['groups', churchId],
+        refetchType: 'active'
+      });
+      toast.success('Group deleted successfully');
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.detail || 'Failed to delete group');
     },
   });
 };
@@ -93,7 +120,14 @@ export const useAddGroupMember = () => {
     mutationFn: ({ groupId, memberId }) =>
       groupsApi.addGroupMember(groupId, memberId),
     onSuccess: (_, { groupId }) => {
-      queryClient.invalidateQueries(['group-members', churchId, groupId]);
+      queryClient.invalidateQueries({
+        queryKey: ['group-members', churchId, groupId],
+        refetchType: 'active'
+      });
+      toast.success('Member added to group successfully');
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.detail || 'Failed to add member to group');
     },
   });
 };
@@ -107,7 +141,14 @@ export const useRemoveGroupMember = () => {
     mutationFn: ({ groupId, memberId }) =>
       groupsApi.removeGroupMember(groupId, memberId),
     onSuccess: (_, { groupId }) => {
-      queryClient.invalidateQueries(['group-members', churchId, groupId]);
+      queryClient.invalidateQueries({
+        queryKey: ['group-members', churchId, groupId],
+        refetchType: 'active'
+      });
+      toast.success('Member removed from group successfully');
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.detail || 'Failed to remove member from group');
     },
   });
 };
@@ -134,8 +175,18 @@ export const useApproveJoinRequest = () => {
   return useMutation({
     mutationFn: groupsApi.approveJoinRequest,
     onSuccess: () => {
-      queryClient.invalidateQueries(['group-join-requests', churchId]);
-      queryClient.invalidateQueries(['groups', churchId]);
+      queryClient.invalidateQueries({
+        queryKey: ['group-join-requests', churchId],
+        refetchType: 'active'
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['groups', churchId],
+        refetchType: 'active'
+      });
+      toast.success('Join request approved successfully');
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.detail || 'Failed to approve join request');
     },
   });
 };
@@ -148,7 +199,14 @@ export const useRejectJoinRequest = () => {
   return useMutation({
     mutationFn: groupsApi.rejectJoinRequest,
     onSuccess: () => {
-      queryClient.invalidateQueries(['group-join-requests', churchId]);
+      queryClient.invalidateQueries({
+        queryKey: ['group-join-requests', churchId],
+        refetchType: 'active'
+      });
+      toast.success('Join request rejected successfully');
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.detail || 'Failed to reject join request');
     },
   });
 };
@@ -175,8 +233,18 @@ export const useApproveLeaveRequest = () => {
   return useMutation({
     mutationFn: groupsApi.approveLeaveRequest,
     onSuccess: () => {
-      queryClient.invalidateQueries(['group-leave-requests', churchId]);
-      queryClient.invalidateQueries(['groups', churchId]);
+      queryClient.invalidateQueries({
+        queryKey: ['group-leave-requests', churchId],
+        refetchType: 'active'
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['groups', churchId],
+        refetchType: 'active'
+      });
+      toast.success('Leave request approved successfully');
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.detail || 'Failed to approve leave request');
     },
   });
 };
