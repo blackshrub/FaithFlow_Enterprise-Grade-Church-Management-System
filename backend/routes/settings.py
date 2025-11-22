@@ -540,15 +540,12 @@ async def update_church_settings(
 
     # Read back from DB
     logger.warning(f"[SETTINGS-PATCH] modified_count = {result.modified_count}, matched_count = {result.matched_count}")
-    updated = await db.church_settings.find_one({"church_id": session_church_id})
-    logger.warning(f"[SETTINGS-PATCH] DB returned after update: {updated}")
+    updated = await db.church_settings.find_one(
         {"church_id": session_church_id},
         {"_id": 0}
     )
+    logger.warning(f"[SETTINGS-PATCH] DB returned after update: {updated}")
     
-    logger.warning(f"   UPDATED DB RESULT = {updated}")
-    logger.warning("="*60 + "\n")
-
     return updated
 
 
