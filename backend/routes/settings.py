@@ -513,17 +513,51 @@ async def get_church_settings(
     Return normalized church settings for the current church context.
     Uses session_church_id from JWT.
     """
-    import logging
-    logger = logging.getLogger("settings-debug")
-    
-    logger.info("📌 GET /church-settings called")
-    logger.info(f"   session_church_id = {session_church_id}")
-    logger.info(f"   user role = {current_user.get('role')}")
-    
+    import logging, os
+    logger = logging.getLogger("settings-diagnostic")
+
+    logger.warning("═══════════════════════════════════════════════════════")
+    logger.warning(" 🔍 DIAGNOSTIC GET /church-settings")
+    logger.warning("═══════════════════════════════════════════════════════")
+
+    # Log environment & DB info
+    logger.warning(f"ENV MONGO_URL = {os.environ.get('MONGO_URL')}")
+    logger.warning(f"ENV DB_NAME = {os.environ.get('DB_NAME')}")
+
+    # Log user & session info
+    logger.warning(f"User email = {current_user.get('email')}")
+    logger.warning(f"User role = {current_user.get('role')}")
+    logger.warning(f"session_church_id = {session_church_id}")
+
+    # Log collection identity
+    logger.warning(f"DB object = {db}")
+    logger.warning(f"Collection object = {db.church_settings}")
+
+    # Log DB name via Motor internals
+    try:
+        logger.warning(f"Motor DB name = {db.name}")
+    except:
+        logger.warning("Motor DB name = <unable to read>")
+
+    # Try reading from DB
+    try:
+        doc = await db.church_settings.find_one({"church_id": session_church_id})
+        logger.warning(f"Mongo returned = {doc}")
+    except Exception as e:
+        logger.error(f"🔥 ERROR DURING DB READ: {e}")
+        raise
+
+    # If no document exists, log explicitly
+    if not doc:
+        logger.warning("⚠️ No church_settings document found for this church_id")
+        logger.warning("⚠️ GET will bootstrap a default record (if implemented).")
+
+    logger.warning("════════════ END GET /church-settings DIAGNOSTICS ═════════════")
+
     doc = await _ensure_settings_for_church(db, session_church_id)
-    
-    logger.info(f"   Returning settings for church: {session_church_id}")
-    
+
+    logger.warning(f"   Returning settings for church: {session_church_id}")
+
     return doc
 
 
@@ -570,43 +604,73 @@ async def update_church_settings(
     Update current church settings (only allowed fields).
     Uses session_church_id as filter.
     """
-    import logging
-    logger = logging.getLogger("settings-debug")
-    
-    logger.info("📌 PATCH /church-settings called")
-    logger.info(f"   session_church_id = {session_church_id}")
-    
+    import logging, os
+    logger = logging.getLogger("settings-diagnostic")
+
+    logger.warning("═══════════════════════════════════════════════════════")
+    logger.warning(" 🔍 DIAGNOSTIC PATCH /church-settings")
+    logger.warning("═══════════════════════════════════════════════════════")
+
+    # Log environment & DB info
+    logger.warning(f"ENV MONGO_URL = {os.environ.get('MONGO_URL')}")
+    logger.warning(f"ENV DB_NAME = {os.environ.get('DB_NAME')}")
+
+    # Log user & session info
+    logger.warning(f"User email = {current_user.get('email')}")
+    logger.warning(f"User role = {current_user.get('role')}")
+    logger.warning(f"session_church_id = {session_church_id}")
+
+    # Log collection identity
+    logger.warning(f"DB object = {db}")
+    logger.warning(f"Collection object = {db.church_settings}")
+
+    # Log DB name via Motor internals
+    try:
+        logger.warning(f"Motor DB name = {db.name}")
+    except:
+        logger.warning("Motor DB name = <unable to read>")
+
     # Get or create base doc
     await _ensure_settings_for_church(db, session_church_id)
-    
+
     # Get update data (exclude unset to only update provided fields)
     update_data = settings_data.model_dump(exclude_unset=True)
-    
+
     # Remove identity fields
     for key in ["id", "church_id", "created_at"]:
         update_data.pop(key, None)
-    
-    logger.info(f"   update_data = {update_data}")
-    
+
+    logger.warning(f"update_data = {update_data}")
+
     if update_data:
         from datetime import datetime
         update_data["updated_at"] = datetime.utcnow()
-        
+
+        logger.warning(f"🔄 Executing update_one with filter: {{'church_id': '{session_church_id}'}}")
+        logger.warning(f"🔄 Update payload: {update_data}")
+
         result = await db.church_settings.update_one(
             {"church_id": session_church_id},
             {"$set": update_data}
         )
-        
-        logger.info(f"   MongoDB matched={result.matched_count}, modified={result.modified_count}")
-    
+
+        logger.warning(f"✅ MongoDB matched={result.matched_count}, modified={result.modified_count}")
+
+        if result.matched_count == 0:
+            logger.error("❌ NO DOCUMENT MATCHED! Update failed - church_id not found!")
+        elif result.modified_count == 0:
+            logger.warning("⚠️ Document matched but NOT modified (same values?)")
+
     # Return fresh doc
+    logger.warning(f"🔍 Reading back updated document with church_id={session_church_id}")
     updated = await db.church_settings.find_one(
         {"church_id": session_church_id},
         {"_id": 0}
     )
-    
-    logger.info("   Returning updated settings")
-    
+
+    logger.warning(f"📄 Document after update = {updated}")
+    logger.warning("════════════ END PATCH /church-settings DIAGNOSTICS ═════════════")
+
     return updated
 
 
