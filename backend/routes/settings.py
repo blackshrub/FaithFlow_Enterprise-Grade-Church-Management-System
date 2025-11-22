@@ -8,6 +8,7 @@ from models.demographic_preset import DemographicPreset, DemographicPresetCreate
 from models.church_settings import ChurchSettings, ChurchSettingsCreate, ChurchSettingsUpdate
 from models.event_category import EventCategory, EventCategoryCreate, EventCategoryUpdate
 from utils.dependencies import get_db, require_admin, get_current_user, get_session_church_id
+from utils.cache import get_cached_statuses, get_cached_demographics, invalidate_church_cache
 
 router = APIRouter(prefix="/settings", tags=["Settings"])
 
@@ -53,6 +54,10 @@ async def create_member_status(
         )
     
     await db.member_statuses.insert_one(status_doc)
+
+    # Invalidate cache after mutation
+    await invalidate_church_cache(status_data.church_id)
+
     return member_status
 
 
@@ -61,22 +66,28 @@ async def list_member_statuses(
     db: AsyncIOMotorDatabase = Depends(get_db),
     current_user: dict = Depends(require_admin)
 ):
-    """List all member statuses for current church"""
-    
-    query = {}
-    if current_user.get('role') != 'super_admin':
-        query['church_id'] = current_user.get('session_church_id') or current_user.get('session_church_id')
-    
-    statuses = await db.member_statuses.find(query, {"_id": 0}).sort("display_order", 1).to_list(100)
-    
-    # Convert ISO strings to datetime
-    for s in statuses:
-        if isinstance(s.get('created_at'), str):
-            s['created_at'] = datetime.fromisoformat(s['created_at'])
-        if isinstance(s.get('updated_at'), str):
-            s['updated_at'] = datetime.fromisoformat(s['updated_at'])
-    
-    return statuses
+    """List all member statuses for current church (cached for 30 minutes)"""
+
+    church_id = get_session_church_id(current_user)
+
+    # Fetch with caching (30 minute TTL)
+    async def fetch_statuses():
+        query = {"church_id": church_id}
+        if current_user.get('role') == 'super_admin':
+            query = {}  # Super admin sees all
+
+        statuses = await db.member_statuses.find(query, {"_id": 0}).sort("display_order", 1).to_list(100)
+
+        # Convert ISO strings to datetime
+        for s in statuses:
+            if isinstance(s.get('created_at'), str):
+                s['created_at'] = datetime.fromisoformat(s['created_at'])
+            if isinstance(s.get('updated_at'), str):
+                s['updated_at'] = datetime.fromisoformat(s['updated_at'])
+
+        return statuses
+
+    return await get_cached_statuses(church_id, fetch_statuses)
 
 
 @router.get("/member-statuses/{status_id}", response_model=MemberStatus)
@@ -276,22 +287,28 @@ async def list_demographic_presets(
     db: AsyncIOMotorDatabase = Depends(get_db),
     current_user: dict = Depends(require_admin)
 ):
-    """List all demographic presets for current church"""
-    
-    query = {}
-    if current_user.get('role') != 'super_admin':
-        query['church_id'] = current_user.get('session_church_id') or current_user.get('session_church_id')
-    
-    presets = await db.demographic_presets.find(query, {"_id": 0}).sort("order", 1).to_list(100)
-    
-    # Convert ISO strings to datetime
-    for p in presets:
-        if isinstance(p.get('created_at'), str):
-            p['created_at'] = datetime.fromisoformat(p['created_at'])
-        if isinstance(p.get('updated_at'), str):
-            p['updated_at'] = datetime.fromisoformat(p['updated_at'])
-    
-    return presets
+    """List all demographic presets for current church (cached for 30 minutes)"""
+
+    church_id = get_session_church_id(current_user)
+
+    # Fetch with caching (30 minute TTL)
+    async def fetch_demographics():
+        query = {"church_id": church_id}
+        if current_user.get('role') == 'super_admin':
+            query = {}  # Super admin sees all
+
+        presets = await db.demographic_presets.find(query, {"_id": 0}).sort("order", 1).to_list(100)
+
+        # Convert ISO strings to datetime
+        for p in presets:
+            if isinstance(p.get('created_at'), str):
+                p['created_at'] = datetime.fromisoformat(p['created_at'])
+            if isinstance(p.get('updated_at'), str):
+                p['updated_at'] = datetime.fromisoformat(p['updated_at'])
+
+        return presets
+
+    return await get_cached_demographics(church_id, fetch_demographics)
 
 
 @router.get("/demographics/{preset_id}", response_model=DemographicPreset)
