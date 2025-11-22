@@ -529,6 +529,7 @@ async def update_church_settings(
     update_data['updated_at'] = datetime.utcnow()
 
     # Execute update
+    logger.warning(f"[SETTINGS-PATCH] Running update_one for church_id = {session_church_id}")
     result = await db.church_settings.update_one(
         {"church_id": session_church_id},
         {"$set": update_data}
