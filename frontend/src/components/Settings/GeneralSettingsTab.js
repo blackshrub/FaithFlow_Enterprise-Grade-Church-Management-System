@@ -9,7 +9,7 @@ import { Loader2, Save } from 'lucide-react';
 
 export default function GeneralSettingsTab() {
   const { t } = useTranslation();
-  const { data: settings, isLoading } = useChurchSettings();
+  const { data: settings, isLoading, isSuccess } = useChurchSettings();
   const updateSettings = useUpdateChurchSettings();
   
   const [formData, setFormData] = useState({
