@@ -159,6 +159,7 @@ export default function Layout() {
     { type: 'section', label: 'SYSTEM' },
     { icon: Settings, label: t('nav.settings'), path: '/settings' },
     { icon: Upload, label: 'Import/Export', path: '/import-export' },
+    { icon: Users, label: 'User Management', path: '/users/management' },
   ];
 
   // Note: Removed "churches" from default menu - only added for super admin below
