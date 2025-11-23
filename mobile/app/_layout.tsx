@@ -4,6 +4,8 @@ import { GluestackUIProvider } from "@/components/ui/gluestack-ui-provider";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { StatusBar } from "expo-status-bar";
 import { useColorScheme } from "nativewind";
+import { useEffect, useState } from "react";
+import { initializeI18n } from "@/i18n";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -17,6 +19,18 @@ const queryClient = new QueryClient({
 
 export default function RootLayout() {
   const { colorScheme } = useColorScheme();
+  const [i18nInitialized, setI18nInitialized] = useState(false);
+
+  useEffect(() => {
+    initializeI18n().then(() => {
+      setI18nInitialized(true);
+    });
+  }, []);
+
+  // Wait for i18n to initialize before rendering
+  if (!i18nInitialized) {
+    return null;
+  }
 
   return (
     <QueryClientProvider client={queryClient}>
