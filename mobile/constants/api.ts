@@ -105,9 +105,10 @@ export const QUERY_KEYS = {
   MY_RSVPS: (memberId: string) => ['rsvps', memberId],
 
   // Groups
-  GROUPS: (churchId: string) => ['groups', churchId],
-  MY_GROUPS: (memberId: string) => ['groups', 'my', memberId],
-  GROUP: (id: string) => ['group', id],
+  GROUPS: ['groups'],
+  MY_GROUPS: ['groups', 'my'],
+  GROUP_DETAIL: ['group', 'detail'],
+  GROUP_MEMBERS: ['group', 'members'],
 
   // Prayer
   PRAYER_REQUESTS: ['prayer', 'requests'],
