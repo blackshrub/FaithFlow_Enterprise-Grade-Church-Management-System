@@ -16,9 +16,7 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/kiosk", tags=["Kiosk"])
 
-# In-memory OTP storage (for demo/development)
-# In production, use Redis or database with TTL
-otp_store = {}
+# Note: OTP storage moved to database for persistence across restarts and multiple instances
 
 class OTPSendRequest(BaseModel):
     phone: str
@@ -40,20 +38,30 @@ async def send_otp(
     """Send OTP to phone via WhatsApp."""
     try:
         phone = request.phone
-        
+
         # Generate 4-digit OTP
         code = str(random.randint(1000, 9999))
-        
-        # Store OTP with expiry (5 minutes)
-        otp_store[phone] = {
-            'code': code,
-            'expires_at': datetime.utcnow() + timedelta(minutes=5),
-            'attempts': 0
-        }
-        
+
+        # Store OTP in database for persistence (survives restarts and works with multiple instances)
+        expires_at = datetime.utcnow() + timedelta(minutes=5)
+        await db.otp_codes.update_one(
+            {"phone": phone},
+            {
+                "$set": {
+                    "phone": phone,
+                    "code": code,
+                    "expires_at": expires_at,
+                    "attempts": 0,
+                    "created_at": datetime.utcnow()
+                }
+            },
+            upsert=True
+        )
+
         # Log OTP for testing
-        logger.info(f"OTP for {phone}: {code}")
+        logger.info(f"🔐 OTP for {phone}: {code} (expires: {expires_at})")
         print(f"\n🔐 OTP for {phone}: {code}\n")
+        print(f"📦 Stored in database, expires at: {expires_at}\n")
         
         # Get WhatsApp config from settings for THIS church
         settings = await db.church_settings.find_one({"church_id": church_id}, {"_id": 0})
@@ -148,48 +156,56 @@ async def verify_otp(
     try:
         phone = request.phone
         code = request.code
-        
+
         print(f"🔍 Verifying OTP for phone: {phone}, code: {code}")
-        print(f"🔍 OTP store has phones: {list(otp_store.keys())}")
-        
-        # Check if OTP exists
-        if phone not in otp_store:
+
+        # Find OTP in database
+        otp_doc = await db.otp_codes.find_one({"phone": phone})
+
+        if not otp_doc:
+            # Debug: show all phones in database
+            all_otps = await db.otp_codes.find({}, {"phone": 1, "created_at": 1}).to_list(length=10)
             print(f"❌ No OTP found for {phone}")
+            print(f"📦 Database has OTPs for: {[doc['phone'] for doc in all_otps]}")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail={"error_code": "OTP_NOT_FOUND", "message": "No OTP found"}
+                detail={"error_code": "OTP_NOT_FOUND", "message": "No OTP found. Please request a new code."}
             )
-        
-        stored = otp_store[phone]
-        
+
+        print(f"📦 Found OTP in database for {phone}")
+
         # Check expiry
-        if datetime.utcnow() > stored['expires_at']:
+        if datetime.utcnow() > otp_doc['expires_at']:
             print(f"❌ OTP expired for {phone}")
-            del otp_store[phone]
+            await db.otp_codes.delete_one({"phone": phone})
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail={"error_code": "OTP_EXPIRED", "message": "OTP expired"}
+                detail={"error_code": "OTP_EXPIRED", "message": "OTP expired. Please request a new code."}
             )
-        
+
         # Check attempts
-        if stored['attempts'] >= 5:  # Increased from 3 to 5
+        if otp_doc['attempts'] >= 5:
             print(f"❌ Too many attempts for {phone}")
-            del otp_store[phone]
+            await db.otp_codes.delete_one({"phone": phone})
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail={"error_code": "TOO_MANY_ATTEMPTS", "message": "Too many attempts"}
+                detail={"error_code": "TOO_MANY_ATTEMPTS", "message": "Too many attempts. Please request a new code."}
             )
-        
+
         # Verify code
-        if stored['code'] != code:
-            stored['attempts'] += 1
-            print(f"❌ Wrong code for {phone}. Expected: {stored['code']}, Got: {code}, Attempts: {stored['attempts']}")
+        if otp_doc['code'] != code:
+            # Increment attempts
+            await db.otp_codes.update_one(
+                {"phone": phone},
+                {"$inc": {"attempts": 1}}
+            )
+            print(f"❌ Wrong code for {phone}. Expected: {otp_doc['code']}, Got: {code}, Attempts: {otp_doc['attempts'] + 1}")
             return {"success": False, "message": "Invalid OTP"}
-        
-        # Success - remove OTP
-        del otp_store[phone]
+
+        # Success - remove OTP from database
+        await db.otp_codes.delete_one({"phone": phone})
         print(f"✅ OTP verified successfully for {phone}")
-        
+
         return {"success": True, "message": "OTP verified"}
     
     except HTTPException:

@@ -131,6 +131,10 @@ async def init_database():
     await db.demographic_presets.create_index([("church_id", 1), ("name", 1)], unique=True)
     await db.demographic_presets.create_index([("church_id", 1), ("order", 1)])
 
+    # OTP codes indexes - with TTL for automatic cleanup of expired OTPs
+    await db.otp_codes.create_index("phone", unique=True)  # Ensure one OTP per phone
+    await db.otp_codes.create_index("expires_at", expireAfterSeconds=0)  # Auto-delete expired OTPs
+
     print("✓ Created database indexes (including performance optimizations)")
     
     # Create default member statuses

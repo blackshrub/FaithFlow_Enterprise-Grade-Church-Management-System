@@ -18,7 +18,7 @@ import Webcam from 'react-webcam';
 const NewMemberRegistration = ({ phone, onComplete, onError, preVisitorStatusId }) => {
   const { t } = useTranslation('kiosk');
   const webcamRef = useRef(null);
-  
+
   const [formData, setFormData] = useState({
     full_name: '',
     gender: '',
@@ -26,13 +26,15 @@ const NewMemberRegistration = ({ phone, onComplete, onError, preVisitorStatusId 
     phone_whatsapp: phone,
     photo_base64: null
   });
-  
+
   const [otp, setOtp] = useState('');
   const [verifying, setVerifying] = useState(false);
   const [otpError, setOtpError] = useState('');
   const [showCamera, setShowCamera] = useState(false);
   const [countdown, setCountdown] = useState(0);
   const [facingMode, setFacingMode] = useState('user'); // 'user' for front, 'environment' for back
+  const [resending, setResending] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
   
   // Check if form is complete (required fields filled)
   const isFormComplete = formData.full_name.trim() && 
@@ -85,7 +87,38 @@ const NewMemberRegistration = ({ phone, onComplete, onError, preVisitorStatusId 
   const switchCamera = () => {
     setFacingMode(prev => prev === 'user' ? 'environment' : 'user');
   };
-  
+
+  const handleResendOTP = async () => {
+    setResending(true);
+    setOtpError('');
+
+    try {
+      const { default: kioskApi } = await import('../../services/kioskApi');
+      const churchId = localStorage.getItem('kiosk_church_id');
+
+      const result = await kioskApi.sendOTP(phone, churchId);
+      console.log('🔄 OTP resent:', result.debug_code);
+
+      // Start 60-second cooldown
+      setResendCooldown(60);
+      const cooldownInterval = setInterval(() => {
+        setResendCooldown(prev => {
+          if (prev <= 1) {
+            clearInterval(cooldownInterval);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+
+    } catch (error) {
+      console.error('Failed to resend OTP:', error);
+      setOtpError('Failed to resend OTP. Please try again.');
+    } finally {
+      setResending(false);
+    }
+  };
+
   const handleOtpComplete = async (code) => {
     setOtpError('');
     setVerifying(true);
@@ -310,7 +343,7 @@ const NewMemberRegistration = ({ phone, onComplete, onError, preVisitorStatusId 
             onComplete={handleOtpComplete}
             disabled={verifying}
           />
-          
+
           {otpError && (
             <motion.p
               className="text-center text-lg text-red-600"
@@ -320,6 +353,15 @@ const NewMemberRegistration = ({ phone, onComplete, onError, preVisitorStatusId 
               {otpError}
             </motion.p>
           )}
+
+          <Button
+            variant="ghost"
+            onClick={handleResendOTP}
+            disabled={resending || resendCooldown > 0}
+            className="w-full text-lg"
+          >
+            {resending ? 'Sending...' : resendCooldown > 0 ? `Resend OTP in ${resendCooldown}s` : 'Resend OTP'}
+          </Button>
         </div>
       )}
       
