@@ -11,7 +11,8 @@ from routes import (
     auth, churches, members, settings, import_export, photo_document_sim,
     seat_layouts, events, bible, devotions, webhooks, api_keys,
     status_rules, status_conflicts, status_history, member_status_automation, public_members,
-    counseling_admin, counseling_public, kiosk, user_management, files
+    counseling_admin, counseling_public, kiosk, user_management, files,
+    giving, member_auth, notifications
 )
 
 # Import accounting routes (v1)
@@ -79,6 +80,11 @@ api_router.include_router(events.router)
 api_router.include_router(bible.router)
 api_router.include_router(devotions.router)
 api_router.include_router(files.router)
+
+# Mobile app routes
+api_router.include_router(member_auth.router)  # Member OTP login
+api_router.include_router(giving.router)  # Giving/offering with iPaymu
+api_router.include_router(notifications.router)  # Push notifications
 
 # Public API (no auth required)
 app.include_router(public_members.router)
@@ -149,12 +155,33 @@ logger = logging.getLogger(__name__)
 # Initialize APScheduler for article publishing
 from scheduler import setup_scheduler, start_scheduler, shutdown_scheduler
 
+# Initialize iPaymu service
+from services.ipaymu_service import IPaymuService, ipaymu_service
+
 @app.on_event("startup")
 async def startup_event():
-    """Initialize scheduler on startup."""
+    """Initialize scheduler and services on startup."""
+    # Initialize scheduler
     setup_scheduler(db)
     start_scheduler()
     logger.info("✓ Article scheduler initialized and started")
+
+    # Initialize iPaymu service
+    ipaymu_va = os.environ.get('IPAYMU_VA')
+    ipaymu_key = os.environ.get('IPAYMU_API_KEY')
+    ipaymu_env = os.environ.get('IPAYMU_ENV', 'sandbox')  # sandbox or production
+
+    if ipaymu_va and ipaymu_key:
+        global ipaymu_service
+        from services import ipaymu_service as ipaymu_module
+        ipaymu_module.ipaymu_service = IPaymuService(
+            va_number=ipaymu_va,
+            api_key=ipaymu_key,
+            environment=ipaymu_env
+        )
+        logger.info(f"✓ iPaymu service initialized ({ipaymu_env} mode)")
+    else:
+        logger.warning("⚠ iPaymu credentials not configured - giving module will not work")
 
 @app.on_event("shutdown")
 async def shutdown_db_client():
