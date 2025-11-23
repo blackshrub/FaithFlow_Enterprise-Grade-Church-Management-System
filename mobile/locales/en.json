@@ -37,8 +37,8 @@
   "tabs": {
     "home": "Home",
     "bible": "Bible",
+    "give": "Give",
     "events": "Events",
-    "groups": "Groups",
     "profile": "Profile"
   },
   "home": {
