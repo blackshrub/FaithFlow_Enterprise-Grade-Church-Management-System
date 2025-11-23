@@ -14,7 +14,8 @@
       "Bash(git mv:*)",
       "Bash(git rm:*)",
       "Bash(python3:*)",
-      "Bash(chmod:*)"
+      "Bash(chmod:*)",
+      "Bash(yarn add:*)"
     ],
     "deny": [],
     "ask": []

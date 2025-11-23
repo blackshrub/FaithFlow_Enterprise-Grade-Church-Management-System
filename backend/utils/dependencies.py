@@ -9,6 +9,7 @@ from utils.tenant_utils import get_session_church_id_from_user
 
 # Security scheme
 security = HTTPBearer()
+security_optional = HTTPBearer(auto_error=False)
 
 # MongoDB connection will be lazy-loaded
 _db_instance = None
@@ -174,9 +175,33 @@ async def require_super_admin(
     return current_user
 
 
+async def get_optional_user(
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security_optional),
+    database: AsyncIOMotorDatabase = Depends(get_db)
+) -> Optional[dict]:
+    """Get current user if token provided, None otherwise (for public endpoints)."""
+    if not credentials:
+        return None
+
+    try:
+        token = credentials.credentials
+        payload = decode_access_token(token)
+        user_id = payload.get("sub")
+        token_type = payload.get("type", "user")
+
+        if token_type == "api_key":
+            api_key = await database.api_keys.find_one({"id": user_id}, {"_id": 0})
+            return api_key if api_key and api_key.get("is_active") else None
+        else:
+            user = await database.users.find_one({"id": user_id}, {"_id": 0})
+            return user if user and user.get("is_active") else None
+    except:
+        return None
+
+
 def get_session_church_id(current_user: dict = Depends(get_current_user)) -> str:
     """Get session-scoped church_id from JWT token.
-    
+
     Wrapper around get_session_church_id_from_user that works with FastAPI Depends.
     """
     return get_session_church_id_from_user(current_user)

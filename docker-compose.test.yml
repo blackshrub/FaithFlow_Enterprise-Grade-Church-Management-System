@@ -1,0 +1,34 @@
+# Docker Compose for FaithFlow Test Environment
+#
+# This file provides:
+# - MongoDB test database (port 27018 to avoid conflicts)
+# - Isolated from production data
+# - Clean slate for each test run
+#
+# Usage:
+#   docker-compose -f docker-compose.test.yml up -d     # Start test DB
+#   docker-compose -f docker-compose.test.yml down -v   # Stop and clean
+
+version: '3.8'
+
+services:
+  mongodb-test:
+    image: mongo:7.0
+    container_name: faithflow-test-db
+    ports:
+      - "27018:27017"  # Different port from production (27017)
+    environment:
+      MONGO_INITDB_DATABASE: faithflow_test
+    volumes:
+      # Use temporary volume (data doesn't persist between runs)
+      - test-mongo-data:/data/db
+    command: mongod --quiet --logpath /dev/null
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  test-mongo-data:
+    driver: local

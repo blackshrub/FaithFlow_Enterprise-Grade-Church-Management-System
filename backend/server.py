@@ -8,10 +8,10 @@ from pathlib import Path
 
 # Import routes
 from routes import (
-    auth, churches, members, settings, import_export, photo_document_sim, 
+    auth, churches, members, settings, import_export, photo_document_sim,
     seat_layouts, events, bible, devotions, webhooks, api_keys,
     status_rules, status_conflicts, status_history, member_status_automation, public_members,
-    counseling_admin, counseling_public, kiosk, user_management
+    counseling_admin, counseling_public, kiosk, user_management, files
 )
 
 # Import accounting routes (v1)
@@ -78,6 +78,7 @@ api_router.include_router(seat_layouts.router)
 api_router.include_router(events.router)
 api_router.include_router(bible.router)
 api_router.include_router(devotions.router)
+api_router.include_router(files.router)
 
 # Public API (no auth required)
 app.include_router(public_members.router)

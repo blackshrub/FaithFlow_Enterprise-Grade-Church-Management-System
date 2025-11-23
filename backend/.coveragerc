@@ -1,0 +1,56 @@
+# Coverage.py configuration for FaithFlow backend testing
+
+[run]
+source = .
+omit =
+    */tests/*
+    */venv/*
+    */__pycache__/*
+    */site-packages/*
+    */migrations/*
+    conftest.py
+    server.py
+    # Test-only files
+    *_test.py
+    backend_test.py
+    articles_test.py
+    prayer_requests_test.py
+
+[report]
+precision = 2
+show_missing = True
+skip_covered = False
+skip_empty = True
+
+# Fail if coverage is below 60%
+fail_under = 60
+
+exclude_lines =
+    # Standard pragma
+    pragma: no cover
+
+    # Don't complain about missing debug-only code
+    def __repr__
+    def __str__
+
+    # Don't complain if tests don't hit defensive assertion code
+    raise AssertionError
+    raise NotImplementedError
+
+    # Don't complain if non-runnable code isn't run
+    if __name__ == .__main__.:
+    if TYPE_CHECKING:
+
+    # Don't complain about abstract methods
+    @abstractmethod
+    @abc.abstractmethod
+
+    # Don't complain about pass statements
+    pass
+
+[html]
+directory = htmlcov
+title = FaithFlow Backend Code Coverage
+
+[xml]
+output = coverage.xml
