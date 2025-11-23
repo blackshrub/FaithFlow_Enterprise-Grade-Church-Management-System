@@ -163,3 +163,21 @@ class IPaymuCallback(BaseModel):
     buyer_phone: Optional[str] = None
     buyer_email: Optional[str] = None
     reference_id: Optional[str] = None  # Our transaction ID
+
+
+class ManualBankAccount(BaseModel):
+    """Manual bank account for offline giving."""
+    bank_name: str
+    account_number: str
+    account_holder: str
+    branch: Optional[str] = None
+
+
+class GivingConfig(BaseModel):
+    """Giving configuration for mobile app."""
+    online_enabled: bool
+    provider: Optional[str] = None
+    supported_methods: List[str] = []
+    manual_bank_accounts: List[ManualBankAccount] = []
+    currency: str = "IDR"
+    minimum_amount: Decimal = Field(default=Decimal("10000"), description="Minimum giving amount")

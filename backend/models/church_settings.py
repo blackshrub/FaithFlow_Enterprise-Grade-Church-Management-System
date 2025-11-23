@@ -44,6 +44,24 @@ class ChurchSettingsBase(BaseModel):
         description="Last time status automation was executed"
     )
 
+    # Payment Gateway Configuration
+    payment_online_enabled: bool = Field(
+        default=False,
+        description="Enable online payment gateway (if False, show manual payment only)"
+    )
+    payment_provider: Optional[Literal['ipaymu', 'xendit', 'midtrans', 'stripe']] = Field(
+        default='ipaymu',
+        description="Payment gateway provider"
+    )
+    payment_provider_config: dict = Field(
+        default_factory=dict,
+        description="Provider-specific configuration (API keys, VA numbers, etc.)"
+    )
+    payment_manual_bank_accounts: list = Field(
+        default_factory=list,
+        description="Manual bank account list for offline giving (when online disabled)"
+    )
+
 
 class ChurchSettingsCreate(ChurchSettingsBase):
     church_id: str
@@ -65,6 +83,10 @@ class ChurchSettingsUpdate(BaseModel):
     status_automation_enabled: Optional[bool] = None
     status_automation_schedule: Optional[str] = None
     last_status_automation_run: Optional[datetime] = None
+    payment_online_enabled: Optional[bool] = None
+    payment_provider: Optional[Literal['ipaymu', 'xendit', 'midtrans', 'stripe']] = None
+    payment_provider_config: Optional[dict] = None
+    payment_manual_bank_accounts: Optional[list] = None
 
 
 class ChurchSettings(ChurchSettingsBase):

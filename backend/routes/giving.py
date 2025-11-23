@@ -21,14 +21,85 @@ from models.giving import (
     GivingPaymentIntentResponse,
     GivingTransactionResponse,
     GivingHistoryResponse,
-    IPaymuCallback
+    IPaymuCallback,
+    GivingConfig,
+    ManualBankAccount,
 )
 from utils.dependencies import get_db, get_current_user, get_session_church_id
-from services.ipaymu_service import get_ipaymu_service
+from services.payments import get_payment_provider, PaymentMethod
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/giving", tags=["Giving"])
+
+
+# ===========================
+# GIVING CONFIGURATION
+# ===========================
+
+@router.get("/config", response_model=GivingConfig)
+async def get_giving_config(
+    current_user: dict = Depends(get_current_user),
+    db: AsyncIOMotorDatabase = Depends(get_db)
+):
+    """
+    Get giving configuration for current church.
+
+    Returns payment settings, supported methods, and manual bank accounts.
+    Used by mobile app to determine payment flow.
+    """
+    church_id = get_session_church_id(current_user)
+
+    # Get church settings
+    settings = await db.church_settings.find_one({"church_id": church_id})
+
+    if not settings:
+        # Return default config (online disabled)
+        return GivingConfig(
+            online_enabled=False,
+            provider=None,
+            supported_methods=[],
+            manual_bank_accounts=[],
+            currency="IDR",
+            minimum_amount=Decimal("10000")
+        )
+
+    # Extract payment configuration
+    online_enabled = settings.get("payment_online_enabled", False)
+    provider_name = settings.get("payment_provider")
+    provider_config = settings.get("payment_provider_config", {})
+    manual_accounts_data = settings.get("payment_manual_bank_accounts", [])
+    currency = settings.get("currency", "IDR")
+
+    # Parse manual bank accounts
+    manual_accounts = [
+        ManualBankAccount(**account) for account in manual_accounts_data
+    ]
+
+    # Get supported payment methods if online enabled
+    supported_methods = []
+    if online_enabled and provider_name:
+        try:
+            provider = get_payment_provider(
+                payment_online_enabled=online_enabled,
+                payment_provider=provider_name,
+                payment_provider_config=provider_config,
+                environment="production"  # TODO: Get from env
+            )
+
+            if provider:
+                supported_methods = [method.value for method in provider.get_supported_methods()]
+        except Exception as e:
+            logger.error(f"Failed to get payment provider: {e}")
+
+    return GivingConfig(
+        online_enabled=online_enabled,
+        provider=provider_name if online_enabled else None,
+        supported_methods=supported_methods,
+        manual_bank_accounts=manual_accounts,
+        currency=currency,
+        minimum_amount=Decimal("10000")
+    )
 
 
 # ===========================
@@ -233,32 +304,74 @@ async def submit_giving(
 
     await db.giving_transactions.insert_one(transaction)
 
-    # Create payment with iPaymu
-    ipaymu = get_ipaymu_service()
+    # Get church payment settings
+    church_settings = await db.church_settings.find_one({"church_id": church_id})
+
+    if not church_settings:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Church settings not found"
+        )
+
+    # Check if online payment is enabled
+    online_enabled = church_settings.get("payment_online_enabled", False)
+
+    if not online_enabled:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Online payment is disabled. Please use manual bank transfer."
+        )
+
+    # Get payment provider
+    provider_name = church_settings.get("payment_provider")
+    provider_config = church_settings.get("payment_provider_config", {})
+
+    provider = get_payment_provider(
+        payment_online_enabled=online_enabled,
+        payment_provider=provider_name,
+        payment_provider_config=provider_config,
+        environment="production"  # TODO: Get from env
+    )
+
+    if not provider:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Payment provider not configured"
+        )
 
     # Build callback URLs
-    base_url = request.url_for("ipaymu_callback").replace("http://", "https://")
-    notify_url = str(base_url)
+    base_url = str(request.base_url).replace("http://", "https://")
+    notify_url = f"{base_url}api/giving/webhook/{provider.provider_name}"
     return_url = f"faithflow://giving/success?transaction_id={transaction_id}"
     cancel_url = f"faithflow://giving/cancelled?transaction_id={transaction_id}"
 
-    success, payment_data, error = await ipaymu.create_payment(
+    # Map payment method string to enum
+    try:
+        payment_method_enum = PaymentMethod(giving_data.payment_method)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid payment method: {giving_data.payment_method}"
+        )
+
+    # Create payment
+    payment_result = await provider.create_payment(
         transaction_id=transaction_id,
-        member_name=member_name,
-        member_phone=member_phone,
-        member_email=member_email,
+        customer_name=member_name,
+        customer_phone=member_phone,
+        customer_email=member_email,
         amount=giving_data.amount,
-        payment_method=giving_data.payment_method,
-        fund_name=fund.get("name"),
+        payment_method=payment_method_enum,
+        description=fund.get("name"),
         notify_url=notify_url,
         return_url=return_url,
         cancel_url=cancel_url,
         expired_duration=24
     )
 
-    if not success:
+    if not payment_result.success:
         # Payment creation failed
-        logger.error(f"iPaymu payment creation failed: {error}")
+        logger.error(f"Payment creation failed: {payment_result.error_message}")
 
         # Update transaction status
         await db.giving_transactions.update_one(
@@ -273,7 +386,7 @@ async def submit_giving(
 
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Payment gateway error: {error}"
+            detail=f"Payment gateway error: {payment_result.error_message}"
         )
 
     # Update transaction with payment data
@@ -281,11 +394,11 @@ async def submit_giving(
         {"id": transaction_id},
         {
             "$set": {
-                "ipaymu_transaction_id": payment_data.get("transaction_id"),
-                "ipaymu_session_id": payment_data.get("session_id"),
-                "ipaymu_payment_url": payment_data.get("payment_url"),
-                "ipaymu_va_number": payment_data.get("va_number"),
-                "ipaymu_qr_string": payment_data.get("qr_string"),
+                "ipaymu_transaction_id": payment_result.transaction_id,
+                "ipaymu_session_id": payment_result.session_id,
+                "ipaymu_payment_url": payment_result.payment_url,
+                "ipaymu_va_number": payment_result.va_number,
+                "ipaymu_qr_string": payment_result.qr_string,
                 "payment_status": "processing",
                 "updated_at": datetime.utcnow()
             }
@@ -293,15 +406,16 @@ async def submit_giving(
     )
 
     # Get payment instructions
-    instructions = ipaymu.get_payment_instructions(giving_data.payment_method)
+    language = church_settings.get("default_language", "id")
+    instructions = provider.get_payment_instructions(payment_method_enum, language)
 
     logger.info(f"Giving transaction created: {transaction_id} for member {member_id}")
 
     return GivingPaymentIntentResponse(
         transaction_id=transaction_id,
-        payment_url=payment_data.get("payment_url"),
-        va_number=payment_data.get("va_number"),
-        qr_string=payment_data.get("qr_string"),
+        payment_url=payment_result.payment_url,
+        va_number=payment_result.va_number,
+        qr_string=payment_result.qr_string,
         amount=giving_data.amount,
         expired_at=transaction["expired_at"],
         payment_method=giving_data.payment_method,
@@ -431,74 +545,91 @@ async def get_giving_transaction(
 
 
 # ===========================
-# IPAYMU CALLBACK/WEBHOOK
+# PAYMENT WEBHOOK
 # ===========================
 
-@router.post("/ipaymu/callback")
-async def ipaymu_callback(
+@router.post("/webhook/{provider_name}")
+async def payment_webhook(
+    provider_name: str,
     request: Request,
     signature: Optional[str] = Header(None),
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """
-    iPaymu payment notification callback.
+    Payment provider webhook/callback.
 
-    Called by iPaymu when payment status changes.
-    Verifies signature and updates transaction status.
+    Called by payment gateway when payment status changes.
+    Supports multiple providers through abstraction layer.
     """
     try:
         # Get callback data
         callback_data = await request.json()
 
-        logger.info(f"iPaymu callback received: {callback_data}")
+        logger.info(f"{provider_name} webhook received: {callback_data}")
 
-        # Verify signature
-        ipaymu = get_ipaymu_service()
-
-        if signature:
-            is_valid = ipaymu.verify_callback_signature(callback_data, signature)
-            if not is_valid:
-                logger.warning("Invalid iPaymu callback signature")
-                raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="Invalid signature"
-                )
-
-        # Extract data
-        reference_id = callback_data.get("reference_id")
-        ipaymu_status = callback_data.get("status")
-        ipaymu_status_desc = callback_data.get("status_desc")
-        paid_amount = callback_data.get("amount")
+        # Get church from transaction (we need to look up church settings)
+        # First, extract reference_id from callback to find the transaction
+        reference_id = callback_data.get("reference_id") or callback_data.get("referenceId")
 
         if not reference_id:
-            logger.error("No reference_id in callback")
+            logger.error("No reference_id in webhook")
             return {"status": "error", "message": "No reference_id"}
 
-        # Find transaction
+        # Find transaction to get church_id
         transaction = await db.giving_transactions.find_one({"id": reference_id})
 
         if not transaction:
             logger.error(f"Transaction not found: {reference_id}")
             return {"status": "error", "message": "Transaction not found"}
 
-        # Map iPaymu status to our status
-        # iPaymu status codes: 0 = pending, 1 = success, -1 = failed, 2 = expired
-        status_map = {
-            "0": "pending",
-            "1": "success",
-            "-1": "failed",
-            "2": "expired"
-        }
+        church_id = transaction.get("church_id")
 
-        new_status = status_map.get(str(ipaymu_status), "pending")
+        # Get church settings to initialize provider
+        church_settings = await db.church_settings.find_one({"church_id": church_id})
+
+        if not church_settings:
+            logger.error(f"Church settings not found for {church_id}")
+            return {"status": "error", "message": "Church settings not found"}
+
+        # Get payment provider
+        provider_config = church_settings.get("payment_provider_config", {})
+
+        provider = get_payment_provider(
+            payment_online_enabled=True,
+            payment_provider=provider_name,
+            payment_provider_config=provider_config,
+            environment="production"
+        )
+
+        if not provider:
+            logger.error(f"Payment provider {provider_name} not configured")
+            return {"status": "error", "message": "Provider not configured"}
+
+        # Verify signature if provided
+        if signature:
+            is_valid = provider.verify_webhook_signature(callback_data, signature)
+            if not is_valid:
+                logger.warning(f"Invalid {provider_name} webhook signature")
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Invalid signature"
+                )
+
+        # Parse webhook payload into standardized format
+        parsed_data = provider.parse_webhook_payload(callback_data)
+
+        # Extract standardized data
+        reference_id = parsed_data.get("reference_id")
+        payment_status = parsed_data.get("status")
+        amount = parsed_data.get("amount")
 
         # Update transaction
         update_data = {
-            "payment_status": new_status,
+            "payment_status": payment_status.value if hasattr(payment_status, "value") else str(payment_status),
             "updated_at": datetime.utcnow()
         }
 
-        if new_status == "success":
+        if payment_status.value == "success":
             update_data["paid_at"] = datetime.utcnow()
 
         await db.giving_transactions.update_one(
@@ -506,13 +637,13 @@ async def ipaymu_callback(
             {"$set": update_data}
         )
 
-        logger.info(f"Transaction {reference_id} updated to status: {new_status}")
+        logger.info(f"Transaction {reference_id} updated to status: {payment_status}")
 
         # TODO: Send WhatsApp notification to member
         # TODO: Record in accounting journal if success
 
-        return {"status": "success", "message": "Callback processed"}
+        return {"status": "success", "message": "Webhook processed"}
 
     except Exception as e:
-        logger.error(f"iPaymu callback error: {e}")
+        logger.error(f"{provider_name} webhook error: {e}")
         return {"status": "error", "message": str(e)}
