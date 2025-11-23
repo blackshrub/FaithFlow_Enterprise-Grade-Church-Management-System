@@ -1,0 +1,32 @@
+[Unit]
+Description=FaithFlow Frontend (React Development Server)
+After=network.target
+
+[Service]
+Type=simple
+User=root
+Group=root
+WorkingDirectory=/opt/faithflow/frontend
+
+# Environment
+Environment="PORT=3000"
+Environment="HOST=0.0.0.0"
+Environment="NODE_ENV=development"
+
+# Command
+ExecStart=/usr/bin/yarn start
+
+# Restart policy
+Restart=always
+RestartSec=5
+
+# Logging - redirect to /var/log for tail access
+StandardOutput=append:/var/log/faithflow/frontend.out.log
+StandardError=append:/var/log/faithflow/frontend.err.log
+
+# Security (optional hardening)
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,31 @@
+[Unit]
+Description=FaithFlow Backend API (FastAPI/Uvicorn)
+After=network.target mongodb.service
+Wants=mongodb.service
+
+[Service]
+Type=simple
+User=root
+Group=root
+WorkingDirectory=/opt/faithflow/backend
+
+# Environment
+Environment="PYTHONUNBUFFERED=1"
+
+# Command
+ExecStart=/opt/faithflow/backend/venv/bin/uvicorn server:app --host 0.0.0.0 --port 8001
+
+# Restart policy
+Restart=always
+RestartSec=5
+
+# Logging - redirect to /var/log for tail access
+StandardOutput=append:/var/log/faithflow/backend.out.log
+StandardError=append:/var/log/faithflow/backend.err.log
+
+# Security (optional hardening)
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
