@@ -92,10 +92,11 @@ export const QUERY_KEYS = {
   ],
 
   // Giving
-  GIVING_CONFIG: (churchId: string) => ['giving', 'config', churchId],
-  GIVING_FUNDS: (churchId: string) => ['giving', 'funds', churchId],
-  GIVING_HISTORY: (memberId: string) => ['giving', 'history', memberId],
-  GIVING_TRANSACTION: (id: string) => ['giving', 'transaction', id],
+  FUNDS: ['funds'],
+  PAYMENT_CONFIG: ['payment', 'config'],
+  GIVING_HISTORY: ['giving', 'history'],
+  GIVING_SUMMARY: ['giving', 'summary'],
+  TRANSACTION_DETAIL: ['transaction', 'detail'],
 
   // Events
   EVENTS_UPCOMING: ['events', 'upcoming'],
@@ -127,7 +128,7 @@ export const QUERY_KEYS = {
 // Cache times
 export const CACHE_TIMES = {
   BIBLE: 1000 * 60 * 60 * 24 * 7, // 1 week (rarely changes)
-  GIVING_CONFIG: 1000 * 60 * 10, // 10 minutes
+  GIVING: 1000 * 60 * 5, // 5 minutes
   EVENTS: 1000 * 60 * 5, // 5 minutes
   GROUPS: 1000 * 60 * 5, // 5 minutes
   PROFILE: 1000 * 60 * 30, // 30 minutes

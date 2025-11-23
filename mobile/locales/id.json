@@ -138,8 +138,11 @@
     "funds": {
       "generalOffering": "Persembahan Umum",
       "tithe": "Persepuluhan",
+      "offering": "Persembahan",
       "mission": "Misi",
-      "buildingFund": "Dana Pembangunan",
+      "building": "Dana Pembangunan",
+      "special": "Dana Khusus",
+      "other": "Lainnya",
       "loadingFunds": "Memuat dana...",
       "loadFundsError": "Gagal memuat dana"
     },

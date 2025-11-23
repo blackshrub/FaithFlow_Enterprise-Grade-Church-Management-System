@@ -138,8 +138,11 @@
     "funds": {
       "generalOffering": "General Offering",
       "tithe": "Tithe",
+      "offering": "Offering",
       "mission": "Mission",
-      "buildingFund": "Building Fund",
+      "building": "Building Fund",
+      "special": "Special Fund",
+      "other": "Other",
       "loadingFunds": "Loading funds...",
       "loadFundsError": "Failed to load funds"
     },
