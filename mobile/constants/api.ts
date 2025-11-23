@@ -98,8 +98,9 @@ export const QUERY_KEYS = {
   GIVING_TRANSACTION: (id: string) => ['giving', 'transaction', id],
 
   // Events
-  EVENTS: (churchId: string) => ['events', churchId],
-  EVENT: (id: string) => ['event', id],
+  EVENTS_UPCOMING: ['events', 'upcoming'],
+  EVENTS_PAST: ['events', 'past'],
+  EVENT_DETAIL: ['event', 'detail'],
   MY_RSVPS: (memberId: string) => ['rsvps', memberId],
 
   // Groups
