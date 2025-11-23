@@ -1,52 +1,169 @@
 /**
  * Bible Reader Screen
  *
- * Features:
- * - Bible version selector
- * - Book/Chapter navigation
- * - FlashList for smooth scrolling
- * - Bookmarks and highlights
- * - Reading history
+ * YouVersion-inspired reading experience:
+ * - Clean, distraction-free reading
+ * - Smooth scrolling with FlashList
+ * - Tap to highlight verses
+ * - Quick book/chapter navigation
+ * - Reading preferences (font size, theme)
  */
 
-import React from 'react';
-import { View, ScrollView } from 'react-native';
+import React, { useState } from 'react';
+import { View, Pressable, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
+import { BookOpen, ChevronLeft, ChevronRight, Settings } from 'lucide-react-native';
 
 import { Text } from '@/components/ui/text';
 import { Heading } from '@/components/ui/heading';
-import { VStack } from '@/components/ui/vstack';
-import { Card } from '@/components/ui/card';
+import { HStack } from '@/components/ui/hstack';
+import { Icon } from '@/components/ui/icon';
+
+import { ChapterReader } from '@/components/bible/ChapterReader';
+import { BookSelectorModal } from '@/components/bible/BookSelectorModal';
+import { useBibleChapter, useBibleBooks } from '@/hooks/useBible';
+import { useBibleStore } from '@/stores/bibleStore';
+import { colors, touchTargets } from '@/constants/theme';
 
 export default function BibleScreen() {
   const { t } = useTranslation();
+  const [isBookSelectorOpen, setIsBookSelectorOpen] = useState(false);
+
+  const { currentVersion, currentBook, currentChapter, setCurrentPosition } = useBibleStore();
+
+  // Fetch current chapter
+  const { data: verses, isLoading: isLoadingChapter } = useBibleChapter(
+    currentVersion,
+    currentBook,
+    currentChapter
+  );
+
+  // Fetch books for navigation
+  const { data: books = [] } = useBibleBooks(currentVersion);
+
+  // Get current book info for chapter navigation
+  const currentBookInfo = books.find((b) => b.name === currentBook);
+  const totalChapters = currentBookInfo?.chapters || 1;
+
+  // Navigation handlers
+  const handlePreviousChapter = () => {
+    if (currentChapter > 1) {
+      setCurrentPosition(currentVersion, currentBook, currentChapter - 1);
+    }
+  };
+
+  const handleNextChapter = () => {
+    if (currentChapter < totalChapters) {
+      setCurrentPosition(currentVersion, currentBook, currentChapter + 1);
+    }
+  };
+
+  const handleSelectChapter = (book: string, chapter: number) => {
+    setCurrentPosition(currentVersion, book, chapter);
+  };
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50" edges={['top']}>
-      <View className="px-6 pt-6 pb-4">
-        <Heading size="2xl" className="text-gray-900">
-          {t('bible.title')}
-        </Heading>
-        <Text className="text-gray-600 mt-1" size="md">
-          {t('bible.subtitle')}
-        </Text>
+    <SafeAreaView className="flex-1 bg-white" edges={['top']}>
+      {/* Header */}
+      <View className="px-4 py-3 border-b border-gray-200">
+        <HStack className="items-center justify-between">
+          {/* Book & Chapter */}
+          <Pressable
+            onPress={() => setIsBookSelectorOpen(true)}
+            className="flex-1 active:opacity-60"
+          >
+            <HStack space="sm" className="items-center">
+              <Icon as={BookOpen} size="md" className="text-primary-500" />
+              <View className="flex-1">
+                <Heading size="md" className="text-gray-900">
+                  {currentBook} {currentChapter}
+                </Heading>
+                <Text size="xs" className="text-gray-500">
+                  {currentVersion} • {totalChapters} chapters
+                </Text>
+              </View>
+            </HStack>
+          </Pressable>
+
+          {/* Navigation */}
+          <HStack space="xs">
+            {/* Previous Chapter */}
+            <Pressable
+              onPress={handlePreviousChapter}
+              disabled={currentChapter <= 1}
+              className="active:opacity-60"
+              style={{
+                width: touchTargets.comfortable,
+                height: touchTargets.comfortable,
+                justifyContent: 'center',
+                alignItems: 'center',
+                borderRadius: touchTargets.comfortable / 2,
+                backgroundColor: currentChapter <= 1 ? colors.gray[100] : colors.primary[50],
+              }}
+            >
+              <Icon
+                as={ChevronLeft}
+                size="lg"
+                className={currentChapter <= 1 ? 'text-gray-300' : 'text-primary-500'}
+              />
+            </Pressable>
+
+            {/* Next Chapter */}
+            <Pressable
+              onPress={handleNextChapter}
+              disabled={currentChapter >= totalChapters}
+              className="active:opacity-60"
+              style={{
+                width: touchTargets.comfortable,
+                height: touchTargets.comfortable,
+                justifyContent: 'center',
+                alignItems: 'center',
+                borderRadius: touchTargets.comfortable / 2,
+                backgroundColor:
+                  currentChapter >= totalChapters ? colors.gray[100] : colors.primary[50],
+              }}
+            >
+              <Icon
+                as={ChevronRight}
+                size="lg"
+                className={
+                  currentChapter >= totalChapters ? 'text-gray-300' : 'text-primary-500'
+                }
+              />
+            </Pressable>
+          </HStack>
+        </HStack>
       </View>
 
-      <ScrollView className="flex-1 px-6">
-        <Card className="p-6 mb-4">
-          <VStack space="md">
-            <Heading size="lg">Coming Soon</Heading>
-            <Text className="text-gray-600">
-              Bible reader with FlashList, bookmarks, and highlights will be
-              implemented here.
-            </Text>
-          </VStack>
-        </Card>
+      {/* Chapter Content */}
+      {isLoadingChapter ? (
+        <View className="flex-1 items-center justify-center">
+          <ActivityIndicator size="large" color={colors.primary[500]} />
+          <Text className="text-gray-500 mt-4">Loading chapter...</Text>
+        </View>
+      ) : verses && verses.length > 0 ? (
+        <ChapterReader
+          verses={verses}
+          version={currentVersion}
+          book={currentBook}
+          chapter={currentChapter}
+        />
+      ) : (
+        <View className="flex-1 items-center justify-center px-6">
+          <Text className="text-gray-500 text-center">
+            Chapter not found. Please select another chapter.
+          </Text>
+        </View>
+      )}
 
-        {/* Bottom padding for tab bar */}
-        <View style={{ height: 100 }} />
-      </ScrollView>
+      {/* Book Selector Modal */}
+      <BookSelectorModal
+        isOpen={isBookSelectorOpen}
+        onClose={() => setIsBookSelectorOpen(false)}
+        books={books}
+        onSelectChapter={handleSelectChapter}
+      />
     </SafeAreaView>
   );
 }
