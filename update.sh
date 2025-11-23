@@ -126,10 +126,10 @@ else
     warn "Some files may be missing. Installation may be incomplete."
 fi
 
-if supervisorctl status backend > /dev/null 2>&1; then
-    success "Backend service exists"
+if systemctl is-active --quiet faithflow-backend.service; then
+    success "Backend service is running"
 else
-    warn "Backend service not configured"
+    warn "Backend service not running or not configured"
 fi
 echo ""
 sleep 1
@@ -273,19 +273,19 @@ progress
 echo -e "${MAGENTA}🚀 Step 9/10: Restarting backend service...${NC}"
 progress
 
-info "Stopping backend service..."
-supervisorctl stop backend > /dev/null 2>&1 || true
-sleep 2
+info "Reloading systemd daemon..."
+systemctl daemon-reload
+sleep 1
 
-info "Starting backend service with updated code..."
-supervisorctl start backend > /dev/null 2>&1 || supervisorctl restart backend > /dev/null 2>&1
+info "Restarting backend service with updated code..."
+systemctl restart faithflow-backend.service
 sleep 5
 
-if supervisorctl status backend | grep -q "RUNNING"; then
+if systemctl is-active --quiet faithflow-backend.service; then
     success "Backend restarted successfully!"
     echo -e "${GREEN}   ✅ New code is now active!${NC}"
 else
-    warn "Backend may not be running. Check: sudo supervisorctl status backend"
+    warn "Backend may not be running. Check: sudo systemctl status faithflow-backend"
 fi
 
 echo ""
@@ -320,9 +320,9 @@ echo ""
 echo -e "${CYAN}╭─────────────────────────────────────────────────────────────────────╮${NC}"
 echo -e "${CYAN}│  ${WHITE}Useful Commands:${CYAN}                                                    │${NC}"
 echo -e "${CYAN}│                                                                     │${NC}"
-echo -e "${CYAN}│  📊 View logs:       ${WHITE}tail -f /var/log/supervisor/backend.out.log${CYAN}  │${NC}"
-echo -e "${CYAN}│  🔍 Check status:    ${WHITE}sudo supervisorctl status backend${CYAN}            │${NC}"
-echo -e "${CYAN}│  🔄 Restart backend: ${WHITE}sudo supervisorctl restart backend${CYAN}          │${NC}"
+echo -e "${CYAN}│  📊 View logs:       ${WHITE}tail -f /var/log/faithflow/backend.out.log${CYAN}   │${NC}"
+echo -e "${CYAN}│  🔍 Check status:    ${WHITE}sudo systemctl status faithflow-backend${CYAN}      │${NC}"
+echo -e "${CYAN}│  🔄 Restart backend: ${WHITE}sudo systemctl restart faithflow-backend${CYAN}    │${NC}"
 echo -e "${CYAN}│  🔄 Reload Nginx:    ${WHITE}sudo systemctl reload nginx${CYAN}                  │${NC}"
 echo -e "${CYAN}│  🌐 Access app:      ${WHITE}https://your-domain${CYAN}                          │${NC}"
 echo -e "${CYAN}│                                                                     │${NC}"

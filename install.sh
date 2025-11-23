@@ -166,11 +166,10 @@ echo ""
 sleep 1
 
 progress
-echo -e "${MAGENTA}${ROCKET} Step 7/14: Installing Supervisor...${NC}"
+echo -e "${MAGENTA}${ROCKET} Step 7/14: Preparing systemd service files...${NC}"
 progress
-info "Supervisor manages your services automatically..."
-apt install -y supervisor > /dev/null 2>&1
-success "Supervisor installed!"
+info "Systemd will manage your services automatically..."
+success "Systemd ready (built into Linux)!"
 echo ""
 sleep 1
 
@@ -332,7 +331,7 @@ echo ""
 sleep 1
 
 progress
-echo -e "${MAGENTA}${ROCKET} Step 12/14: Configuring services...${NC}"
+echo -e "${MAGENTA}${ROCKET} Step 12/14: Configuring services with systemd...${NC}"
 progress
 
 # Ask for backend port
@@ -348,54 +347,99 @@ if ! [[ "$BACKEND_PORT" =~ ^[0-9]+$ ]] || [ "$BACKEND_PORT" -lt 1024 ] || [ "$BA
     BACKEND_PORT=8001
 fi
 
-info "Setting up Supervisor to manage FaithFlow..."
+info "Setting up systemd to manage FaithFlow..."
 echo -e "${CYAN}   Backend will run on port: ${WHITE}$BACKEND_PORT${NC}"
 
-# Create supervisord.conf with correct paths and port
-# Note: Frontend is static files served by Nginx, only backend needs supervisor
-cat > /etc/supervisor/conf.d/faithflow.conf << SUPERVISOR_CONF
-[supervisord]
-nodaemon=false
+# Create log directory
+mkdir -p /var/log/faithflow
+chmod 755 /var/log/faithflow
 
-[unix_http_server]
-file=/var/run/supervisor.sock
-chmod=0700
+# Create systemd service file for backend
+cat > /etc/systemd/system/faithflow-backend.service << SYSTEMD_BACKEND
+[Unit]
+Description=FaithFlow Backend API (FastAPI/Uvicorn)
+After=network.target mongodb.service
+Wants=mongodb.service
 
-[supervisorctl]
-serverurl=unix:///var/run/supervisor.sock
+[Service]
+Type=simple
+User=root
+Group=root
+WorkingDirectory=/opt/faithflow/backend
+Environment="PYTHONUNBUFFERED=1"
+ExecStart=/opt/faithflow/backend/venv/bin/uvicorn server:app --host 0.0.0.0 --port $BACKEND_PORT
+Restart=always
+RestartSec=5
+StandardOutput=append:/var/log/faithflow/backend.out.log
+StandardError=append:/var/log/faithflow/backend.err.log
+NoNewPrivileges=true
+PrivateTmp=true
 
-[rpcinterface:supervisor]
-supervisor.rpcinterface_factory = supervisor.rpcinterface:make_main_rpcinterface
+[Install]
+WantedBy=multi-user.target
+SYSTEMD_BACKEND
 
-[program:backend]
-command=/opt/faithflow/backend/venv/bin/uvicorn server:app --host 0.0.0.0 --port $BACKEND_PORT
-directory=/opt/faithflow/backend
-autostart=true
-autorestart=true
-stdout_logfile=/var/log/supervisor/backend.out.log
-stderr_logfile=/var/log/supervisor/backend.err.log
-environment=PYTHONUNBUFFERED="1"
-SUPERVISOR_CONF
+# Create systemd service file for frontend (development mode)
+cat > /etc/systemd/system/faithflow-frontend.service << SYSTEMD_FRONTEND
+[Unit]
+Description=FaithFlow Frontend (React Development Server)
+After=network.target
 
-mkdir -p /var/log/supervisor
-touch /var/log/supervisor/backend.out.log
-touch /var/log/supervisor/backend.err.log
-touch /var/log/supervisor/frontend.out.log
-touch /var/log/supervisor/frontend.err.log
+[Service]
+Type=simple
+User=root
+Group=root
+WorkingDirectory=/opt/faithflow/frontend
+Environment="PORT=3000"
+Environment="HOST=0.0.0.0"
+Environment="NODE_ENV=development"
+ExecStart=/usr/bin/yarn start
+Restart=always
+RestartSec=5
+StandardOutput=append:/var/log/faithflow/frontend.out.log
+StandardError=append:/var/log/faithflow/frontend.err.log
+NoNewPrivileges=true
+PrivateTmp=true
 
-supervisorctl reread > /dev/null 2>&1
-supervisorctl update > /dev/null 2>&1
-success "Supervisor configured with /opt/faithflow paths!"
+[Install]
+WantedBy=multi-user.target
+SYSTEMD_FRONTEND
 
-# Start backend service
+# Install log rotation
+cat > /etc/logrotate.d/faithflow << LOGROTATE_CONF
+/var/log/faithflow/*.log {
+    daily
+    rotate 30
+    compress
+    delaycompress
+    missingok
+    notifempty
+    create 0644 root root
+    dateext
+    dateformat -%Y%m%d
+    postrotate
+        systemctl reload-or-restart faithflow-backend.service > /dev/null 2>&1 || true
+        systemctl reload-or-restart faithflow-frontend.service > /dev/null 2>&1 || true
+    endscript
+}
+LOGROTATE_CONF
+
+# Reload systemd
+systemctl daemon-reload
+success "Systemd services configured!"
+
+# Enable and start backend service
+info "Enabling backend service to start on boot..."
+systemctl enable faithflow-backend.service > /dev/null 2>&1
+
 info "Starting backend service..."
-supervisorctl start backend > /dev/null 2>&1 || supervisorctl restart backend > /dev/null 2>&1
+systemctl start faithflow-backend.service
 sleep 3
 
-if supervisorctl status backend | grep -q "RUNNING"; then
+if systemctl is-active --quiet faithflow-backend.service; then
     success "Backend service started successfully!"
 else
-    warn "Backend may need manual start. Check: sudo supervisorctl status"
+    warn "Backend may need manual start. Check: sudo systemctl status faithflow-backend"
 fi
 
 echo ""
@@ -638,7 +682,7 @@ echo -e "${CYAN}│  ${CHECK} Python 3.11      - Backend engine                 
 echo -e "${CYAN}│  ${CHECK} Node.js 20.x     - Frontend framework                                 │${NC}"
 echo -e "${CYAN}│  ${CHECK} MongoDB 7.0      - Database                                          │${NC}"
 echo -e "${CYAN}│  ${CHECK} Nginx            - Web server                                        │${NC}"
-echo -e "${CYAN}│  ${CHECK} Supervisor       - Service manager                                   │${NC}"
+echo -e "${CYAN}│  ${CHECK} Systemd          - Service manager                                   │${NC}"
 echo -e "${CYAN}│  ${CHECK} UFW Firewall     - Security                                          │${NC}"
 echo -e "${CYAN}│                                                                             │${NC}"
 echo -e "${CYAN}╰─────────────────────────────────────────────────────────────────────╯${NC}"
@@ -652,7 +696,7 @@ echo -e "${YELLOW}│     ${WHITE}nano /opt/faithflow/backend/.env${YELLOW}     
 echo -e "${YELLOW}│     Set MONGO_URL and JWT_SECRET_KEY                                    │${NC}"
 echo -e "${YELLOW}│                                                                             │${NC}"
 echo -e "${YELLOW}│  2️⃣  Restart services to apply configuration:                            │${NC}"
-echo -e "${YELLOW}│     ${WHITE}sudo supervisorctl restart backend${YELLOW}                                 │${NC}"
+echo -e "${YELLOW}│     ${WHITE}sudo systemctl restart faithflow-backend${YELLOW}                          │${NC}"
 echo -e "${YELLOW}│                                                                             │${NC}"
 echo -e "${YELLOW}│  3️⃣  Access your application:                                            │${NC}"
 
@@ -700,9 +744,9 @@ cat << "EOF"
 │  📚  Need Help?                                                              │
 │                                                                             │
 │  Documentation: /opt/faithflow/INSTALLATION.md                            │
-│  Logs: tail -f /var/log/supervisor/backend.out.log                        │
-│  Status: sudo supervisorctl status                                        │
-│  Restart: sudo supervisorctl restart all                                  │
+│  Logs: tail -f /var/log/faithflow/backend.out.log                        │
+│  Status: sudo systemctl status faithflow-backend                          │
+│  Restart: sudo systemctl restart faithflow-backend                        │
 │                                                                             │
 ╰─────────────────────────────────────────────────────────────────────╯
 EOF
