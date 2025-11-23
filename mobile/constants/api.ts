@@ -110,8 +110,9 @@ export const QUERY_KEYS = {
   GROUP: (id: string) => ['group', id],
 
   // Prayer
-  PRAYER_REQUESTS: (churchId: string) => ['prayer', churchId],
-  MY_PRAYER_REQUESTS: (memberId: string) => ['prayer', 'my', memberId],
+  PRAYER_REQUESTS: ['prayer', 'requests'],
+  MY_PRAYER_REQUESTS: ['prayer', 'my'],
+  PRAYER_REQUEST_DETAIL: ['prayer', 'detail'],
 
   // Articles
   ARTICLES: (churchId: string) => ['articles', churchId],
@@ -131,5 +132,6 @@ export const CACHE_TIMES = {
   GIVING: 1000 * 60 * 5, // 5 minutes
   EVENTS: 1000 * 60 * 5, // 5 minutes
   GROUPS: 1000 * 60 * 5, // 5 minutes
+  PRAYER: 1000 * 60 * 3, // 3 minutes
   PROFILE: 1000 * 60 * 30, // 30 minutes
 };

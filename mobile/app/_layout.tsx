@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import { initializeI18n } from "@/i18n";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { ToastProvider } from "@/components/providers/ToastProvider";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -38,18 +39,20 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <QueryClientProvider client={queryClient}>
         <GluestackUIProvider mode={colorScheme ?? "light"}>
-          <BottomSheetModalProvider>
-            <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
-            <Stack
-              screenOptions={{
-                headerShown: false,
-                animation: "fade",
-              }}
-            >
-              <Stack.Screen name="(auth)" />
-              <Stack.Screen name="(tabs)" />
-            </Stack>
-          </BottomSheetModalProvider>
+          <ToastProvider>
+            <BottomSheetModalProvider>
+              <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
+              <Stack
+                screenOptions={{
+                  headerShown: false,
+                  animation: "fade",
+                }}
+              >
+                <Stack.Screen name="(auth)" />
+                <Stack.Screen name="(tabs)" />
+              </Stack>
+            </BottomSheetModalProvider>
+          </ToastProvider>
         </GluestackUIProvider>
       </QueryClientProvider>
     </GestureHandlerRootView>
