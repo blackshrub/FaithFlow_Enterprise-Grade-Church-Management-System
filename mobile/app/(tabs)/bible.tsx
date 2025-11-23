@@ -22,15 +22,18 @@ import { Icon } from '@/components/ui/icon';
 
 import { ChapterReader } from '@/components/bible/ChapterReader';
 import { BookSelectorModal } from '@/components/bible/BookSelectorModal';
+import { ReadingPreferencesModal } from '@/components/bible/ReadingPreferencesModal';
 import { useBibleChapter, useBibleBooks } from '@/hooks/useBible';
 import { useBibleStore } from '@/stores/bibleStore';
-import { colors, touchTargets } from '@/constants/theme';
+import { colors, touchTargets, readingThemes } from '@/constants/theme';
 
 export default function BibleScreen() {
   const { t } = useTranslation();
   const [isBookSelectorOpen, setIsBookSelectorOpen] = useState(false);
+  const [isPreferencesOpen, setIsPreferencesOpen] = useState(false);
 
-  const { currentVersion, currentBook, currentChapter, setCurrentPosition } = useBibleStore();
+  const { currentVersion, currentBook, currentChapter, setCurrentPosition, preferences } =
+    useBibleStore();
 
   // Fetch current chapter
   const { data: verses, isLoading: isLoadingChapter } = useBibleChapter(
@@ -63,10 +66,19 @@ export default function BibleScreen() {
     setCurrentPosition(currentVersion, book, chapter);
   };
 
+  const currentTheme = readingThemes[preferences.theme];
+
   return (
-    <SafeAreaView className="flex-1 bg-white" edges={['top']}>
+    <SafeAreaView
+      className="flex-1"
+      edges={['top']}
+      style={{ backgroundColor: currentTheme.background }}
+    >
       {/* Header */}
-      <View className="px-4 py-3 border-b border-gray-200">
+      <View
+        className="px-4 py-3 border-b"
+        style={{ borderBottomColor: currentTheme.verseNumber + '40' }}
+      >
         <HStack className="items-center justify-between">
           {/* Book & Chapter */}
           <Pressable
@@ -76,10 +88,10 @@ export default function BibleScreen() {
             <HStack space="sm" className="items-center">
               <Icon as={BookOpen} size="md" className="text-primary-500" />
               <View className="flex-1">
-                <Heading size="md" className="text-gray-900">
+                <Heading size="md" style={{ color: currentTheme.text }}>
                   {currentBook} {currentChapter}
                 </Heading>
-                <Text size="xs" className="text-gray-500">
+                <Text size="xs" style={{ color: currentTheme.verseNumber }}>
                   {currentVersion} • {totalChapters} chapters
                 </Text>
               </View>
@@ -132,15 +144,36 @@ export default function BibleScreen() {
                 }
               />
             </Pressable>
+
+            {/* Settings */}
+            <Pressable
+              onPress={() => setIsPreferencesOpen(true)}
+              className="active:opacity-60"
+              style={{
+                width: touchTargets.comfortable,
+                height: touchTargets.comfortable,
+                justifyContent: 'center',
+                alignItems: 'center',
+                borderRadius: touchTargets.comfortable / 2,
+                backgroundColor: colors.gray[100],
+              }}
+            >
+              <Icon as={Settings} size="lg" className="text-gray-600" />
+            </Pressable>
           </HStack>
         </HStack>
       </View>
 
       {/* Chapter Content */}
       {isLoadingChapter ? (
-        <View className="flex-1 items-center justify-center">
+        <View
+          className="flex-1 items-center justify-center"
+          style={{ backgroundColor: currentTheme.background }}
+        >
           <ActivityIndicator size="large" color={colors.primary[500]} />
-          <Text className="text-gray-500 mt-4">Loading chapter...</Text>
+          <Text className="mt-4" style={{ color: currentTheme.verseNumber }}>
+            Loading chapter...
+          </Text>
         </View>
       ) : verses && verses.length > 0 ? (
         <ChapterReader
@@ -150,8 +183,11 @@ export default function BibleScreen() {
           chapter={currentChapter}
         />
       ) : (
-        <View className="flex-1 items-center justify-center px-6">
-          <Text className="text-gray-500 text-center">
+        <View
+          className="flex-1 items-center justify-center px-6"
+          style={{ backgroundColor: currentTheme.background }}
+        >
+          <Text className="text-center" style={{ color: currentTheme.verseNumber }}>
             Chapter not found. Please select another chapter.
           </Text>
         </View>
@@ -163,6 +199,12 @@ export default function BibleScreen() {
         onClose={() => setIsBookSelectorOpen(false)}
         books={books}
         onSelectChapter={handleSelectChapter}
+      />
+
+      {/* Reading Preferences Modal */}
+      <ReadingPreferencesModal
+        isOpen={isPreferencesOpen}
+        onClose={() => setIsPreferencesOpen(false)}
       />
     </SafeAreaView>
   );

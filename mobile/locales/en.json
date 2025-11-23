@@ -171,11 +171,31 @@
     "selectChapter": "Select Chapter",
     "oldTestament": "Old Testament",
     "newTestament": "New Testament",
+    "chapters": "chapters",
     "search": "Search verses...",
+    "readingPreferences": "Reading Preferences",
     "fontSize": "Font Size",
+    "fontSizes": {
+      "small": "Small",
+      "medium": "Medium",
+      "large": "Large",
+      "xlarge": "X-Large"
+    },
     "theme": "Theme",
-    "light": "Light",
-    "dark": "Dark",
+    "themes": {
+      "light": "Light",
+      "dark": "Dark",
+      "sepia": "Sepia"
+    },
+    "themePreview": "Sample text preview",
+    "lineHeight": "Line Spacing",
+    "lineHeights": {
+      "compact": "Compact",
+      "normal": "Normal",
+      "relaxed": "Relaxed"
+    },
+    "preview": "Preview",
+    "sampleVerse": "For God so loved the world that he gave his one and only Son, that whoever believes in him shall not perish but have eternal life.",
     "bookmark": "Bookmark",
     "bookmarked": "Bookmarked",
     "share": "Share"

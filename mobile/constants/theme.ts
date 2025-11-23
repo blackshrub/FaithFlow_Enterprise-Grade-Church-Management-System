@@ -226,6 +226,46 @@ export const iconSizes = {
   xl: 48,
 };
 
+// Bible Reading Themes (YouVersion-inspired)
+export const readingThemes = {
+  light: {
+    background: '#ffffff',
+    text: '#111827',
+    verseNumber: '#6b7280',
+    highlight: {
+      yellow: '#fef3c7',
+      green: '#d1fae5',
+      blue: '#dbeafe',
+      pink: '#fce7f3',
+      orange: '#fed7aa',
+    },
+  },
+  dark: {
+    background: '#1f2937',
+    text: '#f9fafb',
+    verseNumber: '#9ca3af',
+    highlight: {
+      yellow: '#78350f',
+      green: '#064e3b',
+      blue: '#1e3a8a',
+      pink: '#831843',
+      orange: '#7c2d12',
+    },
+  },
+  sepia: {
+    background: '#f5f1e8',
+    text: '#3e3830',
+    verseNumber: '#78716c',
+    highlight: {
+      yellow: '#fef08a',
+      green: '#bbf7d0',
+      blue: '#bfdbfe',
+      pink: '#fbcfe8',
+      orange: '#fed7aa',
+    },
+  },
+};
+
 export default {
   colors,
   typography,
@@ -235,4 +275,5 @@ export default {
   animations,
   touchTargets,
   iconSizes,
+  readingThemes,
 };

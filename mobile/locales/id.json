@@ -171,11 +171,31 @@
     "selectChapter": "Pilih Pasal",
     "oldTestament": "Perjanjian Lama",
     "newTestament": "Perjanjian Baru",
+    "chapters": "pasal",
     "search": "Cari ayat...",
+    "readingPreferences": "Preferensi Baca",
     "fontSize": "Ukuran Font",
+    "fontSizes": {
+      "small": "Kecil",
+      "medium": "Sedang",
+      "large": "Besar",
+      "xlarge": "Sangat Besar"
+    },
     "theme": "Tema",
-    "light": "Terang",
-    "dark": "Gelap",
+    "themes": {
+      "light": "Terang",
+      "dark": "Gelap",
+      "sepia": "Sepia"
+    },
+    "themePreview": "Contoh teks pratinjau",
+    "lineHeight": "Jarak Baris",
+    "lineHeights": {
+      "compact": "Rapat",
+      "normal": "Normal",
+      "relaxed": "Longgar"
+    },
+    "preview": "Pratinjau",
+    "sampleVerse": "Karena begitu besar kasih Allah akan dunia ini, sehingga Ia telah mengaruniakan Anak-Nya yang tunggal, supaya setiap orang yang percaya kepada-Nya tidak binasa, melainkan beroleh hidup yang kekal.",
     "bookmark": "Tandai",
     "bookmarked": "Ditandai",
     "share": "Bagikan"

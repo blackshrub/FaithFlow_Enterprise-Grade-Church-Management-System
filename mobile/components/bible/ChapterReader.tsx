@@ -17,7 +17,7 @@ import * as Haptics from 'expo-haptics';
 
 import { Text } from '@/components/ui/text';
 import { useBibleStore } from '@/stores/bibleStore';
-import { colors, typography, spacing } from '@/constants/theme';
+import { colors, typography, spacing, readingThemes } from '@/constants/theme';
 import type { BibleVerse } from '@/types/api';
 
 interface ChapterReaderProps {
@@ -92,19 +92,12 @@ export function ChapterReader({
     ({ item }: { item: BibleVerse }) => {
       const highlight = getHighlight(version, book, chapter, item.verse);
       const isSelected = selectedVerse === item.verse;
-
-      const highlightColors = {
-        yellow: colors.warning[100],
-        green: colors.success[100],
-        blue: colors.primary[100],
-        pink: '#fce7f3',
-        orange: colors.secondary[100],
-      };
+      const currentTheme = readingThemes[preferences.theme];
 
       const backgroundColor = highlight
-        ? highlightColors[highlight.color]
+        ? currentTheme.highlight[highlight.color]
         : isSelected
-        ? colors.gray[100]
+        ? currentTheme.verseNumber + '20'
         : 'transparent';
 
       return (
@@ -134,7 +127,7 @@ export function ChapterReader({
                   styles.verseNumber,
                   {
                     fontSize: getFontSize() * 0.7,
-                    color: colors.gray[500],
+                    color: currentTheme.verseNumber,
                   },
                 ]}
               >
@@ -148,7 +141,7 @@ export function ChapterReader({
                   {
                     fontSize: getFontSize(),
                     lineHeight: getFontSize() * getLineHeight(),
-                    color: colors.gray[900],
+                    color: currentTheme.text,
                   },
                 ]}
               >
