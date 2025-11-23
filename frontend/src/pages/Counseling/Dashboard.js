@@ -1,15 +1,17 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Calendar, Clock, Users, AlertCircle } from 'lucide-react';
+import { Calendar, Clock, Users, AlertCircle, Plus } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
 import { useAppointments } from '../../hooks/useCounseling';
 import { format, parseISO, isAfter, startOfDay } from 'date-fns';
 import MemberAvatar from '../../components/MemberAvatar';
+import CreateAppointmentModal from '../../components/Counseling/CreateAppointmentModal';
 
 const CounselingDashboard = () => {
   const navigate = useNavigate();
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const today = startOfDay(new Date()).toISOString().split('T')[0];
   const nextWeek = new Date();
   nextWeek.setDate(nextWeek.getDate() + 7);
@@ -93,11 +95,17 @@ const CounselingDashboard = () => {
           <h1 className="text-3xl font-bold">Counseling & Prayer</h1>
           <p className="text-gray-500 mt-1">Dashboard</p>
         </div>
-        <Button onClick={() => navigate('/counseling/appointments/new')} disabled>
+        <Button onClick={() => setIsCreateModalOpen(true)}>
+          <Plus className="mr-2 h-4 w-4" />
           Create Appointment
-          <span className="ml-2 text-xs opacity-70">(Coming Soon)</span>
         </Button>
       </div>
+
+      {/* Create Appointment Modal */}
+      <CreateAppointmentModal
+        open={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+      />
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
