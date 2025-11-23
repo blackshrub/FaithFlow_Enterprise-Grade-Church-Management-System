@@ -51,6 +51,12 @@
       "night": "Good Night"
     },
     "quickActions": "Quick Actions",
+    "verseOfDay": "Verse of the Day",
+    "stats": {
+      "totalGiven": "Total Given",
+      "activePrayers": "Active Prayers",
+      "upcomingEvents": "Upcoming"
+    },
     "upcomingEvents": "Upcoming Events",
     "noEvents": "No upcoming events",
     "prayerRequests": "Prayer Requests",

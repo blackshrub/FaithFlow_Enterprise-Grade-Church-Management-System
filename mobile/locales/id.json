@@ -51,6 +51,12 @@
       "night": "Selamat Malam"
     },
     "quickActions": "Aksi Cepat",
+    "verseOfDay": "Ayat Hari Ini",
+    "stats": {
+      "totalGiven": "Total Persembahan",
+      "activePrayers": "Doa Aktif",
+      "upcomingEvents": "Mendatang"
+    },
     "upcomingEvents": "Acara Mendatang",
     "noEvents": "Tidak ada acara mendatang",
     "prayerRequests": "Permintaan Doa",
