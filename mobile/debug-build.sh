@@ -54,12 +54,17 @@ echo "📝 Step 6: Current babel.config.js:"
 cat babel.config.js
 echo ""
 
-# Step 7: Verify babel plugin
-echo "🔍 Step 7: Checking Reanimated Babel plugin..."
-if [ -f "node_modules/react-native-reanimated/plugin.js" ]; then
-    echo "✅ Reanimated Babel plugin found"
+# Step 7: Verify Reanimated plugin file
+echo "🔍 Step 7: Checking Reanimated plugin structure..."
+if [ -f "node_modules/react-native-reanimated/plugin/build/plugin.js" ]; then
+    echo "✅ Reanimated plugin found:"
+    echo "   - Entry: node_modules/react-native-reanimated/plugin/index.js"
+    echo "   - Build: node_modules/react-native-reanimated/plugin/build/plugin.js"
+    echo "   - Configured in babel.config.js (must be last plugin)"
 else
-    echo "❌ Reanimated Babel plugin NOT found"
+    echo "❌ Reanimated plugin NOT found at expected location"
+    echo "   This might cause build issues. Try reinstalling:"
+    echo "   yarn remove react-native-reanimated && yarn add react-native-reanimated@~3.10.1"
     exit 1
 fi
 echo ""
