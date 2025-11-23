@@ -4,14 +4,30 @@
     "strict": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./*"],
-      "@components/*": ["./components/*"],
-      "@screens/*": ["./app/*"],
-      "@hooks/*": ["./hooks/*"],
-      "@stores/*": ["./stores/*"],
-      "@lib/*": ["./lib/*"],
-      "@types/*": ["./types/*"],
-      "@assets/*": ["./assets/*"]
+      "@/*": [
+        "./*"
+      ],
+      "@components/*": [
+        "./components/*"
+      ],
+      "@screens/*": [
+        "./app/*"
+      ],
+      "@hooks/*": [
+        "./hooks/*"
+      ],
+      "@stores/*": [
+        "./stores/*"
+      ],
+      "@lib/*": [
+        "./lib/*"
+      ],
+      "@types/*": [
+        "./types/*"
+      ],
+      "@assets/*": [
+        "./assets/*"
+      ]
     },
     "jsx": "react-native",
     "esModuleInterop": true,
@@ -29,7 +45,8 @@
     "**/*.ts",
     "**/*.tsx",
     ".expo/types/**/*.ts",
-    "expo-env.d.ts"
+    "expo-env.d.ts",
+    "nativewind-env.d.ts"
   ],
   "exclude": [
     "node_modules"

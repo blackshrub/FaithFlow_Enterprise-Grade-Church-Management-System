@@ -22,7 +22,7 @@ module.exports = function (api) {
           },
         },
       ],
-      // Reanimated plugin must be last
+      // Reanimated plugin must be last in Babel plugins (NOT in app.json!)
       "react-native-reanimated/plugin",
     ],
   };

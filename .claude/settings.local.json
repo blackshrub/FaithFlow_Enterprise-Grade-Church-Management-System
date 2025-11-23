@@ -19,7 +19,8 @@
       "Bash(npm install:*)",
       "Bash(npx create-expo-app@latest . --template blank-typescript --yes)",
       "Bash(npm uninstall:*)",
-      "Bash(npx expo install:*)"
+      "Bash(npx expo install:*)",
+      "Bash(npx expo start --clear)"
     ],
     "deny": [],
     "ask": []
