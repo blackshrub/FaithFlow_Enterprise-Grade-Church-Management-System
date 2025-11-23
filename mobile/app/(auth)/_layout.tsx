@@ -10,6 +10,7 @@ export default function AuthLayout() {
     >
       <Stack.Screen name="login" />
       <Stack.Screen name="select-church" />
+      <Stack.Screen name="verify-otp" />
     </Stack>
   );
 }
