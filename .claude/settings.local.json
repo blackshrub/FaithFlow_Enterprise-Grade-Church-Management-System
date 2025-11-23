@@ -15,7 +15,10 @@
       "Bash(git rm:*)",
       "Bash(python3:*)",
       "Bash(chmod:*)",
-      "Bash(yarn add:*)"
+      "Bash(yarn add:*)",
+      "Bash(npm install:*)",
+      "Bash(npx create-expo-app@latest . --template blank-typescript --yes)",
+      "Bash(npm uninstall:*)"
     ],
     "deny": [],
     "ask": []

@@ -1,10 +1,9 @@
 import "../global.css";
 import { Stack } from "expo-router";
-import { GluestackUIProvider } from "@gluestack-ui/themed";
-import { config } from "@gluestack-ui/config";
+import { GluestackUIProvider } from "@/components/ui/gluestack-ui-provider";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { StatusBar } from "expo-status-bar";
-import { useColorScheme } from "react-native";
+import { useColorScheme } from "nativewind";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -17,11 +16,11 @@ const queryClient = new QueryClient({
 });
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
+  const { colorScheme } = useColorScheme();
 
   return (
     <QueryClientProvider client={queryClient}>
-      <GluestackUIProvider config={config} colorMode={colorScheme ?? "light"}>
+      <GluestackUIProvider mode={colorScheme ?? "light"}>
         <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
         <Stack
           screenOptions={{
