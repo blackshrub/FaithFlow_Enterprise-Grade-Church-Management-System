@@ -15,6 +15,7 @@ import React, { useState } from 'react';
 import { View, Pressable, RefreshControl, Share, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
+import { useRouter } from 'expo-router';
 import {
   Calendar,
   MapPin,
@@ -47,6 +48,7 @@ type Tab = 'upcoming' | 'past';
 
 export default function EventsScreen() {
   const { t } = useTranslation();
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<Tab>('upcoming');
 
   const {
@@ -186,10 +188,17 @@ export default function EventsScreen() {
         transition={{ type: 'spring', delay: 100 }}
         style={{ marginBottom: spacing.md }}
       >
-        <Card
-          className="overflow-hidden"
-          style={{ borderRadius: borderRadius.xl, ...shadows.md }}
+        <Pressable
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            router.push(`/events/${event._id}`);
+          }}
+          className="active:opacity-90"
         >
+          <Card
+            className="overflow-hidden"
+            style={{ borderRadius: borderRadius.xl, ...shadows.md }}
+          >
           {/* Event Image or Gradient Header */}
           <View
             className="h-32 w-full justify-center items-center relative"
@@ -412,6 +421,7 @@ export default function EventsScreen() {
             </VStack>
           </View>
         </Card>
+        </Pressable>
       </MotiView>
     );
   };

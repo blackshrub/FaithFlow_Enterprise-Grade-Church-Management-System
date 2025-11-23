@@ -18,7 +18,8 @@
       "Bash(yarn add:*)",
       "Bash(npm install:*)",
       "Bash(npx create-expo-app@latest . --template blank-typescript --yes)",
-      "Bash(npm uninstall:*)"
+      "Bash(npm uninstall:*)",
+      "Bash(npx expo install:*)"
     ],
     "deny": [],
     "ask": []

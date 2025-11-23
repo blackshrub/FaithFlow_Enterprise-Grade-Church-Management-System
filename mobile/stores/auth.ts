@@ -3,9 +3,22 @@ import * as SecureStore from "expo-secure-store";
 
 interface Member {
   id: string;
-  name: string;
+  full_name: string;
+  first_name?: string;
+  last_name?: string;
   email?: string;
-  phone: string;
+  phone_whatsapp?: string;
+  date_of_birth?: string;
+  gender?: 'Male' | 'Female';
+  address?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  marital_status?: 'Married' | 'Not Married' | 'Widower' | 'Widow';
+  occupation?: string;
+  baptism_date?: string;
+  membership_date?: string;
+  notes?: string;
   church_id: string;
   church_name?: string;
 }
