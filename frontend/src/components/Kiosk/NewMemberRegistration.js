@@ -35,10 +35,11 @@ const NewMemberRegistration = ({ phone, onComplete, onError, preVisitorStatusId 
   const [facingMode, setFacingMode] = useState('user'); // 'user' for front, 'environment' for back
   const [resending, setResending] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
-  
+  const [otpVerified, setOtpVerified] = useState(false); // Prevent duplicate OTP verification
+
   // Check if form is complete (required fields filled)
-  const isFormComplete = formData.full_name.trim() && 
-                         formData.gender && 
+  const isFormComplete = formData.full_name.trim() &&
+                         formData.gender &&
                          formData.date_of_birth;
   
   const capturePhoto = () => {
@@ -120,37 +121,53 @@ const NewMemberRegistration = ({ phone, onComplete, onError, preVisitorStatusId 
   };
 
   const handleOtpComplete = async (code) => {
+    // Prevent duplicate verification
+    if (verifying || otpVerified) {
+      console.log('⚠️ Already verifying or verified, skipping duplicate call');
+      return;
+    }
+
     setOtpError('');
     setVerifying(true);
-    
+
     try {
       // Import kioskApi here to avoid circular deps
       const { default: kioskApi } = await import('../../services/kioskApi');
-      
+
+      console.log('🔍 Verifying OTP:', code);
+
       // Verify OTP first
       const otpResult = await kioskApi.verifyOTP(phone, code);
-      
+
       if (!otpResult.success) {
         setOtpError(t('existing_profile.otp_error'));
         setOtp('');
         setVerifying(false);
         return;
       }
-      
+
+      console.log('✅ OTP verified, creating member...');
+      setOtpVerified(true); // Mark as verified to prevent re-verification
+
       // Create member
       const memberData = {
         ...formData,
         member_status_id: preVisitorStatusId,
         source: 'kiosk'
       };
-      
+
+      console.log('📝 Member data:', memberData);
+
       const newMember = await kioskApi.createPreVisitor(memberData);
+      console.log('✅ Member created:', newMember);
       onComplete(newMember);
-      
+
     } catch (error) {
-      console.error('Registration error:', error);
+      console.error('❌ Registration error:', error);
+      console.error('❌ Error details:', error.response?.data);
       setOtpError(t('new_profile.submit_error'));
       setOtp('');
+      setOtpVerified(false); // Reset on error so user can retry
       if (onError) onError(error);
     } finally {
       setVerifying(false);
@@ -342,6 +359,7 @@ const NewMemberRegistration = ({ phone, onComplete, onError, preVisitorStatusId 
             onChange={setOtp}
             onComplete={handleOtpComplete}
             disabled={verifying}
+            autoFocus={false}
           />
 
           {otpError && (
