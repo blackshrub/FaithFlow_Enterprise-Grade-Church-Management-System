@@ -198,7 +198,13 @@
     "sampleVerse": "For God so loved the world that he gave his one and only Son, that whoever believes in him shall not perish but have eternal life.",
     "bookmark": "Bookmark",
     "bookmarked": "Bookmarked",
-    "share": "Share"
+    "highlight": "Highlight",
+    "removeHighlight": "Remove Highlight",
+    "copy": "Copy Verse",
+    "share": "Share Verse",
+    "addNote": "Add Note",
+    "verseCopied": "Verse Copied",
+    "noteComingSoon": "Note feature coming soon!"
   },
   "events": {
     "title": "Events",

@@ -198,7 +198,13 @@
     "sampleVerse": "Karena begitu besar kasih Allah akan dunia ini, sehingga Ia telah mengaruniakan Anak-Nya yang tunggal, supaya setiap orang yang percaya kepada-Nya tidak binasa, melainkan beroleh hidup yang kekal.",
     "bookmark": "Tandai",
     "bookmarked": "Ditandai",
-    "share": "Bagikan"
+    "highlight": "Sorot",
+    "removeHighlight": "Hapus Sorotan",
+    "copy": "Salin Ayat",
+    "share": "Bagikan Ayat",
+    "addNote": "Tambah Catatan",
+    "verseCopied": "Ayat Disalin",
+    "noteComingSoon": "Fitur catatan segera hadir!"
   },
   "events": {
     "title": "Acara",
