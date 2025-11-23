@@ -1,11 +1,12 @@
 /**
- * Events Screen
+ * Bible Reader Screen
  *
  * Features:
- * - Upcoming events list
- * - RSVP functionality
- * - Event details
- * - Calendar integration
+ * - Bible version selector
+ * - Book/Chapter navigation
+ * - FlashList for smooth scrolling
+ * - Bookmarks and highlights
+ * - Reading history
  */
 
 import React from 'react';
@@ -18,17 +19,17 @@ import { Heading } from '@/components/ui/heading';
 import { VStack } from '@/components/ui/vstack';
 import { Card } from '@/components/ui/card';
 
-export default function EventsScreen() {
+export default function BibleScreen() {
   const { t } = useTranslation();
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50" edges={['top']}>
       <View className="px-6 pt-6 pb-4">
         <Heading size="2xl" className="text-gray-900">
-          {t('events.title')}
+          {t('bible.title')}
         </Heading>
         <Text className="text-gray-600 mt-1" size="md">
-          {t('events.subtitle')}
+          {t('bible.subtitle')}
         </Text>
       </View>
 
@@ -37,7 +38,8 @@ export default function EventsScreen() {
           <VStack space="md">
             <Heading size="lg">Coming Soon</Heading>
             <Text className="text-gray-600">
-              Events list with RSVP functionality will be implemented here.
+              Bible reader with FlashList, bookmarks, and highlights will be
+              implemented here.
             </Text>
           </VStack>
         </Card>
