@@ -192,7 +192,6 @@ const PrayerRequestKiosk = () => {
         <NewMemberRegistration
           phone={phone}
           onComplete={handleNewMemberComplete}
-          preVisitorStatusId="pre-visitor-id" // TODO: Get from settings
         />
       </KioskLayout>
     );

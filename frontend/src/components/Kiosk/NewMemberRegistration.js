@@ -15,9 +15,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import OTPInput from './OTPInput';
 import Webcam from 'react-webcam';
 
-const NewMemberRegistration = ({ phone, onComplete, onError, preVisitorStatusId }) => {
+const NewMemberRegistration = ({ phone, onComplete, onError }) => {
   const { t } = useTranslation('kiosk');
   const webcamRef = useRef(null);
+
+  // Get church_id from kiosk session
+  const churchId = localStorage.getItem('kiosk_church_id');
 
   const [formData, setFormData] = useState({
     full_name: '',
@@ -149,11 +152,16 @@ const NewMemberRegistration = ({ phone, onComplete, onError, preVisitorStatusId 
       console.log('✅ OTP verified, creating member...');
       setOtpVerified(true); // Mark as verified to prevent re-verification
 
-      // Create member
+      // Create member - backend expects specific fields
       const memberData = {
-        ...formData,
-        member_status_id: preVisitorStatusId,
-        source: 'kiosk'
+        church_id: churchId,
+        full_name: formData.full_name,
+        gender: formData.gender,
+        date_of_birth: formData.date_of_birth,
+        phone_whatsapp: formData.phone_whatsapp,
+        photo_base64: formData.photo_base64,
+        // Let backend set default member status (Visitor)
+        // Backend will auto-assign status based on is_default_for_new flag
       };
 
       console.log('📝 Member data:', memberData);

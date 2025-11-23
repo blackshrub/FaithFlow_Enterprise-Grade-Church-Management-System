@@ -200,7 +200,7 @@ const CounselingKiosk = () => {
   if (step === 'otp_new') {
     return (
       <KioskLayout showBack showHome onBack={() => setStep('phone')}>
-        <NewMemberRegistration phone={phone} onComplete={handleNewMemberComplete} preVisitorStatusId="pre-visitor" />
+        <NewMemberRegistration phone={phone} onComplete={handleNewMemberComplete} />
       </KioskLayout>
     );
   }
