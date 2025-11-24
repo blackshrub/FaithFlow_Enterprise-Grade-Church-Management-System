@@ -106,10 +106,18 @@ export function SearchResults({ groupedResults, counts }: SearchResultsProps) {
           from={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ type: 'spring', delay: 200 }}
+          className="items-center"
         >
           <View
-            className="w-20 h-20 rounded-full items-center justify-center mb-4"
-            style={{ backgroundColor: colors.gray[100] }}
+            style={{
+              width: 80,
+              height: 80,
+              borderRadius: 40,
+              backgroundColor: colors.gray[100],
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginBottom: 16,
+            }}
           >
             <Icon as={Calendar} size="xl" className="text-gray-400" />
           </View>
