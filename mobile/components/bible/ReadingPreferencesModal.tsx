@@ -200,7 +200,7 @@ export function ReadingPreferencesModal({
     <GorhomBottomSheet
       ref={bottomSheetRef}
       index={-1}
-      snapPoints={['40%', '60%']}
+      snapPoints={['60%']}
       enablePanDownToClose={isScrolledToTop} // Only enable close when scrolled to top
       enableDynamicSizing={false}
       activeOffsetY={[-50, 50]} // Require 50px vertical movement before detecting pan (prevents accidental close)
