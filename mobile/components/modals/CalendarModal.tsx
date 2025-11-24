@@ -13,7 +13,7 @@ import { useTranslation } from 'react-i18next';
 import { Calendar as CalendarIcon, X } from 'lucide-react-native';
 import { MotiView } from 'moti';
 import BottomSheet, { BottomSheetBackdrop, BottomSheetBackdropProps } from '@gorhom/bottom-sheet';
-import { Calendar } from '@marceloterreiro/flash-calendar';
+import { Calendar, toDateId } from '@marceloterreiro/flash-calendar';
 
 import { Text } from '@/components/ui/text';
 import { Heading } from '@/components/ui/heading';
@@ -107,11 +107,18 @@ export function CalendarModal() {
   );
 
   // Get calendar markers (event dots)
-  const calendarMarkers = useMemo(() => {
+  // Convert to Map for O(1) lookups
+  const calendarMarkersMap = useMemo(() => {
     const markers = getCalendarMarkers(filteredResults.events, userRsvps, userAttendance);
     console.log('[CalendarModal] Calendar markers:', markers);
     console.log('[CalendarModal] Filtered events count:', filteredResults.events.length);
-    return markers;
+
+    // Convert array to Map for quick date lookup
+    const map = new Map<string, string>();
+    markers.forEach(marker => {
+      map.set(marker.startId, marker.color);
+    });
+    return map;
   }, [filteredResults.events, userRsvps, userAttendance]);
 
   const renderBackdrop = useCallback(
@@ -215,10 +222,12 @@ export function CalendarModal() {
                   ]
                 : undefined
             }
-            calendarMarkedDates={calendarMarkers}
             calendarColorScheme="light"
             calendarFirstDayOfWeek="sunday"
+            calendarDayHeight={56}
             onCalendarDayPress={handleDateSelect}
+            calendarRowVerticalSpacing={8}
+            calendarRowHorizontalSpacing={8}
             theme={{
               rowMonth: {
                 content: {
@@ -275,8 +284,35 @@ export function CalendarModal() {
                   },
                 }),
               },
+              itemDayContainer: {
+                activeDayFiller: {
+                  backgroundColor: colors.primary[100],
+                },
+              },
             }}
+            getItemLayout={(data, index) => ({ length: 56, offset: 56 * index, index })}
           />
+
+          {/* Event Indicator Dots Overlay - Positioned below calendar */}
+          <View style={{ marginTop: 8 }}>
+            <Text className="text-gray-600 text-xs font-semibold mb-2">
+              {t('events.calendar.eventIndicators')}
+            </Text>
+            <HStack space="md" className="flex-wrap">
+              <HStack space="xs" className="items-center">
+                <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#2563eb' }} />
+                <Text className="text-gray-600 text-xs">{t('events.upcoming')}</Text>
+              </HStack>
+              <HStack space="xs" className="items-center">
+                <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#16a34a' }} />
+                <Text className="text-gray-600 text-xs">{t('events.myRSVPs')}</Text>
+              </HStack>
+              <HStack space="xs" className="items-center">
+                <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#9333ea' }} />
+                <Text className="text-gray-600 text-xs">{t('events.attended')}</Text>
+              </HStack>
+            </HStack>
+          </View>
         </View>
 
         {/* Clear Date Button */}

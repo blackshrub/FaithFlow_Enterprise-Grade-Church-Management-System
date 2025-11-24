@@ -328,7 +328,8 @@
       "clearDate": "Clear Date",
       "eventsOnDate": "Events on",
       "noEvents": "No events on this date",
-      "moreEvents": "+{{count}} more events"
+      "moreEvents": "+{{count}} more events",
+      "eventIndicators": "Event Types"
     }
   },
   "rating": {
