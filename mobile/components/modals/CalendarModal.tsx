@@ -43,6 +43,9 @@ export function CalendarModal() {
   const rsvpsQuery = useMyRSVPs();
   const attendedQuery = useAttendedEvents();
 
+  // Check if any query is loading
+  const isLoading = upcomingQuery.isLoading || rsvpsQuery.isLoading || attendedQuery.isLoading;
+
   // Combine all events
   const allEvents = useMemo(
     () => [
@@ -288,8 +291,15 @@ export function CalendarModal() {
           </MotiView>
         )}
 
+        {/* Loading State */}
+        {isLoading && (
+          <View className="items-center justify-center py-8">
+            <Text className="text-gray-500 text-sm">{t('events.loadingEvents')}</Text>
+          </View>
+        )}
+
         {/* Events for Selected Date */}
-        {selectedDate && (
+        {!isLoading && selectedDate && (
           <MotiView
             from={{ opacity: 0, translateY: 10 }}
             animate={{ opacity: 1, translateY: 0 }}

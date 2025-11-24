@@ -11,7 +11,7 @@
  * - Pull-to-refresh with custom indicator
  */
 
-import React, { useState } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { View, Pressable, RefreshControl, Share, Alert, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
@@ -68,6 +68,8 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { SearchBar } from '@/components/events/SearchBar';
 import { SearchResults } from '@/components/events/SearchResults';
 import { SearchEmptyState } from '@/components/events/SearchEmptyState';
+import { EventCardSkeletonList } from '@/components/events/EventCardSkeleton';
+import { ErrorState } from '@/components/events/ErrorState';
 import { useEventFiltersStore } from '@/stores/eventFilters';
 import { useCalendarModalStore } from '@/stores/calendarModal';
 import { filterEvents } from '@/utils/eventFilters';
@@ -118,7 +120,7 @@ export default function EventsScreen() {
   const [existingReview, setExistingReview] = useState<string | undefined>(undefined);
 
   // Handle category filter open
-  const handleOpenCategoryFilter = () => {
+  const handleOpenCategoryFilter = useCallback(() => {
     console.log('[EventsScreen] open() called');
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     categoryFilterStore.open(categories, selectedCategory, (categoryId) => {
@@ -126,10 +128,10 @@ export default function EventsScreen() {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       setSelectedCategory(categoryId);
     });
-  };
+  }, [categories, selectedCategory, categoryFilterStore]);
 
   // Handle tab change with directional animation
-  const handleTabChange = (newTab: Tab) => {
+  const handleTabChange = useCallback((newTab: Tab) => {
     const tabs: Tab[] = ['upcoming', 'my_rsvps', 'attended'];
     const currentIndex = tabs.indexOf(activeTab);
     const newIndex = tabs.indexOf(newTab);
@@ -139,7 +141,7 @@ export default function EventsScreen() {
     setSlideDirection(newIndex > currentIndex ? 30 : -30);
     setActiveTab(newTab);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-  };
+  }, [activeTab]);
 
   // Get current tab data
   const getCurrentTabData = () => {
@@ -194,14 +196,14 @@ export default function EventsScreen() {
       })
     : null;
 
-  const handleRefresh = async () => {
+  const handleRefresh = useCallback(async () => {
     setRefreshing(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     await refetch();
     setRefreshing(false);
-  };
+  }, [refetch]);
 
-  const handleRSVP = (eventId: string) => {
+  const handleRSVP = useCallback((eventId: string) => {
     if (!member?.id) {
       Alert.alert(t('common.error'), 'Member ID not available');
       return;
@@ -225,9 +227,9 @@ export default function EventsScreen() {
         },
       }
     );
-  };
+  }, [member, rsvpMutation, t]);
 
-  const handleCancelRSVP = (eventId: string) => {
+  const handleCancelRSVP = useCallback((eventId: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     Alert.alert(
       t('events.cancelRSVPTitle'),
@@ -257,9 +259,9 @@ export default function EventsScreen() {
         },
       ]
     );
-  };
+  }, [cancelRSVPMutation, t]);
 
-  const handleShareEvent = async (event: EventWithMemberStatus) => {
+  const handleShareEvent = useCallback(async (event: EventWithMemberStatus) => {
     try {
       const eventDate = event.event_date
         ? new Date(event.event_date).toLocaleDateString()
@@ -272,7 +274,7 @@ export default function EventsScreen() {
     } catch (error) {
       console.error('Error sharing event:', error);
     }
-  };
+  }, []);
 
   // Rating & Review Mutation
   const submitRatingMutation = useMutation({
@@ -296,17 +298,17 @@ export default function EventsScreen() {
     },
   });
 
-  const handleOpenRatingModal = (event: EventWithMemberStatus, rating?: number, review?: string) => {
+  const handleOpenRatingModal = useCallback((event: EventWithMemberStatus, rating?: number, review?: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setSelectedEventForRating(event);
     setExistingRating(rating);
     setExistingReview(review);
     setRatingModalVisible(true);
-  };
+  }, []);
 
   // DUMMY: Check if event has been rated (for demo purposes)
   // In production, this would check against actual API data
-  const getEventRating = (eventId: string): { rated: boolean; rating?: number; review?: string } => {
+  const getEventRating = useCallback((eventId: string): { rated: boolean; rating?: number; review?: string } => {
     // Simulate some events having ratings based on event ID hash
     const hash = eventId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
     const hasRating = hash % 3 === 0; // ~33% of events have ratings
@@ -323,16 +325,16 @@ export default function EventsScreen() {
     }
 
     return { rated: false };
-  };
+  }, []);
 
-  const handleCloseRatingModal = () => {
+  const handleCloseRatingModal = useCallback(() => {
     setRatingModalVisible(false);
     setSelectedEventForRating(null);
     setExistingRating(undefined);
     setExistingReview(undefined);
-  };
+  }, []);
 
-  const handleSubmitRating = (rating: number, review: string) => {
+  const handleSubmitRating = useCallback((rating: number, review: string) => {
     if (!selectedEventForRating || !member) return;
 
     submitRatingMutation.mutate({
@@ -340,7 +342,7 @@ export default function EventsScreen() {
       rating,
       review,
     });
-  };
+  }, [selectedEventForRating, member, submitRatingMutation]);
 
   const formatDate = (dateString?: string) => {
     if (!dateString) return '';
@@ -395,18 +397,8 @@ export default function EventsScreen() {
           <Skeleton className="h-11 w-32 rounded-xl" isLoaded={false} />
         </View>
 
-        {/* Event Cards Skeleton */}
-        <ScrollView className="flex-1 px-6">
-          <VStack space="lg">
-            {[1, 2, 3].map((i) => (
-              <View key={i}>
-                <Skeleton className="h-40 w-full rounded-2xl mb-3" isLoaded={false} />
-                <Skeleton className="h-6 w-3/4 mb-2" isLoaded={false} />
-                <Skeleton className="h-4 w-1/2" isLoaded={false} />
-              </View>
-            ))}
-          </VStack>
-        </ScrollView>
+        {/* Event Cards Skeleton - Using premium EventCardSkeleton */}
+        <EventCardSkeletonList />
       </SafeAreaView>
     );
   }
@@ -415,37 +407,18 @@ export default function EventsScreen() {
   if (isError) {
     return (
       <SafeAreaView className="flex-1 bg-gray-50" edges={['top']}>
-        <View className="flex-1 items-center justify-center px-8">
-          <MotiView
-            from={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ type: 'spring' }}
-          >
-            <View
-              className="w-20 h-20 rounded-full items-center justify-center mb-6"
-              style={{ backgroundColor: colors.error[50] }}
-            >
-              <Icon as={Calendar} size="2xl" className="text-error-500" />
-            </View>
-          </MotiView>
-
-          <Heading size="xl" className="text-gray-900 mb-3 text-center font-bold">
-            {t('events.loadError')}
-          </Heading>
-          <Text className="text-gray-500 text-center mb-8 text-base leading-6">
-            {t('events.loadErrorDesc')}
-          </Text>
-
-          <Button onPress={handleRefresh} size="lg" className="px-8">
-            <ButtonText className="font-semibold">{t('common.retry')}</ButtonText>
-          </Button>
-        </View>
+        <ErrorState
+          title={t('events.loadError')}
+          message={t('events.loadErrorDesc')}
+          onRetry={handleRefresh}
+          retrying={refreshing}
+        />
       </SafeAreaView>
     );
   }
 
   // Premium event card
-  const renderEvent = ({ item: event, index }: { item: EventWithMemberStatus; index: number }) => {
+  const renderEvent = useCallback(({ item: event, index }: { item: EventWithMemberStatus; index: number }) => {
     const showRSVPButton = activeTab === 'upcoming' && event.requires_rsvp && event.can_rsvp;
     const showNoRSVPButton = activeTab === 'upcoming' && !event.requires_rsvp;
     const showCancelButton = activeTab === 'my_rsvps' && event.my_rsvp;
@@ -825,26 +798,97 @@ export default function EventsScreen() {
         </Pressable>
       </MotiView>
     );
-  };
+  }, [
+    activeTab,
+    slideDirection,
+    router,
+    handleRSVP,
+    handleCancelRSVP,
+    handleShareEvent,
+    handleOpenRatingModal,
+    getEventRating,
+    rsvpMutation.isPending,
+    cancelRSVPMutation.isPending,
+    categories,
+    t,
+  ]);
 
-  // Premium empty state
+  // Premium empty state with helpful actions
   const EmptyState = () => {
     let title = '';
     let description = '';
     let icon = Calendar;
+    let primaryAction = null;
+    let secondaryAction = null;
 
     if (activeTab === 'upcoming') {
       title = t('events.noUpcomingEvents');
       description = t('events.noUpcomingEventsDesc');
       icon = Calendar;
+      primaryAction = (
+        <Button onPress={handleRefresh} size="lg" className="px-8 min-w-[180px]">
+          <ButtonText className="font-semibold">{t('common.refresh')}</ButtonText>
+        </Button>
+      );
+      // If category filter is active, offer to clear it
+      if (selectedCategory) {
+        secondaryAction = (
+          <Button
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              setSelectedCategory(null);
+            }}
+            size="md"
+            variant="outline"
+            className="min-w-[160px]"
+          >
+            <Icon as={X} size="sm" className="text-gray-600 mr-2" />
+            <ButtonText className="font-semibold">{t('events.clearFilters')}</ButtonText>
+          </Button>
+        );
+      }
     } else if (activeTab === 'my_rsvps') {
       title = t('events.noRSVPs');
       description = t('events.noRSVPsDesc');
       icon = Calendar;
+      primaryAction = (
+        <Button
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            handleTabChange('upcoming');
+          }}
+          size="lg"
+          className="px-8 min-w-[180px]"
+        >
+          <ButtonText className="font-semibold">{t('events.browseEvents')}</ButtonText>
+        </Button>
+      );
+      secondaryAction = (
+        <Button onPress={handleRefresh} size="md" variant="outline" className="min-w-[160px]">
+          <ButtonText className="font-semibold">{t('common.refresh')}</ButtonText>
+        </Button>
+      );
     } else {
       title = t('events.noAttended');
       description = t('events.noAttendedDesc');
       icon = Sparkles;
+      primaryAction = (
+        <Button
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            handleTabChange('upcoming');
+          }}
+          size="lg"
+          className="px-8 min-w-[180px]"
+        >
+          <ButtonText className="font-semibold">{t('events.exploreEvents')}</ButtonText>
+        </Button>
+      );
+      secondaryAction = (
+        <Button onPress={handleRefresh} size="md" variant="outline" className="min-w-[160px]">
+          <ButtonText className="font-semibold">{t('common.refresh')}</ButtonText>
+        </Button>
+      );
     }
 
     return (
@@ -869,9 +913,11 @@ export default function EventsScreen() {
           {description}
         </Text>
 
-        <Button onPress={handleRefresh} size="lg" className="px-8">
-          <ButtonText className="font-semibold">{t('common.refresh')}</ButtonText>
-        </Button>
+        {/* Action Buttons */}
+        <VStack space="sm" className="items-center w-full max-w-xs">
+          {primaryAction}
+          {secondaryAction}
+        </VStack>
       </View>
     );
   };
