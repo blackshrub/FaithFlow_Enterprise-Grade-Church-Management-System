@@ -983,7 +983,7 @@ export default function EventsScreen() {
                       style={{
                         paddingVertical: spacing.md,
                         paddingHorizontal: spacing.sm,
-                        borderRadius: borderRadius.xl,
+                        borderRadius: borderRadius['2xl'],
                         alignItems: 'center',
                         backgroundColor: isActive ? colors.white : 'transparent',
                         ...(isActive ? shadows.sm : {}),
