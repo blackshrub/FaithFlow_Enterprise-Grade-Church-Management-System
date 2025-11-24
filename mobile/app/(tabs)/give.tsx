@@ -33,9 +33,9 @@ import {
   Pressable,
   Input,
   InputField,
-  Skeleton,
-  SkeletonText,
 } from '@gluestack-ui/themed';
+import { Skeleton } from '@/components/ui/skeleton';
+import { SkeletonText } from '@/components/ui/skeleton';
 import {
   DollarSign,
   Heart,
