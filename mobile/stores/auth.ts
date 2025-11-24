@@ -33,6 +33,7 @@ interface AuthState {
   setToken: (token: string) => Promise<void>;
   setMember: (member: Member) => void;
   login: (token: string, member: Member) => Promise<void>;
+  loginDemo: () => Promise<void>; // Demo login for testing
   logout: () => Promise<void>;
   initialize: () => Promise<void>;
 }
@@ -62,6 +63,43 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({
       token,
       member,
+      isAuthenticated: true,
+      isLoading: false,
+    });
+  },
+
+  loginDemo: async () => {
+    // Demo member data
+    const demoMember: Member = {
+      id: "demo-member-001",
+      full_name: "Demo User",
+      first_name: "Demo",
+      last_name: "User",
+      email: "demo@faithflow.com",
+      phone_whatsapp: "8123456789",
+      date_of_birth: "1990-01-01",
+      gender: "Male",
+      address: "123 Demo Street",
+      city: "Jakarta",
+      state: "DKI Jakarta",
+      country: "Indonesia",
+      marital_status: "Married",
+      occupation: "Software Developer",
+      baptism_date: "2010-06-15",
+      membership_date: "2010-07-01",
+      notes: "Demo account for testing",
+      church_id: "demo-church-001",
+      church_name: "FaithFlow Demo Church",
+    };
+
+    const demoToken = "demo-jwt-token-for-testing";
+
+    await SecureStore.setItemAsync(TOKEN_KEY, demoToken);
+    await SecureStore.setItemAsync(MEMBER_KEY, JSON.stringify(demoMember));
+
+    set({
+      token: demoToken,
+      member: demoMember,
       isAuthenticated: true,
       isLoading: false,
     });

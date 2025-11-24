@@ -9,11 +9,13 @@ import { Button, ButtonText, ButtonSpinner } from "@/components/ui/button";
 import { PhoneInput } from "@/components/forms/PhoneInput";
 import { useSendOTP } from "@/hooks/useAuth";
 import { Image } from "@/components/ui/image";
+import { useAuthStore } from "@/stores/auth";
 
 export default function LoginScreen() {
   const router = useRouter();
   const [phone, setPhone] = useState("");
   const [phoneError, setPhoneError] = useState("");
+  const { loginDemo } = useAuthStore();
 
   const sendOTP = useSendOTP();
 
@@ -43,6 +45,11 @@ export default function LoginScreen() {
     } catch (error: any) {
       setPhoneError(error.response?.data?.detail || "Gagal mengirim OTP");
     }
+  };
+
+  const handleDemoLogin = async () => {
+    await loginDemo();
+    router.replace("/(tabs)");
   };
 
   return (
@@ -95,6 +102,16 @@ export default function LoginScreen() {
               <ButtonText>
                 {sendOTP.isPending ? "Mengirim OTP..." : "Kirim OTP"}
               </ButtonText>
+            </Button>
+
+            {/* Demo Login Button */}
+            <Button
+              size="lg"
+              variant="outline"
+              onPress={handleDemoLogin}
+              className="w-full"
+            >
+              <ButtonText>🎭 Demo Login (Skip Auth)</ButtonText>
             </Button>
           </VStack>
 
