@@ -11,7 +11,7 @@
  */
 
 import React, { useEffect, useRef, useCallback } from 'react';
-import { View, Pressable, ScrollView } from 'react-native';
+import { View, Pressable, ScrollView, Animated } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import {
@@ -167,8 +167,9 @@ export function ReadingPreferencesModal({
     <GorhomBottomSheet
       ref={bottomSheetRef}
       index={-1}
-      snapPoints={['50%']}
+      snapPoints={['60%', '85%']}
       enablePanDownToClose
+      enableDynamicSizing={false}
       activeOffsetY={[-10, 10]} // Require 10px vertical movement before detecting pan
       failOffsetX={[-10, 10]} // Fail gesture if horizontal movement > 10px
       bottomInset={bottomInset}
@@ -395,19 +396,24 @@ export function ReadingPreferencesModal({
                   <Text className="text-gray-900 font-medium">Show Verse Numbers</Text>
                 </HStack>
                 <View
-                  className="w-12 h-7 rounded-full p-1"
+                  className="flex-row items-center justify-end"
                   style={{
+                    width: 51,
+                    height: 31,
+                    borderRadius: 16,
                     backgroundColor: preferences.showVerseNumbers
                       ? colors.primary[500]
                       : colors.gray[300],
+                    padding: 2,
                   }}
                 >
                   <View
-                    className="w-5 h-5 rounded-full bg-white"
+                    className="rounded-full bg-white shadow-sm"
                     style={{
-                      transform: [
-                        { translateX: preferences.showVerseNumbers ? 20 : 0 },
-                      ],
+                      width: 27,
+                      height: 27,
+                      position: 'absolute',
+                      left: preferences.showVerseNumbers ? 22 : 2,
                     }}
                   />
                 </View>
@@ -427,19 +433,24 @@ export function ReadingPreferencesModal({
                   <Text className="text-gray-500 text-xs">Highlight Jesus' words in red</Text>
                 </VStack>
                 <View
-                  className="w-12 h-7 rounded-full p-1"
+                  className="flex-row items-center justify-end"
                   style={{
+                    width: 51,
+                    height: 31,
+                    borderRadius: 16,
                     backgroundColor: preferences.redLetterWords
                       ? colors.error[500]
                       : colors.gray[300],
+                    padding: 2,
                   }}
                 >
                   <View
-                    className="w-5 h-5 rounded-full bg-white"
+                    className="rounded-full bg-white shadow-sm"
                     style={{
-                      transform: [
-                        { translateX: preferences.redLetterWords ? 20 : 0 },
-                      ],
+                      width: 27,
+                      height: 27,
+                      position: 'absolute',
+                      left: preferences.redLetterWords ? 22 : 2,
                     }}
                   />
                 </View>

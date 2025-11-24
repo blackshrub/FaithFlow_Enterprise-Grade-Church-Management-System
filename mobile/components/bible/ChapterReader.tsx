@@ -14,8 +14,11 @@ import { View, Pressable, StyleSheet } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { MotiView } from 'moti';
 import * as Haptics from 'expo-haptics';
+import { ChevronLeft, ChevronRight } from 'lucide-react-native';
 
 import { Text } from '@/components/ui/text';
+import { Icon } from '@/components/ui/icon';
+import { HStack } from '@/components/ui/hstack';
 import { useBibleStore, type VerseRef } from '@/stores/bibleStore';
 import { useLatinBibleFont } from '@/stores/bibleFontStore';
 import { getAppliedBibleFont } from '@/utils/fonts';
@@ -28,6 +31,9 @@ interface ChapterReaderProps {
   book: string;
   chapter: number;
   scrollToVerse?: number | null;
+  totalChapters: number;
+  onPreviousChapter?: () => void;
+  onNextChapter?: () => void;
 }
 
 export function ChapterReader({
@@ -36,6 +42,9 @@ export function ChapterReader({
   book,
   chapter,
   scrollToVerse,
+  totalChapters,
+  onPreviousChapter,
+  onNextChapter,
 }: ChapterReaderProps) {
   const {
     preferences,
@@ -235,19 +244,118 @@ export function ChapterReader({
     ]
   );
 
+  const hasPrevious = chapter > 1;
+  const hasNext = chapter < totalChapters;
+
   return (
-    <FlashList
-      ref={flashListRef}
-      data={verses}
-      renderItem={renderVerse}
-      estimatedItemSize={100}
-      keyExtractor={(item) => `${item.verse}`}
-      showsVerticalScrollIndicator={false}
-      contentContainerStyle={{
-        paddingTop: spacing.md,
-        paddingBottom: 160, // Increased space for verse selection bar
-      }}
-    />
+    <>
+      <FlashList
+        ref={flashListRef}
+        data={verses}
+        renderItem={renderVerse}
+        estimatedItemSize={100}
+        keyExtractor={(item) => `${item.verse}`}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{
+          paddingTop: spacing.md,
+          paddingBottom: 200, // Space for navigation buttons + verse selection bar
+        }}
+      />
+
+      {/* Chapter Navigation Buttons - Fixed at bottom */}
+      <View
+        style={{
+          position: 'absolute',
+          bottom: 90, // Above tab bar
+          left: 0,
+          right: 0,
+          paddingHorizontal: spacing.lg,
+        }}
+      >
+        <HStack space="md" className="items-center justify-center">
+          {/* Previous Chapter */}
+          <Pressable
+            onPress={() => {
+              if (hasPrevious && onPreviousChapter) {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                onPreviousChapter();
+              }
+            }}
+            disabled={!hasPrevious}
+            style={{
+              paddingVertical: 12,
+              paddingHorizontal: 20,
+              borderRadius: 12,
+              backgroundColor: hasPrevious ? colors.primary[500] : colors.gray[200],
+              flexDirection: 'row',
+              alignItems: 'center',
+              opacity: hasPrevious ? 1 : 0.5,
+            }}
+          >
+            <Icon
+              as={ChevronLeft}
+              size="sm"
+              style={{ color: hasPrevious ? '#ffffff' : colors.gray[400] }}
+            />
+            <Text
+              style={{
+                color: hasPrevious ? '#ffffff' : colors.gray[400],
+                fontWeight: '600',
+                marginLeft: 4,
+              }}
+            >
+              Previous
+            </Text>
+          </Pressable>
+
+          {/* Chapter Indicator */}
+          <Text
+            style={{
+              fontSize: 14,
+              fontWeight: '600',
+              color: colors.gray[600],
+            }}
+          >
+            Ch {chapter}
+          </Text>
+
+          {/* Next Chapter */}
+          <Pressable
+            onPress={() => {
+              if (hasNext && onNextChapter) {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                onNextChapter();
+              }
+            }}
+            disabled={!hasNext}
+            style={{
+              paddingVertical: 12,
+              paddingHorizontal: 20,
+              borderRadius: 12,
+              backgroundColor: hasNext ? colors.primary[500] : colors.gray[200],
+              flexDirection: 'row',
+              alignItems: 'center',
+              opacity: hasNext ? 1 : 0.5,
+            }}
+          >
+            <Text
+              style={{
+                color: hasNext ? '#ffffff' : colors.gray[400],
+                fontWeight: '600',
+                marginRight: 4,
+              }}
+            >
+              Next
+            </Text>
+            <Icon
+              as={ChevronRight}
+              size="sm"
+              style={{ color: hasNext ? '#ffffff' : colors.gray[400] }}
+            />
+          </Pressable>
+        </HStack>
+      </View>
+    </>
   );
 }
 

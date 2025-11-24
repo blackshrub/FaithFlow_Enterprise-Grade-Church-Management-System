@@ -505,6 +505,9 @@ export default function BibleScreen() {
           book={currentBook}
           chapter={currentChapter}
           scrollToVerse={scrollToVerseNumber}
+          totalChapters={totalChapters}
+          onPreviousChapter={handlePreviousChapter}
+          onNextChapter={handleNextChapter}
         />
       ) : (
         <View
