@@ -19,22 +19,15 @@ import { HStack } from '@/components/ui/hstack';
 import { Icon } from '@/components/ui/icon';
 
 import { colors } from '@/constants/theme';
-import { api } from '@/services/api';
-import { API_ENDPOINTS } from '@/constants/api';
-import type { BibleVerse } from '@/types/api';
+import { useBibleSearchOffline } from '@/hooks/useBibleOffline';
+import { getBookName } from '@/lib/bibleBookLookup';
+import type { BibleTranslation } from '@/types/bible';
 
 interface BibleSearchModalProps {
   isOpen: boolean;
   onClose: () => void;
   version: string;
   onSelectVerse: (book: string, chapter: number, verse: number) => void;
-}
-
-interface SearchResult {
-  book: string;
-  chapter: number;
-  verse: number;
-  text: string;
 }
 
 export function BibleSearchModal({
@@ -47,8 +40,13 @@ export function BibleSearchModal({
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
+
+  // Use offline search hook
+  const { data: searchResults = [], isLoading: isSearching } = useBibleSearchOffline(
+    version as BibleTranslation,
+    searchQuery,
+    { limit: 50, enabled: searchQuery.trim().length >= 3 }
+  );
 
   // Calculate bottom inset
   const bottomInset = insets.bottom;
@@ -62,56 +60,11 @@ export function BibleSearchModal({
     }
   }, [isOpen]);
 
-  // Search verses
-  const handleSearch = useCallback(async () => {
-    if (!searchQuery.trim() || searchQuery.length < 3) {
-      setSearchResults([]);
-      return;
-    }
-
-    setIsSearching(true);
-    try {
-      // TODO: Implement backend search endpoint
-      // For now, this is a placeholder that would need a real API endpoint
-      const response = await api.get<BibleVerse[]>(
-        `${API_ENDPOINTS.BIBLE_SEARCH}?version=${version}&q=${encodeURIComponent(searchQuery)}`
-      );
-
-      const results: SearchResult[] = response.data.map((verse) => ({
-        book: verse.book || '',
-        chapter: verse.chapter || 0,
-        verse: verse.verse,
-        text: verse.text,
-      }));
-
-      setSearchResults(results);
-    } catch (error) {
-      console.error('Bible search error:', error);
-      // Fallback: Show empty results
-      setSearchResults([]);
-    } finally {
-      setIsSearching(false);
-    }
-  }, [searchQuery, version]);
-
-  // Debounce search
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (searchQuery.trim().length >= 3) {
-        handleSearch();
-      } else {
-        setSearchResults([]);
-      }
-    }, 500);
-
-    return () => clearTimeout(timer);
-  }, [searchQuery, handleSearch]);
-
   // Handle verse selection
-  const handleVerseSelect = (book: string, chapter: number, verse: number) => {
-    onSelectVerse(book, chapter, verse);
+  const handleVerseSelect = (bookNumber: number, bookName: string, chapter: number, verse: number) => {
+    // Convert book number to name for compatibility
+    onSelectVerse(bookName, chapter, verse);
     setSearchQuery('');
-    setSearchResults([]);
     onClose();
   };
 
@@ -189,7 +142,8 @@ export function BibleSearchModal({
               placeholderTextColor={colors.gray[400]}
               className="flex-1 text-gray-900 text-base"
               returnKeyType="search"
-              onSubmitEditing={handleSearch}
+              autoCapitalize="none"
+              autoCorrect={false}
             />
             {searchQuery.length > 0 && (
               <Pressable onPress={() => setSearchQuery('')} className="ml-2">
@@ -220,7 +174,7 @@ export function BibleSearchModal({
               {searchResults.map((result, index) => (
                 <Pressable
                   key={`${result.book}-${result.chapter}-${result.verse}-${index}`}
-                  onPress={() => handleVerseSelect(result.book, result.chapter, result.verse)}
+                  onPress={() => handleVerseSelect(result.book, result.bookName, result.chapter, result.verse)}
                   className="active:opacity-70"
                 >
                   <View
@@ -231,7 +185,7 @@ export function BibleSearchModal({
                     }}
                   >
                     <Text className="text-primary-600 font-semibold text-xs mb-2">
-                      {result.book} {result.chapter}:{result.verse}
+                      {result.bookName} {result.chapter}:{result.verse}
                     </Text>
                     {highlightText(result.text, searchQuery)}
                   </View>

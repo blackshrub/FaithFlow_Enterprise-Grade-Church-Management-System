@@ -25,7 +25,7 @@ import { Icon } from '@/components/ui/icon';
 import { HStack } from '@/components/ui/hstack';
 import { useBibleStore } from '@/stores/bibleStore';
 import { colors, typography, spacing, readingThemes } from '@/constants/theme';
-import type { BibleVerse } from '@/types/api';
+import type { BibleVerse } from '@/types/bible';
 
 interface ChapterReaderProps {
   verses: BibleVerse[];

@@ -25,9 +25,10 @@ import { BookSelectorModal } from '@/components/bible/BookSelectorModal';
 import { ReadingPreferencesModal } from '@/components/bible/ReadingPreferencesModal';
 import { BibleVersionSelector } from '@/components/bible/BibleVersionSelector';
 import { BibleSearchModal } from '@/components/bible/BibleSearchModal';
-import { useBibleChapter, useBibleBooks, useBibleVersions } from '@/hooks/useBible';
+import { useBibleChapterOffline, useBibleBooksOffline } from '@/hooks/useBibleOffline';
 import { useBibleStore } from '@/stores/bibleStore';
 import { colors, touchTargets, readingThemes } from '@/constants/theme';
+import { BIBLE_TRANSLATIONS, type BibleTranslation } from '@/types/bible';
 
 export default function BibleScreen() {
   const { t } = useTranslation();
@@ -39,31 +40,34 @@ export default function BibleScreen() {
   const { currentVersion, currentBook, currentChapter, setCurrentPosition, preferences } =
     useBibleStore();
 
-  // Fetch current chapter
-  const { data: verses, isLoading: isLoadingChapter } = useBibleChapter(
-    currentVersion,
+  // Cast version to BibleTranslation type
+  const version = currentVersion as BibleTranslation;
+
+  // Fetch current chapter (offline)
+  const { data: verses, isLoading: isLoadingChapter } = useBibleChapterOffline(
+    version,
     currentBook,
     currentChapter
   );
 
-  // Fetch books for navigation
-  const { data: books = [], isLoading: isLoadingBooks, error: booksError } = useBibleBooks(currentVersion);
+  // Fetch books for navigation (offline)
+  const { data: books = [], isLoading: isLoadingBooks, error: booksError } = useBibleBooksOffline(version);
 
-  // Fetch Bible versions
-  const { data: versions = [] } = useBibleVersions();
+  // Bible versions are now hardcoded since they're offline
+  const versions = Object.values(BIBLE_TRANSLATIONS);
 
   // Debug logging
-  console.log('Bible Screen - currentVersion:', currentVersion);
-  console.log('Bible Screen - books length:', books?.length);
-  console.log('Bible Screen - isLoadingBooks:', isLoadingBooks);
-  console.log('Bible Screen - booksError:', booksError);
-  console.log('Bible Screen - books sample:', books?.[0]);
+  console.log('Bible Screen (Offline) - currentVersion:', currentVersion);
+  console.log('Bible Screen (Offline) - books length:', books?.length);
+  console.log('Bible Screen (Offline) - isLoadingBooks:', isLoadingBooks);
+  console.log('Bible Screen (Offline) - booksError:', booksError);
+  console.log('Bible Screen (Offline) - books sample:', books?.[0]);
 
   // Get current book info for chapter navigation
   const currentBookInfo = books.find(
-    (b) => b.name === currentBook || b.name_local === currentBook
+    (b) => b.name === currentBook || b.englishName === currentBook
   );
-  const totalChapters = currentBookInfo?.chapter_count || 1;
+  const totalChapters = currentBookInfo?.chapters || 1;
 
   // Navigation handlers
   const handlePreviousChapter = () => {
@@ -83,14 +87,9 @@ export default function BibleScreen() {
   };
 
   const handleSelectVersion = (versionCode: string) => {
-    // When switching versions, go to first chapter of first book to avoid missing chapters
-    const firstBook = books?.[0];
-    if (firstBook) {
-      setCurrentPosition(versionCode, firstBook.name, 1);
-    } else {
-      // Fallback to Genesis if books not loaded yet
-      setCurrentPosition(versionCode, 'Genesis', 1);
-    }
+    // When switching versions, go to first book (Genesis)
+    // Use English name since the loader will convert it to book number
+    setCurrentPosition(versionCode, 'Genesis', 1);
   };
 
   const handleSearchVerseSelect = (book: string, chapter: number, verse: number) => {

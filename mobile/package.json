@@ -9,7 +9,8 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "lint": "eslint .",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "build:bible": "npx ts-node --esm scripts/buildBibleAssets.ts"
   },
   "author": "FaithFlow Team",
   "license": "MIT",
