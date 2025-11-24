@@ -718,10 +718,12 @@ export default function BibleScreen() {
           version={version}
           initialBook={getBookNumber(currentBook) || 1}
           initialChapter={currentChapter}
+          scrollToVerse={scrollToVerseNumber}
           onChapterChange={(book, chapter) => {
             // Update header to show current visible chapter
-            const bookName = books.find((b) => b.number === book)?.name || currentBook;
-            setCurrentPosition(currentVersion, bookName, chapter);
+            // NOTE: We DO NOT call setCurrentPosition here to avoid refresh loop
+            // The header will update automatically when scrolling
+            console.log(`📖 Currently viewing: Book ${book}, Chapter ${chapter}`);
           }}
           onScroll={handleScroll}
         />

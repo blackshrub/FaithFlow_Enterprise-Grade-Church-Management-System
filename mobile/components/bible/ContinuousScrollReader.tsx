@@ -34,6 +34,7 @@ interface ContinuousScrollReaderProps {
   version: BibleTranslation;
   initialBook: number;
   initialChapter: number;
+  scrollToVerse?: number | null; // Verse to scroll to (triggers navigation)
   onChapterChange?: (book: number, chapter: number) => void;
   onScroll?: (event: { nativeEvent: { contentOffset: { y: number } } }) => void;
 }
@@ -42,6 +43,7 @@ export function ContinuousScrollReader({
   version,
   initialBook,
   initialChapter,
+  scrollToVerse,
   onChapterChange,
   onScroll,
 }: ContinuousScrollReaderProps) {
@@ -73,6 +75,8 @@ export function ContinuousScrollReader({
   const [isNearBottom, setIsNearBottom] = useState(false);
 
   // Initialize stream loader
+  // IMPORTANT: Only re-initialize when version changes, NOT when initialBook/initialChapter change
+  // This prevents random scrolling back to top when user is reading
   useEffect(() => {
     const initLoader = async () => {
       setIsLoading(true);
@@ -92,7 +96,60 @@ export function ContinuousScrollReader({
     };
 
     initLoader();
-  }, [version, initialBook, initialChapter]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [version]); // Only depend on version - NOT initialBook/initialChapter
+
+  /**
+   * Handle intentional navigation (user taps search result, bookmark, or changes book/chapter manually)
+   * Only reset and scroll when book/chapter differs significantly from currently visible chapter
+   */
+  useEffect(() => {
+    const handleNavigation = async () => {
+      if (!streamLoaderRef.current || isLoading) return;
+
+      const currentChapter = currentVisibleChapter;
+
+      // Check if navigation is significant (different book OR chapter differs by more than preload range)
+      const bookChanged = initialBook !== currentChapter.book;
+      const chapterDiff = Math.abs(initialChapter - currentChapter.chapter);
+      const isSignificantChange = bookChanged || chapterDiff > 3;
+
+      if (isSignificantChange) {
+        console.log('🔄 Significant navigation detected - resetting loader');
+
+        // Reset loader to new position
+        const newItems = await streamLoaderRef.current.reset(initialBook, initialChapter);
+        setItems(newItems);
+        setCurrentVisibleChapter({ book: initialBook, chapter: initialChapter });
+
+        // Scroll to specific verse if provided
+        if (scrollToVerse) {
+          setTimeout(() => {
+            const verseIndex = streamLoaderRef.current?.findItemIndex(
+              initialBook,
+              initialChapter,
+              scrollToVerse
+            );
+            if (verseIndex !== undefined && verseIndex >= 0) {
+              flashListRef.current?.scrollToIndex({ index: verseIndex, animated: true });
+            }
+          }, 100);
+        }
+      } else if (scrollToVerse) {
+        // Same chapter, just scroll to verse
+        const verseIndex = streamLoaderRef.current.findItemIndex(
+          initialBook,
+          initialChapter,
+          scrollToVerse
+        );
+        if (verseIndex >= 0) {
+          flashListRef.current?.scrollToIndex({ index: verseIndex, animated: true });
+        }
+      }
+    };
+
+    handleNavigation();
+  }, [initialBook, initialChapter, scrollToVerse, isLoading]);
 
   /**
    * Get font size from preferences
