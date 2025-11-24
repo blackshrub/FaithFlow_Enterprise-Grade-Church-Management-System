@@ -160,9 +160,9 @@ export function BibleFontSelector({ version }: BibleFontSelectorProps) {
         {/* Info note */}
         <View
           className="p-4 rounded-lg"
-          style={{ backgroundColor: colors.blue[50] }}
+          style={{ backgroundColor: colors.primary[50] }}
         >
-          <Text className="text-blue-700 text-xs">
+          <Text style={{ color: colors.primary[700] }} className="text-xs">
             💡 Font changes apply only to Latin Bible reading screens. Chinese Bibles
             automatically use optimized system fonts.
           </Text>
