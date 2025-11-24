@@ -202,7 +202,7 @@ export default function BibleScreen() {
     setCurrentPosition(currentVersion, book, chapter);
 
     // If verse is specified, scroll to it after chapter loads
-    if (verse) {
+    if (verse && preferences.showVerseSelector) {
       // Reset scroll state first to ensure effect re-triggers
       setScrollToVerseNumber(null);
 
@@ -210,6 +210,20 @@ export default function BibleScreen() {
       setTimeout(() => {
         setScrollToVerseNumber(verse);
       }, 300);
+
+      // Set flash highlight for selected verse (3 seconds) - visual feedback for verse selector navigation
+      const flashVerseRef: VerseRef = {
+        version: currentVersion,
+        book,
+        chapter,
+        verse,
+      };
+      setFlashHighlights([flashVerseRef]);
+
+      // Clear flash highlight after 3 seconds
+      setTimeout(() => {
+        clearFlashHighlights();
+      }, 3000);
     }
   };
 
