@@ -103,7 +103,7 @@ export function BibleVersionSelector({
         <VStack className="p-6" space="sm">
           {versions.map((version) => (
             <Pressable
-              key={version.id}
+              key={version.code}
               onPress={() => handleSelectVersion(version.code)}
               className="active:opacity-70"
             >

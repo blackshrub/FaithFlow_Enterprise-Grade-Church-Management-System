@@ -80,7 +80,7 @@ export function ChapterReader({
     return fontMap[preferences.fontFamily] || 'System';
   };
 
-  // Handle verse tap - toggle selection and show bottom sheet
+  // Handle verse tap - toggle selection (don't show modal yet)
   const handleVerseTap = useCallback(
     (verseNumber: number) => {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -89,20 +89,26 @@ export function ChapterReader({
         const isSelected = prev.includes(verseNumber);
         if (isSelected) {
           // Deselect verse
-          const newSelection = prev.filter((v) => v !== verseNumber);
-          if (newSelection.length === 0) {
-            setShowActionSheet(false);
-          }
-          return newSelection;
+          return prev.filter((v) => v !== verseNumber);
         } else {
-          // Select verse and show action sheet
-          setShowActionSheet(true);
+          // Add to selection
           return [...prev, verseNumber];
         }
       });
     },
     []
   );
+
+  // Show action sheet when user has selection
+  useEffect(() => {
+    if (selectedVerses.length > 0 && !showActionSheet) {
+      // Auto-show actions after a brief delay to allow multi-selection
+      const timer = setTimeout(() => {
+        setShowActionSheet(true);
+      }, 800);
+      return () => clearTimeout(timer);
+    }
+  }, [selectedVerses.length, showActionSheet]);
 
   // Copy selected verses to clipboard
   const handleCopyVerse = useCallback(async () => {

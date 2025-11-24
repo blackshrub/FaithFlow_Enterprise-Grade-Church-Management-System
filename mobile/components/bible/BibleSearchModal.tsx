@@ -93,7 +93,7 @@ export function BibleSearchModal({
           part.toLowerCase() === query.toLowerCase() ? (
             <Text key={i} className="bg-yellow-200 font-semibold">{part}</Text>
           ) : (
-            part
+            <Text key={i}>{part}</Text>
           )
         )}
       </Text>
