@@ -46,8 +46,10 @@ export default function BibleScreen() {
   const { data: books = [] } = useBibleBooks(currentVersion);
 
   // Get current book info for chapter navigation
-  const currentBookInfo = books.find((b) => b.name === currentBook);
-  const totalChapters = currentBookInfo?.chapters || 1;
+  const currentBookInfo = books.find(
+    (b) => b.name === currentBook || b.name_local === currentBook
+  );
+  const totalChapters = currentBookInfo?.chapter_count || 1;
 
   // Navigation handlers
   const handlePreviousChapter = () => {

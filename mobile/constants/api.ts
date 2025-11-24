@@ -3,9 +3,11 @@
  */
 
 // Base URL - Update this for production
-export const API_BASE_URL = __DEV__
-  ? 'http://localhost:8000'
-  : 'https://flow.gkbj.org';
+// Temporarily using production API for testing
+export const API_BASE_URL = 'https://flow.gkbj.org';
+// export const API_BASE_URL = __DEV__
+//   ? 'http://localhost:8000'
+//   : 'https://flow.gkbj.org';
 
 export const API_ENDPOINTS = {
   // Authentication

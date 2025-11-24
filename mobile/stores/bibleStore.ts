@@ -80,7 +80,7 @@ export const useBibleStore = create<BibleState>()(
     (set, get) => ({
       // Initial state
       currentVersion: 'TB', // Terjemahan Baru (Indonesian)
-      currentBook: 'Genesis',
+      currentBook: 'Kejadian', // Genesis in Indonesian
       currentChapter: 1,
       bookmarks: [],
       highlights: [],
