@@ -57,7 +57,12 @@ export function NoteEditorModal({
       console.log('Verse reference:', verseReference);
       console.log('Initial note:', initialNote);
 
-      bottomSheetRef.current?.present();
+      // Use setTimeout to ensure modal presents after render cycle
+      setTimeout(() => {
+        console.log('⏰ Calling present() after timeout...');
+        bottomSheetRef.current?.present();
+      }, 100);
+
       setNote(initialNote); // Reset note to initial value when opening
     } else {
       console.log('❌ Dismissing NoteEditorModal...');
@@ -105,7 +110,6 @@ export function NoteEditorModal({
       keyboardBehavior="interactive"
       keyboardBlurBehavior="restore"
       android_keyboardInputMode="adjustResize"
-      style={{ zIndex: 9999 }}
     >
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}

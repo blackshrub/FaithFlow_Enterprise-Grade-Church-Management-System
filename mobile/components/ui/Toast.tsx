@@ -45,9 +45,9 @@ export const showToast = (
     type,
     text1: title,
     text2: description,
-    position: 'top',
+    position: 'bottom',
     visibilityTime: duration,
-    topOffset: 60, // Below status bar
+    bottomOffset: 180, // Above verse selection bar + tab bar
   });
 
   console.log('✅ Toast displayed');
