@@ -256,23 +256,6 @@ export function ChapterReader({
     return `${book} ${chapter}:${sorted[0]}-${sorted[sorted.length - 1]}`;
   };
 
-  // Backdrop component
-  const renderBackdrop = useCallback(
-    (props: any) => (
-      <GorhomBackdrop
-        {...props}
-        disappearsOnIndex={-1}
-        appearsOnIndex={0}
-        opacity={0.5}
-        onPress={() => {
-          setSelectedVerses([]);
-          setShowActionSheet(false);
-        }}
-      />
-    ),
-    []
-  );
-
   return (
     <>
       <FlashList
@@ -287,82 +270,83 @@ export function ChapterReader({
         }}
       />
 
-      {/* Verse Actions Bottom Sheet */}
+      {/* Verse Actions Bottom Sheet - Compact */}
       <GorhomBottomSheet
         ref={bottomSheetRef}
         index={-1}
-        snapPoints={['35%']}
+        snapPoints={['20%']}
         enablePanDownToClose
         bottomInset={bottomInset}
         detached={false}
+        enableOverDrag={false}
         onClose={() => {
           setSelectedVerses([]);
           setShowActionSheet(false);
         }}
-        backdropComponent={renderBackdrop}
+        backdropComponent={() => null}
         backgroundStyle={{
           backgroundColor: '#ffffff',
         }}
+        style={{
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: -2 },
+          shadowOpacity: 0.1,
+          shadowRadius: 8,
+          elevation: 5,
+        }}
       >
-        <BottomSheetScrollView
-          contentContainerStyle={{ paddingBottom: 40 }}
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Header */}
-          <View className="px-6 pt-2 pb-4 border-b border-gray-200">
-            <Text className="text-gray-900 font-semibold text-lg">
-              {getSelectedReference()}
-            </Text>
-            {selectedVerses.length > 0 && (
-              <Text className="text-gray-500 text-sm mt-1">
-                {selectedVerses.length} {selectedVerses.length === 1 ? 'verse' : 'verses'}{' '}
-                selected
-              </Text>
-            )}
-          </View>
+        <View className="px-4 py-3">
+          {/* Header - Compact */}
+          <Text className="text-gray-600 text-xs font-medium mb-3 text-center">
+            {getSelectedReference()} • {selectedVerses.length}{' '}
+            {selectedVerses.length === 1 ? 'verse' : 'verses'}
+          </Text>
 
-          {/* Actions */}
-          <View className="px-6 pt-4">
+          {/* Actions in One Row */}
+          <HStack className="items-center justify-around">
             {/* Highlight */}
             <Pressable
               onPress={handleToggleHighlight}
-              className="py-4 border-b border-gray-100 active:opacity-60"
+              className="items-center active:opacity-60 flex-1"
             >
-              <HStack space="md" className="items-center">
+              <View
+                className="p-3 rounded-full mb-1"
+                style={{ backgroundColor: hasHighlightedVerse ? colors.warning[100] : colors.gray[100] }}
+              >
                 <Icon
                   as={Highlight}
                   size="lg"
-                  style={{ color: hasHighlightedVerse ? colors.warning[500] : colors.gray[600] }}
+                  style={{ color: hasHighlightedVerse ? colors.warning[600] : colors.gray[600] }}
                 />
-                <Text className="text-gray-900 text-base flex-1">
-                  {hasHighlightedVerse ? t('bible.removeHighlight') : t('bible.highlight')}
-                </Text>
-              </HStack>
+              </View>
+              <Text className="text-gray-700 text-xs">
+                {hasHighlightedVerse ? t('bible.removeHighlight') : t('bible.highlight')}
+              </Text>
             </Pressable>
 
             {/* Copy */}
             <Pressable
               onPress={handleCopyVerse}
-              className="py-4 border-b border-gray-100 active:opacity-60"
+              className="items-center active:opacity-60 flex-1"
             >
-              <HStack space="md" className="items-center">
+              <View className="p-3 rounded-full mb-1" style={{ backgroundColor: colors.gray[100] }}>
                 <Icon as={Copy} size="lg" className="text-gray-600" />
-                <Text className="text-gray-900 text-base flex-1">{t('bible.copy')}</Text>
-              </HStack>
+              </View>
+              <Text className="text-gray-700 text-xs">{t('bible.copy')}</Text>
             </Pressable>
 
             {/* Share */}
             <Pressable
               onPress={handleShareVerse}
-              className="py-4 active:opacity-60"
+              className="items-center active:opacity-60 flex-1"
             >
-              <HStack space="md" className="items-center">
+              <View className="p-3 rounded-full mb-1" style={{ backgroundColor: colors.gray[100] }}>
                 <Icon as={ShareIcon} size="lg" className="text-gray-600" />
-                <Text className="text-gray-900 text-base flex-1">{t('bible.share')}</Text>
-              </HStack>
+              </View>
+              <Text className="text-gray-700 text-xs">{t('bible.share')}</Text>
             </Pressable>
-          </View>
-        </BottomSheetScrollView>
+          </HStack>
+        </View>
       </GorhomBottomSheet>
     </>
   );

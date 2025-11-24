@@ -13,7 +13,7 @@ import React, { useState } from 'react';
 import { View, Pressable, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
-import { BookOpen, ChevronLeft, ChevronRight, Settings } from 'lucide-react-native';
+import { BookOpen, ChevronLeft, ChevronRight, Settings, Languages } from 'lucide-react-native';
 
 import { Text } from '@/components/ui/text';
 import { Heading } from '@/components/ui/heading';
@@ -170,6 +170,22 @@ export default function BibleScreen() {
                   currentChapter >= totalChapters ? 'text-gray-300' : 'text-primary-500'
                 }
               />
+            </Pressable>
+
+            {/* Version Selector */}
+            <Pressable
+              onPress={() => setIsVersionSelectorOpen(true)}
+              className="active:opacity-60"
+              style={{
+                width: touchTargets.comfortable,
+                height: touchTargets.comfortable,
+                justifyContent: 'center',
+                alignItems: 'center',
+                borderRadius: touchTargets.comfortable / 2,
+                backgroundColor: colors.primary[50],
+              }}
+            >
+              <Icon as={Languages} size="lg" className="text-primary-600" />
             </Pressable>
 
             {/* Settings */}
