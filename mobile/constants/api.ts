@@ -5,7 +5,7 @@
 // Base URL - Update this for production
 export const API_BASE_URL = __DEV__
   ? 'http://localhost:8000'
-  : 'https://api.faithflow.com';
+  : 'https://flow.gkbj.org';
 
 export const API_ENDPOINTS = {
   // Authentication
