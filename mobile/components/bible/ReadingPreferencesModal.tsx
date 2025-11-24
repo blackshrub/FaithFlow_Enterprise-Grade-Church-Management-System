@@ -27,6 +27,9 @@ import {
   Eye,
   EyeOff,
   Space,
+  Focus,
+  ScrollText,
+  BookText,
 } from 'lucide-react-native';
 import GorhomBottomSheet, { BottomSheetBackdrop as GorhomBackdrop } from '@gorhom/bottom-sheet';
 
@@ -43,6 +46,8 @@ import {
   type ThemeType,
   type TextAlign,
   type WordSpacing,
+  type VerseSpacing,
+  type ReadingMode,
 } from '@/stores/bibleStore';
 import { BibleFontSelector } from './BibleFontSelector';
 import { isChineseBible } from '@/utils/fonts';
@@ -77,6 +82,12 @@ const WORD_SPACING_OPTIONS: { value: WordSpacing; label: string }[] = [
   { value: 'normal', label: 'Normal' },
   { value: 'wide', label: 'Wide' },
   { value: 'wider', label: 'Wider' },
+];
+
+const VERSE_SPACING_OPTIONS: { value: VerseSpacing; label: string }[] = [
+  { value: 'none', label: 'None' },
+  { value: 'small', label: 'Small' },
+  { value: 'large', label: 'Large' },
 ];
 
 export function ReadingPreferencesModal({
@@ -138,6 +149,11 @@ export function ReadingPreferencesModal({
     updatePreferences({ wordSpacing });
   };
 
+  // Verse spacing handler
+  const handleVerseSpacingChange = (verseSpacing: VerseSpacing) => {
+    updatePreferences({ verseSpacing });
+  };
+
   // Toggle handlers
   const handleToggleVerseNumbers = () => {
     updatePreferences({ showVerseNumbers: !preferences.showVerseNumbers });
@@ -145,6 +161,14 @@ export function ReadingPreferencesModal({
 
   const handleToggleRedLetterWords = () => {
     updatePreferences({ redLetterWords: !preferences.redLetterWords });
+  };
+
+  const handleToggleFocusMode = () => {
+    updatePreferences({ focusMode: !preferences.focusMode });
+  };
+
+  const handleReadingModeChange = (mode: ReadingMode) => {
+    updatePreferences({ readingMode: mode });
   };
 
   // Backdrop component - transparent to allow live preview
@@ -167,7 +191,7 @@ export function ReadingPreferencesModal({
     <GorhomBottomSheet
       ref={bottomSheetRef}
       index={-1}
-      snapPoints={['60%', '85%']}
+      snapPoints={['40%', '60%']}
       enablePanDownToClose
       enableDynamicSizing={false}
       activeOffsetY={[-10, 10]} // Require 10px vertical movement before detecting pan
@@ -375,6 +399,44 @@ export function ReadingPreferencesModal({
             </HStack>
           </VStack>
 
+          {/* Verse Spacing */}
+          <VStack space="sm">
+            <HStack space="sm" className="items-center mb-2">
+              <Icon as={AlignJustify} size="md" className="text-gray-600" />
+              <Text className="text-gray-900 font-semibold text-base">Verse Spacing</Text>
+            </HStack>
+
+            <HStack space="sm">
+              {VERSE_SPACING_OPTIONS.map((option) => (
+                <Pressable
+                  key={option.value}
+                  onPress={() => handleVerseSpacingChange(option.value)}
+                  className="flex-1 active:opacity-70"
+                >
+                  <View
+                    className="p-4 rounded-lg items-center justify-center"
+                    style={{
+                      backgroundColor:
+                        preferences.verseSpacing === option.value
+                          ? colors.primary[500]
+                          : colors.gray[100],
+                    }}
+                  >
+                    <Text
+                      className="font-semibold text-sm"
+                      style={{
+                        color:
+                          preferences.verseSpacing === option.value ? '#ffffff' : colors.gray[600],
+                      }}
+                    >
+                      {option.label}
+                    </Text>
+                  </View>
+                </Pressable>
+              ))}
+            </HStack>
+          </VStack>
+
           {/* Toggle Options */}
           <VStack space="sm">
             <Text className="text-gray-900 font-semibold text-base mb-2">Display Options</Text>
@@ -456,6 +518,150 @@ export function ReadingPreferencesModal({
                 </View>
               </View>
             </Pressable>
+
+            {/* Focus Mode Toggle */}
+            <Pressable onPress={handleToggleFocusMode} className="active:opacity-70">
+              <View
+                className="p-4 rounded-lg flex-row items-center justify-between"
+                style={{
+                  backgroundColor: colors.gray[100],
+                }}
+              >
+                <HStack space="sm" className="items-center flex-1">
+                  <Icon
+                    as={Focus}
+                    size="md"
+                    className="text-gray-600"
+                  />
+                  <VStack space="xs" className="flex-1">
+                    <Text className="text-gray-900 font-medium">Focus Mode</Text>
+                    <Text className="text-gray-500 text-xs">Auto-hide header & navigation for distraction-free reading</Text>
+                  </VStack>
+                </HStack>
+                <View
+                  className="flex-row items-center justify-end"
+                  style={{
+                    width: 51,
+                    height: 31,
+                    borderRadius: 16,
+                    backgroundColor: preferences.focusMode
+                      ? colors.primary[500]
+                      : colors.gray[300],
+                    padding: 2,
+                  }}
+                >
+                  <View
+                    className="rounded-full bg-white shadow-sm"
+                    style={{
+                      width: 27,
+                      height: 27,
+                      position: 'absolute',
+                      left: preferences.focusMode ? 22 : 2,
+                    }}
+                  />
+                </View>
+              </View>
+            </Pressable>
+          </VStack>
+
+          {/* Reading Mode Selector */}
+          <VStack space="sm">
+            <HStack space="sm" className="items-center mb-2">
+              <Icon as={ScrollText} size="md" className="text-gray-600" />
+              <Text className="text-gray-900 font-semibold text-base">Reading Mode</Text>
+            </HStack>
+
+            <HStack space="sm">
+              {/* Scroll Mode */}
+              <Pressable
+                onPress={() => handleReadingModeChange('scroll')}
+                className="flex-1 active:opacity-70"
+              >
+                <View
+                  className="p-4 rounded-lg items-center justify-center"
+                  style={{
+                    backgroundColor:
+                      preferences.readingMode === 'scroll'
+                        ? colors.primary[500]
+                        : colors.gray[100],
+                    borderWidth: 2,
+                    borderColor:
+                      preferences.readingMode === 'scroll'
+                        ? colors.primary[600]
+                        : colors.gray[200],
+                  }}
+                >
+                  <Icon
+                    as={ScrollText}
+                    size="lg"
+                    className={preferences.readingMode === 'scroll' ? 'text-white' : 'text-gray-600'}
+                  />
+                  <Text
+                    className="font-semibold text-sm mt-2"
+                    style={{
+                      color:
+                        preferences.readingMode === 'scroll' ? '#ffffff' : colors.gray[600],
+                    }}
+                  >
+                    Scroll
+                  </Text>
+                  <Text
+                    className="text-xs mt-1 text-center"
+                    style={{
+                      color:
+                        preferences.readingMode === 'scroll' ? '#ffffff' : colors.gray[500],
+                    }}
+                  >
+                    Infinite scroll across chapters
+                  </Text>
+                </View>
+              </Pressable>
+
+              {/* Paged Mode */}
+              <Pressable
+                onPress={() => handleReadingModeChange('paged')}
+                className="flex-1 active:opacity-70"
+              >
+                <View
+                  className="p-4 rounded-lg items-center justify-center"
+                  style={{
+                    backgroundColor:
+                      preferences.readingMode === 'paged'
+                        ? colors.primary[500]
+                        : colors.gray[100],
+                    borderWidth: 2,
+                    borderColor:
+                      preferences.readingMode === 'paged'
+                        ? colors.primary[600]
+                        : colors.gray[200],
+                  }}
+                >
+                  <Icon
+                    as={BookText}
+                    size="lg"
+                    className={preferences.readingMode === 'paged' ? 'text-white' : 'text-gray-600'}
+                  />
+                  <Text
+                    className="font-semibold text-sm mt-2"
+                    style={{
+                      color:
+                        preferences.readingMode === 'paged' ? '#ffffff' : colors.gray[600],
+                    }}
+                  >
+                    Paged
+                  </Text>
+                  <Text
+                    className="text-xs mt-1 text-center"
+                    style={{
+                      color:
+                        preferences.readingMode === 'paged' ? '#ffffff' : colors.gray[500],
+                    }}
+                  >
+                    Chapter-by-chapter with buttons
+                  </Text>
+                </View>
+              </Pressable>
+            </HStack>
           </VStack>
 
           {/* Font Family Selector - NEW: Custom Bible Fonts with Live Preview */}

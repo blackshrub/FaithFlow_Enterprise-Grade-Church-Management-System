@@ -59,7 +59,8 @@ export type FontFamily =
   | 'Monospace';
 export type TextAlign = 'left' | 'justify';
 export type WordSpacing = 'normal' | 'wide' | 'wider';
-export type ReadingMode = 'scroll' | 'paged';
+export type ReadingMode = 'scroll' | 'paged' | 'continuous';
+export type VerseSpacing = 'none' | 'small' | 'large';
 
 export interface BiblePreferences {
   fontSize: number; // 10-24
@@ -69,10 +70,12 @@ export interface BiblePreferences {
   // Advanced typography options
   textAlign: TextAlign;
   wordSpacing: WordSpacing;
+  verseSpacing: VerseSpacing;
   showVerseNumbers: boolean;
   redLetterWords: boolean; // Highlight Jesus' words in red
   // Reading mode
   readingMode: ReadingMode; // 'scroll' for continuous scrolling, 'paged' for swipe navigation
+  focusMode: boolean; // Auto-hide header and tab bar for distraction-free reading
 }
 
 interface BibleState {
@@ -153,9 +156,11 @@ export const useBibleStore = create<BibleState>()(
         fontFamily: 'System',
         textAlign: 'left',
         wordSpacing: 'normal',
+        verseSpacing: 'small',
         showVerseNumbers: true,
         redLetterWords: false,
         readingMode: 'scroll',
+        focusMode: false,
       },
       // Verse selection initial state
       isSelecting: false,
@@ -333,6 +338,9 @@ export const useBibleStore = create<BibleState>()(
           }
           if (persistedState.preferences.wordSpacing === undefined) {
             persistedState.preferences.wordSpacing = 'normal';
+          }
+          if (persistedState.preferences.verseSpacing === undefined) {
+            persistedState.preferences.verseSpacing = 'small';
           }
           if (persistedState.preferences.showVerseNumbers === undefined) {
             persistedState.preferences.showVerseNumbers = true;

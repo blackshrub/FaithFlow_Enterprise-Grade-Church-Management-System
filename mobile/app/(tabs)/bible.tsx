@@ -9,11 +9,11 @@
  * - Reading preferences (font size, theme)
  */
 
-import React, { useState, useEffect } from 'react';
-import { View, Pressable, ActivityIndicator, Share } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Pressable, ActivityIndicator, Share, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
-import { BookOpen, Languages, Search, Type } from 'lucide-react-native';
+import { BookOpen, Languages, Search, Type, Bookmark } from 'lucide-react-native';
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
 
@@ -23,29 +23,42 @@ import { HStack } from '@/components/ui/hstack';
 import { Icon } from '@/components/ui/icon';
 
 import { ChapterReader } from '@/components/bible/ChapterReader';
+import { ContinuousScrollReader } from '@/components/bible/ContinuousScrollReader';
 import { BookSelectorModal } from '@/components/bible/BookSelectorModal';
 import { ReadingPreferencesModal } from '@/components/bible/ReadingPreferencesModal';
 import { BibleVersionSelector } from '@/components/bible/BibleVersionSelector';
 import { BibleSearchModal } from '@/components/bible/BibleSearchModal';
 import { VerseSelectionBar } from '@/components/bible/VerseSelectionBar';
 import { HighlightColorPicker } from '@/components/bible/HighlightColorPicker';
+import { BookmarksModal } from '@/components/bible/BookmarksModal';
+import { NoteEditorModal } from '@/components/bible/NoteEditorModal';
 import { useBibleChapterOffline, useBibleBooksOffline } from '@/hooks/useBibleOffline';
 import { useBibleStore, type VerseRef, type Highlight } from '@/stores/bibleStore';
-import { colors, touchTargets, readingThemes } from '@/constants/theme';
+import { colors, readingThemes } from '@/constants/theme';
 import { BIBLE_TRANSLATIONS, type BibleTranslation } from '@/types/bible';
-import { useToast, Toast, ToastTitle, ToastDescription } from '@/components/ui/toast';
+import { showSuccessToast, showErrorToast, showInfoToast } from '@/components/ui/Toast';
+import { useQueryClient } from '@tanstack/react-query';
+import { getBibleLoader } from '@/lib/bibleLoaderOptimized';
+import { getBookNumber } from '@/lib/bibleBookLookup';
 
 export default function BibleScreen() {
   const { t } = useTranslation();
-  const toast = useToast();
+  const queryClient = useQueryClient();
   const [isBookSelectorOpen, setIsBookSelectorOpen] = useState(false);
   const [isPreferencesOpen, setIsPreferencesOpen] = useState(false);
   const [isVersionSelectorOpen, setIsVersionSelectorOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isBookmarksOpen, setIsBookmarksOpen] = useState(false);
+  const [isNoteEditorOpen, setIsNoteEditorOpen] = useState(false);
   const [scrollToVerseNumber, setScrollToVerseNumber] = useState<number | null>(null);
 
   // NEW: Color picker state for highlight selection
   const [showColorPicker, setShowColorPicker] = useState(false);
+
+  // Focus mode: animated header and tab bar visibility
+  const headerHeight = useRef(new Animated.Value(1)).current; // 1 = visible, 0 = hidden
+  const headerOpacity = useRef(new Animated.Value(1)).current;
+  const lastScrollY = useRef(0);
 
   const {
     currentVersion,
@@ -70,11 +83,16 @@ export default function BibleScreen() {
   const version = currentVersion as BibleTranslation;
 
   // Fetch current chapter (offline)
-  const { data: verses, isLoading: isLoadingChapter } = useBibleChapterOffline(
+  // Use isFetching instead of isLoading to avoid showing loader for cached data
+  const { data: verses, isLoading: isLoadingChapter, isFetching: isFetchingChapter } = useBibleChapterOffline(
     version,
     currentBook,
     currentChapter
   );
+
+  // Only show loading if we have no data AND we're loading
+  // This prevents loading indicator when switching between cached chapters
+  const shouldShowLoading = isLoadingChapter && !verses;
 
   // Fetch books for navigation (offline)
   const { data: books = [], isLoading: isLoadingBooks, error: booksError } = useBibleBooksOffline(version);
@@ -97,6 +115,71 @@ export default function BibleScreen() {
 
   // Get localized book name (for display in header)
   const displayBookName = currentBookInfo?.name || currentBook;
+
+  /**
+   * Handle scroll for focus mode auto-hide behavior
+   * Scroll down = hide header completely, Scroll up = show header
+   * Also communicates with parent to hide tab bar
+   */
+  const handleScroll = (event: { nativeEvent: { contentOffset: { y: number } } }) => {
+    if (!preferences?.focusMode) return;
+
+    const currentScrollY = event.nativeEvent.contentOffset.y;
+    const scrollDelta = currentScrollY - lastScrollY.current;
+
+    // Only hide/show if scrolled more than threshold
+    const threshold = 5;
+
+    if (scrollDelta > threshold && currentScrollY > 50) {
+      // Scrolling down - hide header completely
+      Animated.parallel([
+        Animated.timing(headerOpacity, {
+          toValue: 0,
+          duration: 250,
+          useNativeDriver: false, // Use false for both to avoid conflicts
+        }),
+        Animated.timing(headerHeight, {
+          toValue: 0,
+          duration: 250,
+          useNativeDriver: false,
+        }),
+      ]).start();
+    } else if (scrollDelta < -threshold) {
+      // Scrolling up - show header
+      Animated.parallel([
+        Animated.timing(headerOpacity, {
+          toValue: 1,
+          duration: 250,
+          useNativeDriver: false, // Use false for both to avoid conflicts
+        }),
+        Animated.timing(headerHeight, {
+          toValue: 1,
+          duration: 250,
+          useNativeDriver: false,
+        }),
+      ]).start();
+    }
+
+    lastScrollY.current = currentScrollY;
+  };
+
+  // Reset header visibility when focus mode is toggled off
+  useEffect(() => {
+    if (!preferences?.focusMode) {
+      Animated.parallel([
+        Animated.timing(headerOpacity, {
+          toValue: 1,
+          duration: 250,
+          useNativeDriver: false, // Use false for both to avoid conflicts
+        }),
+        Animated.timing(headerHeight, {
+          toValue: 1,
+          duration: 250,
+          useNativeDriver: false,
+        }),
+      ]).start();
+    }
+  }, [preferences?.focusMode, headerOpacity, headerHeight]);
 
   // Navigation handlers
   const handlePreviousChapter = () => {
@@ -126,6 +209,17 @@ export default function BibleScreen() {
     setScrollToVerseNumber(verse);
     setCurrentPosition(currentVersion, book, chapter);
     console.log('[Bible Screen] scrollToVerseNumber set to:', verse);
+  };
+
+  const handleBookmarkSelect = (bookmark: { version: string; book: string; chapter: number; verse: number }) => {
+    console.log('[Bible Screen] Bookmark selected:', bookmark);
+    // If bookmark is from a different version, switch to that version
+    if (bookmark.version !== currentVersion) {
+      setCurrentPosition(bookmark.version, bookmark.book, bookmark.chapter);
+    } else {
+      setCurrentPosition(currentVersion, bookmark.book, bookmark.chapter);
+    }
+    setScrollToVerseNumber(bookmark.verse);
   };
 
   /**
@@ -218,22 +312,14 @@ export default function BibleScreen() {
 
     await Clipboard.setStringAsync(fullText);
 
-    // Show toast notification
+    // Show success toast with haptic feedback
     const verseCount = selectedVerses.length;
     const verseText = verseCount === 1 ? t('bible.verse') : t('bible.verses');
 
-    toast.show({
-      placement: 'bottom',
-      duration: 3000,
-      render: ({ id }) => (
-        <Toast action="success" variant="solid" nativeID={`toast-${id}`}>
-          <ToastTitle>{t('bible.verseCopied')}</ToastTitle>
-          <ToastDescription>
-            {reference} - {verseCount} {verseText}
-          </ToastDescription>
-        </Toast>
-      ),
-    });
+    showSuccessToast(
+      `✓ ${t('bible.verseCopied')}`,
+      `${reference} - ${verseCount} ${verseText}`
+    );
 
     // Keep selection active - don't clear
   };
@@ -259,11 +345,22 @@ export default function BibleScreen() {
     const fullText = `${reference} (${currentVersion})\n\n${selectedTexts}`;
 
     try {
-      await Share.share({ message: fullText });
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      const result = await Share.share({ message: fullText });
+
+      // Show feedback if share succeeded (not cancelled)
+      if (result.action === Share.sharedAction) {
+        const verseCount = selectedVerses.length;
+        const verseText = verseCount === 1 ? t('bible.verse') : t('bible.verses');
+
+        showSuccessToast(
+          '✓ Shared Successfully',
+          `${verseCount} ${verseText} shared`
+        );
+      }
       // Keep selection active - don't clear
     } catch (error) {
       console.error('Error sharing verses:', error);
+      showErrorToast('Share Failed', 'Could not share verses');
     }
   };
 
@@ -325,15 +422,7 @@ export default function BibleScreen() {
           removeBookmark(existing.id);
         }
       });
-      toast.show({
-        placement: 'bottom',
-        duration: 2000,
-        render: ({ id }) => (
-          <Toast action="info" variant="solid" nativeID={`toast-${id}`}>
-            <ToastTitle>Bookmark Removed</ToastTitle>
-          </Toast>
-        ),
-      });
+      showInfoToast('Bookmark Removed');
     } else {
       // Add bookmarks for all selected verses
       selectedVerses.forEach((verseRef) => {
@@ -360,23 +449,121 @@ export default function BibleScreen() {
       const verseCount = selectedVerses.length;
       const verseText = verseCount === 1 ? t('bible.verse') : t('bible.verses');
 
-      toast.show({
-        placement: 'bottom',
-        duration: 2000,
-        render: ({ id }) => (
-          <Toast action="success" variant="solid" nativeID={`toast-${id}`}>
-            <ToastTitle>Bookmark Added</ToastTitle>
-            <ToastDescription>
-              {verseCount} {verseText} bookmarked
-            </ToastDescription>
-          </Toast>
-        ),
-      });
+      showSuccessToast(
+        'Bookmark Added',
+        `${verseCount} ${verseText} bookmarked`
+      );
     }
-
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     // Keep selection active - don't clear
   };
+
+  /**
+   * NEW: Handle note button tap - open note editor for selected verses
+   * For single verse: edit existing note or create new note
+   * For multiple verses: create note for first verse (YouVersion-style)
+   *
+   * FIX: Removed animation conflicts that were preventing modal from opening
+   * - Changed all header animations to useNativeDriver: false
+   * - Changed height animation to maxHeight (supported property)
+   */
+  const handleNoteVerses = () => {
+    if (selectedVerses.length === 0) return;
+
+    // Haptic feedback when opening note editor
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+    setIsNoteEditorOpen(true);
+  };
+
+  /**
+   * NEW: Save note to bookmark
+   * If bookmark doesn't exist, create it with the note
+   * If bookmark exists, update the note
+   */
+  const handleSaveNote = (note: string) => {
+    if (selectedVerses.length === 0) return;
+
+    const firstVerse = selectedVerses[0];
+
+    // Remove existing bookmark if any
+    const existing = getBookmark(
+      firstVerse.version,
+      firstVerse.book,
+      firstVerse.chapter,
+      firstVerse.verse
+    );
+    if (existing) {
+      removeBookmark(existing.id);
+    }
+
+    // Add bookmark with note
+    addBookmark({
+      version: firstVerse.version,
+      book: firstVerse.book,
+      chapter: firstVerse.chapter,
+      verse: firstVerse.verse,
+      note: note.trim() || undefined,
+    });
+
+    showSuccessToast('Note Saved');
+  };
+
+  /**
+   * Get note from first selected verse's bookmark (if exists)
+   */
+  const getSelectedVerseNote = (): string => {
+    if (selectedVerses.length === 0) return '';
+
+    const firstVerse = selectedVerses[0];
+    const bookmark = getBookmark(
+      firstVerse.version,
+      firstVerse.book,
+      firstVerse.chapter,
+      firstVerse.verse
+    );
+
+    return bookmark?.note || '';
+  };
+
+  /**
+   * INSTANT NAVIGATION: Prefetch adjacent chapters
+   * Preload next and previous chapters so navigation is instant with zero delay
+   */
+  useEffect(() => {
+    const prefetchAdjacentChapters = async () => {
+      const bookNum = getBookNumber(currentBook);
+      if (!bookNum) return;
+
+      const loader = getBibleLoader(version);
+
+      // Ensure Bible is loaded
+      if (!loader.isLoaded()) {
+        await loader.load();
+      }
+
+      // Prefetch previous chapter
+      if (currentChapter > 1) {
+        const prevChapterKey = ['bible-chapter-offline', version, bookNum, currentChapter - 1];
+        queryClient.prefetchQuery({
+          queryKey: prevChapterKey,
+          queryFn: async () => loader.getChapter(bookNum, currentChapter - 1),
+          staleTime: 1000 * 60 * 60 * 24 * 7, // 1 week
+        });
+      }
+
+      // Prefetch next chapter
+      if (currentChapter < totalChapters) {
+        const nextChapterKey = ['bible-chapter-offline', version, bookNum, currentChapter + 1];
+        queryClient.prefetchQuery({
+          queryKey: nextChapterKey,
+          queryFn: async () => loader.getChapter(bookNum, currentChapter + 1),
+          staleTime: 1000 * 60 * 60 * 24 * 7, // 1 week
+        });
+      }
+    };
+
+    prefetchAdjacentChapters();
+  }, [version, currentBook, currentChapter, totalChapters, queryClient]);
 
   // Reset scroll target when chapter changes ONLY if no target verse was set
   // This prevents clearing the scroll target when navigating from search results
@@ -403,11 +590,21 @@ export default function BibleScreen() {
       edges={['top']}
       style={{ backgroundColor: currentTheme.background }}
     >
-      {/* Header - Minimal Design */}
-      <View
-        className="px-4 py-2"
-        style={{ borderBottomWidth: 0.5, borderBottomColor: currentTheme.verseNumber + '20' }}
+      {/* Header - Minimal Design - Animated for focus mode */}
+      <Animated.View
+        className="px-4"
+        style={{
+          borderBottomWidth: 0.5,
+          borderBottomColor: currentTheme.verseNumber + '20',
+          opacity: headerOpacity,
+          maxHeight: headerHeight.interpolate({
+            inputRange: [0, 1],
+            outputRange: [0, 100], // Max 100px to accommodate content
+          }),
+          overflow: 'hidden',
+        }}
       >
+        <View className="py-2">
         <HStack className="items-center justify-between">
           {/* Left Button Group */}
           <HStack space="xs" className="items-center">
@@ -468,6 +665,22 @@ export default function BibleScreen() {
               <Icon as={Search} size="sm" className="text-gray-700" />
             </Pressable>
 
+            {/* Bookmarks Button */}
+            <Pressable
+              onPress={() => setIsBookmarksOpen(true)}
+              className="active:opacity-60"
+              style={{
+                width: 32,
+                height: 32,
+                justifyContent: 'center',
+                alignItems: 'center',
+                borderRadius: 8,
+                backgroundColor: colors.gray[100],
+              }}
+            >
+              <Icon as={Bookmark} size="sm" className="text-gray-700" />
+            </Pressable>
+
             {/* Readability Settings (Aa) */}
             <Pressable
               onPress={() => setIsPreferencesOpen(true)}
@@ -485,10 +698,11 @@ export default function BibleScreen() {
             </Pressable>
           </HStack>
         </HStack>
-      </View>
+        </View>
+      </Animated.View>
 
       {/* Chapter Content */}
-      {isLoadingChapter ? (
+      {shouldShowLoading ? (
         <View
           className="flex-1 items-center justify-center"
           style={{ backgroundColor: currentTheme.background }}
@@ -498,7 +712,21 @@ export default function BibleScreen() {
             Loading chapter...
           </Text>
         </View>
+      ) : preferences.readingMode === 'scroll' || preferences.readingMode === 'continuous' ? (
+        // Continuous scroll mode - infinite scroll across chapters
+        <ContinuousScrollReader
+          version={version}
+          initialBook={getBookNumber(currentBook) || 1}
+          initialChapter={currentChapter}
+          onChapterChange={(book, chapter) => {
+            // Update header to show current visible chapter
+            const bookName = books.find((b) => b.number === book)?.name || currentBook;
+            setCurrentPosition(currentVersion, bookName, chapter);
+          }}
+          onScroll={handleScroll}
+        />
       ) : verses && verses.length > 0 ? (
+        // Paged mode - chapter by chapter navigation
         <ChapterReader
           verses={verses}
           version={currentVersion}
@@ -508,6 +736,7 @@ export default function BibleScreen() {
           totalChapters={totalChapters}
           onPreviousChapter={handlePreviousChapter}
           onNextChapter={handleNextChapter}
+          onScroll={handleScroll}
         />
       ) : (
         <View
@@ -552,6 +781,13 @@ export default function BibleScreen() {
         onSelectVerse={handleSearchVerseSelect}
       />
 
+      {/* Bookmarks Modal */}
+      <BookmarksModal
+        isOpen={isBookmarksOpen}
+        onClose={() => setIsBookmarksOpen(false)}
+        onNavigateToBookmark={handleBookmarkSelect}
+      />
+
       {/* NEW: Verse Selection Bar - Compact bottom action bar (YouVersion-style) */}
       {isSelecting && (
         <VerseSelectionBar
@@ -560,11 +796,21 @@ export default function BibleScreen() {
           onCopy={handleCopyVerses}
           onShare={handleShareVerses}
           onBookmark={handleBookmarkVerses}
+          onNote={handleNoteVerses}
           onDone={clearSelection}
           hasHighlightedVerse={hasHighlightedVerse}
           hasBookmarkedVerse={hasBookmarkedVerse}
         />
       )}
+
+      {/* Note Editor Modal */}
+      <NoteEditorModal
+        isOpen={isNoteEditorOpen}
+        onClose={() => setIsNoteEditorOpen(false)}
+        verseReference={getSelectedReference()}
+        initialNote={getSelectedVerseNote()}
+        onSave={handleSaveNote}
+      />
 
       {/* NEW: Highlight Color Picker - Appears above action bar when highlight is tapped */}
       {isSelecting && showColorPicker && (
