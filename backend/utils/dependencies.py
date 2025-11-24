@@ -4,7 +4,7 @@ from typing import Optional
 from motor.motor_asyncio import AsyncIOMotorDatabase, AsyncIOMotorClient
 import os
 
-from .security import decode_access_token
+from .security import decode_access_token, create_access_token
 from utils.tenant_utils import get_session_church_id_from_user
 
 # Security scheme
