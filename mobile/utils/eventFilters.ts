@@ -25,11 +25,11 @@ export interface FilteredEvent extends Event {
 
 export interface FilterOptions {
   events: Event[];
-  categories: Array<{ id: string; name: string }>;
-  selectedDate: Date | null;
-  searchTerm: string;
-  categoryFilter: string | null;
-  statusFilter: EventStatus | null;
+  categories?: Array<{ id: string; name: string }>;
+  selectedDate?: Date | null;
+  searchTerm?: string;
+  categoryFilter?: string | null;
+  statusFilter?: EventStatus | null;
   userRsvps: RSVP[];
   userAttendance: Attendance[];
 }
@@ -56,10 +56,10 @@ export interface FilterResults {
 export function filterEvents(options: FilterOptions): FilterResults {
   const {
     events,
-    selectedDate,
-    searchTerm,
-    categoryFilter,
-    statusFilter,
+    selectedDate = null,
+    searchTerm = '',
+    categoryFilter = null,
+    statusFilter = null,
     userRsvps,
     userAttendance,
   } = options;
