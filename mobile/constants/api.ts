@@ -30,6 +30,7 @@ export const API_ENDPOINTS = {
     `/api/bible/${version}/${book}/${chapter}/${verse}${
       endVerse ? `?end_verse=${endVerse}` : ''
     }`,
+  BIBLE_SEARCH: '/api/bible/search',
 
   // Giving
   GIVING_CONFIG: '/api/giving/config',

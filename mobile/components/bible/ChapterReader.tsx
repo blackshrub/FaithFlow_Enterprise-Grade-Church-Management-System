@@ -48,8 +48,10 @@ export function ChapterReader({
   const [selectedVerses, setSelectedVerses] = useState<number[]>([]);
   const [showActionSheet, setShowActionSheet] = useState(false);
 
-  // Calculate bottom inset
-  const bottomInset = insets.bottom;
+  // Calculate bottom inset - account for tab bar height
+  // Tab bar is ~64px + safe area bottom
+  const TAB_BAR_HEIGHT = 64;
+  const bottomInset = insets.bottom + TAB_BAR_HEIGHT;
 
   // Control bottom sheet
   useEffect(() => {
@@ -60,15 +62,9 @@ export function ChapterReader({
     }
   }, [showActionSheet, selectedVerses.length]);
 
-  // Get font size based on preference
+  // Get font size based on preference (now numeric 10-24)
   const getFontSize = () => {
-    const sizes = {
-      small: 16,
-      medium: 18,
-      large: 20,
-      xlarge: 24,
-    };
-    return sizes[preferences.fontSize];
+    return preferences.fontSize;
   };
 
   // Get line height based on preference
@@ -274,7 +270,7 @@ export function ChapterReader({
       <GorhomBottomSheet
         ref={bottomSheetRef}
         index={-1}
-        snapPoints={['20%']}
+        snapPoints={[160]}
         enablePanDownToClose
         bottomInset={bottomInset}
         detached={false}

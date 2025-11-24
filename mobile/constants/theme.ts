@@ -226,9 +226,11 @@ export const iconSizes = {
   xl: 48,
 };
 
-// Bible Reading Themes (YouVersion-inspired)
+// Bible Reading Themes (YouVersion-inspired) - 7 Themes Total
 export const readingThemes = {
+  // Light Themes (4)
   light: {
+    name: 'White',
     background: '#ffffff',
     text: '#111827',
     verseNumber: '#6b7280',
@@ -240,7 +242,63 @@ export const readingThemes = {
       orange: '#fed7aa',
     },
   },
+  light2: {
+    name: 'Cream',
+    background: '#faf8f3',
+    text: '#1c1917',
+    verseNumber: '#78716c',
+    highlight: {
+      yellow: '#fef3c7',
+      green: '#d1fae5',
+      blue: '#dbeafe',
+      pink: '#fce7f3',
+      orange: '#fed7aa',
+    },
+  },
+  light3: {
+    name: 'Soft Blue',
+    background: '#f0f9ff',
+    text: '#0c4a6e',
+    verseNumber: '#64748b',
+    highlight: {
+      yellow: '#fef08a',
+      green: '#bbf7d0',
+      blue: '#bfdbfe',
+      pink: '#fbcfe8',
+      orange: '#fcd34d',
+    },
+  },
+  sepia: {
+    name: 'Sepia',
+    background: '#f5f1e8',
+    text: '#3e3830',
+    verseNumber: '#78716c',
+    highlight: {
+      yellow: '#fef08a',
+      green: '#bbf7d0',
+      blue: '#bfdbfe',
+      pink: '#fbcfe8',
+      orange: '#fed7aa',
+    },
+  },
+  // Light Variant 4
+  light4: {
+    name: 'Warm Beige',
+    background: '#fef7ed',
+    text: '#431407',
+    verseNumber: '#92400e',
+    highlight: {
+      yellow: '#fef3c7',
+      green: '#d1fae5',
+      blue: '#dbeafe',
+      pink: '#fce7f3',
+      orange: '#fed7aa',
+    },
+  },
+
+  // Dark Themes (3)
   dark: {
+    name: 'Dark Gray',
     background: '#1f2937',
     text: '#f9fafb',
     verseNumber: '#9ca3af',
@@ -252,16 +310,30 @@ export const readingThemes = {
       orange: '#7c2d12',
     },
   },
-  sepia: {
-    background: '#f5f1e8',
-    text: '#3e3830',
-    verseNumber: '#78716c',
+  dark2: {
+    name: 'True Black',
+    background: '#0a0a0a',
+    text: '#e5e5e5',
+    verseNumber: '#a3a3a3',
     highlight: {
-      yellow: '#fef08a',
-      green: '#bbf7d0',
-      blue: '#bfdbfe',
-      pink: '#fbcfe8',
-      orange: '#fed7aa',
+      yellow: '#713f12',
+      green: '#065f46',
+      blue: '#1e40af',
+      pink: '#9f1239',
+      orange: '#9a3412',
+    },
+  },
+  dark3: {
+    name: 'Navy Blue',
+    background: '#0f172a',
+    text: '#f1f5f9',
+    verseNumber: '#94a3b8',
+    highlight: {
+      yellow: '#713f12',
+      green: '#064e3b',
+      blue: '#1e3a8a',
+      pink: '#831843',
+      orange: '#7c2d12',
     },
   },
 };

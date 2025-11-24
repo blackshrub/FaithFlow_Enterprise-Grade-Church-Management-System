@@ -13,7 +13,7 @@ import React, { useState } from 'react';
 import { View, Pressable, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
-import { BookOpen, ChevronLeft, ChevronRight, Settings, Languages } from 'lucide-react-native';
+import { BookOpen, Languages, Search, Type } from 'lucide-react-native';
 
 import { Text } from '@/components/ui/text';
 import { Heading } from '@/components/ui/heading';
@@ -24,6 +24,7 @@ import { ChapterReader } from '@/components/bible/ChapterReader';
 import { BookSelectorModal } from '@/components/bible/BookSelectorModal';
 import { ReadingPreferencesModal } from '@/components/bible/ReadingPreferencesModal';
 import { BibleVersionSelector } from '@/components/bible/BibleVersionSelector';
+import { BibleSearchModal } from '@/components/bible/BibleSearchModal';
 import { useBibleChapter, useBibleBooks, useBibleVersions } from '@/hooks/useBible';
 import { useBibleStore } from '@/stores/bibleStore';
 import { colors, touchTargets, readingThemes } from '@/constants/theme';
@@ -33,6 +34,7 @@ export default function BibleScreen() {
   const [isBookSelectorOpen, setIsBookSelectorOpen] = useState(false);
   const [isPreferencesOpen, setIsPreferencesOpen] = useState(false);
   const [isVersionSelectorOpen, setIsVersionSelectorOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   const { currentVersion, currentBook, currentChapter, setCurrentPosition, preferences } =
     useBibleStore();
@@ -91,6 +93,11 @@ export default function BibleScreen() {
     }
   };
 
+  const handleSearchVerseSelect = (book: string, chapter: number, verse: number) => {
+    setCurrentPosition(currentVersion, book, chapter);
+    // TODO: Scroll to specific verse
+  };
+
   const currentTheme = readingThemes[preferences.theme];
 
   return (
@@ -99,77 +106,32 @@ export default function BibleScreen() {
       edges={['top']}
       style={{ backgroundColor: currentTheme.background }}
     >
-      {/* Header */}
+      {/* Header - Minimal Design */}
       <View
-        className="px-4 py-3 border-b"
-        style={{ borderBottomColor: currentTheme.verseNumber + '40' }}
+        className="px-4 py-2"
+        style={{ borderBottomWidth: 0.5, borderBottomColor: currentTheme.verseNumber + '20' }}
       >
         <HStack className="items-center justify-between">
-          {/* Book & Chapter */}
-          <Pressable
-            onPress={() => setIsBookSelectorOpen(true)}
-            className="flex-1 active:opacity-60"
-          >
-            <HStack space="sm" className="items-center">
-              <Icon as={BookOpen} size="md" className="text-primary-500" />
-              <View className="flex-1">
-                <Heading size="md" style={{ color: currentTheme.text }}>
-                  {currentBook} {currentChapter}
-                </Heading>
-                <Pressable onPress={() => setIsVersionSelectorOpen(true)}>
-                  <Text size="xs" style={{ color: currentTheme.verseNumber }}>
-                    {currentVersion} • {totalChapters} chapters
-                  </Text>
-                </Pressable>
-              </View>
-            </HStack>
-          </Pressable>
-
-          {/* Navigation */}
-          <HStack space="xs">
-            {/* Previous Chapter */}
+          {/* Left Button Group */}
+          <HStack space="xs" className="items-center">
+            {/* Book/Chapter Selector */}
             <Pressable
-              onPress={handlePreviousChapter}
-              disabled={currentChapter <= 1}
+              onPress={() => setIsBookSelectorOpen(true)}
               className="active:opacity-60"
               style={{
-                width: touchTargets.comfortable,
-                height: touchTargets.comfortable,
-                justifyContent: 'center',
+                paddingVertical: 6,
+                paddingHorizontal: 12,
+                backgroundColor: colors.gray[100],
+                borderRadius: 8,
+                flexDirection: 'row',
                 alignItems: 'center',
-                borderRadius: touchTargets.comfortable / 2,
-                backgroundColor: currentChapter <= 1 ? colors.gray[100] : colors.primary[50],
+                gap: 6,
               }}
             >
-              <Icon
-                as={ChevronLeft}
-                size="lg"
-                className={currentChapter <= 1 ? 'text-gray-300' : 'text-primary-500'}
-              />
-            </Pressable>
-
-            {/* Next Chapter */}
-            <Pressable
-              onPress={handleNextChapter}
-              disabled={currentChapter >= totalChapters}
-              className="active:opacity-60"
-              style={{
-                width: touchTargets.comfortable,
-                height: touchTargets.comfortable,
-                justifyContent: 'center',
-                alignItems: 'center',
-                borderRadius: touchTargets.comfortable / 2,
-                backgroundColor:
-                  currentChapter >= totalChapters ? colors.gray[100] : colors.primary[50],
-              }}
-            >
-              <Icon
-                as={ChevronRight}
-                size="lg"
-                className={
-                  currentChapter >= totalChapters ? 'text-gray-300' : 'text-primary-500'
-                }
-              />
+              <Icon as={BookOpen} size="sm" className="text-gray-700" />
+              <Text className="text-gray-900 font-medium text-sm">
+                {currentBook} {currentChapter}
+              </Text>
             </Pressable>
 
             {/* Version Selector */}
@@ -177,31 +139,52 @@ export default function BibleScreen() {
               onPress={() => setIsVersionSelectorOpen(true)}
               className="active:opacity-60"
               style={{
-                width: touchTargets.comfortable,
-                height: touchTargets.comfortable,
-                justifyContent: 'center',
-                alignItems: 'center',
-                borderRadius: touchTargets.comfortable / 2,
+                paddingVertical: 6,
+                paddingHorizontal: 12,
                 backgroundColor: colors.primary[50],
+                borderRadius: 8,
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 6,
               }}
             >
-              <Icon as={Languages} size="lg" className="text-primary-600" />
+              <Icon as={Languages} size="sm" className="text-primary-600" />
+              <Text className="text-primary-600 font-medium text-sm">{currentVersion}</Text>
+            </Pressable>
+          </HStack>
+
+          {/* Right Button Group */}
+          <HStack space="xs" className="items-center">
+            {/* Search Button */}
+            <Pressable
+              onPress={() => setIsSearchOpen(true)}
+              className="active:opacity-60"
+              style={{
+                width: 32,
+                height: 32,
+                justifyContent: 'center',
+                alignItems: 'center',
+                borderRadius: 8,
+                backgroundColor: colors.gray[100],
+              }}
+            >
+              <Icon as={Search} size="sm" className="text-gray-700" />
             </Pressable>
 
-            {/* Settings */}
+            {/* Readability Settings (Aa) */}
             <Pressable
               onPress={() => setIsPreferencesOpen(true)}
               className="active:opacity-60"
               style={{
-                width: touchTargets.comfortable,
-                height: touchTargets.comfortable,
+                width: 32,
+                height: 32,
                 justifyContent: 'center',
                 alignItems: 'center',
-                borderRadius: touchTargets.comfortable / 2,
+                borderRadius: 8,
                 backgroundColor: colors.gray[100],
               }}
             >
-              <Icon as={Settings} size="lg" className="text-gray-600" />
+              <Icon as={Type} size="sm" className="text-gray-700" />
             </Pressable>
           </HStack>
         </HStack>
@@ -257,6 +240,14 @@ export default function BibleScreen() {
         versions={versions}
         currentVersion={currentVersion}
         onSelectVersion={handleSelectVersion}
+      />
+
+      {/* Bible Search Modal */}
+      <BibleSearchModal
+        isOpen={isSearchOpen}
+        onClose={() => setIsSearchOpen(false)}
+        version={currentVersion}
+        onSelectVerse={handleSearchVerseSelect}
       />
     </SafeAreaView>
   );

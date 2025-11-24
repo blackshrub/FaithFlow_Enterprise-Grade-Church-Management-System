@@ -216,7 +216,13 @@
     "noteComingSoon": "Note feature coming soon!",
     "originalOrder": "Original",
     "alphabetical": "A-Z",
-    "selectVersion": "Select Bible Version"
+    "selectVersion": "Select Bible Version",
+    "searchBible": "Search Bible",
+    "searchPlaceholder": "Search for verses...",
+    "searchMinLength": "Type at least 3 characters to search",
+    "searching": "Searching...",
+    "resultsFound": "results found",
+    "noResults": "No verses found matching your search"
   },
   "events": {
     "title": "Events",

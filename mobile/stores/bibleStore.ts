@@ -40,10 +40,26 @@ export interface ReadingHistory {
   lastReadAt: string;
 }
 
+export type LineHeightType = 'compact' | 'normal' | 'relaxed';
+export type ThemeType = 'light' | 'light2' | 'light3' | 'light4' | 'dark' | 'dark2' | 'dark3' | 'sepia';
+export type FontFamily =
+  | 'System'
+  | 'Untitled Serif'
+  | 'Avenir'
+  | 'New York'
+  | 'San Francisco'
+  | 'Gentium Plus'
+  | 'Baskerville'
+  | 'Georgia'
+  | 'Helvetica Neue'
+  | 'Hoefler Text'
+  | 'Verdana';
+
 export interface BiblePreferences {
-  fontSize: 'small' | 'medium' | 'large' | 'xlarge';
-  lineHeight: 'compact' | 'normal' | 'relaxed';
-  theme: 'light' | 'dark' | 'sepia';
+  fontSize: number; // 10-24
+  lineHeight: LineHeightType;
+  theme: ThemeType;
+  fontFamily: FontFamily;
 }
 
 interface BibleState {
@@ -75,6 +91,18 @@ interface BibleState {
   getLastReading: () => ReadingHistory | undefined;
 }
 
+// Migration helper to convert old string-based font sizes to numbers
+const migrateFontSize = (oldSize: any): number => {
+  if (typeof oldSize === 'number') return oldSize;
+  const sizeMap: Record<string, number> = {
+    small: 16,
+    medium: 18,
+    large: 20,
+    xlarge: 24,
+  };
+  return sizeMap[oldSize as string] || 18;
+};
+
 export const useBibleStore = create<BibleState>()(
   persist(
     (set, get) => ({
@@ -86,9 +114,10 @@ export const useBibleStore = create<BibleState>()(
       highlights: [],
       readingHistory: [],
       preferences: {
-        fontSize: 'medium',
+        fontSize: 18,
         lineHeight: 'normal',
         theme: 'light',
+        fontFamily: 'System',
       },
 
       // Set current reading position
@@ -190,6 +219,20 @@ export const useBibleStore = create<BibleState>()(
     {
       name: 'bible-storage',
       storage: createJSONStorage(() => AsyncStorage),
+      version: 1,
+      migrate: (persistedState: any, version: number) => {
+        // Migrate old string-based fontSize to number
+        if (persistedState?.preferences?.fontSize) {
+          persistedState.preferences.fontSize = migrateFontSize(
+            persistedState.preferences.fontSize
+          );
+        }
+        // Add fontFamily if missing
+        if (!persistedState?.preferences?.fontFamily) {
+          persistedState.preferences.fontFamily = 'System';
+        }
+        return persistedState;
+      },
     }
   )
 );
