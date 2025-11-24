@@ -24,6 +24,9 @@ import {
   AlignLeft,
   AlignCenter,
   AlignRight,
+  Eye,
+  EyeOff,
+  Space,
 } from 'lucide-react-native';
 import GorhomBottomSheet, { BottomSheetBackdrop as GorhomBackdrop } from '@gorhom/bottom-sheet';
 
@@ -38,6 +41,8 @@ import {
   useBibleStore,
   type LineHeightType,
   type ThemeType,
+  type TextAlign,
+  type WordSpacing,
 } from '@/stores/bibleStore';
 import { BibleFontSelector } from './BibleFontSelector';
 import { isChineseBible } from '@/utils/fonts';
@@ -62,6 +67,17 @@ const LINE_HEIGHT_ICONS = {
 };
 
 const THEMES: ThemeType[] = ['light', 'light2', 'light3', 'sepia', 'light4', 'dark', 'dark2', 'dark3'];
+
+const TEXT_ALIGN_OPTIONS: { value: TextAlign; icon: typeof AlignLeft; label: string }[] = [
+  { value: 'left', icon: AlignLeft, label: 'Left' },
+  { value: 'justify', icon: AlignJustify, label: 'Justify' },
+];
+
+const WORD_SPACING_OPTIONS: { value: WordSpacing; label: string }[] = [
+  { value: 'normal', label: 'Normal' },
+  { value: 'wide', label: 'Wide' },
+  { value: 'wider', label: 'Wider' },
+];
 
 export function ReadingPreferencesModal({
   isOpen,
@@ -112,6 +128,25 @@ export function ReadingPreferencesModal({
     updatePreferences({ theme });
   };
 
+  // Text alignment handler
+  const handleTextAlignChange = (textAlign: TextAlign) => {
+    updatePreferences({ textAlign });
+  };
+
+  // Word spacing handler
+  const handleWordSpacingChange = (wordSpacing: WordSpacing) => {
+    updatePreferences({ wordSpacing });
+  };
+
+  // Toggle handlers
+  const handleToggleVerseNumbers = () => {
+    updatePreferences({ showVerseNumbers: !preferences.showVerseNumbers });
+  };
+
+  const handleToggleRedLetterWords = () => {
+    updatePreferences({ redLetterWords: !preferences.redLetterWords });
+  };
+
   // Backdrop component - transparent to allow live preview
   const renderBackdrop = useCallback(
     (props: any) => (
@@ -134,6 +169,8 @@ export function ReadingPreferencesModal({
       index={-1}
       snapPoints={['50%']}
       enablePanDownToClose
+      activeOffsetY={[-10, 10]} // Require 10px vertical movement before detecting pan
+      failOffsetX={[-10, 10]} // Fail gesture if horizontal movement > 10px
       bottomInset={bottomInset}
       topInset={topInset}
       detached={false}
@@ -248,6 +285,164 @@ export function ReadingPreferencesModal({
                   </Text>
                 </HStack>
                 <Text className="text-primary-600 text-xs">Tap to cycle</Text>
+              </View>
+            </Pressable>
+          </VStack>
+
+          {/* Text Alignment */}
+          <VStack space="sm">
+            <HStack space="sm" className="items-center mb-2">
+              <Icon as={AlignLeft} size="md" className="text-gray-600" />
+              <Text className="text-gray-900 font-semibold text-base">Text Alignment</Text>
+            </HStack>
+
+            <HStack space="sm">
+              {TEXT_ALIGN_OPTIONS.map((option) => (
+                <Pressable
+                  key={option.value}
+                  onPress={() => handleTextAlignChange(option.value)}
+                  className="flex-1 active:opacity-70"
+                >
+                  <View
+                    className="p-4 rounded-lg flex-row items-center justify-center"
+                    style={{
+                      backgroundColor:
+                        preferences.textAlign === option.value
+                          ? colors.primary[500]
+                          : colors.gray[100],
+                    }}
+                  >
+                    <Icon
+                      as={option.icon}
+                      size="sm"
+                      style={{
+                        color:
+                          preferences.textAlign === option.value ? '#ffffff' : colors.gray[600],
+                        marginRight: 8,
+                      }}
+                    />
+                    <Text
+                      className="font-semibold"
+                      style={{
+                        color:
+                          preferences.textAlign === option.value ? '#ffffff' : colors.gray[600],
+                      }}
+                    >
+                      {option.label}
+                    </Text>
+                  </View>
+                </Pressable>
+              ))}
+            </HStack>
+          </VStack>
+
+          {/* Word Spacing */}
+          <VStack space="sm">
+            <HStack space="sm" className="items-center mb-2">
+              <Icon as={Space} size="md" className="text-gray-600" />
+              <Text className="text-gray-900 font-semibold text-base">Word Spacing</Text>
+            </HStack>
+
+            <HStack space="sm">
+              {WORD_SPACING_OPTIONS.map((option) => (
+                <Pressable
+                  key={option.value}
+                  onPress={() => handleWordSpacingChange(option.value)}
+                  className="flex-1 active:opacity-70"
+                >
+                  <View
+                    className="p-4 rounded-lg items-center justify-center"
+                    style={{
+                      backgroundColor:
+                        preferences.wordSpacing === option.value
+                          ? colors.primary[500]
+                          : colors.gray[100],
+                    }}
+                  >
+                    <Text
+                      className="font-semibold text-sm"
+                      style={{
+                        color:
+                          preferences.wordSpacing === option.value ? '#ffffff' : colors.gray[600],
+                      }}
+                    >
+                      {option.label}
+                    </Text>
+                  </View>
+                </Pressable>
+              ))}
+            </HStack>
+          </VStack>
+
+          {/* Toggle Options */}
+          <VStack space="sm">
+            <Text className="text-gray-900 font-semibold text-base mb-2">Display Options</Text>
+
+            {/* Show Verse Numbers Toggle */}
+            <Pressable onPress={handleToggleVerseNumbers} className="active:opacity-70">
+              <View
+                className="p-4 rounded-lg flex-row items-center justify-between"
+                style={{
+                  backgroundColor: colors.gray[100],
+                }}
+              >
+                <HStack space="sm" className="items-center">
+                  <Icon
+                    as={preferences.showVerseNumbers ? Eye : EyeOff}
+                    size="md"
+                    className="text-gray-600"
+                  />
+                  <Text className="text-gray-900 font-medium">Show Verse Numbers</Text>
+                </HStack>
+                <View
+                  className="w-12 h-7 rounded-full p-1"
+                  style={{
+                    backgroundColor: preferences.showVerseNumbers
+                      ? colors.primary[500]
+                      : colors.gray[300],
+                  }}
+                >
+                  <View
+                    className="w-5 h-5 rounded-full bg-white"
+                    style={{
+                      transform: [
+                        { translateX: preferences.showVerseNumbers ? 20 : 0 },
+                      ],
+                    }}
+                  />
+                </View>
+              </View>
+            </Pressable>
+
+            {/* Red Letter Words Toggle */}
+            <Pressable onPress={handleToggleRedLetterWords} className="active:opacity-70">
+              <View
+                className="p-4 rounded-lg flex-row items-center justify-between"
+                style={{
+                  backgroundColor: colors.gray[100],
+                }}
+              >
+                <VStack space="xs" className="flex-1">
+                  <Text className="text-gray-900 font-medium">Red Letter Edition</Text>
+                  <Text className="text-gray-500 text-xs">Highlight Jesus' words in red</Text>
+                </VStack>
+                <View
+                  className="w-12 h-7 rounded-full p-1"
+                  style={{
+                    backgroundColor: preferences.redLetterWords
+                      ? colors.error[500]
+                      : colors.gray[300],
+                  }}
+                >
+                  <View
+                    className="w-5 h-5 rounded-full bg-white"
+                    style={{
+                      transform: [
+                        { translateX: preferences.redLetterWords ? 20 : 0 },
+                      ],
+                    }}
+                  />
+                </View>
               </View>
             </Pressable>
           </VStack>

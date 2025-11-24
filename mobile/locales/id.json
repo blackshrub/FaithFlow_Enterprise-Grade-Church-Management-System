@@ -181,6 +181,8 @@
     "oldTestament": "Perjanjian Lama",
     "newTestament": "Perjanjian Baru",
     "chapters": "pasal",
+    "verse": "ayat",
+    "verses": "ayat",
     "search": "Cari ayat...",
     "readingPreferences": "Preferensi Baca",
     "fontSize": "Ukuran Font",

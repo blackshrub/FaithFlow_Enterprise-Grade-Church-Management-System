@@ -9,21 +9,17 @@
  * - Optimized for long-form reading
  */
 
-import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { View, Pressable, StyleSheet, Share, Alert } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { FlashList, type FlashListProps } from '@shopify/flash-list';
+import React, { useCallback, useRef, useEffect } from 'react';
+import { View, Pressable, StyleSheet } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { MotiView } from 'moti';
-import { useTranslation } from 'react-i18next';
 import * as Haptics from 'expo-haptics';
-import * as Clipboard from 'expo-clipboard';
 
 import { Text } from '@/components/ui/text';
-import { VerseActionsSheet } from './VerseActionsSheet';
-import { useBibleStore } from '@/stores/bibleStore';
+import { useBibleStore, type VerseRef } from '@/stores/bibleStore';
 import { useLatinBibleFont } from '@/stores/bibleFontStore';
 import { getAppliedBibleFont } from '@/utils/fonts';
-import { colors, typography, spacing, readingThemes } from '@/constants/theme';
+import { colors, spacing, readingThemes } from '@/constants/theme';
 import type { BibleVerse } from '@/types/bible';
 
 interface ChapterReaderProps {
@@ -41,9 +37,16 @@ export function ChapterReader({
   chapter,
   scrollToVerse,
 }: ChapterReaderProps) {
-  const { t } = useTranslation();
-  const insets = useSafeAreaInsets();
-  const { preferences, getHighlight, addHighlight, removeHighlight } = useBibleStore();
+  const {
+    preferences,
+    getHighlight,
+    highlights,
+    isSelecting,
+    selectedVerses,
+    enterSelectionMode,
+    toggleVerseSelection,
+    isVerseSelected,
+  } = useBibleStore();
   const latinFont = useLatinBibleFont(); // Get Latin Bible font selection
   const flashListRef = useRef<FlashList<BibleVerse>>(null);
 
@@ -52,52 +55,33 @@ export function ChapterReader({
   // Chinese Bibles: use system font automatically
   const appliedFont = getAppliedBibleFont(version, latinFont);
 
-  const [selectedVerses, setSelectedVerses] = useState<number[]>([]);
-  const [showActionSheet, setShowActionSheet] = useState(false);
-
   // Scroll to specific verse when requested (from search)
   useEffect(() => {
-    console.log('[ChapterReader] Scroll effect triggered:', {
-      scrollToVerse,
-      versesLength: verses.length,
-      hasRef: !!flashListRef.current,
-    });
-
     if (scrollToVerse && verses.length > 0) {
-      // Find the index of the target verse
       const verseIndex = verses.findIndex((v) => v.verse === scrollToVerse);
 
-      console.log('[ChapterReader] Target verse index:', verseIndex, 'for verse:', scrollToVerse);
-
       if (verseIndex !== -1) {
-        // Small delay to ensure FlashList is mounted and rendered
         setTimeout(() => {
-          console.log('[ChapterReader] Attempting to scroll to index:', verseIndex);
           flashListRef.current?.scrollToIndex({
             index: verseIndex,
             animated: true,
-            viewPosition: 0.2, // Show verse at 20% from top for better context
+            viewPosition: 0.2,
           });
 
-          // Briefly highlight the verse from search
-          console.log('[ChapterReader] Highlighting search result verse:', scrollToVerse);
-          setSelectedVerses([scrollToVerse]);
+          // Briefly enter selection mode for the search result verse
+          const verseRef: VerseRef = { version, book, chapter, verse: scrollToVerse };
+          enterSelectionMode(verseRef);
+
+          // Clear selection after 2 seconds
           setTimeout(() => {
-            console.log('[ChapterReader] Clearing search highlight');
-            // Only clear if no other verses were selected in the meantime
-            setSelectedVerses((current) => {
-              if (current.length === 1 && current[0] === scrollToVerse) {
-                return [];
-              }
-              return current;
-            });
-          }, 2000); // Clear highlight after 2 seconds
-        }, 300); // Increased delay to ensure list is ready
-      } else {
-        console.log('[ChapterReader] Verse not found in verses array');
+            if (selectedVerses.length === 1 && isVerseSelected(verseRef)) {
+              useBibleStore.getState().clearSelection();
+            }
+          }, 2000);
+        }, 300);
       }
     }
-  }, [scrollToVerse, verses]);
+  }, [scrollToVerse, verses, version, book, chapter]);
 
   // Get font size based on preference (now numeric 10-24)
   const getFontSize = () => {
@@ -114,6 +98,16 @@ export function ChapterReader({
     return heights[preferences.lineHeight];
   };
 
+  // Get word spacing based on preference
+  const getWordSpacing = () => {
+    const spacings = {
+      normal: 0,
+      wide: 2,
+      wider: 4,
+    };
+    return spacings[preferences.wordSpacing];
+  };
+
   // Get verse spacing based on font size
   const getVerseSpacing = () => {
     // Smaller fonts need less spacing, larger fonts need more
@@ -123,115 +117,40 @@ export function ChapterReader({
     return Math.max(4, Math.min(12, fontSize * 0.4));
   };
 
-  // Handle verse tap - toggle selection and show/hide action sheet
+  /**
+   * Handle verse tap - YouVersion-style multi-selection
+   * - If not in selection mode -> enter selection mode with this verse
+   * - If already in selection mode -> toggle this verse
+   */
   const handleVerseTap = useCallback(
     (verseNumber: number) => {
-      console.log('[ChapterReader] Verse tapped:', verseNumber);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
-      setSelectedVerses((prev) => {
-        const isSelected = prev.includes(verseNumber);
-        console.log('[ChapterReader] Is selected:', isSelected, 'Current selection:', prev);
+      const verseRef: VerseRef = { version, book, chapter, verse: verseNumber };
 
-        if (isSelected) {
-          // Deselect verse
-          const newSelection = prev.filter((v) => v !== verseNumber);
-          console.log('[ChapterReader] Deselecting, new selection:', newSelection);
-          // Hide action sheet if no verses selected
-          if (newSelection.length === 0) {
-            console.log('[ChapterReader] Hiding action sheet');
-            setShowActionSheet(false);
-          }
-          return newSelection;
-        } else {
-          // Add to selection and show action sheet
-          console.log('[ChapterReader] Showing action sheet');
-          setShowActionSheet(true);
-          return [...prev, verseNumber];
-        }
-      });
+      if (!isSelecting) {
+        // Enter selection mode with this verse
+        enterSelectionMode(verseRef);
+      } else {
+        // Toggle selection
+        toggleVerseSelection(verseRef);
+      }
     },
-    []
+    [version, book, chapter, isSelecting, enterSelectionMode, toggleVerseSelection]
   );
 
-  // Copy selected verses to clipboard
-  const handleCopyVerse = useCallback(async () => {
-    if (selectedVerses.length === 0) return;
-
-    const selectedVerseObjects = verses.filter((v) => selectedVerses.includes(v.verse));
-    const verseText =
-      selectedVerses.length === 1
-        ? `"${selectedVerseObjects[0].text}"\n${book} ${chapter}:${selectedVerses[0]} (${version})`
-        : `"${selectedVerseObjects.map((v) => v.text).join(' ')}"\n${book} ${chapter}:${Math.min(...selectedVerses)}-${Math.max(...selectedVerses)} (${version})`;
-
-    await Clipboard.setStringAsync(verseText);
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    setSelectedVerses([]);
-    setShowActionSheet(false);
-
-    // TODO: Show toast: "Verse copied to clipboard"
-    Alert.alert(t('bible.verseCopied'), verseText);
-  }, [selectedVerses, verses, book, chapter, version, t]);
-
-  // Share selected verses
-  const handleShareVerse = useCallback(async () => {
-    if (selectedVerses.length === 0) return;
-
-    const selectedVerseObjects = verses.filter((v) => selectedVerses.includes(v.verse));
-    const verseText =
-      selectedVerses.length === 1
-        ? `"${selectedVerseObjects[0].text}"\n${book} ${chapter}:${selectedVerses[0]} (${version})`
-        : `"${selectedVerseObjects.map((v) => v.text).join(' ')}"\n${book} ${chapter}:${Math.min(...selectedVerses)}-${Math.max(...selectedVerses)} (${version})`;
-
-    try {
-      await Share.share({
-        message: verseText,
-        title:
-          selectedVerses.length === 1
-            ? `${book} ${chapter}:${selectedVerses[0]}`
-            : `${book} ${chapter}:${Math.min(...selectedVerses)}-${Math.max(...selectedVerses)}`,
-      });
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    } catch (error) {
-      console.error('Error sharing verse:', error);
-    }
-
-    setSelectedVerses([]);
-    setShowActionSheet(false);
-  }, [selectedVerses, verses, book, chapter, version]);
-
-  // Toggle highlight for selected verses
-  const handleToggleHighlight = useCallback(() => {
-    if (selectedVerses.length === 0) return;
-
-    selectedVerses.forEach((verseNumber) => {
-      const existing = getHighlight(version, book, chapter, verseNumber);
-
-      if (existing) {
-        removeHighlight(existing.id);
-      } else {
-        addHighlight({
-          version,
-          book,
-          chapter,
-          verse: verseNumber,
-          color: 'yellow',
-        });
-      }
-    });
-
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    setSelectedVerses([]);
-    setShowActionSheet(false);
-  }, [selectedVerses, version, book, chapter, getHighlight, addHighlight, removeHighlight]);
 
   // Render verse item
   const renderVerse = useCallback(
     ({ item }: { item: BibleVerse }) => {
       const highlight = getHighlight(version, book, chapter, item.verse);
-      const isSelected = selectedVerses.includes(item.verse);
+      const verseRef: VerseRef = { version, book, chapter, verse: item.verse };
+      // Check if this verse is currently selected
+      const isSelected = isVerseSelected(verseRef);
       const currentTheme = readingThemes[preferences.theme];
 
+      // Background color: ONLY show highlight color if verse is highlighted
+      // Selected but not highlighted verses have NO background (just dotted underline + left border)
       const backgroundColor = highlight
         ? currentTheme.highlight[highlight.color]
         : 'transparent';
@@ -251,21 +170,28 @@ export function ChapterReader({
                   paddingVertical: getVerseSpacing(),
                   paddingHorizontal: spacing.md,
                   marginBottom: getVerseSpacing() * 0.5,
+                  // Add left border for selected verses (YouVersion-style)
+                  ...(isSelected && {
+                    borderLeftWidth: 3,
+                    borderLeftColor: colors.primary[500],
+                  }),
                 },
               ]}
             >
-              {/* Verse number */}
-              <Text
-                style={[
-                  styles.verseNumber,
-                  {
-                    fontSize: getFontSize() * 0.7,
-                    color: currentTheme.verseNumber,
-                  },
-                ]}
-              >
-                {item.verse}
-              </Text>
+              {/* Verse number - conditionally shown */}
+              {preferences.showVerseNumbers && (
+                <Text
+                  style={[
+                    styles.verseNumber,
+                    {
+                      fontSize: getFontSize() * 0.7,
+                      color: currentTheme.verseNumber,
+                    },
+                  ]}
+                >
+                  {item.verse}
+                </Text>
+              )}
 
               {/* Verse text with dotted underline when selected */}
               <Text
@@ -279,6 +205,12 @@ export function ChapterReader({
                     textDecorationLine: isSelected ? 'underline' : 'none',
                     textDecorationStyle: isSelected ? 'dotted' : 'solid',
                     textDecorationColor: isSelected ? colors.primary[500] : 'transparent',
+                    // Apply text alignment
+                    textAlign: preferences.textAlign,
+                    // Apply word spacing
+                    letterSpacing: getWordSpacing(),
+                    // Red letter words for Jesus (placeholder - needs markup data)
+                    // color: preferences.redLetterWords ? colors.error[600] : currentTheme.text,
                   },
                 ]}
               >
@@ -289,54 +221,33 @@ export function ChapterReader({
         </MotiView>
       );
     },
-    [version, book, chapter, selectedVerses, preferences, appliedFont, getHighlight, handleVerseTap]
+    [
+      version,
+      book,
+      chapter,
+      preferences,
+      appliedFont,
+      getHighlight,
+      highlights, // CRITICAL: Add highlights to trigger re-render when highlights change
+      isVerseSelected,
+      handleVerseTap,
+      selectedVerses, // CRITICAL: Add selectedVerses to trigger re-render when selection changes
+    ]
   );
-
-  // Check if any selected verse is highlighted
-  const hasHighlightedVerse = selectedVerses.some((verseNum) =>
-    getHighlight(version, book, chapter, verseNum)
-  );
-
-  // Get selected verse reference string
-  const getSelectedReference = () => {
-    if (selectedVerses.length === 0) return '';
-    if (selectedVerses.length === 1) {
-      return `${book} ${chapter}:${selectedVerses[0]}`;
-    }
-    const sorted = [...selectedVerses].sort((a, b) => a - b);
-    return `${book} ${chapter}:${sorted[0]}-${sorted[sorted.length - 1]}`;
-  };
 
   return (
-    <>
-      <FlashList
-        ref={flashListRef}
-        data={verses}
-        renderItem={renderVerse}
-        estimatedItemSize={100}
-        keyExtractor={(item) => `${item.verse}`}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{
-          paddingTop: spacing.md,
-          paddingBottom: 120, // Space for tab bar
-        }}
-      />
-
-      {/* Verse Actions Bottom Sheet - Persistent */}
-      <VerseActionsSheet
-        isOpen={showActionSheet}
-        onClose={() => {
-          setSelectedVerses([]);
-          setShowActionSheet(false);
-        }}
-        selectedVerses={selectedVerses}
-        hasHighlightedVerse={hasHighlightedVerse}
-        selectedReference={getSelectedReference()}
-        onHighlight={handleToggleHighlight}
-        onCopy={handleCopyVerse}
-        onShare={handleShareVerse}
-      />
-    </>
+    <FlashList
+      ref={flashListRef}
+      data={verses}
+      renderItem={renderVerse}
+      estimatedItemSize={100}
+      keyExtractor={(item) => `${item.verse}`}
+      showsVerticalScrollIndicator={false}
+      contentContainerStyle={{
+        paddingTop: spacing.md,
+        paddingBottom: 160, // Increased space for verse selection bar
+      }}
+    />
   );
 }
 

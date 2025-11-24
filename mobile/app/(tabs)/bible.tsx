@@ -10,10 +10,12 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { View, Pressable, ActivityIndicator } from 'react-native';
+import { View, Pressable, ActivityIndicator, Share } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { BookOpen, Languages, Search, Type } from 'lucide-react-native';
+import * as Clipboard from 'expo-clipboard';
+import * as Haptics from 'expo-haptics';
 
 import { Text } from '@/components/ui/text';
 import { Heading } from '@/components/ui/heading';
@@ -25,21 +27,44 @@ import { BookSelectorModal } from '@/components/bible/BookSelectorModal';
 import { ReadingPreferencesModal } from '@/components/bible/ReadingPreferencesModal';
 import { BibleVersionSelector } from '@/components/bible/BibleVersionSelector';
 import { BibleSearchModal } from '@/components/bible/BibleSearchModal';
+import { VerseSelectionBar } from '@/components/bible/VerseSelectionBar';
+import { HighlightColorPicker } from '@/components/bible/HighlightColorPicker';
 import { useBibleChapterOffline, useBibleBooksOffline } from '@/hooks/useBibleOffline';
-import { useBibleStore } from '@/stores/bibleStore';
+import { useBibleStore, type VerseRef, type Highlight } from '@/stores/bibleStore';
 import { colors, touchTargets, readingThemes } from '@/constants/theme';
 import { BIBLE_TRANSLATIONS, type BibleTranslation } from '@/types/bible';
+import { useToast, Toast, ToastTitle, ToastDescription } from '@/components/ui/toast';
 
 export default function BibleScreen() {
   const { t } = useTranslation();
+  const toast = useToast();
   const [isBookSelectorOpen, setIsBookSelectorOpen] = useState(false);
   const [isPreferencesOpen, setIsPreferencesOpen] = useState(false);
   const [isVersionSelectorOpen, setIsVersionSelectorOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [scrollToVerseNumber, setScrollToVerseNumber] = useState<number | null>(null);
 
-  const { currentVersion, currentBook, currentChapter, setCurrentPosition, preferences } =
-    useBibleStore();
+  // NEW: Color picker state for highlight selection
+  const [showColorPicker, setShowColorPicker] = useState(false);
+
+  const {
+    currentVersion,
+    currentBook,
+    currentChapter,
+    setCurrentPosition,
+    preferences,
+    getHighlight,
+    addHighlight,
+    removeHighlight,
+    // NEW: Verse selection from store
+    isSelecting,
+    selectedVerses,
+    clearSelection,
+    // Bookmark functions
+    getBookmark,
+    addBookmark,
+    removeBookmark,
+  } = useBibleStore();
 
   // Cast version to BibleTranslation type
   const version = currentVersion as BibleTranslation;
@@ -103,6 +128,256 @@ export default function BibleScreen() {
     console.log('[Bible Screen] scrollToVerseNumber set to:', verse);
   };
 
+  /**
+   * NEW: Handle highlight button tap - show color picker
+   * Design choice: Show color picker instead of toggle, allowing user to select color.
+   * This matches YouVersion's UX where you pick a color to highlight.
+   */
+  const handleHighlightTap = () => {
+    setShowColorPicker(!showColorPicker);
+  };
+
+  /**
+   * NEW: Handle color selection from picker
+   * Apply the selected color to all selected verses
+   * Keep selection active so user can perform more actions
+   */
+  const handleColorSelect = (color: Highlight['color']) => {
+    selectedVerses.forEach((verseRef) => {
+      const existing = getHighlight(
+        verseRef.version,
+        verseRef.book,
+        verseRef.chapter,
+        verseRef.verse
+      );
+
+      if (existing) {
+        // Update existing highlight color
+        removeHighlight(existing.id);
+      }
+
+      // Add new highlight with selected color
+      addHighlight({
+        version: verseRef.version,
+        book: verseRef.book,
+        chapter: verseRef.chapter,
+        verse: verseRef.verse,
+        color,
+      });
+    });
+
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    setShowColorPicker(false);
+    // Keep selection active - don't clear
+  };
+
+  /**
+   * NEW: Handle clear highlight - remove highlights from selected verses
+   * Keep selection active so user can perform more actions
+   */
+  const handleClearHighlight = () => {
+    selectedVerses.forEach((verseRef) => {
+      const existing = getHighlight(
+        verseRef.version,
+        verseRef.book,
+        verseRef.chapter,
+        verseRef.verse
+      );
+
+      if (existing) {
+        removeHighlight(existing.id);
+      }
+    });
+
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    setShowColorPicker(false);
+    // Keep selection active - don't clear
+  };
+
+  /**
+   * NEW: Handle copy verses
+   * Format: "{Reference}\n\n{Verse 1}\n{Verse 2}..."
+   * Keep selection active so user can perform more actions
+   */
+  const handleCopyVerses = async () => {
+    if (selectedVerses.length === 0 || !verses) return;
+
+    // Sort by verse number
+    const sortedRefs = [...selectedVerses].sort((a, b) => a.verse - b.verse);
+
+    const selectedTexts = sortedRefs
+      .map((verseRef) => {
+        const verse = verses.find((v) => v.verse === verseRef.verse);
+        return verse ? `${verseRef.verse}. ${verse.text}` : '';
+      })
+      .filter(Boolean)
+      .join('\n\n');
+
+    const reference = getSelectedReference();
+    const fullText = `${reference} (${currentVersion})\n\n${selectedTexts}`;
+
+    await Clipboard.setStringAsync(fullText);
+
+    // Show toast notification
+    const verseCount = selectedVerses.length;
+    const verseText = verseCount === 1 ? t('bible.verse') : t('bible.verses');
+
+    toast.show({
+      placement: 'bottom',
+      duration: 3000,
+      render: ({ id }) => (
+        <Toast action="success" variant="solid" nativeID={`toast-${id}`}>
+          <ToastTitle>{t('bible.verseCopied')}</ToastTitle>
+          <ToastDescription>
+            {reference} - {verseCount} {verseText}
+          </ToastDescription>
+        </Toast>
+      ),
+    });
+
+    // Keep selection active - don't clear
+  };
+
+  /**
+   * NEW: Handle share verses
+   * Keep selection active so user can perform more actions
+   */
+  const handleShareVerses = async () => {
+    if (selectedVerses.length === 0 || !verses) return;
+
+    const sortedRefs = [...selectedVerses].sort((a, b) => a.verse - b.verse);
+
+    const selectedTexts = sortedRefs
+      .map((verseRef) => {
+        const verse = verses.find((v) => v.verse === verseRef.verse);
+        return verse ? `${verseRef.verse}. ${verse.text}` : '';
+      })
+      .filter(Boolean)
+      .join('\n\n');
+
+    const reference = getSelectedReference();
+    const fullText = `${reference} (${currentVersion})\n\n${selectedTexts}`;
+
+    try {
+      await Share.share({ message: fullText });
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      // Keep selection active - don't clear
+    } catch (error) {
+      console.error('Error sharing verses:', error);
+    }
+  };
+
+  /**
+   * NEW: Get formatted reference string from selected verses
+   * Examples: "Genesis 1:3" or "Genesis 1:3-5"
+   * Uses localized book name from currentBookInfo if available
+   */
+  const getSelectedReference = (): string => {
+    if (selectedVerses.length === 0) return '';
+
+    const sortedVerses = [...selectedVerses].sort((a, b) => a.verse - b.verse);
+    // Use localized book name if available, otherwise fall back to currentBook
+    const bookName = displayBookName || currentBook;
+
+    if (sortedVerses.length === 1) {
+      return `${bookName} ${currentChapter}:${sortedVerses[0].verse}`;
+    }
+
+    return `${bookName} ${currentChapter}:${sortedVerses[0].verse}-${
+      sortedVerses[sortedVerses.length - 1].verse
+    }`;
+  };
+
+  /**
+   * NEW: Check if any selected verse is already highlighted
+   */
+  const hasHighlightedVerse = selectedVerses.some((verseRef) =>
+    getHighlight(verseRef.version, verseRef.book, verseRef.chapter, verseRef.verse)
+  );
+
+  /**
+   * NEW: Check if any selected verse is already bookmarked
+   */
+  const hasBookmarkedVerse = selectedVerses.some((verseRef) =>
+    getBookmark(verseRef.version, verseRef.book, verseRef.chapter, verseRef.verse)
+  );
+
+  /**
+   * NEW: Handle bookmark verses
+   * If selected verses are bookmarked, remove bookmarks. Otherwise, add bookmarks.
+   * Keep selection active so user can perform more actions
+   */
+  const handleBookmarkVerses = () => {
+    const allBookmarked = selectedVerses.every((verseRef) =>
+      getBookmark(verseRef.version, verseRef.book, verseRef.chapter, verseRef.verse)
+    );
+
+    if (allBookmarked) {
+      // Remove all bookmarks
+      selectedVerses.forEach((verseRef) => {
+        const existing = getBookmark(
+          verseRef.version,
+          verseRef.book,
+          verseRef.chapter,
+          verseRef.verse
+        );
+        if (existing) {
+          removeBookmark(existing.id);
+        }
+      });
+      toast.show({
+        placement: 'bottom',
+        duration: 2000,
+        render: ({ id }) => (
+          <Toast action="info" variant="solid" nativeID={`toast-${id}`}>
+            <ToastTitle>Bookmark Removed</ToastTitle>
+          </Toast>
+        ),
+      });
+    } else {
+      // Add bookmarks for all selected verses
+      selectedVerses.forEach((verseRef) => {
+        // Remove existing bookmark if any
+        const existing = getBookmark(
+          verseRef.version,
+          verseRef.book,
+          verseRef.chapter,
+          verseRef.verse
+        );
+        if (existing) {
+          removeBookmark(existing.id);
+        }
+
+        // Add new bookmark
+        addBookmark({
+          version: verseRef.version,
+          book: verseRef.book,
+          chapter: verseRef.chapter,
+          verse: verseRef.verse,
+        });
+      });
+
+      const verseCount = selectedVerses.length;
+      const verseText = verseCount === 1 ? t('bible.verse') : t('bible.verses');
+
+      toast.show({
+        placement: 'bottom',
+        duration: 2000,
+        render: ({ id }) => (
+          <Toast action="success" variant="solid" nativeID={`toast-${id}`}>
+            <ToastTitle>Bookmark Added</ToastTitle>
+            <ToastDescription>
+              {verseCount} {verseText} bookmarked
+            </ToastDescription>
+          </Toast>
+        ),
+      });
+    }
+
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    // Keep selection active - don't clear
+  };
+
   // Reset scroll target when chapter changes ONLY if no target verse was set
   // This prevents clearing the scroll target when navigating from search results
   useEffect(() => {
@@ -113,6 +388,12 @@ export default function BibleScreen() {
 
     return () => clearTimeout(timer);
   }, [currentBook, currentChapter]);
+
+  // NEW: Clear selection when chapter changes
+  useEffect(() => {
+    clearSelection();
+    setShowColorPicker(false);
+  }, [currentBook, currentChapter, clearSelection]);
 
   const currentTheme = readingThemes[preferences.theme];
 
@@ -267,6 +548,29 @@ export default function BibleScreen() {
         version={currentVersion}
         onSelectVerse={handleSearchVerseSelect}
       />
+
+      {/* NEW: Verse Selection Bar - Compact bottom action bar (YouVersion-style) */}
+      {isSelecting && (
+        <VerseSelectionBar
+          selectedVerses={selectedVerses}
+          onHighlight={handleHighlightTap}
+          onCopy={handleCopyVerses}
+          onShare={handleShareVerses}
+          onBookmark={handleBookmarkVerses}
+          onDone={clearSelection}
+          hasHighlightedVerse={hasHighlightedVerse}
+          hasBookmarkedVerse={hasBookmarkedVerse}
+        />
+      )}
+
+      {/* NEW: Highlight Color Picker - Appears above action bar when highlight is tapped */}
+      {isSelecting && showColorPicker && (
+        <HighlightColorPicker
+          selectedColor={undefined} // Could track last used color
+          onSelectColor={handleColorSelect}
+          onClearHighlight={handleClearHighlight}
+        />
+      )}
     </SafeAreaView>
   );
 }

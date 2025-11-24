@@ -181,6 +181,8 @@
     "oldTestament": "Old Testament",
     "newTestament": "New Testament",
     "chapters": "chapters",
+    "verse": "verse",
+    "verses": "verses",
     "search": "Search verses...",
     "readingPreferences": "Reading Preferences",
     "fontSize": "Font Size",

@@ -40,18 +40,36 @@ export interface ReadingHistory {
   lastReadAt: string;
 }
 
+/**
+ * Verse reference for selection tracking
+ * Consistent with our existing book/chapter/verse structure
+ */
+export interface VerseRef {
+  version: string;
+  book: string;
+  chapter: number;
+  verse: number;
+}
+
 export type LineHeightType = 'compact' | 'normal' | 'relaxed';
 export type ThemeType = 'light' | 'light2' | 'light3' | 'light4' | 'dark' | 'dark2' | 'dark3' | 'sepia';
 export type FontFamily =
   | 'System'
   | 'Serif'
   | 'Monospace';
+export type TextAlign = 'left' | 'justify';
+export type WordSpacing = 'normal' | 'wide' | 'wider';
 
 export interface BiblePreferences {
   fontSize: number; // 10-24
   lineHeight: LineHeightType;
   theme: ThemeType;
   fontFamily: FontFamily;
+  // Advanced typography options
+  textAlign: TextAlign;
+  wordSpacing: WordSpacing;
+  showVerseNumbers: boolean;
+  redLetterWords: boolean; // Highlight Jesus' words in red
 }
 
 interface BibleState {
@@ -68,6 +86,10 @@ interface BibleState {
   // Preferences
   preferences: BiblePreferences;
 
+  // Verse Selection (YouVersion-style multi-select)
+  isSelecting: boolean;
+  selectedVerses: VerseRef[];
+
   // Actions
   setCurrentPosition: (version: string, book: string, chapter: number) => void;
   addBookmark: (bookmark: Omit<Bookmark, 'id' | 'createdAt'>) => void;
@@ -76,6 +98,12 @@ interface BibleState {
   removeHighlight: (id: string) => void;
   updatePreferences: (preferences: Partial<BiblePreferences>) => void;
   addToHistory: (version: string, book: string, chapter: number) => void;
+
+  // Verse Selection Actions
+  enterSelectionMode: (verse: VerseRef) => void;
+  toggleVerseSelection: (verse: VerseRef) => void;
+  clearSelection: () => void;
+  isVerseSelected: (verse: VerseRef) => boolean;
 
   // Helpers
   getBookmark: (version: string, book: string, chapter: number, verse: number) => Bookmark | undefined;
@@ -95,6 +123,16 @@ const migrateFontSize = (oldSize: any): number => {
   return sizeMap[oldSize as string] || 18;
 };
 
+// Helper to compare verse refs
+const isSameVerse = (a: VerseRef, b: VerseRef): boolean => {
+  return (
+    a.version === b.version &&
+    a.book === b.book &&
+    a.chapter === b.chapter &&
+    a.verse === b.verse
+  );
+};
+
 export const useBibleStore = create<BibleState>()(
   persist(
     (set, get) => ({
@@ -110,7 +148,14 @@ export const useBibleStore = create<BibleState>()(
         lineHeight: 'normal',
         theme: 'light',
         fontFamily: 'System',
+        textAlign: 'left',
+        wordSpacing: 'normal',
+        showVerseNumbers: true,
+        redLetterWords: false,
       },
+      // Verse selection initial state
+      isSelecting: false,
+      selectedVerses: [],
 
       // Set current reading position
       setCurrentPosition: (version, book, chapter) => {
@@ -207,6 +252,60 @@ export const useBibleStore = create<BibleState>()(
       getLastReading: () => {
         return get().readingHistory[0];
       },
+
+      // Verse Selection Actions (YouVersion-style multi-select)
+
+      /**
+       * Enter selection mode with initial verse
+       * Called when user taps a verse for the first time
+       */
+      enterSelectionMode: (verse: VerseRef) => {
+        set({
+          isSelecting: true,
+          selectedVerses: [verse],
+        });
+      },
+
+      /**
+       * Toggle verse selection
+       * If verse is already selected -> remove it
+       * If verse is not selected -> add it
+       * If selection becomes empty -> exit selection mode automatically
+       */
+      toggleVerseSelection: (verse: VerseRef) => {
+        const { selectedVerses } = get();
+        const isSelected = selectedVerses.some(v => isSameVerse(v, verse));
+
+        if (isSelected) {
+          // Remove from selection
+          const newSelection = selectedVerses.filter(v => !isSameVerse(v, verse));
+
+          // Exit selection mode if no verses left
+          if (newSelection.length === 0) {
+            set({ isSelecting: false, selectedVerses: [] });
+          } else {
+            set({ selectedVerses: newSelection });
+          }
+        } else {
+          // Add to selection
+          set({ selectedVerses: [...selectedVerses, verse] });
+        }
+      },
+
+      /**
+       * Clear all selected verses and exit selection mode
+       * Called when user taps "Done" or after performing an action
+       */
+      clearSelection: () => {
+        set({ isSelecting: false, selectedVerses: [] });
+      },
+
+      /**
+       * Check if a specific verse is selected
+       */
+      isVerseSelected: (verse: VerseRef) => {
+        return get().selectedVerses.some(v => isSameVerse(v, verse));
+      },
     }),
     {
       name: 'bible-storage',
@@ -223,8 +322,34 @@ export const useBibleStore = create<BibleState>()(
         if (!persistedState?.preferences?.fontFamily) {
           persistedState.preferences.fontFamily = 'System';
         }
+        // Add advanced typography options if missing
+        if (persistedState?.preferences) {
+          if (persistedState.preferences.textAlign === undefined) {
+            persistedState.preferences.textAlign = 'left';
+          }
+          if (persistedState.preferences.wordSpacing === undefined) {
+            persistedState.preferences.wordSpacing = 'normal';
+          }
+          if (persistedState.preferences.showVerseNumbers === undefined) {
+            persistedState.preferences.showVerseNumbers = true;
+          }
+          if (persistedState.preferences.redLetterWords === undefined) {
+            persistedState.preferences.redLetterWords = false;
+          }
+        }
         return persistedState;
       },
+      // Don't persist selection state - it's transient
+      partialize: (state) => ({
+        currentVersion: state.currentVersion,
+        currentBook: state.currentBook,
+        currentChapter: state.currentChapter,
+        bookmarks: state.bookmarks,
+        highlights: state.highlights,
+        readingHistory: state.readingHistory,
+        preferences: state.preferences,
+        // Exclude: isSelecting, selectedVerses (transient UI state)
+      }),
     }
   )
 );
