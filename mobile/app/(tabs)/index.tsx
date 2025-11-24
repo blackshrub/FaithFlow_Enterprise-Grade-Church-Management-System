@@ -36,9 +36,9 @@ import {
   Icon,
   Badge,
   BadgeText,
-  Skeleton,
-  SkeletonText,
 } from '@gluestack-ui/themed';
+import { Skeleton } from '@/components/ui/skeleton';
+import { SkeletonText } from '@/components/ui/skeleton';
 
 import { useAuthStore } from '@/stores/auth';
 import { colors, spacing, borderRadius, shadows } from '@/constants/theme';
