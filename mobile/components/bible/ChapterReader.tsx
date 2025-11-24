@@ -9,25 +9,19 @@
  * - Optimized for long-form reading
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { View, Pressable, StyleSheet, Share, Alert } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FlashList } from '@shopify/flash-list';
 import { MotiView } from 'moti';
 import { useTranslation } from 'react-i18next';
 import * as Haptics from 'expo-haptics';
 import * as Clipboard from 'expo-clipboard';
-import { Highlight, Copy, Share as ShareIcon, FileText } from 'lucide-react-native';
+import { Highlight, Copy, Share as ShareIcon } from 'lucide-react-native';
+import GorhomBottomSheet, { BottomSheetBackdrop as GorhomBackdrop } from '@gorhom/bottom-sheet';
 
 import { Text } from '@/components/ui/text';
-import {
-  Actionsheet,
-  ActionsheetBackdrop,
-  ActionsheetContent,
-  ActionsheetDragIndicatorWrapper,
-  ActionsheetDragIndicator,
-  ActionsheetItem,
-  ActionsheetItemText,
-} from '@/components/ui/actionsheet';
+import { BottomSheetScrollView } from '@/components/ui/bottomsheet';
 import { Icon } from '@/components/ui/icon';
 import { HStack } from '@/components/ui/hstack';
 import { useBibleStore } from '@/stores/bibleStore';
@@ -48,10 +42,23 @@ export function ChapterReader({
   chapter,
 }: ChapterReaderProps) {
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
+  const bottomSheetRef = useRef<GorhomBottomSheet>(null);
   const { preferences, getHighlight, addHighlight, removeHighlight } = useBibleStore();
-  const [selectedVerse, setSelectedVerse] = useState<number | null>(null);
+  const [selectedVerses, setSelectedVerses] = useState<number[]>([]);
   const [showActionSheet, setShowActionSheet] = useState(false);
-  const [actionSheetVerse, setActionSheetVerse] = useState<BibleVerse | null>(null);
+
+  // Calculate bottom inset
+  const bottomInset = insets.bottom;
+
+  // Control bottom sheet
+  useEffect(() => {
+    if (showActionSheet && selectedVerses.length > 0) {
+      bottomSheetRef.current?.snapToIndex(0);
+    } else {
+      bottomSheetRef.current?.close();
+    }
+  }, [showActionSheet, selectedVerses.length]);
 
   // Get font size based on preference
   const getFontSize = () => {
@@ -74,102 +81,110 @@ export function ChapterReader({
     return heights[preferences.lineHeight];
   };
 
-  // Handle verse tap
+  // Handle verse tap - toggle selection and show bottom sheet
   const handleVerseTap = useCallback(
     (verseNumber: number) => {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      setSelectedVerse(verseNumber === selectedVerse ? null : verseNumber);
-    },
-    [selectedVerse]
-  );
 
-  // Handle verse long press - show action sheet
-  const handleVerseLongPress = useCallback(
-    (verse: BibleVerse) => {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      setActionSheetVerse(verse);
-      setShowActionSheet(true);
+      setSelectedVerses((prev) => {
+        const isSelected = prev.includes(verseNumber);
+        if (isSelected) {
+          // Deselect verse
+          const newSelection = prev.filter((v) => v !== verseNumber);
+          if (newSelection.length === 0) {
+            setShowActionSheet(false);
+          }
+          return newSelection;
+        } else {
+          // Select verse and show action sheet
+          setShowActionSheet(true);
+          return [...prev, verseNumber];
+        }
+      });
     },
     []
   );
 
-  // Copy verse to clipboard
+  // Copy selected verses to clipboard
   const handleCopyVerse = useCallback(async () => {
-    if (!actionSheetVerse) return;
+    if (selectedVerses.length === 0) return;
 
-    const verseText = `"${actionSheetVerse.text}"\n${book} ${chapter}:${actionSheetVerse.verse} (${version})`;
+    const selectedVerseObjects = verses.filter((v) => selectedVerses.includes(v.verse));
+    const verseText =
+      selectedVerses.length === 1
+        ? `"${selectedVerseObjects[0].text}"\n${book} ${chapter}:${selectedVerses[0]} (${version})`
+        : `"${selectedVerseObjects.map((v) => v.text).join(' ')}"\n${book} ${chapter}:${Math.min(...selectedVerses)}-${Math.max(...selectedVerses)} (${version})`;
+
     await Clipboard.setStringAsync(verseText);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    setSelectedVerses([]);
     setShowActionSheet(false);
 
     // TODO: Show toast: "Verse copied to clipboard"
     Alert.alert(t('bible.verseCopied'), verseText);
-  }, [actionSheetVerse, book, chapter, version, t]);
+  }, [selectedVerses, verses, book, chapter, version, t]);
 
-  // Share verse
+  // Share selected verses
   const handleShareVerse = useCallback(async () => {
-    if (!actionSheetVerse) return;
+    if (selectedVerses.length === 0) return;
 
-    const verseText = `"${actionSheetVerse.text}"\n${book} ${chapter}:${actionSheetVerse.verse} (${version})`;
+    const selectedVerseObjects = verses.filter((v) => selectedVerses.includes(v.verse));
+    const verseText =
+      selectedVerses.length === 1
+        ? `"${selectedVerseObjects[0].text}"\n${book} ${chapter}:${selectedVerses[0]} (${version})`
+        : `"${selectedVerseObjects.map((v) => v.text).join(' ')}"\n${book} ${chapter}:${Math.min(...selectedVerses)}-${Math.max(...selectedVerses)} (${version})`;
 
     try {
       await Share.share({
         message: verseText,
-        title: `${book} ${chapter}:${actionSheetVerse.verse}`,
+        title:
+          selectedVerses.length === 1
+            ? `${book} ${chapter}:${selectedVerses[0]}`
+            : `${book} ${chapter}:${Math.min(...selectedVerses)}-${Math.max(...selectedVerses)}`,
       });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (error) {
       console.error('Error sharing verse:', error);
     }
 
+    setSelectedVerses([]);
     setShowActionSheet(false);
-  }, [actionSheetVerse, book, chapter, version]);
+  }, [selectedVerses, verses, book, chapter, version]);
 
-  // Toggle highlight
+  // Toggle highlight for selected verses
   const handleToggleHighlight = useCallback(() => {
-    if (!actionSheetVerse) return;
+    if (selectedVerses.length === 0) return;
 
-    const existing = getHighlight(version, book, chapter, actionSheetVerse.verse);
+    selectedVerses.forEach((verseNumber) => {
+      const existing = getHighlight(version, book, chapter, verseNumber);
 
-    if (existing) {
-      removeHighlight(existing.id);
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      // TODO: Show toast: "Highlight removed"
-    } else {
-      addHighlight({
-        version,
-        book,
-        chapter,
-        verse: actionSheetVerse.verse,
-        color: 'yellow',
-      });
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      // TODO: Show toast: "Verse highlighted"
-    }
+      if (existing) {
+        removeHighlight(existing.id);
+      } else {
+        addHighlight({
+          version,
+          book,
+          chapter,
+          verse: verseNumber,
+          color: 'yellow',
+        });
+      }
+    });
 
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    setSelectedVerses([]);
     setShowActionSheet(false);
-  }, [actionSheetVerse, version, book, chapter, getHighlight, addHighlight, removeHighlight]);
-
-  // Add note (placeholder)
-  const handleAddNote = useCallback(() => {
-    if (!actionSheetVerse) return;
-
-    // TODO: Implement note functionality
-    Alert.alert(t('bible.addNote'), t('bible.noteComingSoon'));
-    setShowActionSheet(false);
-  }, [actionSheetVerse, t]);
+  }, [selectedVerses, version, book, chapter, getHighlight, addHighlight, removeHighlight]);
 
   // Render verse item
   const renderVerse = useCallback(
     ({ item }: { item: BibleVerse }) => {
       const highlight = getHighlight(version, book, chapter, item.verse);
-      const isSelected = selectedVerse === item.verse;
+      const isSelected = selectedVerses.includes(item.verse);
       const currentTheme = readingThemes[preferences.theme];
 
       const backgroundColor = highlight
         ? currentTheme.highlight[highlight.color]
-        : isSelected
-        ? currentTheme.verseNumber + '20'
         : 'transparent';
 
       return (
@@ -178,11 +193,7 @@ export function ChapterReader({
           animate={{ opacity: 1, translateY: 0 }}
           transition={{ type: 'timing', duration: 200, delay: item.verse * 20 }}
         >
-          <Pressable
-            onPress={() => handleVerseTap(item.verse)}
-            onLongPress={() => handleVerseLongPress(item)}
-            delayLongPress={300}
-          >
+          <Pressable onPress={() => handleVerseTap(item.verse)}>
             <View
               style={[
                 styles.verseContainer,
@@ -206,7 +217,7 @@ export function ChapterReader({
                 {item.verse}
               </Text>
 
-              {/* Verse text */}
+              {/* Verse text with dotted underline when selected */}
               <Text
                 style={[
                   styles.verseText,
@@ -214,6 +225,9 @@ export function ChapterReader({
                     fontSize: getFontSize(),
                     lineHeight: getFontSize() * getLineHeight(),
                     color: currentTheme.text,
+                    textDecorationLine: isSelected ? 'underline' : 'none',
+                    textDecorationStyle: isSelected ? 'dotted' : 'solid',
+                    textDecorationColor: isSelected ? colors.primary[500] : 'transparent',
                   },
                 ]}
               >
@@ -224,21 +238,40 @@ export function ChapterReader({
         </MotiView>
       );
     },
-    [
-      version,
-      book,
-      chapter,
-      selectedVerse,
-      preferences,
-      getHighlight,
-      handleVerseTap,
-      handleVerseLongPress,
-    ]
+    [version, book, chapter, selectedVerses, preferences, getHighlight, handleVerseTap]
   );
 
-  const isHighlighted = actionSheetVerse
-    ? !!getHighlight(version, book, chapter, actionSheetVerse.verse)
-    : false;
+  // Check if any selected verse is highlighted
+  const hasHighlightedVerse = selectedVerses.some((verseNum) =>
+    getHighlight(version, book, chapter, verseNum)
+  );
+
+  // Get selected verse reference string
+  const getSelectedReference = () => {
+    if (selectedVerses.length === 0) return '';
+    if (selectedVerses.length === 1) {
+      return `${book} ${chapter}:${selectedVerses[0]}`;
+    }
+    const sorted = [...selectedVerses].sort((a, b) => a - b);
+    return `${book} ${chapter}:${sorted[0]}-${sorted[sorted.length - 1]}`;
+  };
+
+  // Backdrop component
+  const renderBackdrop = useCallback(
+    (props: any) => (
+      <GorhomBackdrop
+        {...props}
+        disappearsOnIndex={-1}
+        appearsOnIndex={0}
+        opacity={0.5}
+        onPress={() => {
+          setSelectedVerses([]);
+          setShowActionSheet(false);
+        }}
+      />
+    ),
+    []
+  );
 
   return (
     <>
@@ -254,62 +287,83 @@ export function ChapterReader({
         }}
       />
 
-      {/* Verse Actions Sheet */}
-      <Actionsheet isOpen={showActionSheet} onClose={() => setShowActionSheet(false)}>
-        <ActionsheetBackdrop />
-        <ActionsheetContent>
-          <ActionsheetDragIndicatorWrapper>
-            <ActionsheetDragIndicator />
-          </ActionsheetDragIndicatorWrapper>
-
+      {/* Verse Actions Bottom Sheet */}
+      <GorhomBottomSheet
+        ref={bottomSheetRef}
+        index={-1}
+        snapPoints={['35%']}
+        enablePanDownToClose
+        bottomInset={bottomInset}
+        detached={false}
+        onClose={() => {
+          setSelectedVerses([]);
+          setShowActionSheet(false);
+        }}
+        backdropComponent={renderBackdrop}
+        backgroundStyle={{
+          backgroundColor: '#ffffff',
+        }}
+      >
+        <BottomSheetScrollView
+          contentContainerStyle={{ paddingBottom: 40 }}
+          showsVerticalScrollIndicator={false}
+        >
           {/* Header */}
-          {actionSheetVerse && (
-            <View className="px-4 py-3 border-b border-gray-200 w-full">
-              <Text className="text-gray-900 font-semibold text-base">
-                {book} {chapter}:{actionSheetVerse.verse}
+          <View className="px-6 pt-2 pb-4 border-b border-gray-200">
+            <Text className="text-gray-900 font-semibold text-lg">
+              {getSelectedReference()}
+            </Text>
+            {selectedVerses.length > 0 && (
+              <Text className="text-gray-500 text-sm mt-1">
+                {selectedVerses.length} {selectedVerses.length === 1 ? 'verse' : 'verses'}{' '}
+                selected
               </Text>
-              <Text className="text-gray-600 text-sm mt-1" numberOfLines={2}>
-                "{actionSheetVerse.text.substring(0, 80)}..."
-              </Text>
-            </View>
-          )}
+            )}
+          </View>
 
           {/* Actions */}
-          <ActionsheetItem onPress={handleToggleHighlight}>
-            <HStack space="md" className="items-center">
-              <Icon
-                as={Highlight}
-                size="lg"
-                style={{ color: isHighlighted ? colors.warning[500] : colors.gray[600] }}
-              />
-              <ActionsheetItemText className="text-base">
-                {isHighlighted ? t('bible.removeHighlight') : t('bible.highlight')}
-              </ActionsheetItemText>
-            </HStack>
-          </ActionsheetItem>
+          <View className="px-6 pt-4">
+            {/* Highlight */}
+            <Pressable
+              onPress={handleToggleHighlight}
+              className="py-4 border-b border-gray-100 active:opacity-60"
+            >
+              <HStack space="md" className="items-center">
+                <Icon
+                  as={Highlight}
+                  size="lg"
+                  style={{ color: hasHighlightedVerse ? colors.warning[500] : colors.gray[600] }}
+                />
+                <Text className="text-gray-900 text-base flex-1">
+                  {hasHighlightedVerse ? t('bible.removeHighlight') : t('bible.highlight')}
+                </Text>
+              </HStack>
+            </Pressable>
 
-          <ActionsheetItem onPress={handleCopyVerse}>
-            <HStack space="md" className="items-center">
-              <Icon as={Copy} size="lg" className="text-gray-600" />
-              <ActionsheetItemText className="text-base">{t('bible.copy')}</ActionsheetItemText>
-            </HStack>
-          </ActionsheetItem>
+            {/* Copy */}
+            <Pressable
+              onPress={handleCopyVerse}
+              className="py-4 border-b border-gray-100 active:opacity-60"
+            >
+              <HStack space="md" className="items-center">
+                <Icon as={Copy} size="lg" className="text-gray-600" />
+                <Text className="text-gray-900 text-base flex-1">{t('bible.copy')}</Text>
+              </HStack>
+            </Pressable>
 
-          <ActionsheetItem onPress={handleShareVerse}>
-            <HStack space="md" className="items-center">
-              <Icon as={ShareIcon} size="lg" className="text-gray-600" />
-              <ActionsheetItemText className="text-base">{t('bible.share')}</ActionsheetItemText>
-            </HStack>
-          </ActionsheetItem>
-
-          <ActionsheetItem onPress={handleAddNote}>
-            <HStack space="md" className="items-center">
-              <Icon as={FileText} size="lg" className="text-gray-600" />
-              <ActionsheetItemText className="text-base">{t('bible.addNote')}</ActionsheetItemText>
-            </HStack>
-          </ActionsheetItem>
-        </ActionsheetContent>
-      </Actionsheet>
+            {/* Share */}
+            <Pressable
+              onPress={handleShareVerse}
+              className="py-4 active:opacity-60"
+            >
+              <HStack space="md" className="items-center">
+                <Icon as={ShareIcon} size="lg" className="text-gray-600" />
+                <Text className="text-gray-900 text-base flex-1">{t('bible.share')}</Text>
+              </HStack>
+            </Pressable>
+          </View>
+        </BottomSheetScrollView>
+      </GorhomBottomSheet>
     </>
   );
 }
