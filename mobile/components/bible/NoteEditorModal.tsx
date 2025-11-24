@@ -49,8 +49,12 @@ export function NoteEditorModal({
 
   // Update note when initialNote changes
   useEffect(() => {
+    console.log('🔄 NoteEditorModal - isOpen changed:', isOpen);
+    console.log('📊 BottomSheet index will be:', isOpen ? 0 : -1);
+
     if (isOpen) {
       setNote(initialNote);
+      console.log('📝 Note set to:', initialNote);
     }
   }, [isOpen, initialNote]);
 
@@ -84,7 +88,7 @@ export function NoteEditorModal({
       ref={bottomSheetRef}
       index={isOpen ? 0 : -1}
       snapPoints={['75%']}
-      enablePanDownToClose
+      enablePanDownToClose={true}
       bottomInset={bottomInset}
       topInset={topInset}
       onClose={onClose}
@@ -95,6 +99,7 @@ export function NoteEditorModal({
       keyboardBehavior="interactive"
       keyboardBlurBehavior="restore"
       android_keyboardInputMode="adjustResize"
+      animateOnMount={true}
     >
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
