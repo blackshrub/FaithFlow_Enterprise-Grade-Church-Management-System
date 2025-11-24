@@ -155,9 +155,6 @@ logger = logging.getLogger(__name__)
 # Initialize APScheduler for article publishing
 from scheduler import setup_scheduler, start_scheduler, shutdown_scheduler
 
-# Initialize iPaymu service
-from services.ipaymu_service import IPaymuService, ipaymu_service
-
 @app.on_event("startup")
 async def startup_event():
     """Initialize scheduler and services on startup."""
@@ -166,20 +163,23 @@ async def startup_event():
     start_scheduler()
     logger.info("✓ Article scheduler initialized and started")
 
-    # Initialize iPaymu service
+    # Initialize iPaymu service (optional - only if credentials configured)
     ipaymu_va = os.environ.get('IPAYMU_VA')
     ipaymu_key = os.environ.get('IPAYMU_API_KEY')
     ipaymu_env = os.environ.get('IPAYMU_ENV', 'sandbox')  # sandbox or production
 
     if ipaymu_va and ipaymu_key:
-        global ipaymu_service
-        from services import ipaymu_service as ipaymu_module
-        ipaymu_module.ipaymu_service = IPaymuService(
-            va_number=ipaymu_va,
-            api_key=ipaymu_key,
-            environment=ipaymu_env
-        )
-        logger.info(f"✓ iPaymu service initialized ({ipaymu_env} mode)")
+        try:
+            from services.ipaymu_service import IPaymuService, ipaymu_service
+            from services import ipaymu_service as ipaymu_module
+            ipaymu_module.ipaymu_service = IPaymuService(
+                va_number=ipaymu_va,
+                api_key=ipaymu_key,
+                environment=ipaymu_env
+            )
+            logger.info(f"✓ iPaymu service initialized ({ipaymu_env} mode)")
+        except ImportError:
+            logger.warning("⚠ iPaymu service not available (module not found)")
     else:
         logger.warning("⚠ iPaymu credentials not configured - giving module will not work")
 
