@@ -308,6 +308,14 @@
       "suggestionSpelling": "Periksa ejaan Anda",
       "suggestionKeywords": "Gunakan kata kunci yang berbeda",
       "suggestionFilter": "Hapus filter untuk melihat lebih banyak acara"
+    },
+    "calendar": {
+      "title": "Kalender",
+      "selectDate": "Ketuk tanggal untuk melihat acara",
+      "clearDate": "Hapus Tanggal",
+      "eventsOnDate": "Acara pada",
+      "noEvents": "Tidak ada acara pada tanggal ini",
+      "moreEvents": "+{{count}} acara lainnya"
     }
   },
   "rating": {

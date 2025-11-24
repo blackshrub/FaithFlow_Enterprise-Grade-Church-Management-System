@@ -25,7 +25,8 @@ interface EventFiltersStore {
   // Actions
   setSearchTerm: (term: string) => void;
   setCategory: (categoryId: string | null) => void;
-  setDate: (date: Date | null) => void;
+  setSelectedDate: (date: Date | null) => void;
+  clearSelectedDate: () => void;
   setStatus: (status: EventStatus | null) => void;
   setIsSearching: (isSearching: boolean) => void;
   setIsCalendarOpen: (isOpen: boolean) => void;
@@ -56,8 +57,12 @@ export const useEventFiltersStore = create<EventFiltersStore>((set) => ({
     set({ selectedCategory: categoryId });
   },
 
-  setDate: (date) => {
+  setSelectedDate: (date) => {
     set({ selectedDate: date });
+  },
+
+  clearSelectedDate: () => {
+    set({ selectedDate: null });
   },
 
   setStatus: (status) => {

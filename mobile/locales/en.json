@@ -312,6 +312,14 @@
       "suggestionSpelling": "Check your spelling",
       "suggestionKeywords": "Try different keywords",
       "suggestionFilter": "Clear filters to see more events"
+    },
+    "calendar": {
+      "title": "Calendar",
+      "selectDate": "Tap a date to view events",
+      "clearDate": "Clear Date",
+      "eventsOnDate": "Events on",
+      "noEvents": "No events on this date",
+      "moreEvents": "+{{count}} more events"
     }
   },
   "rating": {

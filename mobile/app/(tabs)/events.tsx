@@ -69,6 +69,7 @@ import { SearchBar } from '@/components/events/SearchBar';
 import { SearchResults } from '@/components/events/SearchResults';
 import { SearchEmptyState } from '@/components/events/SearchEmptyState';
 import { useEventFiltersStore } from '@/stores/eventFilters';
+import { useCalendarModalStore } from '@/stores/calendarModal';
 import { filterEvents } from '@/utils/eventFilters';
 import type { RSVP, Attendance, Event } from '@/utils/eventStatus';
 
@@ -87,6 +88,9 @@ export default function EventsScreen() {
 
   // Search store
   const { searchTerm, isSearching } = useEventFiltersStore();
+
+  // Calendar modal store
+  const calendarModalStore = useCalendarModalStore();
 
   // Fetch data for all tabs
   const upcomingQuery = useUpcomingEvents(
@@ -876,9 +880,27 @@ export default function EventsScreen() {
     <SafeAreaView className="flex-1 bg-gray-50" edges={['top']}>
       {/* Premium Header */}
       <View className="px-6 pt-6 pb-2">
-        <Heading size="3xl" className="text-gray-900 mb-6 font-bold">
-          {t('events.title')}
-        </Heading>
+        <HStack className="justify-between items-center mb-6">
+          <Heading size="3xl" className="text-gray-900 font-bold">
+            {t('events.title')}
+          </Heading>
+
+          {/* Calendar Icon Button */}
+          <Pressable
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              calendarModalStore.open();
+            }}
+            className="active:opacity-70"
+          >
+            <View
+              className="w-11 h-11 rounded-xl items-center justify-center"
+              style={{ backgroundColor: colors.primary[50] }}
+            >
+              <Icon as={Calendar} size="lg" className="text-primary-600" />
+            </View>
+          </Pressable>
+        </HStack>
       </View>
 
       {/* Search Bar (Always Visible) */}

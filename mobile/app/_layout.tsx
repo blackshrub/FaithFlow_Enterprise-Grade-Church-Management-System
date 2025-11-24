@@ -13,6 +13,7 @@ import Toast from 'react-native-toast-message';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { NoteEditorModal } from '@/components/bible/NoteEditorModal';
 import { CategoryFilterModal } from '@/components/modals/CategoryFilterModal';
+import { CalendarModal } from '@/components/modals/CalendarModal';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -76,6 +77,7 @@ export default function RootLayout() {
             {/* Global bottom sheets - MUST be at root level */}
             <NoteEditorModal />
             <CategoryFilterModal />
+            <CalendarModal />
 
             {/* Toast must be rendered at root level */}
             <Toast />
