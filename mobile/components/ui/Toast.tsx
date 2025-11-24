@@ -47,10 +47,14 @@ export const showToast = (
   description?: string,
   duration: number = 3000
 ) => {
+  console.log('🍞 showToast called:', { type, title, description });
+
   if (!toastInstance) {
-    console.warn('Toast instance not initialized. Make sure ToastProvider is mounted.');
+    console.warn('❌ Toast instance not initialized. Make sure ToastProvider is mounted.');
     return;
   }
+
+  console.log('✅ Toast instance exists, showing toast...');
 
   // Haptic feedback based on type
   switch (type) {
