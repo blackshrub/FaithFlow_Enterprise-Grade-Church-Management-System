@@ -10,7 +10,7 @@
  * - Transparent backdrop to see changes in real-time
  */
 
-import React, { useEffect, useRef, useCallback } from 'react';
+import React, { useEffect, useRef, useCallback, useState } from 'react';
 import { View, Pressable, ScrollView, Animated } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
@@ -100,6 +100,9 @@ export function ReadingPreferencesModal({
   const insets = useSafeAreaInsets();
   const { preferences, updatePreferences } = useBibleStore();
 
+  // Track if scroll view is at the top (to enable/disable pan-down-to-close)
+  const [isScrolledToTop, setIsScrolledToTop] = useState(true);
+
   // Calculate insets to prevent covering status bar
   const TAB_BAR_HEIGHT = 64 + (insets.bottom > 0 ? 20 : 8);
   const bottomInset = TAB_BAR_HEIGHT;
@@ -171,6 +174,12 @@ export function ReadingPreferencesModal({
     updatePreferences({ readingMode: mode });
   };
 
+  // Handle scroll to track if at top (for pan-down-to-close behavior)
+  const handleScroll = useCallback((event: any) => {
+    const scrollY = event.nativeEvent.contentOffset.y;
+    setIsScrolledToTop(scrollY <= 0);
+  }, []);
+
   // Backdrop component - transparent to allow live preview
   const renderBackdrop = useCallback(
     (props: any) => (
@@ -192,10 +201,10 @@ export function ReadingPreferencesModal({
       ref={bottomSheetRef}
       index={-1}
       snapPoints={['40%', '60%']}
-      enablePanDownToClose
+      enablePanDownToClose={isScrolledToTop} // Only enable close when scrolled to top
       enableDynamicSizing={false}
-      activeOffsetY={[-10, 10]} // Require 10px vertical movement before detecting pan
-      failOffsetX={[-10, 10]} // Fail gesture if horizontal movement > 10px
+      activeOffsetY={[-50, 50]} // Require 50px vertical movement before detecting pan (prevents accidental close)
+      failOffsetX={[-15, 15]} // Fail gesture if horizontal movement > 15px
       bottomInset={bottomInset}
       topInset={topInset}
       detached={false}
@@ -208,6 +217,9 @@ export function ReadingPreferencesModal({
       <BottomSheetScrollView
         contentContainerStyle={{ paddingBottom: 40 }}
         showsVerticalScrollIndicator={false}
+        bounces={true} // Enable bounce for better scroll feel
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
       >
         {/* Header */}
         <View className="px-6 pt-2 pb-4 border-b border-gray-200">
