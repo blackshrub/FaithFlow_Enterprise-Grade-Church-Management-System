@@ -43,7 +43,14 @@ export default function BibleScreen() {
   );
 
   // Fetch books for navigation
-  const { data: books = [] } = useBibleBooks(currentVersion);
+  const { data: books = [], isLoading: isLoadingBooks, error: booksError } = useBibleBooks(currentVersion);
+
+  // Debug logging
+  console.log('Bible Screen - currentVersion:', currentVersion);
+  console.log('Bible Screen - books length:', books?.length);
+  console.log('Bible Screen - isLoadingBooks:', isLoadingBooks);
+  console.log('Bible Screen - booksError:', booksError);
+  console.log('Bible Screen - books sample:', books?.[0]);
 
   // Get current book info for chapter navigation
   const currentBookInfo = books.find(

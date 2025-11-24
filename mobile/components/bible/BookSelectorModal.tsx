@@ -42,7 +42,13 @@ export function BookSelectorModal({
   const [selectedTestament, setSelectedTestament] = useState<'OT' | 'NT'>('OT');
   const [selectedBook, setSelectedBook] = useState<BibleBook | null>(null);
 
+  // Debug logging
+  console.log('BookSelectorModal - isOpen:', isOpen);
+  console.log('BookSelectorModal - books length:', books?.length);
+  console.log('BookSelectorModal - books sample:', books?.[0]);
+
   const filteredBooks = books.filter((book) => book.testament === selectedTestament);
+  console.log('BookSelectorModal - filteredBooks length:', filteredBooks.length);
 
   const handleBookSelect = (book: BibleBook) => {
     setSelectedBook(book);
