@@ -83,10 +83,15 @@ export function NoteEditorModal({
     [handleCancel]
   );
 
+  // Don't render anything if not open
+  if (!isOpen) {
+    return null;
+  }
+
   return (
     <BottomSheet
       ref={bottomSheetRef}
-      index={isOpen ? 0 : -1}
+      index={0}
       snapPoints={['75%']}
       enablePanDownToClose={true}
       bottomInset={bottomInset}
