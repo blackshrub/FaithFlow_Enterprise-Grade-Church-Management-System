@@ -144,7 +144,7 @@ export function SearchResults({ groupedResults, counts }: SearchResultsProps) {
   };
 
   return (
-    <>
+    <View style={{ flex: 1 }}>
       {/* Horizontal Tabs */}
       <ScrollView
         horizontal
@@ -318,6 +318,6 @@ export function SearchResults({ groupedResults, counts }: SearchResultsProps) {
         estimatedItemSize={120}
         contentContainerStyle={{ paddingTop: 8, paddingBottom: 80 }}
       />
-    </>
+    </View>
   );
 }
