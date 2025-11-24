@@ -155,13 +155,15 @@ export function filterEvents(options: FilterOptions): FilterResults {
 /**
  * Get calendar markers for events
  * Used by flash-calendar to show dots under dates
+ * Returns array format for flash-calendar's calendarMarkedDates prop
  */
 export function getCalendarMarkers(
   events: Event[],
   userRsvps: RSVP[],
   userAttendance: Attendance[]
 ) {
-  const markers: Record<string, { marked: boolean; color: string }> = {};
+  const markersArray: Array<{ startId: string; endId: string; color: string }> = [];
+  const processedDates = new Set<string>();
 
   events.forEach((event) => {
     if (!shouldShowEvent(event, userRsvps, userAttendance)) {
@@ -174,6 +176,11 @@ export function getCalendarMarkers(
     if (isNaN(eventDate.getTime())) return;
 
     const dateKey = eventDate.toISOString().split('T')[0];
+
+    // Skip if we already processed this date
+    if (processedDates.has(dateKey)) return;
+    processedDates.add(dateKey);
+
     const status = computeEventStatus(event, userRsvps, userAttendance);
 
     // Use status color for marker
@@ -183,13 +190,14 @@ export function getCalendarMarkers(
       upcoming: '#2563eb', // blue600
     };
 
-    markers[dateKey] = {
-      marked: true,
+    markersArray.push({
+      startId: dateKey,
+      endId: dateKey,
       color: colors[status],
-    };
+    });
   });
 
-  return markers;
+  return markersArray;
 }
 
 /**

@@ -107,10 +107,12 @@ export function CalendarModal() {
   );
 
   // Get calendar markers (event dots)
-  const calendarMarkers = useMemo(
-    () => getCalendarMarkers(filteredResults.events, userRsvps, userAttendance),
-    [filteredResults.events, userRsvps, userAttendance]
-  );
+  const calendarMarkers = useMemo(() => {
+    const markers = getCalendarMarkers(filteredResults.events, userRsvps, userAttendance);
+    console.log('[CalendarModal] Calendar markers:', markers);
+    console.log('[CalendarModal] Filtered events count:', filteredResults.events.length);
+    return markers;
+  }, [filteredResults.events, userRsvps, userAttendance]);
 
   const renderBackdrop = useCallback(
     (props: BottomSheetBackdropProps) => (
