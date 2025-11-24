@@ -14,7 +14,6 @@ import { View, Pressable, StyleSheet } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import * as Haptics from 'expo-haptics';
 import { ChevronLeft, ChevronRight } from 'lucide-react-native';
-import { MotiView } from 'moti';
 
 import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
@@ -178,37 +177,23 @@ export function ChapterReader({
         : 'transparent';
 
       return (
-        <MotiView
-          from={{
-            backgroundColor: 'transparent', // Initial state
-          }}
-          animate={{
-            backgroundColor, // Animate backgroundColor for smooth fade-out
-          }}
-          transition={{
-            backgroundColor: {
-              type: 'timing',
-              duration: 500, // Smooth 500ms fade-out when flash highlight is removed
-            },
-          }}
-        >
-          <Pressable onPress={() => handleVerseTap(item.verse)}>
-            <View
-              style={[
-                styles.verseContainer,
-                {
-                  // backgroundColor moved to MotiView animate prop for smooth transitions
-                  paddingVertical: getVerseSpacing(),
-                  paddingHorizontal: spacing.md,
-                  marginBottom: getVerseSpacing() * 0.5,
-                  // Add left border for selected verses (YouVersion-style)
-                  ...(isSelected && {
-                    borderLeftWidth: 3,
-                    borderLeftColor: colors.primary[500],
-                  }),
-                },
-              ]}
-            >
+        <Pressable onPress={() => handleVerseTap(item.verse)}>
+          <View
+            style={[
+              styles.verseContainer,
+              {
+                backgroundColor, // Flash highlight > Regular highlight > Transparent
+                paddingVertical: getVerseSpacing(),
+                paddingHorizontal: spacing.md,
+                marginBottom: getVerseSpacing() * 0.5,
+                // Add left border for selected verses (YouVersion-style)
+                ...(isSelected && {
+                  borderLeftWidth: 3,
+                  borderLeftColor: colors.primary[500],
+                }),
+              },
+            ]}
+          >
             {/* Verse number - conditionally shown */}
             {preferences.showVerseNumbers && (
               <Text
@@ -247,7 +232,6 @@ export function ChapterReader({
             </Text>
           </View>
         </Pressable>
-        </MotiView>
       );
     },
     [

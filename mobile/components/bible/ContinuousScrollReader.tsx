@@ -299,21 +299,15 @@ export function ContinuousScrollReader({
           from={{
             opacity: 0,
             translateY: 10,
-            backgroundColor: 'transparent', // Initial state for backgroundColor
           }}
           animate={{
             opacity: 1,
             translateY: 0,
-            backgroundColor, // Animate backgroundColor for smooth fade-out
           }}
           transition={{
             type: 'timing',
             duration: 200,
             delay: Math.min(item.verse * 20, 500),
-            backgroundColor: {
-              type: 'timing',
-              duration: 500, // Smooth 500ms fade-out when flash highlight is removed
-            },
           }}
         >
           <Pressable
@@ -324,7 +318,7 @@ export function ContinuousScrollReader({
               style={[
                 styles.verseContainer,
                 {
-                  // backgroundColor moved to MotiView animate prop for smooth transitions
+                  backgroundColor, // Flash highlight > Regular highlight > Transparent
                   paddingVertical: getVerseSpacing(),
                   paddingHorizontal: spacing.md,
                   marginBottom: getVerseSpacing() * 0.5,
