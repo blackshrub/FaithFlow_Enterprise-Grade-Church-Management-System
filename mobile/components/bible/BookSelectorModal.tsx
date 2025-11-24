@@ -9,6 +9,7 @@
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { View, Pressable } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MotiView } from 'moti';
 import { useTranslation } from 'react-i18next';
 import { ChevronLeft, ArrowDownAZ, ListOrdered } from 'lucide-react-native';
@@ -42,9 +43,14 @@ export function BookSelectorModal({
 }: BookSelectorModalProps) {
   const bottomSheetRef = useRef<GorhomBottomSheet>(null);
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
   const [selectedTestament, setSelectedTestament] = useState<'OT' | 'NT'>('OT');
   const [selectedBook, setSelectedBook] = useState<BibleBook | null>(null);
   const [sortOrder, setSortOrder] = useState<SortOrder>('original');
+
+  // Calculate bottom inset to account for tab bar (typically 80px + safe area)
+  const TAB_BAR_HEIGHT = 80;
+  const bottomInset = insets.bottom + TAB_BAR_HEIGHT;
 
   // Control bottom sheet based on isOpen prop
   useEffect(() => {
@@ -113,6 +119,8 @@ export function BookSelectorModal({
       index={-1}
       snapPoints={['90%']}
       enablePanDownToClose
+      bottomInset={bottomInset}
+      detached={false}
       onClose={() => {
         setSelectedBook(null);
         onClose();
