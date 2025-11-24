@@ -43,8 +43,9 @@ export function BibleVersionSelector({
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
 
-  // Calculate bottom inset - just use safe area, let sheet sit on top of tab bar
+  // Calculate insets to prevent covering status bar
   const bottomInset = insets.bottom;
+  const topInset = insets.top || 20; // Ensure minimum 20px from top (status bar)
 
   // Control bottom sheet based on isOpen prop
   useEffect(() => {
@@ -81,6 +82,7 @@ export function BibleVersionSelector({
       snapPoints={['50%']}
       enablePanDownToClose
       bottomInset={bottomInset}
+      topInset={topInset}
       detached={false}
       onClose={onClose}
       backdropComponent={renderBackdrop}

@@ -73,9 +73,10 @@ export function ReadingPreferencesModal({
   const insets = useSafeAreaInsets();
   const { preferences, updatePreferences } = useBibleStore();
 
-  // Calculate bottom inset
+  // Calculate insets to prevent covering status bar
   const TAB_BAR_HEIGHT = 64 + (insets.bottom > 0 ? 20 : 8);
   const bottomInset = TAB_BAR_HEIGHT;
+  const topInset = insets.top || 20; // Ensure minimum 20px from top (status bar)
 
   // Control bottom sheet
   useEffect(() => {
@@ -134,6 +135,7 @@ export function ReadingPreferencesModal({
       snapPoints={['50%']}
       enablePanDownToClose
       bottomInset={bottomInset}
+      topInset={topInset}
       detached={false}
       onClose={onClose}
       backdropComponent={renderBackdrop}

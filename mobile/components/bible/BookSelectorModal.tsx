@@ -50,8 +50,9 @@ export function BookSelectorModal({
   const [sortOrder, setSortOrder] = useState<SortOrder>('original');
   const [viewLayout, setViewLayout] = useState<ViewLayout>('grid');
 
-  // Calculate bottom inset - just use safe area, let sheet sit on top of tab bar
+  // Calculate insets to prevent covering status bar
   const bottomInset = insets.bottom;
+  const topInset = insets.top || 20; // Ensure minimum 20px from top (status bar)
 
   // Control bottom sheet based on isOpen prop
   useEffect(() => {
@@ -121,6 +122,7 @@ export function BookSelectorModal({
       snapPoints={['90%']}
       enablePanDownToClose
       bottomInset={bottomInset}
+      topInset={topInset}
       detached={false}
       onClose={() => {
         setSelectedBook(null);
