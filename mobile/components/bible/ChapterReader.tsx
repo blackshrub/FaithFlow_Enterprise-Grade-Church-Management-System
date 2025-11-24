@@ -86,12 +86,12 @@ export function ChapterReader({
 
       if (verseIndex !== -1) {
         setTimeout(() => {
-          // Use centered position (0.5) for better visibility, especially for end verses
-          // This ensures the verse is always visible without manual scrolling
+          // Position verse near top (0.1) for better visibility of end verses
+          // This ensures even the last verses are fully visible without manual scrolling
           flashListRef.current?.scrollToIndex({
             index: verseIndex,
             animated: true,
-            viewPosition: 0.3, // Center the verse for better visibility
+            viewPosition: 0.1, // Position near top to ensure full visibility
           });
 
           // Don't enter selection mode - flash highlights are handled separately by parent
