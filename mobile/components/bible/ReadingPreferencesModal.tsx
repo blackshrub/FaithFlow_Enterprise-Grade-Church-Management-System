@@ -39,8 +39,10 @@ export function ReadingPreferencesModal({
   const insets = useSafeAreaInsets();
   const { preferences, updatePreferences } = useBibleStore();
 
-  // Calculate bottom inset - just use safe area, let sheet sit on top of tab bar
-  const bottomInset = insets.bottom;
+  // Calculate bottom inset - add tab bar height to safe area
+  // Tab bar: ~64px height + variable padding at bottom
+  const TAB_BAR_HEIGHT = 64 + (insets.bottom > 0 ? 20 : 8);
+  const bottomInset = TAB_BAR_HEIGHT;
 
   // Control bottom sheet based on isOpen prop
   useEffect(() => {
