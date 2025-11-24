@@ -43,9 +43,8 @@ export function BibleVersionSelector({
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
 
-  // Calculate bottom inset to account for tab bar
-  const TAB_BAR_HEIGHT = 80;
-  const bottomInset = insets.bottom + TAB_BAR_HEIGHT;
+  // Calculate bottom inset - just use safe area, let sheet sit on top of tab bar
+  const bottomInset = insets.bottom;
 
   // Control bottom sheet based on isOpen prop
   useEffect(() => {

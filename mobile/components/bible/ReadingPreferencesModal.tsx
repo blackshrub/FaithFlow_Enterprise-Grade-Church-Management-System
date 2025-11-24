@@ -10,6 +10,7 @@
 
 import React, { useEffect, useRef, useCallback } from 'react';
 import { View, Pressable } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { Type, Palette, AlignJustify, Check } from 'lucide-react-native';
 import GorhomBottomSheet, { BottomSheetBackdrop as GorhomBackdrop } from '@gorhom/bottom-sheet';
@@ -35,7 +36,11 @@ export function ReadingPreferencesModal({
 }: ReadingPreferencesModalProps) {
   const bottomSheetRef = useRef<GorhomBottomSheet>(null);
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
   const { preferences, updatePreferences } = useBibleStore();
+
+  // Calculate bottom inset - just use safe area, let sheet sit on top of tab bar
+  const bottomInset = insets.bottom;
 
   // Control bottom sheet based on isOpen prop
   useEffect(() => {
@@ -93,6 +98,8 @@ export function ReadingPreferencesModal({
       index={-1}
       snapPoints={['65%']}
       enablePanDownToClose
+      bottomInset={bottomInset}
+      detached={false}
       onClose={onClose}
       backdropComponent={renderBackdrop}
       backgroundStyle={{
