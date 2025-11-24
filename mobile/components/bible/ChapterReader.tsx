@@ -80,7 +80,7 @@ export function ChapterReader({
     }
   }, [chapter, verses.length]);
 
-  // Scroll to specific verse when requested (from search)
+  // Scroll to specific verse when requested (from search or bookmarks)
   useEffect(() => {
     if (scrollToVerse && verses.length > 0) {
       const verseIndex = verses.findIndex((v) => v.verse === scrollToVerse);
@@ -93,20 +93,12 @@ export function ChapterReader({
             viewPosition: 0.2,
           });
 
-          // Briefly enter selection mode for the search result verse
-          const verseRef: VerseRef = { version, book, chapter, verse: scrollToVerse };
-          enterSelectionMode(verseRef);
-
-          // Clear selection after 2 seconds
-          setTimeout(() => {
-            if (selectedVerses.length === 1 && isVerseSelected(verseRef)) {
-              useBibleStore.getState().clearSelection();
-            }
-          }, 2000);
+          // Don't enter selection mode - flash highlights are handled separately by parent
+          // Flash highlights will automatically show for bookmarked verses
         }, 300);
       }
     }
-  }, [scrollToVerse, verses, version, book, chapter]);
+  }, [scrollToVerse, verses]);
 
   // Get font size based on preference (now numeric 10-24)
   const getFontSize = () => {
@@ -187,6 +179,9 @@ export function ChapterReader({
 
       return (
         <MotiView
+          from={{
+            backgroundColor: 'transparent', // Initial state
+          }}
           animate={{
             backgroundColor, // Animate backgroundColor for smooth fade-out
           }}

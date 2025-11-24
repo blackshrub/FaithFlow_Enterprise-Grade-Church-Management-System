@@ -296,7 +296,11 @@ export function ContinuousScrollReader({
 
       return (
         <MotiView
-          from={{ opacity: 0, translateY: 10 }}
+          from={{
+            opacity: 0,
+            translateY: 10,
+            backgroundColor: 'transparent', // Initial state for backgroundColor
+          }}
           animate={{
             opacity: 1,
             translateY: 0,
