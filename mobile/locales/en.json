@@ -236,6 +236,7 @@
   "events": {
     "title": "Events",
     "subtitle": "Church events and activities",
+    "all": "All",
     "upcoming": "Upcoming",
     "past": "Past",
     "myRSVPs": "My RSVPs",
