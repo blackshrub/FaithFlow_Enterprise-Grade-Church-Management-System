@@ -9,7 +9,7 @@
  * - Reading preferences (font size, theme)
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Pressable, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
@@ -36,6 +36,7 @@ export default function BibleScreen() {
   const [isPreferencesOpen, setIsPreferencesOpen] = useState(false);
   const [isVersionSelectorOpen, setIsVersionSelectorOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [scrollToVerseNumber, setScrollToVerseNumber] = useState<number | null>(null);
 
   const { currentVersion, currentBook, currentChapter, setCurrentPosition, preferences } =
     useBibleStore();
@@ -94,8 +95,13 @@ export default function BibleScreen() {
 
   const handleSearchVerseSelect = (book: string, chapter: number, verse: number) => {
     setCurrentPosition(currentVersion, book, chapter);
-    // TODO: Scroll to specific verse
+    setScrollToVerseNumber(verse);
   };
+
+  // Reset scroll target when chapter changes
+  useEffect(() => {
+    setScrollToVerseNumber(null);
+  }, [currentBook, currentChapter]);
 
   const currentTheme = readingThemes[preferences.theme];
 
@@ -206,6 +212,7 @@ export default function BibleScreen() {
           version={currentVersion}
           book={currentBook}
           chapter={currentChapter}
+          scrollToVerse={scrollToVerseNumber}
         />
       ) : (
         <View

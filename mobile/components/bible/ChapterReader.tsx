@@ -9,10 +9,10 @@
  * - Optimized for long-form reading
  */
 
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { View, Pressable, StyleSheet, Share, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { FlashList } from '@shopify/flash-list';
+import { FlashList, type FlashListProps } from '@shopify/flash-list';
 import { MotiView } from 'moti';
 import { useTranslation } from 'react-i18next';
 import * as Haptics from 'expo-haptics';
@@ -31,6 +31,7 @@ interface ChapterReaderProps {
   version: string;
   book: string;
   chapter: number;
+  scrollToVerse?: number | null;
 }
 
 export function ChapterReader({
@@ -38,11 +39,13 @@ export function ChapterReader({
   version,
   book,
   chapter,
+  scrollToVerse,
 }: ChapterReaderProps) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { preferences, getHighlight, addHighlight, removeHighlight } = useBibleStore();
   const latinFont = useLatinBibleFont(); // Get Latin Bible font selection
+  const flashListRef = useRef<FlashList<BibleVerse>>(null);
 
   // Get appropriate font based on Bible version
   // Latin Bibles: use selected custom font
@@ -51,6 +54,31 @@ export function ChapterReader({
 
   const [selectedVerses, setSelectedVerses] = useState<number[]>([]);
   const [showActionSheet, setShowActionSheet] = useState(false);
+
+  // Scroll to specific verse when requested (from search)
+  useEffect(() => {
+    if (scrollToVerse && verses.length > 0) {
+      // Find the index of the target verse
+      const verseIndex = verses.findIndex((v) => v.verse === scrollToVerse);
+
+      if (verseIndex !== -1) {
+        // Small delay to ensure FlashList is mounted
+        setTimeout(() => {
+          flashListRef.current?.scrollToIndex({
+            index: verseIndex,
+            animated: true,
+            viewPosition: 0.2, // Show verse at 20% from top for better context
+          });
+
+          // Briefly highlight the verse
+          setSelectedVerses([scrollToVerse]);
+          setTimeout(() => {
+            setSelectedVerses([]);
+          }, 2000); // Clear highlight after 2 seconds
+        }, 100);
+      }
+    }
+  }, [scrollToVerse, verses]);
 
   // Get font size based on preference (now numeric 10-24)
   const getFontSize = () => {
@@ -257,6 +285,7 @@ export function ChapterReader({
   return (
     <>
       <FlashList
+        ref={flashListRef}
         data={verses}
         renderItem={renderVerse}
         estimatedItemSize={100}
