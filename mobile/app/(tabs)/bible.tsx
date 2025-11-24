@@ -230,6 +230,7 @@ export default function BibleScreen() {
       <ReadingPreferencesModal
         isOpen={isPreferencesOpen}
         onClose={() => setIsPreferencesOpen(false)}
+        version={currentVersion}
       />
 
       {/* Bible Version Selector */}

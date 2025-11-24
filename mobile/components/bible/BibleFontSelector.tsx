@@ -1,19 +1,24 @@
 /**
  * Bible Font Selector Component
  *
- * Displays a scrollable list of Bible reading fonts with live previews.
+ * Displays a scrollable list of Latin Bible reading fonts with live previews.
  * Each font name is rendered in its actual typeface so users can see
  * exactly how it will look in their Bible reader.
+ *
+ * IMPORTANT: This component is ONLY shown for Latin-script Bibles.
+ * For Chinese Bibles, this component returns null (hidden completely).
  *
  * Features:
  * - Live font previews
  * - Categorized by serif/sans-serif
  * - Instant feedback with haptics
  * - Persists selection to AsyncStorage
+ * - Auto-hides for Chinese Bible versions
  *
  * Usage:
  * ```tsx
- * <BibleFontSelector />
+ * <BibleFontSelector version="NIV" />  // Shows for Latin Bibles
+ * <BibleFontSelector version="CHS" />  // Returns null for Chinese Bibles
  * ```
  */
 
@@ -29,25 +34,42 @@ import { VStack } from '@/components/ui/vstack';
 import { HStack } from '@/components/ui/hstack';
 
 import { useBibleFontStore } from '@/stores/bibleFontStore';
-import { getAvailableBibleFonts, type BibleFontKey } from '@/utils/fonts';
+import {
+  getAvailableLatinFonts,
+  isChineseBible,
+  type LatinBibleFontKey
+} from '@/utils/fonts';
 import { colors } from '@/constants/theme';
 
-export function BibleFontSelector() {
+interface BibleFontSelectorProps {
+  /**
+   * Current Bible version code (e.g., 'NIV', 'CHS', 'TB')
+   * Used to determine if font selector should be shown
+   */
+  version: string;
+}
+
+export function BibleFontSelector({ version }: BibleFontSelectorProps) {
   const { t } = useTranslation();
-  const { fontFamily, setFontFamily } = useBibleFontStore();
-  const fonts = getAvailableBibleFonts();
+  const { latinFont, setLatinFont } = useBibleFontStore();
+  const fonts = getAvailableLatinFonts();
+
+  // Hide font selector completely for Chinese Bibles
+  if (isChineseBible(version)) {
+    return null;
+  }
 
   // Group fonts by category
   const serifFonts = fonts.filter(f => f.category === 'serif');
   const sansSerifFonts = fonts.filter(f => f.category === 'sans-serif');
 
-  const handleFontSelect = (font: BibleFontKey) => {
+  const handleFontSelect = (font: LatinBibleFontKey) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setFontFamily(font);
+    setLatinFont(font);
   };
 
-  const renderFontItem = (fontKey: BibleFontKey, label: string) => {
-    const isSelected = fontFamily === fontKey;
+  const renderFontItem = (fontKey: LatinBibleFontKey, label: string) => {
+    const isSelected = latinFont === fontKey;
 
     return (
       <Pressable
@@ -141,8 +163,8 @@ export function BibleFontSelector() {
           style={{ backgroundColor: colors.blue[50] }}
         >
           <Text className="text-blue-700 text-xs">
-            💡 Font changes apply only to Bible reading screens. The rest of the app
-            uses default fonts.
+            💡 Font changes apply only to Latin Bible reading screens. Chinese Bibles
+            automatically use optimized system fonts.
           </Text>
         </View>
       </VStack>

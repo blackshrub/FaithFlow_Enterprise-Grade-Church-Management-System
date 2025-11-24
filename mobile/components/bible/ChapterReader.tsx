@@ -21,7 +21,8 @@ import * as Clipboard from 'expo-clipboard';
 import { Text } from '@/components/ui/text';
 import { VerseActionsSheet } from './VerseActionsSheet';
 import { useBibleStore } from '@/stores/bibleStore';
-import { useBibleFont } from '@/stores/bibleFontStore';
+import { useLatinBibleFont } from '@/stores/bibleFontStore';
+import { getAppliedBibleFont } from '@/utils/fonts';
 import { colors, typography, spacing, readingThemes } from '@/constants/theme';
 import type { BibleVerse } from '@/types/bible';
 
@@ -41,7 +42,13 @@ export function ChapterReader({
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { preferences, getHighlight, addHighlight, removeHighlight } = useBibleStore();
-  const bibleFontFamily = useBibleFont(); // Get custom Bible font
+  const latinFont = useLatinBibleFont(); // Get Latin Bible font selection
+
+  // Get appropriate font based on Bible version
+  // Latin Bibles: use selected custom font
+  // Chinese Bibles: use system font automatically
+  const appliedFont = getAppliedBibleFont(version, latinFont);
+
   const [selectedVerses, setSelectedVerses] = useState<number[]>([]);
   const [showActionSheet, setShowActionSheet] = useState(false);
 
@@ -212,7 +219,7 @@ export function ChapterReader({
                 style={[
                   styles.verseText,
                   {
-                    fontFamily: bibleFontFamily, // Custom Bible font from store
+                    fontFamily: appliedFont, // Latin: custom font, Chinese: system font
                     fontSize: getFontSize(),
                     lineHeight: getFontSize() * getLineHeight(),
                     color: currentTheme.text,
@@ -229,7 +236,7 @@ export function ChapterReader({
         </MotiView>
       );
     },
-    [version, book, chapter, selectedVerses, preferences, bibleFontFamily, getHighlight, handleVerseTap]
+    [version, book, chapter, selectedVerses, preferences, appliedFont, getHighlight, handleVerseTap]
   );
 
   // Check if any selected verse is highlighted

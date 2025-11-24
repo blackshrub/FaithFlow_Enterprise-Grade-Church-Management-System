@@ -45,6 +45,11 @@ import { colors, readingThemes } from '@/constants/theme';
 interface ReadingPreferencesModalProps {
   isOpen: boolean;
   onClose: () => void;
+  /**
+   * Current Bible version code (e.g., 'NIV', 'CHS', 'TB')
+   * Used to determine if font selector should be shown
+   */
+  version: string;
 }
 
 const LINE_HEIGHT_CYCLE: LineHeightType[] = ['compact', 'normal', 'relaxed'];
@@ -60,6 +65,7 @@ const THEMES: ThemeType[] = ['light', 'light2', 'light3', 'sepia', 'light4', 'da
 export function ReadingPreferencesModal({
   isOpen,
   onClose,
+  version,
 }: ReadingPreferencesModalProps) {
   const bottomSheetRef = useRef<GorhomBottomSheet>(null);
   const { t } = useTranslation();
@@ -244,12 +250,13 @@ export function ReadingPreferencesModal({
           </VStack>
 
           {/* Font Family Selector - NEW: Custom Bible Fonts with Live Preview */}
+          {/* Hidden for Chinese Bibles - they use system fonts automatically */}
           <VStack space="sm">
             <HStack space="sm" className="items-center mb-2">
               <Icon as={Type} size="md" className="text-gray-600" />
               <Text className="text-gray-900 font-semibold text-base">Bible Font</Text>
             </HStack>
-            <BibleFontSelector />
+            <BibleFontSelector version={version} />
           </VStack>
 
           {/* Theme Selection - Horizontal Scroll */}

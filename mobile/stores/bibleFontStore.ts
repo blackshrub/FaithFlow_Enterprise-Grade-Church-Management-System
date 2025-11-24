@@ -4,24 +4,29 @@
  * Manages font selection for Bible reading components ONLY.
  * This store persists to AsyncStorage and does not affect other app fonts.
  *
+ * IMPORTANT: This store ONLY handles Latin Bible fonts.
+ * Chinese Bibles use system fonts automatically (no storage needed).
+ *
  * Usage:
  * ```tsx
- * const { fontFamily, setFontFamily } = useBibleFontStore();
- * <Text style={{ fontFamily }}>{verseText}</Text>
+ * const { latinFont, setLatinFont } = useBibleFontStore();
+ * const appliedFont = getAppliedBibleFont(version, latinFont);
+ * <Text style={{ fontFamily: appliedFont }}>{verseText}</Text>
  * ```
  */
 
 import { create } from 'zustand';
 import { persist, createJSONStorage, subscribeWithSelector } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { DEFAULT_BIBLE_FONT, isValidBibleFont, type BibleFontKey } from '@/utils/fonts';
+import { DEFAULT_LATIN_FONT, isValidLatinFont, type LatinBibleFontKey } from '@/utils/fonts';
 
 interface BibleFontState {
   /**
-   * Current Bible reading font family
-   * This is the actual font name loaded via expo-font
+   * Current Latin Bible reading font family
+   * This is ONLY used for Latin-script Bibles (English, Indonesian, etc.)
+   * Chinese Bibles ignore this and use system fonts
    */
-  fontFamily: BibleFontKey;
+  latinFont: LatinBibleFontKey;
 
   /**
    * Whether fonts have been loaded from storage
@@ -30,10 +35,11 @@ interface BibleFontState {
   isHydrated: boolean;
 
   /**
-   * Set the Bible reading font
+   * Set the Latin Bible reading font
    * Automatically persists to AsyncStorage
+   * Note: This has NO effect on Chinese Bibles
    */
-  setFontFamily: (font: BibleFontKey) => void;
+  setLatinFont: (font: LatinBibleFontKey) => void;
 
   /**
    * Load font preference from AsyncStorage
@@ -56,20 +62,20 @@ export const useBibleFontStore = create<BibleFontState>()(
     persist(
       (set, get) => ({
         // Default state
-        fontFamily: DEFAULT_BIBLE_FONT,
+        latinFont: DEFAULT_LATIN_FONT,
         isHydrated: false,
 
         // Actions
-        setFontFamily: (font: BibleFontKey) => {
+        setLatinFont: (font: LatinBibleFontKey) => {
           // Validate font key
-          if (!isValidBibleFont(font)) {
-            console.warn(`Invalid Bible font key: ${font}. Falling back to ${DEFAULT_BIBLE_FONT}`);
-            set({ fontFamily: DEFAULT_BIBLE_FONT });
+          if (!isValidLatinFont(font)) {
+            console.warn(`Invalid Latin Bible font key: ${font}. Falling back to ${DEFAULT_LATIN_FONT}`);
+            set({ latinFont: DEFAULT_LATIN_FONT });
             return;
           }
 
-          console.log(`📖 Bible font changed to: ${font}`);
-          set({ fontFamily: font });
+          console.log(`📖 Latin Bible font changed to: ${font}`);
+          set({ latinFont: font });
         },
 
         _setHydrated: (hydrated: boolean) => {
@@ -79,11 +85,11 @@ export const useBibleFontStore = create<BibleFontState>()(
       {
         name: 'bible-font-storage',
         storage: createJSONStorage(() => AsyncStorage),
-        version: 1,
+        version: 2, // Increment version for migration
 
-        // Partial persistence - only save fontFamily
+        // Partial persistence - only save latinFont
         partialize: (state) => ({
-          fontFamily: state.fontFamily,
+          latinFont: state.latinFont,
         }),
 
         // Handle rehydration
@@ -92,12 +98,12 @@ export const useBibleFontStore = create<BibleFontState>()(
             console.error('Failed to rehydrate Bible font store:', error);
           } else if (state) {
             // Validate rehydrated font
-            if (!isValidBibleFont(state.fontFamily)) {
-              console.warn(`Invalid rehydrated font: ${state.fontFamily}. Using default.`);
-              state.fontFamily = DEFAULT_BIBLE_FONT;
+            if (!isValidLatinFont(state.latinFont)) {
+              console.warn(`Invalid rehydrated Latin font: ${state.latinFont}. Using default.`);
+              state.latinFont = DEFAULT_LATIN_FONT;
             }
             state._setHydrated(true);
-            console.log(`✅ Bible font rehydrated: ${state.fontFamily}`);
+            console.log(`✅ Latin Bible font rehydrated: ${state.latinFont}`);
           }
         },
       }
@@ -106,15 +112,19 @@ export const useBibleFontStore = create<BibleFontState>()(
 );
 
 /**
- * Selector hook for font family only
+ * Selector hook for Latin Bible font only
  * Use this to prevent unnecessary rerenders
+ *
+ * IMPORTANT: This returns the Latin font selection only.
+ * For actual font application, use getAppliedBibleFont() with the version code.
  *
  * Example:
  * ```tsx
- * const fontFamily = useBibleFont();
+ * const latinFont = useLatinBibleFont();
+ * const appliedFont = getAppliedBibleFont(version, latinFont);
  * ```
  */
-export const useBibleFont = () => useBibleFontStore((state) => state.fontFamily);
+export const useLatinBibleFont = () => useBibleFontStore((state) => state.latinFont);
 
 /**
  * Selector hook for hydration status
@@ -127,3 +137,7 @@ export const useBibleFont = () => useBibleFontStore((state) => state.fontFamily)
  * ```
  */
 export const useBibleFontHydrated = () => useBibleFontStore((state) => state.isHydrated);
+
+// Legacy export for backward compatibility
+// @deprecated Use useLatinBibleFont() instead
+export const useBibleFont = useLatinBibleFont;
