@@ -5,11 +5,14 @@
  */
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { View, Pressable, TextInput, ActivityIndicator } from 'react-native';
+import { View, Pressable, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { Search, X } from 'lucide-react-native';
-import GorhomBottomSheet, { BottomSheetBackdrop as GorhomBackdrop } from '@gorhom/bottom-sheet';
+import GorhomBottomSheet, {
+  BottomSheetBackdrop as GorhomBackdrop,
+  BottomSheetTextInput,
+} from '@gorhom/bottom-sheet';
 
 import { Text } from '@/components/ui/text';
 import { Heading } from '@/components/ui/heading';
@@ -110,13 +113,15 @@ export function BibleSearchModal({
       detached={false}
       onClose={() => {
         setSearchQuery('');
-        setSearchResults([]);
         onClose();
       }}
       backdropComponent={renderBackdrop}
       backgroundStyle={{
         backgroundColor: '#ffffff',
       }}
+      keyboardBehavior="interactive"
+      keyboardBlurBehavior="restore"
+      android_keyboardInputMode="adjustResize"
     >
       <BottomSheetScrollView
         contentContainerStyle={{ paddingBottom: 40 }}
@@ -135,12 +140,17 @@ export function BibleSearchModal({
             style={{ backgroundColor: colors.gray[100] }}
           >
             <Icon as={Search} size="md" className="text-gray-400 mr-3" />
-            <TextInput
+            <BottomSheetTextInput
               value={searchQuery}
               onChangeText={setSearchQuery}
               placeholder={t('bible.searchPlaceholder')}
               placeholderTextColor={colors.gray[400]}
-              className="flex-1 text-gray-900 text-base"
+              style={{
+                flex: 1,
+                fontSize: 16,
+                color: colors.gray[900],
+                padding: 0,
+              }}
               returnKeyType="search"
               autoCapitalize="none"
               autoCorrect={false}

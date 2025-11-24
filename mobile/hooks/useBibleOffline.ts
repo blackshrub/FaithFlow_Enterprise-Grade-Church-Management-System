@@ -17,7 +17,7 @@ const CACHE_TIMES = {
 
 /**
  * Get all Bible books for a version (offline)
- * Returns books with both number and name for compatibility
+ * Returns books with schema compatible with BookSelectorModal
  */
 export function useBibleBooksOffline(version: BibleTranslation) {
   return useQuery({
@@ -32,11 +32,23 @@ export function useBibleBooksOffline(version: BibleTranslation) {
 
       const books = loader.getBooks();
 
-      // Add English name for backwards compatibility
-      return books.map((book) => ({
-        ...book,
-        englishName: getBookName(book.number) || book.name,
-      }));
+      // Transform to API-compatible schema for BookSelectorModal
+      return books.map((book) => {
+        const englishName = getBookName(book.number) || book.name;
+        return {
+          // New schema fields
+          number: book.number,
+          name: book.name,
+          chapters: book.chapters,
+          englishName,
+          // Old API schema fields for backwards compatibility
+          id: `${version}-${book.number}`,
+          book_number: book.number,
+          name_local: book.name, // Use native name from Bible file
+          chapter_count: book.chapters,
+          testament: book.number <= 39 ? 'OT' : 'NT', // Books 1-39 = OT, 40-66 = NT
+        };
+      });
     },
     staleTime: CACHE_TIMES.BIBLE,
     gcTime: CACHE_TIMES.BIBLE,

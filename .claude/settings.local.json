@@ -29,7 +29,9 @@
       "Bash(pkill:*)",
       "Bash(pip3 install:*)",
       "Bash(npx ts-node scripts/normalizeBibles.ts)",
-      "Bash(npx ts-node:*)"
+      "Bash(npx ts-node:*)",
+      "Bash(git config:*)",
+      "Bash(git push:*)"
     ],
     "deny": [],
     "ask": []

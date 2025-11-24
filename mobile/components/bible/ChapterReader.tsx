@@ -9,20 +9,17 @@
  * - Optimized for long-form reading
  */
 
-import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { View, Pressable, StyleSheet, Share, Alert, Modal, TouchableOpacity } from 'react-native';
+import React, { useState, useCallback, useRef } from 'react';
+import { View, Pressable, StyleSheet, Share, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FlashList } from '@shopify/flash-list';
 import { MotiView } from 'moti';
 import { useTranslation } from 'react-i18next';
 import * as Haptics from 'expo-haptics';
 import * as Clipboard from 'expo-clipboard';
-import { Highlight, Copy, Share as ShareIcon, X } from 'lucide-react-native';
 
 import { Text } from '@/components/ui/text';
-import { BottomSheetScrollView } from '@/components/ui/bottomsheet';
-import { Icon } from '@/components/ui/icon';
-import { HStack } from '@/components/ui/hstack';
+import { VerseActionsSheet } from './VerseActionsSheet';
 import { useBibleStore } from '@/stores/bibleStore';
 import { colors, typography, spacing, readingThemes } from '@/constants/theme';
 import type { BibleVerse } from '@/types/bible';
@@ -70,17 +67,17 @@ export function ChapterReader({
     return Math.max(4, Math.min(12, fontSize * 0.4));
   };
 
-  // Get font family
+  // Get font family with proper React Native font family values
   const getFontFamily = () => {
-    const fontMap = {
-      System: 'System',
-      Serif: 'serif',
-      Monospace: 'monospace',
+    const fontMap: Record<string, string | undefined> = {
+      System: undefined, // Use system default
+      Serif: 'serif', // iOS: Georgia-like, Android: Noto Serif
+      Monospace: 'monospace', // Fixed-width font
     };
-    return fontMap[preferences.fontFamily] || 'System';
+    return fontMap[preferences.fontFamily];
   };
 
-  // Handle verse tap - toggle selection (don't show modal yet)
+  // Handle verse tap - toggle selection and show/hide action sheet
   const handleVerseTap = useCallback(
     (verseNumber: number) => {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -89,26 +86,21 @@ export function ChapterReader({
         const isSelected = prev.includes(verseNumber);
         if (isSelected) {
           // Deselect verse
-          return prev.filter((v) => v !== verseNumber);
+          const newSelection = prev.filter((v) => v !== verseNumber);
+          // Hide action sheet if no verses selected
+          if (newSelection.length === 0) {
+            setShowActionSheet(false);
+          }
+          return newSelection;
         } else {
-          // Add to selection
+          // Add to selection and show action sheet
+          setShowActionSheet(true);
           return [...prev, verseNumber];
         }
       });
     },
     []
   );
-
-  // Show action sheet when user has selection
-  useEffect(() => {
-    if (selectedVerses.length > 0 && !showActionSheet) {
-      // Auto-show actions after a brief delay to allow multi-selection
-      const timer = setTimeout(() => {
-        setShowActionSheet(true);
-      }, 800);
-      return () => clearTimeout(timer);
-    }
-  }, [selectedVerses.length, showActionSheet]);
 
   // Copy selected verses to clipboard
   const handleCopyVerse = useCallback(async () => {
@@ -277,80 +269,20 @@ export function ChapterReader({
         }}
       />
 
-      {/* Verse Actions Modal - Simple Modal at Bottom */}
-      <Modal
-        visible={showActionSheet && selectedVerses.length > 0}
-        transparent
-        animationType="slide"
-        onRequestClose={() => {
+      {/* Verse Actions Bottom Sheet - Persistent */}
+      <VerseActionsSheet
+        isOpen={showActionSheet}
+        onClose={() => {
           setSelectedVerses([]);
           setShowActionSheet(false);
         }}
-      >
-        <TouchableOpacity
-          activeOpacity={1}
-          onPress={() => {
-            setSelectedVerses([]);
-            setShowActionSheet(false);
-          }}
-          style={styles.modalOverlay}
-        >
-          <TouchableOpacity activeOpacity={1} onPress={(e) => e.stopPropagation()}>
-            <View style={[styles.modalContent, { paddingBottom: insets.bottom + 80 }]}>
-              {/* Header - Compact */}
-              <Text className="text-gray-600 text-xs font-medium mb-3 text-center">
-                {getSelectedReference()} • {selectedVerses.length}{' '}
-                {selectedVerses.length === 1 ? 'verse' : 'verses'}
-              </Text>
-
-              {/* Actions in One Row */}
-              <HStack className="items-center justify-around">
-                {/* Highlight */}
-                <Pressable
-                  onPress={handleToggleHighlight}
-                  className="items-center active:opacity-60 flex-1"
-                >
-                  <View
-                    className="p-3 rounded-full mb-1"
-                    style={{ backgroundColor: hasHighlightedVerse ? colors.warning[100] : colors.gray[100] }}
-                  >
-                    <Icon
-                      as={Highlight}
-                      size="lg"
-                      style={{ color: hasHighlightedVerse ? colors.warning[600] : colors.gray[600] }}
-                    />
-                  </View>
-                  <Text className="text-gray-700 text-xs">
-                    {hasHighlightedVerse ? t('bible.removeHighlight') : t('bible.highlight')}
-                  </Text>
-                </Pressable>
-
-                {/* Copy */}
-                <Pressable
-                  onPress={handleCopyVerse}
-                  className="items-center active:opacity-60 flex-1"
-                >
-                  <View className="p-3 rounded-full mb-1" style={{ backgroundColor: colors.gray[100] }}>
-                    <Icon as={Copy} size="lg" className="text-gray-600" />
-                  </View>
-                  <Text className="text-gray-700 text-xs">{t('bible.copy')}</Text>
-                </Pressable>
-
-                {/* Share */}
-                <Pressable
-                  onPress={handleShareVerse}
-                  className="items-center active:opacity-60 flex-1"
-                >
-                  <View className="p-3 rounded-full mb-1" style={{ backgroundColor: colors.gray[100] }}>
-                    <Icon as={ShareIcon} size="lg" className="text-gray-600" />
-                  </View>
-                  <Text className="text-gray-700 text-xs">{t('bible.share')}</Text>
-                </Pressable>
-              </HStack>
-            </View>
-          </TouchableOpacity>
-        </TouchableOpacity>
-      </Modal>
+        selectedVerses={selectedVerses}
+        hasHighlightedVerse={hasHighlightedVerse}
+        selectedReference={getSelectedReference()}
+        onHighlight={handleToggleHighlight}
+        onCopy={handleCopyVerse}
+        onShare={handleShareVerse}
+      />
     </>
   );
 }
@@ -370,22 +302,5 @@ const styles = StyleSheet.create({
   verseText: {
     flex: 1,
     // fontFamily is dynamic based on user preference
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    backgroundColor: '#ffffff',
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
-    elevation: 8,
   },
 });
