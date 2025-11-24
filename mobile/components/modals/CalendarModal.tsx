@@ -199,6 +199,7 @@ export function CalendarModal() {
         {/* Calendar */}
         <View className="mb-4">
           <Calendar
+            calendarMonthId={new Date().toISOString().split('T')[0]}
             calendarActiveDateRanges={
               selectedDate && !isNaN(selectedDate.getTime())
                 ? [
@@ -207,7 +208,7 @@ export function CalendarModal() {
                       endId: selectedDate.toISOString().split('T')[0],
                     },
                   ]
-                : []
+                : undefined
             }
             calendarColorScheme="light"
             calendarFirstDayOfWeek="sunday"
