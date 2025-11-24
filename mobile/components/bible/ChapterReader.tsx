@@ -21,6 +21,7 @@ import * as Clipboard from 'expo-clipboard';
 import { Text } from '@/components/ui/text';
 import { VerseActionsSheet } from './VerseActionsSheet';
 import { useBibleStore } from '@/stores/bibleStore';
+import { useBibleFont } from '@/stores/bibleFontStore';
 import { colors, typography, spacing, readingThemes } from '@/constants/theme';
 import type { BibleVerse } from '@/types/bible';
 
@@ -40,6 +41,7 @@ export function ChapterReader({
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { preferences, getHighlight, addHighlight, removeHighlight } = useBibleStore();
+  const bibleFontFamily = useBibleFont(); // Get custom Bible font
   const [selectedVerses, setSelectedVerses] = useState<number[]>([]);
   const [showActionSheet, setShowActionSheet] = useState(false);
 
@@ -65,16 +67,6 @@ export function ChapterReader({
     // Spacing range: 4-12
     const fontSize = getFontSize();
     return Math.max(4, Math.min(12, fontSize * 0.4));
-  };
-
-  // Get font family with proper React Native font family values
-  const getFontFamily = () => {
-    const fontMap: Record<string, string | undefined> = {
-      System: undefined, // Use system default
-      Serif: 'serif', // iOS: Georgia-like, Android: Noto Serif
-      Monospace: 'monospace', // Fixed-width font
-    };
-    return fontMap[preferences.fontFamily];
   };
 
   // Handle verse tap - toggle selection and show/hide action sheet
@@ -220,7 +212,7 @@ export function ChapterReader({
                 style={[
                   styles.verseText,
                   {
-                    fontFamily: getFontFamily(),
+                    fontFamily: bibleFontFamily, // Custom Bible font from store
                     fontSize: getFontSize(),
                     lineHeight: getFontSize() * getLineHeight(),
                     color: currentTheme.text,
@@ -237,7 +229,7 @@ export function ChapterReader({
         </MotiView>
       );
     },
-    [version, book, chapter, selectedVerses, preferences, getHighlight, handleVerseTap]
+    [version, book, chapter, selectedVerses, preferences, bibleFontFamily, getHighlight, handleVerseTap]
   );
 
   // Check if any selected verse is highlighted

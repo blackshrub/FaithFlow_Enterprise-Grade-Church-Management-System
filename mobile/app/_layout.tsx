@@ -9,6 +9,8 @@ import { initializeI18n } from "@/i18n";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { ToastProvider } from "@/components/providers/ToastProvider";
+import { useFonts } from "expo-font";
+import { BIBLE_FONT_FILES } from "@/utils/fonts";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -24,14 +26,31 @@ export default function RootLayout() {
   const { colorScheme } = useColorScheme();
   const [i18nInitialized, setI18nInitialized] = useState(false);
 
+  /**
+   * Load Bible reading fonts
+   * These fonts are ONLY used in Bible reader components
+   * The rest of the app uses Gluestack UI default fonts
+   */
+  const [fontsLoaded, fontError] = useFonts(BIBLE_FONT_FILES);
+
   useEffect(() => {
     initializeI18n().then(() => {
       setI18nInitialized(true);
     });
   }, []);
 
-  // Wait for i18n to initialize before rendering
-  if (!i18nInitialized) {
+  // Log font loading errors
+  useEffect(() => {
+    if (fontError) {
+      console.error('Failed to load Bible fonts:', fontError);
+    } else if (fontsLoaded) {
+      console.log('✅ All Bible fonts loaded successfully');
+    }
+  }, [fontsLoaded, fontError]);
+
+  // Wait for i18n and fonts to initialize before rendering
+  // This prevents font flashing and ensures smooth reading experience
+  if (!i18nInitialized || !fontsLoaded) {
     return null;
   }
 

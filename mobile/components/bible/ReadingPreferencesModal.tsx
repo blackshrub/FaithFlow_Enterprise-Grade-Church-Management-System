@@ -38,8 +38,8 @@ import {
   useBibleStore,
   type LineHeightType,
   type ThemeType,
-  type FontFamily,
 } from '@/stores/bibleStore';
+import { BibleFontSelector } from './BibleFontSelector';
 import { colors, readingThemes } from '@/constants/theme';
 
 interface ReadingPreferencesModalProps {
@@ -54,12 +54,6 @@ const LINE_HEIGHT_ICONS = {
   normal: AlignCenter,
   relaxed: AlignRight,
 };
-
-const FONT_FAMILIES: { name: FontFamily; fontFamily: string; preview: string }[] = [
-  { name: 'System', fontFamily: 'System', preview: 'The quick brown fox jumps' },
-  { name: 'Serif', fontFamily: 'serif', preview: 'The quick brown fox jumps' },
-  { name: 'Monospace', fontFamily: 'monospace', preview: 'The quick brown fox jumps' },
-];
 
 const THEMES: ThemeType[] = ['light', 'light2', 'light3', 'sepia', 'light4', 'dark', 'dark2', 'dark3'];
 
@@ -103,11 +97,6 @@ export function ReadingPreferencesModal({
     const currentIndex = LINE_HEIGHT_CYCLE.indexOf(preferences.lineHeight);
     const nextIndex = (currentIndex + 1) % LINE_HEIGHT_CYCLE.length;
     updatePreferences({ lineHeight: LINE_HEIGHT_CYCLE[nextIndex] });
-  };
-
-  // Font family handler
-  const handleFontFamilyChange = (fontFamily: FontFamily) => {
-    updatePreferences({ fontFamily });
   };
 
   // Theme handler
@@ -254,59 +243,13 @@ export function ReadingPreferencesModal({
             </Pressable>
           </VStack>
 
-          {/* Font Family Selector - Horizontal Scroll with Preview */}
+          {/* Font Family Selector - NEW: Custom Bible Fonts with Live Preview */}
           <VStack space="sm">
             <HStack space="sm" className="items-center mb-2">
               <Icon as={Type} size="md" className="text-gray-600" />
-              <Text className="text-gray-900 font-semibold text-base">Font Family</Text>
+              <Text className="text-gray-900 font-semibold text-base">Bible Font</Text>
             </HStack>
-
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ paddingRight: 24 }}
-            >
-              <HStack space="sm">
-                {FONT_FAMILIES.map((fontItem) => (
-                  <Pressable
-                    key={fontItem.name}
-                    onPress={() => handleFontFamilyChange(fontItem.name)}
-                    className="active:opacity-70"
-                  >
-                    <View
-                      className="px-4 py-3 rounded-lg"
-                      style={{
-                        backgroundColor:
-                          preferences.fontFamily === fontItem.name ? colors.primary[50] : colors.gray[100],
-                        borderWidth: preferences.fontFamily === fontItem.name ? 2 : 0,
-                        borderColor: preferences.fontFamily === fontItem.name ? colors.primary[500] : 'transparent',
-                        minWidth: 160,
-                      }}
-                    >
-                      <Text
-                        className={`text-xs mb-1 ${
-                          preferences.fontFamily === fontItem.name
-                            ? 'text-primary-600 font-semibold'
-                            : 'text-gray-600'
-                        }`}
-                      >
-                        {fontItem.name}
-                      </Text>
-                      <Text
-                        style={{
-                          fontFamily: fontItem.fontFamily,
-                          fontSize: 14,
-                          color: preferences.fontFamily === fontItem.name ? colors.primary[700] : colors.gray[700],
-                        }}
-                        numberOfLines={1}
-                      >
-                        {fontItem.preview}
-                      </Text>
-                    </View>
-                  </Pressable>
-                ))}
-              </HStack>
-            </ScrollView>
+            <BibleFontSelector />
           </VStack>
 
           {/* Theme Selection - Horizontal Scroll */}
