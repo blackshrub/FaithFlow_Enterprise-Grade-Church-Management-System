@@ -97,13 +97,21 @@ export default function BibleScreen() {
   };
 
   const handleSearchVerseSelect = (book: string, chapter: number, verse: number) => {
-    setCurrentPosition(currentVersion, book, chapter);
+    console.log('[Bible Screen] Search verse selected:', { book, chapter, verse });
     setScrollToVerseNumber(verse);
+    setCurrentPosition(currentVersion, book, chapter);
+    console.log('[Bible Screen] scrollToVerseNumber set to:', verse);
   };
 
-  // Reset scroll target when chapter changes
+  // Reset scroll target when chapter changes ONLY if no target verse was set
+  // This prevents clearing the scroll target when navigating from search results
   useEffect(() => {
-    setScrollToVerseNumber(null);
+    // Don't reset if we just set a scroll target
+    const timer = setTimeout(() => {
+      setScrollToVerseNumber(null);
+    }, 500); // Give ChapterReader time to process the scroll
+
+    return () => clearTimeout(timer);
   }, [currentBook, currentChapter]);
 
   const currentTheme = readingThemes[preferences.theme];

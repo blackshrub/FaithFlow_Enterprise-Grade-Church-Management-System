@@ -57,25 +57,44 @@ export function ChapterReader({
 
   // Scroll to specific verse when requested (from search)
   useEffect(() => {
+    console.log('[ChapterReader] Scroll effect triggered:', {
+      scrollToVerse,
+      versesLength: verses.length,
+      hasRef: !!flashListRef.current,
+    });
+
     if (scrollToVerse && verses.length > 0) {
       // Find the index of the target verse
       const verseIndex = verses.findIndex((v) => v.verse === scrollToVerse);
 
+      console.log('[ChapterReader] Target verse index:', verseIndex, 'for verse:', scrollToVerse);
+
       if (verseIndex !== -1) {
-        // Small delay to ensure FlashList is mounted
+        // Small delay to ensure FlashList is mounted and rendered
         setTimeout(() => {
+          console.log('[ChapterReader] Attempting to scroll to index:', verseIndex);
           flashListRef.current?.scrollToIndex({
             index: verseIndex,
             animated: true,
             viewPosition: 0.2, // Show verse at 20% from top for better context
           });
 
-          // Briefly highlight the verse
+          // Briefly highlight the verse from search
+          console.log('[ChapterReader] Highlighting search result verse:', scrollToVerse);
           setSelectedVerses([scrollToVerse]);
           setTimeout(() => {
-            setSelectedVerses([]);
+            console.log('[ChapterReader] Clearing search highlight');
+            // Only clear if no other verses were selected in the meantime
+            setSelectedVerses((current) => {
+              if (current.length === 1 && current[0] === scrollToVerse) {
+                return [];
+              }
+              return current;
+            });
           }, 2000); // Clear highlight after 2 seconds
-        }, 100);
+        }, 300); // Increased delay to ensure list is ready
+      } else {
+        console.log('[ChapterReader] Verse not found in verses array');
       }
     }
   }, [scrollToVerse, verses]);
@@ -107,20 +126,26 @@ export function ChapterReader({
   // Handle verse tap - toggle selection and show/hide action sheet
   const handleVerseTap = useCallback(
     (verseNumber: number) => {
+      console.log('[ChapterReader] Verse tapped:', verseNumber);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
       setSelectedVerses((prev) => {
         const isSelected = prev.includes(verseNumber);
+        console.log('[ChapterReader] Is selected:', isSelected, 'Current selection:', prev);
+
         if (isSelected) {
           // Deselect verse
           const newSelection = prev.filter((v) => v !== verseNumber);
+          console.log('[ChapterReader] Deselecting, new selection:', newSelection);
           // Hide action sheet if no verses selected
           if (newSelection.length === 0) {
+            console.log('[ChapterReader] Hiding action sheet');
             setShowActionSheet(false);
           }
           return newSelection;
         } else {
           // Add to selection and show action sheet
+          console.log('[ChapterReader] Showing action sheet');
           setShowActionSheet(true);
           return [...prev, verseNumber];
         }
