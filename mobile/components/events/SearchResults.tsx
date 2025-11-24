@@ -60,7 +60,7 @@ export function SearchResults({ groupedResults, counts }: SearchResultsProps) {
   ].filter((section) => section.count > 0); // Only show non-empty sections
 
   const handleEventPress = (eventId: string) => {
-    router.push(`/(tabs)/events/${eventId}` as any);
+    router.push(`/events/${eventId}` as any);
   };
 
   const renderItem = ({ item, index }: { item: StatusSection | FilteredEvent; index: number }) => {
