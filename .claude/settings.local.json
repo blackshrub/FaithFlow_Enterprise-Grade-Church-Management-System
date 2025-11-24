@@ -27,7 +27,9 @@
       "Bash(curl:*)",
       "Bash(xargs kill:*)",
       "Bash(pkill:*)",
-      "Bash(pip3 install:*)"
+      "Bash(pip3 install:*)",
+      "Bash(npx ts-node scripts/normalizeBibles.ts)",
+      "Bash(npx ts-node:*)"
     ],
     "deny": [],
     "ask": []
