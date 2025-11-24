@@ -168,7 +168,12 @@ export function getCalendarMarkers(
       return; // Skip events that shouldn't be shown
     }
 
-    const dateKey = new Date(event.date).toISOString().split('T')[0];
+    // Skip events with invalid dates
+    if (!event.date) return;
+    const eventDate = new Date(event.date);
+    if (isNaN(eventDate.getTime())) return;
+
+    const dateKey = eventDate.toISOString().split('T')[0];
     const status = computeEventStatus(event, userRsvps, userAttendance);
 
     // Use status color for marker
