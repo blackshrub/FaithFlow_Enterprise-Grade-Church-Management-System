@@ -439,12 +439,15 @@ function EventForm({ event, onClose }) {
             {/* Event Photo */}
             <div className="space-y-2">
               <Label>{t('events.event.eventPhoto')}</Label>
+              <p className="text-xs text-gray-500">
+                Recommended: 2:1 aspect ratio (e.g., 1200×600px) for optimal display across mobile and web
+              </p>
               {photoPreview ? (
-                <div className="relative">
+                <div className="relative w-full" style={{ aspectRatio: '2/1' }}>
                   <img
                     src={photoPreview}
                     alt="Event preview"
-                    className="w-full h-48 object-cover rounded-lg"
+                    className="w-full h-full object-cover rounded-lg"
                   />
                   <Button
                     type="button"

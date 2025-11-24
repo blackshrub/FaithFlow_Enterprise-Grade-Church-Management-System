@@ -15,6 +15,7 @@ import ConflictReview from "./pages/ConflictReview";
 import ImportExport from "./pages/ImportExport";
 import SeatLayouts from "./pages/SeatLayouts";
 import Events from "./pages/Events";
+import EventRatings from "./pages/EventRatings";
 import KioskMode from "./pages/KioskMode";
 import Devotions from "./pages/Devotions";
 import Layout from "./components/Layout/Layout";
@@ -127,6 +128,7 @@ function App() {
               <Route path="conflicts" element={<ConflictReview />} />
               <Route path="seat-layouts" element={<SeatLayouts />} />
               <Route path="events" element={<Events />} />
+              <Route path="events/ratings" element={<EventRatings />} />
               {/* Kiosk moved outside Layout for fullscreen */}
               <Route path="devotions" element={<Devotions />} />
               

@@ -8,6 +8,9 @@
  * - profile.tsx
  *
  * Note: "Give" is handled via modal, not a tab screen
+ *
+ * IMPORTANT: BottomSheetModalProvider is in app/_layout.tsx (root level)
+ * This layout only renders tab content and tab bar
  */
 
 import { View } from 'react-native';

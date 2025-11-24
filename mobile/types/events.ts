@@ -1,36 +1,164 @@
 /**
- * Event Types
+ * Event Types - Matching Backend API Structure
+ *
+ * Based on /backend/models/event.py and /backend/routes/events.py
  */
 
-export type RSVPStatus = 'going' | 'maybe' | 'not_going' | null;
+export type EventType = 'single' | 'series';
 
+export interface EventSession {
+  name: string;
+  date: string; // ISO 8601
+  end_date?: string; // ISO 8601
+}
+
+export interface EventRSVP {
+  member_id: string;
+  member_name: string;
+  session_id?: string; // For series events
+  seat?: string; // If seat selection enabled
+  timestamp: string; // ISO 8601
+  status: 'confirmed';
+  confirmation_code: string;
+  qr_code?: string; // Base64 QR code image
+  qr_data?: string; // QR code data string
+  whatsapp_status?: 'pending' | 'sent' | 'delivered' | 'read' | 'failed' | 'disabled';
+  whatsapp_message_id?: string;
+}
+
+export interface EventAttendance {
+  member_id: string;
+  member_name: string;
+  session_id?: string; // For series events
+  check_in_time: string; // ISO 8601
+}
+
+/**
+ * Core Event structure matching backend
+ */
 export interface Event {
-  _id: string;
+  id: string;
   church_id: string;
-  title: string;
-  description: string;
-  start_time: string; // ISO 8601
-  end_time: string; // ISO 8601
-  location: string;
-  category: string;
-  image_url?: string;
-  max_attendees?: number;
+  name: string;
+  description?: string;
+  event_type: EventType;
   requires_rsvp: boolean;
-  rsvp_deadline?: string; // ISO 8601
+  enable_seat_selection: boolean;
+  seat_layout_id?: string;
+  seat_capacity?: number; // Manual capacity if no seat layout
+  event_category_id?: string;
+  location?: string;
+  reservation_start?: string; // ISO 8601
+  reservation_end?: string; // ISO 8601
+  event_photo?: string; // Base64 or URL
+  is_active: boolean;
+
+  // For single events
+  event_date?: string; // ISO 8601
+  event_end_date?: string; // ISO 8601
+
+  // For series events
+  sessions: EventSession[];
+
+  // RSVP and attendance data
+  rsvp_list: EventRSVP[];
+  attendance_list: EventAttendance[];
+
+  created_at: string; // ISO 8601
+  updated_at: string; // ISO 8601
+}
+
+/**
+ * Event with member's personal RSVP and attendance status
+ */
+export interface EventWithMemberStatus extends Event {
+  // Member's RSVP status for this event
+  my_rsvp?: EventRSVP; // null if not registered
+  my_attendance?: EventAttendance; // null if not checked in
+
+  // Calculated fields
+  total_rsvps: number; // rsvp_list.length
+  total_attendance: number; // attendance_list.length
+  available_seats?: number; // If seat selection enabled
+  is_past: boolean; // event_date < now
+  is_upcoming: boolean; // event_date > now
+  can_rsvp: boolean; // Within reservation window and has capacity
+}
+
+/**
+ * RSVP Request (matching backend POST /events/{id}/rsvp)
+ */
+export interface RSVPRequest {
+  member_id: string;
+  session_id?: string; // Required for series events
+  seat?: string; // Required if seat selection enabled
+}
+
+/**
+ * RSVP Response from backend
+ */
+export interface RSVPResponse {
+  success: boolean;
+  message: string;
+  rsvp: EventRSVP;
+}
+
+/**
+ * Check-in Request
+ */
+export interface CheckInRequest {
+  member_id?: string;
+  session_id?: string;
+  qr_code?: string; // Alternative to member_id
+}
+
+/**
+ * Check-in Response
+ */
+export interface CheckInResponse {
+  success: boolean;
+  message: string;
+  attendance?: EventAttendance;
+  member_name?: string;
+  member_photo?: string;
+  requires_onsite_rsvp?: boolean; // If RSVP required but member hasn't registered
+}
+
+/**
+ * Event Category (from backend)
+ */
+export interface EventCategory {
+  id: string;
+  church_id: string;
+  name: string;
+  description?: string;
+  color?: string;
   created_at: string;
   updated_at: string;
-  deleted: boolean;
 }
 
-export interface EventWithRSVP extends Event {
-  rsvp_status: RSVPStatus;
-  attendee_count: number;
-  is_full: boolean;
-}
-
-export interface RSVPResponse {
+/**
+ * Available Seats Response
+ */
+export interface AvailableSeatsResponse {
   event_id: string;
-  member_id: string;
-  status: RSVPStatus;
-  updated_at: string;
+  session_id?: string;
+  layout_id: string;
+  layout_name: string;
+  total_seats: number;
+  available: number;
+  taken: number;
+  unavailable: number;
+  available_seats: string[];
+  taken_seats: string[];
+  seat_map: Record<string, 'available' | 'unavailable' | 'no_seat'>;
+}
+
+/**
+ * Event Filters for API
+ */
+export interface EventFilters {
+  event_type?: EventType;
+  is_active?: boolean;
+  event_category_id?: string;
 }

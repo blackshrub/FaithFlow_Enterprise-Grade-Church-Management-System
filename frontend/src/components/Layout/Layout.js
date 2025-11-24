@@ -96,6 +96,7 @@ export default function Layout() {
       key: 'events',
       submenu: [
         { label: 'Events List', path: '/events' },
+        { label: 'Ratings & Reviews', path: '/events/ratings' },
         { label: 'Seat Layouts', path: '/seat-layouts' },
         { label: 'Kiosk Mode', path: '/kiosk' },
       ]

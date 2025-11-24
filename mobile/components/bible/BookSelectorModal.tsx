@@ -26,6 +26,8 @@ import { Card } from '@/components/ui/card';
 import { colors } from '@/constants/theme';
 import type { BibleBook } from '@/types/api';
 import { useBibleStore } from '@/stores/bibleStore';
+import { getBibleLoader } from '@/lib/bibleLoaderOptimized';
+import { getBookNumber } from '@/lib/bibleBookLookup';
 
 type SortOrder = 'original' | 'alphabetical';
 type ViewLayout = 'grid' | 'list';
@@ -46,10 +48,11 @@ export function BookSelectorModal({
   const bottomSheetRef = useRef<GorhomBottomSheet>(null);
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
-  const { preferences } = useBibleStore();
+  const { preferences, currentVersion } = useBibleStore();
   const [selectedTestament, setSelectedTestament] = useState<'OT' | 'NT'>('OT');
   const [selectedBook, setSelectedBook] = useState<BibleBook | null>(null);
   const [selectedChapter, setSelectedChapter] = useState<number | null>(null);
+  const [verseCount, setVerseCount] = useState<number>(200); // Default to 200, will be updated
   const [sortOrder, setSortOrder] = useState<SortOrder>('original');
   const [viewLayout, setViewLayout] = useState<ViewLayout>('grid');
 
@@ -110,6 +113,30 @@ export function BookSelectorModal({
       setSelectedChapter(null);
     }
   };
+
+  // Fetch actual verse count when chapter is selected
+  useEffect(() => {
+    if (selectedBook && selectedChapter) {
+      const fetchVerseCount = async () => {
+        try {
+          const loader = getBibleLoader(currentVersion as any);
+          if (!loader.isLoaded()) {
+            await loader.load();
+          }
+          const bookNumber = getBookNumber(selectedBook.name);
+          if (bookNumber) {
+            const chapter = loader.getChapter(bookNumber, selectedChapter);
+            setVerseCount(chapter.length);
+          }
+        } catch (error) {
+          console.error('Error fetching verse count:', error);
+          // Fallback to a reasonable default if error occurs
+          setVerseCount(50);
+        }
+      };
+      fetchVerseCount();
+    }
+  }, [selectedBook, selectedChapter, currentVersion]);
 
   const handleBack = () => {
     if (selectedChapter) {
@@ -316,14 +343,8 @@ export function BookSelectorModal({
             {/* Books Grid/List */}
             <View className={viewLayout === 'grid' ? 'flex-row flex-wrap gap-2' : ''}>
               {filteredBooks.map((book, index) => (
-                <MotiView
+                <View
                   key={book.id}
-                  from={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{
-                    type: 'spring',
-                    delay: index * 30,
-                  }}
                   style={viewLayout === 'grid' ? { width: '48%' } : { width: '100%', marginBottom: 8 }}
                 >
                   <Pressable
@@ -352,113 +373,83 @@ export function BookSelectorModal({
                       )}
                     </Card>
                   </Pressable>
-                </MotiView>
+                </View>
               ))}
             </View>
           </VStack>
         ) : selectedChapter ? (
           /* Verse Selection */
-          <MotiView
-            from={{ opacity: 0, translateX: -20 }}
-            animate={{ opacity: 1, translateX: 0 }}
-            transition={{
-              type: 'timing',
-              duration: 150, // Ultra-snappy: 200ms → 150ms
-            }}
-          >
-            <View className="p-6">
-              {/* Section Title */}
-              <Text className="text-gray-600 text-sm font-medium mb-4 text-center">
-                {t('bible.selectVerse')}
-              </Text>
+          <View className="p-6">
+            {/* Section Title */}
+            <Text className="text-gray-600 text-sm font-medium mb-4 text-center">
+              {t('bible.selectVerse')}
+            </Text>
 
-              <View className="flex-row flex-wrap gap-2">
-                {/* Using 200 as max verse count, which covers all Bible chapters (longest is Psalm 119 with 176) */}
-                {Array.from({ length: 200 }, (_, i) => i + 1).map(
-                  (verse, index) => (
-                    <MotiView
-                      key={`verse-${verse}`}
-                      from={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{
-                        type: 'spring',
-                        delay: index * 5, // Ultra-snappy: instant start (0ms) + 5ms stagger
-                      }}
-                      style={{ width: '18%' }}
+            <View className="flex-row flex-wrap gap-2">
+              {/* Dynamically render only actual number of verses for this chapter */}
+              {Array.from({ length: verseCount }, (_, i) => i + 1).map(
+                (verse, index) => (
+                  <View
+                    key={`verse-${verse}`}
+                    style={{ width: '18%' }}
+                  >
+                    <Pressable
+                      onPress={() => handleVerseSelect(verse)}
+                      className="active:opacity-70"
                     >
-                      <Pressable
-                        onPress={() => handleVerseSelect(verse)}
-                        className="active:opacity-70"
+                      <View
+                        className="p-4 items-center justify-center rounded-lg"
+                        style={{
+                          backgroundColor: colors.gray[100],
+                          aspectRatio: 1,
+                        }}
                       >
-                        <View
-                          className="p-4 items-center justify-center rounded-lg"
-                          style={{
-                            backgroundColor: colors.gray[100],
-                            aspectRatio: 1,
-                          }}
-                        >
-                          <Text className="text-gray-900 font-bold text-lg">
-                            {verse}
-                          </Text>
-                        </View>
-                      </Pressable>
-                    </MotiView>
-                  )
-                )}
-              </View>
+                        <Text className="text-gray-900 font-bold text-lg">
+                          {verse}
+                        </Text>
+                      </View>
+                    </Pressable>
+                  </View>
+                )
+              )}
             </View>
-          </MotiView>
+          </View>
         ) : (
           /* Chapter Selection */
-          <MotiView
-            from={{ opacity: 0, translateX: -20 }}
-            animate={{ opacity: 1, translateX: 0 }}
-            transition={{
-              type: 'timing',
-              duration: 150, // Ultra-snappy: 200ms → 150ms
-            }}
-          >
-            <View className="p-6">
-              {/* Section Title */}
-              <Text className="text-gray-600 text-sm font-medium mb-4 text-center">
-                {t('bible.selectChapter')}
-              </Text>
+          <View className="p-6">
+            {/* Section Title */}
+            <Text className="text-gray-600 text-sm font-medium mb-4 text-center">
+              {t('bible.selectChapter')}
+            </Text>
 
-              <View className="flex-row flex-wrap gap-2">
-                {Array.from({ length: selectedBook.chapter_count }, (_, i) => i + 1).map(
-                  (chapter, index) => (
-                    <MotiView
-                      key={`chapter-${chapter}`}
-                      from={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{
-                        type: 'spring',
-                        delay: index * 5, // Ultra-snappy: instant start (0ms) + 5ms stagger
-                      }}
-                      style={{ width: '18%' }}
+            <View className="flex-row flex-wrap gap-2">
+              {Array.from({ length: selectedBook.chapter_count }, (_, i) => i + 1).map(
+                (chapter, index) => (
+                  <View
+                    key={`chapter-${chapter}`}
+                    style={{ width: '18%' }}
+                  >
+                    <Pressable
+                      onPress={() => handleChapterSelect(chapter)}
+                      className="active:opacity-70"
                     >
-                      <Pressable
-                        onPress={() => handleChapterSelect(chapter)}
-                        className="active:opacity-70"
+                      <View
+                        className="p-4 items-center justify-center rounded-lg"
+                        style={{
+                          backgroundColor: colors.gray[100],
+                          aspectRatio: 1,
+                        }}
                       >
-                        <View
-                          className="p-4 items-center justify-center rounded-lg"
-                          style={{
-                            backgroundColor: colors.gray[100],
-                            aspectRatio: 1,
-                          }}
-                        >
-                          <Text className="text-gray-900 font-bold text-lg">
-                            {chapter}
-                          </Text>
-                        </View>
-                      </Pressable>
-                    </MotiView>
-                  )
-                )}
-              </View>
+                        <Text className="text-gray-900 font-bold text-lg">
+                          {chapter}
+                        </Text>
+                      </View>
+                    </Pressable>
+                  </View>
+                )
+              )}
             </View>
-          </MotiView>
+          </View>
         )}
       </BottomSheetScrollView>
     </GorhomBottomSheet>

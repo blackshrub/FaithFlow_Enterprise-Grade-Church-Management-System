@@ -93,6 +93,10 @@ export const colors = {
     900: '#111827',
   },
 
+  // Common colors
+  white: '#ffffff',
+  black: '#000000',
+
   // Semantic colors
   background: {
     light: '#ffffff',

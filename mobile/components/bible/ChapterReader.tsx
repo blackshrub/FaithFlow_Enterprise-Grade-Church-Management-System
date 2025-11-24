@@ -86,18 +86,25 @@ export function ChapterReader({
 
       if (verseIndex !== -1) {
         setTimeout(() => {
-          // Position verse at top with offset for better visibility of end verses
-          // viewPosition 0 = top of viewport, viewOffset adds padding from top
-          flashListRef.current?.scrollToIndex({
-            index: verseIndex,
-            animated: true,
-            viewPosition: 0, // Position at top
-            viewOffset: 100, // Add 100px offset from top for better visibility
-          });
+          // For end verses (last 3 verses), just scroll to the very end
+          // This is more reliable than trying to position precisely
+          const isEndVerse = verseIndex >= verses.length - 3;
+
+          if (isEndVerse) {
+            // Scroll to the very end - simple and reliable
+            flashListRef.current?.scrollToEnd({ animated: true });
+          } else {
+            // For other verses, position at 20% from top
+            flashListRef.current?.scrollToIndex({
+              index: verseIndex,
+              animated: true,
+              viewPosition: 0.2,
+            });
+          }
 
           // Don't enter selection mode - flash highlights are handled separately by parent
           // Flash highlights will automatically show for bookmarked verses
-        }, 300);
+        }, 500);
       }
     }
   }, [scrollToVerse, verses]);
@@ -449,7 +456,7 @@ export function ChapterReader({
         }
         contentContainerStyle={{
           paddingTop: spacing.md,
-          paddingBottom: 160, // Space for verse selection bar
+          paddingBottom: 300, // Extra space for end verses to be fully visible (increased from 160)
         }}
       />
     </>

@@ -3,7 +3,7 @@ import Constants from "expo-constants";
 // API Configuration
 export const API_BASE_URL = __DEV__
   ? "http://localhost:8000" // Development
-  : "https://api.faithflow.app"; // Production
+  : "https://flow.gkbj.org"; // Production
 
 export const API_ENDPOINTS = {
   // Member Authentication

@@ -86,8 +86,8 @@ function EventCard({ event, category, onEdit }) {
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg hover:shadow-md transition-shadow overflow-hidden flex flex-col h-full">
-      {/* Event Photo */}
-      <div className="h-48 bg-gradient-to-br from-blue-500 to-purple-600 overflow-hidden relative flex-shrink-0">
+      {/* Event Photo - 2:1 Aspect Ratio */}
+      <div className="w-full bg-gradient-to-br from-blue-500 to-purple-600 overflow-hidden relative flex-shrink-0" style={{ aspectRatio: '2/1' }}>
         {event.event_photo ? (
           <img
             src={event.event_photo}

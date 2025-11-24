@@ -31,9 +31,9 @@ import { BibleSearchModal } from '@/components/bible/BibleSearchModal';
 import { VerseSelectionBar } from '@/components/bible/VerseSelectionBar';
 import { HighlightColorPicker } from '@/components/bible/HighlightColorPicker';
 import { BookmarksModal } from '@/components/bible/BookmarksModal';
-import { NoteEditorModal } from '@/components/bible/NoteEditorModal';
 import { useBibleChapterOffline, useBibleBooksOffline } from '@/hooks/useBibleOffline';
 import { useBibleStore, type VerseRef, type Highlight, type Bookmark } from '@/stores/bibleStore';
+import { useBibleUIStore } from '@/stores/bibleUIStore';
 import { colors, readingThemes } from '@/constants/theme';
 import { BIBLE_TRANSLATIONS, type BibleTranslation } from '@/types/bible';
 import { showSuccessToast, showErrorToast, showInfoToast } from '@/components/ui/Toast';
@@ -49,8 +49,10 @@ export default function BibleScreen() {
   const [isVersionSelectorOpen, setIsVersionSelectorOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isBookmarksOpen, setIsBookmarksOpen] = useState(false);
-  const [isNoteEditorOpen, setIsNoteEditorOpen] = useState(false);
   const [scrollToVerseNumber, setScrollToVerseNumber] = useState<number | null>(null);
+
+  // Global note editor store
+  const { openNoteEditor } = useBibleUIStore();
 
   // NEW: Color picker state for highlight selection
   const [showColorPicker, setShowColorPicker] = useState(false);
@@ -207,9 +209,10 @@ export default function BibleScreen() {
       setScrollToVerseNumber(null);
 
       // Then set target verse after brief delay to ensure chapter is rendered
+      // Increased from 300ms to 400ms to match ChapterReader's 500ms scroll delay
       setTimeout(() => {
         setScrollToVerseNumber(verse);
-      }, 300);
+      }, 400);
 
       // Set flash highlight for selected verse (3 seconds) - visual feedback for verse selector navigation
       const flashVerseRef: VerseRef = {
@@ -544,7 +547,11 @@ export default function BibleScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
     console.log('✅ Opening note editor...');
-    setIsNoteEditorOpen(true);
+    openNoteEditor({
+      verseReference: getSelectedReference(),
+      initialNote: getSelectedVerseNote(),
+      onSave: handleSaveNote,
+    });
   };
 
   /**
@@ -892,14 +899,7 @@ export default function BibleScreen() {
         />
       )}
 
-      {/* Note Editor Modal */}
-      <NoteEditorModal
-        isOpen={isNoteEditorOpen}
-        onClose={() => setIsNoteEditorOpen(false)}
-        verseReference={getSelectedReference()}
-        initialNote={getSelectedVerseNote()}
-        onSave={handleSaveNote}
-      />
+      {/* Note Editor Modal is now rendered at root level in _layout.tsx */}
 
       {/* NEW: Highlight Color Picker - Appears above action bar when highlight is tapped */}
       {isSelecting && showColorPicker && (

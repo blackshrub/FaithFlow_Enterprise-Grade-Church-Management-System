@@ -6,11 +6,13 @@ import { StatusBar } from "expo-status-bar";
 import { useColorScheme } from "nativewind";
 import { useEffect, useState } from "react";
 import { initializeI18n } from "@/i18n";
-import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { useFonts } from "expo-font";
 import { BIBLE_FONT_FILES } from "@/utils/fonts";
 import Toast from 'react-native-toast-message';
+import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
+import { NoteEditorModal } from '@/components/bible/NoteEditorModal';
+import { CategoryFilterModal } from '@/components/modals/CategoryFilterModal';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -60,6 +62,7 @@ export default function RootLayout() {
         <GluestackUIProvider mode={colorScheme ?? "light"}>
           <BottomSheetModalProvider>
             <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
+
             <Stack
               screenOptions={{
                 headerShown: false,
@@ -69,9 +72,14 @@ export default function RootLayout() {
               <Stack.Screen name="(auth)" />
               <Stack.Screen name="(tabs)" />
             </Stack>
+
+            {/* Global bottom sheets - MUST be at root level */}
+            <NoteEditorModal />
+            <CategoryFilterModal />
+
+            {/* Toast must be rendered at root level */}
+            <Toast />
           </BottomSheetModalProvider>
-          {/* Toast must be rendered at root level */}
-          <Toast />
         </GluestackUIProvider>
       </QueryClientProvider>
     </GestureHandlerRootView>

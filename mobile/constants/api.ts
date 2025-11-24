@@ -102,10 +102,9 @@ export const QUERY_KEYS = {
   TRANSACTION_DETAIL: ['transaction', 'detail'],
 
   // Events
-  EVENTS_UPCOMING: ['events', 'upcoming'],
-  EVENTS_PAST: ['events', 'past'],
+  EVENTS_LIST: ['events', 'list'], // Base query for all events
   EVENT_DETAIL: ['event', 'detail'],
-  MY_RSVPS: (memberId: string) => ['rsvps', memberId],
+  EVENT_CATEGORIES: ['events', 'categories'],
 
   // Groups
   GROUPS: ['groups'],

@@ -137,7 +137,7 @@ export function BibleVersionSelector({
                             ? 'bg-blue-100 text-blue-700'
                             : version.language === 'en'
                             ? 'bg-green-100 text-green-700'
-                            : 'bg-purple-100 text-purple-700'
+                            : 'bg-orange-100 text-orange-700'
                         }`}
                       >
                         {version.language.toUpperCase()}

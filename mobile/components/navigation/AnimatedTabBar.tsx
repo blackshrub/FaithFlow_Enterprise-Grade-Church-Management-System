@@ -18,6 +18,7 @@ import { Icon } from '@/components/ui/icon';
 import { Home, BookOpen, Calendar, Users, User } from 'lucide-react-native';
 import { colors, touchTargets, shadows } from '@/constants/theme';
 import { useTranslation } from 'react-i18next';
+import { useNavigationStore } from '@/stores/navigation';
 
 interface Tab {
   name: string;
@@ -63,6 +64,7 @@ export function AnimatedTabBar() {
   const router = useRouter();
   const segments = useSegments();
   const { t } = useTranslation();
+  const { calculateDirection } = useNavigationStore();
 
   // Determine active tab from route segments
   const activeRoute = `/(tabs)${segments[1] ? `/${segments[1]}` : ''}`;
@@ -70,6 +72,8 @@ export function AnimatedTabBar() {
   const handleTabPress = (tab: Tab) => {
     // Don't navigate if already on this tab (prevents page blink)
     if (tab.route && activeRoute !== tab.route) {
+      // Calculate and set animation direction before navigation
+      calculateDirection(activeRoute, tab.route);
       router.push(tab.route as any);
     }
   };
