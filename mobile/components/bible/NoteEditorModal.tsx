@@ -13,7 +13,7 @@ import { View, Pressable, TextInput, KeyboardAvoidingView, Platform } from 'reac
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { Save, X } from 'lucide-react-native';
-import { BottomSheetModal, BottomSheetBackdrop as GorhomBackdrop } from '@gorhom/bottom-sheet';
+import BottomSheet, { BottomSheetBackdrop as GorhomBackdrop } from '@gorhom/bottom-sheet';
 import * as Haptics from 'expo-haptics';
 
 import { Text } from '@/components/ui/text';
@@ -38,7 +38,7 @@ export function NoteEditorModal({
   initialNote = '',
   onSave,
 }: NoteEditorModalProps) {
-  const bottomSheetRef = useRef<BottomSheetModal>(null);
+  const bottomSheetRef = useRef<BottomSheet>(null);
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const [note, setNote] = useState(initialNote);
@@ -47,28 +47,12 @@ export function NoteEditorModal({
   const bottomInset = insets.bottom;
   const topInset = insets.top || 20;
 
-  // Control bottom sheet based on isOpen prop
+  // Update note when initialNote changes
   useEffect(() => {
-    console.log('🔄 NoteEditorModal useEffect - isOpen:', isOpen);
-    console.log('📍 BottomSheet ref:', bottomSheetRef.current);
-
     if (isOpen) {
-      console.log('✅ Presenting NoteEditorModal...');
-      console.log('Verse reference:', verseReference);
-      console.log('Initial note:', initialNote);
-
-      // Use setTimeout to ensure modal presents after render cycle
-      setTimeout(() => {
-        console.log('⏰ Calling present() after timeout...');
-        bottomSheetRef.current?.present();
-      }, 100);
-
-      setNote(initialNote); // Reset note to initial value when opening
-    } else {
-      console.log('❌ Dismissing NoteEditorModal...');
-      bottomSheetRef.current?.dismiss();
+      setNote(initialNote);
     }
-  }, [isOpen, initialNote, verseReference]);
+  }, [isOpen, initialNote]);
 
   const handleSave = () => {
     onSave(note.trim());
@@ -96,13 +80,14 @@ export function NoteEditorModal({
   );
 
   return (
-    <BottomSheetModal
+    <BottomSheet
       ref={bottomSheetRef}
+      index={isOpen ? 0 : -1}
       snapPoints={['75%']}
       enablePanDownToClose
       bottomInset={bottomInset}
       topInset={topInset}
-      onDismiss={onClose}
+      onClose={onClose}
       backdropComponent={renderBackdrop}
       backgroundStyle={{
         backgroundColor: '#ffffff',
@@ -210,6 +195,6 @@ export function NoteEditorModal({
           </View>
         </View>
       </KeyboardAvoidingView>
-    </BottomSheetModal>
+    </BottomSheet>
   );
 }
