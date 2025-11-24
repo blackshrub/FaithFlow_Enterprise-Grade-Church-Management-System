@@ -101,7 +101,7 @@ export function SearchResults({ groupedResults, counts }: SearchResultsProps) {
     }
 
     return (
-      <View className="flex-1 items-center justify-center px-8 py-16">
+      <View className="flex-1 items-center px-8" style={{ paddingTop: 80 }}>
         <MotiView
           from={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
