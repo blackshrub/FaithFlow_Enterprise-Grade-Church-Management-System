@@ -363,7 +363,7 @@ export function BookSelectorModal({
             animate={{ opacity: 1, translateX: 0 }}
             transition={{
               type: 'timing',
-              duration: 200, // Snappier: 300ms → 200ms
+              duration: 150, // Ultra-snappy: 200ms → 150ms
             }}
           >
             <View className="p-6">
@@ -382,7 +382,7 @@ export function BookSelectorModal({
                       animate={{ opacity: 1, scale: 1 }}
                       transition={{
                         type: 'spring',
-                        delay: 50 + (index * 10), // Snappier: 100ms → 50ms base, 15ms → 10ms stagger
+                        delay: index * 5, // Ultra-snappy: instant start (0ms) + 5ms stagger
                       }}
                       style={{ width: '18%' }}
                     >
@@ -415,7 +415,7 @@ export function BookSelectorModal({
             animate={{ opacity: 1, translateX: 0 }}
             transition={{
               type: 'timing',
-              duration: 200, // Snappier: 300ms → 200ms
+              duration: 150, // Ultra-snappy: 200ms → 150ms
             }}
           >
             <View className="p-6">
@@ -433,7 +433,7 @@ export function BookSelectorModal({
                       animate={{ opacity: 1, scale: 1 }}
                       transition={{
                         type: 'spring',
-                        delay: 50 + (index * 10), // Snappier: 100ms → 50ms base, 15ms → 10ms stagger
+                        delay: index * 5, // Ultra-snappy: instant start (0ms) + 5ms stagger
                       }}
                       style={{ width: '18%' }}
                     >
