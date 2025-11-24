@@ -23,7 +23,8 @@ import { Icon } from '@/components/ui/icon';
 import { ChapterReader } from '@/components/bible/ChapterReader';
 import { BookSelectorModal } from '@/components/bible/BookSelectorModal';
 import { ReadingPreferencesModal } from '@/components/bible/ReadingPreferencesModal';
-import { useBibleChapter, useBibleBooks } from '@/hooks/useBible';
+import { BibleVersionSelector } from '@/components/bible/BibleVersionSelector';
+import { useBibleChapter, useBibleBooks, useBibleVersions } from '@/hooks/useBible';
 import { useBibleStore } from '@/stores/bibleStore';
 import { colors, touchTargets, readingThemes } from '@/constants/theme';
 
@@ -31,6 +32,7 @@ export default function BibleScreen() {
   const { t } = useTranslation();
   const [isBookSelectorOpen, setIsBookSelectorOpen] = useState(false);
   const [isPreferencesOpen, setIsPreferencesOpen] = useState(false);
+  const [isVersionSelectorOpen, setIsVersionSelectorOpen] = useState(false);
 
   const { currentVersion, currentBook, currentChapter, setCurrentPosition, preferences } =
     useBibleStore();
@@ -44,6 +46,9 @@ export default function BibleScreen() {
 
   // Fetch books for navigation
   const { data: books = [], isLoading: isLoadingBooks, error: booksError } = useBibleBooks(currentVersion);
+
+  // Fetch Bible versions
+  const { data: versions = [] } = useBibleVersions();
 
   // Debug logging
   console.log('Bible Screen - currentVersion:', currentVersion);
@@ -75,6 +80,17 @@ export default function BibleScreen() {
     setCurrentPosition(currentVersion, book, chapter);
   };
 
+  const handleSelectVersion = (versionCode: string) => {
+    // When switching versions, go to first chapter of first book to avoid missing chapters
+    const firstBook = books?.[0];
+    if (firstBook) {
+      setCurrentPosition(versionCode, firstBook.name, 1);
+    } else {
+      // Fallback to Genesis if books not loaded yet
+      setCurrentPosition(versionCode, 'Genesis', 1);
+    }
+  };
+
   const currentTheme = readingThemes[preferences.theme];
 
   return (
@@ -100,9 +116,11 @@ export default function BibleScreen() {
                 <Heading size="md" style={{ color: currentTheme.text }}>
                   {currentBook} {currentChapter}
                 </Heading>
-                <Text size="xs" style={{ color: currentTheme.verseNumber }}>
-                  {currentVersion} • {totalChapters} chapters
-                </Text>
+                <Pressable onPress={() => setIsVersionSelectorOpen(true)}>
+                  <Text size="xs" style={{ color: currentTheme.verseNumber }}>
+                    {currentVersion} • {totalChapters} chapters
+                  </Text>
+                </Pressable>
               </View>
             </HStack>
           </Pressable>
@@ -214,6 +232,15 @@ export default function BibleScreen() {
       <ReadingPreferencesModal
         isOpen={isPreferencesOpen}
         onClose={() => setIsPreferencesOpen(false)}
+      />
+
+      {/* Bible Version Selector */}
+      <BibleVersionSelector
+        isOpen={isVersionSelectorOpen}
+        onClose={() => setIsVersionSelectorOpen(false)}
+        versions={versions}
+        currentVersion={currentVersion}
+        onSelectVersion={handleSelectVersion}
       />
     </SafeAreaView>
   );
