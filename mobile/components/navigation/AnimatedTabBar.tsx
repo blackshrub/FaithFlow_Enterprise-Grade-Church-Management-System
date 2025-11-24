@@ -68,7 +68,8 @@ export function AnimatedTabBar() {
   const activeRoute = `/(tabs)${segments[1] ? `/${segments[1]}` : ''}`;
 
   const handleTabPress = (tab: Tab) => {
-    if (tab.route) {
+    // Don't navigate if already on this tab (prevents page blink)
+    if (tab.route && activeRoute !== tab.route) {
       router.push(tab.route as any);
     }
   };

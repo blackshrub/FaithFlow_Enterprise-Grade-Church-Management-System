@@ -13,7 +13,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { View, Pressable, ActivityIndicator, Share, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
-import { BookOpen, Languages, Search, Type, Bookmark } from 'lucide-react-native';
+import { BookOpen, Languages, Search, Type, Bookmark as BookmarkIcon } from 'lucide-react-native';
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
 
@@ -33,7 +33,7 @@ import { HighlightColorPicker } from '@/components/bible/HighlightColorPicker';
 import { BookmarksModal } from '@/components/bible/BookmarksModal';
 import { NoteEditorModal } from '@/components/bible/NoteEditorModal';
 import { useBibleChapterOffline, useBibleBooksOffline } from '@/hooks/useBibleOffline';
-import { useBibleStore, type VerseRef, type Highlight } from '@/stores/bibleStore';
+import { useBibleStore, type VerseRef, type Highlight, type Bookmark } from '@/stores/bibleStore';
 import { colors, readingThemes } from '@/constants/theme';
 import { BIBLE_TRANSLATIONS, type BibleTranslation } from '@/types/bible';
 import { showSuccessToast, showErrorToast, showInfoToast } from '@/components/ui/Toast';
@@ -77,6 +77,9 @@ export default function BibleScreen() {
     getBookmark,
     addBookmark,
     removeBookmark,
+    // Flash highlights for bookmark navigation
+    setFlashHighlights,
+    clearFlashHighlights,
   } = useBibleStore();
 
   // Cast version to BibleTranslation type
@@ -211,7 +214,7 @@ export default function BibleScreen() {
     console.log('[Bible Screen] scrollToVerseNumber set to:', verse);
   };
 
-  const handleBookmarkSelect = (bookmark: { version: string; book: string; chapter: number; verse: number }) => {
+  const handleBookmarkSelect = (bookmark: Bookmark) => {
     console.log('[Bible Screen] Bookmark selected:', bookmark);
     // If bookmark is from a different version, switch to that version
     if (bookmark.version !== currentVersion) {
@@ -219,7 +222,30 @@ export default function BibleScreen() {
     } else {
       setCurrentPosition(currentVersion, bookmark.book, bookmark.chapter);
     }
-    setScrollToVerseNumber(bookmark.verse);
+
+    // Reset scrollToVerseNumber first to ensure the effect re-triggers
+    // even if we're scrolling to the same verse again
+    setScrollToVerseNumber(null);
+
+    // Then set the target verse after a brief delay
+    setTimeout(() => {
+      setScrollToVerseNumber(bookmark.verse);
+    }, 50);
+
+    // Set flash highlights for bookmarked verses (3 seconds)
+    const versesToHighlight = bookmark.verses || [bookmark.verse];
+    const flashVersesRefs: VerseRef[] = versesToHighlight.map(v => ({
+      version: bookmark.version,
+      book: bookmark.book,
+      chapter: bookmark.chapter,
+      verse: v,
+    }));
+    setFlashHighlights(flashVersesRefs);
+
+    // Clear flash highlights after 3 seconds
+    setTimeout(() => {
+      clearFlashHighlights();
+    }, 3000);
   };
 
   /**
@@ -402,6 +428,7 @@ export default function BibleScreen() {
   /**
    * NEW: Handle bookmark verses
    * If selected verses are bookmarked, remove bookmarks. Otherwise, add bookmarks.
+   * For multiple verses, combine them into a single bookmark with verse range.
    * Keep selection active so user can perform more actions
    */
   const handleBookmarkVerses = () => {
@@ -410,7 +437,7 @@ export default function BibleScreen() {
     );
 
     if (allBookmarked) {
-      // Remove all bookmarks
+      // Remove all bookmarks that overlap with selected verses
       selectedVerses.forEach((verseRef) => {
         const existing = getBookmark(
           verseRef.version,
@@ -424,26 +451,38 @@ export default function BibleScreen() {
       });
       showInfoToast('Bookmark Removed');
     } else {
-      // Add bookmarks for all selected verses
-      selectedVerses.forEach((verseRef) => {
-        // Remove existing bookmark if any
+      // Combine selected verses into a single bookmark with verse range
+      if (selectedVerses.length === 0) return;
+
+      // Get the first verse for version/book/chapter (all selected verses should be from the same chapter)
+      const firstVerse = selectedVerses[0];
+
+      // Find min and max verse numbers
+      const verseNumbers = selectedVerses.map((v) => v.verse);
+      const minVerse = Math.min(...verseNumbers);
+      const maxVerse = Math.max(...verseNumbers);
+
+      // Remove any existing bookmarks that overlap with this range
+      for (let v = minVerse; v <= maxVerse; v++) {
         const existing = getBookmark(
-          verseRef.version,
-          verseRef.book,
-          verseRef.chapter,
-          verseRef.verse
+          firstVerse.version,
+          firstVerse.book,
+          firstVerse.chapter,
+          v
         );
         if (existing) {
           removeBookmark(existing.id);
         }
+      }
 
-        // Add new bookmark
-        addBookmark({
-          version: verseRef.version,
-          book: verseRef.book,
-          chapter: verseRef.chapter,
-          verse: verseRef.verse,
-        });
+      // Add single combined bookmark with verse array for smart formatting
+      addBookmark({
+        version: firstVerse.version,
+        book: firstVerse.book,
+        chapter: firstVerse.chapter,
+        verse: minVerse,
+        endVerse: maxVerse > minVerse ? maxVerse : undefined, // Only set endVerse if it's a range
+        verses: verseNumbers.sort((a, b) => a - b), // Store sorted array for smart range formatting
       });
 
       const verseCount = selectedVerses.length;
@@ -617,7 +656,10 @@ export default function BibleScreen() {
           <HStack space="xs" className="items-center">
             {/* Book/Chapter Selector */}
             <Pressable
-              onPress={() => setIsBookSelectorOpen(true)}
+              onPress={() => {
+                clearSelection();
+                setIsBookSelectorOpen(true);
+              }}
               className="active:opacity-60"
               style={{
                 paddingVertical: 6,
@@ -637,7 +679,10 @@ export default function BibleScreen() {
 
             {/* Version Selector */}
             <Pressable
-              onPress={() => setIsVersionSelectorOpen(true)}
+              onPress={() => {
+                clearSelection();
+                setIsVersionSelectorOpen(true);
+              }}
               className="active:opacity-60"
               style={{
                 paddingVertical: 6,
@@ -658,7 +703,10 @@ export default function BibleScreen() {
           <HStack space="xs" className="items-center">
             {/* Search Button */}
             <Pressable
-              onPress={() => setIsSearchOpen(true)}
+              onPress={() => {
+                clearSelection();
+                setIsSearchOpen(true);
+              }}
               className="active:opacity-60"
               style={{
                 width: 32,
@@ -674,7 +722,10 @@ export default function BibleScreen() {
 
             {/* Bookmarks Button */}
             <Pressable
-              onPress={() => setIsBookmarksOpen(true)}
+              onPress={() => {
+                clearSelection();
+                setIsBookmarksOpen(true);
+              }}
               className="active:opacity-60"
               style={{
                 width: 32,
@@ -685,12 +736,15 @@ export default function BibleScreen() {
                 backgroundColor: colors.gray[100],
               }}
             >
-              <Icon as={Bookmark} size="sm" className="text-gray-700" />
+              <Icon as={BookmarkIcon} size="sm" className="text-gray-700" />
             </Pressable>
 
             {/* Readability Settings (Aa) */}
             <Pressable
-              onPress={() => setIsPreferencesOpen(true)}
+              onPress={() => {
+                clearSelection();
+                setIsPreferencesOpen(true);
+              }}
               className="active:opacity-60"
               style={{
                 width: 32,
