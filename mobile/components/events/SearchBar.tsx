@@ -8,7 +8,7 @@
  * - Accessible with proper labels
  */
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { View, TextInput, Pressable } from 'react-native';
 import { Search, X } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
@@ -20,24 +20,28 @@ export function SearchBar() {
   const { t } = useTranslation();
   const { searchTerm, setSearchTerm } = useEventFiltersStore();
   const [localValue, setLocalValue] = useState(searchTerm);
+  const isTypingRef = useRef(false);
 
   // Debounce search input (300ms)
   useEffect(() => {
+    isTypingRef.current = true;
     const timer = setTimeout(() => {
       if (localValue !== searchTerm) {
         setSearchTerm(localValue);
       }
+      isTypingRef.current = false;
     }, 300);
 
     return () => clearTimeout(timer);
   }, [localValue, searchTerm, setSearchTerm]);
 
   // Sync when store changes externally (e.g., clear all filters)
+  // Only sync if we're not currently typing
   useEffect(() => {
-    if (searchTerm === '' && localValue !== '') {
-      setLocalValue('');
+    if (!isTypingRef.current && searchTerm !== localValue) {
+      setLocalValue(searchTerm);
     }
-  }, [searchTerm, localValue]);
+  }, [searchTerm]);
 
   const handleClear = useCallback(() => {
     setLocalValue('');
