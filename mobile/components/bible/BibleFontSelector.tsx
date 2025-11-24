@@ -50,7 +50,6 @@ interface BibleFontSelectorProps {
 }
 
 export function BibleFontSelector({ version }: BibleFontSelectorProps) {
-  const { t } = useTranslation();
   const { latinFont, setLatinFont } = useBibleFontStore();
   const fonts = getAvailableLatinFonts();
 
@@ -58,10 +57,6 @@ export function BibleFontSelector({ version }: BibleFontSelectorProps) {
   if (isChineseBible(version)) {
     return null;
   }
-
-  // Group fonts by category
-  const serifFonts = fonts.filter(f => f.category === 'serif');
-  const sansSerifFonts = fonts.filter(f => f.category === 'sans-serif');
 
   const handleFontSelect = (font: LatinBibleFontKey) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -75,53 +70,34 @@ export function BibleFontSelector({ version }: BibleFontSelectorProps) {
       <Pressable
         key={fontKey}
         onPress={() => handleFontSelect(fontKey)}
-        className="active:opacity-70"
+        className="active:opacity-70 mr-2"
       >
         <View
-          className="px-4 py-4 rounded-lg mb-2"
+          className="px-4 py-3 rounded-lg"
           style={{
             backgroundColor: isSelected ? colors.primary[50] : colors.gray[50],
             borderWidth: isSelected ? 2 : 1,
             borderColor: isSelected ? colors.primary[500] : colors.gray[200],
+            minWidth: 100,
           }}
         >
-          <HStack className="items-center justify-between">
-            {/* Font preview - rendered in actual font */}
-            <View className="flex-1 mr-3">
-              <Text
-                style={{
-                  fontFamily: fontKey,
-                  fontSize: 18,
-                  lineHeight: 28,
-                  color: isSelected ? colors.primary[700] : colors.gray[900],
-                  fontWeight: isSelected ? '600' : '400',
-                }}
-                numberOfLines={1}
-              >
-                {label}
-              </Text>
-              <Text
-                style={{
-                  fontFamily: fontKey,
-                  fontSize: 14,
-                  lineHeight: 20,
-                  color: colors.gray[600],
-                  marginTop: 2,
-                }}
-                numberOfLines={1}
-              >
-                The quick brown fox jumps
-              </Text>
-            </View>
+          <HStack className="items-center justify-center" space="xs">
+            {/* Font name preview - rendered in actual font */}
+            <Text
+              style={{
+                fontFamily: fontKey,
+                fontSize: 16,
+                color: isSelected ? colors.primary[700] : colors.gray[900],
+                fontWeight: isSelected ? '600' : '400',
+              }}
+              numberOfLines={1}
+            >
+              {label}
+            </Text>
 
             {/* Selection indicator */}
             {isSelected && (
-              <View
-                className="rounded-full p-1"
-                style={{ backgroundColor: colors.primary[500] }}
-              >
-                <Icon as={Check} size="sm" className="text-white" />
-              </View>
+              <Icon as={Check} size="xs" style={{ color: colors.primary[600] }} />
             )}
           </HStack>
         </View>
@@ -130,44 +106,24 @@ export function BibleFontSelector({ version }: BibleFontSelectorProps) {
   };
 
   return (
-    <ScrollView
-      showsVerticalScrollIndicator={false}
-      contentContainerStyle={{ paddingBottom: 16 }}
-    >
-      <VStack space="lg">
-        {/* Serif Fonts Section */}
-        <VStack space="sm">
-          <Text className="text-gray-700 font-semibold text-sm px-1 mb-1">
-            Serif Fonts
-          </Text>
-          <Text className="text-gray-500 text-xs px-1 mb-2">
-            Traditional, readable for long-form text
-          </Text>
-          {serifFonts.map(font => renderFontItem(font.key, font.label))}
-        </VStack>
+    <View>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{ paddingVertical: 8, paddingRight: 16 }}
+      >
+        {fonts.map(font => renderFontItem(font.key, font.label))}
+      </ScrollView>
 
-        {/* Sans-Serif Fonts Section */}
-        <VStack space="sm">
-          <Text className="text-gray-700 font-semibold text-sm px-1 mb-1">
-            Sans-Serif Fonts
-          </Text>
-          <Text className="text-gray-500 text-xs px-1 mb-2">
-            Modern, clean appearance
-          </Text>
-          {sansSerifFonts.map(font => renderFontItem(font.key, font.label))}
-        </VStack>
-
-        {/* Info note */}
-        <View
-          className="p-4 rounded-lg"
-          style={{ backgroundColor: colors.primary[50] }}
-        >
-          <Text style={{ color: colors.primary[700] }} className="text-xs">
-            💡 Font changes apply only to Latin Bible reading screens. Chinese Bibles
-            automatically use optimized system fonts.
-          </Text>
-        </View>
-      </VStack>
-    </ScrollView>
+      {/* Info note */}
+      <View
+        className="p-3 rounded-lg mt-3"
+        style={{ backgroundColor: colors.primary[50] }}
+      >
+        <Text style={{ color: colors.primary[700] }} className="text-xs">
+          💡 Font changes apply only to Latin Bible reading screens. Chinese Bibles automatically use system fonts.
+        </Text>
+      </View>
+    </View>
   );
 }
