@@ -25,6 +25,7 @@ import { Card } from '@/components/ui/card';
 
 import { colors } from '@/constants/theme';
 import type { BibleBook } from '@/types/api';
+import { useBibleStore } from '@/stores/bibleStore';
 
 type SortOrder = 'original' | 'alphabetical';
 type ViewLayout = 'grid' | 'list';
@@ -33,7 +34,7 @@ interface BookSelectorModalProps {
   isOpen: boolean;
   onClose: () => void;
   books: BibleBook[];
-  onSelectChapter: (book: string, chapter: number) => void;
+  onSelectChapter: (book: string, chapter: number, verse?: number) => void;
 }
 
 export function BookSelectorModal({
@@ -45,8 +46,10 @@ export function BookSelectorModal({
   const bottomSheetRef = useRef<GorhomBottomSheet>(null);
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
+  const { preferences } = useBibleStore();
   const [selectedTestament, setSelectedTestament] = useState<'OT' | 'NT'>('OT');
   const [selectedBook, setSelectedBook] = useState<BibleBook | null>(null);
+  const [selectedChapter, setSelectedChapter] = useState<number | null>(null);
   const [sortOrder, setSortOrder] = useState<SortOrder>('original');
   const [viewLayout, setViewLayout] = useState<ViewLayout>('grid');
 
@@ -85,16 +88,33 @@ export function BookSelectorModal({
 
   const handleChapterSelect = (chapter: number) => {
     if (selectedBook) {
-      // Use name_local for non-English versions, name for English
+      // If verse selector is enabled, show verse selection
+      if (preferences.showVerseSelector) {
+        setSelectedChapter(chapter);
+      } else {
+        // Otherwise, directly navigate to chapter (verse 1 by default)
+        const bookName = selectedBook.name_local || selectedBook.name;
+        onSelectChapter(bookName, chapter);
+        onClose();
+        setSelectedBook(null);
+      }
+    }
+  };
+
+  const handleVerseSelect = (verse: number) => {
+    if (selectedBook && selectedChapter) {
       const bookName = selectedBook.name_local || selectedBook.name;
-      onSelectChapter(bookName, chapter);
+      onSelectChapter(bookName, selectedChapter, verse);
       onClose();
       setSelectedBook(null);
+      setSelectedChapter(null);
     }
   };
 
   const handleBack = () => {
-    if (selectedBook) {
+    if (selectedChapter) {
+      setSelectedChapter(null);
+    } else if (selectedBook) {
       setSelectedBook(null);
     } else {
       onClose();
@@ -126,6 +146,7 @@ export function BookSelectorModal({
       detached={false}
       onClose={() => {
         setSelectedBook(null);
+        setSelectedChapter(null);
         onClose();
       }}
       backdropComponent={renderBackdrop}
@@ -140,13 +161,17 @@ export function BookSelectorModal({
         {/* Header */}
         <View className="px-6 pt-2 pb-4 border-b border-gray-200">
           <HStack className="items-center gap-2">
-            {selectedBook && (
-              <Pressable onPress={() => setSelectedBook(null)} className="p-2 -ml-2">
+            {(selectedBook || selectedChapter) && (
+              <Pressable onPress={handleBack} className="p-2 -ml-2">
                 <Icon as={ChevronLeft} size="lg" className="text-gray-600" />
               </Pressable>
             )}
             <Heading size="xl" className="text-gray-900">
-              {selectedBook ? (selectedBook.name_local || selectedBook.name) : t('bible.selectBook')}
+              {selectedChapter
+                ? `${selectedBook?.name_local || selectedBook?.name} ${selectedChapter}`
+                : selectedBook
+                ? (selectedBook.name_local || selectedBook.name)
+                : t('bible.selectBook')}
             </Heading>
           </HStack>
         </View>
@@ -331,20 +356,46 @@ export function BookSelectorModal({
               ))}
             </View>
           </VStack>
+        ) : selectedChapter ? (
+          /* Verse Selection */
+          <View className="p-6">
+            <View className="flex-row flex-wrap gap-2">
+              {/* Using 200 as max verse count, which covers all Bible chapters (longest is Psalm 119 with 176) */}
+              {Array.from({ length: 200 }, (_, i) => i + 1).map(
+                (verse) => (
+                  <View
+                    key={verse}
+                    style={{ width: '18%' }}
+                  >
+                    <Pressable
+                      onPress={() => handleVerseSelect(verse)}
+                      className="active:opacity-70"
+                    >
+                      <View
+                        className="p-4 items-center justify-center rounded-lg"
+                        style={{
+                          backgroundColor: colors.gray[100],
+                          aspectRatio: 1,
+                        }}
+                      >
+                        <Text className="text-gray-900 font-bold text-lg">
+                          {verse}
+                        </Text>
+                      </View>
+                    </Pressable>
+                  </View>
+                )
+              )}
+            </View>
+          </View>
         ) : (
           /* Chapter Selection */
           <View className="p-6">
             <View className="flex-row flex-wrap gap-2">
               {Array.from({ length: selectedBook.chapter_count }, (_, i) => i + 1).map(
-                (chapter, index) => (
-                  <MotiView
+                (chapter) => (
+                  <View
                     key={chapter}
-                    from={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{
-                      type: 'spring',
-                      delay: index * 20,
-                    }}
                     style={{ width: '18%' }}
                   >
                     <Pressable
@@ -363,7 +414,7 @@ export function BookSelectorModal({
                         </Text>
                       </View>
                     </Pressable>
-                  </MotiView>
+                  </View>
                 )
               )}
             </View>

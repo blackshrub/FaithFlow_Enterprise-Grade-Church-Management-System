@@ -18,7 +18,9 @@ export interface Bookmark {
   version: string;
   book: string;
   chapter: number;
-  verse: number;
+  verse: number;        // Start verse (for backward compatibility)
+  endVerse?: number;    // End verse (for backward compatibility)
+  verses?: number[];    // Array of verse numbers for non-consecutive selections (e.g., [1, 2, 5])
   note?: string;
   createdAt: string;
 }
@@ -72,10 +74,11 @@ export interface BiblePreferences {
   wordSpacing: WordSpacing;
   verseSpacing: VerseSpacing;
   showVerseNumbers: boolean;
-  redLetterWords: boolean; // Highlight Jesus' words in red
   // Reading mode
   readingMode: ReadingMode; // 'scroll' for continuous scrolling, 'paged' for swipe navigation
   focusMode: boolean; // Auto-hide header and tab bar for distraction-free reading
+  // Navigation
+  showVerseSelector: boolean; // Show verse selector in book/chapter navigation
 }
 
 interface BibleState {
@@ -96,6 +99,9 @@ interface BibleState {
   isSelecting: boolean;
   selectedVerses: VerseRef[];
 
+  // Flash Highlights (temporary highlights for bookmark navigation, 3 seconds)
+  flashHighlights: VerseRef[];
+
   // Actions
   setCurrentPosition: (version: string, book: string, chapter: number) => void;
   addBookmark: (bookmark: Omit<Bookmark, 'id' | 'createdAt'>) => void;
@@ -110,6 +116,10 @@ interface BibleState {
   toggleVerseSelection: (verse: VerseRef) => void;
   clearSelection: () => void;
   isVerseSelected: (verse: VerseRef) => boolean;
+
+  // Flash Highlight Actions
+  setFlashHighlights: (verses: VerseRef[]) => void;
+  clearFlashHighlights: () => void;
 
   // Helpers
   getBookmark: (version: string, book: string, chapter: number, verse: number) => Bookmark | undefined;
@@ -129,8 +139,8 @@ const migrateFontSize = (oldSize: any): number => {
   return sizeMap[oldSize as string] || 18;
 };
 
-// Helper to compare verse refs
-const isSameVerse = (a: VerseRef, b: VerseRef): boolean => {
+// Helper to compare verse refs (exported for use in components)
+export const isSameVerse = (a: VerseRef, b: VerseRef): boolean => {
   return (
     a.version === b.version &&
     a.book === b.book &&
@@ -158,13 +168,15 @@ export const useBibleStore = create<BibleState>()(
         wordSpacing: 'normal',
         verseSpacing: 'small',
         showVerseNumbers: true,
-        redLetterWords: false,
         readingMode: 'scroll',
         focusMode: false,
+        showVerseSelector: true,
       },
       // Verse selection initial state
       isSelecting: false,
       selectedVerses: [],
+      // Flash highlights initial state (transient)
+      flashHighlights: [],
 
       // Set current reading position
       setCurrentPosition: (version, book, chapter) => {
@@ -174,9 +186,12 @@ export const useBibleStore = create<BibleState>()(
 
       // Bookmark management
       addBookmark: (bookmark) => {
+        const verseRange = bookmark.endVerse
+          ? `${bookmark.verse}-${bookmark.endVerse}`
+          : `${bookmark.verse}`;
         const newBookmark: Bookmark = {
           ...bookmark,
-          id: `${bookmark.version}-${bookmark.book}-${bookmark.chapter}-${bookmark.verse}-${Date.now()}`,
+          id: `${bookmark.version}-${bookmark.book}-${bookmark.chapter}-${verseRange}-${Date.now()}`,
           createdAt: new Date().toISOString(),
         };
         set((state) => ({
@@ -244,7 +259,10 @@ export const useBibleStore = create<BibleState>()(
             b.version === version &&
             b.book === book &&
             b.chapter === chapter &&
-            b.verse === verse
+            // Check if verse is within the bookmark range
+            (b.endVerse
+              ? verse >= b.verse && verse <= b.endVerse  // Range: verse is between start and end
+              : verse === b.verse)                       // Single verse: exact match
         );
       },
 
@@ -315,6 +333,23 @@ export const useBibleStore = create<BibleState>()(
       isVerseSelected: (verse: VerseRef) => {
         return get().selectedVerses.some(v => isSameVerse(v, verse));
       },
+
+      // Flash Highlight Actions (for bookmark navigation feedback)
+
+      /**
+       * Set flash highlights for temporary verse highlighting (3 seconds)
+       * Used when navigating from bookmarks to show which verses were bookmarked
+       */
+      setFlashHighlights: (verses: VerseRef[]) => {
+        set({ flashHighlights: verses });
+      },
+
+      /**
+       * Clear flash highlights
+       */
+      clearFlashHighlights: () => {
+        set({ flashHighlights: [] });
+      },
     }),
     {
       name: 'bible-storage',
@@ -345,11 +380,11 @@ export const useBibleStore = create<BibleState>()(
           if (persistedState.preferences.showVerseNumbers === undefined) {
             persistedState.preferences.showVerseNumbers = true;
           }
-          if (persistedState.preferences.redLetterWords === undefined) {
-            persistedState.preferences.redLetterWords = false;
-          }
           if (persistedState.preferences.readingMode === undefined) {
             persistedState.preferences.readingMode = 'scroll';
+          }
+          if (persistedState.preferences.showVerseSelector === undefined) {
+            persistedState.preferences.showVerseSelector = true;
           }
         }
         return persistedState;
@@ -363,7 +398,7 @@ export const useBibleStore = create<BibleState>()(
         highlights: state.highlights,
         readingHistory: state.readingHistory,
         preferences: state.preferences,
-        // Exclude: isSelecting, selectedVerses (transient UI state)
+        // Exclude: isSelecting, selectedVerses, flashHighlights (transient UI state)
       }),
     }
   )

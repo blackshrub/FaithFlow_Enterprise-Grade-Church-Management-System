@@ -30,6 +30,7 @@ import {
   Focus,
   ScrollText,
   BookText,
+  BookOpen,
 } from 'lucide-react-native';
 import GorhomBottomSheet, { BottomSheetBackdrop as GorhomBackdrop } from '@gorhom/bottom-sheet';
 
@@ -162,12 +163,12 @@ export function ReadingPreferencesModal({
     updatePreferences({ showVerseNumbers: !preferences.showVerseNumbers });
   };
 
-  const handleToggleRedLetterWords = () => {
-    updatePreferences({ redLetterWords: !preferences.redLetterWords });
-  };
-
   const handleToggleFocusMode = () => {
     updatePreferences({ focusMode: !preferences.focusMode });
+  };
+
+  const handleToggleVerseSelector = () => {
+    updatePreferences({ showVerseSelector: !preferences.showVerseSelector });
   };
 
   const handleReadingModeChange = (mode: ReadingMode) => {
@@ -494,43 +495,6 @@ export function ReadingPreferencesModal({
               </View>
             </Pressable>
 
-            {/* Red Letter Words Toggle */}
-            <Pressable onPress={handleToggleRedLetterWords} className="active:opacity-70">
-              <View
-                className="p-4 rounded-lg flex-row items-center justify-between"
-                style={{
-                  backgroundColor: colors.gray[100],
-                }}
-              >
-                <VStack space="xs" className="flex-1">
-                  <Text className="text-gray-900 font-medium">Red Letter Edition</Text>
-                  <Text className="text-gray-500 text-xs">Highlight Jesus' words in red</Text>
-                </VStack>
-                <View
-                  className="flex-row items-center justify-end"
-                  style={{
-                    width: 51,
-                    height: 31,
-                    borderRadius: 16,
-                    backgroundColor: preferences.redLetterWords
-                      ? colors.error[500]
-                      : colors.gray[300],
-                    padding: 2,
-                  }}
-                >
-                  <View
-                    className="rounded-full bg-white shadow-sm"
-                    style={{
-                      width: 27,
-                      height: 27,
-                      position: 'absolute',
-                      left: preferences.redLetterWords ? 22 : 2,
-                    }}
-                  />
-                </View>
-              </View>
-            </Pressable>
-
             {/* Focus Mode Toggle */}
             <Pressable onPress={handleToggleFocusMode} className="active:opacity-70">
               <View
@@ -674,6 +638,55 @@ export function ReadingPreferencesModal({
                 </View>
               </Pressable>
             </HStack>
+          </VStack>
+
+          {/* Navigation Options */}
+          <VStack space="sm">
+            <Text className="text-gray-900 font-semibold text-base mb-2">Navigation</Text>
+
+            {/* Show Verse Selector Toggle */}
+            <Pressable onPress={handleToggleVerseSelector} className="active:opacity-70">
+              <View
+                className="p-4 rounded-lg flex-row items-center justify-between"
+                style={{
+                  backgroundColor: colors.gray[100],
+                }}
+              >
+                <HStack space="sm" className="items-center flex-1">
+                  <Icon
+                    as={BookOpen}
+                    size="md"
+                    className="text-gray-600"
+                  />
+                  <VStack space="xs" className="flex-1">
+                    <Text className="text-gray-900 font-medium">Show Verse Selector</Text>
+                    <Text className="text-gray-500 text-xs">Enable verse selection when choosing book and chapter</Text>
+                  </VStack>
+                </HStack>
+                <View
+                  className="flex-row items-center justify-end"
+                  style={{
+                    width: 51,
+                    height: 31,
+                    borderRadius: 16,
+                    backgroundColor: preferences.showVerseSelector
+                      ? colors.primary[500]
+                      : colors.gray[300],
+                    padding: 2,
+                  }}
+                >
+                  <View
+                    className="rounded-full bg-white shadow-sm"
+                    style={{
+                      width: 27,
+                      height: 27,
+                      position: 'absolute',
+                      left: preferences.showVerseSelector ? 22 : 2,
+                    }}
+                  />
+                </View>
+              </View>
+            </Pressable>
           </VStack>
 
           {/* Font Family Selector - NEW: Custom Bible Fonts with Live Preview */}

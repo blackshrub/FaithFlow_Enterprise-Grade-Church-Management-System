@@ -197,7 +197,10 @@ export default function BibleScreen() {
     }
   };
 
-  const handleSelectChapter = (book: string, chapter: number) => {
+  const handleSelectChapter = (book: string, chapter: number, verse?: number) => {
+    if (verse) {
+      setScrollToVerseNumber(verse);
+    }
     setCurrentPosition(currentVersion, book, chapter);
   };
 
