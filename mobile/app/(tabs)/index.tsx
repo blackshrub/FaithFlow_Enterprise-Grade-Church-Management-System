@@ -225,7 +225,7 @@ export default function HomeScreen() {
                         alignItems: 'center',
                       }}
                     >
-                      <Icon as={stat.icon} size="lg" style={{ color: stat.color }} />
+                      <stat.icon size={24} color={stat.color} />
                     </View>
                     <Text size="xs" className="opacity-75">
                       {stat.label}
@@ -275,7 +275,7 @@ export default function HomeScreen() {
                           backgroundColor: `${action.color}15`,
                         }}
                       >
-                        <Icon as={action.icon} size="xl" style={{ color: action.color }} />
+                        <action.icon size={28} color={action.color} />
 
                         {/* Badge count */}
                         {action.badge && action.badge > 0 && (
