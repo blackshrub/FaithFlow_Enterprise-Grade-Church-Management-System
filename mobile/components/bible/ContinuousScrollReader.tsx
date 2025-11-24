@@ -18,7 +18,7 @@ import * as Haptics from 'expo-haptics';
 
 import { Text } from '@/components/ui/text';
 import { Heading } from '@/components/ui/heading';
-import { useBibleStore, type VerseRef } from '@/stores/bibleStore';
+import { useBibleStore, type VerseRef, isSameVerse } from '@/stores/bibleStore';
 import { useLatinBibleFont } from '@/stores/bibleFontStore';
 import { getAppliedBibleFont } from '@/utils/fonts';
 import { colors, spacing, readingThemes } from '@/constants/theme';
@@ -56,6 +56,7 @@ export function ContinuousScrollReader({
     enterSelectionMode,
     toggleVerseSelection,
     isVerseSelected,
+    flashHighlights,
   } = useBibleStore();
 
   const latinFont = useLatinBibleFont();
@@ -281,18 +282,35 @@ export function ContinuousScrollReader({
         verse: item.verse,
       };
       const isSelected = isVerseSelected(verseRef);
+      // Check if this verse has flash highlight (temporary bookmark navigation feedback)
+      const isFlashHighlighted = flashHighlights.some(v => isSameVerse(v, verseRef));
       const currentTheme = readingThemes[preferences.theme];
 
-      // Background color: highlight color if highlighted, transparent otherwise
-      const backgroundColor = highlight
+      // Background color priority: Flash highlight > Regular highlight > Transparent
+      // Flash highlights are temporary (3 seconds) to show bookmarked verses
+      const backgroundColor = isFlashHighlighted
+        ? colors.warning[200]  // Temporary flash highlight (3 seconds) - vibrant amber/yellow
+        : highlight
         ? currentTheme.highlight[highlight.color]
         : 'transparent';
 
       return (
         <MotiView
           from={{ opacity: 0, translateY: 10 }}
-          animate={{ opacity: 1, translateY: 0 }}
-          transition={{ type: 'timing', duration: 200, delay: Math.min(item.verse * 20, 500) }}
+          animate={{
+            opacity: 1,
+            translateY: 0,
+            backgroundColor, // Animate backgroundColor for smooth fade-out
+          }}
+          transition={{
+            type: 'timing',
+            duration: 200,
+            delay: Math.min(item.verse * 20, 500),
+            backgroundColor: {
+              type: 'timing',
+              duration: 500, // Smooth 500ms fade-out when flash highlight is removed
+            },
+          }}
         >
           <Pressable
             onPress={() => handleVerseTap(item)}
@@ -302,7 +320,7 @@ export function ContinuousScrollReader({
               style={[
                 styles.verseContainer,
                 {
-                  backgroundColor,
+                  // backgroundColor moved to MotiView animate prop for smooth transitions
                   paddingVertical: getVerseSpacing(),
                   paddingHorizontal: spacing.md,
                   marginBottom: getVerseSpacing() * 0.5,
@@ -363,6 +381,7 @@ export function ContinuousScrollReader({
       selectedVerses,
       handleVerseTap,
       handleVerseLongPress,
+      flashHighlights,
     ]
   );
 

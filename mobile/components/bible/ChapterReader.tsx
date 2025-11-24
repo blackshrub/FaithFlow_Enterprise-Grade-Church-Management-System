@@ -12,14 +12,14 @@
 import React, { useCallback, useRef, useEffect } from 'react';
 import { View, Pressable, StyleSheet } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
-import { MotiView } from 'moti';
 import * as Haptics from 'expo-haptics';
 import { ChevronLeft, ChevronRight } from 'lucide-react-native';
+import { MotiView } from 'moti';
 
 import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
 import { HStack } from '@/components/ui/hstack';
-import { useBibleStore, type VerseRef } from '@/stores/bibleStore';
+import { useBibleStore, type VerseRef, isSameVerse } from '@/stores/bibleStore';
 import { useLatinBibleFont } from '@/stores/bibleFontStore';
 import { getAppliedBibleFont } from '@/utils/fonts';
 import { colors, spacing, readingThemes, shadows } from '@/constants/theme';
@@ -57,6 +57,7 @@ export function ChapterReader({
     enterSelectionMode,
     toggleVerseSelection,
     isVerseSelected,
+    flashHighlights,
   } = useBibleStore();
   const latinFont = useLatinBibleFont(); // Get Latin Bible font selection
   const flashListRef = useRef<FlashList<BibleVerse>>(null);
@@ -172,26 +173,36 @@ export function ChapterReader({
       const verseRef: VerseRef = { version, book, chapter, verse: item.verse };
       // Check if this verse is currently selected
       const isSelected = isVerseSelected(verseRef);
+      // Check if this verse has flash highlight (temporary bookmark navigation feedback)
+      const isFlashHighlighted = flashHighlights.some(v => isSameVerse(v, verseRef));
       const currentTheme = readingThemes[preferences.theme];
 
-      // Background color: ONLY show highlight color if verse is highlighted
-      // Selected but not highlighted verses have NO background (just dotted underline + left border)
-      const backgroundColor = highlight
+      // Background color priority: Flash highlight > Regular highlight > Transparent
+      // Flash highlights are temporary (3 seconds) to show bookmarked verses
+      const backgroundColor = isFlashHighlighted
+        ? colors.warning[200]  // Temporary flash highlight (3 seconds) - vibrant amber/yellow
+        : highlight
         ? currentTheme.highlight[highlight.color]
         : 'transparent';
 
       return (
         <MotiView
-          from={{ opacity: 0, translateY: 10 }}
-          animate={{ opacity: 1, translateY: 0 }}
-          transition={{ type: 'timing', duration: 200, delay: item.verse * 20 }}
+          animate={{
+            backgroundColor, // Animate backgroundColor for smooth fade-out
+          }}
+          transition={{
+            backgroundColor: {
+              type: 'timing',
+              duration: 500, // Smooth 500ms fade-out when flash highlight is removed
+            },
+          }}
         >
           <Pressable onPress={() => handleVerseTap(item.verse)}>
             <View
               style={[
                 styles.verseContainer,
                 {
-                  backgroundColor,
+                  // backgroundColor moved to MotiView animate prop for smooth transitions
                   paddingVertical: getVerseSpacing(),
                   paddingHorizontal: spacing.md,
                   marginBottom: getVerseSpacing() * 0.5,
@@ -203,46 +214,44 @@ export function ChapterReader({
                 },
               ]}
             >
-              {/* Verse number - conditionally shown */}
-              {preferences.showVerseNumbers && (
-                <Text
-                  style={[
-                    styles.verseNumber,
-                    {
-                      fontSize: getFontSize() * 0.7,
-                      color: currentTheme.verseNumber,
-                    },
-                  ]}
-                >
-                  {item.verse}
-                </Text>
-              )}
-
-              {/* Verse text with dotted underline when selected */}
+            {/* Verse number - conditionally shown */}
+            {preferences.showVerseNumbers && (
               <Text
                 style={[
-                  styles.verseText,
+                  styles.verseNumber,
                   {
-                    fontFamily: appliedFont, // Latin: custom font, Chinese: system font
-                    fontSize: getFontSize(),
-                    lineHeight: getFontSize() * getLineHeight(),
-                    color: currentTheme.text,
-                    textDecorationLine: isSelected ? 'underline' : 'none',
-                    textDecorationStyle: isSelected ? 'dotted' : 'solid',
-                    textDecorationColor: isSelected ? colors.primary[500] : 'transparent',
-                    // Apply text alignment
-                    textAlign: preferences.textAlign,
-                    // Apply word spacing
-                    letterSpacing: getWordSpacing(),
-                    // Red letter words for Jesus (placeholder - needs markup data)
-                    // color: preferences.redLetterWords ? colors.error[600] : currentTheme.text,
+                    fontSize: getFontSize() * 0.7,
+                    color: currentTheme.verseNumber,
                   },
                 ]}
               >
-                {item.text}
+                {item.verse}
               </Text>
-            </View>
-          </Pressable>
+            )}
+
+            {/* Verse text with dotted underline when selected */}
+            <Text
+              style={[
+                styles.verseText,
+                {
+                  fontFamily: appliedFont, // Latin: custom font, Chinese: system font
+                  fontSize: getFontSize(),
+                  lineHeight: getFontSize() * getLineHeight(),
+                  color: currentTheme.text,
+                  textDecorationLine: isSelected ? 'underline' : 'none',
+                  textDecorationStyle: isSelected ? 'dotted' : 'solid',
+                  textDecorationColor: isSelected ? colors.primary[500] : 'transparent',
+                  // Apply text alignment
+                  textAlign: preferences.textAlign,
+                  // Apply word spacing
+                  letterSpacing: getWordSpacing(),
+                },
+              ]}
+            >
+              {item.text}
+            </Text>
+          </View>
+        </Pressable>
         </MotiView>
       );
     },
@@ -257,6 +266,7 @@ export function ChapterReader({
       isVerseSelected,
       handleVerseTap,
       selectedVerses, // CRITICAL: Add selectedVerses to trigger re-render when selection changes
+      flashHighlights, // CRITICAL: Add flashHighlights to trigger re-render for bookmark navigation feedback
     ]
   );
 
