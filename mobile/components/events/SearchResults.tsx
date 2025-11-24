@@ -146,44 +146,36 @@ export function SearchResults({ groupedResults, counts }: SearchResultsProps) {
   return (
     <View style={{ flex: 1 }}>
       {/* Horizontal Tabs */}
-      <View style={{ paddingHorizontal: 20, paddingVertical: 12 }}>
+      <View style={{ paddingHorizontal: 16, paddingVertical: 12 }}>
         <HStack space="xs">
           {/* All Tab */}
           <Pressable onPress={() => handleTabChange('all')} style={{ flex: 1 }}>
             <View
               style={{
-                paddingVertical: spacing.sm,
-                paddingHorizontal: spacing.md,
+                paddingVertical: 10,
+                paddingHorizontal: 8,
                 borderRadius: borderRadius.xl,
                 backgroundColor: activeTab === 'all' ? colors.primary[500] : colors.gray[100],
+                alignItems: 'center',
+                justifyContent: 'center',
                 ...(activeTab === 'all' ? shadows.sm : {}),
               }}
             >
-              <HStack space="xs" className="items-center">
-                <Text
-                  className={`font-semibold text-sm ${
-                    activeTab === 'all' ? 'text-white' : 'text-gray-600'
-                  }`}
-                >
-                  {t('events.all')}
-                </Text>
-                <View
-                  style={{
-                    paddingHorizontal: 6,
-                    paddingVertical: 2,
-                    borderRadius: 10,
-                    backgroundColor: activeTab === 'all' ? 'rgba(255,255,255,0.2)' : colors.gray[200],
-                  }}
-                >
-                  <Text
-                    className={`text-xs font-bold ${
-                      activeTab === 'all' ? 'text-white' : 'text-gray-600'
-                    }`}
-                  >
-                    {counts.total}
-                  </Text>
-                </View>
-              </HStack>
+              <Text
+                className={`font-bold text-xs ${
+                  activeTab === 'all' ? 'text-white' : 'text-gray-600'
+                }`}
+                numberOfLines={1}
+              >
+                {t('events.all')}
+              </Text>
+              <Text
+                className={`text-xs font-bold mt-0.5 ${
+                  activeTab === 'all' ? 'text-white' : 'text-gray-500'
+                }`}
+              >
+                {counts.total}
+              </Text>
             </View>
           </Pressable>
 
@@ -191,38 +183,30 @@ export function SearchResults({ groupedResults, counts }: SearchResultsProps) {
           <Pressable onPress={() => handleTabChange('upcoming')} style={{ flex: 1 }}>
             <View
               style={{
-                paddingVertical: spacing.sm,
-                paddingHorizontal: spacing.md,
+                paddingVertical: 10,
+                paddingHorizontal: 8,
                 borderRadius: borderRadius.xl,
                 backgroundColor: activeTab === 'upcoming' ? colors.primary[500] : colors.gray[100],
+                alignItems: 'center',
+                justifyContent: 'center',
                 ...(activeTab === 'upcoming' ? shadows.sm : {}),
               }}
             >
-              <HStack space="xs" className="items-center">
-                <Text
-                  className={`font-semibold text-sm ${
-                    activeTab === 'upcoming' ? 'text-white' : 'text-gray-600'
-                  }`}
-                >
-                  {t('events.upcoming')}
-                </Text>
-                <View
-                  style={{
-                    paddingHorizontal: 6,
-                    paddingVertical: 2,
-                    borderRadius: 10,
-                    backgroundColor: activeTab === 'upcoming' ? 'rgba(255,255,255,0.2)' : colors.gray[200],
-                  }}
-                >
-                  <Text
-                    className={`text-xs font-bold ${
-                      activeTab === 'upcoming' ? 'text-white' : 'text-gray-600'
-                    }`}
-                  >
-                    {counts.upcoming}
-                  </Text>
-                </View>
-              </HStack>
+              <Text
+                className={`font-bold text-xs ${
+                  activeTab === 'upcoming' ? 'text-white' : 'text-gray-600'
+                }`}
+                numberOfLines={1}
+              >
+                {t('events.upcoming')}
+              </Text>
+              <Text
+                className={`text-xs font-bold mt-0.5 ${
+                  activeTab === 'upcoming' ? 'text-white' : 'text-gray-500'
+                }`}
+              >
+                {counts.upcoming}
+              </Text>
             </View>
           </Pressable>
 
@@ -230,38 +214,30 @@ export function SearchResults({ groupedResults, counts }: SearchResultsProps) {
           <Pressable onPress={() => handleTabChange('rsvp')} style={{ flex: 1 }}>
             <View
               style={{
-                paddingVertical: spacing.sm,
-                paddingHorizontal: spacing.md,
+                paddingVertical: 10,
+                paddingHorizontal: 8,
                 borderRadius: borderRadius.xl,
                 backgroundColor: activeTab === 'rsvp' ? colors.primary[500] : colors.gray[100],
+                alignItems: 'center',
+                justifyContent: 'center',
                 ...(activeTab === 'rsvp' ? shadows.sm : {}),
               }}
             >
-              <HStack space="xs" className="items-center">
-                <Text
-                  className={`font-semibold text-sm ${
-                    activeTab === 'rsvp' ? 'text-white' : 'text-gray-600'
-                  }`}
-                >
-                  {t('events.myRSVPs')}
-                </Text>
-                <View
-                  style={{
-                    paddingHorizontal: 6,
-                    paddingVertical: 2,
-                    borderRadius: 10,
-                    backgroundColor: activeTab === 'rsvp' ? 'rgba(255,255,255,0.2)' : colors.gray[200],
-                  }}
-                >
-                  <Text
-                    className={`text-xs font-bold ${
-                      activeTab === 'rsvp' ? 'text-white' : 'text-gray-600'
-                    }`}
-                  >
-                    {counts.rsvp}
-                  </Text>
-                </View>
-              </HStack>
+              <Text
+                className={`font-bold text-xs ${
+                  activeTab === 'rsvp' ? 'text-white' : 'text-gray-600'
+                }`}
+                numberOfLines={1}
+              >
+                {t('events.myRSVPs')}
+              </Text>
+              <Text
+                className={`text-xs font-bold mt-0.5 ${
+                  activeTab === 'rsvp' ? 'text-white' : 'text-gray-500'
+                }`}
+              >
+                {counts.rsvp}
+              </Text>
             </View>
           </Pressable>
 
@@ -269,38 +245,30 @@ export function SearchResults({ groupedResults, counts }: SearchResultsProps) {
           <Pressable onPress={() => handleTabChange('attended')} style={{ flex: 1 }}>
             <View
               style={{
-                paddingVertical: spacing.sm,
-                paddingHorizontal: spacing.md,
+                paddingVertical: 10,
+                paddingHorizontal: 8,
                 borderRadius: borderRadius.xl,
                 backgroundColor: activeTab === 'attended' ? colors.primary[500] : colors.gray[100],
+                alignItems: 'center',
+                justifyContent: 'center',
                 ...(activeTab === 'attended' ? shadows.sm : {}),
               }}
             >
-              <HStack space="xs" className="items-center">
-                <Text
-                  className={`font-semibold text-sm ${
-                    activeTab === 'attended' ? 'text-white' : 'text-gray-600'
-                  }`}
-                >
-                  {t('events.attended')}
-                </Text>
-                <View
-                  style={{
-                    paddingHorizontal: 6,
-                    paddingVertical: 2,
-                    borderRadius: 10,
-                    backgroundColor: activeTab === 'attended' ? 'rgba(255,255,255,0.2)' : colors.gray[200],
-                  }}
-                >
-                  <Text
-                    className={`text-xs font-bold ${
-                      activeTab === 'attended' ? 'text-white' : 'text-gray-600'
-                    }`}
-                  >
-                    {counts.attended}
-                  </Text>
-                </View>
-              </HStack>
+              <Text
+                className={`font-bold text-xs ${
+                  activeTab === 'attended' ? 'text-white' : 'text-gray-600'
+                }`}
+                numberOfLines={1}
+              >
+                {t('events.attended')}
+              </Text>
+              <Text
+                className={`text-xs font-bold mt-0.5 ${
+                  activeTab === 'attended' ? 'text-white' : 'text-gray-500'
+                }`}
+              >
+                {counts.attended}
+              </Text>
             </View>
           </Pressable>
         </HStack>
