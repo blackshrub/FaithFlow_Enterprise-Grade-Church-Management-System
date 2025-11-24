@@ -80,6 +80,50 @@ export function SearchResults({ groupedResults, counts }: SearchResultsProps) {
 
   const filteredEvents = getFilteredEvents();
 
+  // Empty state component
+  const EmptyTabState = () => {
+    let message = '';
+
+    switch (activeTab) {
+      case 'upcoming':
+        message = t('events.noUpcomingInSearch');
+        break;
+      case 'rsvp':
+        message = t('events.noRSVPsInSearch');
+        break;
+      case 'attended':
+        message = t('events.noAttendedInSearch');
+        break;
+      case 'all':
+      default:
+        message = t('events.noResultsInSearch');
+        break;
+    }
+
+    return (
+      <View className="flex-1 items-center justify-center px-8 py-16">
+        <MotiView
+          from={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ type: 'spring', delay: 200 }}
+        >
+          <View
+            className="w-20 h-20 rounded-full items-center justify-center mb-4"
+            style={{ backgroundColor: colors.gray[100] }}
+          >
+            <Icon as={Calendar} size="xl" className="text-gray-400" />
+          </View>
+          <Text className="text-gray-900 font-bold text-lg text-center mb-2">
+            {t('events.noResults')}
+          </Text>
+          <Text className="text-gray-500 text-sm text-center">
+            {message}
+          </Text>
+        </MotiView>
+      </View>
+    );
+  };
+
   const renderItem = ({ item: event, index }: { item: FilteredEvent; index: number }) => {
     const eventDate = new Date(event.date);
 
@@ -275,13 +319,17 @@ export function SearchResults({ groupedResults, counts }: SearchResultsProps) {
       </View>
 
       {/* Results List */}
-      <FlashList
-        data={filteredEvents}
-        renderItem={renderItem}
-        keyExtractor={(item) => item.id}
-        estimatedItemSize={120}
-        contentContainerStyle={{ paddingTop: 8, paddingBottom: 80 }}
-      />
+      {filteredEvents.length > 0 ? (
+        <FlashList
+          data={filteredEvents}
+          renderItem={renderItem}
+          keyExtractor={(item) => item.id}
+          estimatedItemSize={120}
+          contentContainerStyle={{ paddingTop: 8, paddingBottom: 80 }}
+        />
+      ) : (
+        <EmptyTabState />
+      )}
     </View>
   );
 }
