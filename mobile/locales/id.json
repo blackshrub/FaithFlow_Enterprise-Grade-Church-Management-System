@@ -213,7 +213,9 @@
     "share": "Bagikan Ayat",
     "addNote": "Tambah Catatan",
     "verseCopied": "Ayat Disalin",
-    "noteComingSoon": "Fitur catatan segera hadir!"
+    "noteComingSoon": "Fitur catatan segera hadir!",
+    "originalOrder": "Asli",
+    "alphabetical": "A-Z"
   },
   "events": {
     "title": "Acara",

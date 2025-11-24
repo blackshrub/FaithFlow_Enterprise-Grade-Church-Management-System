@@ -213,7 +213,9 @@
     "share": "Share Verse",
     "addNote": "Add Note",
     "verseCopied": "Verse Copied",
-    "noteComingSoon": "Note feature coming soon!"
+    "noteComingSoon": "Note feature coming soon!",
+    "originalOrder": "Original",
+    "alphabetical": "A-Z"
   },
   "events": {
     "title": "Events",

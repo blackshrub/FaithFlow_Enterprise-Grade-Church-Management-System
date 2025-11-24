@@ -7,11 +7,11 @@
  * - Chapter selector
  */
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { View, Pressable } from 'react-native';
 import { MotiView } from 'moti';
 import { useTranslation } from 'react-i18next';
-import { ChevronLeft } from 'lucide-react-native';
+import { ChevronLeft, ArrowDownAZ, ListOrdered } from 'lucide-react-native';
 import GorhomBottomSheet, { BottomSheetBackdrop as GorhomBackdrop } from '@gorhom/bottom-sheet';
 
 import { Text } from '@/components/ui/text';
@@ -24,6 +24,8 @@ import { Card } from '@/components/ui/card';
 
 import { colors } from '@/constants/theme';
 import type { BibleBook } from '@/types/api';
+
+type SortOrder = 'original' | 'alphabetical';
 
 interface BookSelectorModalProps {
   isOpen: boolean;
@@ -42,6 +44,7 @@ export function BookSelectorModal({
   const { t } = useTranslation();
   const [selectedTestament, setSelectedTestament] = useState<'OT' | 'NT'>('OT');
   const [selectedBook, setSelectedBook] = useState<BibleBook | null>(null);
+  const [sortOrder, setSortOrder] = useState<SortOrder>('original');
 
   // Control bottom sheet based on isOpen prop
   useEffect(() => {
@@ -52,7 +55,21 @@ export function BookSelectorModal({
     }
   }, [isOpen]);
 
-  const filteredBooks = books.filter((book) => book.testament === selectedTestament);
+  // Filter and sort books
+  const filteredBooks = useMemo(() => {
+    const filtered = books.filter((book) => book.testament === selectedTestament);
+
+    if (sortOrder === 'alphabetical') {
+      return [...filtered].sort((a, b) => {
+        const nameA = a.name_local || a.name;
+        const nameB = b.name_local || b.name;
+        return nameA.localeCompare(nameB);
+      });
+    }
+
+    // Original order (by book_number)
+    return [...filtered].sort((a, b) => a.book_number - b.book_number);
+  }, [books, selectedTestament, sortOrder]);
 
   const handleBookSelect = (book: BibleBook) => {
     setSelectedBook(book);
@@ -127,7 +144,7 @@ export function BookSelectorModal({
           /* Book Selection */
           <VStack space="md" className="p-6">
             {/* Testament Tabs */}
-            <HStack space="sm">
+            <HStack space="sm" className="items-center">
               <Pressable
                 onPress={() => setSelectedTestament('OT')}
                 className="flex-1"
@@ -176,6 +193,55 @@ export function BookSelectorModal({
                     {t('bible.newTestament')}
                   </Text>
                 </View>
+              </Pressable>
+            </HStack>
+
+            {/* Sort Toggle */}
+            <HStack space="xs" className="items-center justify-end">
+              <Pressable
+                onPress={() => setSortOrder('original')}
+                className="p-2"
+              >
+                <HStack space="xs" className="items-center">
+                  <Icon
+                    as={ListOrdered}
+                    size="sm"
+                    style={{
+                      color: sortOrder === 'original' ? colors.primary[500] : colors.gray[400],
+                    }}
+                  />
+                  <Text
+                    className={`text-xs ${
+                      sortOrder === 'original' ? 'text-primary-500 font-semibold' : 'text-gray-500'
+                    }`}
+                  >
+                    {t('bible.originalOrder')}
+                  </Text>
+                </HStack>
+              </Pressable>
+
+              <View className="w-px h-4 bg-gray-300" />
+
+              <Pressable
+                onPress={() => setSortOrder('alphabetical')}
+                className="p-2"
+              >
+                <HStack space="xs" className="items-center">
+                  <Icon
+                    as={ArrowDownAZ}
+                    size="sm"
+                    style={{
+                      color: sortOrder === 'alphabetical' ? colors.primary[500] : colors.gray[400],
+                    }}
+                  />
+                  <Text
+                    className={`text-xs ${
+                      sortOrder === 'alphabetical' ? 'text-primary-500 font-semibold' : 'text-gray-500'
+                    }`}
+                  >
+                    {t('bible.alphabetical')}
+                  </Text>
+                </HStack>
               </Pressable>
             </HStack>
 
