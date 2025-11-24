@@ -36,7 +36,8 @@ async def get_chapter(
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """Get all verses in a chapter"""
-    
+
+    # Try to find verses with the book name as provided
     verses = await db.bible_verses.find(
         {
             "version_code": version.upper(),
@@ -45,10 +46,26 @@ async def get_chapter(
         },
         {"_id": 0}
     ).sort("verse", 1).to_list(200)
-    
+
+    # If not found, try finding by book_number (for non-English versions)
+    if not verses:
+        # Get the book info to find book_number
+        book_info = await db.bible_books.find_one({"name": book})
+        if book_info:
+            book_num = book_info.get('book_number')
+            # Try finding by book_number
+            verses = await db.bible_verses.find(
+                {
+                    "version_code": version.upper(),
+                    "book_number": book_num,
+                    "chapter": chapter
+                },
+                {"_id": 0}
+            ).sort("verse", 1).to_list(200)
+
     if not verses:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Chapter not found")
-    
+
     return verses
 
 

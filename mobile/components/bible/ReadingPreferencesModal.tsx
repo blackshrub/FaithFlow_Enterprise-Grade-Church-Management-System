@@ -4,12 +4,14 @@
  * YouVersion-style reading customization with live preview:
  * - Font size: 10-24pt with +/- buttons
  * - Line height: Cyclable button with 3 states
- * - Font family: 11 font options
- * - 7 background themes (4 light + 3 dark)
+ * - Font family: 11 font options (horizontal scroll)
+ * - 8 background themes (horizontal scroll)
+ * - Max 50% screen height for live preview
+ * - Transparent backdrop to see changes in real-time
  */
 
 import React, { useEffect, useRef, useCallback } from 'react';
-import { View, Pressable } from 'react-native';
+import { View, Pressable, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import {
@@ -121,14 +123,14 @@ export function ReadingPreferencesModal({
     updatePreferences({ theme });
   };
 
-  // Backdrop component
+  // Backdrop component - transparent to allow live preview
   const renderBackdrop = useCallback(
     (props: any) => (
       <GorhomBackdrop
         {...props}
         disappearsOnIndex={-1}
         appearsOnIndex={0}
-        opacity={0.5}
+        opacity={0.3}
         onPress={onClose}
       />
     ),
@@ -141,7 +143,7 @@ export function ReadingPreferencesModal({
     <GorhomBottomSheet
       ref={bottomSheetRef}
       index={-1}
-      snapPoints={['85%']}
+      snapPoints={['50%']}
       enablePanDownToClose
       bottomInset={bottomInset}
       detached={false}
@@ -260,49 +262,51 @@ export function ReadingPreferencesModal({
             </Pressable>
           </VStack>
 
-          {/* Font Family Selector */}
+          {/* Font Family Selector - Horizontal Scroll */}
           <VStack space="sm">
             <HStack space="sm" className="items-center mb-2">
               <Icon as={Type} size="md" className="text-gray-600" />
               <Text className="text-gray-900 font-semibold text-base">Font Family</Text>
             </HStack>
 
-            <VStack space="xs">
-              {FONT_FAMILIES.map((font) => (
-                <Pressable
-                  key={font}
-                  onPress={() => handleFontFamilyChange(font)}
-                  className="active:opacity-70"
-                >
-                  <View
-                    className="p-3 rounded-lg flex-row items-center justify-between"
-                    style={{
-                      backgroundColor:
-                        preferences.fontFamily === font ? colors.primary[50] : colors.gray[50],
-                      borderWidth: preferences.fontFamily === font ? 2 : 1,
-                      borderColor:
-                        preferences.fontFamily === font ? colors.primary[500] : colors.gray[200],
-                    }}
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ paddingRight: 24 }}
+            >
+              <HStack space="xs">
+                {FONT_FAMILIES.map((font) => (
+                  <Pressable
+                    key={font}
+                    onPress={() => handleFontFamilyChange(font)}
+                    className="active:opacity-70"
                   >
-                    <Text
-                      className={`text-sm ${
-                        preferences.fontFamily === font
-                          ? 'text-primary-600 font-semibold'
-                          : 'text-gray-700'
-                      }`}
+                    <View
+                      className="px-4 py-3 rounded-lg"
+                      style={{
+                        backgroundColor:
+                          preferences.fontFamily === font ? colors.primary[500] : colors.gray[100],
+                        minWidth: 120,
+                      }}
                     >
-                      {font}
-                    </Text>
-                    {preferences.fontFamily === font && (
-                      <Icon as={Check} size="sm" className="text-primary-500" />
-                    )}
-                  </View>
-                </Pressable>
-              ))}
-            </VStack>
+                      <Text
+                        className={`text-sm text-center ${
+                          preferences.fontFamily === font
+                            ? 'text-white font-semibold'
+                            : 'text-gray-700'
+                        }`}
+                        numberOfLines={1}
+                      >
+                        {font}
+                      </Text>
+                    </View>
+                  </Pressable>
+                ))}
+              </HStack>
+            </ScrollView>
           </VStack>
 
-          {/* Theme Selection - 7 Themes */}
+          {/* Theme Selection - Horizontal Scroll */}
           <VStack space="sm">
             <HStack space="sm" className="items-center mb-2">
               <Icon as={Palette} size="md" className="text-gray-600" />
@@ -311,56 +315,59 @@ export function ReadingPreferencesModal({
               </Text>
             </HStack>
 
-            <VStack space="sm">
-              {THEMES.map((theme) => (
-                <Pressable key={theme} onPress={() => handleThemeChange(theme)}>
-                  <View
-                    className="rounded-lg overflow-hidden"
-                    style={{
-                      borderWidth: 3,
-                      borderColor:
-                        preferences.theme === theme ? colors.primary[500] : colors.gray[200],
-                    }}
-                  >
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ paddingRight: 24 }}
+            >
+              <HStack space="sm">
+                {THEMES.map((theme) => (
+                  <Pressable key={theme} onPress={() => handleThemeChange(theme)}>
                     <View
-                      className="p-4"
+                      className="rounded-lg overflow-hidden"
                       style={{
-                        backgroundColor: readingThemes[theme].background,
+                        borderWidth: 3,
+                        borderColor:
+                          preferences.theme === theme ? colors.primary[500] : colors.gray[200],
+                        width: 140,
                       }}
                     >
-                      <HStack className="items-center justify-between">
-                        <VStack space="xs">
-                          <Text
-                            className="font-semibold"
-                            style={{ color: readingThemes[theme].text }}
-                          >
-                            {readingThemes[theme].name}
-                          </Text>
-                          <Text
-                            className="text-sm"
-                            style={{
-                              color: readingThemes[theme].verseNumber,
-                            }}
-                          >
-                            {t('bible.themePreview')}
-                          </Text>
-                        </VStack>
+                      <View
+                        className="p-3"
+                        style={{
+                          backgroundColor: readingThemes[theme].background,
+                        }}
+                      >
+                        <Text
+                          className="font-semibold text-sm mb-1"
+                          style={{ color: readingThemes[theme].text }}
+                        >
+                          {readingThemes[theme].name}
+                        </Text>
+                        <Text
+                          className="text-xs"
+                          style={{
+                            color: readingThemes[theme].verseNumber,
+                          }}
+                        >
+                          Aa
+                        </Text>
                         {preferences.theme === theme && (
                           <View
-                            className="p-2 rounded-full"
+                            className="absolute top-1 right-1 p-1 rounded-full"
                             style={{
                               backgroundColor: colors.primary[500],
                             }}
                           >
-                            <Icon as={Check} size="sm" className="text-white" />
+                            <Icon as={Check} size="xs" className="text-white" />
                           </View>
                         )}
-                      </HStack>
+                      </View>
                     </View>
-                  </View>
-                </Pressable>
-              ))}
-            </VStack>
+                  </Pressable>
+                ))}
+              </HStack>
+            </ScrollView>
           </VStack>
         </VStack>
       </BottomSheetScrollView>
