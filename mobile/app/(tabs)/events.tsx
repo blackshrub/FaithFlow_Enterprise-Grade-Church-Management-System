@@ -990,9 +990,9 @@ export default function EventsScreen() {
           transition={{ type: 'timing', duration: 250 }}
           style={{ flex: 1 }}
         >
-          {searchResults && searchResults.results.length > 0 ? (
+          {searchResults && searchResults.events.length > 0 ? (
             <SearchResults
-              groupedResults={searchResults.groupedResults}
+              groupedResults={searchResults.groupedByStatus}
               counts={searchResults.counts}
             />
           ) : (

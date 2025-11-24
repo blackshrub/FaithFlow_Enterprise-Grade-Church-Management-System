@@ -105,8 +105,8 @@ export function CalendarModal() {
 
   // Get calendar markers (event dots)
   const calendarMarkers = useMemo(
-    () => getCalendarMarkers(filteredResults.results),
-    [filteredResults.results]
+    () => getCalendarMarkers(filteredResults.events, userRsvps, userAttendance),
+    [filteredResults.events, userRsvps, userAttendance]
   );
 
   const renderBackdrop = useCallback(
@@ -143,7 +143,7 @@ export function CalendarModal() {
   const eventsForSelectedDate = useMemo(() => {
     if (!selectedDate) return [];
 
-    return filteredResults.results.filter((event) => {
+    return filteredResults.events.filter((event) => {
       const eventDate = new Date(event.date);
       return (
         eventDate.getDate() === selectedDate.getDate() &&
@@ -151,7 +151,7 @@ export function CalendarModal() {
         eventDate.getFullYear() === selectedDate.getFullYear()
       );
     });
-  }, [selectedDate, filteredResults.results]);
+  }, [selectedDate, filteredResults.events]);
 
   return (
     <BottomSheet
