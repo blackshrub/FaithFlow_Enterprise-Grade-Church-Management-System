@@ -34,7 +34,7 @@ interface EventFiltersStore {
   clearSearch: () => void;
 }
 
-export const useEventFiltersStore = create<EventFiltersStore>((set) => ({
+export const useEventFiltersStore = create<EventFiltersStore>((set, get) => ({
   // Initial states
   searchTerm: '',
   selectedCategory: null,
@@ -45,11 +45,12 @@ export const useEventFiltersStore = create<EventFiltersStore>((set) => ({
 
   // Actions
   setSearchTerm: (term) => {
+    const currentCategory = get().selectedCategory;
     set({
       searchTerm: term,
       isSearching: term.trim().length > 0,
       // Clear category filter when searching (per requirements)
-      selectedCategory: term.trim().length > 0 ? null : set((state) => state).selectedCategory,
+      selectedCategory: term.trim().length > 0 ? null : currentCategory,
     });
   },
 
