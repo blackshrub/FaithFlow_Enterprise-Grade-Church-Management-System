@@ -295,4 +295,298 @@ Your responsibility as FaithFlow Engineering Agent:
 
 You MUST enforce these rules in every patch, refactor, or suggestion.
 
+---
+
+# 🔷 10. gorhom/bottom-sheet Rules for Mobile App
+
+**Context**: These rules were learned from debugging a category filter modal that wouldn't appear despite visible state being true and present() being called. The modal worked once then stopped working on subsequent clicks.
+
+## Component Choice (CRITICAL)
+
+gorhom/bottom-sheet provides **two different components** for **two different control patterns**:
+
+### ✅ Use `BottomSheet` for Zustand-controlled modals
+- Supports **declarative control** via reactive `index` prop
+- Index changes automatically when state changes
+- Perfect for global modals controlled by Zustand stores
+- **This is what you want 99% of the time**
+
+```tsx
+import BottomSheet from '@gorhom/bottom-sheet';
+
+<BottomSheet
+  index={visible ? 0 : -1}  // Reactive declarative control
+  snapPoints={['60%']}
+  onClose={handleClose}
+>
+  {/* content */}
+</BottomSheet>
+```
+
+### ❌ DON'T use `BottomSheetModal` for Zustand stores
+- Only supports **imperative control** via `present()`/`dismiss()` methods
+- Does NOT react to `index` prop changes
+- Causes "works once then breaks" bug when mixed with declarative state
+- Only use if you need imperative control (rare cases)
+
+## Architecture Requirements
+
+### 1. Single BottomSheetModalProvider at Root
+
+**MUST have exactly ONE provider at root level** (`app/_layout.tsx`):
+
+```tsx
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
+
+export default function RootLayout() {
+  return (
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <QueryClientProvider>
+        <GluestackUIProvider>
+          <BottomSheetModalProvider>
+            <Stack />
+
+            {/* Global modals MUST be siblings of Stack, not inside tabs */}
+            <NoteEditorModal />
+            <CategoryFilterModal />
+            <Toast />
+          </BottomSheetModalProvider>
+        </GluestackUIProvider>
+      </QueryClientProvider>
+    </GestureHandlerRootView>
+  );
+}
+```
+
+**Critical Rules:**
+- Only ONE `BottomSheetModalProvider` per app
+- Must wrap all screens that use bottom sheets
+- `GestureHandlerRootView` is REQUIRED for gestures to work
+- Global modals must be at root level, NOT inside tab layouts
+
+### 2. Modal Placement
+
+❌ **WRONG** - Inside tabs layout:
+```tsx
+// app/(tabs)/_layout.tsx
+<View>
+  <Slot />
+  <CategoryFilterModal />  // ❌ Wrong! Portal can be blocked
+</View>
+```
+
+✅ **CORRECT** - At root level:
+```tsx
+// app/_layout.tsx
+<BottomSheetModalProvider>
+  <Stack />
+  <CategoryFilterModal />  // ✅ Correct! Always visible
+</BottomSheetModalProvider>
+```
+
+## Zustand Store Pattern
+
+Create a store to control modal visibility globally:
+
+```tsx
+// stores/categoryFilter.ts
+import { create } from 'zustand';
+
+interface CategoryFilterStore {
+  visible: boolean;
+  categories: any[];
+  selectedCategory: string | null;
+  onSelectCategory: ((categoryId: string | null) => void) | null;
+
+  open: (
+    categories: any[],
+    selectedCategory: string | null,
+    onSelect: (categoryId: string | null) => void
+  ) => void;
+  close: () => void;
+  selectCategory: (categoryId: string | null) => void;
+}
+
+export const useCategoryFilterStore = create<CategoryFilterStore>((set, get) => ({
+  visible: false,
+  categories: [],
+  selectedCategory: null,
+  onSelectCategory: null,
+
+  open: (categories, selectedCategory, onSelect) => {
+    set({
+      visible: true,
+      categories,
+      selectedCategory,
+      onSelectCategory: onSelect,
+    });
+  },
+
+  close: () => {
+    set({
+      visible: false,
+      categories: [],
+      selectedCategory: null,
+      onSelectCategory: null,
+    });
+  },
+
+  selectCategory: (categoryId) => {
+    const { onSelectCategory, close } = get();
+    if (onSelectCategory) {
+      onSelectCategory(categoryId);
+    }
+    close();
+  },
+}));
+```
+
+## Modal Component Pattern
+
+```tsx
+// components/modals/CategoryFilterModal.tsx
+import React, { useRef, useCallback, useMemo } from 'react';
+import BottomSheet, { BottomSheetBackdrop } from '@gorhom/bottom-sheet';
+import { useCategoryFilterStore } from '@/stores/categoryFilter';
+
+export function CategoryFilterModal() {
+  const bottomSheetRef = useRef<BottomSheet>(null);
+  const snapPoints = useMemo(() => ['60%'], []);
+
+  const { visible, close } = useCategoryFilterStore();
+
+  const renderBackdrop = useCallback(
+    (props) => (
+      <BottomSheetBackdrop
+        {...props}
+        disappearsOnIndex={-1}
+        appearsOnIndex={0}
+        opacity={0.5}
+        pressBehavior="close"
+      />
+    ),
+    []
+  );
+
+  return (
+    <BottomSheet
+      ref={bottomSheetRef}
+      index={visible ? 0 : -1}  // Declarative control - reacts to state
+      snapPoints={snapPoints}
+      enablePanDownToClose
+      enableDynamicSizing={false}
+      onClose={close}
+      backdropComponent={renderBackdrop}
+    >
+      {/* Your content here */}
+    </BottomSheet>
+  );
+}
+```
+
+## Screen Usage Pattern
+
+```tsx
+// app/(tabs)/events.tsx
+import { useCategoryFilterStore } from '@/stores/categoryFilter';
+
+export default function EventsScreen() {
+  const categoryFilterStore = useCategoryFilterStore();
+  const [selectedCategory, setSelectedCategory] = useState(null);
+
+  const handleOpenFilter = () => {
+    categoryFilterStore.open(
+      categories,
+      selectedCategory,
+      (categoryId) => {
+        setSelectedCategory(categoryId);
+        // Any other logic...
+      }
+    );
+  };
+
+  return (
+    <Pressable onPress={handleOpenFilter}>
+      <Text>Open Filter</Text>
+    </Pressable>
+  );
+}
+```
+
+## Common Pitfalls to Avoid
+
+### ❌ Pitfall 1: Mixing Declarative + Imperative Control
+```tsx
+// DON'T DO THIS
+const { visible } = useStore();
+useEffect(() => {
+  if (visible) {
+    bottomSheetRef.current?.present();  // ❌ Don't use present() with BottomSheet
+  }
+}, [visible]);
+
+<BottomSheet index={visible ? 0 : -1} />  // Mixing patterns causes bugs
+```
+
+### ❌ Pitfall 2: Using BottomSheetModal with Declarative State
+```tsx
+// DON'T DO THIS
+import { BottomSheetModal } from '@gorhom/bottom-sheet';  // ❌ Wrong component
+
+<BottomSheetModal
+  index={visible ? 0 : -1}  // ❌ index prop doesn't work with Modal variant
+/>
+```
+
+### ❌ Pitfall 3: Multiple Providers
+```tsx
+// DON'T DO THIS
+// app/_layout.tsx
+<BottomSheetModalProvider>  // ❌ First provider
+  <Stack />
+</BottomSheetModalProvider>
+
+// app/(tabs)/_layout.tsx
+<BottomSheetModalProvider>  // ❌ Second provider - causes conflicts
+  <Slot />
+</BottomSheetModalProvider>
+```
+
+### ❌ Pitfall 4: Missing GestureHandlerRootView
+```tsx
+// DON'T DO THIS
+export default function RootLayout() {
+  return (
+    <BottomSheetModalProvider>  // ❌ Missing GestureHandlerRootView
+      <Stack />
+    </BottomSheetModalProvider>
+  );
+}
+```
+
+## Debugging Checklist
+
+When bottom sheet doesn't appear:
+
+1. **Check component**: Using `BottomSheet` (not `BottomSheetModal`)?
+2. **Check provider**: Single `BottomSheetModalProvider` at root level?
+3. **Check GestureHandlerRootView**: Wrapping everything?
+4. **Check placement**: Modal at root level (not inside tabs)?
+5. **Check index**: Using `index={visible ? 0 : -1}` pattern?
+6. **Check onChange callback**: Add logging to verify index changes
+7. **Check for mixing**: No `present()`/`dismiss()` calls with declarative index?
+
+## Key Takeaways
+
+1. **BottomSheet** (declarative) ≠ **BottomSheetModal** (imperative)
+2. Use **BottomSheet** with Zustand for global modals
+3. Only **ONE** provider at root level
+4. **GestureHandlerRootView** is required
+5. Modals must be **siblings of Stack**, not inside tabs
+6. **Never mix** declarative and imperative control
+7. Use `index={visible ? 0 : -1}` for declarative control
+
+---
+
 ```
