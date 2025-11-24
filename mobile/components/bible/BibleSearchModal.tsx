@@ -188,7 +188,6 @@ export function BibleSearchModal({
               placeholder={t('bible.searchPlaceholder')}
               placeholderTextColor={colors.gray[400]}
               className="flex-1 text-gray-900 text-base"
-              autoFocus
               returnKeyType="search"
               onSubmitEditing={handleSearch}
             />

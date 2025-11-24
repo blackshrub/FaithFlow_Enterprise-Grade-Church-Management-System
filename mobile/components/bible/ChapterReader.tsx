@@ -55,9 +55,12 @@ export function ChapterReader({
 
   // Control bottom sheet
   useEffect(() => {
+    console.log('Bottom sheet control:', { showActionSheet, selectedVersesCount: selectedVerses.length });
     if (showActionSheet && selectedVerses.length > 0) {
+      console.log('Opening bottom sheet...');
       bottomSheetRef.current?.snapToIndex(0);
     } else {
+      console.log('Closing bottom sheet...');
       bottomSheetRef.current?.close();
     }
   }, [showActionSheet, selectedVerses.length]);
