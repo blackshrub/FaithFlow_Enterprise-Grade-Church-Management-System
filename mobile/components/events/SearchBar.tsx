@@ -45,7 +45,7 @@ export function SearchBar() {
   }, [setSearchTerm]);
 
   return (
-    <View className="px-4 py-3 bg-white border-b border-gray-100">
+    <View className="px-6 py-3">
       <View
         className="flex-row items-center px-4 py-3 rounded-xl bg-gray-50"
         style={{ borderWidth: 1, borderColor: colors.gray[200] }}
@@ -56,13 +56,24 @@ export function SearchBar() {
         {/* Text Input */}
         <TextInput
           value={localValue}
-          onChangeText={setLocalValue}
+          onChangeText={(text) => {
+            console.log('[SearchBar] Text changed:', text);
+            setLocalValue(text);
+          }}
           placeholder={t('events.searchPlaceholder')}
           placeholderTextColor={colors.gray[400]}
-          className="flex-1 text-base text-gray-900"
+          style={{
+            flex: 1,
+            fontSize: 16,
+            color: colors.gray[900],
+            padding: 0,
+            margin: 0,
+          }}
           returnKeyType="search"
           autoCapitalize="none"
           autoCorrect={false}
+          editable={true}
+          selectTextOnFocus={false}
         />
 
         {/* Clear Button */}
