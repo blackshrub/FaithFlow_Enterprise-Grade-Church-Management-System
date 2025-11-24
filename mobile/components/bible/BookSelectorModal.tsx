@@ -375,9 +375,15 @@ export function BookSelectorModal({
               <View className="flex-row flex-wrap gap-2">
                 {/* Using 200 as max verse count, which covers all Bible chapters (longest is Psalm 119 with 176) */}
                 {Array.from({ length: 200 }, (_, i) => i + 1).map(
-                  (verse) => (
-                    <View
+                  (verse, index) => (
+                    <MotiView
                       key={verse}
+                      from={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{
+                        type: 'spring',
+                        delay: index * 15,
+                      }}
                       style={{ width: '18%' }}
                     >
                       <Pressable
@@ -396,7 +402,7 @@ export function BookSelectorModal({
                           </Text>
                         </View>
                       </Pressable>
-                    </View>
+                    </MotiView>
                   )
                 )}
               </View>
@@ -420,9 +426,15 @@ export function BookSelectorModal({
 
               <View className="flex-row flex-wrap gap-2">
                 {Array.from({ length: selectedBook.chapter_count }, (_, i) => i + 1).map(
-                  (chapter) => (
-                    <View
+                  (chapter, index) => (
+                    <MotiView
                       key={chapter}
+                      from={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{
+                        type: 'spring',
+                        delay: index * 15,
+                      }}
                       style={{ width: '18%' }}
                     >
                       <Pressable
@@ -441,7 +453,7 @@ export function BookSelectorModal({
                           </Text>
                         </View>
                       </Pressable>
-                    </View>
+                    </MotiView>
                   )
                 )}
               </View>
