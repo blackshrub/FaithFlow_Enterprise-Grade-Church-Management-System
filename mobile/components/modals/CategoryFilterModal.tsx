@@ -76,7 +76,6 @@ export function CategoryFilterModal() {
       backdropComponent={renderBackdrop}
       backgroundStyle={{
         backgroundColor: colors.white,
-        borderRadius: borderRadius['3xl'],
       }}
       handleIndicatorStyle={{
         backgroundColor: colors.gray[300],
