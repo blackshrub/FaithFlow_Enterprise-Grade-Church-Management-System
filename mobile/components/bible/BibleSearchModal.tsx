@@ -45,10 +45,11 @@ export function BibleSearchModal({
   const [searchQuery, setSearchQuery] = useState('');
 
   // Use offline search hook
+  // Set limit to 500 to show most/all search results (Bible has ~31,000 verses total)
   const { data: searchResults = [], isLoading: isSearching } = useBibleSearchOffline(
     version as BibleTranslation,
     searchQuery,
-    { limit: 50, enabled: searchQuery.trim().length >= 3 }
+    { limit: 500, enabled: searchQuery.trim().length >= 3 }
   );
 
   // Calculate bottom inset

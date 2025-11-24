@@ -104,13 +104,14 @@ export function useBibleChapterOffline(
 
 /**
  * Search Bible verses (offline)
+ * Default limit increased to 500 to show comprehensive search results
  */
 export function useBibleSearchOffline(
   version: BibleTranslation,
   query: string,
   options?: { limit?: number; enabled?: boolean }
 ) {
-  const limit = options?.limit || 50;
+  const limit = options?.limit || 500;
 
   return useQuery({
     queryKey: ['bible-search-offline', version, query, limit],
