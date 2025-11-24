@@ -20,7 +20,13 @@
       "Bash(npx create-expo-app@latest . --template blank-typescript --yes)",
       "Bash(npm uninstall:*)",
       "Bash(npx expo install:*)",
-      "Bash(npx expo start --clear)"
+      "Bash(npx expo start --clear)",
+      "Bash(yarn install)",
+      "Bash(yarn remove:*)",
+      "Bash(lsof:*)",
+      "Bash(curl:*)",
+      "Bash(xargs kill:*)",
+      "Bash(pkill:*)"
     ],
     "deny": [],
     "ask": []
