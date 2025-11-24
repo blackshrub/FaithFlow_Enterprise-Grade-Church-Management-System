@@ -359,11 +359,11 @@ export function BookSelectorModal({
         ) : selectedChapter ? (
           /* Verse Selection */
           <MotiView
-            from={{ opacity: 0, translateX: 20 }}
+            from={{ opacity: 0, translateX: 60 }}
             animate={{ opacity: 1, translateX: 0 }}
             transition={{
               type: 'timing',
-              duration: 300,
+              duration: 350,
             }}
           >
             <View className="p-6">
@@ -378,11 +378,12 @@ export function BookSelectorModal({
                   (verse, index) => (
                     <MotiView
                       key={verse}
-                      from={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
+                      from={{ opacity: 0, scale: 0.8, translateY: 10 }}
+                      animate={{ opacity: 1, scale: 1, translateY: 0 }}
                       transition={{
                         type: 'spring',
-                        delay: index * 15,
+                        delay: index * 20,
+                        damping: 15,
                       }}
                       style={{ width: '18%' }}
                     >
