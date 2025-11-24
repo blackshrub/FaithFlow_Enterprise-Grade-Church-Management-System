@@ -107,18 +107,12 @@ export function CalendarModal() {
   );
 
   // Get calendar markers (event dots)
-  // Convert to Map for O(1) lookups
-  const calendarMarkersMap = useMemo(() => {
+  const calendarMarkers = useMemo(() => {
     const markers = getCalendarMarkers(filteredResults.events, userRsvps, userAttendance);
     console.log('[CalendarModal] Calendar markers:', markers);
     console.log('[CalendarModal] Filtered events count:', filteredResults.events.length);
-
-    // Convert array to Map for quick date lookup
-    const map = new Map<string, string>();
-    markers.forEach(marker => {
-      map.set(marker.startId, marker.color);
-    });
-    return map;
+    console.log('[CalendarModal] Sample events:', filteredResults.events.slice(0, 3));
+    return markers;
   }, [filteredResults.events, userRsvps, userAttendance]);
 
   const renderBackdrop = useCallback(
@@ -135,6 +129,8 @@ export function CalendarModal() {
   );
 
   const handleDismiss = useCallback(() => {
+    console.log('[CalendarModal] handleDismiss called');
+    bottomSheetRef.current?.close();
     close();
   }, [close]);
 
@@ -220,6 +216,8 @@ export function CalendarModal() {
                       endId: selectedDate.toISOString().split('T')[0],
                     },
                   ]
+                : calendarMarkers.length > 0
+                ? calendarMarkers
                 : undefined
             }
             calendarColorScheme="light"
