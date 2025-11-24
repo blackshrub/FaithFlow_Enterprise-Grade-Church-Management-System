@@ -467,11 +467,18 @@ export default function BibleScreen() {
    * - Changed height animation to maxHeight (supported property)
    */
   const handleNoteVerses = () => {
-    if (selectedVerses.length === 0) return;
+    console.log('📝 handleNoteVerses called');
+    console.log('Selected verses:', selectedVerses);
+
+    if (selectedVerses.length === 0) {
+      console.log('❌ No verses selected, aborting');
+      return;
+    }
 
     // Haptic feedback when opening note editor
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
+    console.log('✅ Opening note editor...');
     setIsNoteEditorOpen(true);
   };
 

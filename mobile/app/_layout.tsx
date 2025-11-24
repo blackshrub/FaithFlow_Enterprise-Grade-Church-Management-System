@@ -8,9 +8,9 @@ import { useEffect, useState } from "react";
 import { initializeI18n } from "@/i18n";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { ToastProvider } from "@/components/providers/ToastProvider";
 import { useFonts } from "expo-font";
 import { BIBLE_FONT_FILES } from "@/utils/fonts";
+import Toast from 'react-native-toast-message';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -58,20 +58,20 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <QueryClientProvider client={queryClient}>
         <GluestackUIProvider mode={colorScheme ?? "light"}>
-          <ToastProvider>
-            <BottomSheetModalProvider>
-              <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
-              <Stack
-                screenOptions={{
-                  headerShown: false,
-                  animation: "fade",
-                }}
-              >
-                <Stack.Screen name="(auth)" />
-                <Stack.Screen name="(tabs)" />
-              </Stack>
-            </BottomSheetModalProvider>
-          </ToastProvider>
+          <BottomSheetModalProvider>
+            <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
+            <Stack
+              screenOptions={{
+                headerShown: false,
+                animation: "fade",
+              }}
+            >
+              <Stack.Screen name="(auth)" />
+              <Stack.Screen name="(tabs)" />
+            </Stack>
+          </BottomSheetModalProvider>
+          {/* Toast must be rendered at root level */}
+          <Toast />
         </GluestackUIProvider>
       </QueryClientProvider>
     </GestureHandlerRootView>

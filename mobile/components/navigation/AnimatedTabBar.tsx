@@ -85,12 +85,20 @@ export function AnimatedTabBar() {
         ...shadows.lg,
       }}
     >
-      <View className="flex-row items-center justify-around px-2 pt-2">
+      <View className="flex-row items-center px-2 pt-2">
         {TABS.map((tab, index) => {
           // Central FAB for Give
           if (tab.name === 'give') {
             return (
-              <View key={tab.name} className="items-center justify-center">
+              <View
+                key={tab.name}
+                className="items-center justify-center"
+                style={{
+                  flex: 1,
+                  minWidth: touchTargets.comfortable,
+                  minHeight: touchTargets.comfortable,
+                }}
+              >
                 <Pressable
                   onPress={handleGivePress}
                   className="active:opacity-80"
@@ -140,6 +148,7 @@ export function AnimatedTabBar() {
               onPress={() => handleTabPress(tab)}
               className="items-center justify-center active:opacity-60"
               style={{
+                flex: 1,
                 minWidth: touchTargets.comfortable,
                 minHeight: touchTargets.comfortable,
                 paddingVertical: 8,

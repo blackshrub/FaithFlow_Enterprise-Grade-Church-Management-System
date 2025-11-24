@@ -13,7 +13,7 @@ import { View, Pressable, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MotiView } from 'moti';
 import { useTranslation } from 'react-i18next';
-import { Highlighter, Copy, Share as ShareIcon, X, Bookmark } from 'lucide-react-native';
+import { Highlighter, Copy, Share as ShareIcon, X, Bookmark, FileText } from 'lucide-react-native';
 
 import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
@@ -32,6 +32,8 @@ interface VerseSelectionBarProps {
   onShare: () => void;
   /** Callback when bookmark button is tapped */
   onBookmark: () => void;
+  /** Callback when note button is tapped */
+  onNote: () => void;
   /** Callback when done/close button is tapped */
   onDone: () => void;
   /** Whether any selected verse is already highlighted */
@@ -46,6 +48,7 @@ export function VerseSelectionBar({
   onCopy,
   onShare,
   onBookmark,
+  onNote,
   onDone,
   hasHighlightedVerse = false,
   hasBookmarkedVerse = false,
@@ -131,6 +134,15 @@ export function VerseSelectionBar({
                 color: hasBookmarkedVerse ? colors.primary[600] : colors.gray[700],
               }}
             />
+          </Pressable>
+
+          {/* Note button */}
+          <Pressable
+            onPress={onNote}
+            style={styles.actionButton}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Icon as={FileText} size="md" className="text-gray-700" />
           </Pressable>
 
           {/* Copy button */}
