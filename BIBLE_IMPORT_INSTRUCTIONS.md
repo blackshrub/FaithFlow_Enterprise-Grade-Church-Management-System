@@ -2,7 +2,7 @@
 
 ## Summary
 
-The Bible API on `https://flow.gkbj.org` is **working correctly**, but the MongoDB database is **empty**. You need to import the Bible data.
+The Bible API on `https://flow.gkbj.org` is **working correctly**, but the MongoDB database is **empty**. You need to import the Bible data from the local JSON files.
 
 ## Current Status
 
@@ -13,82 +13,109 @@ The Bible API on `https://flow.gkbj.org` is **working correctly**, but the Mongo
 - `bible_verses` → `[]`
 
 ✅ Mobile app now configured to use `https://flow.gkbj.org`
+✅ Bible data available as JSON files in `backend/data/bible/`:
+- indo_tb.json (6.5M - Indonesian TB)
+- niv.json (4.5M - English NIV)
+- nkjv.json (4.6M - English NKJV)
+- nlt.json (4.7M - English NLT)
+- esv.json (4.5M - English ESV)
+- chinese_union_simp.json (9.4M - Chinese)
 
-## Import Bible Data
+## Import Bible Data from Local JSON Files
 
-### Option 1: Using the Complete Import Script (Recommended)
+**Just run this single command:**
 
-The script `backend/scripts/import_bible_complete.py` will import:
-- TB (Terjemahan Baru - Indonesian)
-- NIV (New International Version - English)
-- NKJV (New King James Version - English)
-- NLT (New Living Translation - English)
+```bash
+./IMPORT_BIBLE_FROM_JSON.sh
+```
 
-**Steps:**
+This automated script will:
+1. ✅ Check that `.env` file exists with `MONGO_URL` and `DB_NAME`
+2. ✅ Create Python virtual environment (if needed)
+3. ✅ Install dependencies (motor, requests, python-dotenv)
+4. ✅ Import all Bible versions from local JSON files:
+   - TB (Terjemahan Baru - Indonesian)
+   - NIV (New International Version - English)
+   - NKJV (New King James Version - English)
+   - NLT (New Living Translation - English)
+   - ESV (English Standard Version - English)
+   - CHS (Chinese Union Simplified)
+5. ✅ Show import progress and summary
+
+**Estimated Time:** 5-10 minutes (imports ~180,000 verses from local files)
+
+### Manual Import (Alternative)
+
+If you prefer to run the import script directly:
 
 1. **SSH into your production server** (where flow.gkbj.org is hosted)
 
 2. **Navigate to backend directory:**
    ```bash
-   cd /path/to/FaithFlow/backend
+   cd /root/FaithFlow_Enterprise-Grade-Church-Management-System/backend
    ```
 
 3. **Ensure environment variables are set:**
    ```bash
-   # Check .env file has:
-   # MONGO_URL=mongodb://...
+   # Check .env file exists:
+   cat .env
+   # Should contain:
+   # MONGO_URL=mongodb://localhost:27017
    # DB_NAME=church_management
    ```
 
-4. **Run the import script:**
+4. **Create virtual environment and install dependencies:**
+   ```bash
+   python3 -m venv venv
+   source venv/bin/activate
+   pip install motor requests python-dotenv
+   ```
+
+5. **Run the import script:**
    ```bash
    cd scripts
-   python3 import_bible_complete.py
+   python import_bible_from_json.py
    ```
 
-5. **Wait for completion** - This will take 15-30 minutes as it imports ~31,000 verses
+6. **Wait for completion** - Takes 5-10 minutes to import ~180,000 verses
 
-6. **Verify import:**
-   ```bash
-   # Test the API
-   curl https://flow.gkbj.org/api/bible/versions
-   # Should return: [{"code":"TB",...}, {"code":"NIV",...}, ...]
+### Verify Import
 
-   curl https://flow.gkbj.org/api/bible/books
-   # Should return 66 books
+After import completes, test the API:
 
-   curl "https://flow.gkbj.org/api/bible/TB/Yohanes/3"
-   # Should return John 3 verses in Indonesian
-   ```
-
-### Option 2: Import Specific Versions Only
-
-**For Indonesian Bible only (TB):**
 ```bash
-cd backend/scripts
-python3 import_bible.py
-```
+# Check Bible versions
+curl https://flow.gkbj.org/api/bible/versions
+# Should return: [{"id":"...","code":"TB","name":"Terjemahan Baru",...}, ...]
 
-**For English Bibles only (NIV, NKJV, NLT):**
-```bash
-cd backend/scripts
-python3 import_english_bibles.py
-```
+# Check Bible books
+curl https://flow.gkbj.org/api/bible/books
+# Should return 66 books
 
-**For Chinese Bible only (CHS):**
-```bash
-cd backend/scripts
-python3 import_tb_chs.py
+# Test Indonesian Bible (TB)
+curl "https://flow.gkbj.org/api/bible/TB/Kejadian/1"
+# Should return Genesis 1 verses in Indonesian
+
+# Test English Bible (NIV)
+curl "https://flow.gkbj.org/api/bible/NIV/Genesis/1"
+# Should return Genesis 1 verses in English
 ```
 
 ## What the Import Script Does
 
-1. **Connects to MongoDB** using `MONGO_URL` from environment
-2. **Imports Bible Versions** - Creates records in `bible_versions` collection
-3. **Imports Bible Books** - Creates 66 book records in `bible_books` collection
-4. **Imports Bible Verses** - Fetches from alkitab-api GraphQL and saves to `bible_verses` collection
+1. **Connects to MongoDB** using `MONGO_URL` from `.env` file
+2. **Imports Bible Books** - Creates 66 book records in `bible_books` collection with:
+   - English names (Genesis, Exodus, etc.)
+   - Local names (Kejadian, Keluaran, etc. for Indonesian)
+   - Testament (OT/NT)
+   - Chapter counts
+3. **Imports Bible Versions** - Creates version records in `bible_versions` collection:
+   - TB (Indonesian), NIV/NKJV/NLT/ESV (English), CHS (Chinese)
+4. **Imports Bible Verses** - Reads from local JSON files and imports to `bible_verses` collection:
    - TB: ~31,000 verses in Indonesian
-   - NIV/NKJV/NLT: ~31,000 verses each in English
+   - NIV/NKJV/NLT/ESV: ~31,000 verses each in English
+   - CHS: ~31,000 verses in Chinese
+   - Total: ~180,000+ verses
 
 ## Mobile App Configuration
 
@@ -144,16 +171,40 @@ python3 import_bible_complete.py
 
 ## Expected Database Size
 
-After importing all 4 versions (TB, NIV, NKJV, NLT):
-- Bible versions: 4-5 documents
+After importing all 6 versions (TB, NIV, NKJV, NLT, ESV, CHS):
+- Bible versions: 6 documents
 - Bible books: 66 documents
-- Bible verses: ~124,000 documents (31,000 × 4 versions)
-- Estimated size: ~50-100 MB
+- Bible verses: ~180,000+ documents (31,000 × 6 versions)
+- Estimated size: ~80-150 MB
 
-## Questions?
+## Troubleshooting
 
-If you encounter any issues during import, check:
-1. MongoDB connection is working
-2. Server has internet access to fetch from alkitab-api
-3. Backend `.env` file has correct `MONGO_URL` and `DB_NAME`
-4. Python dependencies are installed: `pip install motor requests python-dotenv`
+### If MongoDB connection fails:
+```bash
+# Check MongoDB is running
+systemctl status mongod
+
+# Check MONGO_URL in .env
+cat backend/.env | grep MONGO_URL
+```
+
+### If .env file is missing:
+Create `backend/.env` with:
+```
+MONGO_URL=mongodb://localhost:27017
+DB_NAME=church_management
+JWT_SECRET=your-secret-key-here
+JWT_ALGORITHM=HS256
+```
+
+### If Python dependencies fail to install:
+The script automatically creates a virtual environment. If you still encounter issues:
+```bash
+cd backend
+python3 -m venv venv
+source venv/bin/activate
+pip install motor requests python-dotenv
+```
+
+### If you want to re-import:
+The import script will ask if you want to delete existing data before importing. Answer "yes" to re-import.
