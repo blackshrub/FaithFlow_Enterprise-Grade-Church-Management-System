@@ -51,7 +51,7 @@ export function ChapterReader({
   // Calculate bottom inset - account for tab bar height
   // Tab bar is ~64px + safe area bottom
   const TAB_BAR_HEIGHT = 64;
-  const bottomInset = insets.bottom + TAB_BAR_HEIGHT;
+  const bottomInset = insets.bottom;
 
   // Control bottom sheet
   useEffect(() => {
@@ -78,6 +78,15 @@ export function ChapterReader({
       relaxed: 1.8,
     };
     return heights[preferences.lineHeight];
+  };
+
+  // Get verse spacing based on font size
+  const getVerseSpacing = () => {
+    // Smaller fonts need less spacing, larger fonts need more
+    // Font size range: 10-24
+    // Spacing range: 4-12
+    const fontSize = getFontSize();
+    return Math.max(4, Math.min(12, fontSize * 0.4));
   };
 
   // Handle verse tap - toggle selection and show bottom sheet
@@ -198,8 +207,9 @@ export function ChapterReader({
                 styles.verseContainer,
                 {
                   backgroundColor,
-                  paddingVertical: spacing.sm,
+                  paddingVertical: getVerseSpacing(),
                   paddingHorizontal: spacing.md,
+                  marginBottom: getVerseSpacing() * 0.5,
                 },
               ]}
             >
@@ -273,9 +283,9 @@ export function ChapterReader({
       <GorhomBottomSheet
         ref={bottomSheetRef}
         index={-1}
-        snapPoints={[160]}
+        snapPoints={[180]}
         enablePanDownToClose
-        bottomInset={bottomInset}
+        bottomInset={bottomInset + TAB_BAR_HEIGHT}
         detached={false}
         enableOverDrag={false}
         onClose={() => {
@@ -286,12 +296,16 @@ export function ChapterReader({
         backgroundStyle={{
           backgroundColor: '#ffffff',
         }}
+        handleIndicatorStyle={{
+          backgroundColor: colors.gray[300],
+        }}
         style={{
           shadowColor: '#000',
           shadowOffset: { width: 0, height: -2 },
-          shadowOpacity: 0.1,
-          shadowRadius: 8,
-          elevation: 5,
+          shadowOpacity: 0.25,
+          shadowRadius: 12,
+          elevation: 8,
+          zIndex: 1000,
         }}
       >
         <View className="px-4 py-3">
@@ -355,7 +369,7 @@ const styles = StyleSheet.create({
   verseContainer: {
     flexDirection: 'row',
     borderRadius: 8,
-    marginBottom: spacing.xs,
+    // marginBottom is dynamic based on font size
   },
   verseNumber: {
     fontWeight: '700',
