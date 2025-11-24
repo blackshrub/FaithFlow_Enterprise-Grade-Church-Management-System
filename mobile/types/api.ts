@@ -103,19 +103,29 @@ export interface GivingHistoryResponse {
 // ===========================
 
 export interface BibleVersion {
-  abbreviation: string;
+  id: string;
+  code: string;
   name: string;
   language: string;
+  description?: string;
 }
 
 export interface BibleBook {
-  abbreviation: string;
+  id: string;
   name: string;
-  chapters: number;
+  name_local: string;
+  testament: 'OT' | 'NT';
+  book_number: number;
+  chapter_count: number;
 }
 
 export interface BibleVerse {
-  number: number;
+  id: string;
+  version_code: string;
+  book: string;
+  book_number: number;
+  chapter: number;
+  verse: number;
   text: string;
 }
 
