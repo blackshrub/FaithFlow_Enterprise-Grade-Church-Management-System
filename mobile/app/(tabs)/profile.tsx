@@ -52,7 +52,7 @@ import {
   SkeletonText,
 } from '@gluestack-ui/themed';
 
-import { useAuthStore } from '@/stores/authStore';
+import { useAuthStore } from '@/stores/auth';
 import { colors, borderRadius, shadows, spacing } from '@/constants/theme';
 import { useGivingSummary } from '@/hooks/useGiving';
 import { usePrayerRequests } from '@/hooks/usePrayer';
