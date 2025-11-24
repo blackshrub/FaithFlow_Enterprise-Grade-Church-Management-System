@@ -52,8 +52,9 @@ export function BibleSearchModal({
     { limit: 500, enabled: searchQuery.trim().length >= 3 }
   );
 
-  // Calculate bottom inset
+  // Calculate insets - add top inset to prevent covering status bar
   const bottomInset = insets.bottom;
+  const topInset = insets.top || 20; // Ensure minimum 20px from top (status bar)
 
   // Control bottom sheet based on isOpen prop
   useEffect(() => {
@@ -111,6 +112,7 @@ export function BibleSearchModal({
       snapPoints={['80%']}
       enablePanDownToClose
       bottomInset={bottomInset}
+      topInset={topInset}
       detached={false}
       onClose={() => {
         setSearchQuery('');
@@ -120,7 +122,7 @@ export function BibleSearchModal({
       backgroundStyle={{
         backgroundColor: '#ffffff',
       }}
-      keyboardBehavior="interactive"
+      keyboardBehavior="fillParent"
       keyboardBlurBehavior="restore"
       android_keyboardInputMode="adjustResize"
     >
