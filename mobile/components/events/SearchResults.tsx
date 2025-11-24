@@ -146,12 +146,13 @@ export function SearchResults({ groupedResults, counts }: SearchResultsProps) {
   return (
     <View style={{ flex: 1 }}>
       {/* Horizontal Tabs */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: 20, paddingVertical: 12 }}
-      >
-        <HStack space="xs">
+      <View>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ paddingHorizontal: 20, paddingVertical: 12 }}
+        >
+          <HStack space="xs">
           {/* All Tab */}
           <Pressable onPress={() => handleTabChange('all')}>
             <View
@@ -307,8 +308,9 @@ export function SearchResults({ groupedResults, counts }: SearchResultsProps) {
               </HStack>
             </View>
           </Pressable>
-        </HStack>
-      </ScrollView>
+          </HStack>
+        </ScrollView>
+      </View>
 
       {/* Results List */}
       <FlashList
