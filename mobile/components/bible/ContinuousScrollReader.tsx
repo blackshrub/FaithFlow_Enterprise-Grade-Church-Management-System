@@ -116,8 +116,6 @@ export function ContinuousScrollReader({
       const isSignificantChange = bookChanged || chapterDiff > 3;
 
       if (isSignificantChange) {
-        console.log('🔄 Significant navigation detected - resetting loader');
-
         // Reset loader to new position
         const newItems = await streamLoaderRef.current.reset(initialBook, initialChapter);
         setItems(newItems);
@@ -446,11 +444,9 @@ export function ContinuousScrollReader({
       if (!streamLoaderRef.current) return;
 
       if (isNearBottom) {
-        console.log('📖 Loading next chapter...');
         const newItems = await streamLoaderRef.current.loadNextChapter();
         setItems(newItems);
       } else if (isNearTop) {
-        console.log('📖 Loading previous chapter...');
         const newItems = await streamLoaderRef.current.loadPreviousChapter();
         setItems(newItems);
       }

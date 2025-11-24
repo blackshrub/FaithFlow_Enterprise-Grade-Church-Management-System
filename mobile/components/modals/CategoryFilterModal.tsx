@@ -6,7 +6,7 @@
  * Uses BottomSheetModal with present/dismiss methods
  */
 
-import React, { useRef, useCallback, useMemo, useEffect } from 'react';
+import React, { useRef, useCallback, useMemo } from 'react';
 import { View, Pressable } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Filter, Check } from 'lucide-react-native';
@@ -29,15 +29,6 @@ export function CategoryFilterModal() {
 
   const { visible, categories, selectedCategory, selectCategory, close } = useCategoryFilterStore();
 
-  // Diagnostic logging
-  useEffect(() => {
-    console.log('[CategoryFilterModal] MOUNTED');
-  }, []);
-
-  useEffect(() => {
-    console.log('📊 [CategoryFilterModal] visible changed:', visible, '-> index will be:', visible ? 0 : -1);
-  }, [visible]);
-
   const renderBackdrop = useCallback(
     (props: BottomSheetBackdropProps) => (
       <BottomSheetBackdrop
@@ -55,12 +46,7 @@ export function CategoryFilterModal() {
     selectCategory(categoryId);
   };
 
-  const handleSheetChange = useCallback((index: number) => {
-    console.log('📊 [CategoryFilterModal] Bottom sheet index changed:', index);
-  }, []);
-
   const handleDismiss = useCallback(() => {
-    console.log('❌ [CategoryFilterModal] BottomSheetModal onDismiss called');
     close();
   }, [close]);
 
@@ -73,7 +59,6 @@ export function CategoryFilterModal() {
       enableDynamicSizing={false}
       bottomInset={0}
       onClose={handleDismiss}
-      onChange={handleSheetChange}
       backdropComponent={renderBackdrop}
       backgroundStyle={{
         backgroundColor: colors.white,
