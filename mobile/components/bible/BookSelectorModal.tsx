@@ -377,12 +377,12 @@ export function BookSelectorModal({
                 {Array.from({ length: 200 }, (_, i) => i + 1).map(
                   (verse, index) => (
                     <MotiView
-                      key={verse}
+                      key={`verse-${verse}`}
                       from={{ opacity: 0, scale: 0.8, translateY: 10 }}
                       animate={{ opacity: 1, scale: 1, translateY: 0 }}
                       transition={{
                         type: 'spring',
-                        delay: index * 20,
+                        delay: 150 + (index * 20), // Base delay 150ms + stagger
                         damping: 15,
                       }}
                       style={{ width: '18%' }}
@@ -429,12 +429,12 @@ export function BookSelectorModal({
                 {Array.from({ length: selectedBook.chapter_count }, (_, i) => i + 1).map(
                   (chapter, index) => (
                     <MotiView
-                      key={chapter}
+                      key={`chapter-${chapter}`}
                       from={{ opacity: 0, scale: 0.9 }}
                       animate={{ opacity: 1, scale: 1 }}
                       transition={{
                         type: 'spring',
-                        delay: index * 15,
+                        delay: 100 + (index * 15), // Base delay 100ms + stagger
                       }}
                       style={{ width: '18%' }}
                     >

@@ -25,11 +25,55 @@ import { Icon } from '@/components/ui/icon';
 
 import { useBibleStore, type Bookmark } from '@/stores/bibleStore';
 import { colors } from '@/constants/theme';
+import { formatVerseRange } from '@/utils/verseFormatting';
+import { getBibleLoader } from '@/lib/bibleLoaderOptimized';
+import type { BibleTranslation } from '@/types/bible';
 
 interface BookmarksModalProps {
   isOpen: boolean;
   onClose: () => void;
   onNavigateToBookmark: (bookmark: Bookmark) => void;
+}
+
+/**
+ * Helper to fetch verse text for a bookmark
+ */
+async function fetchBookmarkVerseText(bookmark: Bookmark): Promise<string> {
+  try {
+    const loader = getBibleLoader(bookmark.version as BibleTranslation);
+
+    // Ensure Bible is loaded
+    if (!loader.isLoaded()) {
+      await loader.load();
+    }
+
+    // Get book number from book name
+    const { getBookNumber } = require('@/lib/bibleBookLookup');
+    const bookNumber = getBookNumber(bookmark.book);
+
+    if (!bookNumber) {
+      return '';
+    }
+
+    // Fetch verse text based on verses array or range
+    const versesToFetch = bookmark.verses ||
+      (bookmark.endVerse
+        ? Array.from({ length: bookmark.endVerse - bookmark.verse + 1 }, (_, i) => bookmark.verse + i)
+        : [bookmark.verse]);
+
+    const verseTexts = versesToFetch
+      .map(verseNum => {
+        const text = loader.getVerse(bookNumber, bookmark.chapter, verseNum);
+        return text || '';
+      })
+      .filter(text => text.length > 0);
+
+    // Join multiple verses with space
+    return verseTexts.join(' ');
+  } catch (error) {
+    console.error('Failed to fetch bookmark verse text:', error);
+    return '';
+  }
 }
 
 export function BookmarksModal({
@@ -41,6 +85,9 @@ export function BookmarksModal({
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { bookmarks, removeBookmark } = useBibleStore();
+
+  // Cache for verse texts
+  const [verseTexts, setVerseTexts] = React.useState<Record<string, string>>({});
 
   // Calculate insets
   const bottomInset = insets.bottom;
@@ -54,6 +101,25 @@ export function BookmarksModal({
       bottomSheetRef.current?.close();
     }
   }, [isOpen]);
+
+  // Load verse texts when modal opens
+  useEffect(() => {
+    if (isOpen && bookmarks.length > 0) {
+      // Load verse texts for all bookmarks
+      Promise.all(
+        bookmarks.map(async (bookmark) => {
+          const text = await fetchBookmarkVerseText(bookmark);
+          return { id: bookmark.id, text };
+        })
+      ).then((results) => {
+        const texts: Record<string, string> = {};
+        results.forEach((result) => {
+          texts[result.id] = result.text;
+        });
+        setVerseTexts(texts);
+      });
+    }
+  }, [isOpen, bookmarks]);
 
   const handleDeleteBookmark = (bookmark: Bookmark) => {
     Alert.alert(
@@ -160,10 +226,15 @@ export function BookmarksModal({
                     }}
                   >
                     <HStack className="items-start justify-between mb-2">
-                      {/* Verse Reference */}
+                      {/* Verse Reference with smart formatting */}
                       <VStack space="xs" className="flex-1">
                         <Text className="text-primary-600 font-semibold text-base">
-                          {bookmark.book} {bookmark.chapter}:{bookmark.verse}
+                          {bookmark.book} {bookmark.chapter}:
+                          {bookmark.verses
+                            ? formatVerseRange(bookmark.verses)
+                            : bookmark.endVerse
+                            ? `${bookmark.verse}-${bookmark.endVerse}`
+                            : bookmark.verse}
                         </Text>
                         <Text className="text-gray-500 text-xs">
                           {bookmark.version}
@@ -185,6 +256,17 @@ export function BookmarksModal({
                         <Icon as={ChevronRight} size="sm" className="text-gray-400" />
                       </HStack>
                     </HStack>
+
+                    {/* Verse Text Preview */}
+                    {verseTexts[bookmark.id] && (
+                      <Text
+                        className="text-gray-700 text-sm mt-2"
+                        numberOfLines={2}
+                        ellipsizeMode="tail"
+                      >
+                        {verseTexts[bookmark.id]}
+                      </Text>
+                    )}
 
                     {/* Note (if exists) */}
                     {bookmark.note && (

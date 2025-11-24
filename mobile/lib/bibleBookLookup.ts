@@ -215,8 +215,10 @@ function buildLookup() {
     '约翰福音': 43,
     '使徒行传': 44,
     '罗马书': 45,
-    '哥林多前书': 46,
-    '哥林多后书': 47,
+    '哥林多前书': 46, // Standard spelling
+    '歌林多前书': 46, // Alternative spelling (CHS Bible uses this)
+    '哥林多后书': 47, // Standard spelling
+    '歌林多后书': 47, // Alternative spelling (CHS Bible uses this)
     '加拉太书': 48,
     '以弗所书': 49,
     '腓立比书': 50,
