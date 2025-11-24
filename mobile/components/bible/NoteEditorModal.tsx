@@ -8,12 +8,11 @@
  * - Shows verse reference in header
  */
 
-import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { View, Pressable, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
+import React, { useState } from 'react';
+import { View, Pressable, TextInput, KeyboardAvoidingView, Platform, Modal, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { Save, X } from 'lucide-react-native';
-import BottomSheet, { BottomSheetBackdrop as GorhomBackdrop } from '@gorhom/bottom-sheet';
 import * as Haptics from 'expo-haptics';
 
 import { Text } from '@/components/ui/text';
@@ -38,23 +37,15 @@ export function NoteEditorModal({
   initialNote = '',
   onSave,
 }: NoteEditorModalProps) {
-  const bottomSheetRef = useRef<BottomSheet>(null);
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const [note, setNote] = useState(initialNote);
 
-  // Calculate insets
-  const bottomInset = insets.bottom;
-  const topInset = insets.top || 20;
-
-  // Update note when initialNote changes
-  useEffect(() => {
-    console.log('🔄 NoteEditorModal - isOpen changed:', isOpen);
-    console.log('📊 BottomSheet index will be:', isOpen ? 0 : -1);
-
+  // Update note when modal opens
+  React.useEffect(() => {
     if (isOpen) {
       setNote(initialNote);
-      console.log('📝 Note set to:', initialNote);
+      console.log('✅ NoteEditorModal opened with note:', initialNote);
     }
   }, [isOpen, initialNote]);
 
@@ -65,54 +56,30 @@ export function NoteEditorModal({
   };
 
   const handleCancel = () => {
-    setNote(initialNote); // Reset to initial value
+    setNote(initialNote);
     onClose();
   };
 
-  // Backdrop component
-  const renderBackdrop = useCallback(
-    (props: any) => (
-      <GorhomBackdrop
-        {...props}
-        disappearsOnIndex={-1}
-        appearsOnIndex={0}
-        opacity={0.5}
-        onPress={handleCancel}
-      />
-    ),
-    [handleCancel]
-  );
-
-  // Don't render anything if not open
-  if (!isOpen) {
-    return null;
-  }
-
   return (
-    <BottomSheet
-      ref={bottomSheetRef}
-      index={0}
-      snapPoints={['75%']}
-      enablePanDownToClose={true}
-      bottomInset={bottomInset}
-      topInset={topInset}
-      onClose={onClose}
-      backdropComponent={renderBackdrop}
-      backgroundStyle={{
-        backgroundColor: '#ffffff',
-      }}
-      keyboardBehavior="interactive"
-      keyboardBlurBehavior="restore"
-      android_keyboardInputMode="adjustResize"
-      animateOnMount={true}
+    <Modal
+      visible={isOpen}
+      transparent
+      animationType="slide"
+      onRequestClose={handleCancel}
     >
+      {/* Backdrop */}
+      <Pressable style={styles.backdrop} onPress={handleCancel}>
+        <View />
+      </Pressable>
+
+      {/* Modal Content */}
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={{ flex: 1 }}
+        style={styles.container}
       >
-        <View style={{ flex: 1, paddingBottom: 20 }}>
+        <View style={[styles.content, { paddingBottom: insets.bottom + 20 }]}>
           {/* Header */}
-          <View className="px-6 pt-2 pb-4 border-b border-gray-200">
+          <View className="px-6 pt-6 pb-4 border-b border-gray-200">
             <HStack className="items-center justify-between">
               <VStack space="xs" className="flex-1">
                 <Heading size="xl" className="text-gray-900">
@@ -205,6 +172,30 @@ export function NoteEditorModal({
           </View>
         </View>
       </KeyboardAvoidingView>
-    </BottomSheet>
+    </Modal>
   );
 }
+
+const styles = StyleSheet.create({
+  backdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  container: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    maxHeight: '75%',
+  },
+  content: {
+    backgroundColor: '#ffffff',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 10,
+  },
+});
