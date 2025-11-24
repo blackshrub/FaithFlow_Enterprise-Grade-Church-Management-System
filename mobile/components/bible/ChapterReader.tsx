@@ -10,15 +10,14 @@
  */
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { View, Pressable, StyleSheet, Share, Alert } from 'react-native';
+import { View, Pressable, StyleSheet, Share, Alert, Modal, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FlashList } from '@shopify/flash-list';
 import { MotiView } from 'moti';
 import { useTranslation } from 'react-i18next';
 import * as Haptics from 'expo-haptics';
 import * as Clipboard from 'expo-clipboard';
-import { Highlight, Copy, Share as ShareIcon } from 'lucide-react-native';
-import GorhomBottomSheet, { BottomSheetBackdrop as GorhomBackdrop } from '@gorhom/bottom-sheet';
+import { Highlight, Copy, Share as ShareIcon, X } from 'lucide-react-native';
 
 import { Text } from '@/components/ui/text';
 import { BottomSheetScrollView } from '@/components/ui/bottomsheet';
@@ -43,27 +42,9 @@ export function ChapterReader({
 }: ChapterReaderProps) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
-  const bottomSheetRef = useRef<GorhomBottomSheet>(null);
   const { preferences, getHighlight, addHighlight, removeHighlight } = useBibleStore();
   const [selectedVerses, setSelectedVerses] = useState<number[]>([]);
   const [showActionSheet, setShowActionSheet] = useState(false);
-
-  // Calculate bottom inset - account for tab bar height
-  // Tab bar is ~64px + safe area bottom
-  const TAB_BAR_HEIGHT = 64;
-  const bottomInset = insets.bottom;
-
-  // Control bottom sheet
-  useEffect(() => {
-    console.log('Bottom sheet control:', { showActionSheet, selectedVersesCount: selectedVerses.length });
-    if (showActionSheet && selectedVerses.length > 0) {
-      console.log('Opening bottom sheet...');
-      bottomSheetRef.current?.snapToIndex(0);
-    } else {
-      console.log('Closing bottom sheet...');
-      bottomSheetRef.current?.close();
-    }
-  }, [showActionSheet, selectedVerses.length]);
 
   // Get font size based on preference (now numeric 10-24)
   const getFontSize = () => {
@@ -87,6 +68,16 @@ export function ChapterReader({
     // Spacing range: 4-12
     const fontSize = getFontSize();
     return Math.max(4, Math.min(12, fontSize * 0.4));
+  };
+
+  // Get font family
+  const getFontFamily = () => {
+    const fontMap = {
+      System: 'System',
+      Serif: 'serif',
+      Monospace: 'monospace',
+    };
+    return fontMap[preferences.fontFamily] || 'System';
   };
 
   // Handle verse tap - toggle selection and show bottom sheet
@@ -231,6 +222,7 @@ export function ChapterReader({
                 style={[
                   styles.verseText,
                   {
+                    fontFamily: getFontFamily(),
                     fontSize: getFontSize(),
                     lineHeight: getFontSize() * getLineHeight(),
                     color: currentTheme.text,
@@ -279,88 +271,80 @@ export function ChapterReader({
         }}
       />
 
-      {/* Verse Actions Bottom Sheet - Compact */}
-      <GorhomBottomSheet
-        ref={bottomSheetRef}
-        index={-1}
-        snapPoints={[180]}
-        enablePanDownToClose
-        bottomInset={bottomInset + TAB_BAR_HEIGHT}
-        detached={false}
-        enableOverDrag={false}
-        onClose={() => {
+      {/* Verse Actions Modal - Simple Modal at Bottom */}
+      <Modal
+        visible={showActionSheet && selectedVerses.length > 0}
+        transparent
+        animationType="slide"
+        onRequestClose={() => {
           setSelectedVerses([]);
           setShowActionSheet(false);
         }}
-        backdropComponent={() => null}
-        backgroundStyle={{
-          backgroundColor: '#ffffff',
-        }}
-        handleIndicatorStyle={{
-          backgroundColor: colors.gray[300],
-        }}
-        style={{
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: -2 },
-          shadowOpacity: 0.25,
-          shadowRadius: 12,
-          elevation: 8,
-          zIndex: 1000,
-        }}
       >
-        <View className="px-4 py-3">
-          {/* Header - Compact */}
-          <Text className="text-gray-600 text-xs font-medium mb-3 text-center">
-            {getSelectedReference()} • {selectedVerses.length}{' '}
-            {selectedVerses.length === 1 ? 'verse' : 'verses'}
-          </Text>
-
-          {/* Actions in One Row */}
-          <HStack className="items-center justify-around">
-            {/* Highlight */}
-            <Pressable
-              onPress={handleToggleHighlight}
-              className="items-center active:opacity-60 flex-1"
-            >
-              <View
-                className="p-3 rounded-full mb-1"
-                style={{ backgroundColor: hasHighlightedVerse ? colors.warning[100] : colors.gray[100] }}
-              >
-                <Icon
-                  as={Highlight}
-                  size="lg"
-                  style={{ color: hasHighlightedVerse ? colors.warning[600] : colors.gray[600] }}
-                />
-              </View>
-              <Text className="text-gray-700 text-xs">
-                {hasHighlightedVerse ? t('bible.removeHighlight') : t('bible.highlight')}
+        <TouchableOpacity
+          activeOpacity={1}
+          onPress={() => {
+            setSelectedVerses([]);
+            setShowActionSheet(false);
+          }}
+          style={styles.modalOverlay}
+        >
+          <TouchableOpacity activeOpacity={1} onPress={(e) => e.stopPropagation()}>
+            <View style={[styles.modalContent, { paddingBottom: insets.bottom + 80 }]}>
+              {/* Header - Compact */}
+              <Text className="text-gray-600 text-xs font-medium mb-3 text-center">
+                {getSelectedReference()} • {selectedVerses.length}{' '}
+                {selectedVerses.length === 1 ? 'verse' : 'verses'}
               </Text>
-            </Pressable>
 
-            {/* Copy */}
-            <Pressable
-              onPress={handleCopyVerse}
-              className="items-center active:opacity-60 flex-1"
-            >
-              <View className="p-3 rounded-full mb-1" style={{ backgroundColor: colors.gray[100] }}>
-                <Icon as={Copy} size="lg" className="text-gray-600" />
-              </View>
-              <Text className="text-gray-700 text-xs">{t('bible.copy')}</Text>
-            </Pressable>
+              {/* Actions in One Row */}
+              <HStack className="items-center justify-around">
+                {/* Highlight */}
+                <Pressable
+                  onPress={handleToggleHighlight}
+                  className="items-center active:opacity-60 flex-1"
+                >
+                  <View
+                    className="p-3 rounded-full mb-1"
+                    style={{ backgroundColor: hasHighlightedVerse ? colors.warning[100] : colors.gray[100] }}
+                  >
+                    <Icon
+                      as={Highlight}
+                      size="lg"
+                      style={{ color: hasHighlightedVerse ? colors.warning[600] : colors.gray[600] }}
+                    />
+                  </View>
+                  <Text className="text-gray-700 text-xs">
+                    {hasHighlightedVerse ? t('bible.removeHighlight') : t('bible.highlight')}
+                  </Text>
+                </Pressable>
 
-            {/* Share */}
-            <Pressable
-              onPress={handleShareVerse}
-              className="items-center active:opacity-60 flex-1"
-            >
-              <View className="p-3 rounded-full mb-1" style={{ backgroundColor: colors.gray[100] }}>
-                <Icon as={ShareIcon} size="lg" className="text-gray-600" />
-              </View>
-              <Text className="text-gray-700 text-xs">{t('bible.share')}</Text>
-            </Pressable>
-          </HStack>
-        </View>
-      </GorhomBottomSheet>
+                {/* Copy */}
+                <Pressable
+                  onPress={handleCopyVerse}
+                  className="items-center active:opacity-60 flex-1"
+                >
+                  <View className="p-3 rounded-full mb-1" style={{ backgroundColor: colors.gray[100] }}>
+                    <Icon as={Copy} size="lg" className="text-gray-600" />
+                  </View>
+                  <Text className="text-gray-700 text-xs">{t('bible.copy')}</Text>
+                </Pressable>
+
+                {/* Share */}
+                <Pressable
+                  onPress={handleShareVerse}
+                  className="items-center active:opacity-60 flex-1"
+                >
+                  <View className="p-3 rounded-full mb-1" style={{ backgroundColor: colors.gray[100] }}>
+                    <Icon as={ShareIcon} size="lg" className="text-gray-600" />
+                  </View>
+                  <Text className="text-gray-700 text-xs">{t('bible.share')}</Text>
+                </Pressable>
+              </HStack>
+            </View>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
     </>
   );
 }
@@ -379,6 +363,23 @@ const styles = StyleSheet.create({
   },
   verseText: {
     flex: 1,
-    fontFamily: typography.fonts.body,
+    // fontFamily is dynamic based on user preference
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#ffffff',
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 8,
   },
 });

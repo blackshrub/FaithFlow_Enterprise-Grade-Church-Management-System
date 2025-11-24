@@ -44,16 +44,8 @@ export type LineHeightType = 'compact' | 'normal' | 'relaxed';
 export type ThemeType = 'light' | 'light2' | 'light3' | 'light4' | 'dark' | 'dark2' | 'dark3' | 'sepia';
 export type FontFamily =
   | 'System'
-  | 'Untitled Serif'
-  | 'Avenir'
-  | 'New York'
-  | 'San Francisco'
-  | 'Gentium Plus'
-  | 'Baskerville'
-  | 'Georgia'
-  | 'Helvetica Neue'
-  | 'Hoefler Text'
-  | 'Verdana';
+  | 'Serif'
+  | 'Monospace';
 
 export interface BiblePreferences {
   fontSize: number; // 10-24

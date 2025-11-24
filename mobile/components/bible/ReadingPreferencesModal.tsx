@@ -55,18 +55,10 @@ const LINE_HEIGHT_ICONS = {
   relaxed: AlignRight,
 };
 
-const FONT_FAMILIES: FontFamily[] = [
-  'System',
-  'Untitled Serif',
-  'Avenir',
-  'New York',
-  'San Francisco',
-  'Gentium Plus',
-  'Baskerville',
-  'Georgia',
-  'Helvetica Neue',
-  'Hoefler Text',
-  'Verdana',
+const FONT_FAMILIES: { name: FontFamily; fontFamily: string; preview: string }[] = [
+  { name: 'System', fontFamily: 'System', preview: 'The quick brown fox jumps' },
+  { name: 'Serif', fontFamily: 'serif', preview: 'The quick brown fox jumps' },
+  { name: 'Monospace', fontFamily: 'monospace', preview: 'The quick brown fox jumps' },
 ];
 
 const THEMES: ThemeType[] = ['light', 'light2', 'light3', 'sepia', 'light4', 'dark', 'dark2', 'dark3'];
@@ -262,7 +254,7 @@ export function ReadingPreferencesModal({
             </Pressable>
           </VStack>
 
-          {/* Font Family Selector - Horizontal Scroll */}
+          {/* Font Family Selector - Horizontal Scroll with Preview */}
           <VStack space="sm">
             <HStack space="sm" className="items-center mb-2">
               <Icon as={Type} size="md" className="text-gray-600" />
@@ -274,30 +266,41 @@ export function ReadingPreferencesModal({
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={{ paddingRight: 24 }}
             >
-              <HStack space="xs">
-                {FONT_FAMILIES.map((font) => (
+              <HStack space="sm">
+                {FONT_FAMILIES.map((fontItem) => (
                   <Pressable
-                    key={font}
-                    onPress={() => handleFontFamilyChange(font)}
+                    key={fontItem.name}
+                    onPress={() => handleFontFamilyChange(fontItem.name)}
                     className="active:opacity-70"
                   >
                     <View
                       className="px-4 py-3 rounded-lg"
                       style={{
                         backgroundColor:
-                          preferences.fontFamily === font ? colors.primary[500] : colors.gray[100],
-                        minWidth: 120,
+                          preferences.fontFamily === fontItem.name ? colors.primary[50] : colors.gray[100],
+                        borderWidth: preferences.fontFamily === fontItem.name ? 2 : 0,
+                        borderColor: preferences.fontFamily === fontItem.name ? colors.primary[500] : 'transparent',
+                        minWidth: 160,
                       }}
                     >
                       <Text
-                        className={`text-sm text-center ${
-                          preferences.fontFamily === font
-                            ? 'text-white font-semibold'
-                            : 'text-gray-700'
+                        className={`text-xs mb-1 ${
+                          preferences.fontFamily === fontItem.name
+                            ? 'text-primary-600 font-semibold'
+                            : 'text-gray-600'
                         }`}
+                      >
+                        {fontItem.name}
+                      </Text>
+                      <Text
+                        style={{
+                          fontFamily: fontItem.fontFamily,
+                          fontSize: 14,
+                          color: preferences.fontFamily === fontItem.name ? colors.primary[700] : colors.gray[700],
+                        }}
                         numberOfLines={1}
                       >
-                        {font}
+                        {fontItem.preview}
                       </Text>
                     </View>
                   </Pressable>
