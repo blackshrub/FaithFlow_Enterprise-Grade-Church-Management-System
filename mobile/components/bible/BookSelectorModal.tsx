@@ -50,7 +50,9 @@ export function BookSelectorModal({
 
   const handleChapterSelect = (chapter: number) => {
     if (selectedBook) {
-      onSelectChapter(selectedBook.name, chapter);
+      // Use name_local for non-English versions, name for English
+      const bookName = selectedBook.name_local || selectedBook.name;
+      onSelectChapter(bookName, chapter);
       onClose();
       setSelectedBook(null);
     }
@@ -72,7 +74,7 @@ export function BookSelectorModal({
         <View className="px-6 pt-6 pb-4 border-b border-gray-200">
           <HStack className="items-center justify-between">
             <Heading size="xl">
-              {selectedBook ? selectedBook.name : t('bible.selectBook')}
+              {selectedBook ? (selectedBook.name_local || selectedBook.name) : t('bible.selectBook')}
             </Heading>
             <Pressable onPress={handleBack} className="p-2">
               <Icon as={X} size="lg" className="text-gray-600" />
@@ -156,10 +158,10 @@ export function BookSelectorModal({
                     >
                       <Card className="p-4">
                         <Text className="text-gray-900 font-semibold text-center">
-                          {book.name}
+                          {book.name_local || book.name}
                         </Text>
                         <Text className="text-gray-500 text-xs text-center mt-1">
-                          {book.chapters} {t('bible.chapters' as any) || 'chapters'}
+                          {book.chapter_count} {t('bible.chapters' as any) || 'chapters'}
                         </Text>
                       </Card>
                     </Pressable>
@@ -171,7 +173,7 @@ export function BookSelectorModal({
             /* Chapter Selection */
             <View className="p-6">
               <View className="flex-row flex-wrap gap-2">
-                {Array.from({ length: selectedBook.chapters }, (_, i) => i + 1).map(
+                {Array.from({ length: selectedBook.chapter_count }, (_, i) => i + 1).map(
                   (chapter, index) => (
                     <MotiView
                       key={chapter}
