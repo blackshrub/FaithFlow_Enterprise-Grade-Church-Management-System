@@ -198,10 +198,19 @@ export default function BibleScreen() {
   };
 
   const handleSelectChapter = (book: string, chapter: number, verse?: number) => {
-    if (verse) {
-      setScrollToVerseNumber(verse);
-    }
+    // First, navigate to the chapter
     setCurrentPosition(currentVersion, book, chapter);
+
+    // If verse is specified, scroll to it after chapter loads
+    if (verse) {
+      // Reset scroll state first to ensure effect re-triggers
+      setScrollToVerseNumber(null);
+
+      // Then set target verse after brief delay to ensure chapter is rendered
+      setTimeout(() => {
+        setScrollToVerseNumber(verse);
+      }, 300);
+    }
   };
 
   const handleSelectVersion = (versionCode: string) => {
