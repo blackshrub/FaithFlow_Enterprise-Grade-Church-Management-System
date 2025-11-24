@@ -128,8 +128,12 @@ export function CalendarModal() {
 
   const handleDateSelect = useCallback(
     (date: string) => {
+      if (!date) return;
       const selectedDateObj = new Date(date);
-      setSelectedDate(selectedDateObj);
+      // Only set if it's a valid date
+      if (!isNaN(selectedDateObj.getTime())) {
+        setSelectedDate(selectedDateObj);
+      }
     },
     [setSelectedDate]
   );
@@ -196,7 +200,7 @@ export function CalendarModal() {
         <View className="mb-4">
           <Calendar
             calendarActiveDateRanges={
-              selectedDate
+              selectedDate && !isNaN(selectedDate.getTime())
                 ? [
                     {
                       startId: selectedDate.toISOString().split('T')[0],
