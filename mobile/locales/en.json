@@ -215,7 +215,8 @@
     "verseCopied": "Verse Copied",
     "noteComingSoon": "Note feature coming soon!",
     "originalOrder": "Original",
-    "alphabetical": "A-Z"
+    "alphabetical": "A-Z",
+    "selectVersion": "Select Bible Version"
   },
   "events": {
     "title": "Events",

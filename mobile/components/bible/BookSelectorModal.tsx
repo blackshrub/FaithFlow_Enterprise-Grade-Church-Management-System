@@ -12,7 +12,7 @@ import { View, Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MotiView } from 'moti';
 import { useTranslation } from 'react-i18next';
-import { ChevronLeft, ArrowDownAZ, ListOrdered } from 'lucide-react-native';
+import { ChevronLeft, ArrowDownAZ, ListOrdered, LayoutGrid, List } from 'lucide-react-native';
 import GorhomBottomSheet, { BottomSheetBackdrop as GorhomBackdrop } from '@gorhom/bottom-sheet';
 
 import { Text } from '@/components/ui/text';
@@ -27,6 +27,7 @@ import { colors } from '@/constants/theme';
 import type { BibleBook } from '@/types/api';
 
 type SortOrder = 'original' | 'alphabetical';
+type ViewLayout = 'grid' | 'list';
 
 interface BookSelectorModalProps {
   isOpen: boolean;
@@ -47,10 +48,10 @@ export function BookSelectorModal({
   const [selectedTestament, setSelectedTestament] = useState<'OT' | 'NT'>('OT');
   const [selectedBook, setSelectedBook] = useState<BibleBook | null>(null);
   const [sortOrder, setSortOrder] = useState<SortOrder>('original');
+  const [viewLayout, setViewLayout] = useState<ViewLayout>('grid');
 
-  // Calculate bottom inset to account for tab bar (typically 80px + safe area)
-  const TAB_BAR_HEIGHT = 80;
-  const bottomInset = insets.bottom + TAB_BAR_HEIGHT;
+  // Calculate bottom inset - just use safe area, let sheet sit on top of tab bar
+  const bottomInset = insets.bottom;
 
   // Control bottom sheet based on isOpen prop
   useEffect(() => {
@@ -204,57 +205,89 @@ export function BookSelectorModal({
               </Pressable>
             </HStack>
 
-            {/* Sort Toggle */}
-            <HStack space="xs" className="items-center justify-end">
-              <Pressable
-                onPress={() => setSortOrder('original')}
-                className="p-2"
-              >
-                <HStack space="xs" className="items-center">
+            {/* Sort and View Options */}
+            <HStack className="items-center justify-between">
+              {/* Sort Toggle */}
+              <HStack space="xs" className="items-center">
+                <Pressable
+                  onPress={() => setSortOrder('original')}
+                  className="p-2"
+                >
+                  <HStack space="xs" className="items-center">
+                    <Icon
+                      as={ListOrdered}
+                      size="sm"
+                      style={{
+                        color: sortOrder === 'original' ? colors.primary[500] : colors.gray[400],
+                      }}
+                    />
+                    <Text
+                      className={`text-xs ${
+                        sortOrder === 'original' ? 'text-primary-500 font-semibold' : 'text-gray-500'
+                      }`}
+                    >
+                      {t('bible.originalOrder')}
+                    </Text>
+                  </HStack>
+                </Pressable>
+
+                <View className="w-px h-4 bg-gray-300" />
+
+                <Pressable
+                  onPress={() => setSortOrder('alphabetical')}
+                  className="p-2"
+                >
+                  <HStack space="xs" className="items-center">
+                    <Icon
+                      as={ArrowDownAZ}
+                      size="sm"
+                      style={{
+                        color: sortOrder === 'alphabetical' ? colors.primary[500] : colors.gray[400],
+                      }}
+                    />
+                    <Text
+                      className={`text-xs ${
+                        sortOrder === 'alphabetical' ? 'text-primary-500 font-semibold' : 'text-gray-500'
+                      }`}
+                    >
+                      {t('bible.alphabetical')}
+                    </Text>
+                  </HStack>
+                </Pressable>
+              </HStack>
+
+              {/* View Layout Toggle */}
+              <HStack space="xs" className="items-center">
+                <Pressable
+                  onPress={() => setViewLayout('grid')}
+                  className="p-2"
+                >
                   <Icon
-                    as={ListOrdered}
+                    as={LayoutGrid}
                     size="sm"
                     style={{
-                      color: sortOrder === 'original' ? colors.primary[500] : colors.gray[400],
+                      color: viewLayout === 'grid' ? colors.primary[500] : colors.gray[400],
                     }}
                   />
-                  <Text
-                    className={`text-xs ${
-                      sortOrder === 'original' ? 'text-primary-500 font-semibold' : 'text-gray-500'
-                    }`}
-                  >
-                    {t('bible.originalOrder')}
-                  </Text>
-                </HStack>
-              </Pressable>
+                </Pressable>
 
-              <View className="w-px h-4 bg-gray-300" />
-
-              <Pressable
-                onPress={() => setSortOrder('alphabetical')}
-                className="p-2"
-              >
-                <HStack space="xs" className="items-center">
+                <Pressable
+                  onPress={() => setViewLayout('list')}
+                  className="p-2"
+                >
                   <Icon
-                    as={ArrowDownAZ}
+                    as={List}
                     size="sm"
                     style={{
-                      color: sortOrder === 'alphabetical' ? colors.primary[500] : colors.gray[400],
+                      color: viewLayout === 'list' ? colors.primary[500] : colors.gray[400],
                     }}
                   />
-                  <Text
-                    className={`text-xs ${
-                      sortOrder === 'alphabetical' ? 'text-primary-500 font-semibold' : 'text-gray-500'
-                    }`}
-                  >
-                    {t('bible.alphabetical')}
-                  </Text>
-                </HStack>
-              </Pressable>
+                </Pressable>
+              </HStack>
             </HStack>
 
-            {/* Books Grid */}
-            <View className="flex-row flex-wrap gap-2">
+            {/* Books Grid/List */}
+            <View className={viewLayout === 'grid' ? 'flex-row flex-wrap gap-2' : ''}>
               {filteredBooks.map((book, index) => (
                 <MotiView
                   key={book.id}
@@ -264,19 +297,32 @@ export function BookSelectorModal({
                     type: 'spring',
                     delay: index * 30,
                   }}
-                  style={{ width: '48%' }}
+                  style={viewLayout === 'grid' ? { width: '48%' } : { width: '100%', marginBottom: 8 }}
                 >
                   <Pressable
                     onPress={() => handleBookSelect(book)}
                     className="active:opacity-70"
                   >
                     <Card className="p-4">
-                      <Text className="text-gray-900 font-semibold text-center">
-                        {book.name_local || book.name}
-                      </Text>
-                      <Text className="text-gray-500 text-xs text-center mt-1">
-                        {book.chapter_count} {t('bible.chapters' as any) || 'chapters'}
-                      </Text>
+                      {viewLayout === 'grid' ? (
+                        <>
+                          <Text className="text-gray-900 font-semibold text-center">
+                            {book.name_local || book.name}
+                          </Text>
+                          <Text className="text-gray-500 text-xs text-center mt-1">
+                            {book.chapter_count} {t('bible.chapters' as any) || 'chapters'}
+                          </Text>
+                        </>
+                      ) : (
+                        <HStack className="items-center justify-between">
+                          <Text className="text-gray-900 font-semibold flex-1">
+                            {book.name_local || book.name}
+                          </Text>
+                          <Text className="text-gray-500 text-sm">
+                            {book.chapter_count} {t('bible.chapters' as any) || 'chapters'}
+                          </Text>
+                        </HStack>
+                      )}
                     </Card>
                   </Pressable>
                 </MotiView>
