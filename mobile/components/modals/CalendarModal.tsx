@@ -213,6 +213,7 @@ export function CalendarModal() {
                   ]
                 : undefined
             }
+            calendarMarkedDates={calendarMarkers}
             calendarColorScheme="light"
             calendarFirstDayOfWeek="sunday"
             onCalendarDayPress={handleDateSelect}

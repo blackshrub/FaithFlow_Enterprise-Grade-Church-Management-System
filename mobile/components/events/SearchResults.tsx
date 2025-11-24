@@ -146,15 +146,10 @@ export function SearchResults({ groupedResults, counts }: SearchResultsProps) {
   return (
     <View style={{ flex: 1 }}>
       {/* Horizontal Tabs */}
-      <View>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingHorizontal: 20, paddingVertical: 12 }}
-        >
-          <HStack space="xs">
+      <View style={{ paddingHorizontal: 20, paddingVertical: 12 }}>
+        <HStack space="xs">
           {/* All Tab */}
-          <Pressable onPress={() => handleTabChange('all')}>
+          <Pressable onPress={() => handleTabChange('all')} style={{ flex: 1 }}>
             <View
               style={{
                 paddingVertical: spacing.sm,
@@ -193,7 +188,7 @@ export function SearchResults({ groupedResults, counts }: SearchResultsProps) {
           </Pressable>
 
           {/* Upcoming Tab */}
-          <Pressable onPress={() => handleTabChange('upcoming')}>
+          <Pressable onPress={() => handleTabChange('upcoming')} style={{ flex: 1 }}>
             <View
               style={{
                 paddingVertical: spacing.sm,
@@ -232,7 +227,7 @@ export function SearchResults({ groupedResults, counts }: SearchResultsProps) {
           </Pressable>
 
           {/* RSVP'd Tab */}
-          <Pressable onPress={() => handleTabChange('rsvp')}>
+          <Pressable onPress={() => handleTabChange('rsvp')} style={{ flex: 1 }}>
             <View
               style={{
                 paddingVertical: spacing.sm,
@@ -271,7 +266,7 @@ export function SearchResults({ groupedResults, counts }: SearchResultsProps) {
           </Pressable>
 
           {/* Attended Tab */}
-          <Pressable onPress={() => handleTabChange('attended')}>
+          <Pressable onPress={() => handleTabChange('attended')} style={{ flex: 1 }}>
             <View
               style={{
                 paddingVertical: spacing.sm,
@@ -308,8 +303,7 @@ export function SearchResults({ groupedResults, counts }: SearchResultsProps) {
               </HStack>
             </View>
           </Pressable>
-          </HStack>
-        </ScrollView>
+        </HStack>
       </View>
 
       {/* Results List */}
