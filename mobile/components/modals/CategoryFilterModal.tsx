@@ -71,6 +71,7 @@ export function CategoryFilterModal() {
       snapPoints={snapPoints}
       enablePanDownToClose
       enableDynamicSizing={false}
+      bottomInset={0}
       onClose={handleDismiss}
       onChange={handleSheetChange}
       backdropComponent={renderBackdrop}
