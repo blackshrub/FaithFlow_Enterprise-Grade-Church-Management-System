@@ -59,6 +59,7 @@ export type FontFamily =
   | 'Monospace';
 export type TextAlign = 'left' | 'justify';
 export type WordSpacing = 'normal' | 'wide' | 'wider';
+export type ReadingMode = 'scroll' | 'paged';
 
 export interface BiblePreferences {
   fontSize: number; // 10-24
@@ -70,6 +71,8 @@ export interface BiblePreferences {
   wordSpacing: WordSpacing;
   showVerseNumbers: boolean;
   redLetterWords: boolean; // Highlight Jesus' words in red
+  // Reading mode
+  readingMode: ReadingMode; // 'scroll' for continuous scrolling, 'paged' for swipe navigation
 }
 
 interface BibleState {
@@ -152,6 +155,7 @@ export const useBibleStore = create<BibleState>()(
         wordSpacing: 'normal',
         showVerseNumbers: true,
         redLetterWords: false,
+        readingMode: 'scroll',
       },
       // Verse selection initial state
       isSelecting: false,
@@ -335,6 +339,9 @@ export const useBibleStore = create<BibleState>()(
           }
           if (persistedState.preferences.redLetterWords === undefined) {
             persistedState.preferences.redLetterWords = false;
+          }
+          if (persistedState.preferences.readingMode === undefined) {
+            persistedState.preferences.readingMode = 'scroll';
           }
         }
         return persistedState;
