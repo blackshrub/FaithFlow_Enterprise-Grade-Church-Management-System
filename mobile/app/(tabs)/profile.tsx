@@ -381,9 +381,9 @@ export default function ProfileScreen() {
               <Button
                 variant="outline"
                 onPress={handleLogoutCancel}
-                style={{ borderColor: colors.muted[300] }}
+                style={{ borderColor: colors.gray[300] }}
               >
-                <ButtonText style={{ color: colors.muted[700] }}>
+                <ButtonText style={{ color: colors.gray[700] }}>
                   {t('common.cancel')}
                 </ButtonText>
               </Button>
