@@ -32,12 +32,12 @@ import {
   Badge,
   BadgeText,
   Pressable,
-  Skeleton,
-  SkeletonText,
   Avatar,
   AvatarFallbackText,
   AvatarImage,
 } from '@gluestack-ui/themed';
+import { Skeleton } from '@/components/ui/skeleton';
+import { SkeletonText } from '@/components/ui/skeleton';
 import {
   Users,
   User,

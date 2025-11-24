@@ -31,9 +31,9 @@ import {
   Badge,
   BadgeText,
   Pressable,
-  Skeleton,
-  SkeletonText,
 } from '@gluestack-ui/themed';
+import { Skeleton } from '@/components/ui/skeleton';
+import { SkeletonText } from '@/components/ui/skeleton';
 import {
   Heart,
   Sparkles,

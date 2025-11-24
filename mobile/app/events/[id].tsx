@@ -43,9 +43,9 @@ import {
   ButtonText,
   Badge,
   BadgeText,
-  Skeleton,
-  SkeletonText,
 } from '@gluestack-ui/themed';
+import { Skeleton } from '@/components/ui/skeleton';
+import { SkeletonText } from '@/components/ui/skeleton';
 
 import { colors, borderRadius, spacing, shadows } from '@/constants/theme';
 import { showSuccessToast, showErrorToast } from '@/components/ui/Toast';
