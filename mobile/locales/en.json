@@ -303,6 +303,15 @@
       "attended": "Attended",
       "rsvp": "RSVP'd",
       "upcoming": "Upcoming"
+    },
+    "searchPlaceholder": "Search events...",
+    "search": {
+      "noResults": "No Events Found",
+      "noResultsDesc": "We couldn't find any events matching \"{{term}}\"",
+      "suggestions": "Try the following:",
+      "suggestionSpelling": "Check your spelling",
+      "suggestionKeywords": "Try different keywords",
+      "suggestionFilter": "Clear filters to see more events"
     }
   },
   "rating": {

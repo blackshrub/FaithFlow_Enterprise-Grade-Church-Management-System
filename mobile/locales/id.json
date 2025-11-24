@@ -299,6 +299,15 @@
       "attended": "Sudah Hadir",
       "rsvp": "Sudah RSVP",
       "upcoming": "Akan Datang"
+    },
+    "searchPlaceholder": "Cari acara...",
+    "search": {
+      "noResults": "Tidak Ada Acara Ditemukan",
+      "noResultsDesc": "Kami tidak menemukan acara yang cocok dengan \"{{term}}\"",
+      "suggestions": "Coba hal berikut:",
+      "suggestionSpelling": "Periksa ejaan Anda",
+      "suggestionKeywords": "Gunakan kata kunci yang berbeda",
+      "suggestionFilter": "Hapus filter untuk melihat lebih banyak acara"
     }
   },
   "rating": {

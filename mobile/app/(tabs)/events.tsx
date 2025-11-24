@@ -65,6 +65,12 @@ import type { EventWithMemberStatus } from '@/types/events';
 import { RatingReviewModal } from '@/components/modals/RatingReviewModal';
 import { ratingService } from '@/services/ratingService';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { SearchBar } from '@/components/events/SearchBar';
+import { SearchResults } from '@/components/events/SearchResults';
+import { SearchEmptyState } from '@/components/events/SearchEmptyState';
+import { useEventFiltersStore } from '@/stores/eventFilters';
+import { filterEvents } from '@/utils/eventFilters';
+import type { RSVP, Attendance, Event } from '@/utils/eventStatus';
 
 type Tab = 'upcoming' | 'my_rsvps' | 'attended';
 
@@ -78,6 +84,9 @@ export default function EventsScreen() {
 
   // Category filter store
   const categoryFilterStore = useCategoryFilterStore();
+
+  // Search store
+  const { searchTerm, isSearching } = useEventFiltersStore();
 
   // Fetch data for all tabs
   const upcomingQuery = useUpcomingEvents(
@@ -136,6 +145,50 @@ export default function EventsScreen() {
   };
 
   const { data: events = [], isLoading, isError, refetch } = getCurrentTabData();
+
+  // Prepare search data: combine all events and extract RSVP/Attendance records
+  const allEvents = [
+    ...(upcomingQuery.data || []),
+    ...(rsvpsQuery.data || []),
+    ...(attendedQuery.data || []),
+  ];
+
+  // Transform events to match Event interface for filtering
+  const eventsForSearch: Event[] = allEvents.map((event) => ({
+    id: event.id,
+    title: event.name,
+    date: event.event_date || '',
+    category: event.event_category_id,
+    description: event.description,
+    location: event.location,
+  }));
+
+  // Extract RSVP and Attendance records
+  const userRsvps: RSVP[] = allEvents
+    .filter((event) => event.my_rsvp)
+    .map((event) => ({
+      id: `rsvp-${event.id}`,
+      event_id: event.id,
+      user_id: member?.id || '',
+    }));
+
+  const userAttendance: Attendance[] = allEvents
+    .filter((event) => event.my_attendance)
+    .map((event) => ({
+      id: `attendance-${event.id}`,
+      event_id: event.id,
+      user_id: member?.id || '',
+    }));
+
+  // Compute filtered results when searching
+  const searchResults = isSearching
+    ? filterEvents({
+        events: eventsForSearch,
+        searchTerm,
+        userRsvps,
+        userAttendance,
+      })
+    : null;
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -822,109 +875,146 @@ export default function EventsScreen() {
   return (
     <SafeAreaView className="flex-1 bg-gray-50" edges={['top']}>
       {/* Premium Header */}
-      <View className="px-6 pt-6 pb-4">
+      <View className="px-6 pt-6 pb-2">
         <Heading size="3xl" className="text-gray-900 mb-6 font-bold">
           {t('events.title')}
         </Heading>
-
-        {/* Segmented Control - iOS Style */}
-        <View
-          className="p-1 mb-4"
-          style={{
-            backgroundColor: colors.gray[100],
-            borderRadius: borderRadius['2xl'],
-          }}
-        >
-          <HStack space="xs">
-            {(['upcoming', 'my_rsvps', 'attended'] as Tab[]).map((tab) => {
-              const isActive = activeTab === tab;
-              return (
-                <Pressable
-                  key={tab}
-                  onPress={() => handleTabChange(tab)}
-                  className="flex-1"
-                >
-                  <View
-                    style={{
-                      paddingVertical: spacing.md,
-                      paddingHorizontal: spacing.sm,
-                      borderRadius: borderRadius.xl,
-                      alignItems: 'center',
-                      backgroundColor: isActive ? colors.white : 'transparent',
-                      ...(isActive ? shadows.sm : {}),
-                    }}
-                  >
-                    <Text
-                      className={`font-bold text-sm ${
-                        isActive ? 'text-primary-600' : 'text-gray-600'
-                      }`}
-                      numberOfLines={1}
-                    >
-                      {tab === 'upcoming' && t('events.upcoming')}
-                      {tab === 'my_rsvps' && t('events.myRSVPs')}
-                      {tab === 'attended' && t('events.attended')}
-                    </Text>
-                  </View>
-                </Pressable>
-              );
-            })}
-          </HStack>
-        </View>
-
-        {/* Category Filter Button */}
-        {categories.length > 0 && (
-          <Pressable onPress={handleOpenCategoryFilter} className="active:opacity-70">
-            <HStack
-              space="sm"
-              className="items-center px-4 py-3 rounded-xl"
-              style={{ backgroundColor: colors.white, ...shadows.sm }}
-            >
-              <Icon as={Filter} size="sm" className="text-primary-600" />
-              <Text className="text-primary-600 font-bold text-sm flex-1">
-                {selectedCategory
-                  ? categories.find((c) => c.id === selectedCategory)?.name
-                  : t('events.allCategories')}
-              </Text>
-              <Icon as={ChevronRight} size="sm" className="text-primary-400" />
-            </HStack>
-          </Pressable>
-        )}
       </View>
 
-      {/* Event List */}
-      {events && events.length > 0 ? (
-        <FlashList
-          key={activeTab}
-          data={events}
-          renderItem={renderEvent}
-          estimatedItemSize={380}
-          contentContainerStyle={{
-            paddingHorizontal: spacing.lg,
-            paddingBottom: 120,
-            paddingTop: spacing.sm,
-          }}
-          showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={handleRefresh}
-              tintColor={colors.primary[500]}
-            />
-          }
-        />
-      ) : (
-        <ScrollView
-          contentContainerStyle={{ flex: 1 }}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={handleRefresh}
-              tintColor={colors.primary[500]}
-            />
-          }
+      {/* Search Bar (Always Visible) */}
+      <SearchBar />
+
+      {/* Tabs & Filters - Hidden when searching */}
+      <MotiView
+        animate={{
+          opacity: isSearching ? 0 : 1,
+          height: isSearching ? 0 : undefined,
+        }}
+        transition={{ type: 'timing', duration: 250 }}
+        style={{ overflow: 'hidden' }}
+      >
+        <View className="px-6 pb-4">
+          {/* Segmented Control - iOS Style */}
+          <View
+            className="p-1 mb-4"
+            style={{
+              backgroundColor: colors.gray[100],
+              borderRadius: borderRadius['2xl'],
+            }}
+          >
+            <HStack space="xs">
+              {(['upcoming', 'my_rsvps', 'attended'] as Tab[]).map((tab) => {
+                const isActive = activeTab === tab;
+                return (
+                  <Pressable
+                    key={tab}
+                    onPress={() => handleTabChange(tab)}
+                    className="flex-1"
+                  >
+                    <View
+                      style={{
+                        paddingVertical: spacing.md,
+                        paddingHorizontal: spacing.sm,
+                        borderRadius: borderRadius.xl,
+                        alignItems: 'center',
+                        backgroundColor: isActive ? colors.white : 'transparent',
+                        ...(isActive ? shadows.sm : {}),
+                      }}
+                    >
+                      <Text
+                        className={`font-bold text-sm ${
+                          isActive ? 'text-primary-600' : 'text-gray-600'
+                        }`}
+                        numberOfLines={1}
+                      >
+                        {tab === 'upcoming' && t('events.upcoming')}
+                        {tab === 'my_rsvps' && t('events.myRSVPs')}
+                        {tab === 'attended' && t('events.attended')}
+                      </Text>
+                    </View>
+                  </Pressable>
+                );
+              })}
+            </HStack>
+          </View>
+
+          {/* Category Filter Button */}
+          {categories.length > 0 && (
+            <Pressable onPress={handleOpenCategoryFilter} className="active:opacity-70">
+              <HStack
+                space="sm"
+                className="items-center px-4 py-3 rounded-xl"
+                style={{ backgroundColor: colors.white, ...shadows.sm }}
+              >
+                <Icon as={Filter} size="sm" className="text-primary-600" />
+                <Text className="text-primary-600 font-bold text-sm flex-1">
+                  {selectedCategory
+                    ? categories.find((c) => c.id === selectedCategory)?.name
+                    : t('events.allCategories')}
+                </Text>
+                <Icon as={ChevronRight} size="sm" className="text-primary-400" />
+              </HStack>
+            </Pressable>
+          )}
+        </View>
+      </MotiView>
+
+      {/* Conditional Rendering: Search Results vs Tab-based Event List */}
+      {isSearching ? (
+        // Search Results
+        <MotiView
+          from={{ opacity: 0, translateY: 20 }}
+          animate={{ opacity: 1, translateY: 0 }}
+          transition={{ type: 'timing', duration: 250 }}
+          style={{ flex: 1 }}
         >
-          <EmptyState />
-        </ScrollView>
+          {searchResults && searchResults.results.length > 0 ? (
+            <SearchResults
+              groupedResults={searchResults.groupedResults}
+              counts={searchResults.counts}
+            />
+          ) : (
+            <SearchEmptyState searchTerm={searchTerm} />
+          )}
+        </MotiView>
+      ) : (
+        // Normal Tab-based Event List
+        <>
+          {events && events.length > 0 ? (
+            <FlashList
+              key={activeTab}
+              data={events}
+              renderItem={renderEvent}
+              estimatedItemSize={380}
+              contentContainerStyle={{
+                paddingHorizontal: spacing.lg,
+                paddingBottom: 120,
+                paddingTop: spacing.sm,
+              }}
+              showsVerticalScrollIndicator={false}
+              refreshControl={
+                <RefreshControl
+                  refreshing={refreshing}
+                  onRefresh={handleRefresh}
+                  tintColor={colors.primary[500]}
+                />
+              }
+            />
+          ) : (
+            <ScrollView
+              contentContainerStyle={{ flex: 1 }}
+              refreshControl={
+                <RefreshControl
+                  refreshing={refreshing}
+                  onRefresh={handleRefresh}
+                  tintColor={colors.primary[500]}
+                />
+              }
+            >
+              <EmptyState />
+            </ScrollView>
+          )}
+        </>
       )}
 
       {/* Rating & Review Modal */}
