@@ -40,6 +40,7 @@ import {
   type ThemeType,
 } from '@/stores/bibleStore';
 import { BibleFontSelector } from './BibleFontSelector';
+import { isChineseBible } from '@/utils/fonts';
 import { colors, readingThemes } from '@/constants/theme';
 
 interface ReadingPreferencesModalProps {
@@ -251,13 +252,15 @@ export function ReadingPreferencesModal({
 
           {/* Font Family Selector - NEW: Custom Bible Fonts with Live Preview */}
           {/* Hidden for Chinese Bibles - they use system fonts automatically */}
-          <VStack space="sm">
-            <HStack space="sm" className="items-center mb-2">
-              <Icon as={Type} size="md" className="text-gray-600" />
-              <Text className="text-gray-900 font-semibold text-base">Bible Font</Text>
-            </HStack>
-            <BibleFontSelector version={version} />
-          </VStack>
+          {!isChineseBible(version) && (
+            <VStack space="sm">
+              <HStack space="sm" className="items-center mb-2">
+                <Icon as={Type} size="md" className="text-gray-600" />
+                <Text className="text-gray-900 font-semibold text-base">Bible Font</Text>
+              </HStack>
+              <BibleFontSelector version={version} />
+            </VStack>
+          )}
 
           {/* Theme Selection - Horizontal Scroll */}
           <VStack space="sm">

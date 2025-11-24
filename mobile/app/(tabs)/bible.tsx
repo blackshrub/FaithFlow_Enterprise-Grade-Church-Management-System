@@ -70,6 +70,9 @@ export default function BibleScreen() {
   );
   const totalChapters = currentBookInfo?.chapters || 1;
 
+  // Get localized book name (for display in header)
+  const displayBookName = currentBookInfo?.name || currentBook;
+
   // Navigation handlers
   const handlePreviousChapter = () => {
     if (currentChapter > 1) {
@@ -135,7 +138,7 @@ export default function BibleScreen() {
             >
               <Icon as={BookOpen} size="sm" className="text-gray-700" />
               <Text className="text-gray-900 font-medium text-sm">
-                {currentBook} {currentChapter}
+                {displayBookName} {currentChapter}
               </Text>
             </Pressable>
 
