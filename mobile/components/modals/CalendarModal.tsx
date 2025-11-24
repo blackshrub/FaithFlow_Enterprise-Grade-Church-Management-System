@@ -195,14 +195,16 @@ export function CalendarModal() {
         {/* Calendar */}
         <View className="mb-4">
           <Calendar
-            calendarActiveDateRanges={[
+            calendarActiveDateRanges={
               selectedDate
-                ? {
-                    startId: selectedDate.toISOString().split('T')[0],
-                    endId: selectedDate.toISOString().split('T')[0],
-                  }
-                : undefined,
-            ].filter(Boolean)}
+                ? [
+                    {
+                      startId: selectedDate.toISOString().split('T')[0],
+                      endId: selectedDate.toISOString().split('T')[0],
+                    },
+                  ]
+                : []
+            }
             calendarColorScheme="light"
             calendarFirstDayOfWeek="sunday"
             onCalendarDayPress={handleDateSelect}
