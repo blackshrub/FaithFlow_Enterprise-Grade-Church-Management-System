@@ -144,12 +144,11 @@ export function SearchResults({ groupedResults, counts }: SearchResultsProps) {
   };
 
   return (
-    <View className="flex-1 bg-gray-50">
+    <>
       {/* Horizontal Tabs */}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        className="flex-shrink-0"
         contentContainerStyle={{ paddingHorizontal: 20, paddingVertical: 12 }}
       >
         <HStack space="xs">
@@ -319,6 +318,6 @@ export function SearchResults({ groupedResults, counts }: SearchResultsProps) {
         estimatedItemSize={120}
         contentContainerStyle={{ paddingTop: 8, paddingBottom: 80 }}
       />
-    </View>
+    </>
   );
 }
