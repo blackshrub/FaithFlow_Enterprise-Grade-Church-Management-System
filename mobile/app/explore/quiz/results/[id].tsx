@@ -192,7 +192,17 @@ export default function QuizResultsScreen() {
 
           {/* Score Circle */}
           <Animated.View style={[styles.scoreCircleContainer, circleStyle]}>
-            <View style={[styles.scoreCircle, { borderColor: performance.color }]}>
+            <View
+              style={[styles.scoreCircle, { borderColor: performance.color }]}
+              accessible={true}
+              accessibilityRole="text"
+              accessibilityLabel={
+                contentLanguage === 'en'
+                  ? `Quiz completed. Your score: ${percentage} percent. You answered ${score} out of ${total} questions correctly.`
+                  : `Kuis selesai. Nilai Anda: ${percentage} persen. Anda menjawab ${score} dari ${total} pertanyaan dengan benar.`
+              }
+              accessibilityLiveRegion="polite"
+            >
               <View style={styles.iconContainer}>{performance.icon}</View>
               <Text style={styles.scorePercentage}>{percentage}%</Text>
               <Text style={styles.scoreDetail}>
@@ -209,14 +219,32 @@ export default function QuizResultsScreen() {
 
           {/* Stats Grid */}
           <Animated.View entering={FadeInDown.duration(500).delay(600)} style={styles.statsGrid}>
-            <View style={styles.statCard}>
+            <View
+              style={styles.statCard}
+              accessible={true}
+              accessibilityRole="text"
+              accessibilityLabel={
+                contentLanguage === 'en'
+                  ? `${score} correct answers`
+                  : `${score} jawaban benar`
+              }
+            >
               <Text style={styles.statValue}>{score}</Text>
               <Text style={styles.statLabel}>
                 {contentLanguage === 'en' ? 'Correct' : 'Benar'}
               </Text>
             </View>
 
-            <View style={styles.statCard}>
+            <View
+              style={styles.statCard}
+              accessible={true}
+              accessibilityRole="text"
+              accessibilityLabel={
+                contentLanguage === 'en'
+                  ? `${total - score} incorrect answers`
+                  : `${total - score} jawaban salah`
+              }
+            >
               <Text style={[styles.statValue, { color: ExploreColors.error[500] }]}>
                 {total - score}
               </Text>
@@ -225,7 +253,16 @@ export default function QuizResultsScreen() {
               </Text>
             </View>
 
-            <View style={styles.statCard}>
+            <View
+              style={styles.statCard}
+              accessible={true}
+              accessibilityRole="text"
+              accessibilityLabel={
+                contentLanguage === 'en'
+                  ? `${percentage} percent accuracy`
+                  : `${percentage} persen akurasi`
+              }
+            >
               <Text style={[styles.statValue, { color: ExploreColors.secondary[600] }]}>
                 {percentage}%
               </Text>
@@ -238,7 +275,17 @@ export default function QuizResultsScreen() {
           {/* Actions */}
           <Animated.View entering={FadeInDown.duration(500).delay(800)} style={styles.actionsContainer}>
             {/* Share Button */}
-            <Pressable onPress={handleShare} style={styles.shareButton}>
+            <Pressable
+              onPress={handleShare}
+              style={styles.shareButton}
+              accessibilityRole="button"
+              accessibilityLabel={contentLanguage === 'en' ? 'Share your quiz results' : 'Bagikan hasil kuis Anda'}
+              accessibilityHint={
+                contentLanguage === 'en'
+                  ? 'Double tap to share your score with others'
+                  : 'Ketuk dua kali untuk membagikan nilai Anda dengan orang lain'
+              }
+            >
               <Share2 size={20} color={ExploreColors.primary[600]} />
               <Text style={styles.shareButtonText}>
                 {contentLanguage === 'en' ? 'Share Result' : 'Bagikan Hasil'}
@@ -246,7 +293,17 @@ export default function QuizResultsScreen() {
             </Pressable>
 
             {/* Continue Button */}
-            <Pressable onPress={handleContinue} style={styles.continueButton}>
+            <Pressable
+              onPress={handleContinue}
+              style={styles.continueButton}
+              accessibilityRole="button"
+              accessibilityLabel={contentLanguage === 'en' ? 'Continue exploring' : 'Lanjutkan menjelajah'}
+              accessibilityHint={
+                contentLanguage === 'en'
+                  ? 'Double tap to return to Explore home'
+                  : 'Ketuk dua kali untuk kembali ke halaman Jelajahi'
+              }
+            >
               <Text style={styles.continueButtonText}>
                 {contentLanguage === 'en' ? 'Continue Exploring' : 'Lanjutkan Menjelajah'}
               </Text>

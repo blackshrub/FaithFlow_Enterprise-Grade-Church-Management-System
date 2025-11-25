@@ -30,6 +30,7 @@ import Animated, {
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
+import * as Haptics from 'expo-haptics';
 
 interface QuizProgress {
   currentQuestionIndex: number;
@@ -74,6 +75,7 @@ export default function DailyQuizScreen() {
 
   const handleOptionSelect = (optionIndex: number) => {
     if (!isAnswerChecked) {
+      Haptics.selectionAsync();
       setSelectedOption(optionIndex);
     }
   };
@@ -82,6 +84,14 @@ export default function DailyQuizScreen() {
     if (selectedOption === null || !currentQuestion) return;
 
     const isCorrect = selectedOption === currentQuestion.correct_answer;
+
+    // Provide haptic feedback based on correctness
+    if (isCorrect) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } else {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+    }
+
     setIsAnswerChecked(true);
     setShowExplanation(true);
 
@@ -110,6 +120,8 @@ export default function DailyQuizScreen() {
   };
 
   const handleNextQuestion = () => {
+    Haptics.selectionAsync();
+
     if (progress.currentQuestionIndex < totalQuestions - 1) {
       // Move to next question
       setProgress((prev) => ({
@@ -162,11 +174,30 @@ export default function DailyQuizScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.backButton}>
+        <Pressable
+          onPress={() => router.back()}
+          style={styles.backButton}
+          accessibilityRole="button"
+          accessibilityLabel={contentLanguage === 'en' ? 'Go back' : 'Kembali'}
+          accessibilityHint={
+            contentLanguage === 'en'
+              ? 'Return to Explore home'
+              : 'Kembali ke halaman Jelajahi'
+          }
+        >
           <ArrowLeft size={24} color={ExploreColors.neutral[900]} />
         </Pressable>
 
-        <View style={styles.questionCounter}>
+        <View
+          style={styles.questionCounter}
+          accessible={true}
+          accessibilityRole="text"
+          accessibilityLabel={
+            contentLanguage === 'en'
+              ? `Question ${progress.currentQuestionIndex + 1} of ${totalQuestions}`
+              : `Pertanyaan ${progress.currentQuestionIndex + 1} dari ${totalQuestions}`
+          }
+        >
           <Text style={styles.questionCounterText}>
             {progress.currentQuestionIndex + 1} / {totalQuestions}
           </Text>
@@ -176,7 +207,21 @@ export default function DailyQuizScreen() {
       </View>
 
       {/* Progress Bar */}
-      <View style={styles.progressBarContainer}>
+      <View
+        style={styles.progressBarContainer}
+        accessible={true}
+        accessibilityRole="progressbar"
+        accessibilityLabel={
+          contentLanguage === 'en'
+            ? `Quiz progress: ${Math.round(progressPercentage)}% complete`
+            : `Progres kuis: ${Math.round(progressPercentage)}% selesai`
+        }
+        accessibilityValue={{
+          min: 0,
+          max: 100,
+          now: Math.round(progressPercentage),
+        }}
+      >
         <View style={styles.progressBarBackground}>
           <Animated.View
             style={[
@@ -230,7 +275,13 @@ export default function DailyQuizScreen() {
           </View>
 
           {/* Question */}
-          <Text style={styles.questionText}>{questionText}</Text>
+          <Text
+            style={styles.questionText}
+            accessibilityRole="header"
+            accessibilityLevel={1}
+          >
+            {questionText}
+          </Text>
 
           {/* Options */}
           <View style={styles.optionsContainer}>
@@ -251,6 +302,32 @@ export default function DailyQuizScreen() {
                     showCorrect && styles.optionCardCorrect,
                     showIncorrect && styles.optionCardIncorrect,
                   ]}
+                  accessibilityRole="radio"
+                  accessibilityLabel={
+                    contentLanguage === 'en'
+                      ? `Answer option ${index + 1}: ${option}`
+                      : `Opsi jawaban ${index + 1}: ${option}`
+                  }
+                  accessibilityHint={
+                    isAnswerChecked
+                      ? showCorrect
+                        ? contentLanguage === 'en'
+                          ? 'This is the correct answer'
+                          : 'Ini adalah jawaban yang benar'
+                        : showIncorrect
+                        ? contentLanguage === 'en'
+                          ? 'This answer was incorrect'
+                          : 'Jawaban ini salah'
+                        : ''
+                      : contentLanguage === 'en'
+                      ? 'Double tap to select this answer'
+                      : 'Ketuk dua kali untuk memilih jawaban ini'
+                  }
+                  accessibilityState={{
+                    selected: isSelected,
+                    disabled: isAnswerChecked,
+                    checked: showCorrect,
+                  }}
                 >
                   <View style={styles.optionContent}>
                     <View
@@ -318,13 +395,43 @@ export default function DailyQuizScreen() {
             onPress={handleCheckAnswer}
             style={[styles.actionButton, selectedOption === null && styles.actionButtonDisabled]}
             disabled={selectedOption === null}
+            accessibilityRole="button"
+            accessibilityLabel={contentLanguage === 'en' ? 'Check your answer' : 'Periksa jawaban Anda'}
+            accessibilityHint={
+              contentLanguage === 'en'
+                ? 'Double tap to submit your answer and see if it is correct'
+                : 'Ketuk dua kali untuk mengirim jawaban dan melihat apakah benar'
+            }
+            accessibilityState={{ disabled: selectedOption === null }}
           >
             <Text style={styles.actionButtonText}>
               {contentLanguage === 'en' ? 'Check Answer' : 'Periksa Jawaban'}
             </Text>
           </Pressable>
         ) : (
-          <Pressable onPress={handleNextQuestion} style={styles.actionButton}>
+          <Pressable
+            onPress={handleNextQuestion}
+            style={styles.actionButton}
+            accessibilityRole="button"
+            accessibilityLabel={
+              progress.currentQuestionIndex < totalQuestions - 1
+                ? contentLanguage === 'en'
+                  ? 'Go to next question'
+                  : 'Lanjut ke pertanyaan berikutnya'
+                : contentLanguage === 'en'
+                ? 'See quiz results'
+                : 'Lihat hasil kuis'
+            }
+            accessibilityHint={
+              progress.currentQuestionIndex < totalQuestions - 1
+                ? contentLanguage === 'en'
+                  ? 'Double tap to continue to the next question'
+                  : 'Ketuk dua kali untuk melanjutkan ke pertanyaan berikutnya'
+                : contentLanguage === 'en'
+                ? 'Double tap to view your final score'
+                : 'Ketuk dua kali untuk melihat nilai akhir Anda'
+            }
+          >
             <Text style={styles.actionButtonText}>
               {progress.currentQuestionIndex < totalQuestions - 1
                 ? contentLanguage === 'en'

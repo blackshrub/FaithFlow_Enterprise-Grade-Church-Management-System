@@ -26,6 +26,7 @@ import type { BibleFigure } from '@/types/explore';
 import { ArrowLeft, BookmarkIcon, Check, Share2, Calendar, BookOpen } from 'lucide-react-native';
 import { BibleFigureSkeleton } from '@/components/explore/LoadingSkeleton';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
+import * as Haptics from 'expo-haptics';
 
 export default function BibleFigureScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -54,12 +55,14 @@ export default function BibleFigureScreen() {
 
   const handleComplete = () => {
     if (id && !isCompleted) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       trackComplete.mutate({ contentId: id as string, contentType: 'figure' });
     }
   };
 
   const handleBookmark = () => {
     if (id) {
+      Haptics.selectionAsync();
       bookmarkMutation.mutate({ contentId: id as string, bookmarked: !isBookmarked });
     }
   };
@@ -88,12 +91,45 @@ export default function BibleFigureScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.backButton}>
+        <Pressable
+          onPress={() => router.back()}
+          style={styles.backButton}
+          accessibilityRole="button"
+          accessibilityLabel={contentLanguage === 'en' ? 'Go back' : 'Kembali'}
+          accessibilityHint={
+            contentLanguage === 'en'
+              ? 'Return to Explore home'
+              : 'Kembali ke halaman Jelajahi'
+          }
+        >
           <ArrowLeft size={24} color={ExploreColors.neutral[900]} />
         </Pressable>
 
         <View style={styles.headerActions}>
-          <Pressable onPress={handleBookmark} style={styles.iconButton}>
+          <Pressable
+            onPress={handleBookmark}
+            style={styles.iconButton}
+            accessibilityRole="button"
+            accessibilityLabel={
+              isBookmarked
+                ? contentLanguage === 'en'
+                  ? 'Remove bookmark'
+                  : 'Hapus penanda'
+                : contentLanguage === 'en'
+                ? 'Bookmark this Bible figure'
+                : 'Tandai tokoh Alkitab ini'
+            }
+            accessibilityHint={
+              isBookmarked
+                ? contentLanguage === 'en'
+                  ? 'Double tap to remove from your saved Bible figures'
+                  : 'Ketuk dua kali untuk menghapus dari tokoh Alkitab tersimpan'
+                : contentLanguage === 'en'
+                ? 'Double tap to save this Bible figure for later'
+                : 'Ketuk dua kali untuk menyimpan tokoh Alkitab ini'
+            }
+            accessibilityState={{ selected: isBookmarked }}
+          >
             <BookmarkIcon
               size={24}
               color={isBookmarked ? ExploreColors.primary[500] : ExploreColors.neutral[400]}
@@ -101,7 +137,16 @@ export default function BibleFigureScreen() {
             />
           </Pressable>
 
-          <Pressable style={styles.iconButton}>
+          <Pressable
+            style={styles.iconButton}
+            accessibilityRole="button"
+            accessibilityLabel={contentLanguage === 'en' ? 'Share this Bible figure' : 'Bagikan tokoh Alkitab ini'}
+            accessibilityHint={
+              contentLanguage === 'en'
+                ? 'Double tap to share with others'
+                : 'Ketuk dua kali untuk membagikan dengan orang lain'
+            }
+          >
             <Share2 size={24} color={ExploreColors.neutral[400]} />
           </Pressable>
         </View>
@@ -120,9 +165,21 @@ export default function BibleFigureScreen() {
               source={{ uri: figure.image_url }}
               style={styles.heroImage}
               resizeMode="cover"
+              accessibilityLabel={
+                contentLanguage === 'en'
+                  ? `Portrait image of ${name}`
+                  : `Gambar potret ${name}`
+              }
+              accessibilityIgnoresInvertColors={true}
             />
             <View style={styles.heroOverlay}>
-              <Text style={styles.heroName}>{name}</Text>
+              <Text
+                style={styles.heroName}
+                accessibilityRole="header"
+                accessibilityLevel={1}
+              >
+                {name}
+              </Text>
               {title && <Text style={styles.heroTitle}>{title}</Text>}
             </View>
           </Animated.View>
@@ -137,7 +194,11 @@ export default function BibleFigureScreen() {
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
                 <Calendar size={20} color={ExploreColors.primary[600]} />
-                <Text style={styles.sectionTitle}>
+                <Text
+                  style={styles.sectionTitle}
+                  accessibilityRole="header"
+                  accessibilityLevel={2}
+                >
                   {contentLanguage === 'en' ? 'Key Events' : 'Peristiwa Penting'}
                 </Text>
               </View>
@@ -148,7 +209,17 @@ export default function BibleFigureScreen() {
                 const isLast = index === figure.key_events!.length - 1;
 
                 return (
-                  <View key={index} style={styles.timelineItem}>
+                  <View
+                    key={index}
+                    style={styles.timelineItem}
+                    accessible={true}
+                    accessibilityLabel={
+                      contentLanguage === 'en'
+                        ? `Key event ${index + 1}: ${eventTitle}${eventDescription ? `. ${eventDescription}` : ''}${event.scripture_reference ? `. From ${event.scripture_reference}` : ''}`
+                        : `Peristiwa penting ${index + 1}: ${eventTitle}${eventDescription ? `. ${eventDescription}` : ''}${event.scripture_reference ? `. Dari ${event.scripture_reference}` : ''}`
+                    }
+                    accessibilityRole="text"
+                  >
                     {/* Timeline indicator */}
                     <View style={styles.timelineIndicator}>
                       <View style={styles.timelineDot} />
@@ -177,7 +248,11 @@ export default function BibleFigureScreen() {
           {/* Biography */}
           {biography && (
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>
+              <Text
+                style={styles.sectionTitle}
+                accessibilityRole="header"
+                accessibilityLevel={2}
+              >
                 {contentLanguage === 'en' ? 'Biography' : 'Biografi'}
               </Text>
               <Text style={styles.biographyText}>{biography}</Text>
@@ -189,13 +264,27 @@ export default function BibleFigureScreen() {
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
                 <BookOpen size={20} color={ExploreColors.spiritual[600]} />
-                <Text style={styles.sectionTitle}>
+                <Text
+                  style={styles.sectionTitle}
+                  accessibilityRole="header"
+                  accessibilityLevel={2}
+                >
                   {contentLanguage === 'en' ? 'Related Scriptures' : 'Ayat Terkait'}
                 </Text>
               </View>
 
               {figure.related_scriptures.map((scripture, index) => (
-                <View key={index} style={styles.scriptureCard}>
+                <View
+                  key={index}
+                  style={styles.scriptureCard}
+                  accessible={true}
+                  accessibilityLabel={
+                    contentLanguage === 'en'
+                      ? `Related scripture ${index + 1}: ${scripture.text}. From ${scripture.book} chapter ${scripture.chapter}, verse ${scripture.verse_start}`
+                      : `Ayat terkait ${index + 1}: ${scripture.text}. Dari ${scripture.book} pasal ${scripture.chapter}, ayat ${scripture.verse_start}`
+                  }
+                  accessibilityRole="text"
+                >
                   <Text style={styles.scriptureText}>"{scripture.text}"</Text>
                   <Text style={styles.scriptureReference}>
                     {scripture.book} {scripture.chapter}:{scripture.verse_start}
@@ -211,11 +300,25 @@ export default function BibleFigureScreen() {
           {/* Life Lessons */}
           {figure.life_lessons && figure.life_lessons[contentLanguage]?.length > 0 && (
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>
+              <Text
+                style={styles.sectionTitle}
+                accessibilityRole="header"
+                accessibilityLevel={2}
+              >
                 {contentLanguage === 'en' ? 'Life Lessons' : 'Pelajaran Hidup'}
               </Text>
               {figure.life_lessons[contentLanguage].map((lesson, index) => (
-                <View key={index} style={styles.lessonItem}>
+                <View
+                  key={index}
+                  style={styles.lessonItem}
+                  accessible={true}
+                  accessibilityLabel={
+                    contentLanguage === 'en'
+                      ? `Lesson ${index + 1}: ${lesson}`
+                      : `Pelajaran ${index + 1}: ${lesson}`
+                  }
+                  accessibilityRole="text"
+                >
                   <View style={styles.lessonNumber}>
                     <Text style={styles.lessonNumberText}>{index + 1}</Text>
                   </View>
@@ -248,6 +351,21 @@ export default function BibleFigureScreen() {
             onPress={handleComplete}
             style={[styles.completeButton, trackComplete.isPending && styles.completeButtonDisabled]}
             disabled={trackComplete.isPending}
+            accessibilityRole="button"
+            accessibilityLabel={
+              contentLanguage === 'en'
+                ? 'Mark this Bible figure as complete'
+                : 'Tandai tokoh Alkitab ini sebagai selesai'
+            }
+            accessibilityHint={
+              contentLanguage === 'en'
+                ? 'Double tap to complete and maintain your streak'
+                : 'Ketuk dua kali untuk menyelesaikan dan mempertahankan rangkaian Anda'
+            }
+            accessibilityState={{
+              disabled: trackComplete.isPending,
+              busy: trackComplete.isPending,
+            }}
           >
             <Check size={20} color="#FFFFFF" />
             <Text style={styles.completeButtonText}>
@@ -265,7 +383,17 @@ export default function BibleFigureScreen() {
 
       {/* Completed Badge */}
       {isCompleted && (
-        <View style={styles.completedBadgeContainer}>
+        <View
+          style={styles.completedBadgeContainer}
+          accessible={true}
+          accessibilityRole="text"
+          accessibilityLabel={
+            contentLanguage === 'en'
+              ? 'This Bible figure has been completed'
+              : 'Tokoh Alkitab ini telah diselesaikan'
+          }
+          accessibilityLiveRegion="polite"
+        >
           <View style={styles.completedBadge}>
             <Check size={16} color={ExploreColors.success[600]} />
             <Text style={styles.completedText}>

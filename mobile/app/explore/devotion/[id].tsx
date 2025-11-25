@@ -25,6 +25,7 @@ import type { DailyDevotion } from '@/types/explore';
 import { ArrowLeft, BookmarkIcon, Check, Share2 } from 'lucide-react-native';
 import { DailyDevotionSkeleton } from '@/components/explore/LoadingSkeleton';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
+import * as Haptics from 'expo-haptics';
 
 export default function DailyDevotionReaderScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -56,12 +57,14 @@ export default function DailyDevotionReaderScreen() {
 
   const handleComplete = () => {
     if (id && !isCompleted) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       trackComplete.mutate({ contentId: id as string, contentType: 'devotion' });
     }
   };
 
   const handleBookmark = () => {
     if (id) {
+      Haptics.selectionAsync();
       bookmarkMutation.mutate({ contentId: id as string, bookmarked: !isBookmarked });
     }
   };

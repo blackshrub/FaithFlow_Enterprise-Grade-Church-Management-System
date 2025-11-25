@@ -26,6 +26,7 @@ import { ArrowLeft, BookmarkIcon, Check, Share2, Copy } from 'lucide-react-nativ
 import { VerseOfTheDaySkeleton } from '@/components/explore/LoadingSkeleton';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import * as Clipboard from 'expo-clipboard';
+import * as Haptics from 'expo-haptics';
 
 export default function VerseOfTheDayScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -55,12 +56,14 @@ export default function VerseOfTheDayScreen() {
 
   const handleComplete = () => {
     if (id && !isCompleted) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       trackComplete.mutate({ contentId: id as string, contentType: 'verse' });
     }
   };
 
   const handleBookmark = () => {
     if (id) {
+      Haptics.selectionAsync();
       bookmarkMutation.mutate({ contentId: id as string, bookmarked: !isBookmarked });
     }
   };
@@ -76,6 +79,7 @@ export default function VerseOfTheDayScreen() {
     }`;
 
     await Clipboard.setStringAsync(`"${verseText}"\n\n${reference}`);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -122,16 +126,68 @@ export default function VerseOfTheDayScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.backButton}>
+        <Pressable
+          onPress={() => router.back()}
+          style={styles.backButton}
+          accessibilityRole="button"
+          accessibilityLabel={contentLanguage === 'en' ? 'Go back' : 'Kembali'}
+          accessibilityHint={
+            contentLanguage === 'en'
+              ? 'Return to Explore home'
+              : 'Kembali ke halaman Jelajahi'
+          }
+        >
           <ArrowLeft size={24} color={ExploreColors.neutral[900]} />
         </Pressable>
 
         <View style={styles.headerActions}>
-          <Pressable onPress={handleCopy} style={styles.iconButton}>
+          <Pressable
+            onPress={handleCopy}
+            style={styles.iconButton}
+            accessibilityRole="button"
+            accessibilityLabel={
+              copied
+                ? contentLanguage === 'en'
+                  ? 'Verse copied'
+                  : 'Ayat disalin'
+                : contentLanguage === 'en'
+                ? 'Copy verse'
+                : 'Salin ayat'
+            }
+            accessibilityHint={
+              contentLanguage === 'en'
+                ? 'Double tap to copy verse text to clipboard'
+                : 'Ketuk dua kali untuk menyalin teks ayat ke clipboard'
+            }
+            accessibilityState={{ selected: copied }}
+          >
             <Copy size={24} color={copied ? ExploreColors.success[500] : ExploreColors.neutral[400]} />
           </Pressable>
 
-          <Pressable onPress={handleBookmark} style={styles.iconButton}>
+          <Pressable
+            onPress={handleBookmark}
+            style={styles.iconButton}
+            accessibilityRole="button"
+            accessibilityLabel={
+              isBookmarked
+                ? contentLanguage === 'en'
+                  ? 'Remove bookmark'
+                  : 'Hapus penanda'
+                : contentLanguage === 'en'
+                ? 'Bookmark this verse'
+                : 'Tandai ayat ini'
+            }
+            accessibilityHint={
+              isBookmarked
+                ? contentLanguage === 'en'
+                  ? 'Double tap to remove from your saved verses'
+                  : 'Ketuk dua kali untuk menghapus dari ayat tersimpan'
+                : contentLanguage === 'en'
+                ? 'Double tap to save this verse for later'
+                : 'Ketuk dua kali untuk menyimpan ayat ini'
+            }
+            accessibilityState={{ selected: isBookmarked }}
+          >
             <BookmarkIcon
               size={24}
               color={isBookmarked ? ExploreColors.primary[500] : ExploreColors.neutral[400]}
@@ -139,7 +195,17 @@ export default function VerseOfTheDayScreen() {
             />
           </Pressable>
 
-          <Pressable onPress={handleShare} style={styles.iconButton}>
+          <Pressable
+            onPress={handleShare}
+            style={styles.iconButton}
+            accessibilityRole="button"
+            accessibilityLabel={contentLanguage === 'en' ? 'Share this verse' : 'Bagikan ayat ini'}
+            accessibilityHint={
+              contentLanguage === 'en'
+                ? 'Double tap to share with others'
+                : 'Ketuk dua kali untuk membagikan dengan orang lain'
+            }
+          >
             <Share2 size={24} color={ExploreColors.neutral[400]} />
           </Pressable>
         </View>
@@ -153,7 +219,16 @@ export default function VerseOfTheDayScreen() {
       >
         <Animated.View entering={FadeInDown.duration(500)} style={styles.contentContainer}>
           {/* Verse Card */}
-          <View style={styles.verseCard}>
+          <View
+            style={styles.verseCard}
+            accessible={true}
+            accessibilityLabel={
+              contentLanguage === 'en'
+                ? `Verse of the day: ${verseText}. From ${verse.reference.book} chapter ${verse.reference.chapter}, verse ${verse.reference.verse_start}`
+                : `Ayat hari ini: ${verseText}. Dari ${verse.reference.book} pasal ${verse.reference.chapter}, ayat ${verse.reference.verse_start}`
+            }
+            accessibilityRole="text"
+          >
             <View style={styles.verseAccent} />
             <View style={styles.verseContent}>
               <Text style={styles.verseText}>"{verseText}"</Text>
@@ -170,7 +245,11 @@ export default function VerseOfTheDayScreen() {
           {/* Reflection */}
           {reflection && (
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>
+              <Text
+                style={styles.sectionTitle}
+                accessibilityRole="header"
+                accessibilityLevel={2}
+              >
                 {contentLanguage === 'en' ? 'Reflection' : 'Renungan'}
               </Text>
               <Text style={styles.sectionContent}>{reflection}</Text>
@@ -180,7 +259,11 @@ export default function VerseOfTheDayScreen() {
           {/* Application */}
           {application && (
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>
+              <Text
+                style={styles.sectionTitle}
+                accessibilityRole="header"
+                accessibilityLevel={2}
+              >
                 {contentLanguage === 'en' ? 'Application' : 'Aplikasi'}
               </Text>
               <Text style={styles.sectionContent}>{application}</Text>
@@ -190,11 +273,25 @@ export default function VerseOfTheDayScreen() {
           {/* Prayer Points */}
           {verse.prayer_points && verse.prayer_points[contentLanguage]?.length > 0 && (
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>
+              <Text
+                style={styles.sectionTitle}
+                accessibilityRole="header"
+                accessibilityLevel={2}
+              >
                 {contentLanguage === 'en' ? 'Prayer Points' : 'Poin Doa'}
               </Text>
               {verse.prayer_points[contentLanguage].map((point, index) => (
-                <View key={index} style={styles.prayerPoint}>
+                <View
+                  key={index}
+                  style={styles.prayerPoint}
+                  accessible={true}
+                  accessibilityLabel={
+                    contentLanguage === 'en'
+                      ? `Prayer point ${index + 1}: ${point}`
+                      : `Poin doa ${index + 1}: ${point}`
+                  }
+                  accessibilityRole="text"
+                >
                   <View style={styles.bullet} />
                   <Text style={styles.prayerPointText}>{point}</Text>
                 </View>
@@ -225,6 +322,21 @@ export default function VerseOfTheDayScreen() {
             onPress={handleComplete}
             style={[styles.completeButton, trackComplete.isPending && styles.completeButtonDisabled]}
             disabled={trackComplete.isPending}
+            accessibilityRole="button"
+            accessibilityLabel={
+              contentLanguage === 'en'
+                ? 'Mark this verse as read'
+                : 'Tandai ayat ini sebagai sudah dibaca'
+            }
+            accessibilityHint={
+              contentLanguage === 'en'
+                ? 'Double tap to complete and maintain your streak'
+                : 'Ketuk dua kali untuk menyelesaikan dan mempertahankan rangkaian Anda'
+            }
+            accessibilityState={{
+              disabled: trackComplete.isPending,
+              busy: trackComplete.isPending,
+            }}
           >
             <Check size={20} color="#FFFFFF" />
             <Text style={styles.completeButtonText}>
@@ -242,7 +354,17 @@ export default function VerseOfTheDayScreen() {
 
       {/* Completed Badge */}
       {isCompleted && (
-        <View style={styles.completedBadgeContainer}>
+        <View
+          style={styles.completedBadgeContainer}
+          accessible={true}
+          accessibilityRole="text"
+          accessibilityLabel={
+            contentLanguage === 'en'
+              ? 'This verse has been read'
+              : 'Ayat ini telah dibaca'
+          }
+          accessibilityLiveRegion="polite"
+        >
           <View style={styles.completedBadge}>
             <Check size={16} color={ExploreColors.success[600]} />
             <Text style={styles.completedText}>
@@ -254,7 +376,15 @@ export default function VerseOfTheDayScreen() {
 
       {/* Copy Toast */}
       {copied && (
-        <View style={styles.copyToast}>
+        <View
+          style={styles.copyToast}
+          accessible={true}
+          accessibilityRole="alert"
+          accessibilityLabel={
+            contentLanguage === 'en' ? 'Verse copied to clipboard!' : 'Ayat disalin ke clipboard!'
+          }
+          accessibilityLiveRegion="assertive"
+        >
           <Text style={styles.copyToastText}>
             {contentLanguage === 'en' ? 'Verse copied!' : 'Ayat disalin!'}
           </Text>
