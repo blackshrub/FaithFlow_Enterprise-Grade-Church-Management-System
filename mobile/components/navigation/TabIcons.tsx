@@ -44,45 +44,35 @@ export const HomeIcon: React.FC<IconProps> = ({ size = 24, color = '#000', isAct
 
 export const BibleIcon: React.FC<IconProps> = ({ size = 24, color = '#000', isActive = false }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    {/* Open book - two pages */}
-    {/* Left page */}
+    {/* Closed Bible book with cross on cover */}
+    {/* Book outline */}
     <Path
-      d="M2 3H12V21L12 21C10.8954 21 10 20.1046 10 19V3H2Z"
+      d="M4 4H20C20.5304 4 21.0391 4.21071 21.4142 4.58579C21.7893 4.96086 22 5.46957 22 6V18C22 18.5304 21.7893 19.0391 21.4142 19.4142C21.0391 19.7893 20.5304 20 20 20H4C3.46957 20 2.96086 19.7893 2.58579 19.4142C2.21071 19.0391 2 18.5304 2 18V6C2 5.46957 2.21071 4.96086 2.58579 4.58579C2.96086 4.21071 3.46957 4 4 4Z"
       fill={isActive ? color : 'none'}
       stroke={color}
       strokeWidth={2}
       strokeLinecap="round"
       strokeLinejoin="round"
     />
-    {/* Right page */}
+    {/* Pages edge detail */}
     <Path
-      d="M22 3H12V21C13.1046 21 14 20.1046 14 19V3H22Z"
-      fill={isActive ? color : 'none'}
+      d="M5 4V20"
       stroke={color}
       strokeWidth={2}
       strokeLinecap="round"
-      strokeLinejoin="round"
     />
-    {/* Center binding/spine */}
-    <Line
-      x1="12"
-      y1="3"
-      x2="12"
-      y2="21"
-      stroke={color}
-      strokeWidth={2}
-    />
-    {/* Page lines - only when active, in white */}
-    {isActive && (
+    {/* Cross on cover - simple and clear */}
+    {isActive ? (
       <>
-        {/* Left page lines */}
-        <Line x1="4" y1="7" x2="10" y2="7" stroke="white" strokeWidth={1} />
-        <Line x1="4" y1="10" x2="10" y2="10" stroke="white" strokeWidth={1} />
-        <Line x1="4" y1="13" x2="10" y2="13" stroke="white" strokeWidth={1} />
-        {/* Right page lines */}
-        <Line x1="14" y1="7" x2="20" y2="7" stroke="white" strokeWidth={1} />
-        <Line x1="14" y1="10" x2="20" y2="10" stroke="white" strokeWidth={1} />
-        <Line x1="14" y1="13" x2="20" y2="13" stroke="white" strokeWidth={1} />
+        {/* Cross in white when active */}
+        <Line x1="12" y1="8" x2="12" y2="16" stroke="white" strokeWidth={1.5} strokeLinecap="round" />
+        <Line x1="9" y1="11" x2="15" y2="11" stroke="white" strokeWidth={1.5} strokeLinecap="round" />
+      </>
+    ) : (
+      <>
+        {/* Cross in same color when inactive */}
+        <Line x1="12" y1="8" x2="12" y2="16" stroke={color} strokeWidth={1.5} strokeLinecap="round" />
+        <Line x1="9" y1="11" x2="15" y2="11" stroke={color} strokeWidth={1.5} strokeLinecap="round" />
       </>
     )}
   </Svg>
