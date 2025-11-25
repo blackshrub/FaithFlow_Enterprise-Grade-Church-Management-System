@@ -66,7 +66,10 @@ export default function EventRatings() {
   // Fetch events for filter dropdown
   const { data: events = [] } = useQuery({
     queryKey: ['events'],
-    queryFn: () => eventsAPI.list(),
+    queryFn: async () => {
+      const response = await eventsAPI.list();
+      return response.data;
+    },
   });
 
   // Fetch ratings
