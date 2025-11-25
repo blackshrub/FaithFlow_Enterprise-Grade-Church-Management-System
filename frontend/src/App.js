@@ -61,6 +61,7 @@ import PrayerRequestForm from "./pages/PrayerRequests/PrayerRequestForm";
 // Explore pages
 import ExploreDashboard from "./pages/Explore/ExploreDashboard";
 import ExploreContentList from "./pages/Explore/ExploreContentList";
+import SchedulingCalendar from "./pages/Explore/SchedulingCalendar";
 import DevotionEditor from "./pages/Explore/DevotionEditor";
 import VerseEditor from "./pages/Explore/VerseEditor";
 import FigureEditor from "./pages/Explore/FigureEditor";
@@ -196,6 +197,7 @@ function App() {
 
               {/* Explore Routes */}
               <Route path="explore" element={<ExploreDashboard />} />
+              <Route path="explore/schedule" element={<SchedulingCalendar />} />
               <Route path="explore/content/devotion" element={<ExploreContentList />} />
               <Route path="explore/content/devotion/new" element={<DevotionEditor />} />
               <Route path="explore/content/devotion/:id/edit" element={<DevotionEditor />} />
