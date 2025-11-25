@@ -2,10 +2,10 @@
  * Animated Bottom Tab Bar (Facebook-style)
  *
  * Features:
- * - Smooth tab transitions with Moti
- * - Compact height for more screen space
- * - Large icons (28px) for easy recognition
- * - Active indicator at top of navbar
+ * - Instant tab switching (0ms latency)
+ * - Outlined to Filled icon transition
+ * - Compact design
+ * - Full-width active indicator
  * - Icon + label for clarity
  */
 
@@ -43,7 +43,7 @@ const TABS: Tab[] = [
     name: 'give',
     icon: Heart,
     label: 'tabs.give',
-    route: '/give', // Special route - opens Give screen
+    route: '/give',
   },
   {
     name: 'explore',
@@ -114,32 +114,31 @@ export function AnimatedTabBar() {
               style={{
                 flex: 1,
                 minWidth: touchTargets.comfortable,
-                paddingVertical: 6,
+                paddingVertical: 7, // Increased from 6px to 7px
                 paddingTop: 10,
               }}
             >
-              {/* Active indicator - at the very top */}
+              {/* Active indicator - full width, at the very top */}
               {isActive && (
                 <MotiView
                   from={{ opacity: 0, scaleX: 0 }}
                   animate={{ opacity: 1, scaleX: 1 }}
-                  transition={{ type: 'timing', duration: 200 }}
+                  transition={{ type: 'spring', duration: 250, damping: 15 }}
                   style={{
                     position: 'absolute',
                     top: 0,
-                    left: '50%',
-                    marginLeft: -20,
-                    width: 40,
-                    height: 3,
+                    left: 0,
+                    right: 0,
+                    height: 2, // Reduced from 3px to 2px
                     backgroundColor: colors.primary[500],
                   }}
                 />
               )}
 
-              {/* Icon */}
+              {/* Icon with outlined-to-filled transition */}
               <MotiView
                 animate={{
-                  scale: isActive ? 1.05 : 1,
+                  scale: isActive ? 1.02 : 1,
                 }}
                 transition={{
                   type: 'spring',
@@ -147,9 +146,9 @@ export function AnimatedTabBar() {
                 }}
               >
                 <IconComponent
-                  size={28}
+                  size={24} // Reduced from 28px to 24px (4px smaller)
                   color={isActive ? colors.primary[500] : colors.gray[400]}
-                  strokeWidth={isActive ? 2.5 : 2}
+                  strokeWidth={isActive ? 3.5 : 1.5} // Filled effect when active (3.5), thin when inactive (1.5)
                 />
               </MotiView>
 
