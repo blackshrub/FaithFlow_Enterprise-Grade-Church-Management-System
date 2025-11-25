@@ -376,48 +376,8 @@ export default function EventsScreen() {
     return category?.color || colors.primary[500];
   };
 
-  // Skeleton loading with premium design
-  if (isLoading && events.length === 0) {
-    return (
-      <SafeAreaView className="flex-1 bg-gray-50" edges={['top']}>
-        {/* Header Skeleton */}
-        <View className="px-6 py-6">
-          <Skeleton className="h-9 w-40 mb-6" isLoaded={false} />
-
-          {/* Segmented Control Skeleton */}
-          <View className="bg-gray-100 p-1 rounded-2xl mb-4">
-            <HStack space="xs">
-              <Skeleton className="h-10 flex-1 rounded-xl" isLoaded={false} />
-              <Skeleton className="h-10 flex-1 rounded-xl" isLoaded={false} />
-              <Skeleton className="h-10 flex-1 rounded-xl" isLoaded={false} />
-            </HStack>
-          </View>
-
-          {/* Filter Skeleton */}
-          <Skeleton className="h-11 w-32 rounded-xl" isLoaded={false} />
-        </View>
-
-        {/* Event Cards Skeleton - Using premium EventCardSkeleton */}
-        <EventCardSkeletonList />
-      </SafeAreaView>
-    );
-  }
-
-  // Premium error state
-  if (isError) {
-    return (
-      <SafeAreaView className="flex-1 bg-gray-50" edges={['top']}>
-        <ErrorState
-          title={t('events.loadError')}
-          message={t('events.loadErrorDesc')}
-          onRetry={handleRefresh}
-          retrying={refreshing}
-        />
-      </SafeAreaView>
-    );
-  }
-
-  // Premium event card
+  // Premium event card - MOVED HERE TO FIX HOOKS VIOLATION
+  // (Must be called before any early returns to maintain hook order)
   const renderEvent = useCallback(({ item: event, index }: { item: EventWithMemberStatus; index: number }) => {
     const showRSVPButton = activeTab === 'upcoming' && event.requires_rsvp && event.can_rsvp;
     const showNoRSVPButton = activeTab === 'upcoming' && !event.requires_rsvp;
@@ -624,7 +584,7 @@ export default function EventsScreen() {
                     </HStack>
                   )}
 
-                  {event.requires_rsvp && (
+                  {event.max_attendees && (
                     <HStack space="sm" className="items-center">
                       <View
                         className="w-9 h-9 rounded-lg items-center justify-center"
@@ -632,73 +592,26 @@ export default function EventsScreen() {
                       >
                         <Icon as={Users} size="sm" className="text-primary-600" />
                       </View>
-                      <HStack className="items-center flex-1" space="sm">
-                        <Text className="text-gray-700 text-sm font-medium">
-                          {event.total_rsvps}
-                          {event.seat_capacity && ` / ${event.seat_capacity}`} {t('events.registered')}
-                        </Text>
-                        {event.available_seats !== undefined && event.available_seats > 0 && (
-                          <Badge
-                            variant="solid"
-                            size="sm"
-                            style={{ backgroundColor: colors.success[100] }}
-                          >
-                            <BadgeText className="text-success-700 text-xs font-bold">
-                              {event.available_seats} {t('events.seatsLeft')}
-                            </BadgeText>
-                          </Badge>
-                        )}
-                      </HStack>
-                    </HStack>
-                  )}
-
-                  {/* Series Sessions */}
-                  {event.event_type === 'series' && event.sessions.length > 0 && (
-                    <HStack space="sm" className="items-center">
-                      <View
-                        className="w-9 h-9 rounded-lg items-center justify-center"
-                        style={{ backgroundColor: colors.secondary[50] }}
-                      >
-                        <Icon as={Tag} size="sm" className="text-secondary-600" />
-                      </View>
-                      <Text className="text-gray-700 text-sm font-medium">
-                        {event.sessions.length} {t('events.sessions')}
+                      <Text className="text-gray-700 text-sm font-medium flex-1">
+                        {event.attendee_count || 0} / {event.max_attendees} {t('events.attendees')}
                       </Text>
                     </HStack>
                   )}
                 </VStack>
 
-                {/* Description */}
-                {event.description && (
-                  <Text className="text-gray-600 text-sm leading-5" numberOfLines={2}>
-                    {event.description}
-                  </Text>
-                )}
-
-                {/* Action Buttons - Horizontal Layout */}
-                <HStack space="sm" className="mt-2">
+                {/* Action Buttons - Conditional based on tab and event state */}
+                <HStack space="md" className="items-center">
                   {showRSVPButton && (
                     <View className="flex-1">
                       <Button
                         onPress={() => handleRSVP(event.id)}
-                        disabled={rsvpMutation.isPending}
                         size="lg"
                         variant="solid"
+                        style={{ backgroundColor: colors.primary[500] }}
+                        isDisabled={rsvpMutation.isPending || !event.can_rsvp}
                       >
                         <Icon as={Check} size="sm" className="text-white mr-2" />
-                        <ButtonText className="font-bold">{t('events.rsvpNow')}</ButtonText>
-                        <Icon as={ChevronRight} size="sm" className="text-white ml-1" />
-                      </Button>
-                    </View>
-                  )}
-
-                  {showNoRSVPButton && (
-                    <View className="flex-1">
-                      <Button size="lg" variant="outline" disabled={true}>
-                        <Icon as={Info} size="sm" className="text-gray-400 mr-2" />
-                        <ButtonText className="font-bold text-gray-400">
-                          {t('events.noRSVPRequired')}
-                        </ButtonText>
+                        <ButtonText className="font-bold">{t('events.rsvp')}</ButtonText>
                       </Button>
                     </View>
                   )}
@@ -707,46 +620,32 @@ export default function EventsScreen() {
                     <View className="flex-1">
                       <Button
                         onPress={() => handleCancelRSVP(event.id)}
-                        disabled={cancelRSVPMutation.isPending}
                         size="lg"
                         variant="outline"
-                        action="negative"
+                        isDisabled={cancelRSVPMutation.isPending}
+                        style={{ borderColor: colors.error[500] }}
                       >
                         <Icon as={X} size="sm" className="text-error-600 mr-2" />
-                        <ButtonText className="font-bold">{t('events.cancelRSVP')}</ButtonText>
+                        <ButtonText className="font-semibold text-error-600">
+                          {t('events.cancelRSVP')}
+                        </ButtonText>
                       </Button>
                     </View>
                   )}
 
-                  {/* Rate & Review Button (Attended tab) or Share Button (Other tabs) */}
+                  {/* Share button or Rate & Review (attended events only) */}
                   {activeTab === 'attended' ? (
                     (() => {
                       const ratingData = getEventRating(event.id);
-                      const getRatingColor = (rating: number) => {
-                        if (rating >= 8) return colors.success[500];
-                        if (rating >= 6) return colors.primary[500];
-                        if (rating >= 4) return colors.warning[500];
-                        return colors.error[500];
-                      };
-
                       return ratingData.rated ? (
-                        // Already Rated - Show summary + Edit button
+                        // Already Rated - Show rating + edit button
                         <View className="flex-1">
-                          <View
-                            className="rounded-xl p-3"
-                            style={{
-                              backgroundColor: colors.gray[50],
-                              borderWidth: 1,
-                              borderColor: colors.gray[200],
-                            }}
-                          >
-                            <HStack className="items-center justify-between mb-2">
-                              <HStack className="items-center" space="xs">
-                                <Icon as={CheckCircle2} size="sm" style={{ color: colors.success[600] }} />
-                                <Text className="text-gray-700 text-sm font-semibold">
-                                  {t('rating.title')}
-                                </Text>
-                              </HStack>
+                          <View className="flex-row items-center justify-between">
+                            <HStack className="items-center">
+                              <Icon as={Star} size="sm" className="text-warning-500 mr-1.5" />
+                              <Text className="text-gray-600 text-sm mr-2">
+                                {t('rating.yourRating')}:
+                              </Text>
                               <View
                                 className="px-3 py-1 rounded-full"
                                 style={{ backgroundColor: getRatingColor(ratingData.rating!) }}
@@ -822,6 +721,48 @@ export default function EventsScreen() {
     categories,
     t,
   ]);
+
+  // Skeleton loading with premium design
+  if (isLoading && events.length === 0) {
+    return (
+      <SafeAreaView className="flex-1 bg-gray-50" edges={['top']}>
+        {/* Header Skeleton */}
+        <View className="px-6 py-6">
+          <Skeleton className="h-9 w-40 mb-6" isLoaded={false} />
+
+          {/* Segmented Control Skeleton */}
+          <View className="bg-gray-100 p-1 rounded-2xl mb-4">
+            <HStack space="xs">
+              <Skeleton className="h-10 flex-1 rounded-xl" isLoaded={false} />
+              <Skeleton className="h-10 flex-1 rounded-xl" isLoaded={false} />
+              <Skeleton className="h-10 flex-1 rounded-xl" isLoaded={false} />
+            </HStack>
+          </View>
+
+          {/* Filter Skeleton */}
+          <Skeleton className="h-11 w-32 rounded-xl" isLoaded={false} />
+        </View>
+
+        {/* Event Cards Skeleton - Using premium EventCardSkeleton */}
+        <EventCardSkeletonList />
+      </SafeAreaView>
+    );
+  }
+
+  // Premium error state
+  if (isError) {
+    return (
+      <SafeAreaView className="flex-1 bg-gray-50" edges={['top']}>
+        <ErrorState
+          title={t('events.loadError')}
+          message={t('events.loadErrorDesc')}
+          onRetry={handleRefresh}
+          retrying={refreshing}
+        />
+      </SafeAreaView>
+    );
+  }
+
 
   // Premium empty state with helpful actions
   const EmptyState = () => {
