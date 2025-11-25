@@ -145,9 +145,9 @@ async def list_ratings(
 
     if member_id:
         filter_query["member_id"] = member_id
-    elif current_user.role not in ["Admin", "Staff", "Super Admin"]:
+    elif current_user.get("role") not in ["Admin", "Staff", "Super Admin"]:
         # Non-admin users can only see their own ratings
-        filter_query["member_id"] = current_user.id
+        filter_query["member_id"] = current_user.get("id")
 
     # Query with pagination
     cursor = db.ratings_reviews.find(filter_query).sort("created_at", -1).skip(skip).limit(limit)
@@ -288,8 +288,8 @@ async def get_rating_review(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Rating not found")
 
     # Non-admin users can only view their own ratings
-    if current_user.role not in ["Admin", "Staff", "Super Admin"]:
-        if rating["member_id"] != current_user.id:
+    if current_user.get("role") not in ["Admin", "Staff", "Super Admin"]:
+        if rating["member_id"] != current_user.get("id"):
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
 
     rating.pop("_id", None)
@@ -321,7 +321,7 @@ async def update_rating_review(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Rating not found")
 
     # Authorization: only the member who created it can update
-    if rating["member_id"] != current_user.id:
+    if rating["member_id"] != current_user.get("id"):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You can only update your own ratings"
@@ -377,8 +377,8 @@ async def delete_rating_review(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Rating not found")
 
     # Authorization: member can delete their own, admin can delete any
-    if current_user.role not in ["Admin", "Staff", "Super Admin"]:
-        if rating["member_id"] != current_user.id:
+    if current_user.get("role") not in ["Admin", "Staff", "Super Admin"]:
+        if rating["member_id"] != current_user.get("id"):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="You can only delete your own ratings"
