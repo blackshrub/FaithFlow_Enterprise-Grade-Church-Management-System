@@ -15,7 +15,7 @@ import { MotiView } from 'moti';
 import { useRouter, useSegments } from 'expo-router';
 import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
-import { Home, BookOpen, Calendar, Users, User } from 'lucide-react-native';
+import { Home, BookOpen, Calendar, Users, User, Compass } from 'lucide-react-native';
 import { colors, touchTargets, shadows } from '@/constants/theme';
 import { useTranslation } from 'react-i18next';
 import { useNavigationStore } from '@/stores/navigation';
@@ -45,6 +45,12 @@ const TABS: Tab[] = [
     icon: () => null,
     label: '',
     route: '',
+  },
+  {
+    name: 'explore',
+    icon: Compass,
+    label: 'tabs.explore',
+    route: '/(tabs)/explore',
   },
   {
     name: 'events',

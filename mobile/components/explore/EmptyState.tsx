@@ -1,0 +1,238 @@
+/**
+ * EmptyState - Empty state components for Explore feature
+ *
+ * Design: Calm, encouraging, never guilt-inducing
+ * Following UI/UX spec: "Progress over Perfection" principle
+ */
+
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+import { ExploreColors, ExploreTypography, ExploreSpacing } from '@/constants/explore/designSystem';
+import { BookOpen, Heart, Calendar, Search, Sparkles } from 'lucide-react-native';
+
+interface EmptyStateProps {
+  icon?: React.ReactNode;
+  title: string;
+  description?: string;
+  action?: React.ReactNode;
+  variant?: 'default' | 'encouraging' | 'minimal';
+}
+
+/**
+ * Base empty state component
+ */
+export function EmptyState({
+  icon,
+  title,
+  description,
+  action,
+  variant = 'default',
+}: EmptyStateProps) {
+  return (
+    <View style={[styles.container, variant === 'minimal' && styles.containerMinimal]}>
+      {icon && <View style={styles.iconContainer}>{icon}</View>}
+
+      <Text style={styles.title}>{title}</Text>
+
+      {description && (
+        <Text style={[styles.description, variant === 'encouraging' && styles.descriptionEncouraging]}>
+          {description}
+        </Text>
+      )}
+
+      {action && <View style={styles.actionContainer}>{action}</View>}
+    </View>
+  );
+}
+
+/**
+ * No content available empty state
+ */
+export function NoContentEmptyState({ contentType }: { contentType: string }) {
+  const messages: Record<string, { title: string; description: string }> = {
+    devotion: {
+      title: 'No Devotion Yet',
+      description: "Today's devotion will be available soon. Check back later!",
+    },
+    verse: {
+      title: 'No Verse Yet',
+      description: "Today's verse will be available soon. Check back later!",
+    },
+    figure: {
+      title: 'No Bible Figure Yet',
+      description: "Today's Bible figure will be available soon. Check back later!",
+    },
+    quiz: {
+      title: 'No Quiz Yet',
+      description: "Today's quiz challenge will be available soon. Check back later!",
+    },
+    default: {
+      title: 'No Content Available',
+      description: 'Content will be available soon. Check back later!',
+    },
+  };
+
+  const message = messages[contentType] || messages.default;
+
+  return (
+    <EmptyState
+      icon={<BookOpen size={48} color={ExploreColors.primary[400]} />}
+      title={message.title}
+      description={message.description}
+      variant="encouraging"
+    />
+  );
+}
+
+/**
+ * No favorites empty state
+ */
+export function NoFavoritesEmptyState({ language = 'en' }: { language?: 'en' | 'id' }) {
+  return (
+    <EmptyState
+      icon={<Heart size={48} color={ExploreColors.spiritual[400]} />}
+      title={language === 'en' ? 'No Favorites Yet' : 'Belum Ada Favorit'}
+      description={
+        language === 'en'
+          ? 'Tap the heart icon on any content to save it here for quick access.'
+          : 'Ketuk ikon hati pada konten apa pun untuk menyimpannya di sini.'
+      }
+      variant="encouraging"
+    />
+  );
+}
+
+/**
+ * No bookmarks empty state
+ */
+export function NoBookmarksEmptyState({ language = 'en' }: { language?: 'en' | 'id' }) {
+  return (
+    <EmptyState
+      icon={<BookOpen size={48} color={ExploreColors.primary[400]} />}
+      title={language === 'en' ? 'No Bookmarks Yet' : 'Belum Ada Bookmark'}
+      description={
+        language === 'en'
+          ? 'Bookmark devotions and studies to continue where you left off.'
+          : 'Tandai bacaan dan studi untuk melanjutkan dari tempat Anda berhenti.'
+      }
+      variant="encouraging"
+    />
+  );
+}
+
+/**
+ * No search results empty state
+ */
+export function NoSearchResultsEmptyState({
+  query,
+  language = 'en',
+}: {
+  query: string;
+  language?: 'en' | 'id';
+}) {
+  return (
+    <EmptyState
+      icon={<Search size={48} color={ExploreColors.neutral[400]} />}
+      title={language === 'en' ? 'No Results Found' : 'Tidak Ada Hasil'}
+      description={
+        language === 'en'
+          ? `No content found for "${query}". Try different keywords.`
+          : `Tidak ada konten ditemukan untuk "${query}". Coba kata kunci lain.`
+      }
+      variant="minimal"
+    />
+  );
+}
+
+/**
+ * Coming soon empty state
+ */
+export function ComingSoonEmptyState({
+  feature,
+  language = 'en',
+}: {
+  feature: string;
+  language?: 'en' | 'id';
+}) {
+  return (
+    <EmptyState
+      icon={<Sparkles size={48} color={ExploreColors.secondary[400]} />}
+      title={language === 'en' ? 'Coming Soon!' : 'Segera Hadir!'}
+      description={
+        language === 'en'
+          ? `${feature} is coming soon. Stay tuned!`
+          : `${feature} akan segera hadir. Nantikan!`
+      }
+      variant="encouraging"
+    />
+  );
+}
+
+/**
+ * No streak empty state (encouraging, no guilt)
+ */
+export function NoStreakEmptyState({ language = 'en' }: { language?: 'en' | 'id' }) {
+  return (
+    <EmptyState
+      icon={<Calendar size={48} color={ExploreColors.primary[400]} />}
+      title={language === 'en' ? 'Start Your Journey' : 'Mulai Perjalanan Anda'}
+      description={
+        language === 'en'
+          ? "Complete today's content to start building your streak. Every step counts!"
+          : 'Selesaikan konten hari ini untuk mulai membangun streak. Setiap langkah berarti!'
+      }
+      variant="encouraging"
+    />
+  );
+}
+
+/**
+ * Streak broken empty state (encouraging, no guilt - per UI/UX spec)
+ */
+export function StreakBrokenEmptyState({ language = 'en' }: { language?: 'en' | 'id' }) {
+  return (
+    <EmptyState
+      icon={<Sparkles size={48} color={ExploreColors.secondary[400]} />}
+      title={language === 'en' ? 'Fresh Start' : 'Awal Baru'}
+      description={
+        language === 'en'
+          ? "Every day is a new opportunity. Let's begin again together!"
+          : 'Setiap hari adalah kesempatan baru. Mari kita mulai lagi bersama!'
+      }
+      variant="encouraging"
+    />
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: ExploreSpacing['3xl'],
+    paddingHorizontal: ExploreSpacing.xl,
+  },
+  containerMinimal: {
+    paddingVertical: ExploreSpacing.xl,
+  },
+  iconContainer: {
+    marginBottom: ExploreSpacing.lg,
+  },
+  title: {
+    ...ExploreTypography.h3,
+    color: ExploreColors.neutral[900],
+    textAlign: 'center',
+    marginBottom: ExploreSpacing.sm,
+  },
+  description: {
+    ...ExploreTypography.body,
+    color: ExploreColors.neutral[600],
+    textAlign: 'center',
+    maxWidth: 280,
+  },
+  descriptionEncouraging: {
+    color: ExploreColors.primary[700],
+  },
+  actionContainer: {
+    marginTop: ExploreSpacing.lg,
+  },
+});
