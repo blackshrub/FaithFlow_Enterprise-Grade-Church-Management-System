@@ -114,11 +114,11 @@ export function AnimatedTabBar() {
               style={{
                 flex: 1,
                 minWidth: touchTargets.comfortable,
-                paddingVertical: 7, // Increased from 6px to 7px
-                paddingTop: 10,
+                paddingVertical: 9, // Increased from 7px to 9px
+                paddingTop: 11, // Adjusted to maintain proportion
               }}
             >
-              {/* Active indicator - full width, at the very top */}
+              {/* Active indicator - full width, sticking to very top edge */}
               {isActive && (
                 <MotiView
                   from={{ opacity: 0, scaleX: 0 }}
@@ -126,10 +126,10 @@ export function AnimatedTabBar() {
                   transition={{ type: 'spring', duration: 250, damping: 15 }}
                   style={{
                     position: 'absolute',
-                    top: 0,
+                    top: -1, // -1px to stick to very top edge (accounts for border)
                     left: 0,
                     right: 0,
-                    height: 2, // Reduced from 3px to 2px
+                    height: 2,
                     backgroundColor: colors.primary[500],
                   }}
                 />
@@ -146,9 +146,10 @@ export function AnimatedTabBar() {
                 }}
               >
                 <IconComponent
-                  size={24} // Reduced from 28px to 24px (4px smaller)
+                  size={24}
                   color={isActive ? colors.primary[500] : colors.gray[400]}
-                  strokeWidth={isActive ? 3.5 : 1.5} // Filled effect when active (3.5), thin when inactive (1.5)
+                  fill={isActive ? colors.primary[500] : 'none'} // Filled when active
+                  strokeWidth={2} // Consistent 2px stroke for both states
                 />
               </MotiView>
 
