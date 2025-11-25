@@ -15,6 +15,13 @@ from routes import (
     giving, member_auth, notifications, rating_review
 )
 
+# Import Explore routes
+from routes.explore import (
+    explore_public_router,
+    explore_admin_router,
+    explore_church_router,
+)
+
 # Import accounting routes (v1)
 from routes import (
     file_upload, accounting_coa, responsibility_centers, journals,
@@ -89,6 +96,11 @@ api_router.include_router(rating_review.router)  # Event ratings & reviews
 
 # Public API (no auth required)
 app.include_router(public_members.router)
+
+# Include Explore routes
+app.include_router(explore_public_router)  # Public Explore endpoints
+api_router.include_router(explore_admin_router)  # Super Admin Explore endpoints
+api_router.include_router(explore_church_router)  # Church Admin Explore endpoints
 
 # Include accounting routers (v1)
 api_v1_router = APIRouter(prefix="/v1")
