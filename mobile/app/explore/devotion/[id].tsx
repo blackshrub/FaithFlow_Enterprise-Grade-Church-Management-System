@@ -89,12 +89,45 @@ export default function DailyDevotionReaderScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.backButton}>
+        <Pressable
+          onPress={() => router.back()}
+          style={styles.backButton}
+          accessibilityRole="button"
+          accessibilityLabel={contentLanguage === 'en' ? 'Go back' : 'Kembali'}
+          accessibilityHint={
+            contentLanguage === 'en'
+              ? 'Return to Explore home'
+              : 'Kembali ke halaman Jelajahi'
+          }
+        >
           <ArrowLeft size={24} color={ExploreColors.neutral[900]} />
         </Pressable>
 
         <View style={styles.headerActions}>
-          <Pressable onPress={handleBookmark} style={styles.iconButton}>
+          <Pressable
+            onPress={handleBookmark}
+            style={styles.iconButton}
+            accessibilityRole="button"
+            accessibilityLabel={
+              isBookmarked
+                ? contentLanguage === 'en'
+                  ? 'Remove bookmark'
+                  : 'Hapus penanda'
+                : contentLanguage === 'en'
+                ? 'Bookmark this devotion'
+                : 'Tandai renungan ini'
+            }
+            accessibilityHint={
+              isBookmarked
+                ? contentLanguage === 'en'
+                  ? 'Double tap to remove from your saved devotions'
+                  : 'Ketuk dua kali untuk menghapus dari renungan tersimpan'
+                : contentLanguage === 'en'
+                ? 'Double tap to save this devotion for later'
+                : 'Ketuk dua kali untuk menyimpan renungan ini'
+            }
+            accessibilityState={{ selected: isBookmarked }}
+          >
             <BookmarkIcon
               size={24}
               color={isBookmarked ? ExploreColors.primary[500] : ExploreColors.neutral[400]}
@@ -102,7 +135,16 @@ export default function DailyDevotionReaderScreen() {
             />
           </Pressable>
 
-          <Pressable style={styles.iconButton}>
+          <Pressable
+            style={styles.iconButton}
+            accessibilityRole="button"
+            accessibilityLabel={contentLanguage === 'en' ? 'Share this devotion' : 'Bagikan renungan ini'}
+            accessibilityHint={
+              contentLanguage === 'en'
+                ? 'Double tap to share with others'
+                : 'Ketuk dua kali untuk membagikan dengan orang lain'
+            }
+          >
             <Share2 size={24} color={ExploreColors.neutral[400]} />
           </Pressable>
         </View>
@@ -121,13 +163,25 @@ export default function DailyDevotionReaderScreen() {
               source={{ uri: devotion.image_url }}
               style={styles.heroImage}
               resizeMode="cover"
+              accessibilityLabel={
+                contentLanguage === 'en'
+                  ? `Devotion cover image for ${title}`
+                  : `Gambar sampul renungan untuk ${title}`
+              }
+              accessibilityIgnoresInvertColors={true}
             />
           </Animated.View>
         )}
 
         <Animated.View entering={FadeInDown.duration(500).delay(200)} style={styles.contentContainer}>
           {/* Title */}
-          <Text style={styles.title}>{title}</Text>
+          <Text
+            style={styles.title}
+            accessibilityRole="header"
+            accessibilityLevel={1}
+          >
+            {title}
+          </Text>
 
           {/* Meta */}
           <View style={styles.metaRow}>
@@ -138,7 +192,16 @@ export default function DailyDevotionReaderScreen() {
           </View>
 
           {/* Main Verse */}
-          <View style={styles.verseContainer}>
+          <View
+            style={styles.verseContainer}
+            accessible={true}
+            accessibilityLabel={
+              contentLanguage === 'en'
+                ? `Main verse: ${devotion.main_verse.text}. From ${devotion.main_verse.book} chapter ${devotion.main_verse.chapter}, verse ${devotion.main_verse.verse_start}`
+                : `Ayat utama: ${devotion.main_verse.text}. Dari ${devotion.main_verse.book} pasal ${devotion.main_verse.chapter}, ayat ${devotion.main_verse.verse_start}`
+            }
+            accessibilityRole="text"
+          >
             <View style={styles.verseAccent} />
             <View style={styles.verseContent}>
               <Text style={styles.verseText}>"{devotion.main_verse.text}"</Text>
@@ -159,11 +222,25 @@ export default function DailyDevotionReaderScreen() {
           {/* Additional Verses */}
           {devotion.additional_verses && devotion.additional_verses.length > 0 && (
             <View style={styles.additionalVersesSection}>
-              <Text style={styles.sectionTitle}>
+              <Text
+                style={styles.sectionTitle}
+                accessibilityRole="header"
+                accessibilityLevel={2}
+              >
                 {contentLanguage === 'en' ? 'Related Verses' : 'Ayat Terkait'}
               </Text>
               {devotion.additional_verses.map((verse, index) => (
-                <View key={index} style={styles.additionalVerse}>
+                <View
+                  key={index}
+                  style={styles.additionalVerse}
+                  accessible={true}
+                  accessibilityLabel={
+                    contentLanguage === 'en'
+                      ? `Related verse ${index + 1}: ${verse.text}. From ${verse.book} chapter ${verse.chapter}, verse ${verse.verse_start}`
+                      : `Ayat terkait ${index + 1}: ${verse.text}. Dari ${verse.book} pasal ${verse.chapter}, ayat ${verse.verse_start}`
+                  }
+                  accessibilityRole="text"
+                >
                   <Text style={styles.additionalVerseText}>"{verse.text}"</Text>
                   <Text style={styles.additionalVerseReference}>
                     {verse.book} {verse.chapter}:{verse.verse_start}
@@ -199,6 +276,21 @@ export default function DailyDevotionReaderScreen() {
             onPress={handleComplete}
             style={[styles.completeButton, trackComplete.isPending && styles.completeButtonDisabled]}
             disabled={trackComplete.isPending}
+            accessibilityRole="button"
+            accessibilityLabel={
+              contentLanguage === 'en'
+                ? 'Mark this devotion as complete'
+                : 'Tandai renungan ini sebagai selesai'
+            }
+            accessibilityHint={
+              contentLanguage === 'en'
+                ? 'Double tap to complete and maintain your streak'
+                : 'Ketuk dua kali untuk menyelesaikan dan mempertahankan rangkaian Anda'
+            }
+            accessibilityState={{
+              disabled: trackComplete.isPending,
+              busy: trackComplete.isPending,
+            }}
           >
             <Check size={20} color="#FFFFFF" />
             <Text style={styles.completeButtonText}>
@@ -216,7 +308,17 @@ export default function DailyDevotionReaderScreen() {
 
       {/* Completed Badge */}
       {isCompleted && (
-        <View style={styles.completedBadgeContainer}>
+        <View
+          style={styles.completedBadgeContainer}
+          accessible={true}
+          accessibilityRole="text"
+          accessibilityLabel={
+            contentLanguage === 'en'
+              ? 'This devotion has been completed'
+              : 'Renungan ini telah diselesaikan'
+          }
+          accessibilityLiveRegion="polite"
+        >
           <View style={styles.completedBadge}>
             <Check size={16} color={ExploreColors.success[600]} />
             <Text style={styles.completedText}>

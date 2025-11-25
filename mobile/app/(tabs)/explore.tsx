@@ -51,11 +51,28 @@ export default function ExploreScreen() {
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <Text style={styles.headerTitle}>
+          <Text
+            style={styles.headerTitle}
+            accessibilityRole="header"
+            accessibilityLevel={1}
+          >
             {contentLanguage === 'en' ? 'Explore' : 'Jelajahi'}
           </Text>
           {currentStreak > 0 && (
-            <View style={styles.streakBadge}>
+            <View
+              style={styles.streakBadge}
+              accessible={true}
+              accessibilityLabel={
+                contentLanguage === 'en'
+                  ? `Current streak: ${currentStreak} ${currentStreak === 1 ? 'day' : 'days'}`
+                  : `Rangkaian saat ini: ${currentStreak} hari`
+              }
+              accessibilityHint={
+                contentLanguage === 'en'
+                  ? 'Keep your streak going by completing daily content'
+                  : 'Pertahankan rangkaian Anda dengan menyelesaikan konten harian'
+              }
+            >
               <Flame size={16} color={ExploreColors.secondary[600]} />
               <Text style={styles.streakText}>{currentStreak}</Text>
             </View>
@@ -64,7 +81,21 @@ export default function ExploreScreen() {
 
         <View style={styles.headerActions}>
           {/* Language Toggle */}
-          <Pressable onPress={handleLanguageToggle} style={styles.languageButton}>
+          <Pressable
+            onPress={handleLanguageToggle}
+            style={styles.languageButton}
+            accessibilityRole="button"
+            accessibilityLabel={
+              contentLanguage === 'en'
+                ? 'Switch to Indonesian'
+                : 'Beralih ke Bahasa Inggris'
+            }
+            accessibilityHint={
+              contentLanguage === 'en'
+                ? 'Double tap to change content language to Indonesian'
+                : 'Ketuk dua kali untuk mengubah bahasa konten ke Bahasa Inggris'
+            }
+          >
             <Globe size={20} color={ExploreColors.neutral[600]} />
             <Text style={styles.languageText}>{contentLanguage.toUpperCase()}</Text>
           </Pressable>
@@ -92,7 +123,12 @@ export default function ExploreScreen() {
         {isLoading ? (
           <ExploreHomeSkeleton />
         ) : error ? (
-          <View style={styles.errorContainer}>
+          <View
+            style={styles.errorContainer}
+            accessible={true}
+            accessibilityRole="alert"
+            accessibilityLiveRegion="assertive"
+          >
             <Text style={styles.errorText}>
               {contentLanguage === 'en'
                 ? 'Unable to load content. Please try again.'
@@ -104,7 +140,11 @@ export default function ExploreScreen() {
             {/* Daily Devotion */}
             {homeData.daily_devotion ? (
               <View style={styles.section}>
-                <Text style={styles.sectionTitle}>
+                <Text
+                  style={styles.sectionTitle}
+                  accessibilityRole="header"
+                  accessibilityLevel={2}
+                >
                   {contentLanguage === 'en' ? "Today's Devotion" : 'Renungan Hari Ini'}
                 </Text>
                 <DailyDevotionCard
@@ -121,7 +161,11 @@ export default function ExploreScreen() {
             {/* Verse of the Day */}
             {homeData.verse_of_the_day ? (
               <View style={styles.section}>
-                <Text style={styles.sectionTitle}>
+                <Text
+                  style={styles.sectionTitle}
+                  accessibilityRole="header"
+                  accessibilityLevel={2}
+                >
                   {contentLanguage === 'en' ? 'Verse of the Day' : 'Ayat Hari Ini'}
                 </Text>
                 <VerseOfTheDayCard
@@ -137,7 +181,11 @@ export default function ExploreScreen() {
             {/* Bible Figure of the Day */}
             {homeData.bible_figure ? (
               <View style={styles.section}>
-                <Text style={styles.sectionTitle}>
+                <Text
+                  style={styles.sectionTitle}
+                  accessibilityRole="header"
+                  accessibilityLevel={2}
+                >
                   {contentLanguage === 'en' ? 'Bible Figure of the Day' : 'Tokoh Alkitab Hari Ini'}
                 </Text>
                 <BibleFigureCard
@@ -153,7 +201,11 @@ export default function ExploreScreen() {
             {/* Daily Quiz */}
             {homeData.daily_quiz ? (
               <View style={styles.section}>
-                <Text style={styles.sectionTitle}>
+                <Text
+                  style={styles.sectionTitle}
+                  accessibilityRole="header"
+                  accessibilityLevel={2}
+                >
                   {contentLanguage === 'en' ? 'Daily Challenge' : 'Tantangan Harian'}
                 </Text>
                 <DailyQuizCard
@@ -171,31 +223,67 @@ export default function ExploreScreen() {
             {/* Self-Paced Content - Quick Access */}
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>
+                <Text
+                  style={styles.sectionTitle}
+                  accessibilityRole="header"
+                  accessibilityLevel={2}
+                >
                   {contentLanguage === 'en' ? 'Explore More' : 'Jelajahi Lebih Banyak'}
                 </Text>
               </View>
 
-              <View style={styles.quickAccessGrid}>
+              <View
+                style={styles.quickAccessGrid}
+                accessible={false}
+                accessibilityLabel={
+                  contentLanguage === 'en'
+                    ? 'Self-paced content categories'
+                    : 'Kategori konten mandiri'
+                }
+              >
                 <QuickAccessCard
                   title={contentLanguage === 'en' ? 'Bible Studies' : 'Studi Alkitab'}
+                  description={
+                    contentLanguage === 'en'
+                      ? 'Browse in-depth Bible study guides'
+                      : 'Jelajahi panduan studi Alkitab mendalam'
+                  }
                   icon="📖"
                   onPress={() => router.push('/explore/studies')}
+                  contentLanguage={contentLanguage}
                 />
                 <QuickAccessCard
                   title={contentLanguage === 'en' ? 'Bible Figures' : 'Tokoh Alkitab'}
+                  description={
+                    contentLanguage === 'en'
+                      ? 'Learn about biblical characters'
+                      : 'Pelajari tentang tokoh-tokoh Alkitab'
+                  }
                   icon="👤"
                   onPress={() => router.push('/explore/figures')}
+                  contentLanguage={contentLanguage}
                 />
                 <QuickAccessCard
                   title={contentLanguage === 'en' ? 'Topical Verses' : 'Ayat Topik'}
+                  description={
+                    contentLanguage === 'en'
+                      ? 'Find verses by topic'
+                      : 'Temukan ayat berdasarkan topik'
+                  }
                   icon="🏷️"
                   onPress={() => router.push('/explore/topical')}
+                  contentLanguage={contentLanguage}
                 />
                 <QuickAccessCard
                   title={contentLanguage === 'en' ? 'Devotion Plans' : 'Rencana Renungan'}
+                  description={
+                    contentLanguage === 'en'
+                      ? 'Follow multi-day devotion plans'
+                      : 'Ikuti rencana renungan multi-hari'
+                  }
                   icon="📅"
                   onPress={() => router.push('/explore/plans')}
+                  contentLanguage={contentLanguage}
                 />
               </View>
             </View>
@@ -219,13 +307,21 @@ export default function ExploreScreen() {
  */
 interface QuickAccessCardProps {
   title: string;
+  description: string;
   icon: string;
   onPress: () => void;
+  contentLanguage: string;
 }
 
-function QuickAccessCard({ title, icon, onPress }: QuickAccessCardProps) {
+function QuickAccessCard({ title, description, icon, onPress, contentLanguage }: QuickAccessCardProps) {
   return (
-    <Pressable style={styles.quickAccessCard} onPress={onPress}>
+    <Pressable
+      style={styles.quickAccessCard}
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={title}
+      accessibilityHint={description}
+    >
       <Text style={styles.quickAccessIcon}>{icon}</Text>
       <Text style={styles.quickAccessTitle}>{title}</Text>
     </Pressable>
