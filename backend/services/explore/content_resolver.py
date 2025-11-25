@@ -13,7 +13,7 @@ from typing import Optional, List, Dict, Any
 from motor.motor_asyncio import AsyncIOMotorClient
 import logging
 
-from backend.models.explore import (
+from models.explore import (
     ContentType,
     ContentScope,
     Language,

@@ -14,7 +14,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 import pytz
 import logging
 
-from backend.models.explore import (
+from models.explore import (
     ContentType,
     ContentScheduleEntry,
     ChurchExploreSettings,
