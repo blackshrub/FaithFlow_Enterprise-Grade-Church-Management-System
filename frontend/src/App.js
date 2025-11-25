@@ -58,6 +58,14 @@ import CommentsModeration from "./pages/Articles/CommentsModeration";
 import PrayerRequestsList from "./pages/PrayerRequests/PrayerRequestsList";
 import PrayerRequestForm from "./pages/PrayerRequests/PrayerRequestForm";
 
+// Explore pages
+import ExploreDashboard from "./pages/Explore/ExploreDashboard";
+import ExploreContentList from "./pages/Explore/ExploreContentList";
+import DevotionEditor from "./pages/Explore/DevotionEditor";
+import VerseEditor from "./pages/Explore/VerseEditor";
+import FigureEditor from "./pages/Explore/FigureEditor";
+import QuizEditor from "./pages/Explore/QuizEditor";
+
 // Groups pages
 import GroupsListPage from "./pages/Groups/GroupsListPage";
 import GroupEditorPage from "./pages/Groups/GroupEditorPage";
@@ -185,7 +193,22 @@ function App() {
               <Route path="counseling/availability" element={<AvailabilityPage />} />
               <Route path="counseling/appointments" element={<AppointmentsListPage />} />
               <Route path="counseling/appointments/:appointmentId" element={<AppointmentDetailPage />} />
-              
+
+              {/* Explore Routes */}
+              <Route path="explore" element={<ExploreDashboard />} />
+              <Route path="explore/content/devotion" element={<ExploreContentList />} />
+              <Route path="explore/content/devotion/new" element={<DevotionEditor />} />
+              <Route path="explore/content/devotion/:id/edit" element={<DevotionEditor />} />
+              <Route path="explore/content/verse" element={<ExploreContentList />} />
+              <Route path="explore/content/verse/new" element={<VerseEditor />} />
+              <Route path="explore/content/verse/:id/edit" element={<VerseEditor />} />
+              <Route path="explore/content/figure" element={<ExploreContentList />} />
+              <Route path="explore/content/figure/new" element={<FigureEditor />} />
+              <Route path="explore/content/figure/:id/edit" element={<FigureEditor />} />
+              <Route path="explore/content/quiz" element={<ExploreContentList />} />
+              <Route path="explore/content/quiz/new" element={<QuizEditor />} />
+              <Route path="explore/content/quiz/:id/edit" element={<QuizEditor />} />
+
               {/* System Routes */}
               <Route path="users/management" element={<UserManagement />} />
               
