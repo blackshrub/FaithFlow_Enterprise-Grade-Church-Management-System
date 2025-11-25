@@ -12,12 +12,14 @@ interface NavigationState {
   calculateDirection: (currentRoute: string, newRoute: string) => number;
 }
 
-// Tab order for calculating direction
+// Tab order for calculating direction (matches bottom navbar order)
 const TAB_ORDER = [
   '/(tabs)',           // Home (0)
   '/(tabs)/bible',     // Bible (1)
-  '/(tabs)/events',    // Events (2)
-  '/(tabs)/profile',   // Profile (3)
+  '/give',             // Give (2) - special route
+  '/(tabs)/explore',   // Explore (3)
+  '/(tabs)/events',    // Events (4)
+  '/(tabs)/profile',   // Profile (5)
 ];
 
 export const useNavigationStore = create<NavigationState>((set) => ({
