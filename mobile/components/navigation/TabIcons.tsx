@@ -20,9 +20,10 @@ interface IconProps {
 
 export const HomeIcon: React.FC<IconProps> = ({ size = 24, color = '#000', isActive = false }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    {/* House roof */}
+    {/* House roof - filled when active */}
     <Path
-      d="M3 12L12 3L21 12"
+      d="M3 12L12 3L21 12Z"
+      fill={isActive ? color : 'none'}
       stroke={color}
       strokeWidth={2}
       strokeLinecap="round"
@@ -67,7 +68,8 @@ export const BibleIcon: React.FC<IconProps> = ({ size = 24, color = '#000', isAc
       strokeLinecap="round"
       strokeLinejoin="round"
     />
-    {/* Center divider line - always white/transparent when filled */}
+    {/* Inner lines - white when active, colored when inactive */}
+    {/* Center divider line */}
     <Line
       x1="12"
       y1="2"
@@ -77,6 +79,19 @@ export const BibleIcon: React.FC<IconProps> = ({ size = 24, color = '#000', isAc
       strokeWidth={2}
       strokeLinecap="round"
     />
+    {/* Horizontal page lines - only visible when active */}
+    {isActive && (
+      <>
+        <Line x1="7" y1="7" x2="11" y2="7" stroke="white" strokeWidth={1.5} strokeLinecap="round" />
+        <Line x1="13" y1="7" x2="19" y2="7" stroke="white" strokeWidth={1.5} strokeLinecap="round" />
+        <Line x1="7" y1="10" x2="11" y2="10" stroke="white" strokeWidth={1.5} strokeLinecap="round" />
+        <Line x1="13" y1="10" x2="19" y2="10" stroke="white" strokeWidth={1.5} strokeLinecap="round" />
+        <Line x1="7" y1="13" x2="11" y2="13" stroke="white" strokeWidth={1.5} strokeLinecap="round" />
+        <Line x1="13" y1="13" x2="19" y2="13" stroke="white" strokeWidth={1.5} strokeLinecap="round" />
+        <Line x1="7" y1="16" x2="11" y2="16" stroke="white" strokeWidth={1.5} strokeLinecap="round" />
+        <Line x1="13" y1="16" x2="19" y2="16" stroke="white" strokeWidth={1.5} strokeLinecap="round" />
+      </>
+    )}
   </Svg>
 );
 
