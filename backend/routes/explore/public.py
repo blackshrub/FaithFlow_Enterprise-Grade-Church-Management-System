@@ -19,9 +19,9 @@ from datetime import datetime
 from typing import Optional, List
 from pydantic import BaseModel
 
-from backend.utils.dependencies import get_current_user, get_db, get_session_church_id
-from backend.services.explore import ContentResolver, ProgressService
-from backend.models.explore import ContentType, Language
+from utils.dependencies import get_current_user, get_db, get_session_church_id
+from services.explore import ContentResolver, ProgressService
+from models.explore import ContentType, Language
 
 router = APIRouter()
 
