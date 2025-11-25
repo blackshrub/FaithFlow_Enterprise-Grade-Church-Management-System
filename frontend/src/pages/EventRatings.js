@@ -55,7 +55,7 @@ import {
 } from '../components/ui/alert-dialog';
 import { toast } from 'sonner';
 import ratingReviewService from '../services/ratingReviewService';
-import eventsService from '../services/eventsService';
+import { eventsAPI } from '../services/api';
 
 export default function EventRatings() {
   const { t } = useTranslation();
@@ -66,7 +66,7 @@ export default function EventRatings() {
   // Fetch events for filter dropdown
   const { data: events = [] } = useQuery({
     queryKey: ['events'],
-    queryFn: () => eventsService.getEvents(),
+    queryFn: () => eventsAPI.list(),
   });
 
   // Fetch ratings
