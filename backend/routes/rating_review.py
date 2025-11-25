@@ -8,6 +8,7 @@ Admin/Staff can view all ratings for reporting.
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from typing import List, Optional
 from datetime import datetime
+from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from models.rating_review import (
     RatingReviewCreate,
@@ -16,18 +17,16 @@ from models.rating_review import (
     EventRatingStats
 )
 from models.user import User
-from utils.dependencies import get_current_user, get_session_church_id, require_admin
-from utils.db import get_database
+from utils.dependencies import get_current_user, get_session_church_id, require_admin, get_db
 
 router = APIRouter(prefix="/api/ratings", tags=["Ratings & Reviews"])
 
 
-async def validate_member_attended(event_id: str, member_id: str, church_id: str) -> bool:
+async def validate_member_attended(event_id: str, member_id: str, church_id: str, db: AsyncIOMotorDatabase) -> bool:
     """
     Validate that the member has been marked as attended for this event.
     Returns True if member attended, False otherwise.
     """
-    db = await get_database()
 
     # Check if member exists in event's attendees with status 'attended'
     event = await db.events.find_one({
@@ -48,7 +47,8 @@ async def validate_member_attended(event_id: str, member_id: str, church_id: str
 @router.post("", response_model=RatingReview, status_code=status.HTTP_201_CREATED)
 async def create_rating_review(
     data: RatingReviewCreate,
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """
     Create a new rating/review for an event.
@@ -57,11 +57,10 @@ async def create_rating_review(
     - Member must have been marked as attended for the event
     - One rating per member per event (no duplicates)
     """
-    db = await get_database()
     church_id = get_session_church_id(current_user)
 
     # Validate that the member attended the event
-    if not await validate_member_attended(data.event_id, data.member_id, church_id):
+    if not await validate_member_attended(data.event_id, data.member_id, church_id, db):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only members who attended this event can submit a rating"
@@ -124,7 +123,8 @@ async def list_ratings(
     member_id: Optional[str] = Query(None, description="Filter by member ID"),
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """
     List all ratings/reviews with optional filters.
@@ -132,7 +132,6 @@ async def list_ratings(
     Admin/Staff can see all ratings for their church.
     Members can only see their own ratings.
     """
-    db = await get_database()
     church_id = get_session_church_id(current_user)
 
     # Build filter
@@ -164,7 +163,8 @@ async def list_ratings(
 @router.get("/stats/{event_id}", response_model=EventRatingStats)
 async def get_event_rating_stats(
     event_id: str,
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """
     Get rating statistics for a specific event.
@@ -174,7 +174,6 @@ async def get_event_rating_stats(
     - Average rating
     - Rating distribution (count per rating value 1-10)
     """
-    db = await get_database()
     church_id = get_session_church_id(current_user)
 
     # Verify event exists
@@ -222,14 +221,14 @@ async def get_event_rating_stats(
 async def get_all_events_rating_stats(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
-    current_user: User = Depends(require_admin)
+    current_user: User = Depends(require_admin),
+    db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """
     Get rating statistics for all events (Admin/Staff only).
 
     Returns stats for events that have at least one rating.
     """
-    db = await get_database()
     church_id = get_session_church_id(current_user)
 
     # Aggregate ratings by event
@@ -273,10 +272,10 @@ async def get_all_events_rating_stats(
 @router.get("/{rating_id}", response_model=RatingReview)
 async def get_rating_review(
     rating_id: str,
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """Get a specific rating/review by ID"""
-    db = await get_database()
     church_id = get_session_church_id(current_user)
 
     rating = await db.ratings_reviews.find_one({
@@ -301,14 +300,14 @@ async def get_rating_review(
 async def update_rating_review(
     rating_id: str,
     data: RatingReviewUpdate,
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """
     Update an existing rating/review.
 
     Members can only update their own ratings.
     """
-    db = await get_database()
     church_id = get_session_church_id(current_user)
 
     # Find existing rating
@@ -356,7 +355,8 @@ async def update_rating_review(
 @router.delete("/{rating_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_rating_review(
     rating_id: str,
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """
     Soft delete a rating/review.
@@ -364,7 +364,6 @@ async def delete_rating_review(
     Members can only delete their own ratings.
     Admins can delete any rating.
     """
-    db = await get_database()
     church_id = get_session_church_id(current_user)
 
     # Find existing rating
