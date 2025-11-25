@@ -8,8 +8,7 @@
  */
 
 import React from 'react';
-import { Pressable, ViewStyle, PressableProps } from 'react-native';
-import { View } from '@/components/Themed';
+import { Pressable, View, ViewStyle, PressableProps } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
