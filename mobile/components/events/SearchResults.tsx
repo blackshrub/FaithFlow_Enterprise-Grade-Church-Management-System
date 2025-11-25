@@ -34,11 +34,13 @@ interface SearchResultsProps {
     attended: FilteredEvent[];
     rsvp: FilteredEvent[];
     upcoming: FilteredEvent[];
+    passed: FilteredEvent[];
   };
   counts: {
     attended: number;
     rsvp: number;
     upcoming: number;
+    passed: number;
     total: number;
   };
 }
@@ -74,6 +76,7 @@ export function SearchResults({ groupedResults, counts }: SearchResultsProps) {
           ...groupedResults.upcoming,
           ...groupedResults.rsvp,
           ...groupedResults.attended,
+          ...groupedResults.passed,
         ];
     }
   };

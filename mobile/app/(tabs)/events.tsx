@@ -440,21 +440,27 @@ export default function EventsScreen() {
           className="active:opacity-95 active:scale-[0.99]"
         >
           <Card
-            className="overflow-hidden"
+            className="overflow-hidden p-0"
             style={{
               borderRadius: borderRadius['2xl'],
               ...shadows.lg,
               backgroundColor: '#FFFFFF',
             }}
           >
-            {/* Premium Image Header - 2:1 Aspect Ratio */}
+            {/* Premium Image Header - 2:1 Aspect Ratio - Full Width */}
             <View className="w-full" style={{ aspectRatio: 2 }}>
               {event.event_photo ? (
                 <>
                   {/* Photo with clean overlay - no gradient */}
                   <Image
                     source={{ uri: event.event_photo }}
-                    style={{ width: '100%', height: '100%', position: 'absolute' }}
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      position: 'absolute',
+                      borderTopLeftRadius: borderRadius['2xl'],
+                      borderTopRightRadius: borderRadius['2xl'],
+                    }}
                     contentFit="cover"
                   />
                   <View className="h-full w-full justify-between p-4">
@@ -512,6 +518,10 @@ export default function EventsScreen() {
                     start={{ x: 0, y: 0 }}
                     end={{ x: 0, y: 1 }}
                     className="h-full w-full justify-between p-4"
+                    style={{
+                      borderTopLeftRadius: borderRadius['2xl'],
+                      borderTopRightRadius: borderRadius['2xl'],
+                    }}
                   >
                     {/* Top Row: Date & Type Badge (only for series) */}
                     <HStack className="justify-between items-start">

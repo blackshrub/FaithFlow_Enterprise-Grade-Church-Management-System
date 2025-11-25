@@ -6,11 +6,11 @@
  * - User RSVP status
  * - User attendance records
  *
- * Priority: attended > rsvp > upcoming
- * Note: Past events without RSVP/attendance are filtered out
+ * Priority: attended > rsvp > upcoming > passed
+ * Note: Past events without RSVP/attendance show as "passed"
  */
 
-export type EventStatus = 'attended' | 'rsvp' | 'upcoming';
+export type EventStatus = 'attended' | 'rsvp' | 'upcoming' | 'passed';
 
 export interface Event {
   id: string;
@@ -61,32 +61,21 @@ export function computeEventStatus(
     return 'upcoming';
   }
 
-  // Default: upcoming (shouldn't reach here due to filtering)
-  return 'upcoming';
+  // Priority 4: Passed (past event without RSVP/attendance)
+  return 'passed';
 }
 
 /**
  * Check if event should be shown
- * Past events are only shown if user RSVP'd or attended
+ * All events are shown (including past events without interaction)
  */
 export function shouldShowEvent(
   event: Event,
   userRsvps: RSVP[],
   userAttendance: Attendance[]
 ): boolean {
-  const now = new Date();
-  const eventDate = new Date(event.date);
-  const isPast = eventDate < now;
-
-  if (!isPast) {
-    return true; // Always show future events
-  }
-
-  // For past events, only show if user RSVP'd or attended
-  const hasRsvp = userRsvps.some((r) => r.event_id === event.id);
-  const hasAttendance = userAttendance.some((a) => a.event_id === event.id);
-
-  return hasRsvp || hasAttendance;
+  // Show all events - past events without interaction will show as "passed"
+  return true;
 }
 
 /**
@@ -95,9 +84,9 @@ export function shouldShowEvent(
 export function getStatusConfig(status: EventStatus) {
   const configs = {
     attended: {
-      color: '#9333ea', // purple600
-      bgColor: '#f3e8ff', // purple50
-      textColor: '#6b21a8', // purple800
+      color: '#f97316', // orange500 - more distinct than purple for small dots
+      bgColor: '#ffedd5', // orange50
+      textColor: '#c2410c', // orange700
     },
     rsvp: {
       color: '#16a34a', // green600
@@ -108,6 +97,11 @@ export function getStatusConfig(status: EventStatus) {
       color: '#2563eb', // blue600
       bgColor: '#dbeafe', // blue50
       textColor: '#1e40af', // blue700
+    },
+    passed: {
+      color: '#6b7280', // gray500
+      bgColor: '#f3f4f6', // gray100
+      textColor: '#374151', // gray700
     },
   };
 

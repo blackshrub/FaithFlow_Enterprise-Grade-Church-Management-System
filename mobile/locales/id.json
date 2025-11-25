@@ -241,6 +241,7 @@
     "past": "Sebelumnya",
     "myRSVPs": "RSVP Saya",
     "attended": "Dihadiri",
+    "passed": "Terlewat",
     "upcomingEvents": "Acara Mendatang",
     "pastEvents": "Acara Sebelumnya",
     "noEvents": "Tidak ada acara",
@@ -307,7 +308,8 @@
     "status": {
       "attended": "Sudah Hadir",
       "rsvp": "Sudah RSVP",
-      "upcoming": "Akan Datang"
+      "upcoming": "Akan Datang",
+      "passed": "Terlewat"
     },
     "searchPlaceholder": "Cari acara...",
     "search": {
@@ -586,6 +588,7 @@
     }
   },
   "common": {
+    "locale": "id-ID",
     "save": "Simpan",
     "cancel": "Batal",
     "delete": "Hapus",
@@ -619,7 +622,16 @@
     "copy": "Salin",
     "copied": "Disalin",
     "share": "Bagikan",
-    "download": "Unduh"
+    "download": "Unduh",
+    "dayNames": {
+      "monday": "Sen",
+      "tuesday": "Sel",
+      "wednesday": "Rab",
+      "thursday": "Kam",
+      "friday": "Jum",
+      "saturday": "Sab",
+      "sunday": "Min"
+    }
   },
   "validation": {
     "required": "Kolom ini wajib diisi",

@@ -241,6 +241,7 @@
     "past": "Past",
     "myRSVPs": "My RSVPs",
     "attended": "Attended",
+    "passed": "Passed",
     "upcomingEvents": "Upcoming Events",
     "pastEvents": "Past Events",
     "noEvents": "No events found",
@@ -311,7 +312,8 @@
     "status": {
       "attended": "Attended",
       "rsvp": "RSVP'd",
-      "upcoming": "Upcoming"
+      "upcoming": "Upcoming",
+      "passed": "Passed"
     },
     "searchPlaceholder": "Search events...",
     "search": {
@@ -590,6 +592,7 @@
     }
   },
   "common": {
+    "locale": "en-US",
     "save": "Save",
     "cancel": "Cancel",
     "delete": "Delete",
@@ -623,7 +626,16 @@
     "copy": "Copy",
     "copied": "Copied",
     "share": "Share",
-    "download": "Download"
+    "download": "Download",
+    "dayNames": {
+      "monday": "Mon",
+      "tuesday": "Tue",
+      "wednesday": "Wed",
+      "thursday": "Thu",
+      "friday": "Fri",
+      "saturday": "Sat",
+      "sunday": "Sun"
+    }
   },
   "validation": {
     "required": "This field is required",
