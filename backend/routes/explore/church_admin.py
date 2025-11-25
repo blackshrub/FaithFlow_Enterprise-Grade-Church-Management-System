@@ -12,14 +12,14 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Body
 from datetime import datetime
 from typing import Optional, Dict, Any
 
-from backend.utils.dependencies import (
+from utils.dependencies import (
     get_current_user,
     get_db,
     get_session_church_id,
     require_admin,
 )
-from backend.services.explore import ScheduleService, ProgressService
-from backend.models.explore import ContentType
+from services.explore import ScheduleService, ProgressService
+from models.explore import ContentType
 
 router = APIRouter()
 

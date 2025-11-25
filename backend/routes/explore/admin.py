@@ -14,9 +14,9 @@ from datetime import datetime, timedelta
 from typing import Optional, List, Dict, Any
 from pydantic import BaseModel
 
-from backend.utils.dependencies import get_current_user, get_db, require_super_admin
-from backend.services.explore import ContentResolver, ScheduleService, ProgressService
-from backend.models.explore import (
+from utils.dependencies import get_current_user, get_db, require_super_admin
+from services.explore import ContentResolver, ScheduleService, ProgressService
+from models.explore import (
     ContentType,
     ContentStatus,
     Language,

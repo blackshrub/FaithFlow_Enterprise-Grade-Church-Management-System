@@ -15,7 +15,7 @@ from cryptography.fernet import Fernet
 import os
 import logging
 
-from backend.models.explore import APIConfiguration
+from models.explore import APIConfiguration
 
 logger = logging.getLogger(__name__)
 
