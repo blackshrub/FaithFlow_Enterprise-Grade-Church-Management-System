@@ -12,7 +12,7 @@ from typing import Dict, Any, Optional, List
 from string import Template
 import logging
 
-from backend.models.explore import PromptConfiguration
+from models.explore import PromptConfiguration
 
 logger = logging.getLogger(__name__)
 
