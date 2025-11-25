@@ -20,78 +20,56 @@ interface IconProps {
 
 export const HomeIcon: React.FC<IconProps> = ({ size = 24, color = '#000', isActive = false }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    {/* House roof - filled when active */}
+    {/* Simple house outline - cleaner design */}
     <Path
-      d="M3 12L12 3L21 12Z"
+      d="M3 9L12 2L21 9V20C21 20.5304 20.7893 21.0391 20.4142 21.4142C20.0391 21.7893 19.5304 22 19 22H5C4.46957 22 3.96086 21.7893 3.58579 21.4142C3.21071 21.0391 3 20.5304 3 20V9Z"
       fill={isActive ? color : 'none'}
       stroke={color}
       strokeWidth={2}
       strokeLinecap="round"
       strokeLinejoin="round"
     />
-    {/* House walls - filled when active */}
-    <Path
-      d="M5 12V19C5 19.5304 5.21071 20.0391 5.58579 20.4142C5.96086 20.7893 6.46957 21 7 21H17C17.5304 21 18.0391 20.7893 18.4142 20.4142C18.7893 20.0391 19 19.5304 19 19V12"
-      fill={isActive ? color : 'none'}
-      stroke={color}
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-    {/* Door - always outlined */}
-    <Path
-      d="M9 21V15C9 14.4696 9.21071 13.9609 9.58579 13.5858C9.96086 13.2107 10.4696 13 11 13H13C13.5304 13 14.0391 13.2107 14.4142 13.5858C14.7893 13.9609 15 14.4696 15 15V21"
-      fill="white"
-      stroke={color}
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
+    {/* Simple door cutout - only visible when active */}
+    {isActive && (
+      <Path
+        d="M9 22V16C9 15.4477 9.44772 15 10 15H14C14.5523 15 15 15.4477 15 16V22"
+        fill="white"
+        stroke={color}
+        strokeWidth={2}
+        strokeLinejoin="round"
+      />
+    )}
   </Svg>
 );
 
 export const BibleIcon: React.FC<IconProps> = ({ size = 24, color = '#000', isActive = false }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    {/* Book outline - filled when active */}
+    {/* Closed book with pages visible on right side */}
+    {/* Book spine/left edge */}
     <Path
-      d="M4 19.5C4 18.837 4.26339 18.2011 4.73223 17.7322C5.20107 17.2634 5.83696 17 6.5 17H20"
-      stroke={color}
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-    <Path
-      d="M6.5 2H20V22H6.5C5.83696 22 5.20107 21.7366 4.73223 21.2678C4.26339 20.7989 4 20.163 4 19.5V4.5C4 3.83696 4.26339 3.20107 4.73223 2.73223C5.20107 2.26339 5.83696 2 6.5 2Z"
+      d="M4 19.5V4.5C4 3.83696 4.26339 3.20107 4.73223 2.73223C5.20107 2.26339 5.83696 2 6.5 2H20V22H6.5C5.83696 22 5.20107 21.7366 4.73223 21.2678C4.26339 20.7989 4 20.163 4 19.5Z"
       fill={isActive ? color : 'none'}
       stroke={color}
       strokeWidth={2}
       strokeLinecap="round"
       strokeLinejoin="round"
     />
-    {/* Inner lines - white when active, colored when inactive */}
-    {/* Center divider line */}
-    <Line
-      x1="12"
-      y1="2"
-      x2="12"
-      y2="22"
-      stroke={isActive ? 'white' : color}
-      strokeWidth={2}
-      strokeLinecap="round"
-    />
-    {/* Horizontal page lines - only visible when active */}
+    {/* Book pages layers - only visible when active, on right edge */}
     {isActive && (
       <>
-        <Line x1="7" y1="7" x2="11" y2="7" stroke="white" strokeWidth={1.5} strokeLinecap="round" />
-        <Line x1="13" y1="7" x2="19" y2="7" stroke="white" strokeWidth={1.5} strokeLinecap="round" />
-        <Line x1="7" y1="10" x2="11" y2="10" stroke="white" strokeWidth={1.5} strokeLinecap="round" />
-        <Line x1="13" y1="10" x2="19" y2="10" stroke="white" strokeWidth={1.5} strokeLinecap="round" />
-        <Line x1="7" y1="13" x2="11" y2="13" stroke="white" strokeWidth={1.5} strokeLinecap="round" />
-        <Line x1="13" y1="13" x2="19" y2="13" stroke="white" strokeWidth={1.5} strokeLinecap="round" />
-        <Line x1="7" y1="16" x2="11" y2="16" stroke="white" strokeWidth={1.5} strokeLinecap="round" />
-        <Line x1="13" y1="16" x2="19" y2="16" stroke="white" strokeWidth={1.5} strokeLinecap="round" />
+        <Line x1="18" y1="2" x2="18" y2="22" stroke="white" strokeWidth={1.5} />
+        <Line x1="16" y1="2" x2="16" y2="22" stroke="white" strokeWidth={1.5} />
       </>
     )}
+    {/* Bookmark ribbon */}
+    <Path
+      d="M10 2V8L12 6L14 8V2"
+      fill={isActive ? 'white' : 'none'}
+      stroke={isActive ? 'white' : color}
+      strokeWidth={1.5}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
   </Svg>
 );
 
