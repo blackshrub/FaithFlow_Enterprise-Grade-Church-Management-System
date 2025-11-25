@@ -14,14 +14,21 @@ import { View, Pressable, Platform } from 'react-native';
 import { MotiView } from 'moti';
 import { useRouter, useSegments } from 'expo-router';
 import { Text } from '@/components/ui/text';
-import { Home, BookOpen, Calendar, User, Compass, Heart } from 'lucide-react-native';
 import { colors, touchTargets } from '@/constants/theme';
 import { useTranslation } from 'react-i18next';
 import { useNavigationStore } from '@/stores/navigation';
+import {
+  HomeIcon,
+  BibleIcon,
+  HeartIcon,
+  CompassIcon,
+  CalendarIcon,
+  UserIcon,
+} from './TabIcons';
 
 interface Tab {
   name: string;
-  icon: React.ComponentType<any>;
+  icon: React.ComponentType<{ size?: number; color?: string; isActive?: boolean }>;
   label: string;
   route: string;
 }
@@ -29,37 +36,37 @@ interface Tab {
 const TABS: Tab[] = [
   {
     name: 'home',
-    icon: Home,
+    icon: HomeIcon,
     label: 'tabs.home',
     route: '/(tabs)',
   },
   {
     name: 'bible',
-    icon: BookOpen,
+    icon: BibleIcon,
     label: 'tabs.bible',
     route: '/(tabs)/bible',
   },
   {
     name: 'give',
-    icon: Heart,
+    icon: HeartIcon,
     label: 'tabs.give',
     route: '/give',
   },
   {
     name: 'explore',
-    icon: Compass,
+    icon: CompassIcon,
     label: 'tabs.explore',
     route: '/(tabs)/explore',
   },
   {
     name: 'events',
-    icon: Calendar,
+    icon: CalendarIcon,
     label: 'tabs.events',
     route: '/(tabs)/events',
   },
   {
     name: 'profile',
-    icon: User,
+    icon: UserIcon,
     label: 'tabs.profile',
     route: '/(tabs)/profile',
   },
@@ -135,7 +142,7 @@ export function AnimatedTabBar() {
                 />
               )}
 
-              {/* Icon with outlined-to-filled transition */}
+              {/* Icon with selective fill transition */}
               <MotiView
                 animate={{
                   scale: isActive ? 1.02 : 1,
@@ -148,8 +155,7 @@ export function AnimatedTabBar() {
                 <IconComponent
                   size={24}
                   color={isActive ? colors.primary[500] : colors.gray[400]}
-                  fill={isActive ? colors.primary[500] : 'none'} // Filled when active
-                  strokeWidth={2} // Consistent 2px stroke for both states
+                  isActive={isActive}
                 />
               </MotiView>
 
