@@ -44,32 +44,47 @@ export const HomeIcon: React.FC<IconProps> = ({ size = 24, color = '#000', isAct
 
 export const BibleIcon: React.FC<IconProps> = ({ size = 24, color = '#000', isActive = false }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    {/* Closed book with pages visible on right side */}
-    {/* Book spine/left edge */}
+    {/* Open book - two pages */}
+    {/* Left page */}
     <Path
-      d="M4 19.5V4.5C4 3.83696 4.26339 3.20107 4.73223 2.73223C5.20107 2.26339 5.83696 2 6.5 2H20V22H6.5C5.83696 22 5.20107 21.7366 4.73223 21.2678C4.26339 20.7989 4 20.163 4 19.5Z"
+      d="M2 3H12V21L12 21C10.8954 21 10 20.1046 10 19V3H2Z"
       fill={isActive ? color : 'none'}
       stroke={color}
       strokeWidth={2}
       strokeLinecap="round"
       strokeLinejoin="round"
     />
-    {/* Book pages layers - only visible when active, on right edge */}
-    {isActive && (
-      <>
-        <Line x1="18" y1="2" x2="18" y2="22" stroke="white" strokeWidth={1.5} />
-        <Line x1="16" y1="2" x2="16" y2="22" stroke="white" strokeWidth={1.5} />
-      </>
-    )}
-    {/* Bookmark ribbon */}
+    {/* Right page */}
     <Path
-      d="M10 2V8L12 6L14 8V2"
-      fill={isActive ? 'white' : 'none'}
-      stroke={isActive ? 'white' : color}
-      strokeWidth={1.5}
+      d="M22 3H12V21C13.1046 21 14 20.1046 14 19V3H22Z"
+      fill={isActive ? color : 'none'}
+      stroke={color}
+      strokeWidth={2}
       strokeLinecap="round"
       strokeLinejoin="round"
     />
+    {/* Center binding/spine */}
+    <Line
+      x1="12"
+      y1="3"
+      x2="12"
+      y2="21"
+      stroke={color}
+      strokeWidth={2}
+    />
+    {/* Page lines - only when active, in white */}
+    {isActive && (
+      <>
+        {/* Left page lines */}
+        <Line x1="4" y1="7" x2="10" y2="7" stroke="white" strokeWidth={1} />
+        <Line x1="4" y1="10" x2="10" y2="10" stroke="white" strokeWidth={1} />
+        <Line x1="4" y1="13" x2="10" y2="13" stroke="white" strokeWidth={1} />
+        {/* Right page lines */}
+        <Line x1="14" y1="7" x2="20" y2="7" stroke="white" strokeWidth={1} />
+        <Line x1="14" y1="10" x2="20" y2="10" stroke="white" strokeWidth={1} />
+        <Line x1="14" y1="13" x2="20" y2="13" stroke="white" strokeWidth={1} />
+      </>
+    )}
   </Svg>
 );
 
