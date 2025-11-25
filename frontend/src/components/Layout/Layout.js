@@ -74,6 +74,9 @@ export default function Layout() {
     if (path.includes('/articles')) {
       setExpandedMenus(prev => ({ ...prev, articles: true }));
     }
+    if (path.includes('/explore')) {
+      setExpandedMenus(prev => ({ ...prev, explore: true }));
+    }
     if (path.includes('/accounting')) {
       setExpandedMenus(prev => ({ ...prev, finance: true }));
     }
@@ -130,6 +133,17 @@ export default function Layout() {
         { label: 'Article Categories', path: '/articles/categories' },
         { label: 'Article Tags', path: '/articles/tags' },
         { label: 'Comment Moderation', path: '/articles/comments' },
+      ]
+    },
+    {
+      icon: Sparkles,
+      label: 'Explore',
+      key: 'explore',
+      submenu: [
+        { label: 'Dashboard', path: '/explore' },
+        { label: 'Content Management', path: '/explore/content' },
+        { label: 'Scheduling', path: '/explore/schedule' },
+        { label: 'Analytics', path: '/explore/analytics' },
       ]
     },
     
