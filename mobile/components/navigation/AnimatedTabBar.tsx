@@ -1,12 +1,12 @@
 /**
- * Animated Bottom Tab Bar with Central FAB
+ * Animated Bottom Tab Bar (Facebook-style)
  *
  * Features:
  * - Smooth tab transitions with Moti
- * - Central floating action button for "Give"
- * - Large touch targets (56px) for accessibility
+ * - Compact height for more screen space
+ * - Large icons (28px) for easy recognition
+ * - Active indicator at top of navbar
  * - Icon + label for clarity
- * - Active indicator with smooth animation
  */
 
 import React from 'react';
@@ -14,9 +14,8 @@ import { View, Pressable, Platform } from 'react-native';
 import { MotiView } from 'moti';
 import { useRouter, useSegments } from 'expo-router';
 import { Text } from '@/components/ui/text';
-import { Icon } from '@/components/ui/icon';
-import { Home, BookOpen, Calendar, Users, User, Compass } from 'lucide-react-native';
-import { colors, touchTargets, shadows } from '@/constants/theme';
+import { Home, BookOpen, Calendar, User, Compass, Heart } from 'lucide-react-native';
+import { colors, touchTargets } from '@/constants/theme';
 import { useTranslation } from 'react-i18next';
 import { useNavigationStore } from '@/stores/navigation';
 
@@ -41,10 +40,10 @@ const TABS: Tab[] = [
     route: '/(tabs)/bible',
   },
   {
-    name: 'give', // Placeholder for FAB
-    icon: () => null,
-    label: '',
-    route: '',
+    name: 'give',
+    icon: Heart,
+    label: 'tabs.give',
+    route: '/give', // Special route - opens Give screen
   },
   {
     name: 'explore',
@@ -76,6 +75,12 @@ export function AnimatedTabBar() {
   const activeRoute = `/(tabs)${segments[1] ? `/${segments[1]}` : ''}`;
 
   const handleTabPress = (tab: Tab) => {
+    // Special handling for Give button
+    if (tab.name === 'give') {
+      router.push('/give');
+      return;
+    }
+
     // Don't navigate if already on this tab (prevents page blink)
     if (tab.route && activeRoute !== tab.route) {
       // Calculate and set animation direction before navigation
@@ -84,72 +89,20 @@ export function AnimatedTabBar() {
     }
   };
 
-  const handleGivePress = () => {
-    router.push('/give');
-  };
-
   return (
     <View
       className="absolute bottom-0 left-0 right-0 bg-white border-t border-gray-200"
       style={{
-        paddingBottom: Platform.OS === 'ios' ? 20 : 8,
-        ...shadows.lg,
+        paddingBottom: Platform.OS === 'ios' ? 16 : 4,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: -2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+        elevation: 8,
       }}
     >
-      <View className="flex-row items-center px-2 pt-2">
+      <View className="flex-row items-center">
         {TABS.map((tab, index) => {
-          // Central FAB for Give
-          if (tab.name === 'give') {
-            return (
-              <View
-                key={tab.name}
-                className="items-center justify-center"
-                style={{
-                  flex: 1,
-                  minWidth: touchTargets.comfortable,
-                  minHeight: touchTargets.comfortable,
-                }}
-              >
-                <Pressable
-                  onPress={handleGivePress}
-                  className="active:opacity-80"
-                  style={{
-                    width: touchTargets.large,
-                    height: touchTargets.large,
-                    borderRadius: touchTargets.large / 2,
-                    backgroundColor: colors.secondary[500],
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    marginTop: -32,
-                    ...shadows.xl,
-                  }}
-                >
-                  <MotiView
-                    from={{ scale: 0.95 }}
-                    animate={{ scale: 1 }}
-                    transition={{
-                      type: 'spring',
-                      duration: 300,
-                    }}
-                  >
-                    <Icon
-                      as={require('lucide-react-native').Heart}
-                      size="xl"
-                      className="text-white"
-                    />
-                  </MotiView>
-                </Pressable>
-                <Text
-                  size="2xs"
-                  className="text-gray-600 mt-1 font-medium"
-                  style={{ fontSize: 10 }}
-                >
-                  {t('tabs.give' as any) || 'Give'}
-                </Text>
-              </View>
-            );
-          }
-
           const isActive = activeRoute === tab.route;
           const IconComponent = tab.icon;
 
@@ -157,26 +110,27 @@ export function AnimatedTabBar() {
             <Pressable
               key={tab.name}
               onPress={() => handleTabPress(tab)}
-              className="items-center justify-center active:opacity-60"
+              className="items-center justify-center active:opacity-60 relative"
               style={{
                 flex: 1,
                 minWidth: touchTargets.comfortable,
-                minHeight: touchTargets.comfortable,
-                paddingVertical: 8,
+                paddingVertical: 6,
+                paddingTop: 10,
               }}
             >
-              {/* Active indicator */}
+              {/* Active indicator - at the very top */}
               {isActive && (
                 <MotiView
-                  from={{ opacity: 0, translateY: 5 }}
-                  animate={{ opacity: 1, translateY: 0 }}
+                  from={{ opacity: 0, scaleX: 0 }}
+                  animate={{ opacity: 1, scaleX: 1 }}
                   transition={{ type: 'timing', duration: 200 }}
                   style={{
                     position: 'absolute',
                     top: 0,
+                    left: '50%',
+                    marginLeft: -20,
                     width: 40,
-                    height: 4,
-                    borderRadius: 2,
+                    height: 3,
                     backgroundColor: colors.primary[500],
                   }}
                 />
@@ -185,27 +139,27 @@ export function AnimatedTabBar() {
               {/* Icon */}
               <MotiView
                 animate={{
-                  scale: isActive ? 1.1 : 1,
+                  scale: isActive ? 1.05 : 1,
                 }}
                 transition={{
                   type: 'spring',
                   damping: 20,
                 }}
               >
-                <Icon
-                  as={IconComponent}
-                  size="lg"
-                  className={isActive ? 'text-primary-500' : 'text-gray-400'}
+                <IconComponent
+                  size={28}
+                  color={isActive ? colors.primary[500] : colors.gray[400]}
+                  strokeWidth={isActive ? 2.5 : 2}
                 />
               </MotiView>
 
               {/* Label */}
               <Text
                 size="xs"
-                className={`mt-1 font-medium ${
+                className={`mt-0.5 font-medium ${
                   isActive ? 'text-primary-500' : 'text-gray-500'
                 }`}
-                style={{ fontSize: 11 }}
+                style={{ fontSize: 10 }}
               >
                 {t(tab.label as any)}
               </Text>
