@@ -1,33 +1,28 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
+import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
+import { Input } from '../components/ui/input';
+import { Button } from '../components/ui/button';
+import { Switch } from '../components/ui/switch';
+import { Label } from '../components/ui/label';
+import { Alert, AlertDescription, AlertTitle } from '../components/ui/alert';
 import {
-  Box,
-  Card,
-  CardContent,
-  Typography,
-  TextField,
-  Button,
-  Switch,
-  FormControlLabel,
-  Tabs,
-  Tab,
-  Alert,
-  Snackbar,
-  CircularProgress,
-  Grid,
-  Divider,
-  InputAdornment,
-  IconButton,
-} from '@mui/material';
-import { Visibility, VisibilityOff, Check, Error } from '@mui/icons-material';
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../components/ui/select';
+import { Separator } from '../components/ui/separator';
+import { toast } from 'sonner';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
 function SystemSettings() {
-  const [activeTab, setActiveTab] = useState(0);
   const [showKeys, setShowKeys] = useState({});
-  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const queryClient = useQueryClient();
 
   // Fetch system settings
@@ -47,14 +42,10 @@ function SystemSettings() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['systemSettings']);
-      setSnackbar({ open: true, message: 'Settings saved successfully!', severity: 'success' });
+      toast.success('Settings saved successfully!');
     },
     onError: (error) => {
-      setSnackbar({
-        open: true,
-        message: error.response?.data?.detail || 'Failed to save settings',
-        severity: 'error',
-      });
+      toast.error(error.response?.data?.detail || 'Failed to save settings');
     },
   });
 
@@ -65,14 +56,10 @@ function SystemSettings() {
       return data;
     },
     onSuccess: (data) => {
-      setSnackbar({ open: true, message: data.message, severity: 'success' });
+      toast.success(data.message);
     },
     onError: (error) => {
-      setSnackbar({
-        open: true,
-        message: error.response?.data?.detail || 'AI connection test failed',
-        severity: 'error',
-      });
+      toast.error(error.response?.data?.detail || 'AI connection test failed');
     },
   });
 
@@ -83,14 +70,10 @@ function SystemSettings() {
       return data;
     },
     onSuccess: (data) => {
-      setSnackbar({ open: true, message: data.message, severity: 'success' });
+      toast.success(data.message);
     },
     onError: (error) => {
-      setSnackbar({
-        open: true,
-        message: error.response?.data?.detail || 'Stability AI connection test failed',
-        severity: 'error',
-      });
+      toast.error(error.response?.data?.detail || 'Stability AI connection test failed');
     },
   });
 
@@ -130,76 +113,68 @@ function SystemSettings() {
 
   if (isLoading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
-        <CircularProgress />
-      </Box>
+      <div className="flex justify-center items-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
     );
   }
 
   return (
-    <Box p={3}>
-      <Typography variant="h4" gutterBottom>
-        System Settings
-      </Typography>
-      <Typography variant="body2" color="textSecondary" gutterBottom>
-        Manage application-wide configuration, API keys, and integrations
-      </Typography>
+    <div className="p-6">
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold tracking-tight">System Settings</h1>
+        <p className="text-muted-foreground mt-1">
+          Manage application-wide configuration, API keys, and integrations
+        </p>
+      </div>
 
-      <Card sx={{ mt: 3 }}>
-        <Tabs value={activeTab} onChange={(e, v) => setActiveTab(v)}>
-          <Tab label="AI Integration" />
-          <Tab label="WhatsApp" />
-          <Tab label="Payment Gateway" />
+      <Card>
+        <Tabs defaultValue="ai">
+          <CardHeader className="pb-0">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="ai">AI Integration</TabsTrigger>
+              <TabsTrigger value="whatsapp">WhatsApp</TabsTrigger>
+              <TabsTrigger value="payment">Payment Gateway</TabsTrigger>
+            </TabsList>
+          </CardHeader>
+
+          <CardContent className="pt-6">
+            <TabsContent value="ai" className="mt-0">
+              <AIIntegrationTab
+                settings={settings?.ai_integration || {}}
+                onSave={handleSaveAI}
+                onTestAI={() => testAIMutation.mutate()}
+                onTestStability={() => testStabilityMutation.mutate()}
+                showKeys={showKeys}
+                setShowKeys={setShowKeys}
+                isSaving={updateMutation.isPending}
+                isTesting={testAIMutation.isPending || testStabilityMutation.isPending}
+              />
+            </TabsContent>
+
+            <TabsContent value="whatsapp" className="mt-0">
+              <WhatsAppIntegrationTab
+                settings={settings?.whatsapp_integration || {}}
+                onSave={handleSaveWhatsApp}
+                showKeys={showKeys}
+                setShowKeys={setShowKeys}
+                isSaving={updateMutation.isPending}
+              />
+            </TabsContent>
+
+            <TabsContent value="payment" className="mt-0">
+              <PaymentIntegrationTab
+                settings={settings?.payment_integration || {}}
+                onSave={handleSavePayment}
+                showKeys={showKeys}
+                setShowKeys={setShowKeys}
+                isSaving={updateMutation.isPending}
+              />
+            </TabsContent>
+          </CardContent>
         </Tabs>
-
-        <Divider />
-
-        <CardContent>
-          {activeTab === 0 && (
-            <AIIntegrationTab
-              settings={settings?.ai_integration || {}}
-              onSave={handleSaveAI}
-              onTestAI={() => testAIMutation.mutate()}
-              onTestStability={() => testStabilityMutation.mutate()}
-              showKeys={showKeys}
-              setShowKeys={setShowKeys}
-              isSaving={updateMutation.isPending}
-              isTesting={testAIMutation.isPending || testStabilityMutation.isPending}
-            />
-          )}
-
-          {activeTab === 1 && (
-            <WhatsAppIntegrationTab
-              settings={settings?.whatsapp_integration || {}}
-              onSave={handleSaveWhatsApp}
-              showKeys={showKeys}
-              setShowKeys={setShowKeys}
-              isSaving={updateMutation.isPending}
-            />
-          )}
-
-          {activeTab === 2 && (
-            <PaymentIntegrationTab
-              settings={settings?.payment_integration || {}}
-              onSave={handleSavePayment}
-              showKeys={showKeys}
-              setShowKeys={setShowKeys}
-              isSaving={updateMutation.isPending}
-            />
-          )}
-        </CardContent>
       </Card>
-
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={6000}
-        onClose={() => setSnackbar({ ...snackbar, open: false })}
-      >
-        <Alert severity={snackbar.severity} onClose={() => setSnackbar({ ...snackbar, open: false })}>
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
-    </Box>
+    </div>
   );
 }
 
@@ -217,144 +192,147 @@ function AIIntegrationTab({ settings, onSave, onTestAI, onTestStability, showKey
   };
 
   return (
-    <Box>
-      <Alert severity="info" sx={{ mb: 3 }}>
-        <Typography variant="subtitle2" gutterBottom>
-          AI Integration for Explore Feature
-        </Typography>
-        <Typography variant="body2">
+    <div className="space-y-6">
+      <Alert>
+        <AlertTitle>AI Integration for Explore Feature</AlertTitle>
+        <AlertDescription>
           Configure Anthropic Claude for AI-generated devotions, verses, and quizzes (~$0.01 per devotion).
           Configure Stability AI for AI-generated cover images (~$0.08 per image).
-        </Typography>
+        </AlertDescription>
       </Alert>
 
-      <Grid container spacing={3}>
-        <Grid item xs={12}>
-          <FormControlLabel
-            control={
-              <Switch
-                checked={formData.ai_generation_enabled}
-                onChange={(e) => handleChange('ai_generation_enabled', e.target.checked)}
-              />
-            }
-            label="Enable AI Content Generation"
-          />
-          <Typography variant="caption" display="block" color="textSecondary">
-            Master switch for AI features (disable to save costs)
-          </Typography>
-        </Grid>
+      <div className="flex items-center space-x-3">
+        <Switch
+          id="ai-enabled"
+          checked={formData.ai_generation_enabled}
+          onCheckedChange={(checked) => handleChange('ai_generation_enabled', checked)}
+        />
+        <div>
+          <Label htmlFor="ai-enabled">Enable AI Content Generation</Label>
+          <p className="text-sm text-muted-foreground">Master switch for AI features (disable to save costs)</p>
+        </div>
+      </div>
 
-        <Grid item xs={12}>
-          <Typography variant="h6" gutterBottom>
-            Anthropic Claude API
-          </Typography>
-          <TextField
-            fullWidth
-            label="API Key"
-            value={formData.anthropic_api_key}
-            onChange={(e) => handleChange('anthropic_api_key', e.target.value)}
-            type={showKeys.anthropic ? 'text' : 'password'}
-            placeholder="sk-ant-api03-xxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-            helperText="Get from https://console.anthropic.com/"
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton
-                    onClick={() => setShowKeys({ ...showKeys, anthropic: !showKeys.anthropic })}
-                    edge="end"
-                  >
-                    {showKeys.anthropic ? <VisibilityOff /> : <Visibility />}
-                  </IconButton>
-                </InputAdornment>
-              ),
-            }}
-          />
-        </Grid>
+      <Separator />
 
-        <Grid item xs={12} md={6}>
-          <TextField
-            fullWidth
-            label="Claude Model"
-            select
-            SelectProps={{ native: true }}
-            value={formData.anthropic_model}
-            onChange={(e) => handleChange('anthropic_model', e.target.value)}
-            helperText="Sonnet is recommended (balance of quality and cost)"
-          >
-            <option value="claude-3-5-sonnet-20241022">Claude 3.5 Sonnet (Recommended)</option>
-            <option value="claude-3-opus-20240229">Claude 3 Opus (Highest quality, expensive)</option>
-            <option value="claude-3-haiku-20240307">Claude 3 Haiku (Fastest, cheapest)</option>
-          </TextField>
-        </Grid>
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold">Anthropic Claude API</h3>
 
-        <Grid item xs={12} md={6}>
-          <Button variant="outlined" onClick={onTestAI} disabled={isTesting || !formData.anthropic_api_key}>
-            {isTesting ? <CircularProgress size={20} /> : 'Test Connection'}
+        <div className="space-y-2">
+          <Label htmlFor="anthropic-key">API Key</Label>
+          <div className="relative">
+            <Input
+              id="anthropic-key"
+              value={formData.anthropic_api_key}
+              onChange={(e) => handleChange('anthropic_api_key', e.target.value)}
+              type={showKeys.anthropic ? 'text' : 'password'}
+              placeholder="sk-ant-api03-xxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+            />
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="absolute right-0 top-0 h-full px-3"
+              onClick={() => setShowKeys({ ...showKeys, anthropic: !showKeys.anthropic })}
+            >
+              {showKeys.anthropic ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </Button>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Get from <a href="https://console.anthropic.com/" target="_blank" rel="noreferrer" className="text-primary hover:underline">https://console.anthropic.com/</a>
+          </p>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="claude-model">Claude Model</Label>
+            <Select
+              value={formData.anthropic_model}
+              onValueChange={(value) => handleChange('anthropic_model', value)}
+            >
+              <SelectTrigger id="claude-model">
+                <SelectValue placeholder="Select model" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="claude-3-5-sonnet-20241022">Claude 3.5 Sonnet (Recommended)</SelectItem>
+                <SelectItem value="claude-3-opus-20240229">Claude 3 Opus (Highest quality, expensive)</SelectItem>
+                <SelectItem value="claude-3-haiku-20240307">Claude 3 Haiku (Fastest, cheapest)</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-sm text-muted-foreground">Sonnet is recommended (balance of quality and cost)</p>
+          </div>
+
+          <div className="flex items-end">
+            <Button variant="outline" onClick={onTestAI} disabled={isTesting || !formData.anthropic_api_key}>
+              {isTesting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Test Connection
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      <Separator />
+
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold">Stability AI (Image Generation)</h3>
+
+        <div className="space-y-2">
+          <Label htmlFor="stability-key">API Key</Label>
+          <div className="relative">
+            <Input
+              id="stability-key"
+              value={formData.stability_api_key}
+              onChange={(e) => handleChange('stability_api_key', e.target.value)}
+              type={showKeys.stability ? 'text' : 'password'}
+              placeholder="sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+            />
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="absolute right-0 top-0 h-full px-3"
+              onClick={() => setShowKeys({ ...showKeys, stability: !showKeys.stability })}
+            >
+              {showKeys.stability ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </Button>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Get from <a href="https://platform.stability.ai/" target="_blank" rel="noreferrer" className="text-primary hover:underline">https://platform.stability.ai/</a>
+          </p>
+        </div>
+
+        <div>
+          <Button variant="outline" onClick={onTestStability} disabled={isTesting || !formData.stability_api_key}>
+            {isTesting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+            Test Connection
           </Button>
-        </Grid>
+        </div>
+      </div>
 
-        <Grid item xs={12}>
-          <Divider />
-        </Grid>
+      <Separator />
 
-        <Grid item xs={12}>
-          <Typography variant="h6" gutterBottom>
-            Stability AI (Image Generation)
-          </Typography>
-          <TextField
-            fullWidth
-            label="API Key"
-            value={formData.stability_api_key}
-            onChange={(e) => handleChange('stability_api_key', e.target.value)}
-            type={showKeys.stability ? 'text' : 'password'}
-            placeholder="sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-            helperText="Get from https://platform.stability.ai/"
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton
-                    onClick={() => setShowKeys({ ...showKeys, stability: !showKeys.stability })}
-                    edge="end"
-                  >
-                    {showKeys.stability ? <VisibilityOff /> : <Visibility />}
-                  </IconButton>
-                </InputAdornment>
-              ),
-            }}
-          />
-        </Grid>
+      <div className="space-y-4">
+        <div className="space-y-2 max-w-xs">
+          <Label htmlFor="monthly-budget">Monthly Budget (USD)</Label>
+          <div className="relative">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+            <Input
+              id="monthly-budget"
+              type="number"
+              value={formData.monthly_budget_usd}
+              onChange={(e) => handleChange('monthly_budget_usd', e.target.value)}
+              className="pl-7"
+            />
+          </div>
+          <p className="text-sm text-muted-foreground">AI generation stops when budget is reached</p>
+        </div>
+      </div>
 
-        <Grid item xs={12} md={6}>
-          <Button variant="outlined" onClick={onTestStability} disabled={isTesting || !formData.stability_api_key}>
-            {isTesting ? <CircularProgress size={20} /> : 'Test Connection'}
-          </Button>
-        </Grid>
-
-        <Grid item xs={12}>
-          <Divider />
-        </Grid>
-
-        <Grid item xs={12} md={6}>
-          <TextField
-            fullWidth
-            label="Monthly Budget (USD)"
-            type="number"
-            value={formData.monthly_budget_usd}
-            onChange={(e) => handleChange('monthly_budget_usd', e.target.value)}
-            helperText="AI generation stops when budget is reached"
-            InputProps={{
-              startAdornment: <InputAdornment position="start">$</InputAdornment>,
-            }}
-          />
-        </Grid>
-
-        <Grid item xs={12}>
-          <Button variant="contained" color="primary" onClick={() => onSave(formData)} disabled={isSaving}>
-            {isSaving ? <CircularProgress size={20} /> : 'Save AI Settings'}
-          </Button>
-        </Grid>
-      </Grid>
-    </Box>
+      <Button onClick={() => onSave(formData)} disabled={isSaving}>
+        {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+        Save AI Settings
+      </Button>
+    </div>
   );
 }
 
@@ -367,74 +345,69 @@ function WhatsAppIntegrationTab({ settings, onSave, showKeys, setShowKeys, isSav
   });
 
   return (
-    <Box>
-      <Alert severity="info" sx={{ mb: 3 }}>
-        Configure WhatsApp API for OTP login and notifications
+    <div className="space-y-6">
+      <Alert>
+        <AlertDescription>
+          Configure WhatsApp API for OTP login and notifications
+        </AlertDescription>
       </Alert>
 
-      <Grid container spacing={3}>
-        <Grid item xs={12}>
-          <FormControlLabel
-            control={
-              <Switch
-                checked={formData.whatsapp_enabled}
-                onChange={(e) => setFormData({ ...formData, whatsapp_enabled: e.target.checked })}
-              />
-            }
-            label="Enable WhatsApp Integration"
-          />
-        </Grid>
+      <div className="flex items-center space-x-3">
+        <Switch
+          id="whatsapp-enabled"
+          checked={formData.whatsapp_enabled}
+          onCheckedChange={(checked) => setFormData({ ...formData, whatsapp_enabled: checked })}
+        />
+        <Label htmlFor="whatsapp-enabled">Enable WhatsApp Integration</Label>
+      </div>
 
-        <Grid item xs={12}>
-          <TextField
-            fullWidth
-            label="WhatsApp API URL"
-            value={formData.whatsapp_api_url}
-            onChange={(e) => setFormData({ ...formData, whatsapp_api_url: e.target.value })}
-            placeholder="https://your-whatsapp-api.com"
-          />
-        </Grid>
+      <div className="space-y-2">
+        <Label htmlFor="whatsapp-url">WhatsApp API URL</Label>
+        <Input
+          id="whatsapp-url"
+          value={formData.whatsapp_api_url}
+          onChange={(e) => setFormData({ ...formData, whatsapp_api_url: e.target.value })}
+          placeholder="https://your-whatsapp-api.com"
+        />
+      </div>
 
-        <Grid item xs={12}>
-          <TextField
-            fullWidth
-            label="API Key"
+      <div className="space-y-2">
+        <Label htmlFor="whatsapp-key">API Key</Label>
+        <div className="relative">
+          <Input
+            id="whatsapp-key"
             value={formData.whatsapp_api_key}
             onChange={(e) => setFormData({ ...formData, whatsapp_api_key: e.target.value })}
             type={showKeys.whatsapp ? 'text' : 'password'}
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton
-                    onClick={() => setShowKeys({ ...showKeys, whatsapp: !showKeys.whatsapp })}
-                    edge="end"
-                  >
-                    {showKeys.whatsapp ? <VisibilityOff /> : <Visibility />}
-                  </IconButton>
-                </InputAdornment>
-              ),
-            }}
           />
-        </Grid>
-
-        <Grid item xs={12} md={6}>
-          <TextField
-            fullWidth
-            label="From Number"
-            value={formData.whatsapp_from_number}
-            onChange={(e) => setFormData({ ...formData, whatsapp_from_number: e.target.value })}
-            placeholder="+6281234567890"
-            helperText="WhatsApp sender number (include country code)"
-          />
-        </Grid>
-
-        <Grid item xs={12}>
-          <Button variant="contained" color="primary" onClick={() => onSave(formData)} disabled={isSaving}>
-            {isSaving ? <CircularProgress size={20} /> : 'Save WhatsApp Settings'}
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="absolute right-0 top-0 h-full px-3"
+            onClick={() => setShowKeys({ ...showKeys, whatsapp: !showKeys.whatsapp })}
+          >
+            {showKeys.whatsapp ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
           </Button>
-        </Grid>
-      </Grid>
-    </Box>
+        </div>
+      </div>
+
+      <div className="space-y-2 max-w-xs">
+        <Label htmlFor="whatsapp-from">From Number</Label>
+        <Input
+          id="whatsapp-from"
+          value={formData.whatsapp_from_number}
+          onChange={(e) => setFormData({ ...formData, whatsapp_from_number: e.target.value })}
+          placeholder="+6281234567890"
+        />
+        <p className="text-sm text-muted-foreground">WhatsApp sender number (include country code)</p>
+      </div>
+
+      <Button onClick={() => onSave(formData)} disabled={isSaving}>
+        {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+        Save WhatsApp Settings
+      </Button>
+    </div>
   );
 }
 
@@ -447,78 +420,79 @@ function PaymentIntegrationTab({ settings, onSave, showKeys, setShowKeys, isSavi
   });
 
   return (
-    <Box>
-      <Alert severity="info" sx={{ mb: 3 }}>
-        Configure iPaymu payment gateway for online giving and donations
+    <div className="space-y-6">
+      <Alert>
+        <AlertDescription>
+          Configure iPaymu payment gateway for online giving and donations
+        </AlertDescription>
       </Alert>
 
-      <Grid container spacing={3}>
-        <Grid item xs={12}>
-          <FormControlLabel
-            control={
-              <Switch
-                checked={formData.ipaymu_enabled}
-                onChange={(e) => setFormData({ ...formData, ipaymu_enabled: e.target.checked })}
-              />
-            }
-            label="Enable iPaymu Integration"
-          />
-        </Grid>
+      <div className="flex items-center space-x-3">
+        <Switch
+          id="ipaymu-enabled"
+          checked={formData.ipaymu_enabled}
+          onCheckedChange={(checked) => setFormData({ ...formData, ipaymu_enabled: checked })}
+        />
+        <Label htmlFor="ipaymu-enabled">Enable iPaymu Integration</Label>
+      </div>
 
-        <Grid item xs={12} md={6}>
-          <TextField
-            fullWidth
-            label="Virtual Account Number"
+      <div className="grid gap-4 md:grid-cols-2">
+        <div className="space-y-2">
+          <Label htmlFor="ipaymu-va">Virtual Account Number</Label>
+          <Input
+            id="ipaymu-va"
             value={formData.ipaymu_va}
             onChange={(e) => setFormData({ ...formData, ipaymu_va: e.target.value })}
             placeholder="1179000899"
-            helperText="Get from https://my.ipaymu.com"
           />
-        </Grid>
+          <p className="text-sm text-muted-foreground">
+            Get from <a href="https://my.ipaymu.com" target="_blank" rel="noreferrer" className="text-primary hover:underline">https://my.ipaymu.com</a>
+          </p>
+        </div>
 
-        <Grid item xs={12} md={6}>
-          <TextField
-            fullWidth
-            label="Environment"
-            select
-            SelectProps={{ native: true }}
+        <div className="space-y-2">
+          <Label htmlFor="ipaymu-env">Environment</Label>
+          <Select
             value={formData.ipaymu_env}
-            onChange={(e) => setFormData({ ...formData, ipaymu_env: e.target.value })}
+            onValueChange={(value) => setFormData({ ...formData, ipaymu_env: value })}
           >
-            <option value="sandbox">Sandbox (Testing)</option>
-            <option value="production">Production (Live)</option>
-          </TextField>
-        </Grid>
+            <SelectTrigger id="ipaymu-env">
+              <SelectValue placeholder="Select environment" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="sandbox">Sandbox (Testing)</SelectItem>
+              <SelectItem value="production">Production (Live)</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
 
-        <Grid item xs={12}>
-          <TextField
-            fullWidth
-            label="API Key"
+      <div className="space-y-2">
+        <Label htmlFor="ipaymu-key">API Key</Label>
+        <div className="relative">
+          <Input
+            id="ipaymu-key"
             value={formData.ipaymu_api_key}
             onChange={(e) => setFormData({ ...formData, ipaymu_api_key: e.target.value })}
             type={showKeys.ipaymu ? 'text' : 'password'}
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton
-                    onClick={() => setShowKeys({ ...showKeys, ipaymu: !showKeys.ipaymu })}
-                    edge="end"
-                  >
-                    {showKeys.ipaymu ? <VisibilityOff /> : <Visibility />}
-                  </IconButton>
-                </InputAdornment>
-              ),
-            }}
           />
-        </Grid>
-
-        <Grid item xs={12}>
-          <Button variant="contained" color="primary" onClick={() => onSave(formData)} disabled={isSaving}>
-            {isSaving ? <CircularProgress size={20} /> : 'Save Payment Settings'}
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="absolute right-0 top-0 h-full px-3"
+            onClick={() => setShowKeys({ ...showKeys, ipaymu: !showKeys.ipaymu })}
+          >
+            {showKeys.ipaymu ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
           </Button>
-        </Grid>
-      </Grid>
-    </Box>
+        </div>
+      </div>
+
+      <Button onClick={() => onSave(formData)} disabled={isSaving}>
+        {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+        Save Payment Settings
+      </Button>
+    </div>
   );
 }
 
