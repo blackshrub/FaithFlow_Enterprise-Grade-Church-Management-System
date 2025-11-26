@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useAuth } from '../context/AuthContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import GeneralSettingsTab from '../components/Settings/GeneralSettingsTab';
 import MemberStatusesTabNew from '../components/Settings/MemberStatusesTabNew';
@@ -10,9 +11,11 @@ import EventCategoriesTab from '../components/Settings/EventCategoriesTab';
 import WebhooksTab from '../components/Settings/WebhooksTab';
 import KioskSettingsTab from './Settings/KioskSettings';
 import ExploreSettingsTab from '../components/Settings/ExploreSettingsTab';
+import ExploreAIPromptsTab from '../components/Settings/ExploreAIPromptsTab';
 
 export default function Settings() {
   const { t } = useTranslation();
+  const { isSuperAdmin } = useAuth();
   const [activeTab, setActiveTab] = useState('general');
 
   return (
@@ -23,7 +26,7 @@ export default function Settings() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full max-w-5xl grid-cols-9">
+        <TabsList className={`grid w-full max-w-6xl ${isSuperAdmin ? 'grid-cols-10' : 'grid-cols-9'}`}>
           <TabsTrigger value="general">{t('settings.general')}</TabsTrigger>
           <TabsTrigger value="statuses">Statuses</TabsTrigger>
           <TabsTrigger value="rules">Rules</TabsTrigger>
@@ -33,6 +36,7 @@ export default function Settings() {
           <TabsTrigger value="webhooks">{t('settings.webhooks.title')}</TabsTrigger>
           <TabsTrigger value="kiosk">Kiosk</TabsTrigger>
           <TabsTrigger value="explore">Explore</TabsTrigger>
+          {isSuperAdmin && <TabsTrigger value="ai-prompts">AI Prompts</TabsTrigger>}
         </TabsList>
 
         <TabsContent value="general" className="mt-6">
@@ -70,6 +74,12 @@ export default function Settings() {
         <TabsContent value="explore" className="mt-6">
           <ExploreSettingsTab />
         </TabsContent>
+
+        {isSuperAdmin && (
+          <TabsContent value="ai-prompts" className="mt-6">
+            <ExploreAIPromptsTab />
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   );
