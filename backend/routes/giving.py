@@ -11,6 +11,7 @@ from datetime import datetime, timedelta
 from decimal import Decimal
 import logging
 import uuid
+import os
 
 from models.giving import (
     GivingFund,
@@ -26,6 +27,7 @@ from models.giving import (
     ManualBankAccount,
 )
 from utils.dependencies import get_db, get_current_user, get_session_church_id
+from utils.system_config import get_payment_settings
 from services.payments import get_payment_provider, PaymentMethod
 
 logger = logging.getLogger(__name__)
@@ -80,11 +82,15 @@ async def get_giving_config(
     supported_methods = []
     if online_enabled and provider_name:
         try:
+            # Get payment environment from system settings (with env var fallback)
+            system_payment_settings = await get_payment_settings(db)
+            payment_env = system_payment_settings.get("ipaymu_env", "sandbox")
+
             provider = get_payment_provider(
                 payment_online_enabled=online_enabled,
                 payment_provider=provider_name,
                 payment_provider_config=provider_config,
-                environment="production"  # TODO: Get from env
+                environment=payment_env
             )
 
             if provider:
@@ -326,11 +332,15 @@ async def submit_giving(
     provider_name = church_settings.get("payment_provider")
     provider_config = church_settings.get("payment_provider_config", {})
 
+    # Get payment environment from system settings (with env var fallback)
+    system_payment_settings = await get_payment_settings(db)
+    payment_env = system_payment_settings.get("ipaymu_env", "sandbox")
+
     provider = get_payment_provider(
         payment_online_enabled=online_enabled,
         payment_provider=provider_name,
         payment_provider_config=provider_config,
-        environment="production"  # TODO: Get from env
+        environment=payment_env
     )
 
     if not provider:

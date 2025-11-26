@@ -103,7 +103,6 @@ export const useBibleFontStore = create<BibleFontState>()(
               state.latinFont = DEFAULT_LATIN_FONT;
             }
             state._setHydrated(true);
-            console.log(`✅ Latin Bible font rehydrated: ${state.latinFont}`);
           }
         },
       }

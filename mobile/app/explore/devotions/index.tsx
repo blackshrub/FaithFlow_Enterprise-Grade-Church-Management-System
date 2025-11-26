@@ -21,6 +21,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
   ExploreColors,
@@ -38,11 +39,9 @@ import {
   Search,
   Calendar,
   Star,
-  Users,
   Play,
   CheckCircle2,
   BookOpen,
-  Clock,
 } from 'lucide-react-native';
 import { EmptyState } from '@/components/explore/EmptyState';
 import { ExploreHomeSkeleton } from '@/components/explore/LoadingSkeleton';
@@ -50,7 +49,8 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 
 export default function DevotionPlansLibraryScreen() {
   const router = useRouter();
-  const contentLanguage = useExploreStore((state) => state.contentLanguage);
+  const { t } = useTranslation(); // UI language follows global setting
+  const contentLanguage = useExploreStore((state) => state.contentLanguage); // Content language is independent
   const [searchQuery, setSearchQuery] = useState('');
 
   // Data queries
@@ -83,7 +83,7 @@ export default function DevotionPlansLibraryScreen() {
             <ArrowLeft size={24} color={ExploreColors.neutral[900]} />
           </Pressable>
           <Text style={styles.headerTitle}>
-            {contentLanguage === 'en' ? 'Devotion Plans' : 'Rencana Renungan'}
+            {t('explore.devotionPlans')}
           </Text>
           <View style={{ width: 40 }} />
         </View>
@@ -102,12 +102,12 @@ export default function DevotionPlansLibraryScreen() {
           onPress={() => router.back()}
           style={styles.backButton}
           accessibilityRole="button"
-          accessibilityLabel={contentLanguage === 'en' ? 'Go back' : 'Kembali'}
+          accessibilityLabel={t('explore.goBack')}
         >
           <ArrowLeft size={24} color={ExploreColors.neutral[900]} />
         </Pressable>
         <Text style={styles.headerTitle}>
-          {contentLanguage === 'en' ? 'Devotion Plans' : 'Rencana Renungan'}
+          {t('explore.devotionPlans')}
         </Text>
         <View style={{ width: 40 }} />
       </View>
@@ -123,11 +123,7 @@ export default function DevotionPlansLibraryScreen() {
             <Search size={20} color={ExploreColors.neutral[400]} />
             <TextInput
               style={styles.searchInput}
-              placeholder={
-                contentLanguage === 'en'
-                  ? 'Search devotion plans...'
-                  : 'Cari rencana renungan...'
-              }
+              placeholder={t('explore.searchDevotionPlans')}
               placeholderTextColor={ExploreColors.neutral[400]}
               value={searchQuery}
               onChangeText={setSearchQuery}
@@ -137,30 +133,20 @@ export default function DevotionPlansLibraryScreen() {
 
         {/* Description */}
         <Text style={styles.description}>
-          {contentLanguage === 'en'
-            ? 'Multi-day devotional journeys designed to deepen your faith, address specific life challenges, and build consistent spiritual habits.'
-            : 'Perjalanan renungan multi-hari yang dirancang untuk memperdalam iman, mengatasi tantangan hidup, dan membangun kebiasaan rohani yang konsisten.'}
+          {t('explore.devotionPlansDescription')}
         </Text>
 
         {/* Results Count */}
         <Text style={styles.resultsCount}>
           {filteredPlans.length}{' '}
-          {contentLanguage === 'en'
-            ? filteredPlans.length === 1
-              ? 'plan'
-              : 'plans'
-            : 'rencana'}
+          {filteredPlans.length === 1 ? t('explore.plan') : t('explore.plans')}
         </Text>
 
         {/* Plans List */}
         {filteredPlans.length === 0 ? (
           <EmptyState
             type="no_results"
-            message={
-              contentLanguage === 'en'
-                ? 'No devotion plans match your search'
-                : 'Tidak ada rencana renungan yang cocok dengan pencarian Anda'
-            }
+            message={t('explore.noDevotionPlansMatch')}
           />
         ) : (
           <View style={styles.plansList}>
@@ -205,7 +191,8 @@ function PlanCard({
   contentLanguage,
   index,
 }: PlanCardProps) {
-  const title = plan.title[contentLanguage] || plan.title.en;
+  const { t } = useTranslation(); // UI language follows global setting
+  const title = plan.title[contentLanguage] || plan.title.en; // Content uses contentLanguage
   const subtitle = plan.subtitle?.[contentLanguage] || plan.subtitle?.en;
   const description =
     plan.description?.[contentLanguage] || plan.description?.en || '';
@@ -216,38 +203,6 @@ function PlanCard({
   const completedDays = progress?.completed_days?.length ?? 0;
   const progressPercent =
     plan.duration_days > 0 ? (completedDays / plan.duration_days) * 100 : 0;
-
-  // Determine difficulty color
-  const getDifficultyConfig = () => {
-    switch (plan.difficulty) {
-      case 'beginner':
-        return {
-          color: ExploreColors.success[500],
-          bgColor: ExploreColors.success[500] + '40',
-          label: contentLanguage === 'en' ? 'Beginner' : 'Pemula',
-        };
-      case 'intermediate':
-        return {
-          color: ExploreColors.warning[500],
-          bgColor: ExploreColors.warning[500] + '40',
-          label: contentLanguage === 'en' ? 'Intermediate' : 'Menengah',
-        };
-      case 'advanced':
-        return {
-          color: ExploreColors.error[500],
-          bgColor: ExploreColors.error[500] + '40',
-          label: contentLanguage === 'en' ? 'Advanced' : 'Lanjutan',
-        };
-      default:
-        return {
-          color: ExploreColors.primary[500],
-          bgColor: ExploreColors.primary[500] + '40',
-          label: contentLanguage === 'en' ? 'All Levels' : 'Semua Level',
-        };
-    }
-  };
-
-  const difficultyConfig = getDifficultyConfig();
 
   return (
     <Animated.View entering={FadeInDown.duration(400).delay(index * 80)}>
@@ -272,37 +227,26 @@ function PlanCard({
             colors={['transparent', 'rgba(0,0,0,0.8)']}
             style={styles.imageGradient}
           >
-            {/* Difficulty Badge */}
-            <View
-              style={[
-                styles.difficultyBadge,
-                { backgroundColor: difficultyConfig.bgColor },
-              ]}
-            >
-              <Text
-                style={[styles.difficultyText, { color: difficultyConfig.color }]}
-              >
-                {difficultyConfig.label}
-              </Text>
-            </View>
-
-            {/* Duration Badge */}
-            <View style={styles.durationBadge}>
-              <Calendar size={14} color="#FFFFFF" />
-              <Text style={styles.durationText}>
-                {plan.duration_days} {contentLanguage === 'en' ? 'Days' : 'Hari'}
-              </Text>
-            </View>
-
-            {/* Completed Badge */}
-            {isCompleted && (
-              <View style={styles.completedBadge}>
-                <CheckCircle2 size={16} color="#FFFFFF" fill="#FFFFFF" />
-                <Text style={styles.completedBadgeText}>
-                  {contentLanguage === 'en' ? 'Completed' : 'Selesai'}
+            {/* Top Right Badges Container */}
+            <View style={styles.topRightBadges}>
+              {/* Duration Badge */}
+              <View style={styles.durationBadge}>
+                <Calendar size={14} color="#FFFFFF" />
+                <Text style={styles.durationText}>
+                  {plan.duration_days} {t('explore.days')}
                 </Text>
               </View>
-            )}
+
+              {/* Completed Badge - Under Duration */}
+              {isCompleted && (
+                <View style={styles.completedBadge}>
+                  <CheckCircle2 size={14} color="#FFFFFF" fill="#FFFFFF" />
+                  <Text style={styles.completedBadgeText}>
+                    {t('explore.completed')}
+                  </Text>
+                </View>
+              )}
+            </View>
 
             {/* Title on Image */}
             <View style={styles.imageTextContainer}>
@@ -341,16 +285,6 @@ function PlanCard({
               </View>
             )}
 
-            {/* Subscribers */}
-            {plan.subscriber_count !== undefined && plan.subscriber_count > 0 && (
-              <View style={styles.statItem}>
-                <Users size={14} color={ExploreColors.neutral[500]} />
-                <Text style={styles.statText}>
-                  {plan.subscriber_count.toLocaleString()}
-                </Text>
-              </View>
-            )}
-
             {/* Categories */}
             {plan.categories && plan.categories.length > 0 && (
               <View style={styles.categoryTag}>
@@ -366,9 +300,7 @@ function PlanCard({
             <View style={styles.progressSection}>
               <View style={styles.progressHeader}>
                 <Text style={styles.progressLabel}>
-                  {contentLanguage === 'en'
-                    ? `Day ${currentDay} of ${plan.duration_days}`
-                    : `Hari ${currentDay} dari ${plan.duration_days}`}
+                  {t('explore.dayOf', { current: currentDay, total: plan.duration_days })}
                 </Text>
                 <Text style={styles.progressPercent}>
                   {Math.round(progressPercent)}%
@@ -394,21 +326,21 @@ function PlanCard({
               <>
                 <CheckCircle2 size={18} color="#FFFFFF" />
                 <Text style={styles.actionButtonText}>
-                  {contentLanguage === 'en' ? 'Review Plan' : 'Tinjau Rencana'}
+                  {t('explore.review')}
                 </Text>
               </>
             ) : isSubscribed ? (
               <>
                 <Play size={18} color="#FFFFFF" fill="#FFFFFF" />
                 <Text style={styles.actionButtonText}>
-                  {contentLanguage === 'en' ? 'Continue' : 'Lanjutkan'}
+                  {t('explore.resume')}
                 </Text>
               </>
             ) : (
               <>
                 <BookOpen size={18} color="#FFFFFF" />
                 <Text style={styles.actionButtonText}>
-                  {contentLanguage === 'en' ? 'Start Plan' : 'Mulai Rencana'}
+                  {t('explore.start')}
                 </Text>
               </>
             )}
@@ -513,23 +445,14 @@ const styles = StyleSheet.create({
     padding: ExploreSpacing.md,
     justifyContent: 'space-between',
   },
-  difficultyBadge: {
-    position: 'absolute',
-    top: ExploreSpacing.md,
-    left: ExploreSpacing.md,
-    paddingHorizontal: ExploreSpacing.sm,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  difficultyText: {
-    ...ExploreTypography.caption,
-    fontWeight: '700',
-    fontSize: 11,
-  },
-  durationBadge: {
+  topRightBadges: {
     position: 'absolute',
     top: ExploreSpacing.md,
     right: ExploreSpacing.md,
+    alignItems: 'flex-end',
+    gap: 6,
+  },
+  durationBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
@@ -545,9 +468,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   completedBadge: {
-    position: 'absolute',
-    bottom: ExploreSpacing.xl + 40,
-    right: ExploreSpacing.md,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,

@@ -31,6 +31,13 @@ import {
   MessageCircleHeart,
   Sparkles,
   Database,
+  BookMarked,
+  User,
+  HelpCircle,
+  Layers,
+  Bookmark,
+  BarChart3,
+  Wand2,
 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
@@ -74,8 +81,30 @@ export default function Layout() {
     if (path.includes('/articles')) {
       setExpandedMenus(prev => ({ ...prev, articles: true }));
     }
-    if (path.includes('/explore')) {
-      setExpandedMenus(prev => ({ ...prev, explore: true }));
+    // Content Center submenus
+    if (path.includes('/content-center/devotion')) {
+      setExpandedMenus(prev => ({ ...prev, devotion: true }));
+    }
+    if (path.includes('/content-center/verse')) {
+      setExpandedMenus(prev => ({ ...prev, verse: true }));
+    }
+    if (path.includes('/content-center/figure')) {
+      setExpandedMenus(prev => ({ ...prev, figure: true }));
+    }
+    if (path.includes('/content-center/quiz')) {
+      setExpandedMenus(prev => ({ ...prev, quiz: true }));
+    }
+    if (path.includes('/content-center/bible-study')) {
+      setExpandedMenus(prev => ({ ...prev, bibleStudy: true }));
+    }
+    if (path.includes('/content-center/devotion-plan')) {
+      setExpandedMenus(prev => ({ ...prev, devotionPlan: true }));
+    }
+    if (path.includes('/content-center/topical')) {
+      setExpandedMenus(prev => ({ ...prev, topical: true }));
+    }
+    if (path.includes('/content-center')) {
+      setExpandedMenus(prev => ({ ...prev, contentCenter: true }));
     }
     if (path.includes('/accounting')) {
       setExpandedMenus(prev => ({ ...prev, finance: true }));
@@ -135,15 +164,82 @@ export default function Layout() {
         { label: 'Comment Moderation', path: '/articles/comments' },
       ]
     },
+
+    // Content Center Section (Explore Feature)
+    { type: 'section', label: 'CONTENT CENTER' },
     {
-      icon: Sparkles,
-      label: 'Explore',
-      key: 'explore',
+      icon: BarChart3,
+      label: 'Overview',
+      key: 'contentCenter',
       submenu: [
-        { label: 'Dashboard', path: '/explore' },
-        { label: 'Content Management', path: '/explore/content' },
-        { label: 'Scheduling', path: '/explore/schedule' },
-        { label: 'Analytics', path: '/explore/analytics' },
+        { label: 'Dashboard', path: '/content-center' },
+        { label: 'Scheduling', path: '/content-center/schedule' },
+        { label: 'Analytics', path: '/content-center/analytics' },
+        { label: 'AI Generation', path: '/content-center/ai' },
+      ]
+    },
+    {
+      icon: FileText,
+      label: 'Daily Devotion',
+      key: 'devotion',
+      submenu: [
+        { label: 'All Devotions', path: '/content-center/devotion' },
+        { label: 'Create New', path: '/content-center/devotion/new' },
+      ]
+    },
+    {
+      icon: BookMarked,
+      label: 'Verse of the Day',
+      key: 'verse',
+      submenu: [
+        { label: 'All Verses', path: '/content-center/verse' },
+        { label: 'Create New', path: '/content-center/verse/new' },
+      ]
+    },
+    {
+      icon: User,
+      label: 'Bible Figure',
+      key: 'figure',
+      submenu: [
+        { label: 'All Figures', path: '/content-center/figure' },
+        { label: 'Create New', path: '/content-center/figure/new' },
+      ]
+    },
+    {
+      icon: HelpCircle,
+      label: 'Daily Quiz',
+      key: 'quiz',
+      submenu: [
+        { label: 'All Quizzes', path: '/content-center/quiz' },
+        { label: 'Create New', path: '/content-center/quiz/new' },
+      ]
+    },
+    {
+      icon: BookOpen,
+      label: 'Bible Study',
+      key: 'bibleStudy',
+      submenu: [
+        { label: 'All Studies', path: '/content-center/bible-study' },
+        { label: 'Create New', path: '/content-center/bible-study/new' },
+      ]
+    },
+    {
+      icon: Layers,
+      label: 'Devotion Plan',
+      key: 'devotionPlan',
+      submenu: [
+        { label: 'All Plans', path: '/content-center/devotion-plan' },
+        { label: 'Create New', path: '/content-center/devotion-plan/new' },
+      ]
+    },
+    {
+      icon: Bookmark,
+      label: 'Topical Verses',
+      key: 'topical',
+      submenu: [
+        { label: 'Categories', path: '/content-center/topical' },
+        { label: 'All Verses', path: '/content-center/topical/verses' },
+        { label: 'Create New', path: '/content-center/topical/new' },
       ]
     },
     
@@ -173,6 +269,7 @@ export default function Layout() {
     // System Section
     { type: 'section', label: 'SYSTEM' },
     { icon: Settings, label: t('nav.settings'), path: '/settings' },
+    { icon: Database, label: 'System Settings', path: '/system-settings', superAdminOnly: true },
     { icon: Upload, label: 'Import/Export', path: '/import-export' },
     { icon: Users, label: 'User Management', path: '/users/management' },
   ];
@@ -221,7 +318,9 @@ export default function Layout() {
           {/* Navigation */}
           <nav className="flex-1 overflow-y-auto p-4">
             <ul className="space-y-1">
-              {menuItems.map((item, index) => {
+              {menuItems
+                .filter(item => !item.superAdminOnly || isSuperAdmin)
+                .map((item, index) => {
                 // Render section header
                 if (item.type === 'section') {
                   return (

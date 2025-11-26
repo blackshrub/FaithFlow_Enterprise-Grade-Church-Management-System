@@ -1,63 +1,68 @@
 /**
- * Offline Bible Hooks
+ * Offline Bible Hooks - INSTANT, ZERO-LATENCY
  *
  * React Query hooks for offline Bible data using optimized loaders
- * No network required - all data from local JSON files
+ * Key optimization: Bible data NEVER changes, so we use:
+ * - staleTime: Infinity (never refetch)
+ * - gcTime: Infinity (never garbage collect)
+ * - initialData: Synchronous data from loader (no loading state)
  */
 
 import { useQuery } from '@tanstack/react-query';
-import { getBibleLoader, preloadBible } from '@/lib/bibleLoaderOptimized';
+import { getBibleLoader, preloadBibles } from '@/lib/bibleLoaderOptimized';
 import { getBookNumber, getBookName } from '@/lib/bibleBookLookup';
 import type { BibleTranslation } from '@/types/bible';
 import type { BibleBook, BibleVerse, BibleSearchResult } from '@/lib/bibleLoaderOptimized';
 
+// Bible data NEVER changes - cache forever
 const CACHE_TIMES = {
-  BIBLE: 1000 * 60 * 60 * 24 * 7, // 1 week
+  BIBLE: Infinity, // Never expires - Bible text is immutable
 };
 
 /**
- * Get all Bible books for a version (offline)
- * Returns books with schema compatible with BookSelectorModal
+ * Transform books to API-compatible schema (pure function for initialData)
+ */
+function transformBooks(version: BibleTranslation, books: BibleBook[]) {
+  return books.map((book) => {
+    const englishName = getBookName(book.number) || book.name;
+    return {
+      number: book.number,
+      name: book.name,
+      chapters: book.chapters,
+      englishName,
+      id: `${version}-${book.number}`,
+      book_number: book.number,
+      name_local: book.name,
+      chapter_count: book.chapters,
+      testament: book.number <= 39 ? 'OT' : 'NT',
+    };
+  });
+}
+
+/**
+ * Get all Bible books for a version (offline) - INSTANT
+ * Uses initialData for zero loading state
  */
 export function useBibleBooksOffline(version: BibleTranslation) {
+  const loader = getBibleLoader(version);
+
   return useQuery({
     queryKey: ['bible-books-offline', version],
-    queryFn: async () => {
-      const loader = getBibleLoader(version);
-
-      // Ensure Bible is loaded
-      if (!loader.isLoaded()) {
-        await loader.load();
-      }
-
-      const books = loader.getBooks();
-
-      // Transform to API-compatible schema for BookSelectorModal
-      return books.map((book) => {
-        const englishName = getBookName(book.number) || book.name;
-        return {
-          // New schema fields
-          number: book.number,
-          name: book.name,
-          chapters: book.chapters,
-          englishName,
-          // Old API schema fields for backwards compatibility
-          id: `${version}-${book.number}`,
-          book_number: book.number,
-          name_local: book.name, // Use native name from Bible file
-          chapter_count: book.chapters,
-          testament: book.number <= 39 ? 'OT' : 'NT', // Books 1-39 = OT, 40-66 = NT
-        };
-      });
+    queryFn: () => {
+      // Synchronous - loader auto-loads if needed
+      return transformBooks(version, loader.getBooks());
     },
+    // INSTANT: Provide data synchronously, never show loading
+    initialData: () => transformBooks(version, loader.getBooks()),
+    // Bible NEVER changes - cache forever
     staleTime: CACHE_TIMES.BIBLE,
     gcTime: CACHE_TIMES.BIBLE,
   });
 }
 
 /**
- * Get a specific chapter with all verses (offline)
- * Accepts either book name or book number
+ * Get a specific chapter with all verses (offline) - INSTANT
+ * Uses initialData for zero loading state - critical for smooth navigation
  */
 export function useBibleChapterOffline(
   version: BibleTranslation,
@@ -71,40 +76,31 @@ export function useBibleChapterOffline(
       ? getBookNumber(bookNameOrNumber)
       : bookNameOrNumber;
 
+  const loader = getBibleLoader(version);
+  const isValid = !!version && !!bookNumber && bookNumber > 0 && chapter > 0;
+
   return useQuery({
     queryKey: ['bible-chapter-offline', version, bookNumber, chapter],
-    queryFn: async () => {
-      if (!bookNumber) {
-        console.warn(`Unknown book: ${bookNameOrNumber}`);
-        return [];
-      }
-
-      const loader = getBibleLoader(version);
-
-      // Ensure Bible is loaded
-      if (!loader.isLoaded()) {
-        await loader.load();
-      }
-
-      const verses = loader.getChapter(bookNumber, chapter);
-
-      // Return empty array if chapter not found
-      return verses;
+    queryFn: () => {
+      if (!bookNumber) return [];
+      // Synchronous - loader auto-loads if needed
+      return loader.getChapter(bookNumber, chapter);
     },
+    // INSTANT: Provide chapter data synchronously
+    initialData: () => {
+      if (!isValid || !bookNumber) return undefined;
+      return loader.getChapter(bookNumber, chapter);
+    },
+    // Bible NEVER changes - cache forever
     staleTime: CACHE_TIMES.BIBLE,
     gcTime: CACHE_TIMES.BIBLE,
-    enabled:
-      options?.enabled !== false &&
-      !!version &&
-      !!bookNumber &&
-      bookNumber > 0 &&
-      chapter > 0,
+    enabled: options?.enabled !== false && isValid,
   });
 }
 
 /**
- * Search Bible verses (offline)
- * Default limit increased to 500 to show comprehensive search results
+ * Search Bible verses (offline) - INSTANT after first search
+ * Search is computationally heavier, but still synchronous
  */
 export function useBibleSearchOffline(
   version: BibleTranslation,
@@ -112,31 +108,24 @@ export function useBibleSearchOffline(
   options?: { limit?: number; enabled?: boolean }
 ) {
   const limit = options?.limit || 500;
+  const isValid = !!query && query.trim().length >= 3;
 
   return useQuery({
     queryKey: ['bible-search-offline', version, query, limit],
-    queryFn: async () => {
-      if (!query || query.trim().length < 3) {
-        return [];
-      }
-
+    queryFn: () => {
+      if (!isValid) return [];
       const loader = getBibleLoader(version);
-
-      // Ensure Bible is loaded
-      if (!loader.isLoaded()) {
-        await loader.load();
-      }
-
       return loader.search(query.trim(), limit);
     },
+    // Search results are deterministic - cache forever
     staleTime: CACHE_TIMES.BIBLE,
     gcTime: CACHE_TIMES.BIBLE,
-    enabled: options?.enabled !== false && !!query && query.trim().length >= 3,
+    enabled: options?.enabled !== false && isValid,
   });
 }
 
 /**
- * Get a single verse (offline)
+ * Get a single verse (offline) - INSTANT
  */
 export function useBibleVerseOffline(
   version: BibleTranslation,
@@ -145,92 +134,72 @@ export function useBibleVerseOffline(
   verse: number,
   options?: { enabled?: boolean }
 ) {
+  const loader = getBibleLoader(version);
+  const isValid = bookNumber > 0 && chapter > 0 && verse > 0;
+
   return useQuery({
     queryKey: ['bible-verse-offline', version, bookNumber, chapter, verse],
-    queryFn: async () => {
-      const loader = getBibleLoader(version);
-
-      // Ensure Bible is loaded
-      if (!loader.isLoaded()) {
-        await loader.load();
-      }
-
+    queryFn: () => {
       const verseText = loader.getVerse(bookNumber, chapter, verse);
-
       if (!verseText) return null;
-
-      return {
-        book: bookNumber,
-        chapter,
-        verse,
-        text: verseText,
-      };
+      return { book: bookNumber, chapter, verse, text: verseText };
+    },
+    // INSTANT: Provide verse synchronously
+    initialData: () => {
+      if (!isValid) return undefined;
+      const verseText = loader.getVerse(bookNumber, chapter, verse);
+      if (!verseText) return null;
+      return { book: bookNumber, chapter, verse, text: verseText };
     },
     staleTime: CACHE_TIMES.BIBLE,
     gcTime: CACHE_TIMES.BIBLE,
-    enabled: options?.enabled !== false && bookNumber > 0 && chapter > 0 && verse > 0,
+    enabled: options?.enabled !== false && isValid,
   });
 }
 
 /**
- * Get Bible metadata (offline)
+ * Get Bible metadata (offline) - INSTANT
  */
 export function useBibleMetadataOffline(version: BibleTranslation) {
+  const loader = getBibleLoader(version);
+
   return useQuery({
     queryKey: ['bible-metadata-offline', version],
-    queryFn: async () => {
-      const loader = getBibleLoader(version);
-
-      // Ensure Bible is loaded
-      if (!loader.isLoaded()) {
-        await loader.load();
-      }
-
-      return loader.getMetadata();
-    },
+    queryFn: () => loader.getMetadata(),
+    initialData: () => loader.getMetadata(),
     staleTime: CACHE_TIMES.BIBLE,
     gcTime: CACHE_TIMES.BIBLE,
   });
 }
 
 /**
- * Preload Bible in background (offline)
- * Call this on app startup for user's preferred translations
+ * Preload Bible SYNCHRONOUSLY on app startup
+ * This ensures instant Bible access from the very first navigation
+ * Called in _layout.tsx before any screen renders
  */
-export async function preloadBiblesOffline(versions: BibleTranslation[]): Promise<void> {
-  console.log(`📚 Preloading ${versions.length} Bibles...`);
-
-  await Promise.all(versions.map(version => preloadBible(version)));
-
-  console.log(`✅ Preloaded ${versions.length} Bibles successfully`);
+export function preloadBiblesOffline(versions: BibleTranslation[]): void {
+  preloadBibles(versions);
 }
 
 /**
- * Helper: Get verse of the day (random verse)
+ * Helper: Get verse of the day - INSTANT
  * For demo purposes, returns John 3:16
  */
 export function useVerseOfTheDayOffline(version: BibleTranslation = 'NIV') {
+  const loader = getBibleLoader(version);
+
   return useQuery({
     queryKey: ['verse-of-the-day-offline', version, new Date().toDateString()],
-    queryFn: async () => {
-      const loader = getBibleLoader(version);
-
-      // Ensure Bible is loaded
-      if (!loader.isLoaded()) {
-        await loader.load();
-      }
-
+    queryFn: () => {
       // John 3:16 (Book 43, Chapter 3, Verse 16)
       const verseText = loader.getVerse(43, 3, 16);
-
       if (!verseText) return null;
-
-      return {
-        book: 43,
-        chapter: 3,
-        verse: 16,
-        text: verseText,
-      };
+      return { book: 43, chapter: 3, verse: 16, text: verseText };
+    },
+    initialData: () => {
+      const verseText = loader.getVerse(43, 3, 16);
+      if (!verseText) return null;
+      return { book: 43, chapter: 3, verse: 16, text: verseText };
     },
     staleTime: 1000 * 60 * 60 * 24, // 24 hours
   });

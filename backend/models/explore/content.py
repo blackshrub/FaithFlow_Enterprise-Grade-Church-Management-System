@@ -116,7 +116,10 @@ class VerseOfTheDay(BaseModel):
     # Bible reference
     verse: BibleReference
 
-    # Multilingual commentary
+    # Multilingual verse text (the actual Scripture)
+    verse_text: Optional[MultilingualText] = None
+
+    # Multilingual commentary (theological explanation)
     commentary: Optional[MultilingualText] = None
     reflection_prompt: Optional[MultilingualText] = None
 
@@ -234,8 +237,44 @@ class DailyQuiz(BaseModel):
 
 # ==================== SELF-PACED CONTENT ====================
 
+
+class StudyLesson(BaseModel):
+    """Individual lesson within a Bible Study"""
+    id: str = Field(default_factory=lambda: str(datetime.now().timestamp()))
+    title: MultilingualText
+    content: MultilingualText  # Markdown supported
+    summary: Optional[MultilingualText] = None
+
+    # Scripture references for this lesson
+    scripture_references: List[Dict[str, Any]] = []  # BibleReference with optional text
+
+    # Discussion/reflection questions
+    discussion_questions: Optional[Dict[str, List[str]]] = None  # {en: [...], id: [...]}
+
+    # Practical application section
+    application: Optional[MultilingualText] = None
+
+    # Key takeaways
+    key_takeaways: List[MultilingualText] = []
+
+    # Prayer prompt for the lesson
+    prayer: Optional[MultilingualText] = None
+
+    # Lesson duration in minutes
+    duration_minutes: int = 10
+
+    # Order within the study
+    order: int = 0
+
+    # Visual (optional lesson-specific image)
+    image_url: Optional[str] = None
+
+    # Video content (optional)
+    video_url: Optional[str] = None
+
+
 class BibleStudy(BaseModel):
-    """Bible Study content (self-paced)"""
+    """Bible Study content (self-paced) with lesson structure"""
     id: str = Field(default_factory=lambda: str(datetime.now().timestamp()))
     scope: ContentScope
     church_id: Optional[str] = None
@@ -244,9 +283,22 @@ class BibleStudy(BaseModel):
     title: MultilingualText
     subtitle: Optional[MultilingualText] = None
     description: MultilingualText
-    full_content: MultilingualText  # Markdown with sections
+    full_content: Optional[MultilingualText] = None  # Markdown overview
 
-    # Study structure
+    # Introduction (what users will learn)
+    introduction: Optional[MultilingualText] = None
+
+    # Learning objectives/outcomes
+    learning_objectives: List[MultilingualText] = []
+
+    # Target audience
+    target_audience: Optional[MultilingualText] = None
+
+    # Study structure - lessons for the reader (NEW)
+    lessons: List[StudyLesson] = []
+    lesson_count: int = 0  # Computed from lessons
+
+    # Legacy: sections (for backwards compatibility)
     sections: List[Dict[str, Any]] = []  # List of {title, content, verses}
     estimated_duration_minutes: int = 15
 
@@ -256,12 +308,27 @@ class BibleStudy(BaseModel):
 
     # Categorization
     categories: List[str] = []  # e.g., ["Prayer", "Faith", "Leadership"]
+    category: Optional[str] = None  # Primary category (old_testament, new_testament, topical)
     difficulty: Literal["beginner", "intermediate", "advanced"] = "beginner"
     series_id: Optional[str] = None  # Group related studies
     series_order: Optional[int] = None
 
     # Visual
     cover_image_url: Optional[str] = None
+    thumbnail_url: Optional[str] = None
+
+    # Instructor/Author info
+    author: Optional[MultilingualText] = None
+    author_title: Optional[MultilingualText] = None
+    author_image_url: Optional[str] = None
+
+    # Engagement metrics (computed)
+    completion_count: int = 0
+    average_rating: float = 0
+    ratings_count: int = 0
+
+    # Prerequisites
+    prerequisites: List[str] = []  # IDs of studies that should be completed first
 
     # AI generation
     ai_generated: bool = False

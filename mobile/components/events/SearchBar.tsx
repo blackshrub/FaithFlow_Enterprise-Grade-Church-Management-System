@@ -60,10 +60,7 @@ export function SearchBar() {
         {/* Text Input */}
         <TextInput
           value={localValue}
-          onChangeText={(text) => {
-            console.log('[SearchBar] Text changed:', text);
-            setLocalValue(text);
-          }}
+          onChangeText={setLocalValue}
           placeholder={t('events.searchPlaceholder')}
           placeholderTextColor={colors.gray[400]}
           style={{

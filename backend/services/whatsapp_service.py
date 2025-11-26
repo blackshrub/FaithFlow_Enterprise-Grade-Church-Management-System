@@ -2,12 +2,39 @@ import os
 import requests
 import logging
 from typing import Optional
+from motor.motor_asyncio import AsyncIOMotorDatabase
 
 logger = logging.getLogger(__name__)
 
-WHATSAPP_API_URL = os.environ.get('WHATSAPP_API_URL', '')
-WHATSAPP_USERNAME = os.environ.get('WHATSAPP_USERNAME', '')
-WHATSAPP_PASSWORD = os.environ.get('WHATSAPP_PASSWORD', '')
+# Legacy: Env vars for backwards compatibility (deprecated - use System Settings)
+_ENV_WHATSAPP_API_URL = os.environ.get('WHATSAPP_API_URL', '')
+_ENV_WHATSAPP_USERNAME = os.environ.get('WHATSAPP_USERNAME', '')
+_ENV_WHATSAPP_PASSWORD = os.environ.get('WHATSAPP_PASSWORD', '')
+
+
+async def get_whatsapp_config(db: AsyncIOMotorDatabase) -> dict:
+    """
+    Get WhatsApp configuration from database (System Settings).
+    Falls back to environment variables if not configured.
+    """
+    from utils.system_config import get_whatsapp_settings
+
+    try:
+        settings = await get_whatsapp_settings(db)
+        return {
+            "api_url": settings.get("whatsapp_api_url") or _ENV_WHATSAPP_API_URL,
+            "api_key": settings.get("whatsapp_api_key"),
+            "from_number": settings.get("whatsapp_from_number"),
+            "enabled": settings.get("whatsapp_enabled", True),
+        }
+    except Exception as e:
+        logger.warning(f"Error getting WhatsApp config from DB: {e}, using env vars")
+        return {
+            "api_url": _ENV_WHATSAPP_API_URL,
+            "api_key": None,
+            "from_number": None,
+            "enabled": bool(_ENV_WHATSAPP_API_URL),
+        }
 
 
 async def send_whatsapp_message(
@@ -32,10 +59,10 @@ async def send_whatsapp_message(
     Returns:
         dict with success status, message, and delivery_status
     """
-    # Use parameters if provided, otherwise use env variables
-    whatsapp_url = api_url or WHATSAPP_API_URL
-    whatsapp_user = api_username or WHATSAPP_USERNAME
-    whatsapp_pass = api_password or WHATSAPP_PASSWORD
+    # Use parameters if provided, otherwise use env variables as fallback
+    whatsapp_url = api_url or _ENV_WHATSAPP_API_URL
+    whatsapp_user = api_username or _ENV_WHATSAPP_USERNAME
+    whatsapp_pass = api_password or _ENV_WHATSAPP_PASSWORD
     
     if not whatsapp_url:
         logger.warning("WhatsApp API URL not configured")

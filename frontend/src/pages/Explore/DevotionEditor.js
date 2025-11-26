@@ -84,7 +84,7 @@ export default function DevotionEditor() {
         title: 'Success',
         description: isEditMode ? 'Devotion updated successfully' : 'Devotion created successfully',
       });
-      navigate('/explore/content/devotion');
+      navigate('/content-center/devotion');
     },
     onError: (error) => {
       toast({
@@ -186,7 +186,7 @@ export default function DevotionEditor() {
       <div className="flex items-center justify-between">
         <div>
           <Link
-            to="/explore/content/devotion"
+            to="/content-center/devotion"
             className="text-sm text-blue-600 hover:underline mb-2 inline-block"
           >
             <ArrowLeft className="h-4 w-4 inline mr-1" />
@@ -483,7 +483,7 @@ export default function DevotionEditor() {
           <Button
             type="button"
             variant="outline"
-            onClick={() => navigate('/explore/content/devotion')}
+            onClick={() => navigate('/content-center/devotion')}
           >
             Cancel
           </Button>

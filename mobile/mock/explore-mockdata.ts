@@ -1412,7 +1412,7 @@ The proud try to grab and control. The meek receive from God's hand. Psalm 37:11
     categories: ['Teachings of Jesus', 'Character', 'Spiritual Growth'],
     category: 'new_testament',
     difficulty: 'beginner',
-    cover_image_url: 'https://images.unsplash.com/photo-1490730141103-6cac27abb37f?w=800&q=80',
+    cover_image_url: 'https://images.unsplash.com/photo-1504052434569-70ad5836ab65?w=800&q=80',
     completion_count: 4231,
     average_rating: 4.9,
     ratings_count: 628,

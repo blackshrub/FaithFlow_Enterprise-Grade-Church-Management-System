@@ -118,15 +118,40 @@ export class OptimizedBibleLoader {
   }
 
   /**
-   * Load Bible + build indexes
+   * SYNCHRONOUS load - Bible data is already require()'d at module load time
+   * This is the KEY to instant, zero-latency Bible access
+   * require() in React Native is synchronous - data is already in memory
+   */
+  loadSync(): void {
+    if (this.bible) return; // Already loaded
+
+    // BIBLE_FILES are require()'d at module load time = already in JS memory
+    // This is INSTANT - no I/O, no async, no waiting
+    this.bible = BIBLE_FILES[this.translation] as MinBible;
+    this._buildIndexes();
+  }
+
+  /**
+   * Ensure loaded - auto-loads synchronously if not loaded
+   * Call this before any data access for guaranteed instant response
+   */
+  private ensureLoaded(): void {
+    if (!this.bible) {
+      this.loadSync();
+    }
+  }
+
+  /**
+   * Load Bible + build indexes (async wrapper for compatibility)
+   * Actually synchronous since data is pre-required
    */
   async load(): Promise<void> {
     if (this.bible) return; // Already loaded
 
     if (this.loading) {
-      // Wait for existing load
+      // Wait for existing load (edge case)
       while (this.loading) {
-        await new Promise((resolve) => setTimeout(resolve, 50));
+        await new Promise((resolve) => setTimeout(resolve, 10));
       }
       return;
     }
@@ -134,18 +159,8 @@ export class OptimizedBibleLoader {
     this.loading = true;
 
     try {
-      console.log(`📖 Loading ${this.translation}...`);
-
-      // Load minified Bible (React Native requires synchronous)
-      this.bible = BIBLE_FILES[this.translation] as MinBible;
-
-      // Build indexes (fast with minified format)
-      this._buildIndexes();
-
-      console.log(`   ✅ Loaded ${this.translation}`);
-    } catch (error) {
-      console.error(`   ❌ Failed to load ${this.translation}:`, error);
-      throw error;
+      // Synchronous - no await needed, data is pre-loaded via require()
+      this.loadSync();
     } finally {
       this.loading = false;
     }
@@ -172,22 +187,20 @@ export class OptimizedBibleLoader {
 
   /**
    * Load search index (lazy, only when needed)
+   * Also synchronous via require()
    */
   private _loadSearchIndex(): void {
     if (this.searchIndex) return;
-
-    console.log(`   🔍 Loading search index for ${this.translation}...`);
     this.searchIndex = SEARCH_INDEXES[this.translation] as SearchIndex;
-    console.log(`   ✅ Search index ready`);
   }
 
   /**
-   * Get all books
+   * Get all books - auto-loads if needed for instant access
    */
   getBooks(): BibleBook[] {
-    if (!this.bible) throw new Error('Bible not loaded');
+    this.ensureLoaded();
 
-    return this.bible.bb.map((book) => ({
+    return this.bible!.bb.map((book) => ({
       number: book.b,
       name: book.n,
       chapters: book.cc.length,
@@ -195,12 +208,12 @@ export class OptimizedBibleLoader {
   }
 
   /**
-   * Get a specific book
+   * Get a specific book - auto-loads if needed
    */
   getBook(bookNumber: number): BibleBook | undefined {
-    if (!this.bookMap) throw new Error('Bible not loaded');
+    this.ensureLoaded();
 
-    const book = this.bookMap.get(bookNumber);
+    const book = this.bookMap!.get(bookNumber);
     if (!book) return undefined;
 
     return {
@@ -211,13 +224,14 @@ export class OptimizedBibleLoader {
   }
 
   /**
-   * Get all verses in a chapter (for FlashList)
+   * Get all verses in a chapter (for FlashList) - auto-loads if needed
+   * This is the most performance-critical method - must be INSTANT
    */
   getChapter(bookNumber: number, chapterNumber: number): BibleVerse[] {
-    if (!this.chapterMap) throw new Error('Bible not loaded');
+    this.ensureLoaded();
 
     const key = `${bookNumber}-${chapterNumber}`;
-    const chapter = this.chapterMap.get(key);
+    const chapter = this.chapterMap!.get(key);
 
     if (!chapter) return [];
 
@@ -230,17 +244,17 @@ export class OptimizedBibleLoader {
   }
 
   /**
-   * Get a single verse
+   * Get a single verse - auto-loads if needed
    */
   getVerse(
     bookNumber: number,
     chapterNumber: number,
     verseNumber: number
   ): string | undefined {
-    if (!this.chapterMap) throw new Error('Bible not loaded');
+    this.ensureLoaded();
 
     const key = `${bookNumber}-${chapterNumber}`;
-    const chapter = this.chapterMap.get(key);
+    const chapter = this.chapterMap!.get(key);
 
     if (!chapter) return undefined;
 
@@ -249,22 +263,22 @@ export class OptimizedBibleLoader {
   }
 
   /**
-   * Get verse count for a chapter
+   * Get verse count for a chapter - auto-loads if needed
    */
   getVerseCount(bookNumber: number, chapterNumber: number): number {
-    if (!this.chapterMap) throw new Error('Bible not loaded');
+    this.ensureLoaded();
 
     const key = `${bookNumber}-${chapterNumber}`;
-    const chapter = this.chapterMap.get(key);
+    const chapter = this.chapterMap!.get(key);
 
     return chapter?.vv.length || 0;
   }
 
   /**
-   * Search Bible verses (uses pre-built index)
+   * Search Bible verses (uses pre-built index) - auto-loads if needed
    */
   search(query: string, limit: number = 50): BibleSearchResult[] {
-    if (!this.bible || !this.bookMap) throw new Error('Bible not loaded');
+    this.ensureLoaded();
 
     // Lazy-load search index
     this._loadSearchIndex();
@@ -301,15 +315,15 @@ export class OptimizedBibleLoader {
   }
 
   /**
-   * Get Bible metadata
+   * Get Bible metadata - auto-loads if needed
    */
   getMetadata() {
-    if (!this.bible) throw new Error('Bible not loaded');
+    this.ensureLoaded();
 
     return {
-      code: this.bible.v,
-      name: this.bible.name,
-      language: this.bible.lang,
+      code: this.bible!.v,
+      name: this.bible!.name,
+      language: this.bible!.lang,
     };
   }
 
@@ -356,16 +370,23 @@ export function getBibleLoader(translation: BibleTranslation): OptimizedBibleLoa
 }
 
 /**
- * Preload a Bible translation in the background
+ * Preload a Bible translation SYNCHRONOUSLY
+ * Call this on app startup for instant Bible access
  */
-export async function preloadBible(translation: BibleTranslation): Promise<void> {
+export function preloadBible(translation: BibleTranslation): void {
   const loader = getBibleLoader(translation);
-  if (loader.isLoaded()) return;
+  if (!loader.isLoaded()) {
+    loader.loadSync();
+  }
+}
 
-  try {
-    await loader.load();
-  } catch (error) {
-    console.error(`Failed to preload ${translation}:`, error);
+/**
+ * Preload multiple Bible translations at once (synchronous)
+ * Call this on app startup to preload user's preferred translations
+ */
+export function preloadBibles(translations: BibleTranslation[]): void {
+  for (const translation of translations) {
+    preloadBible(translation);
   }
 }
 

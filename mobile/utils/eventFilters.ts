@@ -88,10 +88,10 @@ export function filterEvents(options: FilterOptions): FilterResults {
     });
   }
 
-  // Step 4: Apply search filter (fuzzy search)
+  // Step 4: Apply search filter (fuzzy search) - title only
   if (searchTerm.trim()) {
     const fuse = new Fuse(filteredEvents, {
-      keys: ['title', 'description', 'location'],
+      keys: ['title'],
       threshold: 0.3, // 0 = perfect match, 1 = match anything
       ignoreLocation: true,
     });
@@ -172,7 +172,6 @@ export function getCalendarMarkers(
   // Group events by date and collect their statuses
   events.forEach((event) => {
     if (!shouldShowEvent(event, userRsvps, userAttendance)) {
-      console.log(`[getCalendarMarkers] Skipping event ${event.id} (${event.title}) - shouldShowEvent returned false`);
       return; // Skip events that shouldn't be shown
     }
 
@@ -184,11 +183,6 @@ export function getCalendarMarkers(
     const dateKey = eventDate.toISOString().split('T')[0];
     const status = computeEventStatus(event, userRsvps, userAttendance);
 
-    console.log(`[getCalendarMarkers] Event ${event.id} (${event.title}) on ${dateKey} = ${status}`);
-    console.log(`  - Has RSVP: ${userRsvps.some((r) => r.event_id === event.id)}`);
-    console.log(`  - Has Attendance: ${userAttendance.some((a) => a.event_id === event.id)}`);
-    console.log(`  - Is Past: ${new Date(event.date) < new Date()}`);
-
     // Add status to date's status list (avoid duplicates)
     const statuses = dateStatusMap.get(dateKey) || [];
     if (!statuses.includes(status)) {
@@ -197,7 +191,6 @@ export function getCalendarMarkers(
     dateStatusMap.set(dateKey, statuses);
   });
 
-  console.log('[getCalendarMarkers] Final dateStatusMap:', dateStatusMap);
   return dateStatusMap;
 }
 
@@ -229,20 +222,17 @@ export function convertMarkersToActiveDateRanges(
     if (statuses.length === 1) {
       // Single status: use its color
       color = statusColors[statuses[0]];
-      console.log(`[convertMarkersToActiveDateRanges] ${dateKey}: Single status (${statuses[0]}) = ${color}`);
     } else if (statuses.length === 2) {
       // Two statuses: blend colors
       const color1 = statusColors[statuses[0]];
       const color2 = statusColors[statuses[1]];
       color = blendColors(color1, color2);
-      console.log(`[convertMarkersToActiveDateRanges] ${dateKey}: Two statuses (${statuses[0]} + ${statuses[1]}) = ${color}`);
     } else if (statuses.length === 3) {
       // Three statuses: blend all three
       const color1 = statusColors[statuses[0]];
       const color2 = statusColors[statuses[1]];
       const color3 = statusColors[statuses[2]];
       color = blendThreeColors(color1, color2, color3);
-      console.log(`[convertMarkersToActiveDateRanges] ${dateKey}: Three statuses (${statuses[0]} + ${statuses[1]} + ${statuses[2]}) = ${color}`);
     }
 
     ranges.push({
@@ -252,7 +242,6 @@ export function convertMarkersToActiveDateRanges(
     });
   });
 
-  console.log('[convertMarkersToActiveDateRanges] Final ranges:', ranges);
   return ranges;
 }
 

@@ -1,5 +1,5 @@
 /**
- * Profile Screen - Enhanced
+ * Profile Screen - PERFORMANCE OPTIMIZED
  *
  * Features:
  * - Personal information with avatar
@@ -9,9 +9,14 @@
  * - Profile edit functionality
  * - Skeleton loading
  * - Complete bilingual support
+ *
+ * Performance:
+ * - useMemo for computed values
+ * - useCallback for event handlers
+ * - Demo mode with instant data
  */
 
-import React, { useState } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { ScrollView, Pressable, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
@@ -71,31 +76,34 @@ export default function ProfileScreen() {
   const { data: prayerRequests, isLoading: prayerLoading, refetch: refetchPrayer } = usePrayerRequests();
   const { data: upcomingEvents, isLoading: eventsLoading, refetch: refetchEvents } = useUpcomingEvents();
 
-  // Calculate stats
-  const totalGiven = givingSummary?.total_given || 0;
-  const myPrayersCount = prayerRequests?.filter((r) => r.member_id === member?.id).length || 0;
+  // Calculate stats - memoized
+  const totalGiven = useMemo(() => givingSummary?.total_given || 0, [givingSummary]);
+  const myPrayersCount = useMemo(
+    () => prayerRequests?.filter((r) => r.member_id === member?.id).length || 0,
+    [prayerRequests, member?.id]
+  );
   const attendedEventsCount = 0; // TODO: Get from RSVP history
 
-  // Format currency
-  const formatCurrency = (amount: number) => {
+  // Format currency - memoized formatter
+  const formatCurrency = useCallback((amount: number) => {
     return new Intl.NumberFormat('id-ID', {
       style: 'currency',
       currency: 'IDR',
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(amount);
-  };
+  }, []);
 
-  // Refresh
-  const onRefresh = React.useCallback(async () => {
+  // Refresh - memoized callback
+  const onRefresh = useCallback(async () => {
     setRefreshing(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     await Promise.all([refetchGiving(), refetchPrayer(), refetchEvents()]);
     setRefreshing(false);
   }, [refetchGiving, refetchPrayer, refetchEvents]);
 
-  // Stats cards
-  const statsCards = [
+  // Stats cards - memoized
+  const statsCards = useMemo(() => [
     {
       icon: Heart,
       label: t('profile.stats.totalGiven'),
@@ -120,54 +128,50 @@ export default function ProfileScreen() {
       bgColor: colors.secondary[50],
       loading: eventsLoading,
     },
-  ];
+  ], [t, totalGiven, myPrayersCount, attendedEventsCount, givingLoading, prayerLoading, eventsLoading, formatCurrency]);
 
-  const menuItems = [
+  // Menu items - memoized
+  const menuItems = useMemo(() => [
     {
       icon: User,
       label: t('profile.personalInfo'),
-      onPress: () => router.push('/profile/edit'),
+      route: '/profile/edit' as const,
     },
     {
       icon: Settings,
       label: t('profile.settings'),
-      onPress: () => {
-        // TODO: Navigate to settings
-      },
+      route: null,
     },
     {
       icon: Bell,
       label: t('profile.notifications'),
-      onPress: () => {
-        // TODO: Navigate to notifications
-      },
+      route: null,
     },
     {
       icon: Globe,
       label: t('profile.language'),
-      onPress: () => {
-        // TODO: Navigate to language settings
-      },
+      route: null,
     },
-  ];
+  ], [t]);
 
-  const handleLogoutPress = () => {
+  // Callbacks - memoized
+  const handleLogoutPress = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setShowLogoutDialog(true);
-  };
+  }, []);
 
-  const handleLogoutConfirm = () => {
+  const handleLogoutConfirm = useCallback(() => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     setShowLogoutDialog(false);
     logout();
     showSuccessToast(t('profile.logoutSuccess'), t('profile.logoutSuccessDesc'));
     router.replace('/(auth)/login');
-  };
+  }, [logout, t, router]);
 
-  const handleLogoutCancel = () => {
+  const handleLogoutCancel = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setShowLogoutDialog(false);
-  };
+  }, []);
 
   // Render skeleton for stats
   const renderStatsSkeleton = () => (
@@ -303,7 +307,7 @@ export default function ProfileScreen() {
                   delay: index * 50 + 300,
                 }}
               >
-                <Pressable onPress={item.onPress} className="active:opacity-60">
+                <Pressable onPress={() => item.route && router.push(item.route)} className="active:opacity-60">
                   <Card style={{ borderRadius: borderRadius.lg, ...shadows.sm }}>
                     <HStack space="md" className="items-center p-4">
                       <View

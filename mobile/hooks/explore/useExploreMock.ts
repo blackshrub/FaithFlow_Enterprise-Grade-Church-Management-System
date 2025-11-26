@@ -72,6 +72,28 @@ export function useDevotionPlan(planId: string) {
 }
 
 /**
+ * Get Single Daily Devotion by ID (Mock) - INSTANT
+ */
+export function useDailyDevotion(devotionId: string) {
+  return useQuery({
+    queryKey: ['dailyDevotion', 'mock', devotionId],
+    queryFn: () => {
+      const devotion = mockData.dailyDevotions.find((d) => d.id === devotionId);
+      if (!devotion) {
+        throw new Error(`Daily devotion not found: ${devotionId}`);
+      }
+      return devotion;
+    },
+    initialData: () => {
+      if (!devotionId) return undefined;
+      return mockData.dailyDevotions.find((d) => d.id === devotionId);
+    },
+    enabled: !!devotionId,
+    staleTime: Infinity,
+  });
+}
+
+/**
  * Get Verses of the Day (Mock) - INSTANT
  */
 export function useVersesOfTheDay() {

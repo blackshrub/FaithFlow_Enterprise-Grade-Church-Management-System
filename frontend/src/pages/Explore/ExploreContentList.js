@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
@@ -20,11 +20,28 @@ import exploreService from '../../services/exploreService';
 import { useToast } from '../../hooks/use-toast';
 
 export default function ExploreContentList() {
-  const { contentType } = useParams();
+  const location = useLocation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { t } = useTranslation();
+
+  // Extract content type from URL path (e.g., /content-center/devotion -> devotion)
+  const contentType = useMemo(() => {
+    const pathParts = location.pathname.split('/').filter(Boolean);
+    // Get the segment after 'content-center'
+    const ccIndex = pathParts.indexOf('content-center');
+    if (ccIndex !== -1 && pathParts[ccIndex + 1]) {
+      // Convert hyphenated to underscore for API (bible-study -> bible_study)
+      return pathParts[ccIndex + 1].replace(/-/g, '_');
+    }
+    return pathParts[pathParts.length - 1]?.replace(/-/g, '_') || 'devotion';
+  }, [location.pathname]);
+
+  // URL-friendly content type (with hyphens for routes)
+  const urlContentType = useMemo(() => {
+    return contentType.replace(/_/g, '-');
+  }, [contentType]);
 
   const [search, setSearch] = useState('');
   const [selectedItems, setSelectedItems] = useState([]);
@@ -92,7 +109,9 @@ export default function ExploreContentList() {
     figure: 'Bible Figures',
     quiz: 'Daily Quizzes',
     bible_study: 'Bible Studies',
-    topical: 'Topical Categories',
+    devotion_plan: 'Devotion Plans',
+    topical: 'Topical Verses',
+    topical_category: 'Topical Categories',
   };
 
   const getTitle = (item) => {
@@ -115,7 +134,7 @@ export default function ExploreContentList() {
       <div className="flex items-center justify-between">
         <div>
           <Link
-            to="/explore"
+            to="/content-center"
             className="text-sm text-blue-600 hover:underline mb-2 inline-block"
           >
             ← Back to Dashboard
@@ -139,7 +158,7 @@ export default function ExploreContentList() {
               Delete ({selectedItems.length})
             </Button>
           )}
-          <Link to={`/explore/content/${contentType}/new`}>
+          <Link to={`/content-center/${urlContentType}/new`}>
             <Button>
               <Plus className="h-4 w-4 mr-2" />
               Create New
@@ -184,7 +203,7 @@ export default function ExploreContentList() {
             <div className="flex flex-col items-center justify-center py-12 text-gray-500">
               <Plus className="h-12 w-12 mb-3 text-gray-300" />
               <p>No content found</p>
-              <Link to={`/explore/content/${contentType}/new`}>
+              <Link to={`/content-center/${urlContentType}/new`}>
                 <Button variant="link" className="mt-2">
                   Create your first {contentTypeLabels[contentType]?.toLowerCase()}
                 </Button>
@@ -257,7 +276,7 @@ export default function ExploreContentList() {
                         >
                           <Eye className="h-4 w-4" />
                         </Button>
-                        <Link to={`/explore/content/${contentType}/${item.id}/edit`}>
+                        <Link to={`/content-center/${urlContentType}/${item.id}/edit`}>
                           <Button variant="ghost" size="sm">
                             <Edit className="h-4 w-4" />
                           </Button>

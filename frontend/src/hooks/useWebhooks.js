@@ -85,20 +85,31 @@ export const useTestWebhook = () => {
 };
 
 export const useWebhookLogs = (webhookId) => {
+  const { church } = useAuth();
+
   return useQuery({
-    queryKey: ['webhook-logs', webhookId],
+    // Include church_id for multi-tenant cache isolation
+    queryKey: ['webhook-logs', church?.id, webhookId],
     queryFn: () => webhooksAPI.getLogs(webhookId).then(res => res.data),
-    enabled: !!webhookId,
+    enabled: !!church?.id && !!webhookId,
+    staleTime: 30 * 1000, // 30 seconds - logs don't change frequently
   });
 };
 
 export const useQueueStatus = () => {
   const { church } = useAuth();
-  
+
   return useQuery({
     queryKey: ['webhook-queue-status', church?.id],
     queryFn: () => webhooksAPI.getQueueStatus().then(res => res.data),
     enabled: !!church?.id,
-    refetchInterval: 30000, // Refetch every 30 seconds
+    // Adaptive polling - faster when processing, slower when idle
+    refetchInterval: (query) => {
+      const data = query.state.data;
+      const isProcessing = data?.is_processing || (data?.pending_count > 0);
+      return isProcessing ? 10000 : 60000; // 10s when active, 60s when idle
+    },
+    refetchIntervalInBackground: false, // Stop polling when tab not visible
+    staleTime: 5000, // 5 seconds
   });
 };

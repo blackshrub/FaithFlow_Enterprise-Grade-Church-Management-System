@@ -1,5 +1,5 @@
 /**
- * Bible Chapter Reader Component
+ * Bible Chapter Reader Component - PERFORMANCE OPTIMIZED
  *
  * YouVersion-style reading experience:
  * - FlashList for smooth scrolling
@@ -7,9 +7,15 @@
  * - Long press for actions (highlight, copy, share, note)
  * - Clean, readable typography
  * - Optimized for long-form reading
+ *
+ * Performance optimizations:
+ * - React.memo to prevent unnecessary re-renders
+ * - Memoized VerseRow component
+ * - useCallback for all event handlers
+ * - Optimized FlashList configuration
  */
 
-import React, { useCallback, useRef, useEffect } from 'react';
+import React, { useCallback, useRef, useEffect, memo } from 'react';
 import { View, Pressable, StyleSheet } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import * as Haptics from 'expo-haptics';
@@ -480,3 +486,9 @@ const styles = StyleSheet.create({
     // fontFamily is dynamic based on user preference
   },
 });
+
+/**
+ * Memoized ChapterReader export
+ * Prevents re-render when parent updates but props haven't changed
+ */
+export const MemoizedChapterReader = memo(ChapterReader);

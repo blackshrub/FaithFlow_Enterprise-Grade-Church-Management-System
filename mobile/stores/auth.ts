@@ -31,7 +31,7 @@ interface AuthState {
 
   // Actions
   setToken: (token: string) => Promise<void>;
-  setMember: (member: Member) => void;
+  setMember: (member: Member) => Promise<void>;  // Fixed: should be async
   login: (token: string, member: Member) => Promise<void>;
   loginDemo: () => Promise<void>; // Demo login for testing
   logout: () => Promise<void>;
@@ -52,8 +52,9 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ token, isAuthenticated: true });
   },
 
-  setMember: (member: Member) => {
-    SecureStore.setItemAsync(MEMBER_KEY, JSON.stringify(member));
+  setMember: async (member: Member) => {
+    // Fix: Await SecureStore operation to ensure data persistence before state update
+    await SecureStore.setItemAsync(MEMBER_KEY, JSON.stringify(member));
     set({ member });
   },
 

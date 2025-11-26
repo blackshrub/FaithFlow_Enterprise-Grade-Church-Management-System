@@ -140,25 +140,27 @@ export const useDeleteDemographic = () => {
 
 export const useChurchSettings = () => {
   const { user } = useAuth();
-  
+
   // Extract session_church_id from JWT (via user context)
   // For super admin: The church they selected at login
   // For regular user: Their assigned church_id
-  const sessionChurchId = user?.session_church_id || user?.church_id;
-  
+  const sessionChurchId = user?.session_church_id ?? user?.church_id;
+
   return useQuery({
     queryKey: ['church-settings', sessionChurchId],  // Cache per church
     queryFn: () => settingsAPI.getChurchSettings().then(res => res.data),
     enabled: !!sessionChurchId,  // Only run when we have a church context
-    refetchOnWindowFocus: true,  // Refetch when window regains focus
-    staleTime: 0,  // Always consider data stale
+    // Performance optimization: Church settings rarely change during a session
+    // Removed aggressive refetch that was causing excessive API calls
+    refetchOnWindowFocus: false,  // Don't refetch on every tab switch
+    staleTime: 5 * 60 * 1000,  // 5 minutes - reasonable for settings data
   });
 };
 
 export const useUpdateChurchSettings = () => {
   const queryClient = useQueryClient();
   const { user } = useAuth();
-  const sessionChurchId = user?.session_church_id || user?.church_id;
+  const sessionChurchId = user?.session_church_id ?? user?.church_id;
   
   return useMutation({
     mutationFn: (settingsData) => {
@@ -179,23 +181,30 @@ export const useUpdateChurchSettings = () => {
   });
 };
 
-// Event Categories hooks
+// Event Categories hooks - scoped by church for proper multi-tenant cache isolation
 export function useEventCategories() {
+  const { user } = useAuth();
+  const sessionChurchId = user?.session_church_id ?? user?.church_id;
+
   return useQuery({
-    queryKey: ['eventCategories'],
+    queryKey: ['eventCategories', sessionChurchId],
     queryFn: async () => {
       const response = await settingsAPI.listEventCategories();
       return response.data;
     },
+    enabled: !!sessionChurchId,
   });
 }
 
 export function useCreateEventCategory() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const sessionChurchId = user?.session_church_id ?? user?.church_id;
+
   return useMutation({
     mutationFn: (data) => settingsAPI.createEventCategory(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['eventCategories'] });
+      queryClient.invalidateQueries({ queryKey: ['eventCategories', sessionChurchId] });
       toast.success('Category created successfully');
     },
     onError: () => {
@@ -206,10 +215,13 @@ export function useCreateEventCategory() {
 
 export function useUpdateEventCategory() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const sessionChurchId = user?.session_church_id ?? user?.church_id;
+
   return useMutation({
     mutationFn: ({ id, data }) => settingsAPI.updateEventCategory(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['eventCategories'] });
+      queryClient.invalidateQueries({ queryKey: ['eventCategories', sessionChurchId] });
       toast.success('Category updated successfully');
     },
     onError: () => {
@@ -220,10 +232,13 @@ export function useUpdateEventCategory() {
 
 export function useDeleteEventCategory() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const sessionChurchId = user?.session_church_id ?? user?.church_id;
+
   return useMutation({
     mutationFn: (id) => settingsAPI.deleteEventCategory(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['eventCategories'] });
+      queryClient.invalidateQueries({ queryKey: ['eventCategories', sessionChurchId] });
       toast.success('Category deleted successfully');
     },
     onError: (error) => {

@@ -31,6 +31,17 @@ export interface RatingReview {
   updated_at: string;
 }
 
+/**
+ * Get color based on rating value (1-10 scale)
+ * Used for rating display across the app
+ */
+export const getRatingColor = (value: number): string => {
+  if (value <= 3) return '#EF4444'; // red
+  if (value <= 5) return '#F59E0B'; // amber
+  if (value <= 7) return '#3B82F6'; // blue
+  return '#10B981'; // green
+};
+
 export const ratingService = {
   /**
    * Create a new rating for an event

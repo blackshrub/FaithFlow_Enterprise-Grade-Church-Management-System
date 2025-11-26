@@ -181,9 +181,9 @@ export default function GroupsScreen() {
       case 'couples':
         return colors.secondary[300];
       case 'seniors':
-        return colors.muted[500];
+        return colors.gray[500];
       default:
-        return colors.muted[500];
+        return colors.gray[500];
     }
   }, []);
 
@@ -320,7 +320,7 @@ export default function GroupsScreen() {
 
                 {/* Leader Info */}
                 <HStack className="items-center" space="xs">
-                  <Icon as={User} size="xs" style={{ color: colors.muted[500] }} />
+                  <Icon as={User} size="xs" style={{ color: colors.gray[500] }} />
                   <Text size="xs" className="text-muted-600">
                     {t('groups.leader')}: {group.leader_name}
                   </Text>
@@ -330,7 +330,7 @@ export default function GroupsScreen() {
 
             {/* Meeting Schedule */}
             {group.meeting_schedule && (
-              <Card style={{ backgroundColor: colors.muted[50] }}>
+              <Card style={{ backgroundColor: colors.gray[50] }}>
                 <HStack space="xs" className="items-center p-3">
                   <Icon as={Calendar} size="sm" style={{ color: colors.primary[600] }} />
                   <Text size="sm" className="font-semibold">
@@ -346,7 +346,7 @@ export default function GroupsScreen() {
             {/* Location */}
             {group.location && (
               <HStack className="items-center" space="xs">
-                <Icon as={MapPin} size="xs" style={{ color: colors.muted[500] }} />
+                <Icon as={MapPin} size="xs" style={{ color: colors.gray[500] }} />
                 <Text size="xs" className="text-muted-600">
                   {group.location}
                 </Text>
@@ -390,7 +390,7 @@ export default function GroupsScreen() {
                 <View
                   style={{
                     height: 6,
-                    backgroundColor: colors.muted[200],
+                    backgroundColor: colors.gray[200],
                     borderRadius: 999,
                     overflow: 'hidden',
                   }}
@@ -419,7 +419,7 @@ export default function GroupsScreen() {
                   isDisabled={group.is_full || isJoining}
                   style={{
                     flex: 1,
-                    backgroundColor: group.is_full ? colors.muted[300] : colors.primary[500],
+                    backgroundColor: group.is_full ? colors.gray[300] : colors.primary[500],
                     borderRadius: borderRadius.lg,
                   }}
                 >

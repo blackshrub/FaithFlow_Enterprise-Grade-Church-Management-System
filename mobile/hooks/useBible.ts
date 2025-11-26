@@ -4,7 +4,7 @@
  * React Query hooks for Bible data with offline caching
  */
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/services/api';
 import { API_ENDPOINTS, QUERY_KEYS, CACHE_TIMES } from '@/constants/api';
 import type {
@@ -100,11 +100,12 @@ export function usePrefetchNextChapter(
   currentChapter: number,
   totalChapters: number
 ) {
-  const queryClient = api.defaults.baseURL; // Access query client
+  // Fix: Use useQueryClient() hook instead of api.defaults.baseURL
+  const queryClient = useQueryClient();
 
   const prefetchNext = () => {
     if (currentChapter < totalChapters) {
-      // Prefetch next chapter
+      // Prefetch next chapter for smooth navigation
       queryClient.prefetchQuery({
         queryKey: QUERY_KEYS.BIBLE_CHAPTER(version, book, currentChapter + 1),
         queryFn: async () => {
@@ -113,6 +114,7 @@ export function usePrefetchNextChapter(
           );
           return response.data;
         },
+        staleTime: CACHE_TIMES.BIBLE,
       });
     }
   };

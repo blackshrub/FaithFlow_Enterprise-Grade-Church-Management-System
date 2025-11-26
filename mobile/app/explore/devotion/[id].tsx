@@ -1,11 +1,9 @@
 /**
- * Devotion Plan Detail Screen
+ * Devotion Detail Screen
  *
- * Design: E-learning style plan viewer with day-by-day navigation
- * - Plan overview with introduction
- * - Day selector with progress indicators
- * - Individual day content reader
- * - Subscription and completion tracking
+ * Handles both:
+ * - Single Daily Devotions (dev_xxx IDs)
+ * - Devotion Plans (plan_xxx IDs) with day-by-day navigation
  */
 
 import React, { useEffect, useState, useCallback } from 'react';
@@ -30,13 +28,13 @@ import {
 import { formatBibleReference } from '@/constants/explore/bibleBooks';
 import {
   useDevotionPlan,
+  useDailyDevotion,
   useSinglePlanProgress,
   useSubscribeToPlan,
   useCompletePlanDay,
-  useIsPlanDayCompleted,
 } from '@/hooks/explore/useExploreMock';
 import { useExploreStore } from '@/stores/explore/exploreStore';
-import type { DevotionPlan, DevotionPlanDay } from '@/types/explore';
+import type { DevotionPlan, DevotionPlanDay, DailyDevotion } from '@/types/explore';
 import {
   ArrowLeft,
   Share2,
@@ -49,99 +47,55 @@ import {
   BookOpen,
   Play,
   Lock,
+  User,
 } from 'lucide-react-native';
 import { Share } from 'react-native';
 import { DailyDevotionSkeleton } from '@/components/explore/LoadingSkeleton';
+import { MarkdownText } from '@/components/explore/MarkdownText';
 import Animated, { FadeIn, FadeInDown, FadeInRight } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-export default function DevotionPlanDetailScreen() {
+export default function DevotionDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const contentLanguage = useExploreStore((state) => state.contentLanguage);
 
-  // State for current view
-  const [selectedDay, setSelectedDay] = useState<number | null>(null);
+  // Try to fetch as daily devotion (dev_xxx) or devotion plan (plan_xxx)
+  const { data: dailyDevotion, isLoading: isDailyLoading } = useDailyDevotion(id as string);
+  const { data: plan, isLoading: isPlanLoading } = useDevotionPlan(id as string);
 
-  // Data queries
-  const { data: plan, isLoading } = useDevotionPlan(id as string);
-  const { data: progress } = useSinglePlanProgress(id as string);
+  const isLoading = isDailyLoading && isPlanLoading;
 
-  // Mutations
-  const subscribeToPlan = useSubscribeToPlan();
-  const completePlanDay = useCompletePlanDay();
+  // Determine which type of content we have
+  const isDailyDevotion = !!dailyDevotion && !plan;
+  const isDevotionPlan = !!plan && !dailyDevotion;
 
-  // Set initial day when plan loads
-  useEffect(() => {
-    if (plan && progress?.subscribed && progress.current_day > 0) {
-      // If subscribed, go to current day
-      setSelectedDay(progress.current_day);
-    }
-  }, [plan, progress]);
+  // If we have a single daily devotion, show that view
+  if (dailyDevotion && !plan) {
+    return (
+      <DailyDevotionView
+        devotion={dailyDevotion}
+        contentLanguage={contentLanguage}
+        onBack={() => router.back()}
+      />
+    );
+  }
 
-  const isSubscribed = progress?.subscribed ?? false;
-  const isCompleted = progress?.completed ?? false;
-  const currentDay = progress?.current_day ?? 0;
-  const completedDays = progress?.completed_days ?? [];
+  // If we have a devotion plan, show the plan view
+  if (plan) {
+    return (
+      <DevotionPlanView
+        plan={plan}
+        contentLanguage={contentLanguage}
+        onBack={() => router.back()}
+      />
+    );
+  }
 
-  const handleSubscribe = async () => {
-    if (!id) return;
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    await subscribeToPlan.mutateAsync({ planId: id });
-    setSelectedDay(1);
-  };
-
-  const handleCompleteDay = async () => {
-    if (!id || !selectedDay) return;
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    await completePlanDay.mutateAsync({
-      planId: id,
-      dayNumber: selectedDay,
-    });
-
-    // Move to next day if available
-    if (plan && selectedDay < plan.duration_days) {
-      setTimeout(() => setSelectedDay(selectedDay + 1), 500);
-    }
-  };
-
-  const handleShare = async () => {
-    if (!plan) return;
-
-    const title = plan.title[contentLanguage] || plan.title.en;
-    const description =
-      plan.description?.[contentLanguage] || plan.description?.en || '';
-
-    try {
-      await Share.share({
-        message: `📖 ${title}\n\n${description}\n\n${plan.duration_days} ${
-          contentLanguage === 'en' ? 'day devotion plan' : 'hari rencana renungan'
-        }\n\nShared from FaithFlow`,
-      });
-    } catch (error) {
-      console.error('Error sharing:', error);
-    }
-  };
-
-  const isDayCompleted = useCallback(
-    (dayNum: number) => {
-      return completedDays.includes(dayNum);
-    },
-    [completedDays]
-  );
-
-  const isDayAccessible = useCallback(
-    (dayNum: number) => {
-      if (!isSubscribed) return false;
-      // Can access if it's the current day or any completed day or day 1
-      return dayNum <= currentDay || dayNum === 1;
-    },
-    [isSubscribed, currentDay]
-  );
-
-  if (isLoading || !plan) {
+  // Loading state
+  if (isLoading) {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
         <View style={styles.header}>
@@ -156,12 +110,260 @@ export default function DevotionPlanDetailScreen() {
     );
   }
 
+  // No content found
+  return (
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <View style={styles.header}>
+        <Pressable onPress={() => router.back()} style={styles.backButton}>
+          <ArrowLeft size={24} color={ExploreColors.neutral[900]} />
+        </Pressable>
+      </View>
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>
+          {contentLanguage === 'en' ? 'Content not found' : 'Konten tidak ditemukan'}
+        </Text>
+      </View>
+    </SafeAreaView>
+  );
+}
+
+// ============================================================================
+// DAILY DEVOTION VIEW (Single devotion)
+// ============================================================================
+
+interface DailyDevotionViewProps {
+  devotion: DailyDevotion;
+  contentLanguage: string;
+  onBack: () => void;
+}
+
+function DailyDevotionView({ devotion, contentLanguage, onBack }: DailyDevotionViewProps) {
+  const title = devotion.title[contentLanguage] || devotion.title.en;
+  const content = devotion.content[contentLanguage] || devotion.content.en;
+  const summary = devotion.summary?.[contentLanguage] || devotion.summary?.en;
+  const author = devotion.author?.[contentLanguage] || devotion.author?.en;
+
+  const handleShare = async () => {
+    try {
+      await Share.share({
+        message: `📖 ${title}\n\n${summary || ''}\n\nShared from FaithFlow`,
+      });
+    } catch (error) {
+      console.error('Error sharing:', error);
+    }
+  };
+
+  return (
+    <SafeAreaView style={styles.container} edges={['top']}>
+      {/* Header */}
+      <View style={styles.header}>
+        <Pressable
+          onPress={onBack}
+          style={styles.backButton}
+          accessibilityRole="button"
+          accessibilityLabel={contentLanguage === 'en' ? 'Go back' : 'Kembali'}
+        >
+          <ArrowLeft size={24} color={ExploreColors.neutral[900]} />
+        </Pressable>
+
+        <Pressable
+          onPress={handleShare}
+          style={styles.iconButton}
+          accessibilityRole="button"
+          accessibilityLabel={contentLanguage === 'en' ? 'Share' : 'Bagikan'}
+        >
+          <Share2 size={24} color={ExploreColors.neutral[600]} />
+        </Pressable>
+      </View>
+
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Hero Image */}
+        {devotion.image_url && (
+          <Animated.View entering={FadeIn.duration(400)}>
+            <ImageBackground
+              source={{ uri: devotion.image_url }}
+              style={styles.heroImage}
+            >
+              <LinearGradient
+                colors={['transparent', 'rgba(0,0,0,0.7)']}
+                style={styles.heroGradient}
+              >
+                {/* Reading Time Badge */}
+                {devotion.reading_time_minutes && (
+                  <View style={styles.heroBadge}>
+                    <Clock size={14} color="#FFFFFF" />
+                    <Text style={styles.heroBadgeText}>
+                      {devotion.reading_time_minutes} {contentLanguage === 'en' ? 'min read' : 'menit baca'}
+                    </Text>
+                  </View>
+                )}
+              </LinearGradient>
+            </ImageBackground>
+          </Animated.View>
+        )}
+
+        <Animated.View
+          entering={FadeInDown.duration(500).delay(200)}
+          style={styles.contentContainer}
+        >
+          {/* Title */}
+          <Text style={styles.title}>{title}</Text>
+
+          {/* Author */}
+          {author && (
+            <View style={styles.authorRow}>
+              <User size={16} color={ExploreColors.neutral[500]} />
+              <Text style={styles.authorText}>{author}</Text>
+            </View>
+          )}
+
+          {/* Main Verse */}
+          {devotion.main_verse && (
+            <View style={styles.verseContainer}>
+              <View style={styles.verseAccent} />
+              <View style={styles.verseContent}>
+                <Text style={styles.verseText}>
+                  "{devotion.main_verse.text || ''}"
+                </Text>
+                <Text style={styles.verseReference}>
+                  {formatBibleReference(devotion.main_verse, contentLanguage)}
+                </Text>
+              </View>
+            </View>
+          )}
+
+          {/* Main Content */}
+          <MarkdownText style={styles.dayContent}>{content}</MarkdownText>
+
+          {/* Additional Verses */}
+          {devotion.additional_verses && devotion.additional_verses.length > 0 && (
+            <View style={styles.additionalVersesSection}>
+              <Text style={styles.sectionTitle}>
+                {contentLanguage === 'en' ? 'Related Verses' : 'Ayat Terkait'}
+              </Text>
+              {devotion.additional_verses.map((verse, index) => (
+                <View key={index} style={styles.additionalVerse}>
+                  <Text style={styles.additionalVerseText}>
+                    "{verse.text || ''}"
+                  </Text>
+                  <Text style={styles.additionalVerseReference}>
+                    {formatBibleReference(verse, contentLanguage)}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          )}
+
+          {/* Tags */}
+          {devotion.tags && devotion.tags.length > 0 && (
+            <View style={styles.tagsContainer}>
+              {devotion.tags.map((tag, index) => (
+                <View key={index} style={styles.tag}>
+                  <Text style={styles.tagText}>{tag}</Text>
+                </View>
+              ))}
+            </View>
+          )}
+
+          {/* Bottom spacing */}
+          <View style={{ height: 40 }} />
+        </Animated.View>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+// ============================================================================
+// DEVOTION PLAN VIEW (Multi-day plan)
+// ============================================================================
+
+interface DevotionPlanViewProps {
+  plan: DevotionPlan;
+  contentLanguage: string;
+  onBack: () => void;
+}
+
+function DevotionPlanView({ plan, contentLanguage, onBack }: DevotionPlanViewProps) {
+  const router = useRouter();
+
+  // State for current view
+  const [selectedDay, setSelectedDay] = useState<number | null>(null);
+
+  // Data queries
+  const { data: progress } = useSinglePlanProgress(plan.id);
+
+  // Mutations
+  const subscribeToPlan = useSubscribeToPlan();
+  const completePlanDay = useCompletePlanDay();
+
+  // Set initial day when plan loads
+  useEffect(() => {
+    if (plan && progress?.subscribed && progress.current_day > 0) {
+      setSelectedDay(progress.current_day);
+    }
+  }, [plan, progress]);
+
+  const isSubscribed = progress?.subscribed ?? false;
+  const isCompleted = progress?.completed ?? false;
+  const currentDay = progress?.current_day ?? 0;
+  const completedDays = progress?.completed_days ?? [];
+
+  const handleSubscribe = async () => {
+    if (!plan.id) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    await subscribeToPlan.mutateAsync({ planId: plan.id });
+    setSelectedDay(1);
+  };
+
+  const handleCompleteDay = async () => {
+    if (!plan.id || !selectedDay) return;
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    await completePlanDay.mutateAsync({
+      planId: plan.id,
+      dayNumber: selectedDay,
+    });
+
+    if (selectedDay < plan.duration_days) {
+      setTimeout(() => setSelectedDay(selectedDay + 1), 500);
+    }
+  };
+
+  const handleShare = async () => {
+    const title = plan.title[contentLanguage] || plan.title.en;
+    const description = plan.description?.[contentLanguage] || plan.description?.en || '';
+
+    try {
+      await Share.share({
+        message: `📖 ${title}\n\n${description}\n\n${plan.duration_days} ${
+          contentLanguage === 'en' ? 'day devotion plan' : 'hari rencana renungan'
+        }\n\nShared from FaithFlow`,
+      });
+    } catch (error) {
+      console.error('Error sharing:', error);
+    }
+  };
+
+  const isDayCompleted = useCallback(
+    (dayNum: number) => completedDays.includes(dayNum),
+    [completedDays]
+  );
+
+  const isDayAccessible = useCallback(
+    (dayNum: number) => {
+      if (!isSubscribed) return false;
+      return dayNum <= currentDay || dayNum === 1;
+    },
+    [isSubscribed, currentDay]
+  );
+
   const title = plan.title[contentLanguage] || plan.title.en;
   const subtitle = plan.subtitle?.[contentLanguage] || plan.subtitle?.en;
-  const description =
-    plan.description?.[contentLanguage] || plan.description?.en || '';
-  const introduction =
-    plan.introduction?.[contentLanguage] || plan.introduction?.en;
+  const description = plan.description?.[contentLanguage] || plan.description?.en || '';
+  const introduction = plan.introduction?.[contentLanguage] || plan.introduction?.en;
 
   // If a day is selected, show day content
   if (selectedDay !== null && plan.plan_days && plan.plan_days.length > 0) {
@@ -176,9 +378,7 @@ export default function DevotionPlanDetailScreen() {
           isCompleted={isDayCompleted(selectedDay)}
           onBack={() => setSelectedDay(null)}
           onComplete={handleCompleteDay}
-          onPrevDay={() =>
-            selectedDay > 1 && setSelectedDay(selectedDay - 1)
-          }
+          onPrevDay={() => selectedDay > 1 && setSelectedDay(selectedDay - 1)}
           onNextDay={() =>
             selectedDay < plan.duration_days &&
             isDayAccessible(selectedDay + 1) &&
@@ -197,7 +397,7 @@ export default function DevotionPlanDetailScreen() {
       {/* Header */}
       <View style={styles.header}>
         <Pressable
-          onPress={() => router.back()}
+          onPress={onBack}
           style={styles.backButton}
           accessibilityRole="button"
           accessibilityLabel={contentLanguage === 'en' ? 'Go back' : 'Kembali'}
@@ -209,9 +409,7 @@ export default function DevotionPlanDetailScreen() {
           onPress={handleShare}
           style={styles.iconButton}
           accessibilityRole="button"
-          accessibilityLabel={
-            contentLanguage === 'en' ? 'Share this plan' : 'Bagikan rencana ini'
-          }
+          accessibilityLabel={contentLanguage === 'en' ? 'Share this plan' : 'Bagikan rencana ini'}
         >
           <Share2 size={24} color={ExploreColors.neutral[600]} />
         </Pressable>
@@ -226,9 +424,7 @@ export default function DevotionPlanDetailScreen() {
         <Animated.View entering={FadeIn.duration(400)}>
           <ImageBackground
             source={{
-              uri:
-                plan.cover_image_url ||
-                'https://images.unsplash.com/photo-1504052434569-70ad5836ab65?w=800',
+              uri: plan.cover_image_url || 'https://images.unsplash.com/photo-1504052434569-70ad5836ab65?w=800',
             }}
             style={styles.heroImage}
           >
@@ -288,21 +484,14 @@ export default function DevotionPlanDetailScreen() {
                     : `Hari ${currentDay} dari ${plan.duration_days}`}
                 </Text>
                 <Text style={styles.progressPercent}>
-                  {Math.round(
-                    (completedDays.length / plan.duration_days) * 100
-                  )}
-                  %
+                  {Math.round((completedDays.length / plan.duration_days) * 100)}%
                 </Text>
               </View>
               <View style={styles.progressBarBg}>
                 <View
                   style={[
                     styles.progressBarFill,
-                    {
-                      width: `${
-                        (completedDays.length / plan.duration_days) * 100
-                      }%`,
-                    },
+                    { width: `${(completedDays.length / plan.duration_days) * 100}%` },
                   ]}
                 />
               </View>
@@ -330,9 +519,7 @@ export default function DevotionPlanDetailScreen() {
                     <Pressable
                       onPress={() => {
                         if (accessible) {
-                          Haptics.impactAsync(
-                            Haptics.ImpactFeedbackStyle.Light
-                          );
+                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                           setSelectedDay(dayNum);
                         }
                       }}
@@ -402,8 +589,7 @@ export default function DevotionPlanDetailScreen() {
                                 !accessible && styles.dayMetaTextLocked,
                               ]}
                             >
-                              {day.reading_time_minutes}{' '}
-                              {contentLanguage === 'en' ? 'min' : 'mnt'}
+                              {day.reading_time_minutes} {contentLanguage === 'en' ? 'min' : 'mnt'}
                             </Text>
                           </View>
                         )}
@@ -471,7 +657,10 @@ export default function DevotionPlanDetailScreen() {
   );
 }
 
-// Day Content View Component
+// ============================================================================
+// DAY CONTENT VIEW (Individual day within a plan)
+// ============================================================================
+
 interface DayContentViewProps {
   plan: DevotionPlan;
   day: DevotionPlanDay;
@@ -501,7 +690,6 @@ function DayContentView({
 }: DayContentViewProps) {
   const title = day.title[contentLanguage] || day.title.en;
   const content = day.content[contentLanguage] || day.content.en;
-  const summary = day.summary?.[contentLanguage] || day.summary?.en;
   const prayer = day.prayer?.[contentLanguage] || day.prayer?.en;
   const planTitle = plan.title[contentLanguage] || plan.title.en;
 
@@ -513,9 +701,7 @@ function DayContentView({
           onPress={onBack}
           style={styles.backButton}
           accessibilityRole="button"
-          accessibilityLabel={
-            contentLanguage === 'en' ? 'Back to plan' : 'Kembali ke rencana'
-          }
+          accessibilityLabel={contentLanguage === 'en' ? 'Back to plan' : 'Kembali ke rencana'}
         >
           <ArrowLeft size={24} color={ExploreColors.neutral[900]} />
         </Pressable>
@@ -532,11 +718,7 @@ function DayContentView({
           >
             <ChevronLeft
               size={20}
-              color={
-                dayNumber === 1
-                  ? ExploreColors.neutral[300]
-                  : ExploreColors.neutral[700]
-              }
+              color={dayNumber === 1 ? ExploreColors.neutral[300] : ExploreColors.neutral[700]}
             />
           </Pressable>
 
@@ -554,11 +736,7 @@ function DayContentView({
           >
             <ChevronRight
               size={20}
-              color={
-                dayNumber === totalDays
-                  ? ExploreColors.neutral[300]
-                  : ExploreColors.neutral[700]
-              }
+              color={dayNumber === totalDays ? ExploreColors.neutral[300] : ExploreColors.neutral[700]}
             />
           </Pressable>
         </View>
@@ -597,8 +775,7 @@ function DayContentView({
             <View style={styles.readingTimeRow}>
               <Clock size={14} color={ExploreColors.neutral[500]} />
               <Text style={styles.readingTimeText}>
-                {day.reading_time_minutes}{' '}
-                {contentLanguage === 'en' ? 'min read' : 'menit baca'}
+                {day.reading_time_minutes} {contentLanguage === 'en' ? 'min read' : 'menit baca'}
               </Text>
             </View>
           )}
@@ -608,9 +785,7 @@ function DayContentView({
             <View style={styles.verseContainer}>
               <View style={styles.verseAccent} />
               <View style={styles.verseContent}>
-                <Text style={styles.verseText}>
-                  "{day.main_verse.text || ''}"
-                </Text>
+                <Text style={styles.verseText}>"{day.main_verse.text || ''}"</Text>
                 <Text style={styles.verseReference}>
                   {formatBibleReference(day.main_verse, contentLanguage)}
                 </Text>
@@ -619,7 +794,7 @@ function DayContentView({
           )}
 
           {/* Content */}
-          <Text style={styles.dayContent}>{content}</Text>
+          <MarkdownText style={styles.dayContent}>{content}</MarkdownText>
 
           {/* Additional Verses */}
           {day.additional_verses && day.additional_verses.length > 0 && (
@@ -629,9 +804,7 @@ function DayContentView({
               </Text>
               {day.additional_verses.map((verse, index) => (
                 <View key={index} style={styles.additionalVerse}>
-                  <Text style={styles.additionalVerseText}>
-                    "{verse.text || ''}"
-                  </Text>
+                  <Text style={styles.additionalVerseText}>"{verse.text || ''}"</Text>
                   <Text style={styles.additionalVerseReference}>
                     {formatBibleReference(verse, contentLanguage)}
                   </Text>
@@ -644,9 +817,7 @@ function DayContentView({
           {day.reflection_questions && day.reflection_questions.length > 0 && (
             <View style={styles.reflectionSection}>
               <Text style={styles.sectionTitle}>
-                {contentLanguage === 'en'
-                  ? 'Reflection Questions'
-                  : 'Pertanyaan Refleksi'}
+                {contentLanguage === 'en' ? 'Reflection Questions' : 'Pertanyaan Refleksi'}
               </Text>
               {day.reflection_questions.map((q, index) => {
                 const question = q[contentLanguage] || q.en;
@@ -682,10 +853,7 @@ function DayContentView({
         <View style={styles.bottomContainer}>
           <Pressable
             onPress={onComplete}
-            style={[
-              styles.completeButton,
-              isPending && styles.completeButtonDisabled,
-            ]}
+            style={[styles.completeButton, isPending && styles.completeButtonDisabled]}
             disabled={isPending}
           >
             <Check size={20} color="#FFFFFF" />
@@ -716,6 +884,10 @@ function DayContentView({
     </SafeAreaView>
   );
 }
+
+// ============================================================================
+// STYLES
+// ============================================================================
 
 const styles = StyleSheet.create({
   container: {
@@ -761,6 +933,16 @@ const styles = StyleSheet.create({
   },
   loadingContainer: {
     padding: ExploreSpacing.screenMargin,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: ExploreSpacing.screenMargin,
+  },
+  errorText: {
+    ...ExploreTypography.body,
+    color: ExploreColors.neutral[500],
   },
   heroImage: {
     width: '100%',
@@ -820,6 +1002,17 @@ const styles = StyleSheet.create({
     color: ExploreColors.neutral[600],
     marginBottom: ExploreSpacing.md,
     fontStyle: 'italic',
+  },
+  authorRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: ExploreSpacing.lg,
+  },
+  authorText: {
+    ...ExploreTypography.body,
+    color: ExploreColors.neutral[600],
+    fontWeight: '500',
   },
   description: {
     ...ExploreTypography.body,
@@ -993,7 +1186,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     fontSize: 16,
   },
-  // Day Content View Styles
   dayImage: {
     width: '100%',
     height: 200,
@@ -1151,5 +1343,22 @@ const styles = StyleSheet.create({
     ...ExploreTypography.body,
     color: ExploreColors.success[700],
     fontWeight: '600',
+  },
+  tagsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: ExploreSpacing.lg,
+  },
+  tag: {
+    backgroundColor: ExploreColors.primary[50],
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+  },
+  tagText: {
+    ...ExploreTypography.caption,
+    color: ExploreColors.primary[700],
+    fontWeight: '500',
   },
 });

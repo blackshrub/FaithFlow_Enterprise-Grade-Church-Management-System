@@ -1,5 +1,5 @@
 /**
- * Home Dashboard Screen - Enhanced
+ * Home Dashboard Screen - PERFORMANCE OPTIMIZED
  *
  * Features:
  * - Personalized greeting based on time
@@ -9,9 +9,14 @@
  * - Skeleton loading
  * - Pull-to-refresh
  * - Smooth animations with Moti
+ *
+ * Performance:
+ * - useMemo for computed values
+ * - useCallback for event handlers
+ * - Demo mode with instant data
  */
 
-import React from 'react';
+import React, { useMemo, useCallback } from 'react';
 import { ScrollView, View, Pressable, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MotiView } from 'moti';
@@ -57,77 +62,80 @@ export default function HomeScreen() {
   const { data: prayerRequests, isLoading: prayerLoading, refetch: refetchPrayer } = usePrayerRequests();
   const { data: upcomingEvents, isLoading: eventsLoading, refetch: refetchEvents } = useUpcomingEvents();
 
-  // Get time-based greeting
-  const getGreeting = () => {
+  // Get time-based greeting - memoized to avoid recalculation
+  const greeting = useMemo(() => {
     const hour = new Date().getHours();
     if (hour < 12) return t('home.greeting.morning');
     if (hour < 17) return t('home.greeting.afternoon');
     if (hour < 21) return t('home.greeting.evening');
     return t('home.greeting.night');
-  };
+  }, [t]);
 
-  const onRefresh = React.useCallback(async () => {
+  const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await Promise.all([refetchGiving(), refetchPrayer(), refetchEvents()]);
     setRefreshing(false);
   }, [refetchGiving, refetchPrayer, refetchEvents]);
 
-  // Calculate stats
-  const activePrayerCount = prayerRequests?.filter((r) => r.status === 'active').length || 0;
-  const upcomingEventsCount = upcomingEvents?.length || 0;
-  const totalGiven = givingSummary?.total_given || 0;
+  // Calculate stats - memoized
+  const activePrayerCount = useMemo(
+    () => prayerRequests?.filter((r) => r.status === 'active').length || 0,
+    [prayerRequests]
+  );
+  const upcomingEventsCount = useMemo(() => upcomingEvents?.length || 0, [upcomingEvents]);
+  const totalGiven = useMemo(() => givingSummary?.total_given || 0, [givingSummary]);
 
-  // Format currency
-  const formatCurrency = (amount: number) => {
+  // Format currency - memoized formatter
+  const formatCurrency = useCallback((amount: number) => {
     return new Intl.NumberFormat('id-ID', {
       style: 'currency',
       currency: 'IDR',
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(amount);
-  };
+  }, []);
 
-  // Quick actions with badge counts
-  const quickActions = [
+  // Quick actions with badge counts - memoized
+  const quickActions = useMemo(() => [
     {
       icon: Heart,
       label: t('giving.give'),
       color: colors.secondary[500],
       badge: null,
-      onPress: () => router.push('/(tabs)/give'),
+      route: '/(tabs)/give' as const,
     },
     {
       icon: BookOpen,
       label: t('bible.title'),
       color: colors.primary[500],
       badge: null,
-      onPress: () => router.push('/(tabs)/bible'),
+      route: '/(tabs)/bible' as const,
     },
     {
       icon: Calendar,
       label: t('events.title'),
       color: colors.success[500],
       badge: upcomingEventsCount > 0 ? upcomingEventsCount : null,
-      onPress: () => router.push('/(tabs)/events'),
+      route: '/(tabs)/events' as const,
     },
     {
       icon: MessageCircle,
       label: t('prayer.title'),
       color: colors.warning[600],
       badge: activePrayerCount > 0 ? activePrayerCount : null,
-      onPress: () => router.push('/prayer'),
+      route: '/prayer' as const,
     },
     {
       icon: Users,
       label: t('groups.title'),
       color: colors.secondary[300],
       badge: null,
-      onPress: () => router.push('/groups'),
+      route: '/groups' as const,
     },
-  ];
+  ], [t, upcomingEventsCount, activePrayerCount]);
 
-  // Stats cards data
-  const statsCards = [
+  // Stats cards data - memoized
+  const statsCards = useMemo(() => [
     {
       icon: DollarSign,
       label: t('home.stats.totalGiven'),
@@ -152,7 +160,7 @@ export default function HomeScreen() {
       bgColor: colors.secondary[50],
       loading: eventsLoading,
     },
-  ];
+  ], [t, totalGiven, activePrayerCount, upcomingEventsCount, givingLoading, prayerLoading, eventsLoading, formatCurrency]);
 
   // Render skeleton for stats
   const renderStatsSkeleton = () => (
@@ -184,7 +192,7 @@ export default function HomeScreen() {
           className="px-6 pt-6 pb-4"
         >
           <Text className="text-gray-600" size="lg">
-            {getGreeting()}
+            {greeting}
           </Text>
           <Heading size="2xl" className="text-gray-900 mt-1">
             {member?.full_name || t('home.welcome', { name: '' })}
@@ -257,7 +265,7 @@ export default function HomeScreen() {
                 }}
                 style={{ flex: 1, minWidth: '45%' }}
               >
-                <Pressable onPress={action.onPress} className="active:opacity-80">
+                <Pressable onPress={() => router.push(action.route)} className="active:opacity-80">
                   <Card
                     className="p-5"
                     style={{

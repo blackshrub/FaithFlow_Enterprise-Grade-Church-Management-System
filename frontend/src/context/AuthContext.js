@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect, useMemo, useCallback } from 'react';
 import { authAPI, settingsAPI } from '../services/api';
 import { useTranslation } from 'react-i18next';
 
@@ -87,15 +87,17 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const logout = () => {
+  const logout = useCallback(() => {
     localStorage.removeItem('access_token');
     // Don't store user/church separately - JWT is single source of truth
     setUser(null);
     setChurch(null);
     setError(null);
-  };
+  }, []);
 
-  const value = {
+  // Memoize context value to prevent unnecessary re-renders of all consumers
+  // Without this, every state change creates a new object reference causing app-wide re-renders
+  const value = useMemo(() => ({
     user,
     church,
     loading,
@@ -105,7 +107,7 @@ export const AuthProvider = ({ children }) => {
     isAuthenticated: !!user,
     isSuperAdmin: user?.role === 'super_admin',
     isAdmin: user?.role === 'admin' || user?.role === 'super_admin',
-  };
+  }), [user, church, loading, error, login, logout]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

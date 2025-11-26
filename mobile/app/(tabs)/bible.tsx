@@ -22,7 +22,7 @@ import { Heading } from '@/components/ui/heading';
 import { HStack } from '@/components/ui/hstack';
 import { Icon } from '@/components/ui/icon';
 
-import { ChapterReader } from '@/components/bible/ChapterReader';
+import { ChapterReader, MemoizedChapterReader } from '@/components/bible/ChapterReader';
 import { ContinuousScrollReader } from '@/components/bible/ContinuousScrollReader';
 import { BookSelectorModal } from '@/components/bible/BookSelectorModal';
 import { ReadingPreferencesModal } from '@/components/bible/ReadingPreferencesModal';
@@ -104,13 +104,6 @@ export default function BibleScreen() {
 
   // Bible versions are now hardcoded since they're offline
   const versions = Object.values(BIBLE_TRANSLATIONS);
-
-  // Debug logging
-  console.log('Bible Screen (Offline) - currentVersion:', currentVersion);
-  console.log('Bible Screen (Offline) - books length:', books?.length);
-  console.log('Bible Screen (Offline) - isLoadingBooks:', isLoadingBooks);
-  console.log('Bible Screen (Offline) - booksError:', booksError);
-  console.log('Bible Screen (Offline) - books sample:', books?.[0]);
 
   // Get current book info for chapter navigation
   const currentBookInfo = books.find(
@@ -237,14 +230,11 @@ export default function BibleScreen() {
   };
 
   const handleSearchVerseSelect = (book: string, chapter: number, verse: number) => {
-    console.log('[Bible Screen] Search verse selected:', { book, chapter, verse });
     setScrollToVerseNumber(verse);
     setCurrentPosition(currentVersion, book, chapter);
-    console.log('[Bible Screen] scrollToVerseNumber set to:', verse);
   };
 
   const handleBookmarkSelect = (bookmark: Bookmark) => {
-    console.log('[Bible Screen] Bookmark selected:', bookmark);
     // If bookmark is from a different version, switch to that version
     if (bookmark.version !== currentVersion) {
       setCurrentPosition(bookmark.version, bookmark.book, bookmark.chapter);
@@ -535,18 +525,11 @@ export default function BibleScreen() {
    * - Changed height animation to maxHeight (supported property)
    */
   const handleNoteVerses = () => {
-    console.log('📝 handleNoteVerses called');
-    console.log('Selected verses:', selectedVerses);
-
-    if (selectedVerses.length === 0) {
-      console.log('❌ No verses selected, aborting');
-      return;
-    }
+    if (selectedVerses.length === 0) return;
 
     // Haptic feedback when opening note editor
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
-    console.log('✅ Opening note editor...');
     openNoteEditor({
       verseReference: getSelectedReference(),
       initialNote: getSelectedVerseNote(),
@@ -817,13 +800,12 @@ export default function BibleScreen() {
             // Update header to show current visible chapter
             // NOTE: We DO NOT call setCurrentPosition here to avoid refresh loop
             // The header will update automatically when scrolling
-            console.log(`📖 Currently viewing: Book ${book}, Chapter ${chapter}`);
           }}
           onScroll={handleScroll}
         />
       ) : verses && verses.length > 0 ? (
-        // Paged mode - chapter by chapter navigation
-        <ChapterReader
+        // Paged mode - chapter by chapter navigation (memoized for performance)
+        <MemoizedChapterReader
           verses={verses}
           version={currentVersion}
           book={currentBook}

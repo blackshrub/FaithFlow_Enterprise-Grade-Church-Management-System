@@ -9,17 +9,32 @@
  */
 
 import React from 'react';
-import { ScrollView, View, Text, StyleSheet, RefreshControl, Pressable } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import {
+  ScrollView,
+  View,
+  Text,
+  StyleSheet,
+  RefreshControl,
+  Pressable,
+  StatusBar,
+  Platform,
+  FlatList,
+  Dimensions,
+  ImageBackground,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { ExploreColors, ExploreTypography, ExploreSpacing } from '@/constants/explore/designSystem';
 import {
   useExploreHomeMock as useExploreHome,
   useUserProgress,
   useCurrentStreak,
+  useBibleStudies,
 } from '@/hooks/explore/useExploreMock';
 import { useExploreStore } from '@/stores/explore/exploreStore';
 import { useStreakStore } from '@/stores/explore/streakStore';
+import type { BibleStudy } from '@/types/explore';
 
 // Components
 import { DailyDevotionCard } from '@/components/explore/DailyDevotionCard';
@@ -31,17 +46,35 @@ import { NoContentEmptyState } from '@/components/explore/EmptyState';
 import { CelebrationModal } from '@/components/explore/CelebrationModal';
 
 // Icons
-import { Flame, Settings, Globe, ChevronRight } from 'lucide-react-native';
+import {
+  Flame,
+  Globe,
+  ChevronRight,
+  BookOpen,
+  Users,
+  Tag,
+  Calendar,
+  GraduationCap,
+  Play,
+  Clock,
+  Star,
+} from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import Animated, { FadeInRight } from 'react-native-reanimated';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export default function ExploreScreen() {
   const router = useRouter();
-  const contentLanguage = useExploreStore((state) => state.contentLanguage);
+  const insets = useSafeAreaInsets();
+  const { t } = useTranslation(); // UI language follows global setting
+  const contentLanguage = useExploreStore((state) => state.contentLanguage); // Content language is independent
   const setContentLanguage = useExploreStore((state) => state.setContentLanguage);
 
   // Data queries
   const { data: homeData, isLoading, error, refetch } = useExploreHome();
   const { data: progressData } = useUserProgress();
+  const { data: bibleStudies } = useBibleStudies();
   const currentStreak = useCurrentStreak();
 
   const handleRefresh = () => {
@@ -49,6 +82,7 @@ export default function ExploreScreen() {
   };
 
   const handleLanguageToggle = () => {
+    // Toggle content language (independent from UI language)
     setContentLanguage(contentLanguage === 'en' ? 'id' : 'en');
   };
 
@@ -60,64 +94,63 @@ export default function ExploreScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text
-          style={styles.headerTitle}
-          accessibilityRole="header"
-          accessibilityLevel={1}
-        >
-          {contentLanguage === 'en' ? 'Explore' : 'Jelajahi'}
-        </Text>
+    <View style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor={ExploreColors.primary[600]} />
 
-        <View style={styles.headerActions}>
-          {/* Streak Badge - Always visible so users understand the feature */}
-          <Pressable
-            onPress={handleStreakPress}
-            style={({ pressed }) => [
-              styles.streakBadge,
-              pressed && styles.streakBadgePressed,
-            ]}
-            accessibilityRole="button"
-            accessibilityLabel={
-              contentLanguage === 'en'
-                ? `Current streak: ${currentStreak ?? 0} ${currentStreak === 1 ? 'day' : 'days'}. Tap for details.`
-                : `Rangkaian saat ini: ${currentStreak ?? 0} hari. Ketuk untuk detail.`
-            }
-            accessibilityHint={
-              contentLanguage === 'en'
-                ? 'Double tap to view your streak details'
-                : 'Ketuk dua kali untuk melihat detail rangkaian Anda'
-            }
+      {/* Full-bleed Header with Status Bar Coverage */}
+      <LinearGradient
+        colors={[ExploreColors.primary[600], ExploreColors.primary[500]]}
+        style={[styles.headerGradient, { paddingTop: insets.top }]}
+      >
+        <View style={styles.header}>
+          <Text
+            style={styles.headerTitle}
+            accessibilityRole="header"
+            accessibilityLevel={1}
           >
-            <View style={styles.streakIconContainer}>
-              <Flame size={16} color="#FFFFFF" fill="#FFFFFF" />
-            </View>
-            <Text style={styles.streakText}>{currentStreak ?? 0}</Text>
-          </Pressable>
+            {t('explore.title')}
+          </Text>
 
-          {/* Language Toggle */}
-          <Pressable
-            onPress={handleLanguageToggle}
-            style={styles.languageButton}
-            accessibilityRole="button"
-            accessibilityLabel={
-              contentLanguage === 'en'
-                ? 'Switch to Indonesian'
-                : 'Beralih ke Bahasa Inggris'
-            }
-            accessibilityHint={
-              contentLanguage === 'en'
-                ? 'Double tap to change content language to Indonesian'
-                : 'Ketuk dua kali untuk mengubah bahasa konten ke Bahasa Inggris'
-            }
-          >
-            <Globe size={20} color={ExploreColors.neutral[600]} />
-            <Text style={styles.languageText}>{contentLanguage.toUpperCase()}</Text>
-          </Pressable>
+          <View style={styles.headerActions}>
+            {/* Streak Badge - Inline styles for reliability */}
+            <Pressable
+              onPress={handleStreakPress}
+              accessibilityRole="button"
+              accessibilityLabel={`${t('explore.streak.current')}: ${currentStreak ?? 0} ${t(currentStreak === 1 ? 'explore.day' : 'explore.days')}. ${t('explore.streak.tapForDetails')}`}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                backgroundColor: '#FFFFFF',
+                paddingHorizontal: 12,
+                paddingVertical: 6,
+                borderRadius: 20,
+                gap: 6,
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.15,
+                shadowRadius: 4,
+                elevation: 3,
+              }}
+            >
+              <Flame size={18} color="#FF6B35" fill="#FF6B35" />
+              <Text style={{ fontSize: 15, fontWeight: '700', color: '#FF6B35' }}>
+                {currentStreak ?? 0}
+              </Text>
+            </Pressable>
+
+            {/* Content Language Toggle - Shows which language content is in */}
+            <Pressable
+              onPress={handleLanguageToggle}
+              style={styles.languageButton}
+              accessibilityRole="button"
+              accessibilityLabel={`${t('explore.language.switchTo')} ${contentLanguage === 'en' ? t('explore.language.indonesian') : t('explore.language.english')}`}
+            >
+              <Globe size={18} color="#FFFFFF" />
+              <Text style={styles.languageText}>{contentLanguage.toUpperCase()}</Text>
+            </Pressable>
+          </View>
         </View>
-      </View>
+      </LinearGradient>
 
       {/* Content */}
       <ScrollView
@@ -142,9 +175,7 @@ export default function ExploreScreen() {
             accessibilityLiveRegion="assertive"
           >
             <Text style={styles.errorText}>
-              {contentLanguage === 'en'
-                ? 'Unable to load content. Please try again.'
-                : 'Tidak dapat memuat konten. Silakan coba lagi.'}
+              {t('explore.error.loadContent')}
             </Text>
           </View>
         ) : homeData ? (
@@ -157,7 +188,7 @@ export default function ExploreScreen() {
                   accessibilityRole="header"
                   accessibilityLevel={2}
                 >
-                  {contentLanguage === 'en' ? "Today's Devotion" : 'Renungan Hari Ini'}
+                  {t('explore.todaysDevotions')}
                 </Text>
                 <DailyDevotionCard
                   devotion={homeData.daily_devotion}
@@ -178,7 +209,7 @@ export default function ExploreScreen() {
                   accessibilityRole="header"
                   accessibilityLevel={2}
                 >
-                  {contentLanguage === 'en' ? 'Verse of the Day' : 'Ayat Hari Ini'}
+                  {t('explore.verseOfTheDay')}
                 </Text>
                 <VerseOfTheDayCard
                   verse={homeData.verse_of_the_day}
@@ -198,7 +229,7 @@ export default function ExploreScreen() {
                   accessibilityRole="header"
                   accessibilityLevel={2}
                 >
-                  {contentLanguage === 'en' ? 'Bible Figure of the Day' : 'Tokoh Alkitab Hari Ini'}
+                  {t('explore.bibleFigureOfTheDay')}
                 </Text>
                 <BibleFigureCard
                   figure={homeData.bible_figure}
@@ -218,7 +249,7 @@ export default function ExploreScreen() {
                   accessibilityRole="header"
                   accessibilityLevel={2}
                 >
-                  {contentLanguage === 'en' ? 'Daily Challenge' : 'Tantangan Harian'}
+                  {t('explore.dailyChallenge')}
                 </Text>
                 <DailyQuizCard
                   quiz={homeData.daily_quiz}
@@ -232,58 +263,80 @@ export default function ExploreScreen() {
               </View>
             ) : null}
 
+            {/* Bible Studies - Featured Horizontal Carousel */}
+            {bibleStudies && bibleStudies.length > 0 && (
+              <View style={styles.section}>
+                <View style={styles.sectionHeaderRow}>
+                  <Text
+                    style={styles.sectionTitle}
+                    accessibilityRole="header"
+                    accessibilityLevel={2}
+                  >
+                    {t('explore.bibleStudies')}
+                  </Text>
+                  <Pressable
+                    onPress={() => router.push('/explore/studies')}
+                    style={styles.viewAllButton}
+                  >
+                    <Text style={styles.viewAllText}>
+                      {t('explore.viewAll')}
+                    </Text>
+                    <ChevronRight size={16} color={ExploreColors.primary[600]} />
+                  </Pressable>
+                </View>
+
+                <FlatList
+                  data={bibleStudies.slice(0, 6)}
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  keyExtractor={(item) => item.id}
+                  style={styles.studiesCarouselContainer}
+                  contentContainerStyle={styles.studiesCarousel}
+                  renderItem={({ item, index }) => (
+                    <BibleStudyCard
+                      study={item}
+                      onPress={() => router.push(`/explore/studies/${item.id}`)}
+                      contentLanguage={contentLanguage}
+                      index={index}
+                    />
+                  )}
+                />
+              </View>
+            )}
+
             {/* Self-Paced Content - Quick Access */}
             <View style={styles.section}>
-              <View style={styles.sectionHeader}>
+              <View style={styles.sectionHeaderRow}>
                 <Text
                   style={styles.sectionTitle}
                   accessibilityRole="header"
                   accessibilityLevel={2}
                 >
-                  {contentLanguage === 'en' ? 'Explore More' : 'Jelajahi Lebih Banyak'}
+                  {t('explore.exploreMore')}
                 </Text>
               </View>
 
-              <View
-                style={styles.quickAccessGrid}
-                accessible={false}
-                accessibilityLabel={
-                  contentLanguage === 'en'
-                    ? 'Self-paced content categories'
-                    : 'Kategori konten mandiri'
-                }
-              >
+              <View style={styles.quickAccessGrid}>
                 <QuickAccessCard
-                  title={contentLanguage === 'en' ? 'Bible Studies' : 'Studi Alkitab'}
-                  description={contentLanguage === 'en' ? 'In-depth guides' : 'Panduan mendalam'}
-                  icon="📖"
-                  color="#8B5CF6"
-                  onPress={() => router.push('/explore/studies')}
-                  contentLanguage={contentLanguage}
-                />
-                <QuickAccessCard
-                  title={contentLanguage === 'en' ? 'Bible Figures' : 'Tokoh Alkitab'}
-                  description={contentLanguage === 'en' ? 'Learn stories' : 'Pelajari kisah'}
-                  icon="👤"
+                  title={t('explore.bibleFigures')}
+                  description={t('explore.heroesOfFaith')}
+                  icon={<Users size={24} color="#FFFFFF" />}
                   color="#3B82F6"
                   onPress={() => router.push('/explore/figures')}
-                  contentLanguage={contentLanguage}
                 />
                 <QuickAccessCard
-                  title={contentLanguage === 'en' ? 'Topical Verses' : 'Ayat Topik'}
-                  description={contentLanguage === 'en' ? 'By topic' : 'Per topik'}
-                  icon="🏷️"
+                  title={t('explore.topicalVerses')}
+                  description={t('explore.findByTheme')}
+                  icon={<Tag size={24} color="#FFFFFF" />}
                   color="#10B981"
                   onPress={() => router.push('/explore/topical')}
-                  contentLanguage={contentLanguage}
                 />
                 <QuickAccessCard
-                  title={contentLanguage === 'en' ? 'Devotion Plans' : 'Rencana Renungan'}
-                  description={contentLanguage === 'en' ? 'Daily readings' : 'Renungan harian'}
-                  icon="📅"
+                  title={t('explore.devotionPlans')}
+                  description={t('explore.dailyJourney')}
+                  icon={<Calendar size={24} color="#FFFFFF" />}
                   color="#F59E0B"
                   onPress={() => router.push('/explore/devotions')}
-                  contentLanguage={contentLanguage}
                 />
               </View>
             </View>
@@ -298,31 +351,136 @@ export default function ExploreScreen() {
 
       {/* Celebration Modal */}
       <CelebrationModal />
-    </SafeAreaView>
+    </View>
   );
 }
 
 /**
- * Premium Quick access card for self-paced content - World-class design
+ * Bible Study Card for horizontal carousel
+ * Note: contentLanguage is used for content (title), but UI labels use useTranslation
+ */
+interface BibleStudyCardProps {
+  study: BibleStudy;
+  onPress: () => void;
+  contentLanguage: string;
+  index: number;
+}
+
+// Calculate card width at module level for 1.5 cards visibility (larger cards)
+// Formula: (screenWidth - leftPadding - 1*gap) / 1.5
+const STUDY_CARD_WIDTH = (SCREEN_WIDTH - 20 - 12) / 1.5; // ~239px on 390px screen
+
+function BibleStudyCard({ study, onPress, contentLanguage, index }: BibleStudyCardProps) {
+  const { t } = useTranslation(); // UI language
+  const title = study.title[contentLanguage] || study.title.en;
+  const subtitle = study.subtitle?.[contentLanguage] || study.subtitle?.en;
+  const lessonCount = study.lesson_count || study.lessons?.length || 0;
+  const duration = study.estimated_duration_minutes || 0;
+  const rating = study.average_rating || 0;
+  const difficulty = study.difficulty || 'beginner';
+
+  // Format duration
+  const formatDuration = (mins: number) => {
+    if (mins < 60) return `${mins}m`;
+    const hours = Math.floor(mins / 60);
+    return `${hours}h`;
+  };
+
+  // Difficulty color
+  const difficultyColors: Record<string, string> = {
+    beginner: '#10B981',
+    intermediate: '#F59E0B',
+    advanced: '#EF4444',
+  };
+  const difficultyColor = difficultyColors[difficulty] || '#6B7280';
+
+  return (
+    <Animated.View
+      entering={FadeInRight.duration(400).delay(index * 100)}
+      style={{ width: STUDY_CARD_WIDTH, marginRight: 12 }}
+    >
+      <Pressable
+        onPress={onPress}
+        style={({ pressed }) => [
+          styles.studyCard,
+          pressed && styles.studyCardPressed,
+        ]}
+      >
+        {/* Cover Image Section - Top Half */}
+        <ImageBackground
+          source={{
+            uri: study.cover_image_url || 'https://images.unsplash.com/photo-1504052434569-70ad5836ab65?w=400',
+          }}
+          style={styles.studyCardImage}
+          imageStyle={{ borderTopLeftRadius: 16, borderTopRightRadius: 16 }}
+          resizeMode="cover"
+        >
+          <LinearGradient
+            colors={['rgba(0,0,0,0.1)', 'rgba(0,0,0,0.5)']}
+            style={styles.studyCardImageOverlay}
+          >
+            {/* Difficulty Badge - Top Right */}
+            <View style={[styles.studyDifficultyBadge, { backgroundColor: difficultyColor }]}>
+              <Text style={styles.studyDifficultyText}>
+                {difficulty.charAt(0).toUpperCase() + difficulty.slice(1)}
+              </Text>
+            </View>
+          </LinearGradient>
+        </ImageBackground>
+
+        {/* Content Section - Bottom Half */}
+        <View style={styles.studyCardContent}>
+          <Text style={styles.studyCardTitle} numberOfLines={2}>
+            {title}
+          </Text>
+          {subtitle && (
+            <Text style={styles.studyCardSubtitle} numberOfLines={1}>
+              {subtitle}
+            </Text>
+          )}
+
+          {/* Meta Info Row */}
+          <View style={styles.studyCardMeta}>
+            <View style={styles.studyMetaItem}>
+              <BookOpen size={12} color="#6B7280" />
+              <Text style={styles.studyMetaText}>{lessonCount}</Text>
+            </View>
+            <View style={styles.studyMetaItem}>
+              <Clock size={12} color="#6B7280" />
+              <Text style={styles.studyMetaText}>{formatDuration(duration)}</Text>
+            </View>
+            {rating > 0 && (
+              <View style={styles.studyMetaItem}>
+                <Star size={12} color="#F59E0B" fill="#F59E0B" />
+                <Text style={styles.studyMetaText}>{rating.toFixed(1)}</Text>
+              </View>
+            )}
+          </View>
+        </View>
+      </Pressable>
+    </Animated.View>
+  );
+}
+
+/**
+ * Premium Quick access card - World-class design with proper icons
  */
 interface QuickAccessCardProps {
   title: string;
   description: string;
-  icon: string;
+  icon: React.ReactNode;
   color: string;
   onPress: () => void;
-  contentLanguage: string;
 }
 
 // Premium gradient colors for each card
 const cardGradients: Record<string, [string, string]> = {
-  '#8B5CF6': ['#8B5CF6', '#6D28D9'], // Purple - Bible Studies
   '#3B82F6': ['#3B82F6', '#1D4ED8'], // Blue - Bible Figures
   '#10B981': ['#10B981', '#059669'], // Green - Topical Verses
   '#F59E0B': ['#F59E0B', '#D97706'], // Amber - Devotion Plans
 };
 
-function QuickAccessCard({ title, description, icon, color, onPress, contentLanguage }: QuickAccessCardProps) {
+function QuickAccessCard({ title, description, icon, color, onPress }: QuickAccessCardProps) {
   const gradientColors = cardGradients[color] || [color, color];
 
   return (
@@ -351,7 +509,7 @@ function QuickAccessCard({ title, description, icon, color, onPress, contentLang
         {/* Content */}
         <View style={styles.quickAccessContent}>
           <View style={styles.quickAccessIconContainer}>
-            <Text style={styles.quickAccessIcon}>{icon}</Text>
+            {icon}
           </View>
 
           <View style={styles.quickAccessTextContainer}>
@@ -376,69 +534,63 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: ExploreColors.neutral[50],
   },
+  headerGradient: {
+    paddingBottom: ExploreSpacing.md,
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: ExploreSpacing.screenMargin,
-    paddingVertical: ExploreSpacing.md,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: ExploreColors.neutral[200],
+    paddingVertical: ExploreSpacing.sm,
   },
   headerTitle: {
     ...ExploreTypography.h2,
-    color: ExploreColors.neutral[900],
+    color: '#FFFFFF',
+    fontWeight: '700',
   },
   headerActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 10,
   },
   streakBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    paddingLeft: 4,
-    paddingRight: 14,
-    paddingVertical: 4,
-    borderRadius: 24,
-    backgroundColor: '#FF6B35',
-    shadowColor: '#FF6B35',
+    justifyContent: 'center',
+    gap: 4,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 16,
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.15,
     shadowRadius: 4,
     elevation: 3,
+    minWidth: 56,
   },
   streakBadgePressed: {
     opacity: 0.85,
     transform: [{ scale: 0.96 }],
   },
-  streakIconContainer: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   streakText: {
-    fontSize: 16,
-    color: '#FFFFFF',
+    fontSize: 14,
+    color: '#FF6B35',
     fontWeight: '700',
   },
   languageButton: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    paddingHorizontal: 12,
+    paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 12,
-    backgroundColor: ExploreColors.neutral[100],
+    backgroundColor: 'rgba(255,255,255,0.2)',
   },
   languageText: {
     ...ExploreTypography.caption,
-    color: ExploreColors.neutral[700],
+    color: '#FFFFFF',
     fontWeight: '600',
   },
   scrollView: {
@@ -453,16 +605,137 @@ const styles = StyleSheet.create({
   section: {
     marginBottom: ExploreSpacing.xl,
   },
-  sectionHeader: {
+  sectionHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    // No paddingHorizontal - parent scrollContent provides it
     marginBottom: ExploreSpacing.md,
   },
   sectionTitle: {
     ...ExploreTypography.h4,
     color: ExploreColors.neutral[900],
-    marginBottom: ExploreSpacing.md,
+    marginBottom: ExploreSpacing.md, // Same spacing as sectionHeaderRow
+  },
+  viewAllButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  viewAllText: {
+    ...ExploreTypography.body,
+    color: ExploreColors.primary[600],
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  // Bible Studies Carousel - Shows 2.5 cards for scroll hint
+  // Uses negative margin to escape parent ScrollView padding for edge-to-edge scrolling
+  studiesCarouselContainer: {
+    marginHorizontal: -ExploreSpacing.screenMargin, // Escape parent padding
+  },
+  studiesCarousel: {
+    paddingLeft: ExploreSpacing.screenMargin,
+    paddingRight: ExploreSpacing.screenMargin,
+  },
+  studyCard: {
+    // Width controlled by STUDY_CARD_WIDTH constant on Animated.View wrapper
+    width: '100%',
+    height: 240,
+    borderRadius: 16,
+    overflow: 'hidden',
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  studyCardPressed: {
+    opacity: 0.95,
+    transform: [{ scale: 0.98 }],
+  },
+  studyCardImage: {
+    width: '100%',
+    height: 120,
+  },
+  studyCardImageOverlay: {
+    flex: 1,
+    padding: 10,
+    justifyContent: 'flex-start',
+    alignItems: 'flex-end',
+  },
+  studyDifficultyBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  studyDifficultyText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    textTransform: 'capitalize',
+  },
+  studyCardContent: {
+    flex: 1,
+    padding: 12,
+    justifyContent: 'space-between',
+    borderWidth: 1,
+    borderTopWidth: 0,
+    borderColor: ExploreColors.neutral[200],
+    borderRadius: 16,
+  },
+  studyCardImageStyle: {
+    borderRadius: 16,
+    resizeMode: 'cover',
+  },
+  studyCardGradient: {
+    flex: 1,
+    padding: ExploreSpacing.md,
+    justifyContent: 'space-between',
+  },
+  studyCardBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: 4,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  studyCardBadgeText: {
+    fontSize: 11,
+    color: '#FFFFFF',
+    fontWeight: '600',
+  },
+  studyCardTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: ExploreColors.neutral[900],
+    lineHeight: 18,
+  },
+  studyCardSubtitle: {
+    fontSize: 12,
+    fontWeight: '400',
+    color: ExploreColors.neutral[500],
+    lineHeight: 16,
+    marginTop: 2,
+  },
+  studyCardMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginTop: 8,
+  },
+  studyMetaItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  studyMetaText: {
+    fontSize: 11,
+    fontWeight: '500',
+    color: ExploreColors.neutral[500],
   },
   errorContainer: {
     padding: ExploreSpacing.xl,
@@ -475,6 +748,7 @@ const styles = StyleSheet.create({
   },
   // World-class Explore More cards
   quickAccessGrid: {
+    // No paddingHorizontal - parent scrollContent provides it
     gap: 12,
   },
   quickAccessCard: {
@@ -532,9 +806,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.25)',
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  quickAccessIcon: {
-    fontSize: 26,
   },
   quickAccessTextContainer: {
     flex: 1,

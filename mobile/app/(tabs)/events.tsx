@@ -63,7 +63,7 @@ import { useCategoryFilterStore } from '@/stores/categoryFilter';
 import { colors, spacing, borderRadius, shadows } from '@/constants/theme';
 import type { EventWithMemberStatus } from '@/types/events';
 import { RatingReviewModal } from '@/components/modals/RatingReviewModal';
-import { ratingService } from '@/services/ratingService';
+import { ratingService, getRatingColor } from '@/services/ratingService';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { SearchBar } from '@/components/events/SearchBar';
 import { SearchResults } from '@/components/events/SearchResults';
@@ -121,10 +121,8 @@ export default function EventsScreen() {
 
   // Handle category filter open
   const handleOpenCategoryFilter = useCallback(() => {
-    console.log('[EventsScreen] open() called');
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     categoryFilterStore.open(categories, selectedCategory, (categoryId) => {
-      console.log('[EventsScreen] Callback triggered');
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       setSelectedCategory(categoryId);
     });
@@ -186,15 +184,16 @@ export default function EventsScreen() {
       user_id: member?.id || '',
     }));
 
-  // Compute filtered results when searching
-  const searchResults = isSearching
-    ? filterEvents({
-        events: eventsForSearch,
-        searchTerm,
-        userRsvps,
-        userAttendance,
-      })
-    : null;
+  // Compute filtered results when searching (memoized for performance)
+  const searchResults = useMemo(() => {
+    if (!isSearching) return null;
+    return filterEvents({
+      events: eventsForSearch,
+      searchTerm,
+      userRsvps,
+      userAttendance,
+    });
+  }, [isSearching, eventsForSearch, searchTerm, userRsvps, userAttendance]);
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -1004,6 +1003,7 @@ export default function EventsScreen() {
               key={activeTab}
               data={events}
               renderItem={renderEvent}
+              keyExtractor={(item) => item.id}
               estimatedItemSize={380}
               contentContainerStyle={{
                 paddingHorizontal: spacing.lg,

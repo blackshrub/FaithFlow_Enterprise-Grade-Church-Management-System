@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 import logging
 
 from models.event import Event, EventCreate, EventUpdate
-from utils.dependencies import get_db, require_admin, get_current_user
+from utils.dependencies import get_db, require_admin, get_current_user, get_session_church_id
 from services.qr_service import generate_confirmation_code, generate_rsvp_qr_data
 from services.whatsapp_service import send_whatsapp_message, format_rsvp_confirmation_message
 
@@ -114,13 +114,11 @@ async def get_event(
     current_user: dict = Depends(get_current_user)
 ):
     """Get event by ID"""
-    
-    event = await db.events.find_one({"id": event_id}, {"_id": 0})
+    # Filter by church_id at query time for proper multi-tenant isolation
+    church_id = get_session_church_id(current_user)
+    event = await db.events.find_one({"id": event_id, "church_id": church_id}, {"_id": 0})
     if not event:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
-    
-    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') != event.get('church_id'):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
     
     # Convert datetime fields
     if isinstance(event.get('created_at'), str):
@@ -143,13 +141,11 @@ async def update_event(
     current_user: dict = Depends(require_admin)
 ):
     """Update event"""
-    
-    event = await db.events.find_one({"id": event_id})
+    # Filter by church_id at query time for proper multi-tenant isolation
+    church_id = get_session_church_id(current_user)
+    event = await db.events.find_one({"id": event_id, "church_id": church_id})
     if not event:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
-    
-    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') != event.get('church_id'):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
     
     update_data = event_data.model_dump(exclude_unset=True)
     if update_data:
@@ -181,15 +177,13 @@ async def delete_event(
     current_user: dict = Depends(require_admin)
 ):
     """Delete event"""
-    
-    event = await db.events.find_one({"id": event_id})
+    # Filter by church_id at query time for proper multi-tenant isolation
+    church_id = get_session_church_id(current_user)
+    event = await db.events.find_one({"id": event_id, "church_id": church_id})
     if not event:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
-    
-    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') != event.get('church_id'):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
-    
-    await db.events.delete_one({"id": event_id})
+
+    await db.events.delete_one({"id": event_id, "church_id": church_id})
     logger.info(f"Event deleted: {event_id}")
     return None
 

@@ -115,16 +115,10 @@ export function CalendarModal() {
   );
 
   // Get calendar markers (event dots) - Map of date -> statuses
-  const calendarMarkersMap = useMemo(() => {
-    const markersMap = getCalendarMarkers(filteredResults.events, userRsvps, userAttendance);
-    console.log('[CalendarModal] Calendar markers:', markersMap);
-    console.log('[CalendarModal] Filtered events count:', filteredResults.events.length);
-    console.log('[CalendarModal] Sample events:', filteredResults.events.slice(0, 3));
-    console.log('[CalendarModal] User RSVPs:', userRsvps);
-    console.log('[CalendarModal] User Attendance:', userAttendance);
-    console.log('[CalendarModal] All events:', allEvents);
-    return markersMap;
-  }, [filteredResults.events, userRsvps, userAttendance, allEvents]);
+  const calendarMarkersMap = useMemo(
+    () => getCalendarMarkers(filteredResults.events, userRsvps, userAttendance),
+    [filteredResults.events, userRsvps, userAttendance]
+  );
 
   // Convert map to array format for calendarActiveDateRanges (blue outline only)
   const calendarActiveDates = useMemo(() => {
@@ -205,7 +199,6 @@ export function CalendarModal() {
   );
 
   const handleDismiss = useCallback(() => {
-    console.log('[CalendarModal] handleDismiss called');
     bottomSheetRef.current?.close();
     close();
   }, [close]);
@@ -419,9 +412,6 @@ export function CalendarModal() {
               const statuses = calendarMarkersMap.get(dateKey) || [];
 
               if (statuses.length === 0) return null;
-
-              // Debug logging
-              console.log(`[CalendarModal Dots] Rendering dots for date ${dateKey}, day ${gridCell.date}, row ${gridCell.row}, col ${gridCell.col}, statuses:`, statuses);
 
               // Calculate position
               const DOT_SIZE = 5;

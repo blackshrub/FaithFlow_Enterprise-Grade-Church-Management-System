@@ -12,6 +12,7 @@ import React, { useState } from 'react';
 import { ScrollView, View, Text, StyleSheet, Pressable, TextInput, Image, ImageBackground } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { ExploreColors, ExploreTypography, ExploreSpacing } from '@/constants/explore/designSystem';
 import { useBibleStudies, useStudyProgress } from '@/hooks/explore/useExploreMock';
 import { useExploreStore } from '@/stores/explore/exploreStore';
@@ -38,7 +39,8 @@ type FilterCategory = 'all' | 'old_testament' | 'new_testament' | 'topical';
 
 export default function BibleStudiesBrowserScreen() {
   const router = useRouter();
-  const contentLanguage = useExploreStore((state) => state.contentLanguage);
+  const { t } = useTranslation(); // UI language follows global setting
+  const contentLanguage = useExploreStore((state) => state.contentLanguage); // Content language is independent
 
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<SortOption>('newest');
@@ -96,11 +98,11 @@ export default function BibleStudiesBrowserScreen() {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
         <View style={styles.header}>
-          <Pressable onPress={() => router.back()} style={styles.backButton}>
+          <Pressable onPress={() => router.replace('/(tabs)/explore')} style={styles.backButton}>
             <ArrowLeft size={24} color={ExploreColors.neutral[900]} />
           </Pressable>
           <Text style={styles.headerTitle}>
-            {contentLanguage === 'en' ? 'Bible Studies' : 'Studi Alkitab'}
+            {t('explore.bibleStudies')}
           </Text>
           <View style={{ width: 40 }} />
         </View>
@@ -115,11 +117,11 @@ export default function BibleStudiesBrowserScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.backButton}>
+        <Pressable onPress={() => router.replace('/(tabs)/explore')} style={styles.backButton}>
           <ArrowLeft size={24} color={ExploreColors.neutral[900]} />
         </Pressable>
         <Text style={styles.headerTitle}>
-          {contentLanguage === 'en' ? 'Bible Studies' : 'Studi Alkitab'}
+          {t('explore.bibleStudies')}
         </Text>
         <Pressable onPress={() => setShowFilters(!showFilters)} style={styles.filterButton}>
           <Filter size={20} color={ExploreColors.primary[600]} />
@@ -137,7 +139,7 @@ export default function BibleStudiesBrowserScreen() {
             <Search size={20} color={ExploreColors.neutral[400]} />
             <TextInput
               style={styles.searchInput}
-              placeholder={contentLanguage === 'en' ? 'Search studies...' : 'Cari studi...'}
+              placeholder={t('explore.searchStudies')}
               placeholderTextColor={ExploreColors.neutral[400]}
               value={searchQuery}
               onChangeText={setSearchQuery}
@@ -151,14 +153,14 @@ export default function BibleStudiesBrowserScreen() {
             {/* Category Filter */}
             <View style={styles.filterGroup}>
               <Text style={styles.filterLabel}>
-                {contentLanguage === 'en' ? 'Category' : 'Kategori'}
+                {t('explore.category')}
               </Text>
               <View style={styles.filterOptions}>
                 {[
-                  { value: 'all', label: contentLanguage === 'en' ? 'All' : 'Semua' },
-                  { value: 'old_testament', label: contentLanguage === 'en' ? 'Old Testament' : 'Perjanjian Lama' },
-                  { value: 'new_testament', label: contentLanguage === 'en' ? 'New Testament' : 'Perjanjian Baru' },
-                  { value: 'topical', label: contentLanguage === 'en' ? 'Topical' : 'Topikal' },
+                  { value: 'all', label: t('explore.all') },
+                  { value: 'old_testament', label: t('explore.oldTestament') },
+                  { value: 'new_testament', label: t('explore.newTestament') },
+                  { value: 'topical', label: t('explore.topicalCategory') },
                 ].map((option) => (
                   <Pressable
                     key={option.value}
@@ -184,13 +186,13 @@ export default function BibleStudiesBrowserScreen() {
             {/* Sort Options */}
             <View style={styles.filterGroup}>
               <Text style={styles.filterLabel}>
-                {contentLanguage === 'en' ? 'Sort By' : 'Urutkan'}
+                {t('explore.sortBy')}
               </Text>
               <View style={styles.filterOptions}>
                 {[
-                  { value: 'newest', label: contentLanguage === 'en' ? 'Newest' : 'Terbaru' },
-                  { value: 'popular', label: contentLanguage === 'en' ? 'Popular' : 'Populer' },
-                  { value: 'alphabetical', label: contentLanguage === 'en' ? 'A-Z' : 'A-Z' },
+                  { value: 'newest', label: t('explore.newest') },
+                  { value: 'popular', label: t('explore.popular') },
+                  { value: 'alphabetical', label: 'A-Z' },
                 ].map((option) => (
                   <Pressable
                     key={option.value}
@@ -218,24 +220,14 @@ export default function BibleStudiesBrowserScreen() {
         {/* Results Count */}
         <Text style={styles.resultsCount}>
           {sortedStudies.length}{' '}
-          {contentLanguage === 'en'
-            ? sortedStudies.length === 1
-              ? 'study found'
-              : 'studies found'
-            : sortedStudies.length === 1
-            ? 'studi ditemukan'
-            : 'studi ditemukan'}
+          {sortedStudies.length === 1 ? t('explore.studyFound') : t('explore.studiesFound')}
         </Text>
 
         {/* Studies List */}
         {sortedStudies.length === 0 ? (
           <EmptyState
             type="no_results"
-            message={
-              contentLanguage === 'en'
-                ? 'No studies match your search'
-                : 'Tidak ada studi yang cocok dengan pencarian Anda'
-            }
+            message={t('explore.noStudiesMatch')}
           />
         ) : (
           <View style={styles.studiesList}>
@@ -265,20 +257,11 @@ interface StudyCardProps {
 }
 
 function StudyCard({ study, progress, onPress, contentLanguage, index }: StudyCardProps) {
-  const title = study.title[contentLanguage] || study.title.en;
+  const { t } = useTranslation(); // UI language follows global setting
+  const title = study.title[contentLanguage] || study.title.en; // Content uses contentLanguage
   const subtitle = study.subtitle?.[contentLanguage] || study.subtitle?.en;
-  const description = study.description?.[contentLanguage] || study.description?.en;
-  const author = study.author?.[contentLanguage] || study.author?.en;
   const isCompleted = progress === 100;
   const lessonCount = study.lesson_count || study.lessons?.length || 0;
-
-  // Difficulty badge color
-  const difficultyColors = {
-    beginner: { bg: '#10B981', text: '#fff' },
-    intermediate: { bg: '#F59E0B', text: '#fff' },
-    advanced: { bg: '#EF4444', text: '#fff' },
-  };
-  const difficultyStyle = difficultyColors[study.difficulty] || difficultyColors.beginner;
 
   return (
     <Animated.View entering={FadeInDown.duration(400).delay(index * 80)}>
@@ -301,25 +284,18 @@ function StudyCard({ study, progress, onPress, contentLanguage, index }: StudyCa
                 colors={['transparent', 'rgba(0,0,0,0.7)']}
                 style={styles.coverGradient}
               >
-                {/* Difficulty Badge */}
-                <View style={[styles.difficultyBadge, { backgroundColor: difficultyStyle.bg }]}>
-                  <Text style={[styles.difficultyText, { color: difficultyStyle.text }]}>
-                    {study.difficulty.charAt(0).toUpperCase() + study.difficulty.slice(1)}
-                  </Text>
-                </View>
-
                 {/* Lessons & Duration on Image */}
                 <View style={styles.coverStats}>
                   <View style={styles.coverStatItem}>
                     <BookOpen size={14} color="#fff" />
                     <Text style={styles.coverStatText}>
-                      {lessonCount} {contentLanguage === 'en' ? 'lessons' : 'pelajaran'}
+                      {lessonCount} {t('explore.lessons')}
                     </Text>
                   </View>
                   <View style={styles.coverStatItem}>
                     <Clock size={14} color="#fff" />
                     <Text style={styles.coverStatText}>
-                      {study.estimated_duration_minutes} {contentLanguage === 'en' ? 'min' : 'mnt'}
+                      {study.estimated_duration_minutes} {t('explore.min')}
                     </Text>
                   </View>
                 </View>
@@ -336,7 +312,7 @@ function StudyCard({ study, progress, onPress, contentLanguage, index }: StudyCa
             <View style={styles.completedOverlay}>
               <CheckCircle2 size={32} color="#fff" />
               <Text style={styles.completedOverlayText}>
-                {contentLanguage === 'en' ? 'Completed' : 'Selesai'}
+                {t('explore.completed')}
               </Text>
             </View>
           )}
@@ -344,39 +320,11 @@ function StudyCard({ study, progress, onPress, contentLanguage, index }: StudyCa
 
         {/* Content Section */}
         <View style={styles.courseContent}>
-          {/* Title & Subtitle */}
+          {/* Title & Subtitle - Content uses contentLanguage */}
           <Text style={styles.courseTitle} numberOfLines={2}>{title}</Text>
           {subtitle && (
             <Text style={styles.courseSubtitle} numberOfLines={1}>{subtitle}</Text>
           )}
-
-          {/* Author */}
-          {author && (
-            <Text style={styles.courseAuthor}>
-              {contentLanguage === 'en' ? 'By ' : 'Oleh '}{author}
-            </Text>
-          )}
-
-          {/* Rating & Students */}
-          <View style={styles.courseMetaRow}>
-            {study.average_rating && (
-              <View style={styles.ratingContainer}>
-                <Star size={14} color="#F59E0B" fill="#F59E0B" />
-                <Text style={styles.ratingText}>{study.average_rating.toFixed(1)}</Text>
-                {study.ratings_count && (
-                  <Text style={styles.ratingCount}>({study.ratings_count})</Text>
-                )}
-              </View>
-            )}
-            {study.completion_count && study.completion_count > 0 && (
-              <View style={styles.studentsContainer}>
-                <Users size={14} color={ExploreColors.neutral[500]} />
-                <Text style={styles.studentsText}>
-                  {study.completion_count.toLocaleString()} {contentLanguage === 'en' ? 'completed' : 'selesai'}
-                </Text>
-              </View>
-            )}
-          </View>
 
           {/* Progress Bar (if started but not completed) */}
           {progress > 0 && !isCompleted && (
@@ -384,7 +332,7 @@ function StudyCard({ study, progress, onPress, contentLanguage, index }: StudyCa
               <View style={styles.progressBarBackground}>
                 <View style={[styles.progressBarFill, { width: `${progress}%` }]} />
               </View>
-              <Text style={styles.progressText}>{progress}% {contentLanguage === 'en' ? 'complete' : 'selesai'}</Text>
+              <Text style={styles.progressText}>{progress}% {t('explore.complete')}</Text>
             </View>
           )}
 
@@ -401,10 +349,10 @@ function StudyCard({ study, progress, onPress, contentLanguage, index }: StudyCa
                 isCompleted && styles.actionButtonTextCompleted,
               ]}>
                 {isCompleted
-                  ? (contentLanguage === 'en' ? 'Review' : 'Tinjau')
+                  ? t('explore.review')
                   : progress > 0
-                    ? (contentLanguage === 'en' ? 'Continue' : 'Lanjutkan')
-                    : (contentLanguage === 'en' ? 'Start Course' : 'Mulai Kursus')}
+                    ? t('explore.continue')
+                    : t('explore.startCourse')}
               </Text>
             </View>
           </View>

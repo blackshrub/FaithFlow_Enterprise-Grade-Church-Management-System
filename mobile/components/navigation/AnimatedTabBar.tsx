@@ -11,7 +11,6 @@
 
 import React from 'react';
 import { View, Pressable, Platform } from 'react-native';
-import { MotiView } from 'moti';
 import { useRouter, useSegments } from 'expo-router';
 import { Text } from '@/components/ui/text';
 import { colors, touchTargets } from '@/constants/theme';
@@ -50,7 +49,7 @@ const TABS: Tab[] = [
     name: 'give',
     icon: HeartIcon,
     label: 'tabs.give',
-    route: '/give',
+    route: '/(tabs)/give',
   },
   {
     name: 'explore',
@@ -82,17 +81,12 @@ export function AnimatedTabBar() {
   const activeRoute = `/(tabs)${segments[1] ? `/${segments[1]}` : ''}`;
 
   const handleTabPress = (tab: Tab) => {
-    // Special handling for Give button
-    if (tab.name === 'give') {
-      router.push('/give');
-      return;
-    }
-
     // Don't navigate if already on this tab (prevents page blink)
     if (tab.route && activeRoute !== tab.route) {
-      // Calculate and set animation direction before navigation
-      calculateDirection(activeRoute, tab.route);
+      // Navigate FIRST for instant response - no state updates before navigation
       router.push(tab.route as any);
+      // Direction calculation happens after (non-blocking, for future use)
+      calculateDirection(activeRoute, tab.route);
     }
   };
 
@@ -116,24 +110,21 @@ export function AnimatedTabBar() {
           return (
             <Pressable
               key={tab.name}
-              onPress={() => handleTabPress(tab)}
+              onPressIn={() => handleTabPress(tab)}
               className="items-center justify-center active:opacity-60 relative"
               style={{
                 flex: 1,
                 minWidth: touchTargets.comfortable,
-                paddingVertical: 9, // Increased from 7px to 9px
-                paddingTop: 11, // Adjusted to maintain proportion
+                paddingVertical: 9,
+                paddingTop: 11,
               }}
             >
-              {/* Active indicator - full width, sticking to very top edge */}
+              {/* Active indicator - instant, no animation */}
               {isActive && (
-                <MotiView
-                  from={{ opacity: 0, scaleX: 0 }}
-                  animate={{ opacity: 1, scaleX: 1 }}
-                  transition={{ type: 'spring', duration: 250, damping: 15 }}
+                <View
                   style={{
                     position: 'absolute',
-                    top: -1, // -1px to stick to very top edge (accounts for border)
+                    top: -1,
                     left: 0,
                     right: 0,
                     height: 2,
@@ -142,22 +133,12 @@ export function AnimatedTabBar() {
                 />
               )}
 
-              {/* Icon with selective fill transition */}
-              <MotiView
-                animate={{
-                  scale: isActive ? 1.02 : 1,
-                }}
-                transition={{
-                  type: 'spring',
-                  damping: 20,
-                }}
-              >
-                <IconComponent
-                  size={24}
-                  color={isActive ? colors.primary[500] : colors.gray[400]}
-                  isActive={isActive}
-                />
-              </MotiView>
+              {/* Icon - instant, no animation wrapper */}
+              <IconComponent
+                size={24}
+                color={isActive ? colors.primary[500] : colors.gray[400]}
+                isActive={isActive}
+              />
 
               {/* Label */}
               <Text

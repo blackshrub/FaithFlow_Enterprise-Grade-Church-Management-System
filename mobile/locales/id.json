@@ -312,7 +312,7 @@
       "upcoming": "Akan Datang",
       "passed": "Terlewat"
     },
-    "searchPlaceholder": "Cari acara...",
+    "searchPlaceholder": "Cari berdasarkan judul acara...",
     "search": {
       "noResults": "Tidak Ada Acara Ditemukan",
       "noResultsDesc": "Kami tidak menemukan acara yang cocok dengan \"{{term}}\"",
@@ -633,6 +633,125 @@
       "saturday": "Sab",
       "sunday": "Min"
     }
+  },
+  "explore": {
+    "title": "Jelajahi",
+    "todaysDevotions": "Renungan Hari Ini",
+    "verseOfTheDay": "Ayat Hari Ini",
+    "bibleFigureOfTheDay": "Tokoh Alkitab Hari Ini",
+    "dailyChallenge": "Tantangan Harian",
+    "bibleStudies": "Studi Alkitab",
+    "exploreMore": "Jelajahi Lainnya",
+    "viewAll": "Lihat Semua",
+    "bibleFigures": "Tokoh Alkitab",
+    "heroesOfFaith": "Pahlawan iman",
+    "topicalVerses": "Ayat per Topik",
+    "findByTheme": "Cari per tema",
+    "devotionPlans": "Rencana Renungan",
+    "dailyJourney": "Perjalanan harian",
+    "lessons": "pelajaran",
+    "lesson": "Pelajaran",
+    "day": "hari",
+    "days": "hari",
+    "streak": {
+      "current": "Rangkaian saat ini",
+      "tapForDetails": "Ketuk untuk detail"
+    },
+    "language": {
+      "switchTo": "Beralih ke",
+      "english": "Bahasa Inggris",
+      "indonesian": "Bahasa Indonesia",
+      "contentLanguage": "Bahasa Konten",
+      "contentLanguageDesc": "Bahasa untuk renungan, ayat, dan studi"
+    },
+    "error": {
+      "loadContent": "Tidak dapat memuat konten. Silakan coba lagi."
+    },
+    "quiz": {
+      "questions": "pertanyaan",
+      "completed": "Selesai",
+      "score": "Skor",
+      "perfect": "Sempurna!",
+      "startQuiz": "Mulai Kuis",
+      "nextQuestion": "Pertanyaan Berikutnya",
+      "seeResults": "Lihat Hasil",
+      "tryAgain": "Coba Lagi",
+      "backToExplore": "Kembali ke Jelajahi"
+    },
+    "study": {
+      "aboutCourse": "Tentang Kursus Ini",
+      "whatYouWillLearn": "Apa yang Akan Anda Pelajari",
+      "courseSyllabus": "Silabus Kursus",
+      "startCourse": "Mulai Kursus",
+      "continueCourse": "Lanjutkan Kursus",
+      "progress": "Kemajuan",
+      "complete": "selesai",
+      "lessonOf": "dari"
+    },
+    "devotion": {
+      "readTime": "menit baca",
+      "reflection": "Refleksi",
+      "prayer": "Doa",
+      "completed": "Selesai",
+      "markComplete": "Tandai Selesai"
+    },
+    "figure": {
+      "timeline": "Kronologi",
+      "biography": "Biografi",
+      "lifeLessons": "Pelajaran Hidup",
+      "relatedScriptures": "Ayat Terkait"
+    },
+    "verse": {
+      "reflection": "Refleksi",
+      "application": "Penerapan",
+      "prayerPoints": "Poin Doa",
+      "relatedVerses": "Ayat Terkait"
+    },
+    "topical": {
+      "verses": "ayat",
+      "categories": "Kategori",
+      "allVerses": "Semua Ayat"
+    },
+    "search": "Cari",
+    "searchStudies": "Cari studi...",
+    "searchFigures": "Cari tokoh...",
+    "searchCategories": "Cari kategori...",
+    "category": "Kategori",
+    "all": "Semua",
+    "oldTestament": "Perjanjian Lama",
+    "newTestament": "Perjanjian Baru",
+    "topicalCategory": "Topikal",
+    "sortBy": "Urutkan",
+    "newest": "Terbaru",
+    "popular": "Populer",
+    "studyFound": "studi ditemukan",
+    "studiesFound": "studi ditemukan",
+    "noStudiesMatch": "Tidak ada studi yang cocok dengan pencarian Anda",
+    "min": "mnt",
+    "complete": "selesai",
+    "completed": "Selesai",
+    "review": "Tinjau",
+    "continue": "Lanjutkan",
+    "startCourse": "Mulai Kursus",
+    "figureFound": "tokoh ditemukan",
+    "figuresFound": "tokoh ditemukan",
+    "noFiguresMatch": "Tidak ada tokoh yang cocok dengan pencarian Anda",
+    "readBiography": "Baca Biografi",
+    "categoryFound": "kategori ditemukan",
+    "categoriesFound": "kategori ditemukan",
+    "noCategoriesMatch": "Tidak ada kategori yang cocok dengan pencarian Anda",
+    "verseFound": "ayat ditemukan",
+    "versesFound": "ayat ditemukan",
+    "noVersesMatch": "Tidak ada ayat yang cocok dengan pencarian Anda",
+    "goBack": "Kembali",
+    "searchDevotionPlans": "Cari rencana renungan...",
+    "devotionPlansDescription": "Perjalanan renungan multi-hari yang dirancang untuk memperdalam iman, mengatasi tantangan hidup, dan membangun kebiasaan rohani yang konsisten.",
+    "plan": "rencana",
+    "plans": "rencana",
+    "noDevotionPlansMatch": "Tidak ada rencana renungan yang cocok dengan pencarian Anda",
+    "start": "Mulai",
+    "dayOf": "Hari {{current}} dari {{total}}",
+    "resume": "Lanjutkan"
   },
   "validation": {
     "required": "Kolom ini wajib diisi",

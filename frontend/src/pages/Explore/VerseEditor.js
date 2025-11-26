@@ -72,7 +72,7 @@ export default function VerseEditor() {
         title: 'Success',
         description: isEditMode ? 'Verse updated successfully' : 'Verse created successfully',
       });
-      navigate('/explore/content/verse');
+      navigate('/content-center/verse');
     },
     onError: (error) => {
       toast({
@@ -139,7 +139,7 @@ export default function VerseEditor() {
       <div className="flex items-center justify-between">
         <div>
           <Link
-            to="/explore/content/verse"
+            to="/content-center/verse"
             className="text-sm text-blue-600 hover:underline mb-2 inline-block"
           >
             <ArrowLeft className="h-4 w-4 inline mr-1" />
@@ -428,7 +428,7 @@ export default function VerseEditor() {
           <Button
             type="button"
             variant="outline"
-            onClick={() => navigate('/explore/content/verse')}
+            onClick={() => navigate('/content-center/verse')}
           >
             Cancel
           </Button>

@@ -316,7 +316,7 @@
       "upcoming": "Upcoming",
       "passed": "Passed"
     },
-    "searchPlaceholder": "Search events...",
+    "searchPlaceholder": "Search by event title...",
     "search": {
       "noResults": "No Events Found",
       "noResultsDesc": "We couldn't find any events matching \"{{term}}\"",
@@ -637,6 +637,125 @@
       "saturday": "Sat",
       "sunday": "Sun"
     }
+  },
+  "explore": {
+    "title": "Explore",
+    "todaysDevotions": "Today's Devotion",
+    "verseOfTheDay": "Verse of the Day",
+    "bibleFigureOfTheDay": "Bible Figure of the Day",
+    "dailyChallenge": "Daily Challenge",
+    "bibleStudies": "Bible Studies",
+    "exploreMore": "Explore More",
+    "viewAll": "View All",
+    "bibleFigures": "Bible Figures",
+    "heroesOfFaith": "Heroes of faith",
+    "topicalVerses": "Topical Verses",
+    "findByTheme": "Find by theme",
+    "devotionPlans": "Devotion Plans",
+    "dailyJourney": "Daily journey",
+    "lessons": "lessons",
+    "lesson": "Lesson",
+    "day": "day",
+    "days": "days",
+    "streak": {
+      "current": "Current streak",
+      "tapForDetails": "Tap for details"
+    },
+    "language": {
+      "switchTo": "Switch to",
+      "english": "English",
+      "indonesian": "Indonesian",
+      "contentLanguage": "Content Language",
+      "contentLanguageDesc": "Language for devotions, verses, and studies"
+    },
+    "error": {
+      "loadContent": "Unable to load content. Please try again."
+    },
+    "quiz": {
+      "questions": "questions",
+      "completed": "Completed",
+      "score": "Score",
+      "perfect": "Perfect!",
+      "startQuiz": "Start Quiz",
+      "nextQuestion": "Next Question",
+      "seeResults": "See Results",
+      "tryAgain": "Try Again",
+      "backToExplore": "Back to Explore"
+    },
+    "study": {
+      "aboutCourse": "About This Course",
+      "whatYouWillLearn": "What You Will Learn",
+      "courseSyllabus": "Course Syllabus",
+      "startCourse": "Start Course",
+      "continueCourse": "Continue Course",
+      "progress": "Progress",
+      "complete": "complete",
+      "lessonOf": "of"
+    },
+    "devotion": {
+      "readTime": "min read",
+      "reflection": "Reflection",
+      "prayer": "Prayer",
+      "completed": "Completed",
+      "markComplete": "Mark as Complete"
+    },
+    "figure": {
+      "timeline": "Timeline",
+      "biography": "Biography",
+      "lifeLessons": "Life Lessons",
+      "relatedScriptures": "Related Scriptures"
+    },
+    "verse": {
+      "reflection": "Reflection",
+      "application": "Application",
+      "prayerPoints": "Prayer Points",
+      "relatedVerses": "Related Verses"
+    },
+    "topical": {
+      "verses": "verses",
+      "categories": "Categories",
+      "allVerses": "All Verses"
+    },
+    "search": "Search",
+    "searchStudies": "Search studies...",
+    "searchFigures": "Search figures...",
+    "searchCategories": "Search categories...",
+    "category": "Category",
+    "all": "All",
+    "oldTestament": "Old Testament",
+    "newTestament": "New Testament",
+    "topicalCategory": "Topical",
+    "sortBy": "Sort By",
+    "newest": "Newest",
+    "popular": "Popular",
+    "studyFound": "study found",
+    "studiesFound": "studies found",
+    "noStudiesMatch": "No studies match your search",
+    "min": "min",
+    "complete": "complete",
+    "completed": "Completed",
+    "review": "Review",
+    "continue": "Continue",
+    "startCourse": "Start Course",
+    "figureFound": "figure found",
+    "figuresFound": "figures found",
+    "noFiguresMatch": "No figures match your search",
+    "readBiography": "Read Biography",
+    "categoryFound": "category found",
+    "categoriesFound": "categories found",
+    "noCategoriesMatch": "No categories match your search",
+    "verseFound": "verse found",
+    "versesFound": "verses found",
+    "noVersesMatch": "No verses match your search",
+    "goBack": "Go back",
+    "searchDevotionPlans": "Search devotion plans...",
+    "devotionPlansDescription": "Multi-day devotional journeys designed to deepen your faith, address specific life challenges, and build consistent spiritual habits.",
+    "plan": "plan",
+    "plans": "plans",
+    "noDevotionPlansMatch": "No devotion plans match your search",
+    "start": "Start",
+    "dayOf": "Day {{current}} of {{total}}",
+    "resume": "Resume"
   },
   "validation": {
     "required": "This field is required",

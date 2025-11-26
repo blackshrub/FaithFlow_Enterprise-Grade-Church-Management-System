@@ -84,10 +84,8 @@ export function useEvents(filters?: EventFilters) {
   return useQuery({
     queryKey: [...QUERY_KEYS.EVENTS_LIST, filters],
     queryFn: async () => {
-      // Use mock data in demo mode
+      // Use mock data in demo mode - INSTANT (no artificial delay)
       if (isDemoMode && memberId) {
-        console.log('📊 Using mock events (Demo Mode)', filters);
-        await new Promise((resolve) => setTimeout(resolve, 500));
 
         // Apply filters to mock data
         let filteredEvents = mockEvents;
@@ -196,10 +194,8 @@ export function useEvent(eventId: string) {
   return useQuery({
     queryKey: [...QUERY_KEYS.EVENT_DETAIL, eventId],
     queryFn: async () => {
-      // Use mock data in demo mode
+      // Use mock data in demo mode - INSTANT
       if (isDemoMode && memberId) {
-        console.log('📊 Using mock event details (Demo Mode)');
-        await new Promise((resolve) => setTimeout(resolve, 300));
 
         const event = mockEvents.find((e) => e.id === eventId);
         if (!event) {
@@ -232,10 +228,8 @@ export function useEventCategories() {
   return useQuery({
     queryKey: QUERY_KEYS.EVENT_CATEGORIES,
     queryFn: async () => {
-      // Use mock data in demo mode
+      // Use mock data in demo mode - INSTANT
       if (isDemoMode) {
-        console.log('📊 Using mock event categories (Demo Mode)');
-        await new Promise((resolve) => setTimeout(resolve, 300));
         return mockEventCategories;
       }
 
@@ -261,10 +255,9 @@ export function useRSVP() {
     mutationFn: async (request: RSVPRequest & { eventId: string }) => {
       const { eventId, ...rsvpData } = request;
 
-      // Simulate RSVP in demo mode
+      // Simulate RSVP in demo mode - minimal delay for UX feedback
       if (isDemoMode) {
-        console.log('📊 Simulating RSVP (Demo Mode):', request);
-        await new Promise((resolve) => setTimeout(resolve, 400));
+        await new Promise((resolve) => setTimeout(resolve, 100));
 
         return {
           success: true,
@@ -395,10 +388,9 @@ export function useCancelRSVP() {
 
   return useMutation({
     mutationFn: async ({ eventId }: { eventId: string }) => {
-      // Simulate cancel in demo mode
+      // Simulate cancel in demo mode - minimal delay for UX feedback
       if (isDemoMode && memberId) {
-        console.log('📊 Simulating RSVP cancellation (Demo Mode):', eventId);
-        await new Promise((resolve) => setTimeout(resolve, 400));
+        await new Promise((resolve) => setTimeout(resolve, 100));
         return { success: true, message: 'RSVP cancelled successfully' };
       }
 

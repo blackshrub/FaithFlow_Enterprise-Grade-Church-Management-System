@@ -63,8 +63,6 @@ export const initializeI18n = async (): Promise<void> => {
       },
       compatibilityJSON: 'v3', // Use i18next v3 format
     });
-
-  console.log('i18n initialized with language:', initialLanguage);
 };
 
 // Change language

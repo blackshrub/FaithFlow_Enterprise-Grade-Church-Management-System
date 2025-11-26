@@ -91,7 +91,7 @@ export default function QuizEditor() {
         title: 'Success',
         description: isEditMode ? 'Quiz updated successfully' : 'Quiz created successfully',
       });
-      navigate('/explore/content/quiz');
+      navigate('/content-center/quiz');
     },
     onError: (error) => {
       toast({
@@ -220,7 +220,7 @@ export default function QuizEditor() {
       <div className="flex items-center justify-between">
         <div>
           <Link
-            to="/explore/content/quiz"
+            to="/content-center/quiz"
             className="text-sm text-blue-600 hover:underline mb-2 inline-block"
           >
             <ArrowLeft className="h-4 w-4 inline mr-1" />
@@ -612,7 +612,7 @@ export default function QuizEditor() {
           <Button
             type="button"
             variant="outline"
-            onClick={() => navigate('/explore/content/quiz')}
+            onClick={() => navigate('/content-center/quiz')}
           >
             Cancel
           </Button>

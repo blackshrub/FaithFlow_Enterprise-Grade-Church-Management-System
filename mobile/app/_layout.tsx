@@ -14,7 +14,16 @@ import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { NoteEditorModal } from '@/components/bible/NoteEditorModal';
 import { CategoryFilterModal } from '@/components/modals/CategoryFilterModal';
 import { CalendarModal } from '@/components/modals/CalendarModal';
-import { queryClient } from '@/lib/queryClient'; // Phase 9.1.1 - Optimized React Query config
+import { StreakDetailsSheet } from '@/components/explore/StreakDetailsSheet';
+import { queryClient } from '@/lib/queryClient';
+import { preloadBiblesOffline } from '@/hooks/useBibleOffline';
+
+/**
+ * INSTANT BIBLE ACCESS - Preload default Bible translation on app startup
+ * This runs SYNCHRONOUSLY before any component renders
+ * Bible data is pre-required via require() - no async I/O needed
+ */
+preloadBiblesOffline(['NIV']); // Preload NIV (most common) immediately
 
 export default function RootLayout() {
   const { colorScheme } = useColorScheme();
@@ -33,14 +42,14 @@ export default function RootLayout() {
     });
   }, []);
 
-  // Log font loading errors
+  // Preload additional Bible translations after fonts are ready
+  // This happens in background - NIV is already loaded synchronously above
   useEffect(() => {
-    if (fontError) {
-      console.error('Failed to load Bible fonts:', fontError);
-    } else if (fontsLoaded) {
-      console.log('✅ All Bible fonts loaded successfully');
+    if (fontsLoaded) {
+      // Preload other popular translations for instant switching
+      preloadBiblesOffline(['ESV', 'TB', 'NLT']);
     }
-  }, [fontsLoaded, fontError]);
+  }, [fontsLoaded]);
 
   // Wait for i18n and fonts to initialize before rendering
   // This prevents font flashing and ensures smooth reading experience
@@ -69,6 +78,7 @@ export default function RootLayout() {
             <NoteEditorModal />
             <CategoryFilterModal />
             <CalendarModal />
+            <StreakDetailsSheet />
 
             {/* Toast must be rendered at root level */}
             <Toast />

@@ -1,16 +1,19 @@
 /**
- * Prayer Requests API Hooks
+ * Prayer Requests API Hooks - PERFORMANCE OPTIMIZED
  *
  * React Query hooks for prayer operations:
  * - Fetch prayer requests
  * - Create prayer request
  * - Pray for request
  * - Mark as answered
+ *
+ * Demo mode: Uses mock data with instant loading (no delays)
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/services/api';
 import { QUERY_KEYS, CACHE_TIMES } from '@/constants/api';
+import { useAuthStore } from '@/stores/auth';
 import type {
   PrayerRequestWithStatus,
   CreatePrayerRequest,
@@ -20,55 +23,126 @@ import type {
   PrayerStatus,
 } from '@/types/prayer';
 
+// Mock data for demo mode - INSTANT access
+const MOCK_PRAYER_REQUESTS: PrayerRequestWithStatus[] = [
+  {
+    _id: 'prayer_001',
+    member_id: 'demo-member-123',
+    member_name: 'John Doe',
+    title: 'Healing for my mother',
+    content: 'Please pray for my mother who is undergoing surgery next week.',
+    is_anonymous: false,
+    status: 'active',
+    prayer_count: 15,
+    has_prayed: false,
+    created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+    updated_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    _id: 'prayer_002',
+    member_id: 'member_002',
+    member_name: 'Jane Smith',
+    title: 'Job interview',
+    content: 'I have an important job interview this Friday. Please pray for wisdom and confidence.',
+    is_anonymous: false,
+    status: 'active',
+    prayer_count: 8,
+    has_prayed: true,
+    created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+    updated_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    _id: 'prayer_003',
+    member_id: 'member_003',
+    member_name: 'Anonymous',
+    title: 'Family reconciliation',
+    content: 'Praying for restoration of broken family relationships.',
+    is_anonymous: true,
+    status: 'active',
+    prayer_count: 22,
+    has_prayed: false,
+    created_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+    updated_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+];
+
 /**
- * Fetch all prayer requests
+ * Fetch all prayer requests - INSTANT in demo mode
  */
 export function usePrayerRequests(status?: PrayerStatus) {
+  const { token } = useAuthStore();
+  const isDemoMode = token === 'demo-jwt-token-for-testing';
+
   return useQuery({
     queryKey: status ? [...QUERY_KEYS.PRAYER_REQUESTS, status] : QUERY_KEYS.PRAYER_REQUESTS,
     queryFn: async () => {
+      if (isDemoMode) {
+        return status
+          ? MOCK_PRAYER_REQUESTS.filter(r => r.status === status)
+          : MOCK_PRAYER_REQUESTS;
+      }
       const params = status ? { status } : {};
       const response = await api.get<PrayerRequestWithStatus[]>('/api/prayer-requests', {
         params,
       });
       return response.data;
     },
-    staleTime: CACHE_TIMES.PRAYER,
+    initialData: isDemoMode ? MOCK_PRAYER_REQUESTS : undefined,
+    staleTime: isDemoMode ? Infinity : CACHE_TIMES.PRAYER,
     gcTime: CACHE_TIMES.PRAYER,
   });
 }
 
 /**
- * Fetch my prayer requests
+ * Fetch my prayer requests - INSTANT in demo mode
  */
 export function useMyPrayerRequests() {
+  const { token, member } = useAuthStore();
+  const isDemoMode = token === 'demo-jwt-token-for-testing';
+
   return useQuery({
     queryKey: QUERY_KEYS.MY_PRAYER_REQUESTS,
     queryFn: async () => {
+      if (isDemoMode) {
+        return MOCK_PRAYER_REQUESTS.filter(r => r.member_id === member?.id);
+      }
       const response = await api.get<PrayerRequestWithStatus[]>(
         '/api/prayer-requests/my-requests'
       );
       return response.data;
     },
-    staleTime: CACHE_TIMES.PRAYER,
+    initialData: isDemoMode ? MOCK_PRAYER_REQUESTS.filter(r => r.member_id === 'demo-member-123') : undefined,
+    staleTime: isDemoMode ? Infinity : CACHE_TIMES.PRAYER,
     gcTime: CACHE_TIMES.PRAYER,
   });
 }
 
 /**
- * Fetch single prayer request
+ * Fetch single prayer request - INSTANT in demo mode
  */
 export function usePrayerRequest(requestId: string) {
+  const { token } = useAuthStore();
+  const isDemoMode = token === 'demo-jwt-token-for-testing';
+
   return useQuery({
     queryKey: [...QUERY_KEYS.PRAYER_REQUEST_DETAIL, requestId],
     queryFn: async () => {
+      if (isDemoMode) {
+        const request = MOCK_PRAYER_REQUESTS.find(r => r._id === requestId);
+        if (!request) throw new Error('Prayer request not found');
+        return request;
+      }
       const response = await api.get<PrayerRequestWithStatus>(
         `/api/prayer-requests/${requestId}`
       );
       return response.data;
     },
+    initialData: () => {
+      if (!isDemoMode || !requestId) return undefined;
+      return MOCK_PRAYER_REQUESTS.find(r => r._id === requestId);
+    },
     enabled: !!requestId,
-    staleTime: CACHE_TIMES.PRAYER,
+    staleTime: isDemoMode ? Infinity : CACHE_TIMES.PRAYER,
   });
 }
 

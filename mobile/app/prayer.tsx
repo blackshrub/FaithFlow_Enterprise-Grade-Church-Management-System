@@ -196,7 +196,7 @@ export default function PrayerRequestsScreen() {
       case 'thanksgiving':
         return colors.success[300];
       default:
-        return colors.muted[500];
+        return colors.gray[500];
     }
   }, []);
 
@@ -311,7 +311,7 @@ export default function PrayerRequestsScreen() {
               <VStack space="xs" style={{ flex: 1 }}>
                 <Heading size="md">{request.title}</Heading>
                 <HStack className="items-center" space="xs">
-                  <Icon as={User} size="xs" style={{ color: colors.muted[500] }} />
+                  <Icon as={User} size="xs" style={{ color: colors.gray[500] }} />
                   <Text size="sm" className="text-muted-600">
                     {request.is_anonymous ? t('prayer.anonymous') : request.member_name}
                   </Text>
@@ -351,13 +351,13 @@ export default function PrayerRequestsScreen() {
                 </Text>
               </HStack>
               <HStack className="items-center" space="xs">
-                <Icon as={Calendar} size="xs" style={{ color: colors.muted[500] }} />
+                <Icon as={Calendar} size="xs" style={{ color: colors.gray[500] }} />
                 <Text size="xs" className="text-muted-600">
                   {formatDate(request.created_at)}
                 </Text>
               </HStack>
               <HStack className="items-center" space="xs">
-                <Icon as={Users} size="xs" style={{ color: colors.muted[500] }} />
+                <Icon as={Users} size="xs" style={{ color: colors.gray[500] }} />
                 <Text size="xs" className="text-muted-600">
                   {t('prayer.prayedCount', { count: request.prayer_count })}
                 </Text>

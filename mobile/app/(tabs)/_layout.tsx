@@ -13,6 +13,7 @@
  * Screens:
  * - index.tsx (Home)
  * - bible.tsx
+ * - give.tsx
  * - explore.tsx
  * - events.tsx
  * - profile.tsx
@@ -27,10 +28,15 @@ export default function TabsLayout() {
       tabBar={() => <AnimatedTabBar />}
       screenOptions={{
         headerShown: false,
-        // CRITICAL: Disable animations for instant switching (Instagram/Facebook pattern)
+        // CRITICAL: Disable ALL animations for instant switching
         animation: 'none',
+        animationDuration: 0,
         // Pre-mount all tabs immediately (zero-latency switching)
         lazy: false,
+        // Don't freeze screens when blurred (keeps them ready)
+        freezeOnBlur: false,
+        // Ensure detached screens stay mounted
+        unmountOnBlur: false,
       }}
     >
       <Tabs.Screen
@@ -40,6 +46,7 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen name="bible" />
+      <Tabs.Screen name="give" />
       <Tabs.Screen name="explore" />
       <Tabs.Screen name="events" />
       <Tabs.Screen name="profile" />

@@ -28,7 +28,7 @@ export default function ExploreDashboard() {
       description: 'All content items',
       color: 'text-blue-600',
       bgColor: 'bg-blue-50',
-      link: '/explore/content',
+      link: '/content-center/devotion',
     },
     {
       title: 'Scheduled Today',
@@ -37,7 +37,7 @@ export default function ExploreDashboard() {
       description: 'Daily content scheduled',
       color: 'text-green-600',
       bgColor: 'bg-green-50',
-      link: '/explore/schedule',
+      link: '/content-center/schedule',
     },
     {
       title: 'Total Users Engaged',
@@ -46,7 +46,7 @@ export default function ExploreDashboard() {
       description: 'Active Explore users',
       color: 'text-purple-600',
       bgColor: 'bg-purple-50',
-      link: '/explore/analytics',
+      link: '/content-center/analytics',
     },
     {
       title: 'Avg. Completion Rate',
@@ -55,7 +55,7 @@ export default function ExploreDashboard() {
       description: 'Content completion',
       color: 'text-emerald-600',
       bgColor: 'bg-emerald-50',
-      link: '/explore/analytics',
+      link: '/content-center/analytics',
     },
     {
       title: 'Total Streaks',
@@ -64,7 +64,7 @@ export default function ExploreDashboard() {
       description: 'Users with active streaks',
       color: 'text-orange-600',
       bgColor: 'bg-orange-50',
-      link: '/explore/analytics',
+      link: '/content-center/analytics',
     },
     {
       title: 'AI Generations',
@@ -73,7 +73,7 @@ export default function ExploreDashboard() {
       description: 'This month',
       color: 'text-pink-600',
       bgColor: 'bg-pink-50',
-      link: '/explore/ai',
+      link: '/content-center/ai',
     },
   ];
 
@@ -82,42 +82,49 @@ export default function ExploreDashboard() {
       name: 'Daily Devotions',
       icon: FileText,
       count: stats?.content_by_type?.devotion || 0,
-      link: '/explore/content/devotion',
+      link: '/content-center/devotion',
       color: 'text-blue-600',
     },
     {
       name: 'Verse of the Day',
       icon: MessageSquare,
       count: stats?.content_by_type?.verse || 0,
-      link: '/explore/content/verse',
+      link: '/content-center/verse',
       color: 'text-green-600',
     },
     {
       name: 'Bible Figures',
       icon: User,
       count: stats?.content_by_type?.figure || 0,
-      link: '/explore/content/figure',
+      link: '/content-center/figure',
       color: 'text-purple-600',
     },
     {
       name: 'Daily Quizzes',
       icon: HelpCircle,
       count: stats?.content_by_type?.quiz || 0,
-      link: '/explore/content/quiz',
+      link: '/content-center/quiz',
       color: 'text-orange-600',
     },
     {
       name: 'Bible Studies',
       icon: BookOpen,
       count: stats?.content_by_type?.bible_study || 0,
-      link: '/explore/content/bible_study',
+      link: '/content-center/bible-study',
       color: 'text-indigo-600',
     },
     {
-      name: 'Topical Categories',
+      name: 'Devotion Plans',
+      icon: BookOpen,
+      count: stats?.content_by_type?.devotion_plan || 0,
+      link: '/content-center/devotion-plan',
+      color: 'text-pink-600',
+    },
+    {
+      name: 'Topical Verses',
       icon: BookOpen,
       count: stats?.content_by_type?.topical || 0,
-      link: '/explore/content/topical',
+      link: '/content-center/topical',
       color: 'text-teal-600',
     },
   ];
@@ -125,25 +132,25 @@ export default function ExploreDashboard() {
   const quickActions = [
     {
       label: 'Create Devotion',
-      link: '/explore/content/devotion/new',
+      link: '/content-center/devotion/new',
       icon: Plus,
       variant: 'default',
     },
     {
       label: 'Schedule Content',
-      link: '/explore/schedule',
+      link: '/content-center/schedule',
       icon: Calendar,
       variant: 'outline',
     },
     {
       label: 'Generate with AI',
-      link: '/explore/ai',
+      link: '/content-center/ai',
       icon: Sparkles,
       variant: 'outline',
     },
     {
       label: 'View Analytics',
-      link: '/explore/analytics',
+      link: '/content-center/analytics',
       icon: TrendingUp,
       variant: 'outline',
     },
@@ -155,10 +162,10 @@ export default function ExploreDashboard() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">
-            Explore Content Management
+            Content Center
           </h1>
           <p className="text-gray-600 mt-1">
-            Manage daily spiritual content and engagement
+            Manage daily spiritual content for the Explore feature
           </p>
         </div>
 

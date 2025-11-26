@@ -126,12 +126,13 @@ async def update_comment(
     
     update_dict["updated_at"] = datetime.utcnow()
     
+    # Always include church_id in filter for proper multi-tenant isolation
     await db.article_comments.update_one(
-        {"id": comment_id},
+        {"id": comment_id, "church_id": church_id},
         {"$set": update_dict}
     )
-    
-    updated = await db.article_comments.find_one({"id": comment_id}, {"_id": 0})
+
+    updated = await db.article_comments.find_one({"id": comment_id, "church_id": church_id}, {"_id": 0})
     
     await audit_service.log_action(
         db=db, church_id=church_id, user_id=user_id,
@@ -162,7 +163,8 @@ async def delete_comment(
             detail={"error_code": "NOT_FOUND", "message": "Comment not found"}
         )
     
-    await db.article_comments.delete_one({"id": comment_id})
+    # Always include church_id in filter for proper multi-tenant isolation
+    await db.article_comments.delete_one({"id": comment_id, "church_id": church_id})
     
     await audit_service.log_action(
         db=db, church_id=church_id, user_id=user_id,

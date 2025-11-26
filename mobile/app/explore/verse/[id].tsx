@@ -23,6 +23,7 @@ import { useExploreStore } from '@/stores/explore/exploreStore';
 import type { VerseOfTheDay } from '@/types/explore';
 import { ArrowLeft, Check, Share2, Copy } from 'lucide-react-native';
 import { VerseOfTheDaySkeleton } from '@/components/explore/LoadingSkeleton';
+import { MarkdownText } from '@/components/explore/MarkdownText';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
@@ -217,7 +218,7 @@ export default function VerseOfTheDayScreen() {
               >
                 {contentLanguage === 'en' ? 'Commentary' : 'Komentar'}
               </Text>
-              <Text style={styles.sectionContent}>{commentary}</Text>
+              <MarkdownText style={styles.sectionContent}>{commentary}</MarkdownText>
             </View>
           )}
 
@@ -231,7 +232,7 @@ export default function VerseOfTheDayScreen() {
               >
                 {contentLanguage === 'en' ? 'Reflect' : 'Renungkan'}
               </Text>
-              <Text style={styles.sectionContent}>{reflection}</Text>
+              <MarkdownText style={styles.sectionContent}>{reflection}</MarkdownText>
             </View>
           )}
 

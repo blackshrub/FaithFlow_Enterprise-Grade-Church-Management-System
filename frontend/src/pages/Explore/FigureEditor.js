@@ -88,7 +88,7 @@ export default function FigureEditor() {
         title: 'Success',
         description: isEditMode ? 'Bible figure updated successfully' : 'Bible figure created successfully',
       });
-      navigate('/explore/content/figure');
+      navigate('/content-center/figure');
     },
     onError: (error) => {
       toast({
@@ -212,7 +212,7 @@ export default function FigureEditor() {
       <div className="flex items-center justify-between">
         <div>
           <Link
-            to="/explore/content/figure"
+            to="/content-center/figure"
             className="text-sm text-blue-600 hover:underline mb-2 inline-block"
           >
             <ArrowLeft className="h-4 w-4 inline mr-1" />
@@ -642,7 +642,7 @@ export default function FigureEditor() {
           <Button
             type="button"
             variant="outline"
-            onClick={() => navigate('/explore/content/figure')}
+            onClick={() => navigate('/content-center/figure')}
           >
             Cancel
           </Button>
