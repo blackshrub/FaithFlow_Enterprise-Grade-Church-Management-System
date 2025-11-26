@@ -12,7 +12,7 @@ from routes import (
     seat_layouts, events, bible, devotions, webhooks, api_keys,
     status_rules, status_conflicts, status_history, member_status_automation, public_members,
     counseling_admin, counseling_public, kiosk, user_management, files,
-    giving, member_auth, notifications, rating_review
+    giving, member_auth, notifications, rating_review, system_settings
 )
 
 # Import Explore routes
@@ -21,6 +21,7 @@ from routes.explore import (
     explore_admin_router,
     explore_church_router,
 )
+from routes.explore_ai import router as explore_ai_router
 
 # Import accounting routes (v1)
 from routes import (
@@ -79,6 +80,7 @@ api_router.include_router(members.router)
 api_router.include_router(settings.router)
 api_router.include_router(webhooks.router)
 api_router.include_router(api_keys.router)
+api_router.include_router(system_settings.router, prefix="/system", tags=["System Settings"])
 api_router.include_router(member_status_automation.router)
 api_router.include_router(import_export.router)
 api_router.include_router(photo_document_sim.router)
@@ -101,6 +103,7 @@ app.include_router(public_members.router)
 app.include_router(explore_public_router)  # Public Explore endpoints
 api_router.include_router(explore_admin_router)  # Super Admin Explore endpoints
 api_router.include_router(explore_church_router)  # Church Admin Explore endpoints
+api_router.include_router(explore_ai_router)  # AI Content Generation endpoints
 
 # Include accounting routers (v1)
 api_v1_router = APIRouter(prefix="/v1")

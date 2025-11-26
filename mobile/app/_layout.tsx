@@ -1,7 +1,7 @@
 import "../global.css";
 import { Stack } from "expo-router";
 import { GluestackUIProvider } from "@/components/ui/gluestack-ui-provider";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { StatusBar } from "expo-status-bar";
 import { useColorScheme } from "nativewind";
 import { useEffect, useState } from "react";
@@ -14,16 +14,7 @@ import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { NoteEditorModal } from '@/components/bible/NoteEditorModal';
 import { CategoryFilterModal } from '@/components/modals/CategoryFilterModal';
 import { CalendarModal } from '@/components/modals/CalendarModal';
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 2,
-      staleTime: 1000 * 60 * 5, // 5 minutes
-      gcTime: 1000 * 60 * 10, // 10 minutes
-    },
-  },
-});
+import { queryClient } from '@/lib/queryClient'; // Phase 9.1.1 - Optimized React Query config
 
 export default function RootLayout() {
   const { colorScheme } = useColorScheme();

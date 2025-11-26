@@ -39,11 +39,19 @@ async def get_church_settings(
     )
 
     if not settings:
-        # Return default settings
+        # Return default settings (Explore enabled by default)
         return {
             "church_id": church_id,
-            "explore_enabled": False,
-            "features": {},
+            "explore_enabled": True,
+            "features": {
+                "daily_devotion": {"enabled": True, "order": 1},
+                "verse_of_the_day": {"enabled": True, "order": 2},
+                "bible_figure_of_the_day": {"enabled": True, "order": 3},
+                "daily_quiz": {"enabled": True, "order": 4},
+                "bible_study": {"enabled": True, "order": 5},
+                "topical_exploration": {"enabled": True, "order": 6},
+                "shareable_images": {"enabled": True, "order": 7},
+            },
             "preferred_bible_translation": "NIV",
             "content_language": "en",
             "allow_church_content": False,

@@ -79,6 +79,14 @@ export const exploreService = {
   },
 
   /**
+   * Get scheduled content with filters
+   */
+  getScheduledContent: async (params = {}) => {
+    const { data } = await api.get('/api/explore/admin/scheduled-content', { params });
+    return data;
+  },
+
+  /**
    * Schedule content for a specific date
    */
   scheduleContent: async (contentType, contentId, scheduledDate) => {
@@ -93,8 +101,8 @@ export const exploreService = {
   /**
    * Unschedule content
    */
-  unscheduleContent: async (scheduleId) => {
-    const { data} = await api.delete(`/api/explore/admin/schedule/${scheduleId}`);
+  unscheduleContent: async (contentType, contentId) => {
+    const { data} = await api.delete(`/api/explore/admin/unschedule/${contentType}/${contentId}`);
     return data;
   },
 
@@ -120,17 +128,45 @@ export const exploreService = {
     return data;
   },
 
+  /**
+   * Get comprehensive analytics with filters
+   */
+  getAnalytics: async (params = {}) => {
+    const { data } = await api.get('/api/explore/admin/analytics', { params });
+    return data;
+  },
+
+  /**
+   * Get top performing content
+   */
+  getTopContent: async (params = {}) => {
+    const { data } = await api.get('/api/explore/admin/analytics/top-content', { params });
+    return data;
+  },
+
   // ==================== AI GENERATION ====================
+
+  /**
+   * Get AI configuration
+   */
+  getAIConfig: async () => {
+    const { data } = await api.get('/api/explore/admin/ai/config');
+    return data;
+  },
 
   /**
    * Generate content using AI
    */
-  generateContent: async (contentType, prompt, options = {}) => {
-    const { data } = await api.post('/api/explore/admin/ai/generate', {
-      content_type: contentType,
-      prompt,
-      ...options
-    });
+  generateContent: async (params) => {
+    const { data } = await api.post('/api/explore/admin/ai/generate', params);
+    return data;
+  },
+
+  /**
+   * Get AI generation queue
+   */
+  getGenerationQueue: async () => {
+    const { data } = await api.get('/api/explore/admin/ai/queue');
     return data;
   },
 
@@ -139,6 +175,30 @@ export const exploreService = {
    */
   getGenerationStatus: async (jobId) => {
     const { data } = await api.get(`/api/explore/admin/ai/status/${jobId}`);
+    return data;
+  },
+
+  /**
+   * Accept generated content and publish
+   */
+  acceptGeneratedContent: async (jobId, edits = null) => {
+    const { data } = await api.post(`/api/explore/admin/ai/accept/${jobId}`, { edits });
+    return data;
+  },
+
+  /**
+   * Reject generated content
+   */
+  rejectGeneratedContent: async (jobId) => {
+    const { data } = await api.post(`/api/explore/admin/ai/reject/${jobId}`);
+    return data;
+  },
+
+  /**
+   * Regenerate content with same parameters
+   */
+  regenerateContent: async (jobId) => {
+    const { data } = await api.post(`/api/explore/admin/ai/regenerate/${jobId}`);
     return data;
   },
 
