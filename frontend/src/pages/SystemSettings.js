@@ -81,6 +81,7 @@ function SystemSettings() {
         anthropic_api_key: formData.anthropic_api_key || undefined,
         anthropic_model: formData.anthropic_model,
         stability_api_key: formData.stability_api_key || undefined,
+        stability_model: formData.stability_model,
         ai_generation_enabled: formData.ai_generation_enabled,
         monthly_budget_usd: parseFloat(formData.monthly_budget_usd),
       },
@@ -179,8 +180,9 @@ function SystemSettings() {
 function AIIntegrationTab({ settings, onSave, onTestAI, onTestStability, showKeys, setShowKeys, isSaving, isTesting }) {
   const [formData, setFormData] = useState({
     anthropic_api_key: settings.anthropic_api_key || '',
-    anthropic_model: settings.anthropic_model || 'claude-3-5-sonnet-20241022',
+    anthropic_model: settings.anthropic_model || 'claude-sonnet-4-20250514',
     stability_api_key: settings.stability_api_key || '',
+    stability_model: settings.stability_model || 'ultra',
     ai_generation_enabled: settings.ai_generation_enabled ?? false,
     monthly_budget_usd: settings.monthly_budget_usd || 50.0,
   });
@@ -252,12 +254,14 @@ function AIIntegrationTab({ settings, onSave, onTestAI, onTestStability, showKey
                 <SelectValue placeholder="Select model" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="claude-3-5-sonnet-20241022">Claude 3.5 Sonnet (Recommended)</SelectItem>
-                <SelectItem value="claude-3-opus-20240229">Claude 3 Opus (Highest quality, expensive)</SelectItem>
-                <SelectItem value="claude-3-haiku-20240307">Claude 3 Haiku (Fastest, cheapest)</SelectItem>
+                <SelectItem value="claude-sonnet-4-20250514">Claude Sonnet 4 (Recommended)</SelectItem>
+                <SelectItem value="claude-opus-4-20250514">Claude Opus 4 (Highest quality, expensive)</SelectItem>
+                <SelectItem value="claude-3-7-sonnet-20250219">Claude 3.7 Sonnet (Balanced)</SelectItem>
+                <SelectItem value="claude-3-5-sonnet-20241022">Claude 3.5 Sonnet (Legacy)</SelectItem>
+                <SelectItem value="claude-3-5-haiku-20241022">Claude 3.5 Haiku (Fast, cheap)</SelectItem>
               </SelectContent>
             </Select>
-            <p className="text-sm text-muted-foreground">Sonnet is recommended (balance of quality and cost)</p>
+            <p className="text-sm text-muted-foreground">Sonnet 4 recommended for best quality/cost balance</p>
           </div>
 
           <div className="flex items-end">
@@ -299,11 +303,32 @@ function AIIntegrationTab({ settings, onSave, onTestAI, onTestStability, showKey
           </p>
         </div>
 
-        <div>
-          <Button variant="outline" onClick={onTestStability} disabled={isTesting || !formData.stability_api_key}>
-            {isTesting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-            Test Connection
-          </Button>
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="stability-model">Image Model</Label>
+            <Select
+              value={formData.stability_model}
+              onValueChange={(value) => handleChange('stability_model', value)}
+            >
+              <SelectTrigger id="stability-model">
+                <SelectValue placeholder="Select model" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ultra">Stable Image Ultra (Best quality, ~$0.08/image)</SelectItem>
+                <SelectItem value="core">Stable Image Core (Balanced, ~$0.03/image)</SelectItem>
+                <SelectItem value="sd3-large">SD3 Large (High quality, ~$0.065/image)</SelectItem>
+                <SelectItem value="sd3-medium">SD3 Medium (Fast, ~$0.035/image)</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-sm text-muted-foreground">Ultra recommended for best devotional images</p>
+          </div>
+
+          <div className="flex items-end">
+            <Button variant="outline" onClick={onTestStability} disabled={isTesting || !formData.stability_api_key}>
+              {isTesting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Test Connection
+            </Button>
+          </div>
         </div>
       </div>
 

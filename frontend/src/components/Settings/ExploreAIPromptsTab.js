@@ -57,6 +57,8 @@ const CONTENT_TYPES = [
   { value: 'bible_figure', label: 'Bible Figure', icon: User },
   { value: 'quiz_questions', label: 'Quiz Questions', icon: HelpCircle },
   { value: 'bible_study', label: 'Bible Study', icon: FileText },
+  { value: 'topical_verse', label: 'Topical Verse', icon: BookOpen },
+  { value: 'devotion_plan', label: 'Devotion Plan', icon: FileText },
 ];
 
 const LANGUAGES = [
@@ -172,6 +174,72 @@ Guidelines:
 
 Make it transformative.`,
     variables: ['topic', 'passage'],
+  },
+  topical_verse: {
+    en: `You are a biblical scholar curating verses by topic for daily encouragement.
+
+Topic: $topic
+Category: $category
+
+Provide a verse collection with the following:
+1. Main Verse: Select the most impactful verse for this topic
+2. Supporting Verses: 3-5 additional related verses
+3. Reflection (100-150 words): Brief meditation on how these verses connect
+4. Prayer Points: 2-3 specific prayer applications
+5. Practical Application: One actionable step for today
+
+For each verse include:
+- Full verse text
+- Scripture reference (Book Chapter:Verse)
+- Brief context note (1 sentence)
+
+Guidelines:
+- Select verses from different parts of Scripture (OT/NT variety)
+- Choose translations that are accessible
+- Focus on verses that speak directly to the topic
+- Include both comfort and challenge
+- Make connections between the verses clear
+
+Output in JSON format with structured fields.`,
+    variables: ['topic', 'category'],
+  },
+  devotion_plan: {
+    en: `You are a Christian devotional planner creating multi-day spiritual growth plans.
+
+Plan Title: $title
+Theme: $theme
+Duration: $duration days
+Target Audience: $audience
+
+Create a devotion plan with the following structure:
+
+Overview:
+- Title and description (50 words)
+- Main scripture passage for the plan
+- Expected outcomes (3 bullet points)
+
+For each day, provide:
+1. Day Title: Engaging subtitle
+2. Main Verse: Key scripture for the day
+3. Reading: Bible passage to read (2-5 chapters)
+4. Devotional Content (200-300 words):
+   - Opening hook
+   - Scripture exploration
+   - Life application
+5. Reflection Questions: 2-3 thought-provoking questions
+6. Prayer Prompt: Specific prayer focus
+7. Action Step: One practical application
+
+Guidelines:
+- Build progressively through the plan
+- Each day should stand alone but connect to the whole
+- Vary the types of scripture (narrative, poetry, teaching, prophecy)
+- Balance challenge with encouragement
+- Include personal stories or illustrations
+- Make it practical for busy people
+
+Output as JSON with structured fields for each day.`,
+    variables: ['title', 'theme', 'duration', 'audience'],
   },
 };
 
