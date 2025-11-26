@@ -180,7 +180,7 @@ function SystemSettings() {
 function AIIntegrationTab({ settings, onSave, onTestAI, onTestStability, showKeys, setShowKeys, isSaving, isTesting }) {
   const [formData, setFormData] = useState({
     anthropic_api_key: settings.anthropic_api_key || '',
-    anthropic_model: settings.anthropic_model || 'claude-sonnet-4-20250514',
+    anthropic_model: settings.anthropic_model || 'claude-sonnet-4-5-20250929',
     stability_api_key: settings.stability_api_key || '',
     stability_model: settings.stability_model || 'ultra',
     ai_generation_enabled: settings.ai_generation_enabled ?? false,
@@ -254,14 +254,15 @@ function AIIntegrationTab({ settings, onSave, onTestAI, onTestStability, showKey
                 <SelectValue placeholder="Select model" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="claude-sonnet-4-20250514">Claude Sonnet 4 (Recommended)</SelectItem>
-                <SelectItem value="claude-opus-4-20250514">Claude Opus 4 (Highest quality, expensive)</SelectItem>
-                <SelectItem value="claude-3-7-sonnet-20250219">Claude 3.7 Sonnet (Balanced)</SelectItem>
-                <SelectItem value="claude-3-5-sonnet-20241022">Claude 3.5 Sonnet (Legacy)</SelectItem>
-                <SelectItem value="claude-3-5-haiku-20241022">Claude 3.5 Haiku (Fast, cheap)</SelectItem>
+                <SelectItem value="claude-sonnet-4-5-20250929">Claude Sonnet 4.5 (Recommended - Best balance)</SelectItem>
+                <SelectItem value="claude-opus-4-5-20251101">Claude Opus 4.5 (Highest quality, most expensive)</SelectItem>
+                <SelectItem value="claude-sonnet-4-20250514">Claude Sonnet 4 (Great quality/cost)</SelectItem>
+                <SelectItem value="claude-opus-4-20250514">Claude Opus 4 (High quality)</SelectItem>
+                <SelectItem value="claude-3-7-sonnet-20250219">Claude 3.7 Sonnet (Legacy)</SelectItem>
+                <SelectItem value="claude-3-5-haiku-20241022">Claude 3.5 Haiku (Fast, cheapest)</SelectItem>
               </SelectContent>
             </Select>
-            <p className="text-sm text-muted-foreground">Sonnet 4 recommended for best quality/cost balance</p>
+            <p className="text-sm text-muted-foreground">Sonnet 4.5 recommended for best quality/cost balance</p>
           </div>
 
           <div className="flex items-end">

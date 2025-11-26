@@ -175,7 +175,15 @@ export default function Layout() {
         { label: 'Dashboard', path: '/content-center' },
         { label: 'Scheduling', path: '/content-center/schedule' },
         { label: 'Analytics', path: '/content-center/analytics' },
-        { label: 'AI Generation', path: '/content-center/ai' },
+      ]
+    },
+    {
+      icon: Sparkles,
+      label: 'AI Generation',
+      key: 'aiGeneration',
+      submenu: [
+        { label: 'Generate Content', path: '/content-center/ai' },
+        { label: 'AI Prompt Config', path: '/content-center/ai/prompts' },
       ]
     },
     {
