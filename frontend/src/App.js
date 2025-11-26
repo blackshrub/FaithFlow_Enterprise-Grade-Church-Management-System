@@ -69,6 +69,10 @@ import DevotionEditor from "./pages/Explore/DevotionEditor";
 import VerseEditor from "./pages/Explore/VerseEditor";
 import FigureEditor from "./pages/Explore/FigureEditor";
 import QuizEditor from "./pages/Explore/QuizEditor";
+import BibleStudyEditor from "./pages/Explore/BibleStudyEditor";
+import TopicalCategoryEditor from "./pages/Explore/TopicalCategoryEditor";
+import TopicalVerseEditor from "./pages/Explore/TopicalVerseEditor";
+import DevotionPlanEditor from "./pages/Explore/DevotionPlanEditor";
 
 // Groups pages
 import GroupsListPage from "./pages/Groups/GroupsListPage";
@@ -97,6 +101,7 @@ import ProfileUpdateKiosk from "./pages/Kiosk/ProfileUpdate";
 import EventCheckinKiosk from "./pages/Kiosk/EventCheckin";
 import SmartLanding from "./components/SmartLanding";
 import UserManagement from "./pages/System/UserManagement";
+import SystemSettings from "./pages/SystemSettings";
 
 import FaithFlowLogo from './components/Branding/FaithFlowLogo';
 
@@ -198,27 +203,61 @@ function App() {
               <Route path="counseling/appointments" element={<AppointmentsListPage />} />
               <Route path="counseling/appointments/:appointmentId" element={<AppointmentDetailPage />} />
 
-              {/* Explore Routes */}
-              <Route path="explore" element={<ExploreDashboard />} />
-              <Route path="explore/schedule" element={<SchedulingCalendar />} />
-              <Route path="explore/analytics" element={<AnalyticsDashboard />} />
-              <Route path="explore/ai" element={<AIGenerationHub />} />
-              <Route path="explore/settings" element={<ChurchSettings />} />
-              <Route path="explore/content/devotion" element={<ExploreContentList />} />
-              <Route path="explore/content/devotion/new" element={<DevotionEditor />} />
-              <Route path="explore/content/devotion/:id/edit" element={<DevotionEditor />} />
-              <Route path="explore/content/verse" element={<ExploreContentList />} />
-              <Route path="explore/content/verse/new" element={<VerseEditor />} />
-              <Route path="explore/content/verse/:id/edit" element={<VerseEditor />} />
-              <Route path="explore/content/figure" element={<ExploreContentList />} />
-              <Route path="explore/content/figure/new" element={<FigureEditor />} />
-              <Route path="explore/content/figure/:id/edit" element={<FigureEditor />} />
-              <Route path="explore/content/quiz" element={<ExploreContentList />} />
-              <Route path="explore/content/quiz/new" element={<QuizEditor />} />
-              <Route path="explore/content/quiz/:id/edit" element={<QuizEditor />} />
+              {/* Content Center Routes (formerly Explore) */}
+              {/* Overview */}
+              <Route path="content-center" element={<ExploreDashboard />} />
+              <Route path="content-center/schedule" element={<SchedulingCalendar />} />
+              <Route path="content-center/analytics" element={<AnalyticsDashboard />} />
+              <Route path="content-center/ai" element={<AIGenerationHub />} />
+              <Route path="content-center/settings" element={<ChurchSettings />} />
+
+              {/* Daily Devotion */}
+              <Route path="content-center/devotion" element={<ExploreContentList />} />
+              <Route path="content-center/devotion/new" element={<DevotionEditor />} />
+              <Route path="content-center/devotion/:id/edit" element={<DevotionEditor />} />
+
+              {/* Verse of the Day */}
+              <Route path="content-center/verse" element={<ExploreContentList />} />
+              <Route path="content-center/verse/new" element={<VerseEditor />} />
+              <Route path="content-center/verse/:id/edit" element={<VerseEditor />} />
+
+              {/* Bible Figure */}
+              <Route path="content-center/figure" element={<ExploreContentList />} />
+              <Route path="content-center/figure/new" element={<FigureEditor />} />
+              <Route path="content-center/figure/:id/edit" element={<FigureEditor />} />
+
+              {/* Daily Quiz */}
+              <Route path="content-center/quiz" element={<ExploreContentList />} />
+              <Route path="content-center/quiz/new" element={<QuizEditor />} />
+              <Route path="content-center/quiz/:id/edit" element={<QuizEditor />} />
+
+              {/* Bible Study */}
+              <Route path="content-center/bible-study" element={<ExploreContentList />} />
+              <Route path="content-center/bible-study/new" element={<BibleStudyEditor />} />
+              <Route path="content-center/bible-study/:id/edit" element={<BibleStudyEditor />} />
+
+              {/* Devotion Plan */}
+              <Route path="content-center/devotion-plan" element={<ExploreContentList />} />
+              <Route path="content-center/devotion-plan/new" element={<DevotionPlanEditor />} />
+              <Route path="content-center/devotion-plan/:id/edit" element={<DevotionPlanEditor />} />
+
+              {/* Topical Categories */}
+              <Route path="content-center/topical" element={<ExploreContentList />} />
+              <Route path="content-center/topical/category/new" element={<TopicalCategoryEditor />} />
+              <Route path="content-center/topical/category/:id/edit" element={<TopicalCategoryEditor />} />
+
+              {/* Topical Verses */}
+              <Route path="content-center/topical/verses" element={<ExploreContentList />} />
+              <Route path="content-center/topical/verses/new" element={<TopicalVerseEditor />} />
+              <Route path="content-center/topical/verses/:id/edit" element={<TopicalVerseEditor />} />
+
+              {/* Legacy explore routes - redirect to content-center */}
+              <Route path="explore" element={<Navigate to="/content-center" replace />} />
+              <Route path="explore/*" element={<Navigate to="/content-center" replace />} />
 
               {/* System Routes */}
               <Route path="users/management" element={<UserManagement />} />
+              <Route path="system-settings" element={<SystemSettings />} />
               
               {/* Placeholder routes - will be implemented in next phases */}
               <Route path="donations" element={<PlaceholderPage title="Donations" />} />

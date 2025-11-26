@@ -175,8 +175,18 @@ function VerseCard({ verse, contentLanguage, index }: VerseCardProps) {
 
   // Format the reference with localized book name and translation
   const lang = contentLanguage as 'en' | 'id';
-  const verseText = verse.text[lang] || verse.text.en;
-  const reference = formatBibleReference(verse.reference as any, lang);
+
+  // Support both backend model (verse.verse, commentary, application)
+  // and transformed mock data (text, reference, application_note)
+  const verseRef = (verse as any).verse || (verse as any).reference;
+  const verseText = (verse as any).text?.[lang] ||
+                    (verse as any).text?.en ||
+                    (verse as any).commentary?.[lang] ||
+                    (verse as any).commentary?.en ||
+                    '';
+  const applicationNote = (verse as any).application_note ||
+                          (verse as any).application;
+  const reference = formatBibleReference(verseRef as any, lang);
 
   const handleBookmark = () => {
     bookmarkMutation.mutate({ verseId: verse.id, bookmarked: !isBookmarked });
@@ -232,10 +242,10 @@ function VerseCard({ verse, contentLanguage, index }: VerseCardProps) {
         </View>
 
         {/* Application Note */}
-        {verse.application_note && verse.application_note[contentLanguage] && (
+        {applicationNote && (applicationNote[contentLanguage] || applicationNote.en || applicationNote) && (
           <View style={styles.applicationNote}>
             <Text style={styles.applicationNoteText}>
-              {verse.application_note[contentLanguage]}
+              {applicationNote[contentLanguage] || applicationNote.en || applicationNote}
             </Text>
           </View>
         )}
