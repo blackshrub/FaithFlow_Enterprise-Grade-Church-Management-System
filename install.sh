@@ -1129,6 +1129,7 @@ server {
     # Frontend SPA
     location / {
         root $INSTALL_DIR/frontend/build;
+        index index.html;
         try_files \$uri \$uri/ /index.html;
         add_header Cache-Control "no-cache, must-revalidate";
     }
@@ -1220,6 +1221,7 @@ server {
 
     location / {
         root $INSTALL_DIR/frontend/build;
+        index index.html;
         try_files \$uri \$uri/ /index.html;
     }
 }
