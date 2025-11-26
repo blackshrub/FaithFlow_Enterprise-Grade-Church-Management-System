@@ -515,6 +515,79 @@ async def get_my_giving_history(
     )
 
 
+# Alias for mobile app compatibility
+@router.get("/history", response_model=GivingHistoryResponse)
+async def get_giving_history_alias(
+    status_filter: Optional[str] = None,
+    limit: int = 50,
+    offset: int = 0,
+    current_user: dict = Depends(get_current_user),
+    db: AsyncIOMotorDatabase = Depends(get_db)
+):
+    """Alias for /my-history - Mobile app compatibility."""
+    return await get_my_giving_history(status_filter, limit, offset, current_user, db)
+
+
+@router.get("/summary")
+async def get_giving_summary(
+    current_user: dict = Depends(get_current_user),
+    db: AsyncIOMotorDatabase = Depends(get_db)
+):
+    """
+    Get giving summary for current member.
+
+    Returns total giving, this month, this year, and recent transactions count.
+    """
+    church_id = get_session_church_id(current_user)
+    member_id = current_user.get("id")
+
+    now = datetime.utcnow()
+    start_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    start_of_year = now.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+
+    # Base query for successful transactions
+    base_query = {
+        "church_id": church_id,
+        "member_id": member_id,
+        "payment_status": "success"
+    }
+
+    # Total all time
+    total_pipeline = [
+        {"$match": base_query},
+        {"$group": {"_id": None, "total": {"$sum": "$amount"}, "count": {"$sum": 1}}}
+    ]
+    total_result = await db.giving_transactions.aggregate(total_pipeline).to_list(1)
+    total_amount = float(total_result[0]["total"]) if total_result else 0
+    total_count = total_result[0]["count"] if total_result else 0
+
+    # This month
+    month_query = {**base_query, "created_at": {"$gte": start_of_month}}
+    month_pipeline = [
+        {"$match": month_query},
+        {"$group": {"_id": None, "total": {"$sum": "$amount"}}}
+    ]
+    month_result = await db.giving_transactions.aggregate(month_pipeline).to_list(1)
+    month_amount = float(month_result[0]["total"]) if month_result else 0
+
+    # This year
+    year_query = {**base_query, "created_at": {"$gte": start_of_year}}
+    year_pipeline = [
+        {"$match": year_query},
+        {"$group": {"_id": None, "total": {"$sum": "$amount"}}}
+    ]
+    year_result = await db.giving_transactions.aggregate(year_pipeline).to_list(1)
+    year_amount = float(year_result[0]["total"]) if year_result else 0
+
+    return {
+        "total_amount": total_amount,
+        "total_count": total_count,
+        "this_month": month_amount,
+        "this_year": year_amount,
+        "currency": "IDR"
+    }
+
+
 @router.get("/transaction/{transaction_id}", response_model=GivingTransactionResponse)
 async def get_giving_transaction(
     transaction_id: str,

@@ -117,6 +117,7 @@ api_router.include_router(member_auth.router)  # Member OTP login
 api_router.include_router(giving.router)  # Giving/offering with iPaymu
 api_router.include_router(notifications.router)  # Push notifications
 api_router.include_router(rating_review.router)  # Event ratings & reviews
+api_router.include_router(prayer_requests.router)  # Prayer requests (mobile compatibility)
 
 # Public API (no auth required)
 app.include_router(public_members.router)
