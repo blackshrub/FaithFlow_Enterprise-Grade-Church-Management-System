@@ -23,6 +23,7 @@ ENV/
 *.swp
 *.swo
 *~
+.emergent/
 
 # Logs
 *.log
