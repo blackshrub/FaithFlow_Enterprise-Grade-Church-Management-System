@@ -65,7 +65,7 @@ export default function AIGenerationHub() {
   const { toast } = useToast();
 
   const [contentType, setContentType] = useState('devotion');
-  const [model, setModel] = useState('claude-3-5-sonnet-20241022');
+  const [model, setModel] = useState('claude-sonnet-4-5-20250929');
   const [customPrompt, setCustomPrompt] = useState('');
   const [generateBothLanguages, setGenerateBothLanguages] = useState(true);
   const [showPreview, setShowPreview] = useState(false);
@@ -296,9 +296,12 @@ export default function AIGenerationHub() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="claude-3-5-sonnet-20241022">Claude 3.5 Sonnet (Recommended)</SelectItem>
-                    <SelectItem value="claude-3-opus-20240229">Claude 3 Opus (Most Capable)</SelectItem>
-                    <SelectItem value="claude-3-haiku-20240307">Claude 3 Haiku (Fastest)</SelectItem>
+                    <SelectItem value="claude-sonnet-4-5-20250929">Claude Sonnet 4.5 (Recommended)</SelectItem>
+                    <SelectItem value="claude-opus-4-5-20251101">Claude Opus 4.5 (Highest quality)</SelectItem>
+                    <SelectItem value="claude-sonnet-4-20250514">Claude Sonnet 4</SelectItem>
+                    <SelectItem value="claude-opus-4-20250514">Claude Opus 4</SelectItem>
+                    <SelectItem value="claude-3-7-sonnet-20250219">Claude 3.7 Sonnet (Legacy)</SelectItem>
+                    <SelectItem value="claude-3-5-haiku-20241022">Claude 3.5 Haiku (Fastest)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

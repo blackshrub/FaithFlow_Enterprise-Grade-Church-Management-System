@@ -244,9 +244,6 @@ function ContentTypePanel({ contentType, config, schema, onUpdate }) {
           <AccordionItem key={group} value={group}>
             <AccordionTrigger className="text-sm font-semibold">
               {groupLabels[group] || formatFieldName(group)}
-              <Badge variant="outline" className="ml-2 text-xs">
-                {fields.length}
-              </Badge>
             </AccordionTrigger>
             <AccordionContent>
               <div className="space-y-4 pt-2">
