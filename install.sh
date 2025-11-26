@@ -868,17 +868,18 @@ FRONTEND_ENV
     yarn build > "$build_log" 2>&1 &
     pid=$!
 
-    count=0
     local start_time=$(date +%s)
+    local spin_chars='|/-\'
+    local i=0
     while kill -0 "$pid" 2>/dev/null; do
         local elapsed=$(($(date +%s) - start_time))
         local mins=$((elapsed / 60))
         local secs=$((elapsed % 60))
-        progress_bar $((count % 100)) 100 "[${mins}m ${secs}s]"
-        sleep 1
-        ((count++))
+        local spin="${spin_chars:i++%4:1}"
+        printf "\r    ${CYAN}%s${NC} Building... ${WHITE}[%dm %ds]${NC}   " "$spin" "$mins" "$secs"
+        sleep 0.5
     done
-    echo ""
+    printf "\r\033[K"
 
     wait "$pid"
     local build_status=$?
