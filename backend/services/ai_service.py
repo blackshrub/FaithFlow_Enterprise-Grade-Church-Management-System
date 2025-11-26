@@ -7,17 +7,17 @@ import os
 import json
 import asyncio
 import base64
+import logging
 import httpx
 from typing import Dict, Any, Optional, List
 from datetime import datetime
 import anthropic
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
-from utils.logger import get_logger
 from utils.system_config import get_ai_settings
 from services.image_prompt_builder import ImagePromptBuilder, build_image_prompt
 
-logger = get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 class AIService:
