@@ -858,11 +858,19 @@ FRONTEND_ENV
 
     local build_log="/tmp/faithflow-frontend-build-$$.log"
 
+    # Increase Node.js memory limit for build process (prevents OOM on small VPS)
+    export NODE_OPTIONS="--max-old-space-size=4096"
+
     yarn build > "$build_log" 2>&1 &
     pid=$!
 
     count=0
+    local start_time=$(date +%s)
     while kill -0 "$pid" 2>/dev/null; do
+        local elapsed=$(($(date +%s) - start_time))
+        local mins=$((elapsed / 60))
+        local secs=$((elapsed % 60))
+        printf "\r  Building... [%02d:%02d elapsed] " "$mins" "$secs"
         progress_bar $((count % 100)) 100
         sleep 1
         ((count++))
@@ -978,9 +986,9 @@ LOGROTATE
     if wait_for_service faithflow-backend 30; then
         print_success "Backend service started successfully"
 
-        # Health check
+        # Health check - use proper /api/health endpoint
         sleep 2
-        if curl -s http://localhost:$backend_port/docs > /dev/null 2>&1; then
+        if curl -sf http://localhost:$backend_port/api/health > /dev/null 2>&1; then
             print_success "Backend health check passed"
         else
             print_warn "Backend started but health check pending"
