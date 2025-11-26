@@ -136,19 +136,23 @@ spinner() {
     printf "\r\033[K"
 }
 
-# Progress bar
+# Progress bar (with optional elapsed time)
 progress_bar() {
     local current=$1
     local total=$2
-    local width=50
+    local elapsed_msg="${3:-}"
+    local width=40
     local percentage=$((current * 100 / total))
     local filled=$((current * width / total))
     local empty=$((width - filled))
 
     printf "\r  ${CYAN}["
-    printf "%${filled}s" | tr ' ' '█'
-    printf "%${empty}s" | tr ' ' '░'
+    printf "%${filled}s" | tr ' ' '#'
+    printf "%${empty}s" | tr ' ' '-'
     printf "]${NC} ${WHITE}%3d%%${NC}" "$percentage"
+    if [ -n "$elapsed_msg" ]; then
+        printf " ${GRAY}%s${NC}" "$elapsed_msg"
+    fi
 }
 
 run_silent() {
@@ -676,8 +680,7 @@ update_frontend() {
         local elapsed=$(($(date +%s) - start_time))
         local mins=$((elapsed / 60))
         local secs=$((elapsed % 60))
-        printf "\r  Building... [%02d:%02d elapsed] " "$mins" "$secs"
-        progress_bar $((count % 100)) 100
+        progress_bar $((count % 100)) 100 "[${mins}m ${secs}s]"
         sleep 1
         ((count++))
     done
