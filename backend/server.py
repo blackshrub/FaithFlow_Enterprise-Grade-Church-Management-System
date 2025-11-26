@@ -1,10 +1,13 @@
-from fastapi import FastAPI, APIRouter
+from fastapi import FastAPI, APIRouter, Request, Response
+from fastapi.middleware.gzip import GZIPMiddleware
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import logging
+import time
 from pathlib import Path
+from typing import Callable
 
 # Import routes
 from routes import (
@@ -42,9 +45,18 @@ from routes import (
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
-# MongoDB connection
+# MongoDB connection with optimized connection pooling
 mongo_url = os.environ['MONGO_URL']
-client = AsyncIOMotorClient(mongo_url)
+client = AsyncIOMotorClient(
+    mongo_url,
+    maxPoolSize=100,           # Maximum connections in pool
+    minPoolSize=10,            # Minimum connections to maintain
+    maxIdleTimeMS=45000,       # Close idle connections after 45s
+    waitQueueTimeoutMS=5000,   # Timeout waiting for connection
+    serverSelectionTimeoutMS=5000,  # Timeout for server selection
+    connectTimeoutMS=10000,    # Timeout for initial connection
+    retryWrites=True,          # Auto-retry failed writes
+)
 db = client[os.environ['DB_NAME']]
 
 # Create the main app without a prefix
@@ -71,6 +83,16 @@ async def health_check():
     return {
         "status": "healthy",
         "database": "connected"
+    }
+
+@api_router.get("/performance")
+async def performance_stats():
+    """Get performance statistics."""
+    from utils.performance import get_cache, PerformanceMonitor
+    cache = get_cache()
+    return {
+        "cache": cache.stats(),
+        "queries": PerformanceMonitor.get_stats(),
     }
 
 # Include all routers
@@ -153,6 +175,9 @@ api_router.include_router(kiosk.router)
 # Include the API router in the main app
 app.include_router(api_router)
 
+# Add GZIP compression middleware (compress responses > 500 bytes)
+app.add_middleware(GZIPMiddleware, minimum_size=500)
+
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
@@ -160,6 +185,21 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Request timing middleware
+@app.middleware("http")
+async def add_process_time_header(request: Request, call_next: Callable):
+    """Add X-Process-Time header to all responses for performance monitoring."""
+    start_time = time.time()
+    response = await call_next(request)
+    process_time = time.time() - start_time
+    response.headers["X-Process-Time"] = f"{process_time:.4f}"
+
+    # Log slow requests (> 2 seconds)
+    if process_time > 2.0:
+        logger.warning(f"Slow request: {request.method} {request.url.path} took {process_time:.2f}s")
+
+    return response
 
 # Configure logging
 logging.basicConfig(
@@ -174,6 +214,14 @@ from scheduler import setup_scheduler, start_scheduler, shutdown_scheduler
 @app.on_event("startup")
 async def startup_event():
     """Initialize scheduler and services on startup."""
+    # Initialize performance optimizations (indexes, caching)
+    try:
+        from utils.performance import initialize_performance_optimizations
+        perf_results = await initialize_performance_optimizations(db)
+        logger.info("✓ Performance optimizations initialized (indexes, caching)")
+    except Exception as e:
+        logger.warning(f"⚠ Performance initialization partial: {e}")
+
     # Initialize scheduler
     setup_scheduler(db)
     start_scheduler()
