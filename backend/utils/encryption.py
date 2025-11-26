@@ -9,7 +9,7 @@ import os
 import base64
 from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 import logging
 
 logger = logging.getLogger(__name__)
@@ -25,8 +25,8 @@ def _get_encryption_key() -> bytes:
     # Use JWT_SECRET as the base for encryption key
     secret = os.environ.get("JWT_SECRET", "default-insecure-secret-change-this")
 
-    # Derive a proper Fernet key using PBKDF2
-    kdf = PBKDF2(
+    # Derive a proper Fernet key using PBKDF2HMAC
+    kdf = PBKDF2HMAC(
         algorithm=hashes.SHA256(),
         length=32,
         salt=b"faithflow_salt_v1",  # Static salt (OK for this use case)
