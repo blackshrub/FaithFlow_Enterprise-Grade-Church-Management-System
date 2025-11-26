@@ -951,24 +951,22 @@ SYSTEMD_BACKEND
     print_success "Backend service configured (port $backend_port, 4 workers)"
 
     # Log rotation
-    cat > /etc/logrotate.d/faithflow << 'LOGROTATE_CONF'
+    cat > /etc/logrotate.d/faithflow << 'LOGROTATE'
 /var/log/faithflow/*.log {
     daily
-    rotate 30
+    missingok
+    rotate 14
     compress
     delaycompress
-    missingok
     notifempty
-    create 0644 root root
-    dateext
-    dateformat -%Y%m%d
+    create 0640 faithflow faithflow
     sharedscripts
     postrotate
-        systemctl reload faithflow-backend.service > /dev/null 2>&1 || true
+        systemctl reload faithflow-backend > /dev/null 2>&1 || true
     endscript
 }
-LOGROTATE_CONF
-    print_success "Log rotation configured (30 days retention)"
+LOGROTATE
+    print_success "Log rotation configured (14 days retention)"
 
     # Reload and start services
     systemctl daemon-reload
