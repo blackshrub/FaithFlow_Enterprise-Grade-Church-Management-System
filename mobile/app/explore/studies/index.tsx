@@ -9,11 +9,11 @@
  */
 
 import React, { useState } from 'react';
-import { ScrollView, View, Text, StyleSheet, Pressable, TextInput } from 'react-native';
+import { ScrollView, View, Text, StyleSheet, Pressable, TextInput, Image, ImageBackground } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { ExploreColors, ExploreTypography, ExploreSpacing } from '@/constants/explore/designSystem';
-import { useBibleStudies, useStudyProgress } from '@/hooks/explore/useExplore';
+import { useBibleStudies, useStudyProgress } from '@/hooks/explore/useExploreMock';
 import { useExploreStore } from '@/stores/explore/exploreStore';
 import type { BibleStudy } from '@/types/explore';
 import {
@@ -24,11 +24,14 @@ import {
   Clock,
   TrendingUp,
   CheckCircle2,
+  Star,
+  Users,
+  Play,
 } from 'lucide-react-native';
-import { ExploreCard } from '@/components/explore/ExploreCard';
 import { EmptyState } from '@/components/explore/EmptyState';
 import { BibleStudyListSkeleton } from '@/components/explore/LoadingSkeleton';
 import Animated, { FadeInDown } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 
 type SortOption = 'newest' | 'popular' | 'alphabetical';
 type FilterCategory = 'all' | 'old_testament' | 'new_testament' | 'topical';
@@ -44,7 +47,7 @@ export default function BibleStudiesBrowserScreen() {
 
   // Data queries
   const { data: studies, isLoading } = useBibleStudies();
-  const progressData = useStudyProgress();
+  const { data: progressData } = useStudyProgress();
 
   // Filter and sort studies
   const filteredStudies = studies?.filter((study) => {
@@ -83,9 +86,10 @@ export default function BibleStudiesBrowserScreen() {
   };
 
   const getStudyProgress = (studyId: string) => {
-    const progress = progressData?.find((p) => p.content_id === studyId);
+    // progressData is an object keyed by study ID, not an array
+    const progress = progressData?.[studyId];
     if (!progress) return 0;
-    return Math.round((progress.lessons_completed / progress.total_lessons) * 100);
+    return Math.round((progress.current_lesson / progress.total_lessons) * 100);
   };
 
   if (isLoading) {
@@ -262,72 +266,150 @@ interface StudyCardProps {
 
 function StudyCard({ study, progress, onPress, contentLanguage, index }: StudyCardProps) {
   const title = study.title[contentLanguage] || study.title.en;
+  const subtitle = study.subtitle?.[contentLanguage] || study.subtitle?.en;
   const description = study.description?.[contentLanguage] || study.description?.en;
+  const author = study.author?.[contentLanguage] || study.author?.en;
   const isCompleted = progress === 100;
+  const lessonCount = study.lesson_count || study.lessons?.length || 0;
+
+  // Difficulty badge color
+  const difficultyColors = {
+    beginner: { bg: '#10B981', text: '#fff' },
+    intermediate: { bg: '#F59E0B', text: '#fff' },
+    advanced: { bg: '#EF4444', text: '#fff' },
+  };
+  const difficultyStyle = difficultyColors[study.difficulty] || difficultyColors.beginner;
 
   return (
-    <Animated.View entering={FadeInDown.duration(400).delay(index * 50)}>
-      <ExploreCard onPress={onPress} style={styles.studyCard}>
-        {/* Progress Badge */}
-        {progress > 0 && (
-          <View style={styles.progressBadge}>
-            {isCompleted ? (
-              <>
-                <CheckCircle2 size={14} color={ExploreColors.success[600]} />
-                <Text style={styles.progressBadgeTextCompleted}>
-                  {contentLanguage === 'en' ? 'Completed' : 'Selesai'}
-                </Text>
-              </>
-            ) : (
-              <Text style={styles.progressBadgeText}>{progress}%</Text>
-            )}
-          </View>
-        )}
+    <Animated.View entering={FadeInDown.duration(400).delay(index * 80)}>
+      <Pressable
+        onPress={onPress}
+        style={({ pressed }) => [
+          styles.courseCard,
+          pressed && styles.courseCardPressed,
+        ]}
+      >
+        {/* Cover Image */}
+        <View style={styles.coverImageContainer}>
+          {study.cover_image_url ? (
+            <ImageBackground
+              source={{ uri: study.cover_image_url }}
+              style={styles.coverImage}
+              imageStyle={styles.coverImageStyle}
+            >
+              <LinearGradient
+                colors={['transparent', 'rgba(0,0,0,0.7)']}
+                style={styles.coverGradient}
+              >
+                {/* Difficulty Badge */}
+                <View style={[styles.difficultyBadge, { backgroundColor: difficultyStyle.bg }]}>
+                  <Text style={[styles.difficultyText, { color: difficultyStyle.text }]}>
+                    {study.difficulty.charAt(0).toUpperCase() + study.difficulty.slice(1)}
+                  </Text>
+                </View>
 
-        {/* Content */}
-        <View style={styles.studyCardContent}>
-          <Text style={styles.studyTitle}>{title}</Text>
-          {description && (
-            <Text style={styles.studyDescription} numberOfLines={2}>
-              {description}
-            </Text>
+                {/* Lessons & Duration on Image */}
+                <View style={styles.coverStats}>
+                  <View style={styles.coverStatItem}>
+                    <BookOpen size={14} color="#fff" />
+                    <Text style={styles.coverStatText}>
+                      {lessonCount} {contentLanguage === 'en' ? 'lessons' : 'pelajaran'}
+                    </Text>
+                  </View>
+                  <View style={styles.coverStatItem}>
+                    <Clock size={14} color="#fff" />
+                    <Text style={styles.coverStatText}>
+                      {study.estimated_duration_minutes} {contentLanguage === 'en' ? 'min' : 'mnt'}
+                    </Text>
+                  </View>
+                </View>
+              </LinearGradient>
+            </ImageBackground>
+          ) : (
+            <View style={styles.coverPlaceholder}>
+              <BookOpen size={40} color={ExploreColors.primary[300]} />
+            </View>
           )}
 
-          {/* Meta Info */}
-          <View style={styles.studyMeta}>
-            <View style={styles.metaItem}>
-              <BookOpen size={14} color={ExploreColors.neutral[600]} />
-              <Text style={styles.metaText}>
-                {study.lesson_count} {contentLanguage === 'en' ? 'lessons' : 'pelajaran'}
+          {/* Progress/Completed Overlay */}
+          {isCompleted && (
+            <View style={styles.completedOverlay}>
+              <CheckCircle2 size={32} color="#fff" />
+              <Text style={styles.completedOverlayText}>
+                {contentLanguage === 'en' ? 'Completed' : 'Selesai'}
               </Text>
-            </View>
-
-            <View style={styles.metaItem}>
-              <Clock size={14} color={ExploreColors.neutral[600]} />
-              <Text style={styles.metaText}>
-                {study.estimated_duration_minutes}{' '}
-                {contentLanguage === 'en' ? 'min' : 'mnt'}
-              </Text>
-            </View>
-
-            {study.completion_count > 0 && (
-              <View style={styles.metaItem}>
-                <TrendingUp size={14} color={ExploreColors.neutral[600]} />
-                <Text style={styles.metaText}>{study.completion_count}</Text>
-              </View>
-            )}
-          </View>
-
-          {/* Progress Bar */}
-          {progress > 0 && !isCompleted && (
-            <View style={styles.progressBarContainer}>
-              <View style={styles.progressBarBackground}>
-                <View style={[styles.progressBarFill, { width: `${progress}%` }]} />
-              </View>
             </View>
           )}
         </View>
-      </ExploreCard>
+
+        {/* Content Section */}
+        <View style={styles.courseContent}>
+          {/* Title & Subtitle */}
+          <Text style={styles.courseTitle} numberOfLines={2}>{title}</Text>
+          {subtitle && (
+            <Text style={styles.courseSubtitle} numberOfLines={1}>{subtitle}</Text>
+          )}
+
+          {/* Author */}
+          {author && (
+            <Text style={styles.courseAuthor}>
+              {contentLanguage === 'en' ? 'By ' : 'Oleh '}{author}
+            </Text>
+          )}
+
+          {/* Rating & Students */}
+          <View style={styles.courseMetaRow}>
+            {study.average_rating && (
+              <View style={styles.ratingContainer}>
+                <Star size={14} color="#F59E0B" fill="#F59E0B" />
+                <Text style={styles.ratingText}>{study.average_rating.toFixed(1)}</Text>
+                {study.ratings_count && (
+                  <Text style={styles.ratingCount}>({study.ratings_count})</Text>
+                )}
+              </View>
+            )}
+            {study.completion_count && study.completion_count > 0 && (
+              <View style={styles.studentsContainer}>
+                <Users size={14} color={ExploreColors.neutral[500]} />
+                <Text style={styles.studentsText}>
+                  {study.completion_count.toLocaleString()} {contentLanguage === 'en' ? 'completed' : 'selesai'}
+                </Text>
+              </View>
+            )}
+          </View>
+
+          {/* Progress Bar (if started but not completed) */}
+          {progress > 0 && !isCompleted && (
+            <View style={styles.progressSection}>
+              <View style={styles.progressBarBackground}>
+                <View style={[styles.progressBarFill, { width: `${progress}%` }]} />
+              </View>
+              <Text style={styles.progressText}>{progress}% {contentLanguage === 'en' ? 'complete' : 'selesai'}</Text>
+            </View>
+          )}
+
+          {/* Start/Continue Button */}
+          <View style={styles.actionRow}>
+            <View style={[
+              styles.actionButton,
+              progress > 0 && !isCompleted && styles.actionButtonContinue,
+              isCompleted && styles.actionButtonCompleted,
+            ]}>
+              <Play size={16} color={isCompleted ? ExploreColors.success[600] : '#fff'} fill={isCompleted ? ExploreColors.success[600] : '#fff'} />
+              <Text style={[
+                styles.actionButtonText,
+                isCompleted && styles.actionButtonTextCompleted,
+              ]}>
+                {isCompleted
+                  ? (contentLanguage === 'en' ? 'Review' : 'Tinjau')
+                  : progress > 0
+                    ? (contentLanguage === 'en' ? 'Continue' : 'Lanjutkan')
+                    : (contentLanguage === 'en' ? 'Start Course' : 'Mulai Kursus')}
+              </Text>
+            </View>
+          </View>
+        </View>
+      </Pressable>
     </Animated.View>
   );
 }
@@ -335,7 +417,7 @@ function StudyCard({ study, progress, onPress, contentLanguage, index }: StudyCa
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: ExploreColors.neutral[50],
   },
   header: {
     flexDirection: 'row',
@@ -343,6 +425,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: ExploreSpacing.md,
     paddingVertical: ExploreSpacing.sm,
+    backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
     borderBottomColor: ExploreColors.neutral[100],
   },
@@ -360,7 +443,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: ExploreSpacing.xl,
+    paddingBottom: 100,
   },
   loadingContainer: {
     padding: ExploreSpacing.screenMargin,
@@ -369,12 +452,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: ExploreSpacing.screenMargin,
     paddingTop: ExploreSpacing.md,
     paddingBottom: ExploreSpacing.sm,
+    backgroundColor: '#FFFFFF',
   },
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: ExploreSpacing.sm,
-    backgroundColor: ExploreColors.neutral[50],
+    backgroundColor: ExploreColors.neutral[100],
     borderRadius: 12,
     paddingHorizontal: ExploreSpacing.md,
     paddingVertical: ExploreSpacing.sm,
@@ -387,7 +471,7 @@ const styles = StyleSheet.create({
   filtersSection: {
     paddingHorizontal: ExploreSpacing.screenMargin,
     paddingVertical: ExploreSpacing.md,
-    backgroundColor: ExploreColors.neutral[50],
+    backgroundColor: '#FFFFFF',
     borderRadius: 16,
     marginHorizontal: ExploreSpacing.screenMargin,
     marginBottom: ExploreSpacing.md,
@@ -411,7 +495,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: ExploreSpacing.md,
     paddingVertical: ExploreSpacing.xs,
     borderRadius: 16,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: ExploreColors.neutral[100],
     borderWidth: 1,
     borderColor: ExploreColors.neutral[200],
   },
@@ -431,78 +515,185 @@ const styles = StyleSheet.create({
     ...ExploreTypography.caption,
     color: ExploreColors.neutral[600],
     paddingHorizontal: ExploreSpacing.screenMargin,
-    marginBottom: ExploreSpacing.md,
+    marginTop: ExploreSpacing.md,
+    marginBottom: ExploreSpacing.sm,
   },
   studiesList: {
     paddingHorizontal: ExploreSpacing.screenMargin,
-    gap: ExploreSpacing.md,
+    gap: ExploreSpacing.lg,
   },
-  studyCard: {
+
+  // E-Learning Course Card Styles
+  courseCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  courseCardPressed: {
+    opacity: 0.95,
+    transform: [{ scale: 0.98 }],
+  },
+  coverImageContainer: {
+    height: 160,
     position: 'relative',
   },
-  progressBadge: {
-    position: 'absolute',
-    top: ExploreSpacing.sm,
-    right: ExploreSpacing.sm,
-    flexDirection: 'row',
+  coverImage: {
+    width: '100%',
+    height: '100%',
+  },
+  coverImageStyle: {
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+  },
+  coverGradient: {
+    flex: 1,
+    justifyContent: 'space-between',
+    padding: ExploreSpacing.md,
+  },
+  coverPlaceholder: {
+    flex: 1,
+    backgroundColor: ExploreColors.primary[100],
     alignItems: 'center',
-    gap: ExploreSpacing.xs,
-    backgroundColor: ExploreColors.primary[50],
-    paddingHorizontal: ExploreSpacing.sm,
+    justifyContent: 'center',
+  },
+  difficultyBadge: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 12,
-    zIndex: 1,
+    borderRadius: 6,
   },
-  progressBadgeText: {
-    ...ExploreTypography.caption,
-    color: ExploreColors.primary[700],
-    fontWeight: '700',
-    fontSize: 12,
-  },
-  progressBadgeTextCompleted: {
-    ...ExploreTypography.caption,
-    color: ExploreColors.success[700],
-    fontWeight: '700',
+  difficultyText: {
     fontSize: 11,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
-  studyCardContent: {
-    gap: ExploreSpacing.sm,
-  },
-  studyTitle: {
-    ...ExploreTypography.h4,
-    color: ExploreColors.neutral[900],
-  },
-  studyDescription: {
-    ...ExploreTypography.body,
-    color: ExploreColors.neutral[700],
-    lineHeight: 22,
-  },
-  studyMeta: {
+  coverStats: {
     flexDirection: 'row',
     gap: ExploreSpacing.md,
-    flexWrap: 'wrap',
   },
-  metaItem: {
+  coverStatItem: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
   },
-  metaText: {
-    ...ExploreTypography.caption,
-    color: ExploreColors.neutral[600],
+  coverStatText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '600',
   },
-  progressBarContainer: {
-    marginTop: ExploreSpacing.xs,
+  completedOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(16, 185, 129, 0.85)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  completedOverlayText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  courseContent: {
+    padding: ExploreSpacing.md,
+    gap: 6,
+  },
+  courseTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: ExploreColors.neutral[900],
+    lineHeight: 22,
+  },
+  courseSubtitle: {
+    fontSize: 13,
+    color: ExploreColors.neutral[600],
+    fontWeight: '500',
+  },
+  courseAuthor: {
+    fontSize: 12,
+    color: ExploreColors.neutral[500],
+    marginTop: 2,
+  },
+  courseMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: ExploreSpacing.md,
+    marginTop: 6,
+  },
+  ratingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  ratingText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: ExploreColors.neutral[900],
+  },
+  ratingCount: {
+    fontSize: 12,
+    color: ExploreColors.neutral[500],
+  },
+  studentsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  studentsText: {
+    fontSize: 12,
+    color: ExploreColors.neutral[500],
+  },
+  progressSection: {
+    marginTop: 8,
+    gap: 4,
   },
   progressBarBackground: {
-    height: 4,
+    height: 6,
     backgroundColor: ExploreColors.neutral[200],
-    borderRadius: 2,
+    borderRadius: 3,
     overflow: 'hidden',
   },
   progressBarFill: {
     height: '100%',
     backgroundColor: ExploreColors.primary[500],
-    borderRadius: 2,
+    borderRadius: 3,
+  },
+  progressText: {
+    fontSize: 11,
+    color: ExploreColors.neutral[600],
+    fontWeight: '500',
+  },
+  actionRow: {
+    marginTop: 10,
+  },
+  actionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: ExploreColors.primary[500],
+    paddingVertical: 10,
+    borderRadius: 10,
+  },
+  actionButtonContinue: {
+    backgroundColor: ExploreColors.secondary[500],
+  },
+  actionButtonCompleted: {
+    backgroundColor: ExploreColors.success[50],
+    borderWidth: 1,
+    borderColor: ExploreColors.success[200],
+  },
+  actionButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  actionButtonTextCompleted: {
+    color: ExploreColors.success[700],
   },
 });

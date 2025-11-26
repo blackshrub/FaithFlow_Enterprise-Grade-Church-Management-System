@@ -6,15 +6,50 @@
  * - Modern church context
  * - Natural, engaging content
  * - All fields populated
+ * - Matches TypeScript types exactly (snake_case fields)
  */
+
+import type {
+  DailyDevotion,
+  VerseOfTheDay,
+  BibleFigure,
+  DailyQuiz,
+  BibleStudy,
+  TopicalCategory,
+  BibleReference,
+  MultilingualText,
+} from '@/types/explore';
+
+// ============================================================================
+// HELPER: Create Bible Reference
+// ============================================================================
+
+function createBibleRef(
+  book: string,
+  chapter: number,
+  verseStart: number,
+  verseEnd?: number,
+  translation: string = 'NIV',
+  text?: string
+): BibleReference & { text?: string } {
+  return {
+    book,
+    chapter,
+    verse_start: verseStart,
+    verse_end: verseEnd,
+    translation,
+    ...(text && { text }),
+  };
+}
 
 // ============================================================================
 // DAILY DEVOTIONS
 // ============================================================================
 
-export const mockDailyDevotions = [
+export const mockDailyDevotions: DailyDevotion[] = [
   {
     id: 'dev_001',
+    scope: 'global',
     title: {
       en: 'Finding Peace in the Storm',
       id: 'Menemukan Damai di Tengah Badai',
@@ -47,41 +82,33 @@ Bagaimana jika Tuhan mengizinkan badai bukan untuk menghancurkanmu, tetapi untuk
 
 Jangan biarkan ketakutan menenggelamkan iman. Tuhan yang sama yang menenangkan laut kuno dapat menenangkan hati cemasmu hari ini.`,
     },
-    mainVerse: {
-      reference: 'Mark 4:39',
-      text: {
-        en: 'He got up, rebuked the wind and said to the waves, "Quiet! Be still!" Then the wind died down and it was completely calm.',
-        id: 'Lalu Yesus bangun, menghardik angin itu dan berkata kepada danau itu: "Diam! Tenanglah!" Maka angin itu reda dan danau itu menjadi sangat tenang.',
-      },
-    },
-    reflectionQuestions: {
-      en: [
-        'What "storms" are you currently facing in your life?',
-        'How have you seen God\'s presence in difficult times before?',
-        'What would it look like to trust God even when the storm hasn\'t calmed yet?',
-      ],
-      id: [
-        'Apa "badai" yang sedang kamu hadapi dalam hidupmu saat ini?',
-        'Bagaimana kamu melihat kehadiran Tuhan dalam masa-masa sulit sebelumnya?',
-        'Seperti apa mempercayai Tuhan bahkan ketika badai belum reda?',
-      ],
-    },
-    prayer: {
-      en: 'Lord Jesus, thank You for being in the boat with me. When I face storms that shake my faith, remind me of Your presence. Calm the anxiety in my heart and help me trust that You are working even when I cannot see it. Give me peace that surpasses understanding. In Your name, Amen.',
-      id: 'Tuhan Yesus, terima kasih karena Engkau ada di perahu bersamaku. Ketika aku menghadapi badai yang mengguncang imanku, ingatkan aku akan kehadiran-Mu. Tenangkan kecemasan di hatiku dan tolonglah aku percaya bahwa Engkau bekerja bahkan ketika aku tidak dapat melihatnya. Berikan aku damai yang melampaui segala akal. Dalam nama-Mu, Amin.',
-    },
     author: {
-      name: 'Pastor Michael Chen',
-      title: 'Lead Pastor',
+      en: 'Pastor Michael Chen',
+      id: 'Pendeta Michael Chen',
     },
-    imageUrl: 'https://images.unsplash.com/photo-1527004013197-933c4bb611b3?w=800&q=80',
-    category: 'Faith & Trust',
-    readTime: '4 min',
-    date: '2025-01-15',
-    completed: false,
+    summary: {
+      en: 'Jesus brings peace to life\'s storms, not just outside but inside our hearts.',
+      id: 'Yesus membawa damai dalam badai kehidupan, bukan hanya di luar tetapi di dalam hati kita.',
+    },
+    main_verse: createBibleRef('Mark', 4, 39, undefined, 'NIV', 'He got up, rebuked the wind and said to the waves, "Quiet! Be still!" Then the wind died down and it was completely calm.'),
+    additional_verses: [
+      createBibleRef('Isaiah', 41, 10, undefined, 'NIV', 'So do not fear, for I am with you; do not be dismayed, for I am your God.'),
+      createBibleRef('Philippians', 4, 6, 7, 'NIV', 'Do not be anxious about anything, but in every situation, by prayer and petition, with thanksgiving, present your requests to God.'),
+    ],
+    reading_time_minutes: 4,
+    tags: ['peace', 'faith', 'trust', 'storms'],
+    image_url: 'https://images.unsplash.com/photo-1527004013197-933c4bb611b3?w=800&q=80',
+    ai_generated: false,
+    status: 'published',
+    version: 1,
+    published_at: '2025-01-15T00:00:00Z',
+    created_by: 'system',
+    created_at: '2025-01-14T10:00:00Z',
+    deleted: false,
   },
   {
     id: 'dev_002',
+    scope: 'global',
     title: {
       en: 'The Power of Consistent Prayer',
       id: 'Kuasa Doa yang Konsisten',
@@ -122,38 +149,29 @@ Konsistensi dalam doa bukan tentang mengesankan Tuhan. Ini tentang mengubahmu. S
 
 Jangan menyerah. Terus berdoa. Terus mencari. Terus mengetuk. Kegigihan setia yang kamu tunjukkan hari ini sedang membangun warisan doa yang akan berdampak bukan hanya pada hidupmu, tetapi generasi yang akan datang.`,
     },
-    mainVerse: {
-      reference: 'Luke 18:1',
-      text: {
-        en: 'Then Jesus told his disciples a parable to show them that they should always pray and not give up.',
-        id: 'Yesus mengatakan kepada mereka suatu perumpamaan untuk mengajarkan, bahwa mereka harus selalu berdoa dengan tidak jemu-jemu.',
-      },
-    },
-    reflectionQuestions: {
-      en: [
-        'How consistent is your current prayer life? Daily, weekly, or only in emergencies?',
-        'What's preventing you from praying more consistently?',
-        'What would change in your life if you committed to daily prayer for the next 30 days?',
-      ],
-      id: [
-        'Seberapa konsisten kehidupan doamu saat ini? Harian, mingguan, atau hanya dalam keadaan darurat?',
-        'Apa yang menghalangimu untuk berdoa lebih konsisten?',
-        'Apa yang akan berubah dalam hidupmu jika kamu berkomitmen untuk berdoa setiap hari selama 30 hari ke depan?',
-      ],
-    },
-    prayer: {
-      en: 'Heavenly Father, forgive me for treating prayer as a last resort instead of my first response. Help me build a consistent prayer life that draws me closer to You every single day. Teach me to pray with faith and persistence, knowing that You hear every word. Give me the discipline to keep praying even when I don\'t see immediate answers. In Jesus\' name, Amen.',
-      id: 'Bapa Surgawi, ampuni aku karena memperlakukan doa sebagai pilihan terakhir alih-alih respons pertamaku. Tolonglah aku membangun kehidupan doa yang konsisten yang mendekatkan aku kepada-Mu setiap hari. Ajarlah aku berdoa dengan iman dan ketekunan, mengetahui bahwa Engkau mendengar setiap kata. Berikan aku disiplin untuk terus berdoa bahkan ketika aku tidak melihat jawaban segera. Dalam nama Yesus, Amin.',
-    },
     author: {
-      name: 'Pastor Sarah Johnson',
-      title: 'Prayer Ministry Leader',
+      en: 'Pastor Sarah Johnson',
+      id: 'Pendeta Sarah Johnson',
     },
-    imageUrl: 'https://images.unsplash.com/photo-1490730141103-6cac27aaab94?w=800&q=80',
-    category: 'Prayer & Worship',
-    readTime: '5 min',
-    date: '2025-01-16',
-    completed: true,
+    summary: {
+      en: 'Consistency in prayer transforms us and builds a legacy of faith.',
+      id: 'Konsistensi dalam doa mengubah kita dan membangun warisan iman.',
+    },
+    main_verse: createBibleRef('Luke', 18, 1, undefined, 'NIV', 'Then Jesus told his disciples a parable to show them that they should always pray and not give up.'),
+    additional_verses: [
+      createBibleRef('Daniel', 6, 10, undefined, 'NIV', 'Three times a day he got down on his knees and prayed, giving thanks to his God.'),
+      createBibleRef('1 Thessalonians', 5, 17, undefined, 'NIV', 'Pray continually.'),
+    ],
+    reading_time_minutes: 5,
+    tags: ['prayer', 'persistence', 'faith', 'spiritual discipline'],
+    image_url: 'https://images.unsplash.com/photo-1490730141103-6cac27aaab94?w=800&q=80',
+    ai_generated: false,
+    status: 'published',
+    version: 1,
+    published_at: '2025-01-16T00:00:00Z',
+    created_by: 'system',
+    created_at: '2025-01-15T10:00:00Z',
+    deleted: false,
   },
 ];
 
@@ -161,118 +179,76 @@ Jangan menyerah. Terus berdoa. Terus mencari. Terus mengetuk. Kegigihan setia ya
 // VERSE OF THE DAY
 // ============================================================================
 
-export const mockVersesOfTheDay = [
+export const mockVersesOfTheDay: VerseOfTheDay[] = [
   {
     id: 'verse_001',
-    mainVerse: {
-      reference: 'Philippians 4:6-7',
-      text: {
-        en: 'Do not be anxious about anything, but in every situation, by prayer and petition, with thanksgiving, present your requests to God. And the peace of God, which transcends all understanding, will guard your hearts and your minds in Christ Jesus.',
-        id: 'Janganlah hendaknya kamu kuatir tentang apapun juga, tetapi nyatakanlah dalam segala hal keinginanmu kepada Allah dalam doa dan permohonan dengan ucapan syukur. Damai sejahtera Allah, yang melampaui segala akal, akan memelihara hati dan pikiranmu dalam Kristus Yesus.',
-      },
+    scope: 'global',
+    verse: createBibleRef('Philippians', 4, 6, 7),
+    verse_text: {
+      en: 'Do not be anxious about anything, but in every situation, by prayer and petition, with thanksgiving, present your requests to God. And the peace of God, which transcends all understanding, will guard your hearts and your minds in Christ Jesus.',
+      id: 'Janganlah hendaknya kamu kuatir tentang apa pun juga, tetapi nyatakanlah dalam segala hal keinginanmu kepada Allah dalam doa dan permohonan dengan ucapan syukur. Damai sejahtera Allah, yang melampaui segala akal, akan memelihara hati dan pikiranmu dalam Kristus Yesus.',
     },
-    reflection: {
+    commentary: {
       en: `Anxiety is like a rocking chair—it gives you something to do but doesn't get you anywhere. Paul's instruction here isn't "stop worrying" (which feels impossible). Instead, he gives us a specific action: bring everything to God in prayer.
 
 Notice the progression: Don't be anxious → Pray about everything → Experience God's peace. It's not magic, it's a relationship. When we bring our worries to God instead of carrying them ourselves, His supernatural peace begins to guard our hearts like a soldier standing watch.
 
-The peace Paul describes isn't the absence of problems—it's the presence of God in the midst of problems. It "transcends all understanding" because it doesn't make logical sense. Your circumstances might not change, but your internal state can be transformed.
-
-Today, whatever is causing you anxiety—finances, relationships, health, future—don't just worry about it. Pray about it. Specifically. Honestly. With thanksgiving (yes, even in hard times, we can thank God for His faithfulness).
-
-Then watch as His peace, which your mind can't fully comprehend, begins to stand guard over your heart and mind. This is God's promise to you today.`,
+The peace Paul describes isn't the absence of problems—it's the presence of God in the midst of problems.`,
       id: `Kecemasan seperti kursi goyang—memberimu sesuatu untuk dilakukan tetapi tidak membawamu ke mana-mana. Instruksi Paulus di sini bukan "berhenti khawatir" (yang terasa mustahil). Sebaliknya, dia memberi kita tindakan spesifik: bawa semuanya kepada Tuhan dalam doa.
 
 Perhatikan perkembangannya: Jangan kuatir → Berdoalah tentang segalanya → Alami damai Tuhan. Ini bukan sihir, ini hubungan. Ketika kita membawa kekhawatiran kita kepada Tuhan alih-alih memikulnya sendiri, damai supernatural-Nya mulai menjaga hati kita seperti prajurit yang berjaga.
 
-Damai yang digambarkan Paulus bukan ketiadaan masalah—melainkan kehadiran Tuhan di tengah masalah. Itu "melampaui segala akal" karena tidak masuk akal secara logis. Keadaanmu mungkin tidak berubah, tetapi kondisi internalmu dapat diubah.
-
-Hari ini, apa pun yang menyebabkanmu cemas—keuangan, hubungan, kesehatan, masa depan—jangan hanya khawatir tentang itu. Berdoalah tentang itu. Secara spesifik. Jujur. Dengan ucapan syukur (ya, bahkan di masa-masa sulit, kita bisa mengucap syukur kepada Tuhan atas kesetiaan-Nya).
-
-Kemudian saksikan bagaimana damai-Nya, yang pikiranmu tidak bisa sepenuhnya memahami, mulai berjaga atas hati dan pikiranmu. Ini adalah janji Tuhan untukmu hari ini.`,
+Damai yang digambarkan Paulus bukan ketiadaan masalah—melainkan kehadiran Tuhan di tengah masalah.`,
     },
-    prayerPoints: {
-      en: [
-        'Ask God to help you identify the source of your anxiety today',
-        'Bring each worry to Him specifically, naming them out loud if helpful',
-        'Thank Him for His faithfulness in past situations',
-        'Ask for His supernatural peace to guard your heart and mind',
-      ],
-      id: [
-        'Minta Tuhan untuk membantumu mengidentifikasi sumber kecemasanmu hari ini',
-        'Bawa setiap kekhawatiran kepada-Nya secara spesifik, sebutkan dengan keras jika membantu',
-        'Ucapkan syukur kepada-Nya atas kesetiaan-Nya di situasi-situasi masa lalu',
-        'Minta damai supernatural-Nya untuk menjaga hati dan pikiranmu',
-      ],
+    reflection_prompt: {
+      en: 'What worry are you carrying today that you can bring to God in prayer?',
+      id: 'Kekhawatiran apa yang kamu pikul hari ini yang dapat kamu bawa kepada Tuhan dalam doa?',
     },
-    application: {
-      en: `Practical step: Create an "anxiety journal" today. When you feel anxious, write down specifically what you're worried about. Then pray about it and write "Given to God" with the date. When that situation resolves, go back and write how God answered. This builds a record of God's faithfulness that strengthens your faith for future challenges.`,
-      id: `Langkah praktis: Buat "jurnal kecemasan" hari ini. Ketika kamu merasa cemas, tuliskan secara spesifik apa yang kamu khawatirkan. Kemudian berdoalah tentang itu dan tulis "Diberikan kepada Tuhan" dengan tanggalnya. Ketika situasi itu terselesaikan, kembali dan tulis bagaimana Tuhan menjawab. Ini membangun catatan kesetiaan Tuhan yang memperkuat imanmu untuk tantangan masa depan.`,
-    },
-    theme: 'Peace & Anxiety',
-    imageUrl: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80',
-    date: '2025-01-15',
-    completed: false,
+    background_image_url: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80',
+    background_color: '#1e3a5f',
+    ai_generated: false,
+    status: 'published',
+    published_at: '2025-01-15T00:00:00Z',
+    created_by: 'system',
+    created_at: '2025-01-14T08:00:00Z',
+    deleted: false,
   },
   {
     id: 'verse_002',
-    mainVerse: {
-      reference: 'Proverbs 3:5-6',
-      text: {
-        en: 'Trust in the LORD with all your heart and lean not on your own understanding; in all your ways submit to him, and he will make your paths straight.',
-        id: 'Percayalah kepada TUHAN dengan segenap hatimu, dan janganlah bersandar kepada pengertianmu sendiri. Akuilah Dia dalam segala lakumu, maka Ia akan meluruskan jalanmu.',
-      },
+    scope: 'global',
+    verse: createBibleRef('Proverbs', 3, 5, 6),
+    verse_text: {
+      en: 'Trust in the LORD with all your heart and lean not on your own understanding; in all your ways submit to him, and he will make your paths straight.',
+      id: 'Percayalah kepada TUHAN dengan segenap hatimu, dan janganlah bersandar kepada pengertianmu sendiri. Akuilah Dia dalam segala lakumu, maka Ia akan meluruskan jalanmu.',
     },
-    reflection: {
+    commentary: {
       en: `"Lean not on your own understanding" might be one of the hardest commands in Scripture. We've been trained to analyze, strategize, and figure things out. Our culture worships the self-made person who pulls themselves up by their bootstraps.
 
 But God calls us to something radically different: dependence.
 
-Notice it says "all your heart"—not most of it, not when it's convenient. All of it. This means there's no backup plan where you trust yourself if God doesn't come through. It means burning the ships and saying, "God, You're my only option."
+Notice it says "all your heart"—not most of it, not when it's convenient. All of it. This means there's no backup plan where you trust yourself if God doesn't come through.
 
-The second part is equally important: "In all your ways submit to him." Not just the big decisions—career, marriage, where to live. ALL your ways. The mundane Monday morning commute. The difficult conversation with your boss. The parenting decision about screen time. Everything.
-
-When you acknowledge God in all your ways, something supernatural happens: He makes your paths straight. Not necessarily easy, but straight. The confusion clears. The direction becomes evident. The peace settles.
-
-Maybe you're at a crossroads today, trying to figure out which path to take. Stop leaning on your own limited understanding. Surrender it fully to God. Trust Him even when it doesn't make sense. He sees the full map; you only see the next step.
-
-His guidance is perfect. His timing is perfect. His ways are higher than yours. Trust Him today.`,
+When you acknowledge God in all your ways, something supernatural happens: He makes your paths straight. Not necessarily easy, but straight.`,
       id: `"Janganlah bersandar kepada pengertianmu sendiri" mungkin salah satu perintah tersulit dalam Kitab Suci. Kita telah dilatih untuk menganalisis, menyusun strategi, dan memahami sesuatu. Budaya kita menyembah orang yang mandiri yang mengangkat diri mereka sendiri.
 
 Tapi Tuhan memanggil kita pada sesuatu yang sangat berbeda: ketergantungan.
 
-Perhatikan itu mengatakan "segenap hatimu"—bukan sebagian besar, bukan saat nyaman. Semuanya. Ini berarti tidak ada rencana cadangan di mana kamu mempercayai dirimu sendiri jika Tuhan tidak datang. Ini berarti membakar kapal-kapal dan berkata, "Tuhan, Engkau satu-satunya pilihanku."
+Perhatikan itu mengatakan "segenap hatimu"—bukan sebagian besar, bukan saat nyaman. Semuanya. Ini berarti tidak ada rencana cadangan di mana kamu mempercayai dirimu sendiri jika Tuhan tidak datang.
 
-Bagian kedua sama pentingnya: "Akuilah Dia dalam segala lakumu." Bukan hanya keputusan besar—karir, pernikahan, di mana tinggal. SEMUA lakumu. Perjalanan Senin pagi yang biasa-biasa saja. Percakapan sulit dengan bosmu. Keputusan pengasuhan tentang waktu layar. Semuanya.
-
-Ketika kamu mengakui Tuhan dalam segala lakumu, sesuatu yang supernatural terjadi: Dia meluruskan jalanmu. Tidak harus mudah, tetapi lurus. Kebingungan hilang. Arah menjadi jelas. Damai menetap.
-
-Mungkin kamu berada di persimpangan jalan hari ini, mencoba mencari tahu jalan mana yang harus diambil. Berhentilah bersandar pada pengertianmu yang terbatas. Serahkan sepenuhnya kepada Tuhan. Percayalah pada-Nya bahkan ketika itu tidak masuk akal. Dia melihat peta lengkapnya; kamu hanya melihat langkah selanjutnya.
-
-Bimbingan-Nya sempurna. Waktu-Nya sempurna. Jalan-jalan-Nya lebih tinggi dari jalanmu. Percayalah pada-Nya hari ini.`,
+Ketika kamu mengakui Tuhan dalam segala lakumu, sesuatu yang supernatural terjadi: Dia meluruskan jalanmu. Tidak harus mudah, tetapi lurus.`,
     },
-    prayerPoints: {
-      en: [
-        'Surrender any area where you\'ve been relying on your own understanding',
-        'Ask God for His wisdom and guidance in specific decisions you\'re facing',
-        'Thank Him that His ways are higher and better than yours',
-        'Commit to following His leading even when it doesn\'t make sense',
-      ],
-      id: [
-        'Serahkan area mana pun di mana kamu telah mengandalkan pengertianmu sendiri',
-        'Minta Tuhan untuk hikmat dan bimbingan-Nya dalam keputusan spesifik yang kamu hadapi',
-        'Ucapkan syukur kepada-Nya bahwa jalan-jalan-Nya lebih tinggi dan lebih baik dari jalanmu',
-        'Berkomitmen untuk mengikuti pimpinan-Nya bahkan ketika itu tidak masuk akal',
-      ],
+    reflection_prompt: {
+      en: 'What area of your life are you still trying to control instead of trusting God?',
+      id: 'Area mana dari hidupmu yang masih kamu coba kendalikan alih-alih mempercayai Tuhan?',
     },
-    application: {
-      en: `Practical step: For every major decision this week, pause before acting and ask: "God, what do You want me to do here?" Then listen. Don't just tell God your plans and ask Him to bless them. Ask for His plans first, then follow His lead.`,
-      id: `Langkah praktis: Untuk setiap keputusan besar minggu ini, jeda sebelum bertindak dan tanyakan: "Tuhan, apa yang Engkau ingin aku lakukan di sini?" Kemudian dengarkan. Jangan hanya memberitahu Tuhan rencanamu dan meminta Dia untuk memberkatinya. Mintalah rencana-Nya terlebih dahulu, lalu ikuti pimpinan-Nya.`,
-    },
-    theme: 'Trust & Guidance',
-    imageUrl: 'https://images.unsplash.com/photo-1513002749550-c59d786b8e6c?w=800&q=80',
-    date: '2025-01-16',
-    completed: false,
+    background_image_url: 'https://images.unsplash.com/photo-1513002749550-c59d786b8e6c?w=800&q=80',
+    background_color: '#2d4a3e',
+    ai_generated: false,
+    status: 'published',
+    published_at: '2025-01-16T00:00:00Z',
+    created_by: 'system',
+    created_at: '2025-01-15T08:00:00Z',
+    deleted: false,
   },
 ];
 
@@ -280,9 +256,10 @@ Bimbingan-Nya sempurna. Waktu-Nya sempurna. Jalan-jalan-Nya lebih tinggi dari ja
 // BIBLE FIGURES
 // ============================================================================
 
-export const mockBibleFigures = [
+export const mockBibleFigures: BibleFigure[] = [
   {
     id: 'figure_001',
+    scope: 'global',
     name: {
       en: 'David',
       id: 'Daud',
@@ -291,201 +268,159 @@ export const mockBibleFigures = [
       en: 'The Shepherd King',
       id: 'Raja Gembala',
     },
-    testament: 'Old Testament',
     summary: {
-      en: 'From shepherd boy to king of Israel, David\'s life shows us that God looks at the heart, not outward appearance. Despite his failures, he\'s remembered as "a man after God\'s own heart."',
-      id: 'Dari anak gembala menjadi raja Israel, kehidupan Daud menunjukkan kepada kita bahwa Tuhan melihat hati, bukan penampilan luar. Meski pun dengan kegagalannya, dia dikenang sebagai "orang yang berkenan di hati Tuhan."',
+      en: "From shepherd boy to king of Israel, David's life shows us that God looks at the heart, not outward appearance. Despite his failures, he's remembered as \"a man after God's own heart.\"",
+      id: 'Dari anak gembala menjadi raja Israel, kehidupan Daud menunjukkan kepada kita bahwa Tuhan melihat hati, bukan penampilan luar. Meskipun dengan kegagalannya, dia dikenang sebagai "orang yang berkenan di hati Tuhan."',
     },
-    fullBio: {
+    full_story: {
       en: `David's story is one of the most compelling in the Bible—a shepherd boy who became a warrior, a fugitive, a king, a psalmist, and ultimately an ancestor of Jesus Christ himself.
 
 Born the youngest of eight sons in Bethlehem, David was so overlooked that when the prophet Samuel came to anoint the next king of Israel, his father Jesse didn't even bother to bring him in from the fields. But God told Samuel, "The LORD does not look at the things people look at. People look at the outward appearance, but the LORD looks at the heart." David was chosen that day, though he wouldn't become king for another 15 years.
 
-As a teenager, David gained national fame by defeating the Philistine giant Goliath with just a sling and five smooth stones. While Israel's trained soldiers trembled in fear, this shepherd boy had faith that God would deliver the enemy into his hands. His confidence wasn't in his own ability but in God's power.
+As a teenager, David gained national fame by defeating the Philistine giant Goliath with just a sling and five smooth stones. While Israel's trained soldiers trembled in fear, this shepherd boy had faith that God would deliver the enemy into his hands.
 
-David's rise to prominence brought him into the orbit of King Saul, who made him a commander in his army. David became best friends with Saul's son Jonathan and married Saul's daughter Michal. But Saul's jealousy turned deadly when he heard people singing, "Saul has slain his thousands, and David his tens of thousands." For years, David lived as a fugitive, hunted by the very king he served.
+David's rise to prominence brought him into the orbit of King Saul, who made him a commander in his army. But Saul's jealousy turned deadly when he heard people singing, "Saul has slain his thousands, and David his tens of thousands." For years, David lived as a fugitive.
 
-During this wilderness season, David had multiple opportunities to kill Saul and take the throne by force. But he refused, saying, "I will not lift my hand against the LORD's anointed." This showed David's character—he trusted God's timing rather than taking matters into his own hands.
+When Saul finally died in battle, David became king at age 30. He conquered Jerusalem and made it his capital. More than his military victories, David is remembered for his heart of worship. He wrote at least half of the Psalms.
 
-When Saul finally died in battle, David became king at age 30. He conquered Jerusalem and made it his capital. He brought the Ark of the Covenant back to Jerusalem with great celebration. He extended Israel's borders and established the nation as a regional power. But more than his military victories, David is remembered for his heart of worship. He wrote at least half of the Psalms, pouring out his honest emotions to God—praise, lament, confession, thanksgiving.
+David's greatest failure came when he committed adultery with Bathsheba and arranged for her husband Uriah to be killed. When confronted by the prophet Nathan, David confessed, "I have sinned against the LORD." Psalm 51 records his broken, repentant heart.
 
-David's greatest failure came when he committed adultery with Bathsheba and arranged for her husband Uriah to be killed in battle. When confronted by the prophet Nathan, David could have used his power to silence the prophet. Instead, he confessed, "I have sinned against the LORD." Psalm 51 records his broken, repentant heart. This sin had lasting consequences—David's family was plagued by violence and betrayal—but God forgave him.
+What made David "a man after God's own heart" wasn't perfection. It was his authentic relationship with God. When he sinned, he genuinely repented. When he worshiped, he held nothing back.
 
-What made David "a man after God's own heart" wasn't perfection. It was his authentic relationship with God. When he sinned, he genuinely repented. When he worshiped, he held nothing back (even dancing in the streets in his underwear, much to his wife's embarrassment). When he faced enemies, he relied on God's strength. When he wrote psalms, he was brutally honest about his fears, doubts, and struggles.
-
-God made an eternal covenant with David, promising that his throne would be established forever. This promise was ultimately fulfilled in Jesus Christ, who was called "Son of David" and whose kingdom will have no end.
-
-David's life teaches us that God can use imperfect people who have sincere hearts. Our failures don't disqualify us from God's purposes if we genuinely repent and return to Him. Like David, we can bring our whole selves to God—our victories and failures, our worship and doubts, our strength and weakness.`,
+God made an eternal covenant with David, promising that his throne would be established forever. This promise was ultimately fulfilled in Jesus Christ, who was called "Son of David."`,
       id: `Kisah Daud adalah salah satu yang paling menarik dalam Alkitab—seorang anak gembala yang menjadi pejuang, buronan, raja, pemazmur, dan akhirnya leluhur Yesus Kristus sendiri.
 
 Lahir sebagai anak bungsu dari delapan bersaudara di Betlehem, Daud begitu diabaikan sehingga ketika nabi Samuel datang untuk mengurapi raja Israel berikutnya, ayahnya Isai bahkan tidak repot-repot membawanya dari padang. Tetapi Tuhan berkata kepada Samuel, "TUHAN tidak memandang apa yang dilihat manusia: manusia melihat apa yang di depan mata, tetapi TUHAN melihat hati." Daud dipilih hari itu, meskipun dia tidak akan menjadi raja selama 15 tahun lagi.
 
-Sebagai remaja, Daud mendapat ketenaran nasional dengan mengalahkan raksasa Filistin Goliat hanya dengan umban dan lima batu licin. Sementara tentara terlatih Israel gemetar ketakutan, anak gembala ini memiliki iman bahwa Tuhan akan menyerahkan musuh ke tangannya. Kepercayaan dirinya bukan pada kemampuannya sendiri tetapi pada kuasa Tuhan.
+Sebagai remaja, Daud mendapat ketenaran nasional dengan mengalahkan raksasa Filistin Goliat hanya dengan umban dan lima batu licin. Sementara tentara terlatih Israel gemetar ketakutan, anak gembala ini memiliki iman bahwa Tuhan akan menyerahkan musuh ke tangannya.
 
-Kebangkitan Daud membawanya ke orbit Raja Saul, yang menjadikannya komandan di pasukannya. Daud menjadi sahabat karib dengan anak Saul, Yonatan, dan menikahi putri Saul, Mikhal. Tetapi kecemburuan Saul berubah mematikan ketika dia mendengar orang bernyanyi, "Saul mengalahkan beribu-ribu, tetapi Daud berlaksa-laksa." Selama bertahun-tahun, Daud hidup sebagai buronan, diburu oleh raja yang dia layani.
+Kebangkitan Daud membawanya ke orbit Raja Saul, yang menjadikannya komandan di pasukannya. Tetapi kecemburuan Saul berubah mematikan ketika dia mendengar orang bernyanyi, "Saul mengalahkan beribu-ribu, tetapi Daud berlaksa-laksa." Selama bertahun-tahun, Daud hidup sebagai buronan.
 
-Selama musim padang gurun ini, Daud memiliki beberapa kesempatan untuk membunuh Saul dan mengambil takhta dengan paksa. Tetapi dia menolak, berkata, "Aku tidak akan mengangkat tanganku melawan orang yang diurapi TUHAN." Ini menunjukkan karakter Daud—dia mempercayai waktu Tuhan daripada mengambil masalah ke tangannya sendiri.
+Ketika Saul akhirnya mati dalam pertempuran, Daud menjadi raja pada usia 30 tahun. Dia menaklukkan Yerusalem dan menjadikannya ibukotanya. Lebih dari kemenangan militernya, Daud dikenang karena hati penyembahannya. Dia menulis setidaknya setengah dari Mazmur.
 
-Ketika Saul akhirnya mati dalam pertempuran, Daud menjadi raja pada usia 30 tahun. Dia menaklukkan Yerusalem dan menjadikannya ibukotanya. Dia membawa Tabut Perjanjian kembali ke Yerusalem dengan perayaan besar. Dia memperluas perbatasan Israel dan menetapkan bangsa itu sebagai kekuatan regional. Tetapi lebih dari kemenangan militernya, Daud dikenang karena hati penyembahannya. Dia menulis setidaknya setengah dari Mazmur, mencurahkan emosi jujurnya kepada Tuhan—pujian, ratapan, pengakuan, ucapan syukur.
+Kegagalan terbesar Daud datang ketika dia berzina dengan Batsyeba dan mengatur agar suaminya Uria dibunuh. Ketika dikonfrontasi oleh nabi Natan, Daud mengaku, "Aku telah berdosa terhadap TUHAN." Mazmur 51 mencatat hatinya yang hancur dan bertobat.
 
-Kegagalan terbesar Daud datang ketika dia berzina dengan Batsyeba dan mengatur agar suaminya Uria dibunuh dalam pertempuran. Ketika dikonfrontasi oleh nabi Natan, Daud bisa menggunakan kekuasaannya untuk membungkam nabi. Sebaliknya, dia mengaku, "Aku telah berdosa terhadap TUHAN." Mazmur 51 mencatat hatinya yang hancur dan bertobat. Dosa ini memiliki konsekuensi yang bertahan lama—keluarga Daud dilanda kekerasan dan pengkhianatan—tetapi Tuhan mengampuninya.
+Apa yang membuat Daud "orang yang berkenan di hati Tuhan" bukanlah kesempurnaan. Itu adalah hubungannya yang autentik dengan Tuhan. Ketika dia berdosa, dia benar-benar bertobat. Ketika dia menyembah, dia tidak menahan apa-apa.
 
-Apa yang membuat Daud "orang yang berkenan di hati Tuhan" bukanlah kesempurnaan. Itu adalah hubungannya yang autentik dengan Tuhan. Ketika dia berdosa, dia benar-benar bertobat. Ketika dia menyembah, dia tidak menahan apa-apa (bahkan menari di jalan-jalan dengan pakaian dalamnya, membuat istrinya malu). Ketika dia menghadapi musuh, dia mengandalkan kekuatan Tuhan. Ketika dia menulis mazmur, dia sangat jujur tentang ketakutan, keraguan, dan perjuangannya.
-
-Tuhan membuat perjanjian abadi dengan Daud, berjanji bahwa takhtanya akan ditegakkan selamanya. Janji ini akhirnya digenapi dalam Yesus Kristus, yang disebut "Anak Daud" dan yang kerajaan-Nya tidak akan berakhir.
-
-Kehidupan Daud mengajar kita bahwa Tuhan dapat menggunakan orang yang tidak sempurna yang memiliki hati yang tulus. Kegagalan kita tidak mendiskualifikasi kita dari tujuan Tuhan jika kita benar-benar bertobat dan kembali kepada-Nya. Seperti Daud, kita dapat membawa seluruh diri kita kepada Tuhan—kemenangan dan kegagalan kita, penyembahan dan keraguan kita, kekuatan dan kelemahan kita.`,
+Tuhan membuat perjanjian abadi dengan Daud, berjanji bahwa takhtanya akan ditegakkan selamanya. Janji ini akhirnya digenapi dalam Yesus Kristus, yang disebut "Anak Daud."`,
     },
-    timelineEvents: [
+    key_verses: [
+      createBibleRef('1 Samuel', 16, 7),
+      createBibleRef('1 Samuel', 17, 45, 47),
+      createBibleRef('2 Samuel', 7, 16),
+      createBibleRef('Psalm', 51, 1, 4),
+    ],
+    key_lessons: {
+      en: 'God looks at the heart, not outward appearance. Authentic worship involves bringing our whole selves to God. Genuine repentance restores relationship with God.',
+      id: 'Tuhan melihat hati, bukan penampilan luar. Penyembahan yang autentik melibatkan membawa seluruh diri kita kepada Tuhan. Pertobatan yang tulus memulihkan hubungan dengan Tuhan.',
+    },
+    time_period: {
+      en: '1040-970 BC',
+      id: '1040-970 SM',
+    },
+    image_url: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800&q=80',
+    related_figure_ids: ['figure_002'],
+    related_study_ids: ['study_001'],
+    ai_generated: false,
+    status: 'published',
+    published_at: '2025-01-15T00:00:00Z',
+    created_by: 'system',
+    created_at: '2025-01-14T10:00:00Z',
+    deleted: false,
+    // Extended BibleFigure fields
+    biography: {
+      en: `David, whose name means "beloved," remains one of the most significant figures in biblical history. Born around 1040 BC in Bethlehem, he was the youngest of eight sons of Jesse, a farmer from the tribe of Judah. As a shepherd boy, David developed the skills and faith that would later define his life—protecting his father's flock from lions and bears, and composing songs of worship under the stars.
+
+God chose David when he was just a teenager, sending the prophet Samuel to anoint him as Israel's future king. Unlike Saul, who looked the part of a king, David's anointing revealed God's perspective: "The LORD does not look at the things people look at. People look at the outward appearance, but the LORD looks at the heart" (1 Samuel 16:7).
+
+David's legendary defeat of Goliath showcased both his courage and his deep trust in God. While King Saul and the entire Israelite army cowered before the Philistine giant, young David declared, "The battle is the LORD's, and he will give all of you into our hands" (1 Samuel 17:47).
+
+After years of running from the jealous King Saul, David finally ascended to the throne at age 30. He reigned for 40 years, first over Judah alone and then over all Israel. He conquered Jerusalem and made it the nation's capital, establishing a dynasty that would endure for centuries.
+
+David was also a gifted musician and poet, credited with writing at least 73 of the 150 Psalms. These songs express the full range of human emotion—from despair to joy, from repentance to praise—and continue to comfort and inspire believers today.
+
+Yet David was far from perfect. His adultery with Bathsheba and the murder of her husband Uriah represent his greatest moral failures. But what distinguished David was his genuine repentance. When confronted by the prophet Nathan, David didn't make excuses—he confessed, "I have sinned against the LORD" (2 Samuel 12:13). Psalm 51 captures his broken and contrite heart.
+
+God's covenant with David promised that his throne would be established forever—a promise ultimately fulfilled in Jesus Christ, who is called "Son of David" and whose kingdom has no end.`,
+      id: `Daud, yang namanya berarti "yang dikasihi," tetap menjadi salah satu tokoh paling signifikan dalam sejarah Alkitab. Lahir sekitar 1040 SM di Betlehem, dia adalah anak bungsu dari delapan putra Isai, seorang petani dari suku Yehuda. Sebagai anak gembala, Daud mengembangkan keterampilan dan iman yang kemudian mendefinisikan hidupnya—melindungi kawanan ayahnya dari singa dan beruang, dan menyusun lagu-lagu penyembahan di bawah bintang-bintang.
+
+Tuhan memilih Daud ketika dia masih remaja, mengirim nabi Samuel untuk mengurapinya sebagai raja Israel masa depan. Tidak seperti Saul, yang terlihat seperti seorang raja, pengurapan Daud mengungkapkan perspektif Tuhan: "TUHAN tidak memandang apa yang dilihat manusia: manusia melihat apa yang di depan mata, tetapi TUHAN melihat hati" (1 Samuel 16:7).
+
+Kemenangan legendaris Daud atas Goliat menunjukkan keberanian dan kepercayaannya yang dalam kepada Tuhan. Sementara Raja Saul dan seluruh tentara Israel ciut di hadapan raksasa Filistin, Daud muda menyatakan, "Peperangan adalah milik TUHAN, dan Ia akan menyerahkan kamu semua ke dalam tangan kami" (1 Samuel 17:47).
+
+Setelah bertahun-tahun melarikan diri dari Raja Saul yang cemburu, Daud akhirnya naik takhta pada usia 30 tahun. Dia memerintah selama 40 tahun, pertama atas Yehuda saja dan kemudian atas seluruh Israel. Dia menaklukkan Yerusalem dan menjadikannya ibukota bangsa, mendirikan dinasti yang akan bertahan selama berabad-abad.
+
+Daud juga seorang musisi dan penyair berbakat, dikreditkan menulis setidaknya 73 dari 150 Mazmur. Lagu-lagu ini mengekspresikan berbagai emosi manusia—dari keputusasaan hingga sukacita, dari pertobatan hingga pujian—dan terus menghibur dan menginspirasi orang percaya hingga hari ini.
+
+Namun Daud jauh dari sempurna. Perzinahannya dengan Batsyeba dan pembunuhan suaminya Uria mewakili kegagalan moralnya yang terbesar. Tetapi yang membedakan Daud adalah pertobatannya yang tulus. Ketika dihadapkan oleh nabi Natan, Daud tidak membuat alasan—dia mengaku, "Aku telah berdosa terhadap TUHAN" (2 Samuel 12:13). Mazmur 51 menangkap hatinya yang hancur dan menyesal.
+
+Perjanjian Tuhan dengan Daud menjanjikan bahwa takhtanya akan ditegakkan selamanya—janji yang akhirnya digenapi dalam Yesus Kristus, yang disebut "Anak Daud" dan kerajaannya tidak ada akhirnya.`,
+    },
+    testament: 'old',
+    timeline: [
       {
-        year: '1040 BC',
-        title: {
-          en: 'Born in Bethlehem',
-          id: 'Lahir di Betlehem',
+        date: '1040 BC',
+        event: {
+          en: 'Born in Bethlehem as youngest son of Jesse',
+          id: 'Lahir di Betlehem sebagai anak bungsu Isai',
         },
-        description: {
-          en: 'Born as the youngest of eight sons to Jesse. Spent his youth as a shepherd, developing his courage and faith while protecting his flock from lions and bears.',
-          id: 'Lahir sebagai anak bungsu dari delapan bersaudara dari Isai. Menghabiskan masa mudanya sebagai gembala, mengembangkan keberanian dan imannya sambil melindungi kawanan dari singa dan beruang.',
-        },
-        scriptureReference: '1 Samuel 16:1-13',
+        verse: createBibleRef('1 Samuel', 16, 11),
       },
       {
-        year: '1025 BC',
-        title: {
-          en: 'Anointed by Samuel',
-          id: 'Diurapi oleh Samuel',
+        date: '1025 BC',
+        event: {
+          en: 'Anointed by Samuel as future king',
+          id: 'Diurapi oleh Samuel sebagai raja masa depan',
         },
-        description: {
-          en: 'Prophet Samuel secretly anoints David as the next king of Israel while he was still a teenager, though he would not take the throne for another 15 years.',
-          id: 'Nabi Samuel secara diam-diam mengurapi Daud sebagai raja Israel berikutnya saat dia masih remaja, meskipun dia tidak akan naik takhta selama 15 tahun lagi.',
-        },
-        scriptureReference: '1 Samuel 16:13',
+        verse: createBibleRef('1 Samuel', 16, 13),
       },
       {
-        year: '1024 BC',
-        title: {
-          en: 'Defeats Goliath',
-          id: 'Mengalahkan Goliat',
+        date: '1024 BC',
+        event: {
+          en: 'Defeats Goliath with sling and stone',
+          id: 'Mengalahkan Goliat dengan umban dan batu',
         },
-        description: {
-          en: 'As a young shepherd, defeats the Philistine giant Goliath with just a sling and stone, displaying remarkable faith in God\'s power. This victory made him a national hero overnight.',
-          id: 'Sebagai gembala muda, mengalahkan raksasa Filistin Goliat hanya dengan umban dan batu, menunjukkan iman yang luar biasa pada kuasa Tuhan. Kemenangan ini membuatnya menjadi pahlawan nasional dalam semalam.',
-        },
-        scriptureReference: '1 Samuel 17',
+        verse: createBibleRef('1 Samuel', 17, 50),
       },
       {
-        year: '1015 BC',
-        title: {
-          en: 'Friendship with Jonathan',
-          id: 'Persahabatan dengan Yonatan',
-        },
-        description: {
-          en: 'Forms a deep, covenantal friendship with King Saul\'s son Jonathan. Their bond becomes one of the most celebrated friendships in Scripture, with Jonathan risking his life to protect David.',
-          id: 'Membentuk persahabatan yang dalam dan berdasarkan perjanjian dengan anak Raja Saul, Yonatan. Ikatan mereka menjadi salah satu persahabatan paling terkenal dalam Kitab Suci, dengan Yonatan mempertaruhkan nyawanya untuk melindungi Daud.',
-        },
-        scriptureReference: '1 Samuel 18:1-4, 20:1-42',
-      },
-      {
-        year: '1012-1003 BC',
-        title: {
-          en: 'Years as a Fugitive',
-          id: 'Tahun-tahun sebagai Buronan',
-        },
-        description: {
-          en: 'Spends years fleeing from King Saul, who became jealous and sought to kill him. Despite having opportunities to kill Saul, David refused to harm "the LORD\'s anointed," showing his character and trust in God\'s timing.',
-          id: 'Menghabiskan bertahun-tahun melarikan diri dari Raja Saul, yang menjadi cemburu dan berusaha membunuhnya. Meskipun memiliki kesempatan untuk membunuh Saul, Daud menolak untuk menyakiti "orang yang diurapi TUHAN," menunjukkan karakternya dan kepercayaannya pada waktu Tuhan.',
-        },
-        scriptureReference: '1 Samuel 19-31',
-      },
-      {
-        year: '1010 BC',
-        title: {
+        date: '1010 BC',
+        event: {
           en: 'Becomes King of Judah',
           id: 'Menjadi Raja Yehuda',
         },
-        description: {
-          en: 'After Saul\'s death, David is anointed king over Judah at age 30. He ruled from Hebron for seven years before becoming king over all Israel.',
-          id: 'Setelah kematian Saul, Daud diurapi sebagai raja atas Yehuda pada usia 30 tahun. Dia memerintah dari Hebron selama tujuh tahun sebelum menjadi raja atas seluruh Israel.',
-        },
-        scriptureReference: '2 Samuel 2:1-4',
+        verse: createBibleRef('2 Samuel', 2, 4),
       },
       {
-        year: '1003 BC',
-        title: {
-          en: 'King of United Israel',
-          id: 'Raja Israel Bersatu',
+        date: '1003 BC',
+        event: {
+          en: 'Crowned King of all Israel',
+          id: 'Dinobatkan sebagai Raja seluruh Israel',
         },
-        description: {
-          en: 'Becomes king over all twelve tribes of Israel. Conquers Jerusalem and establishes it as his capital, bringing the Ark of the Covenant to the city with great celebration.',
-          id: 'Menjadi raja atas semua dua belas suku Israel. Menaklukkan Yerusalem dan menetapkannya sebagai ibukotanya, membawa Tabut Perjanjian ke kota dengan perayaan besar.',
-        },
-        scriptureReference: '2 Samuel 5-6',
+        verse: createBibleRef('2 Samuel', 5, 3),
       },
       {
-        year: '997 BC',
-        title: {
-          en: 'God\'s Covenant with David',
-          id: 'Perjanjian Tuhan dengan Daud',
+        date: '970 BC',
+        event: {
+          en: 'Dies after 40 years of reign',
+          id: 'Meninggal setelah 40 tahun memerintah',
         },
-        description: {
-          en: 'God makes an eternal covenant with David, promising that his throne will be established forever. This Davidic Covenant is ultimately fulfilled in Jesus Christ, the eternal King.',
-          id: 'Tuhan membuat perjanjian abadi dengan Daud, berjanji bahwa takhtanya akan ditegakkan selamanya. Perjanjian Daud ini akhirnya digenapi dalam Yesus Kristus, Raja yang kekal.',
-        },
-        scriptureReference: '2 Samuel 7',
-      },
-      {
-        year: '990 BC',
-        title: {
-          en: 'Sin with Bathsheba',
-          id: 'Dosa dengan Batsyeba',
-        },
-        description: {
-          en: 'Commits adultery with Bathsheba and arranges for her husband Uriah to be killed. When confronted by prophet Nathan, David genuinely repents. Though forgiven, the consequences affect his family for years.',
-          id: 'Berzina dengan Batsyeba dan mengatur agar suaminya Uria dibunuh. Ketika dikonfrontasi oleh nabi Natan, Daud benar-benar bertobat. Meskipun diampuni, konsekuensinya mempengaruhi keluarganya selama bertahun-tahun.',
-        },
-        scriptureReference: '2 Samuel 11-12, Psalm 51',
-      },
-      {
-        year: '970 BC',
-        title: {
-          en: 'Death and Legacy',
-          id: 'Kematian dan Warisan',
-        },
-        description: {
-          en: 'Dies at age 70 after reigning for 40 years (7 in Hebron, 33 in Jerusalem). Despite his failures, he\'s remembered as Israel\'s greatest king and "a man after God\'s own heart." His son Solomon succeeds him.',
-          id: 'Meninggal pada usia 70 tahun setelah memerintah selama 40 tahun (7 di Hebron, 33 di Yerusalem). Meskipun dengan kegagalannya, dia dikenang sebagai raja terbesar Israel dan "orang yang berkenan di hati Tuhan." Anaknya Salomo menggantikannya.',
-        },
-        scriptureReference: '1 Kings 2:10-12',
+        verse: createBibleRef('1 Kings', 2, 10, 11),
       },
     ],
-    relatedScriptures: [
-      '1 Samuel 16-31',
-      '2 Samuel 1-24',
-      '1 Chronicles 11-29',
-      'Psalms (attributed to David)',
-      'Matthew 1:1-17 (genealogy of Jesus)',
+    life_lessons: [
+      {
+        en: 'God looks at the heart, not outward appearance',
+        id: 'Tuhan melihat hati, bukan penampilan luar',
+      },
+      {
+        en: 'Genuine repentance restores relationship with God',
+        id: 'Pertobatan yang tulus memulihkan hubungan dengan Tuhan',
+      },
+      {
+        en: "Our failures don't disqualify us from God's purposes",
+        id: 'Kegagalan kita tidak mendiskualifikasi kita dari tujuan Tuhan',
+      },
     ],
-    lifeLessons: {
-      en: [
-        'God looks at the heart, not outward appearance or qualifications',
-        'Authentic worship involves bringing our whole selves—joy, pain, doubt—to God',
-        'Genuine repentance restores relationship with God, though consequences may remain',
-        'Trusting God\'s timing is better than forcing our own plans',
-        'Our failures don\'t disqualify us from God\'s purposes if we genuinely return to Him',
-        'God can use imperfect people who have sincere hearts toward Him',
-      ],
-      id: [
-        'Tuhan melihat hati, bukan penampilan luar atau kualifikasi',
-        'Penyembahan yang autentik melibatkan membawa seluruh diri kita—sukacita, rasa sakit, keraguan—kepada Tuhan',
-        'Pertobatan yang tulus memulihkan hubungan dengan Tuhan, meskipun konsekuensi mungkin tetap ada',
-        'Mempercayai waktu Tuhan lebih baik daripada memaksakan rencana kita sendiri',
-        'Kegagalan kita tidak mendiskualifikasi kita dari tujuan Tuhan jika kita benar-benar kembali kepada-Nya',
-        'Tuhan dapat menggunakan orang yang tidak sempurna yang memiliki hati yang tulus terhadap-Nya',
-      ],
-    },
-    imageUrl: 'https://images.unsplash.com/photo-1509112756310-23b18e97e15d?w=800&q=80',
-    date: '2025-01-15',
-    completed: false,
   },
 ];
 
@@ -493,364 +428,1297 @@ Kehidupan Daud mengajar kita bahwa Tuhan dapat menggunakan orang yang tidak semp
 // DAILY QUIZZES
 // ============================================================================
 
-export const mockDailyQuizzes = [
+export const mockDailyQuizzes: DailyQuiz[] = [
   {
     id: 'quiz_001',
+    scope: 'global',
     title: {
       en: 'Test Your Knowledge: The Life of Jesus',
       id: 'Uji Pengetahuanmu: Kehidupan Yesus',
     },
     description: {
-      en: 'How well do you know the Gospel accounts of Jesus\' ministry, miracles, and teachings?',
+      en: "How well do you know the Gospel accounts of Jesus' ministry, miracles, and teachings?",
       id: 'Seberapa baik kamu mengenal catatan Injil tentang pelayanan, mukjizat, dan pengajaran Yesus?',
     },
-    category: 'New Testament',
-    difficulty: 'Medium',
-    timeLimit: 300, // 5 minutes in seconds
-    passPercentage: 70,
+    theme: {
+      en: 'New Testament',
+      id: 'Perjanjian Baru',
+    },
     questions: [
       {
-        questionText: {
+        id: 'q1',
+        question: {
           en: 'In which city was Jesus born?',
           id: 'Di kota mana Yesus dilahirkan?',
         },
-        options: {
-          en: ['Nazareth', 'Bethlehem', 'Jerusalem', 'Capernaum'],
-          id: ['Nazaret', 'Betlehem', 'Yerusalem', 'Kapernaum'],
-        },
-        correctAnswer: 1, // Index 1 = Bethlehem
+        options: [
+          { en: 'Nazareth', id: 'Nazaret' },
+          { en: 'Bethlehem', id: 'Betlehem' },
+          { en: 'Jerusalem', id: 'Yerusalem' },
+          { en: 'Capernaum', id: 'Kapernaum' },
+        ],
+        correct_answer_index: 1,
         explanation: {
-          en: 'Jesus was born in Bethlehem, fulfilling the prophecy in Micah 5:2. Though Mary and Joseph lived in Nazareth, they traveled to Bethlehem for the Roman census.',
-          id: 'Yesus dilahirkan di Betlehem, menggenapi nubuatan dalam Mikha 5:2. Meskipun Maria dan Yusuf tinggal di Nazaret, mereka melakukan perjalanan ke Betlehem untuk sensus Romawi.',
+          en: 'Jesus was born in Bethlehem, fulfilling the prophecy in Micah 5:2.',
+          id: 'Yesus dilahirkan di Betlehem, menggenapi nubuatan dalam Mikha 5:2.',
         },
-        scriptureReference: 'Luke 2:4-7, Micah 5:2',
+        difficulty: 'easy',
+        related_verse: createBibleRef('Luke', 2, 4, 7),
       },
       {
-        questionText: {
+        id: 'q2',
+        question: {
           en: 'How many disciples did Jesus choose?',
           id: 'Berapa banyak murid yang dipilih Yesus?',
         },
-        options: {
-          en: ['7', '10', '12', '70'],
-          id: ['7', '10', '12', '70'],
-        },
-        correctAnswer: 2, // Index 2 = 12
+        options: [
+          { en: '7', id: '7' },
+          { en: '10', id: '10' },
+          { en: '12', id: '12' },
+          { en: '70', id: '70' },
+        ],
+        correct_answer_index: 2,
         explanation: {
-          en: 'Jesus chose 12 disciples (also called apostles) to be His closest followers and to carry on His ministry after His ascension. These 12 represented the 12 tribes of Israel.',
-          id: 'Yesus memilih 12 murid (juga disebut rasul) untuk menjadi pengikut terdekat-Nya dan untuk melanjutkan pelayanan-Nya setelah kenaikan-Nya. Kedua belas ini mewakili 12 suku Israel.',
+          en: 'Jesus chose 12 disciples to be His closest followers.',
+          id: 'Yesus memilih 12 murid untuk menjadi pengikut terdekat-Nya.',
         },
-        scriptureReference: 'Mark 3:13-19, Luke 6:13-16',
+        difficulty: 'easy',
+        related_verse: createBibleRef('Mark', 3, 13, 19),
       },
       {
-        questionText: {
-          en: 'What was Jesus\' first miracle?',
+        id: 'q3',
+        question: {
+          en: "What was Jesus' first miracle?",
           id: 'Apa mukjizat pertama Yesus?',
         },
-        options: {
-          en: [
-            'Healing a blind man',
-            'Turning water into wine',
-            'Feeding 5,000 people',
-            'Walking on water',
-          ],
-          id: [
-            'Menyembuhkan orang buta',
-            'Mengubah air menjadi anggur',
-            'Memberi makan 5.000 orang',
-            'Berjalan di atas air',
-          ],
-        },
-        correctAnswer: 1, // Index 1 = Turning water into wine
+        options: [
+          { en: 'Healing a blind man', id: 'Menyembuhkan orang buta' },
+          { en: 'Turning water into wine', id: 'Mengubah air menjadi anggur' },
+          { en: 'Feeding 5,000 people', id: 'Memberi makan 5.000 orang' },
+          { en: 'Walking on water', id: 'Berjalan di atas air' },
+        ],
+        correct_answer_index: 1,
         explanation: {
-          en: 'Jesus\' first miracle was turning water into wine at a wedding in Cana. This demonstrated His divine power and began His public ministry. His mother Mary asked Him to help when the wine ran out.',
-          id: 'Mukjizat pertama Yesus adalah mengubah air menjadi anggur di sebuah pernikahan di Kana. Ini menunjukkan kuasa ilahi-Nya dan memulai pelayanan publik-Nya. Ibu-Nya Maria meminta Dia untuk membantu ketika anggur habis.',
+          en: "Jesus' first miracle was turning water into wine at a wedding in Cana.",
+          id: 'Mukjizat pertama Yesus adalah mengubah air menjadi anggur di pernikahan di Kana.',
         },
-        scriptureReference: 'John 2:1-11',
+        difficulty: 'medium',
+        related_verse: createBibleRef('John', 2, 1, 11),
       },
       {
-        questionText: {
+        id: 'q4',
+        question: {
           en: 'Who betrayed Jesus for 30 pieces of silver?',
           id: 'Siapa yang mengkhianati Yesus dengan 30 keping perak?',
         },
-        options: {
-          en: ['Peter', 'Judas Iscariot', 'Thomas', 'Matthew'],
-          id: ['Petrus', 'Yudas Iskariot', 'Tomas', 'Matius'],
-        },
-        correctAnswer: 1, // Index 1 = Judas Iscariot
+        options: [
+          { en: 'Peter', id: 'Petrus' },
+          { en: 'Judas Iscariot', id: 'Yudas Iskariot' },
+          { en: 'Thomas', id: 'Tomas' },
+          { en: 'Matthew', id: 'Matius' },
+        ],
+        correct_answer_index: 1,
         explanation: {
-          en: 'Judas Iscariot, one of the twelve disciples, betrayed Jesus to the religious leaders for 30 pieces of silver. He identified Jesus to the arresting soldiers with a kiss in the Garden of Gethsemane.',
-          id: 'Yudas Iskariot, salah satu dari dua belas murid, mengkhianati Yesus kepada para pemimpin agama dengan 30 keping perak. Dia mengidentifikasi Yesus kepada tentara yang menangkap dengan ciuman di Taman Getsemani.',
+          en: 'Judas Iscariot betrayed Jesus to the religious leaders for 30 pieces of silver.',
+          id: 'Yudas Iskariot mengkhianati Yesus kepada para pemimpin agama dengan 30 keping perak.',
         },
-        scriptureReference: 'Matthew 26:14-16, 47-50',
+        difficulty: 'easy',
+        related_verse: createBibleRef('Matthew', 26, 14, 16),
       },
       {
-        questionText: {
-          en: 'How many days was Jesus in the tomb before He rose from the dead?',
-          id: 'Berapa hari Yesus berada di kubur sebelum Dia bangkit dari kematian?',
+        id: 'q5',
+        question: {
+          en: 'How many days was Jesus in the tomb before resurrection?',
+          id: 'Berapa hari Yesus berada di kubur sebelum kebangkitan?',
         },
-        options: {
-          en: ['1 day', '2 days', '3 days', '7 days'],
-          id: ['1 hari', '2 hari', '3 hari', '7 hari'],
-        },
-        correctAnswer: 2, // Index 2 = 3 days
+        options: [
+          { en: '1 day', id: '1 hari' },
+          { en: '2 days', id: '2 hari' },
+          { en: '3 days', id: '3 hari' },
+          { en: '7 days', id: '7 hari' },
+        ],
+        correct_answer_index: 2,
         explanation: {
-          en: 'Jesus was in the tomb for three days (Friday evening through early Sunday morning). His resurrection on the third day fulfilled prophecy and is the foundation of Christian faith. We celebrate this every Easter Sunday.',
-          id: 'Yesus berada di kubur selama tiga hari (Jumat sore hingga Minggu pagi dini hari). Kebangkitan-Nya pada hari ketiga menggenapi nubuatan dan merupakan fondasi iman Kristen. Kita merayakan ini setiap Minggu Paskah.',
+          en: 'Jesus was in the tomb for three days before His resurrection.',
+          id: 'Yesus berada di kubur selama tiga hari sebelum kebangkitan-Nya.',
         },
-        scriptureReference: 'Matthew 16:21, Luke 24:6-7, 1 Corinthians 15:3-4',
+        difficulty: 'easy',
+        related_verse: createBibleRef('Matthew', 16, 21),
       },
     ],
-    imageUrl: 'https://images.unsplash.com/photo-1507692049790-de58290a4334?w=800&q=80',
-    date: '2025-01-15',
-    completed: false,
-    score: null,
+    time_limit_seconds: 300,
+    passing_score_percentage: 70,
+    ai_generated: false,
+    status: 'published',
+    published_at: '2025-01-15T00:00:00Z',
+    created_by: 'system',
+    created_at: '2025-01-14T10:00:00Z',
+    deleted: false,
   },
   {
     id: 'quiz_002',
+    scope: 'global',
     title: {
       en: 'Bible Heroes: Old Testament Edition',
       id: 'Pahlawan Alkitab: Edisi Perjanjian Lama',
     },
     description: {
       en: 'Test your knowledge of the great men and women of the Old Testament.',
-      id: 'Uji pengetahuanmu tentang laki-laki dan perempuan hebat dari Perjanjian Lama.',
+      id: 'Uji pengetahuanmu tentang tokoh-tokoh hebat dari Perjanjian Lama.',
     },
-    category: 'Old Testament',
-    difficulty: 'Easy',
-    timeLimit: 240, // 4 minutes
-    passPercentage: 60,
+    theme: {
+      en: 'Old Testament',
+      id: 'Perjanjian Lama',
+    },
     questions: [
       {
-        questionText: {
+        id: 'q1',
+        question: {
           en: 'Who built the ark to survive the great flood?',
           id: 'Siapa yang membangun bahtera untuk bertahan dari air bah besar?',
         },
-        options: {
-          en: ['Abraham', 'Noah', 'Moses', 'Joshua'],
-          id: ['Abraham', 'Nuh', 'Musa', 'Yosua'],
-        },
-        correctAnswer: 1,
+        options: [
+          { en: 'Abraham', id: 'Abraham' },
+          { en: 'Noah', id: 'Nuh' },
+          { en: 'Moses', id: 'Musa' },
+          { en: 'Joshua', id: 'Yosua' },
+        ],
+        correct_answer_index: 1,
         explanation: {
-          en: 'Noah built the ark according to God\'s specific instructions. It took him many years to build, and he faced ridicule from others. The ark saved Noah, his family, and two of every animal species from the flood.',
-          id: 'Nuh membangun bahtera sesuai dengan instruksi spesifik Tuhan. Butuh bertahun-tahun untuk membangunnya, dan dia menghadapi ejekan dari orang lain. Bahtera itu menyelamatkan Nuh, keluarganya, dan dua dari setiap spesies hewan dari air bah.',
+          en: "Noah built the ark according to God's specific instructions.",
+          id: 'Nuh membangun bahtera sesuai dengan instruksi spesifik Tuhan.',
         },
-        scriptureReference: 'Genesis 6:9-22',
+        difficulty: 'easy',
+        related_verse: createBibleRef('Genesis', 6, 9, 22),
       },
       {
-        questionText: {
-          en: 'Who was sold into slavery by his brothers but later became second in command in Egypt?',
-          id: 'Siapa yang dijual menjadi budak oleh saudara-saudaranya tetapi kemudian menjadi orang kedua yang berkuasa di Mesir?',
+        id: 'q2',
+        question: {
+          en: 'Who was sold into slavery but became second in command in Egypt?',
+          id: 'Siapa yang dijual menjadi budak tetapi menjadi orang kedua berkuasa di Mesir?',
         },
-        options: {
-          en: ['Joseph', 'Benjamin', 'Judah', 'Reuben'],
-          id: ['Yusuf', 'Benyamin', 'Yehuda', 'Ruben'],
-        },
-        correctAnswer: 0,
+        options: [
+          { en: 'Joseph', id: 'Yusuf' },
+          { en: 'Benjamin', id: 'Benyamin' },
+          { en: 'Judah', id: 'Yehuda' },
+          { en: 'Reuben', id: 'Ruben' },
+        ],
+        correct_answer_index: 0,
         explanation: {
-          en: 'Joseph was sold by his jealous brothers but remained faithful to God. Through his gift of interpreting dreams, he rose to become Pharaoh\'s second in command and later saved his family from famine.',
-          id: 'Yusuf dijual oleh saudara-saudaranya yang cemburu tetapi tetap setia kepada Tuhan. Melalui karunia menafsirkan mimpi, dia naik menjadi orang kedua yang berkuasa di bawah Firaun dan kemudian menyelamatkan keluarganya dari kelaparan.',
+          en: 'Joseph was sold by his brothers but rose to power in Egypt.',
+          id: 'Yusuf dijual oleh saudara-saudaranya tetapi naik ke kekuasaan di Mesir.',
         },
-        scriptureReference: 'Genesis 37-50',
+        difficulty: 'easy',
+        related_verse: createBibleRef('Genesis', 37, 28),
       },
       {
-        questionText: {
-          en: 'Which woman became queen of Persia and saved the Jewish people from genocide?',
-          id: 'Wanita mana yang menjadi ratu Persia dan menyelamatkan orang Yahudi dari genosida?',
+        id: 'q3',
+        question: {
+          en: 'Which woman became queen of Persia and saved the Jewish people?',
+          id: 'Wanita mana yang menjadi ratu Persia dan menyelamatkan orang Yahudi?',
         },
-        options: {
-          en: ['Ruth', 'Esther', 'Deborah', 'Hannah'],
-          id: ['Rut', 'Ester', 'Debora', 'Hana'],
-        },
-        correctAnswer: 1,
+        options: [
+          { en: 'Ruth', id: 'Rut' },
+          { en: 'Esther', id: 'Ester' },
+          { en: 'Deborah', id: 'Debora' },
+          { en: 'Hannah', id: 'Hana' },
+        ],
+        correct_answer_index: 1,
         explanation: {
-          en: 'Queen Esther risked her life by approaching the king uninvited to expose a plot to destroy the Jewish people. Her famous words, "If I perish, I perish," show her courage and faith. The Jewish festival of Purim celebrates this deliverance.',
-          id: 'Ratu Ester mempertaruhkan nyawanya dengan mendekati raja tanpa diundang untuk mengungkap plot untuk menghancurkan orang Yahudi. Kata-katanya yang terkenal, "Jika aku binasa, biarlah aku binasa," menunjukkan keberanian dan imannya. Festival Yahudi Purim merayakan pembebasan ini.',
+          en: 'Queen Esther risked her life to save the Jewish people from genocide.',
+          id: 'Ratu Ester mempertaruhkan nyawanya untuk menyelamatkan orang Yahudi dari genosida.',
         },
-        scriptureReference: 'Book of Esther',
+        difficulty: 'medium',
+        related_verse: createBibleRef('Esther', 4, 14),
       },
       {
-        questionText: {
+        id: 'q4',
+        question: {
           en: 'Who led the Israelites out of slavery in Egypt?',
           id: 'Siapa yang memimpin orang Israel keluar dari perbudakan di Mesir?',
         },
-        options: {
-          en: ['Aaron', 'Moses', 'Joshua', 'Caleb'],
-          id: ['Harun', 'Musa', 'Yosua', 'Kaleb'],
-        },
-        correctAnswer: 1,
+        options: [
+          { en: 'Aaron', id: 'Harun' },
+          { en: 'Moses', id: 'Musa' },
+          { en: 'Joshua', id: 'Yosua' },
+          { en: 'Caleb', id: 'Kaleb' },
+        ],
+        correct_answer_index: 1,
         explanation: {
-          en: 'Moses, though reluctant at first, led the Israelites out of Egyptian slavery through God\'s power. He performed miracles, parted the Red Sea, received the Ten Commandments, and guided the people for 40 years in the wilderness.',
-          id: 'Musa, meskipun awalnya enggan, memimpin orang Israel keluar dari perbudakan Mesir melalui kuasa Tuhan. Dia melakukan mukjizat, membelah Laut Merah, menerima Sepuluh Perintah Allah, dan membimbing bangsa itu selama 40 tahun di padang gurun.',
+          en: "Moses led the Israelites out of Egypt through God's power.",
+          id: 'Musa memimpin orang Israel keluar dari Mesir melalui kuasa Tuhan.',
         },
-        scriptureReference: 'Exodus 1-40',
+        difficulty: 'easy',
+        related_verse: createBibleRef('Exodus', 3, 10),
       },
       {
-        questionText: {
-          en: 'Who defeated Goliath the giant with just a sling and stone?',
-          id: 'Siapa yang mengalahkan raksasa Goliat hanya dengan umban dan batu?',
+        id: 'q5',
+        question: {
+          en: 'Who defeated Goliath with just a sling and stone?',
+          id: 'Siapa yang mengalahkan Goliat hanya dengan umban dan batu?',
         },
-        options: {
-          en: ['Saul', 'Jonathan', 'David', 'Samuel'],
-          id: ['Saul', 'Yonatan', 'Daud', 'Samuel'],
-        },
-        correctAnswer: 2,
+        options: [
+          { en: 'Saul', id: 'Saul' },
+          { en: 'Jonathan', id: 'Yonatan' },
+          { en: 'David', id: 'Daud' },
+          { en: 'Samuel', id: 'Samuel' },
+        ],
+        correct_answer_index: 2,
         explanation: {
-          en: 'David, a young shepherd boy, volunteered to fight Goliath when all of Israel\'s trained soldiers were too afraid. His faith was in God, not in weapons or armor. This victory launched David toward becoming Israel\'s greatest king.',
-          id: 'Daud, seorang anak gembala muda, menawarkan diri untuk melawan Goliat ketika semua tentara terlatih Israel terlalu takut. Imannya ada pada Tuhan, bukan pada senjata atau baju zirah. Kemenangan ini meluncurkan Daud menuju menjadi raja terbesar Israel.',
+          en: 'David, a young shepherd boy, defeated Goliath with faith in God.',
+          id: 'Daud, seorang anak gembala muda, mengalahkan Goliat dengan iman kepada Tuhan.',
         },
-        scriptureReference: '1 Samuel 17',
+        difficulty: 'easy',
+        related_verse: createBibleRef('1 Samuel', 17, 50),
       },
     ],
-    imageUrl: 'https://images.unsplash.com/photo-1519491050282-cf00c82424b4?w=800&q=80',
-    date: '2025-01-16',
-    completed: true,
-    score: 80, // 4 out of 5 correct
+    time_limit_seconds: 240,
+    passing_score_percentage: 60,
+    ai_generated: false,
+    status: 'published',
+    published_at: '2025-01-16T00:00:00Z',
+    created_by: 'system',
+    created_at: '2025-01-15T10:00:00Z',
+    deleted: false,
   },
 ];
 
 // ============================================================================
-// BIBLE STUDIES (Self-Paced)
+// BIBLE STUDIES (Self-Paced E-Learning Courses)
+// Comprehensive, production-ready content with full lessons
 // ============================================================================
 
-export const mockBibleStudies = [
+export const mockBibleStudies: BibleStudy[] = [
   {
     id: 'study_001',
+    scope: 'global',
     title: {
       en: 'The Armor of God: Standing Firm in Spiritual Warfare',
       id: 'Perlengkapan Senjata Allah: Berdiri Teguh dalam Peperangan Rohani',
     },
-    description: {
-      en: 'A 7-day study on Ephesians 6:10-18, equipping believers to stand against spiritual attacks through God\'s armor.',
-      id: 'Studi 7 hari tentang Efesus 6:10-18, memperlengkapi orang percaya untuk berdiri melawan serangan rohani melalui perlengkapan senjata Allah.',
+    subtitle: {
+      en: 'A 7-Day Journey Through Ephesians 6',
+      id: 'Perjalanan 7 Hari Melalui Efesus 6',
     },
-    category: 'Spiritual Warfare',
-    difficulty: 'Intermediate',
-    duration: '7 days',
-    lessonsCount: 7,
-    imageUrl: 'https://images.unsplash.com/photo-1611174753180-bcc0f1f14469?w=800&q=80',
+    description: {
+      en: "Discover how to stand firm against spiritual attacks by putting on God's complete armor. This 7-day study takes you piece by piece through the spiritual armor described in Ephesians 6, giving you practical tools for daily victory.",
+      id: 'Temukan cara berdiri teguh melawan serangan rohani dengan mengenakan seluruh perlengkapan senjata Allah. Studi 7 hari ini membawamu bagian per bagian melalui perlengkapan senjata rohani yang dijelaskan dalam Efesus 6.',
+    },
+    full_content: {
+      en: 'This comprehensive study explores each piece of the spiritual armor described by Paul in Ephesians 6. You will learn not just what each piece represents, but how to practically apply these truths in your daily spiritual battles.',
+      id: 'Studi komprehensif ini menjelajahi setiap bagian dari perlengkapan senjata rohani yang dijelaskan oleh Paulus dalam Efesus 6. Anda akan belajar tidak hanya apa yang diwakili setiap bagian, tetapi bagaimana menerapkan kebenaran ini dalam pertempuran rohani sehari-hari.',
+    },
+    introduction: {
+      en: 'Every believer is in a spiritual battle. The good news? God has given us everything we need to stand victoriously. In this 7-day study, you will discover how to put on the full armor of God and walk in daily victory.',
+      id: 'Setiap orang percaya berada dalam pertempuran rohani. Kabar baiknya? Tuhan telah memberi kita segala yang kita butuhkan untuk berdiri dengan kemenangan. Dalam studi 7 hari ini, Anda akan menemukan cara mengenakan seluruh perlengkapan senjata Allah.',
+    },
+    learning_objectives: [
+      { en: 'Understand the reality of spiritual warfare', id: 'Memahami realitas peperangan rohani' },
+      { en: 'Learn the purpose of each piece of armor', id: 'Mempelajari tujuan setiap bagian perlengkapan senjata' },
+      { en: 'Develop daily practices to stand firm', id: 'Mengembangkan praktik harian untuk berdiri teguh' },
+      { en: 'Gain confidence in your spiritual authority', id: 'Memperoleh kepercayaan dalam otoritas rohani Anda' },
+    ],
+    target_audience: {
+      en: 'Believers who want to grow stronger in their faith and learn to overcome spiritual challenges',
+      id: 'Orang percaya yang ingin bertumbuh lebih kuat dalam iman mereka dan belajar mengatasi tantangan rohani',
+    },
+    author: { en: 'Pastor David Thompson', id: 'Pendeta David Thompson' },
+    author_title: { en: 'Senior Pastor & Bible Teacher', id: 'Pendeta Senior & Pengajar Alkitab' },
+    lessons: [
+      {
+        id: 'lesson_001_1',
+        title: { en: 'Introduction: The Battle is Real', id: 'Pendahuluan: Pertempuran Itu Nyata' },
+        content: {
+          en: `Before we can effectively use spiritual armor, we must understand the reality of spiritual warfare. Paul writes to the Ephesians not to scare them, but to prepare them.
+
+The enemy is real. His attacks are strategic. But here's the good news—God has not left us defenseless. In fact, He has given us everything we need to not just survive, but to stand victoriously.
+
+"Finally, be strong in the Lord and in his mighty power." (Ephesians 6:10)
+
+Notice Paul doesn't say "be strong in yourself." Our strength comes from the Lord. This is the foundation of everything else we will learn in this study.
+
+**Why Does This Matter Today?**
+
+Many believers live in defeat because they don't recognize the nature of their struggles. When we understand that our battle is spiritual, we can use spiritual weapons effectively.
+
+The word "struggle" in Greek is "pale" (πάλη), referring to hand-to-hand combat. This isn't distant warfare—it's personal. The enemy wants to take you down personally.
+
+But don't be afraid. Greater is He who is in you than he who is in the world (1 John 4:4).`,
+          id: `Sebelum kita dapat menggunakan perlengkapan senjata rohani dengan efektif, kita harus memahami realitas peperangan rohani. Paulus menulis kepada jemaat Efesus bukan untuk menakuti mereka, tetapi untuk mempersiapkan mereka.
+
+Musuh itu nyata. Serangannya strategis. Tapi inilah kabar baiknya—Tuhan tidak membiarkan kita tanpa pertahanan. Bahkan, Dia telah memberi kita segala yang kita butuhkan untuk tidak hanya bertahan, tetapi berdiri dengan kemenangan.
+
+"Akhirnya, jadilah kuat di dalam Tuhan, di dalam kekuatan kuasa-Nya." (Efesus 6:10)
+
+Perhatikan Paulus tidak mengatakan "jadilah kuat dalam dirimu sendiri." Kekuatan kita berasal dari Tuhan. Ini adalah fondasi dari semua yang akan kita pelajari dalam studi ini.
+
+**Mengapa Ini Penting Hari Ini?**
+
+Banyak orang percaya hidup dalam kekalahan karena mereka tidak mengenali sifat pergumulan mereka. Ketika kita memahami bahwa pertempuran kita bersifat rohani, kita dapat menggunakan senjata rohani dengan efektif.`,
+        },
+        summary: { en: 'Understanding that spiritual warfare is real prepares us to use God\'s armor effectively.', id: 'Memahami bahwa peperangan rohani itu nyata mempersiapkan kita untuk menggunakan perlengkapan senjata Allah dengan efektif.' },
+        scripture_references: [
+          { ...createBibleRef('Ephesians', 6, 10, 12), text: 'Finally, be strong in the Lord and in his mighty power. Put on the full armor of God, so that you can take your stand against the devil\'s schemes.' },
+          { ...createBibleRef('1 John', 4, 4), text: 'You, dear children, are from God and have overcome them, because the one who is in you is greater than the one who is in the world.' },
+        ],
+        discussion_questions: {
+          en: [
+            'What spiritual struggles have you faced recently that you now recognize as spiritual warfare?',
+            'How does knowing your strength comes from the Lord change how you approach challenges?',
+            'In what areas of your life do you feel most attacked by the enemy?',
+          ],
+          id: [
+            'Pergumulan rohani apa yang baru-baru ini kamu hadapi yang sekarang kamu kenali sebagai peperangan rohani?',
+            'Bagaimana mengetahui kekuatanmu berasal dari Tuhan mengubah cara kamu menghadapi tantangan?',
+            'Di area mana dalam hidupmu kamu merasa paling diserang oleh musuh?',
+          ],
+        },
+        application: {
+          en: 'Today, ask God to open your eyes to the spiritual reality around you. Commit to approaching your challenges not in your own strength, but in the Lord\'s mighty power.',
+          id: 'Hari ini, minta Tuhan untuk membuka matamu terhadap realitas rohani di sekitarmu. Berkomitmenlah untuk menghadapi tantanganmu bukan dengan kekuatanmu sendiri, tetapi dalam kuasa Tuhan yang perkasa.',
+        },
+        prayer: {
+          en: 'Lord, thank You for not leaving me defenseless. Open my eyes to see the spiritual battles around me, and help me to stand strong in Your mighty power. In Jesus\' name, Amen.',
+          id: 'Tuhan, terima kasih karena tidak membiarkan aku tanpa pertahanan. Buka mataku untuk melihat pertempuran rohani di sekitarku, dan tolong aku untuk berdiri kuat dalam kuasa-Mu yang perkasa. Dalam nama Yesus, Amin.',
+        },
+        duration_minutes: 15,
+        order: 1,
+      },
+      {
+        id: 'lesson_001_2',
+        title: { en: 'The Belt of Truth', id: 'Ikat Pinggang Kebenaran' },
+        content: {
+          en: `The Roman soldier's belt was foundational—it held everything else in place. Without it, the armor would be useless. In the same way, truth is the foundation of our spiritual protection.
+
+"Stand firm then, with the belt of truth buckled around your waist" (Ephesians 6:14a)
+
+**What is the Belt of Truth?**
+
+The belt of truth has two dimensions:
+1. **God's Truth** - The objective truth of Scripture, God's Word
+2. **Personal Integrity** - Living truthfully in all we do
+
+Both are essential. We must know God's truth AND walk in personal honesty.
+
+**Why Truth First?**
+
+The enemy is called "the father of lies" (John 8:44). His primary weapon is deception. When we are grounded in truth, we can recognize his lies.
+
+Many Christians are defeated because they believe lies:
+- "God doesn't really love me"
+- "I'm too far gone to be forgiven"
+- "I'll never change"
+- "God is disappointed in me"
+
+These are all lies! The belt of truth protects us from such deceptions.
+
+**How to Put on the Belt of Truth**
+
+1. **Read Scripture Daily** - Saturate your mind with God's Word
+2. **Memorize Key Verses** - Have truth ready when lies attack
+3. **Practice Honesty** - Live without deception in all relationships
+4. **Speak Truth to Yourself** - Counter lies with biblical truth`,
+          id: `Ikat pinggang tentara Romawi adalah dasar—ia menahan semua yang lain di tempatnya. Tanpanya, baju zirah akan sia-sia. Dengan cara yang sama, kebenaran adalah fondasi perlindungan rohani kita.
+
+"Berdiri teguhlah dengan ikat pinggang kebenaran di pinggangmu" (Efesus 6:14a)
+
+**Apa itu Ikat Pinggang Kebenaran?**
+
+Ikat pinggang kebenaran memiliki dua dimensi:
+1. **Kebenaran Allah** - Kebenaran objektif dari Alkitab, Firman Tuhan
+2. **Integritas Pribadi** - Hidup dengan jujur dalam semua yang kita lakukan
+
+Keduanya penting. Kita harus mengetahui kebenaran Allah DAN berjalan dalam kejujuran pribadi.`,
+        },
+        summary: { en: 'Truth is the foundation that holds all other spiritual armor in place.', id: 'Kebenaran adalah fondasi yang menahan semua perlengkapan senjata rohani lainnya di tempatnya.' },
+        scripture_references: [
+          { ...createBibleRef('Ephesians', 6, 14), text: 'Stand firm then, with the belt of truth buckled around your waist' },
+          { ...createBibleRef('John', 8, 44), text: 'He was a murderer from the beginning, not holding to the truth, for there is no truth in him. When he lies, he speaks his native language, for he is a liar and the father of lies.' },
+          { ...createBibleRef('John', 17, 17), text: 'Sanctify them by the truth; your word is truth.' },
+        ],
+        discussion_questions: {
+          en: [
+            'What lies have you believed about yourself or God that you need to replace with truth?',
+            'How consistent is your daily intake of God\'s Word?',
+            'Are there areas where you struggle with personal honesty?',
+          ],
+          id: [
+            'Kebohongan apa tentang dirimu atau Tuhan yang telah kamu percayai yang perlu kamu ganti dengan kebenaran?',
+            'Seberapa konsisten konsumsi harian Firman Tuhan-mu?',
+            'Apakah ada area di mana kamu berjuang dengan kejujuran pribadi?',
+          ],
+        },
+        application: {
+          en: 'Choose one lie you have believed and write down the biblical truth that counters it. Memorize that verse this week.',
+          id: 'Pilih satu kebohongan yang telah kamu percayai dan tuliskan kebenaran alkitabiah yang melawannya. Hafalkan ayat itu minggu ini.',
+        },
+        duration_minutes: 15,
+        order: 2,
+      },
+      {
+        id: 'lesson_001_3',
+        title: { en: 'The Breastplate of Righteousness', id: 'Baju Zirah Kebenaran' },
+        content: {
+          en: `The breastplate protected the soldier's vital organs—especially the heart. In spiritual terms, righteousness guards our heart from condemnation and accusation.
+
+"...with the breastplate of righteousness in place" (Ephesians 6:14b)
+
+**Understanding Righteousness**
+
+There are two types of righteousness the believer must understand:
+
+1. **Positional Righteousness** - Our standing before God through Christ
+"God made him who had no sin to be sin for us, so that in him we might become the righteousness of God." (2 Corinthians 5:21)
+
+This is a gift! We don't earn it. When we trust Christ, His righteousness is credited to our account.
+
+2. **Practical Righteousness** - Living rightly in daily choices
+"If you know that he is righteous, you know that everyone who does what is right has been born of him." (1 John 2:29)
+
+**The Enemy's Attack Strategy**
+
+Satan is called "the accuser of our brothers and sisters" (Revelation 12:10). He loves to remind us of our failures and make us feel unworthy of God's love.
+
+When we put on the breastplate of righteousness, we remind ourselves:
+- I am righteous because of Christ, not my performance
+- My past failures are covered by His blood
+- I am fully accepted and beloved by God
+
+**Practical Steps**
+
+1. When guilt attacks, run TO God, not FROM Him
+2. Confess sin quickly and receive forgiveness (1 John 1:9)
+3. Make right choices—practical righteousness builds confidence`,
+          id: `Baju zirah melindungi organ vital prajurit—terutama jantung. Dalam istilah rohani, kebenaran menjaga hati kita dari penghukuman dan tuduhan.
+
+"...dengan baju zirah kebenaran terpasang" (Efesus 6:14b)
+
+**Memahami Kebenaran**
+
+Ada dua jenis kebenaran yang harus dipahami orang percaya:
+
+1. **Kebenaran Posisional** - Kedudukan kita di hadapan Allah melalui Kristus
+2. **Kebenaran Praktis** - Hidup dengan benar dalam pilihan sehari-hari`,
+        },
+        summary: { en: 'Righteousness protects our hearts from the enemy\'s accusations and condemnation.', id: 'Kebenaran melindungi hati kita dari tuduhan dan penghukuman musuh.' },
+        scripture_references: [
+          { ...createBibleRef('Ephesians', 6, 14), text: '...with the breastplate of righteousness in place' },
+          { ...createBibleRef('2 Corinthians', 5, 21), text: 'God made him who had no sin to be sin for us, so that in him we might become the righteousness of God.' },
+        ],
+        discussion_questions: {
+          en: [
+            'How often do you struggle with feelings of guilt or unworthiness?',
+            'Do you tend to run TO God or FROM God when you fail?',
+            'How does knowing your righteousness is a gift affect how you approach God?',
+          ],
+          id: [
+            'Seberapa sering kamu berjuang dengan perasaan bersalah atau tidak layak?',
+            'Apakah kamu cenderung berlari KEPADA Tuhan atau DARI Tuhan ketika kamu gagal?',
+            'Bagaimana mengetahui kebenaranmu adalah hadiah mempengaruhi cara kamu menghampiri Tuhan?',
+          ],
+        },
+        application: {
+          en: 'Write 2 Corinthians 5:21 on a card and read it every morning this week. Let this truth sink deep into your heart.',
+          id: 'Tulis 2 Korintus 5:21 di sebuah kartu dan baca setiap pagi minggu ini. Biarkan kebenaran ini meresap dalam hatimu.',
+        },
+        duration_minutes: 15,
+        order: 3,
+      },
+      {
+        id: 'lesson_001_4',
+        title: { en: 'Feet Fitted with Readiness', id: 'Kaki Diperlengkapi dengan Kesiapan' },
+        content: {
+          en: `Roman soldiers wore sandals with studs for sure footing in battle. The gospel of peace gives us stable footing when everything around us is unstable.
+
+"...and with your feet fitted with the readiness that comes from the gospel of peace" (Ephesians 6:15)
+
+**The Gospel of Peace**
+
+It seems strange that we wear "peace" into warfare. But this is the secret of victorious Christian living—even in battle, we have peace with God.
+
+"Therefore, since we have been justified through faith, we have peace with God through our Lord Jesus Christ." (Romans 5:1)
+
+**Readiness for What?**
+
+The word "readiness" (hetoimasia) means preparation or a firm foundation. We are to be:
+
+1. **Ready to stand** - Firmly grounded in our identity in Christ
+2. **Ready to share** - Prepared to tell others about this peace
+3. **Ready to go** - Willing to take the gospel wherever God sends us
+
+**The Peace That Passes Understanding**
+
+"And the peace of God, which transcends all understanding, will guard your hearts and your minds in Christ Jesus." (Philippians 4:7)
+
+This supernatural peace:
+- Guards your heart when emotions rage
+- Protects your mind when thoughts attack
+- Steadies your soul when life shakes`,
+          id: `Prajurit Romawi mengenakan sandal dengan paku untuk pijakan yang pasti dalam pertempuran. Injil damai memberi kita pijakan yang stabil ketika segala sesuatu di sekitar kita tidak stabil.
+
+"...dan kaki diperlengkapi dengan kesiapan yang datang dari Injil damai" (Efesus 6:15)`,
+        },
+        summary: { en: 'The gospel of peace provides stable footing even in the midst of spiritual battles.', id: 'Injil damai menyediakan pijakan yang stabil bahkan di tengah pertempuran rohani.' },
+        scripture_references: [
+          { ...createBibleRef('Ephesians', 6, 15), text: '...and with your feet fitted with the readiness that comes from the gospel of peace' },
+          { ...createBibleRef('Romans', 5, 1), text: 'Therefore, since we have been justified through faith, we have peace with God through our Lord Jesus Christ.' },
+          { ...createBibleRef('Philippians', 4, 7), text: 'And the peace of God, which transcends all understanding, will guard your hearts and your minds in Christ Jesus.' },
+        ],
+        discussion_questions: {
+          en: [
+            'How does knowing you have peace with God affect how you face daily challenges?',
+            'Are you ready to share the gospel when opportunities arise?',
+            'In what situations do you most need supernatural peace?',
+          ],
+          id: [
+            'Bagaimana mengetahui kamu memiliki damai dengan Tuhan mempengaruhi cara kamu menghadapi tantangan harian?',
+            'Apakah kamu siap untuk membagikan Injil ketika kesempatan muncul?',
+            'Dalam situasi apa kamu paling membutuhkan damai supernatural?',
+          ],
+        },
+        application: {
+          en: 'Think of one person who needs to hear about peace with God. Pray for an opportunity to share this week.',
+          id: 'Pikirkan satu orang yang perlu mendengar tentang damai dengan Tuhan. Berdoa untuk kesempatan berbagi minggu ini.',
+        },
+        duration_minutes: 15,
+        order: 4,
+      },
+      {
+        id: 'lesson_001_5',
+        title: { en: 'The Shield of Faith', id: 'Perisai Iman' },
+        content: {
+          en: `The Roman shield (thureos) was large—about 4 feet tall and 2.5 feet wide. It could cover the entire body. Faith is our all-encompassing protection against the enemy's attacks.
+
+"In addition to all this, take up the shield of faith, with which you can extinguish all the flaming arrows of the evil one." (Ephesians 6:16)
+
+**Flaming Arrows**
+
+In ancient warfare, arrows were dipped in pitch and set on fire. They were designed to burn, not just wound. The enemy's attacks are similar—they're meant to cause ongoing damage.
+
+These "flaming arrows" include:
+- Doubt about God's love or faithfulness
+- Temptations that seem irresistible
+- Fear and anxiety about the future
+- Discouragement and hopelessness
+- Offense and unforgiveness
+
+**Faith as Defense**
+
+Faith is not blind belief—it's confident trust in God's character and promises. When the arrows fly, faith declares:
+- "God is still good"
+- "God's promises are still true"
+- "God is still in control"
+- "God will never leave me"
+
+**Growing Your Shield**
+
+"Faith comes from hearing the message, and the message is heard through the word about Christ." (Romans 10:17)
+
+Your shield grows as you:
+1. Study God's Word consistently
+2. Remember His faithfulness in the past
+3. Fellowship with other believers
+4. Step out in obedience`,
+          id: `Perisai Romawi (thureos) besar—sekitar 1,2 meter tinggi dan 75 cm lebar. Ia bisa menutupi seluruh tubuh. Iman adalah perlindungan menyeluruh kita terhadap serangan musuh.`,
+        },
+        summary: { en: 'Faith extinguishes the enemy\'s fiery attacks by trusting in God\'s character and promises.', id: 'Iman memadamkan serangan berapi musuh dengan percaya pada karakter dan janji-janji Allah.' },
+        scripture_references: [
+          { ...createBibleRef('Ephesians', 6, 16), text: 'In addition to all this, take up the shield of faith, with which you can extinguish all the flaming arrows of the evil one.' },
+          { ...createBibleRef('Romans', 10, 17), text: 'Faith comes from hearing the message, and the message is heard through the word about Christ.' },
+        ],
+        discussion_questions: {
+          en: [
+            'What "flaming arrows" have you experienced recently?',
+            'How did you respond? Did faith help you extinguish them?',
+            'What specific practices help you grow your faith?',
+          ],
+          id: [
+            'Apa "panah berapi" yang baru-baru ini kamu alami?',
+            'Bagaimana responmu? Apakah iman membantumu memadamkannya?',
+            'Praktik spesifik apa yang membantumu menumbuhkan imanmu?',
+          ],
+        },
+        application: {
+          en: 'Identify one "flaming arrow" you\'re currently facing. Write down three promises from Scripture that counter this attack.',
+          id: 'Identifikasi satu "panah berapi" yang sedang kamu hadapi. Tuliskan tiga janji dari Alkitab yang melawan serangan ini.',
+        },
+        duration_minutes: 15,
+        order: 5,
+      },
+      {
+        id: 'lesson_001_6',
+        title: { en: 'The Helmet of Salvation', id: 'Ketopong Keselamatan' },
+        content: {
+          en: `The helmet protected the soldier's head—the command center. Our minds are a primary battlefield, and the assurance of salvation protects our thinking.
+
+"Take the helmet of salvation" (Ephesians 6:17a)
+
+**The Mind Under Attack**
+
+The enemy loves to attack our minds with:
+- Doubt about our salvation
+- Confusion about doctrine
+- Worldly thought patterns
+- Negative self-talk
+- Hopelessness about the future
+
+**Secure in Salvation**
+
+The helmet of salvation provides confidence in:
+1. **Past salvation** - "I am saved" (Ephesians 2:8)
+2. **Present sanctification** - "I am being saved" (Philippians 2:12-13)
+3. **Future glorification** - "I will be saved" (Romans 8:30)
+
+**Hope as Protection**
+
+In 1 Thessalonians 5:8, Paul calls this "the hope of salvation as a helmet." Hope is forward-looking confidence that God will complete what He started.
+
+"Being confident of this, that he who began a good work in you will carry it on to completion until the day of Christ Jesus." (Philippians 1:6)
+
+**Renewing Your Mind**
+
+"Do not conform to the pattern of this world, but be transformed by the renewing of your mind." (Romans 12:2)
+
+Daily practices to protect your mind:
+- Start each day with Scripture
+- Take negative thoughts captive
+- Focus on what is true, noble, right, pure
+- Guard what you watch and listen to`,
+          id: `Ketopong melindungi kepala prajurit—pusat komando. Pikiran kita adalah medan pertempuran utama, dan jaminan keselamatan melindungi pemikiran kita.`,
+        },
+        summary: { en: 'The helmet of salvation protects our minds with the assurance of our past, present, and future salvation.', id: 'Ketopong keselamatan melindungi pikiran kita dengan jaminan keselamatan masa lalu, sekarang, dan masa depan kita.' },
+        scripture_references: [
+          { ...createBibleRef('Ephesians', 6, 17), text: 'Take the helmet of salvation...' },
+          { ...createBibleRef('Philippians', 1, 6), text: 'Being confident of this, that he who began a good work in you will carry it on to completion until the day of Christ Jesus.' },
+          { ...createBibleRef('Romans', 12, 2), text: 'Do not conform to the pattern of this world, but be transformed by the renewing of your mind.' },
+        ],
+        discussion_questions: {
+          en: [
+            'What negative thoughts most frequently attack your mind?',
+            'How secure do you feel in your salvation?',
+            'What practices help you renew your mind daily?',
+          ],
+          id: [
+            'Pikiran negatif apa yang paling sering menyerang pikiranmu?',
+            'Seberapa aman perasaanmu dalam keselamatanmu?',
+            'Praktik apa yang membantumu memperbarui pikiranmu setiap hari?',
+          ],
+        },
+        application: {
+          en: 'This week, practice taking every thought captive. When negative thoughts come, immediately counter them with Scripture.',
+          id: 'Minggu ini, berlatihlah menawan setiap pikiran. Ketika pikiran negatif datang, segera lawannya dengan Alkitab.',
+        },
+        duration_minutes: 15,
+        order: 6,
+      },
+      {
+        id: 'lesson_001_7',
+        title: { en: 'The Sword of the Spirit & Prayer', id: 'Pedang Roh & Doa' },
+        content: {
+          en: `We conclude our study with the only offensive weapon in our arsenal and the power that activates everything—the Word of God and prayer.
+
+"...and the sword of the Spirit, which is the word of God. And pray in the Spirit on all occasions with all kinds of prayers and requests." (Ephesians 6:17b-18)
+
+**The Sword of the Spirit**
+
+This is the machaira—a short sword for close combat. It's the Word of God applied to specific situations.
+
+Jesus modeled this in the wilderness temptation. Each time Satan attacked, Jesus responded with "It is written..." (Matthew 4:4, 7, 10).
+
+The Word of God is:
+- Living and active (Hebrews 4:12)
+- Sharper than any two-edged sword
+- Able to penetrate the enemy's lies
+
+**Prayer: The Power Source**
+
+Notice Paul doesn't say "and pray" as a separate item. Prayer permeates everything. It's how we put on the armor. It's how we use the sword.
+
+"Pray in the Spirit on all occasions" means:
+- Constant communion with God
+- Being led by the Spirit in prayer
+- Praying for all the saints (not just ourselves)
+
+**Putting It All Together**
+
+Each morning, consciously put on your armor:
+- Belt of Truth: "I will walk in Your truth today"
+- Breastplate of Righteousness: "I am righteous through Christ"
+- Feet of Peace: "I have peace with You and am ready to share it"
+- Shield of Faith: "I trust Your promises no matter what comes"
+- Helmet of Salvation: "My mind is protected by the hope of salvation"
+- Sword of the Spirit: "Your Word is my weapon"
+- Prayer: "I depend completely on You"
+
+You are now fully equipped for victory!`,
+          id: `Kita mengakhiri studi kita dengan satu-satunya senjata ofensif dalam gudang senjata kita dan kuasa yang mengaktifkan segalanya—Firman Tuhan dan doa.`,
+        },
+        summary: { en: 'The Word of God and prayer are our offensive weapons that activate all the armor.', id: 'Firman Tuhan dan doa adalah senjata ofensif kita yang mengaktifkan semua perlengkapan senjata.' },
+        scripture_references: [
+          { ...createBibleRef('Ephesians', 6, 17, 18), text: '...and the sword of the Spirit, which is the word of God. And pray in the Spirit on all occasions with all kinds of prayers and requests.' },
+          { ...createBibleRef('Hebrews', 4, 12), text: 'For the word of God is alive and active. Sharper than any double-edged sword...' },
+          { ...createBibleRef('Matthew', 4, 4), text: 'Jesus answered, "It is written: Man shall not live on bread alone, but on every word that comes from the mouth of God."' },
+        ],
+        discussion_questions: {
+          en: [
+            'How effectively do you use Scripture to combat the enemy\'s attacks?',
+            'What does "pray in the Spirit on all occasions" look like practically?',
+            'How will you apply what you\'ve learned in this study going forward?',
+          ],
+          id: [
+            'Seberapa efektif kamu menggunakan Alkitab untuk melawan serangan musuh?',
+            'Seperti apa "berdoa di dalam Roh dalam segala kesempatan" secara praktis?',
+            'Bagaimana kamu akan menerapkan apa yang telah kamu pelajari dalam studi ini ke depannya?',
+          ],
+        },
+        application: {
+          en: 'Create a daily routine for "putting on the armor." Spend time each morning consciously equipping yourself for the day\'s battles.',
+          id: 'Buat rutinitas harian untuk "mengenakan perlengkapan senjata." Luangkan waktu setiap pagi untuk secara sadar memperlengkapi dirimu untuk pertempuran hari itu.',
+        },
+        prayer: {
+          en: 'Father, thank You for providing everything I need for spiritual victory. Help me to put on Your full armor daily and to stand firm against the enemy. May I use Your Word skillfully and pray without ceasing. In Jesus\' mighty name, Amen.',
+          id: 'Bapa, terima kasih karena menyediakan segala yang aku butuhkan untuk kemenangan rohani. Tolong aku untuk mengenakan seluruh perlengkapan senjata-Mu setiap hari dan berdiri teguh melawan musuh. Semoga aku menggunakan Firman-Mu dengan terampil dan berdoa tanpa henti. Dalam nama Yesus yang perkasa, Amin.',
+        },
+        duration_minutes: 20,
+        order: 7,
+      },
+    ],
+    lesson_count: 7,
+    estimated_duration_minutes: 110,
+    main_passage: createBibleRef('Ephesians', 6, 10, 18),
+    supporting_verses: [
+      createBibleRef('2 Corinthians', 10, 3, 5),
+      createBibleRef('James', 4, 7),
+      createBibleRef('1 Peter', 5, 8, 9),
+    ],
+    categories: ['Spiritual Warfare', 'Christian Living', 'Spiritual Growth'],
+    category: 'new_testament',
+    difficulty: 'intermediate',
+    cover_image_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&q=80',
+    completion_count: 2847,
+    average_rating: 4.8,
+    ratings_count: 412,
+    ai_generated: false,
+    status: 'published',
+    published_at: '2025-01-10T00:00:00Z',
+    created_by: 'system',
+    created_at: '2025-01-08T10:00:00Z',
+    deleted: false,
   },
   {
     id: 'study_002',
+    scope: 'global',
     title: {
-      en: 'The Beatitudes: Jesus\' Blueprint for Happiness',
+      en: "The Beatitudes: Jesus' Blueprint for Happiness",
       id: 'Ucapan Bahagia: Cetak Biru Yesus untuk Kebahagiaan',
     },
-    description: {
-      en: 'Explore the revolutionary teachings of Jesus in the Sermon on the Mount and discover true blessedness.',
-      id: 'Jelajahi ajaran revolusioner Yesus dalam Khotbah di Bukit dan temukan kebahagiaan sejati.',
+    subtitle: {
+      en: 'An 8-Day Study on the Sermon on the Mount',
+      id: 'Studi 8 Hari tentang Khotbah di Bukit',
     },
-    category: 'Teachings of Jesus',
-    difficulty: 'Beginner',
-    duration: '8 days',
-    lessonsCount: 8,
-    imageUrl: 'https://images.unsplash.com/photo-1504052434569-70ad5836ab65?w=800&q=80',
+    description: {
+      en: 'Explore the revolutionary teachings of Jesus in the Sermon on the Mount. Discover what it truly means to be blessed and how to live a life that reflects the values of God\'s Kingdom.',
+      id: 'Jelajahi ajaran revolusioner Yesus dalam Khotbah di Bukit. Temukan arti sebenarnya dari diberkati dan bagaimana menjalani kehidupan yang mencerminkan nilai-nilai Kerajaan Allah.',
+    },
+    full_content: {
+      en: 'Jesus turned worldly wisdom upside down with these radical statements about true happiness. In this study, you\'ll discover that blessing isn\'t about having everything—it\'s about having Him.',
+      id: 'Yesus membalikkan hikmat duniawi dengan pernyataan radikal tentang kebahagiaan sejati. Dalam studi ini, Anda akan menemukan bahwa berkat bukan tentang memiliki segalanya—tetapi tentang memiliki Dia.',
+    },
+    introduction: {
+      en: 'The Beatitudes are among the most quoted yet least understood teachings of Jesus. Join us for 8 transformative days as we unpack what it really means to be blessed.',
+      id: 'Ucapan Bahagia adalah salah satu ajaran Yesus yang paling sering dikutip namun paling tidak dipahami. Bergabunglah dengan kami selama 8 hari transformatif.',
+    },
+    learning_objectives: [
+      { en: 'Understand the upside-down nature of Kingdom blessings', id: 'Memahami sifat terbalik dari berkat Kerajaan' },
+      { en: 'Develop attitudes that attract God\'s favor', id: 'Mengembangkan sikap yang menarik kemurahan Allah' },
+      { en: 'Apply the Beatitudes to daily situations', id: 'Menerapkan Ucapan Bahagia dalam situasi sehari-hari' },
+    ],
+    author: { en: 'Rev. Sarah Williams', id: 'Pdt. Sarah Williams' },
+    author_title: { en: 'Teaching Pastor', id: 'Pendeta Pengajar' },
+    lessons: [
+      {
+        id: 'lesson_002_1',
+        title: { en: 'Introduction: The Setting of the Sermon', id: 'Pendahuluan: Latar Khotbah' },
+        content: {
+          en: `Before we dive into the Beatitudes, let's set the scene. Jesus sees the crowds, goes up on a mountainside, and begins to teach. This isn't random—it's intentional.
+
+**The Crowds**
+The people following Jesus were hurting. They were poor, oppressed by Rome, and longing for the Messiah. They expected a political liberator. Jesus gave them something far greater.
+
+**The Mountain**
+Just as Moses received the Law on Mount Sinai, Jesus delivers a "new law" from a mountainside. He's not replacing the Law—He's fulfilling it, showing its true meaning.
+
+**The Revolutionary Message**
+The world says: "Blessed are the rich, the powerful, the comfortable."
+Jesus says: "Blessed are the poor in spirit, those who mourn, the meek..."
+
+This is upside-down kingdom living. Everything the world values, Jesus turns on its head.
+
+**What Does "Blessed" Mean?**
+The Greek word "makarios" means more than happy. It describes a state of spiritual well-being that exists regardless of circumstances. It's not about what you have—it's about who you are and whose you are.`,
+          id: `Sebelum kita mendalami Ucapan Bahagia, mari kita atur pemandangannya. Yesus melihat orang banyak, naik ke lereng bukit, dan mulai mengajar.`,
+        },
+        summary: { en: 'Understanding the context helps us grasp the revolutionary nature of Jesus\' teaching.', id: 'Memahami konteks membantu kita mengerti sifat revolusioner dari ajaran Yesus.' },
+        scripture_references: [
+          { ...createBibleRef('Matthew', 5, 1, 2), text: 'Now when Jesus saw the crowds, he went up on a mountainside and sat down. His disciples came to him, and he began to teach them.' },
+        ],
+        discussion_questions: {
+          en: [
+            'What do you typically think of when you hear the word "blessed"?',
+            'How does the world\'s definition of success differ from Jesus\' teaching?',
+          ],
+          id: [
+            'Apa yang biasanya kamu pikirkan ketika mendengar kata "diberkati"?',
+            'Bagaimana definisi sukses dunia berbeda dari ajaran Yesus?',
+          ],
+        },
+        duration_minutes: 12,
+        order: 1,
+      },
+      {
+        id: 'lesson_002_2',
+        title: { en: 'Blessed are the Poor in Spirit', id: 'Berbahagialah yang Miskin di Hadapan Allah' },
+        content: {
+          en: `"Blessed are the poor in spirit, for theirs is the kingdom of heaven." (Matthew 5:3)
+
+**What Does It Mean?**
+Being "poor in spirit" doesn't mean lacking confidence or having low self-esteem. It means recognizing our spiritual bankruptcy before God.
+
+The tax collector in Luke 18 understood this: "God, have mercy on me, a sinner." He went home justified, while the proud Pharisee did not.
+
+**Why Is This First?**
+This beatitude is foundational. Without recognizing our need for God, we cannot receive His kingdom. Pride says, "I've got this." Poverty of spirit says, "I need You, God."
+
+**The Paradox**
+Here's the beautiful paradox: When we admit we have nothing, we receive everything—the kingdom of heaven itself!
+
+**Practical Application**
+- Start each day acknowledging your dependence on God
+- Resist the temptation to compare your spirituality to others
+- Pray like the tax collector: honestly about your need`,
+          id: `"Berbahagialah orang yang miskin di hadapan Allah, karena merekalah yang empunya Kerajaan Sorga." (Matius 5:3)`,
+        },
+        scripture_references: [
+          { ...createBibleRef('Matthew', 5, 3), text: 'Blessed are the poor in spirit, for theirs is the kingdom of heaven.' },
+          { ...createBibleRef('Luke', 18, 13, 14), text: 'But the tax collector stood at a distance. He would not even look up to heaven, but beat his breast and said, "God, have mercy on me, a sinner."' },
+        ],
+        discussion_questions: {
+          en: [
+            'In what areas do you tend to be spiritually self-sufficient?',
+            'How can you cultivate poverty of spirit this week?',
+          ],
+          id: [
+            'Di area mana kamu cenderung mandiri secara rohani?',
+            'Bagaimana kamu bisa mengembangkan kemiskinan roh minggu ini?',
+          ],
+        },
+        application: {
+          en: 'Before you pray today, pause and acknowledge: "God, without You, I can do nothing."',
+          id: 'Sebelum berdoa hari ini, berhenti sejenak dan akui: "Tuhan, tanpa-Mu, aku tidak bisa berbuat apa-apa."',
+        },
+        duration_minutes: 15,
+        order: 2,
+      },
+      {
+        id: 'lesson_002_3',
+        title: { en: 'Blessed are Those Who Mourn', id: 'Berbahagialah yang Berdukacita' },
+        content: {
+          en: `"Blessed are those who mourn, for they will be comforted." (Matthew 5:4)
+
+**Not All Mourning**
+Jesus isn't saying all sadness is blessed. He's talking about a specific type of mourning—godly sorrow over sin and the brokenness of our world.
+
+**Three Types of Godly Mourning**
+1. **Mourning over personal sin** - Not just guilt, but genuine grief that we've hurt the heart of God
+2. **Mourning over the world's brokenness** - Weeping over injustice, suffering, and the effects of sin
+3. **Mourning over distance from God** - Longing for deeper intimacy with our Creator
+
+**The Promise of Comfort**
+"They will be comforted" - The Greek is passive, meaning God Himself will do the comforting. The Holy Spirit is called the Comforter (Parakletos) for this very reason.
+
+**From Mourning to Dancing**
+This isn't permanent sorrow. It's the pathway to joy. Psalm 30:11 says, "You turned my wailing into dancing."`,
+          id: `"Berbahagialah orang yang berdukacita, karena mereka akan dihibur." (Matius 5:4)`,
+        },
+        scripture_references: [
+          { ...createBibleRef('Matthew', 5, 4), text: 'Blessed are those who mourn, for they will be comforted.' },
+          { ...createBibleRef('2 Corinthians', 7, 10), text: 'Godly sorrow brings repentance that leads to salvation and leaves no regret.' },
+        ],
+        discussion_questions: {
+          en: [
+            'When was the last time you mourned over sin in your life?',
+            'How have you experienced God\'s comfort in times of godly sorrow?',
+          ],
+          id: [
+            'Kapan terakhir kali kamu berdukacita atas dosa dalam hidupmu?',
+            'Bagaimana kamu mengalami penghiburan Tuhan dalam waktu dukacita yang saleh?',
+          ],
+        },
+        duration_minutes: 15,
+        order: 3,
+      },
+      {
+        id: 'lesson_002_4',
+        title: { en: 'Blessed are the Meek', id: 'Berbahagialah yang Lemah Lembut' },
+        content: {
+          en: `"Blessed are the meek, for they will inherit the earth." (Matthew 5:5)
+
+**Meekness is Not Weakness**
+Meekness is often misunderstood as weakness or passivity. Nothing could be further from the truth!
+
+The Greek word "praus" was used to describe a wild horse that had been broken and trained. It still had all its strength—but now that strength was under control.
+
+**Power Under Control**
+Jesus called Himself "gentle and humble in heart" (Matthew 11:29), yet He drove money-changers from the temple. Moses was called the meekest man on earth, yet he confronted Pharaoh.
+
+Meekness is:
+- Strength surrendered to God
+- Power under divine control
+- Responding, not reacting
+- Trusting God to defend you
+
+**Inheriting the Earth**
+The proud try to grab and control. The meek receive from God's hand. Psalm 37:11 echoes this: "The meek will inherit the land and enjoy peace and prosperity."`,
+          id: `"Berbahagialah orang yang lemah lembut, karena mereka akan memiliki bumi." (Matius 5:5)`,
+        },
+        scripture_references: [
+          { ...createBibleRef('Matthew', 5, 5), text: 'Blessed are the meek, for they will inherit the earth.' },
+          { ...createBibleRef('Matthew', 11, 29), text: 'Take my yoke upon you and learn from me, for I am gentle and humble in heart.' },
+        ],
+        discussion_questions: {
+          en: [
+            'How is meekness different from weakness in your understanding now?',
+            'In what situations do you find it hardest to respond with meekness?',
+          ],
+          id: [
+            'Bagaimana kelemahlembutan berbeda dari kelemahan dalam pemahamanmu sekarang?',
+            'Dalam situasi apa kamu merasa paling sulit merespons dengan kelemahlembutan?',
+          ],
+        },
+        application: {
+          en: 'The next time you feel the urge to react harshly, pause and ask: "How would meekness respond?"',
+          id: 'Lain kali kamu merasa dorongan untuk bereaksi keras, berhenti dan tanya: "Bagaimana kelemahlembutan akan merespons?"',
+        },
+        duration_minutes: 15,
+        order: 4,
+      },
+    ],
+    lesson_count: 4,
+    estimated_duration_minutes: 60,
+    main_passage: createBibleRef('Matthew', 5, 1, 12),
+    supporting_verses: [createBibleRef('Luke', 6, 20, 26)],
+    categories: ['Teachings of Jesus', 'Character', 'Spiritual Growth'],
+    category: 'new_testament',
+    difficulty: 'beginner',
+    cover_image_url: 'https://images.unsplash.com/photo-1490730141103-6cac27abb37f?w=800&q=80',
+    completion_count: 4231,
+    average_rating: 4.9,
+    ratings_count: 628,
+    ai_generated: false,
+    status: 'published',
+    published_at: '2025-01-12T00:00:00Z',
+    created_by: 'system',
+    created_at: '2025-01-10T10:00:00Z',
+    deleted: false,
   },
   {
     id: 'study_003',
+    scope: 'global',
     title: {
-      en: 'Names of God: Understanding His Character',
-      id: 'Nama-Nama Allah: Memahami Karakter-Nya',
+      en: 'Foundations of Faith: Core Christian Beliefs',
+      id: 'Dasar-Dasar Iman: Keyakinan Kristen Inti',
+    },
+    subtitle: {
+      en: 'A 5-Day Study for New Believers',
+      id: 'Studi 5 Hari untuk Orang Percaya Baru',
     },
     description: {
-      en: 'Study the various names and titles of God in Scripture to understand His multifaceted character and nature.',
-      id: 'Pelajari berbagai nama dan gelar Allah dalam Kitab Suci untuk memahami karakter dan sifat-Nya yang beraneka ragam.',
+      en: 'Perfect for new Christians or anyone wanting to strengthen their understanding of core beliefs. This study covers salvation, the Trinity, Scripture, prayer, and the Church.',
+      id: 'Sempurna untuk orang Kristen baru atau siapa pun yang ingin memperkuat pemahaman mereka tentang keyakinan inti. Studi ini mencakup keselamatan, Tritunggal, Alkitab, doa, dan Gereja.',
     },
-    category: 'Theology',
-    difficulty: 'Intermediate',
-    duration: '10 days',
-    lessonsCount: 10,
-    imageUrl: 'https://images.unsplash.com/photo-1518895949257-7621c3c786d7?w=800&q=80',
+    full_content: {
+      en: 'Every building needs a strong foundation. In this study, we lay the groundwork for a lifetime of faith by exploring the essential truths every Christian should know.',
+      id: 'Setiap bangunan membutuhkan fondasi yang kuat. Dalam studi ini, kita meletakkan dasar untuk seumur hidup iman dengan menjelajahi kebenaran penting yang harus diketahui setiap orang Kristen.',
+    },
+    introduction: {
+      en: 'Whether you\'re a new believer or want to refresh your understanding, this study will give you confidence in what you believe and why you believe it.',
+      id: 'Apakah Anda orang percaya baru atau ingin menyegarkan pemahaman Anda, studi ini akan memberi Anda keyakinan tentang apa yang Anda percaya dan mengapa.',
+    },
+    learning_objectives: [
+      { en: 'Understand the basics of salvation', id: 'Memahami dasar-dasar keselamatan' },
+      { en: 'Know the nature of God as Trinity', id: 'Mengetahui sifat Allah sebagai Tritunggal' },
+      { en: 'Build a foundation for prayer and Bible reading', id: 'Membangun fondasi untuk doa dan membaca Alkitab' },
+    ],
+    author: { en: 'Pastor James Miller', id: 'Pendeta James Miller' },
+    author_title: { en: 'Discipleship Pastor', id: 'Pendeta Pemuridan' },
+    lessons: [
+      {
+        id: 'lesson_003_1',
+        title: { en: 'Salvation: The Gift of Grace', id: 'Keselamatan: Karunia Anugerah' },
+        content: {
+          en: `The foundation of Christian faith is understanding what God has done for us through Jesus Christ.
+
+**The Problem: Sin**
+"For all have sinned and fall short of the glory of God." (Romans 3:23)
+
+Sin isn't just bad behavior—it's separation from God. Like a power cord unplugged from its source, we were disconnected from the source of life.
+
+**The Solution: Jesus**
+"For God so loved the world that he gave his one and only Son, that whoever believes in him shall not perish but have eternal life." (John 3:16)
+
+Jesus—fully God and fully man—lived the perfect life we couldn't live, and died the death we deserved to die.
+
+**The Response: Faith**
+"For it is by grace you have been saved, through faith—and this is not from yourselves, it is the gift of God—not by works, so that no one can boast." (Ephesians 2:8-9)
+
+Salvation is a gift, not a reward. We receive it by trusting in Jesus, not by earning it through good deeds.
+
+**The Result: New Life**
+"Therefore, if anyone is in Christ, the new creation has come: The old has gone, the new is here!" (2 Corinthians 5:17)
+
+When we trust Christ, we become new creations. Our past is forgiven, our present is empowered, and our future is secure.`,
+          id: `Fondasi iman Kristen adalah memahami apa yang telah Allah lakukan bagi kita melalui Yesus Kristus.`,
+        },
+        summary: { en: 'Salvation is God\'s free gift, received by faith in Jesus Christ.', id: 'Keselamatan adalah karunia gratis dari Allah, diterima melalui iman kepada Yesus Kristus.' },
+        scripture_references: [
+          { ...createBibleRef('Romans', 3, 23), text: 'For all have sinned and fall short of the glory of God.' },
+          { ...createBibleRef('John', 3, 16), text: 'For God so loved the world that he gave his one and only Son, that whoever believes in him shall not perish but have eternal life.' },
+          { ...createBibleRef('Ephesians', 2, 8, 9), text: 'For it is by grace you have been saved, through faith—and this is not from yourselves, it is the gift of God.' },
+        ],
+        discussion_questions: {
+          en: [
+            'When did you first understand that salvation is a gift, not something earned?',
+            'How does understanding grace change how you approach God?',
+          ],
+          id: [
+            'Kapan kamu pertama kali memahami bahwa keselamatan adalah karunia, bukan sesuatu yang diperoleh?',
+            'Bagaimana memahami anugerah mengubah cara kamu menghampiri Tuhan?',
+          ],
+        },
+        application: {
+          en: 'If you\'ve never received Christ, today can be the day. Simply pray: "Jesus, I believe You died for my sins. I receive Your gift of salvation. Come into my life and be my Lord."',
+          id: 'Jika kamu belum pernah menerima Kristus, hari ini bisa menjadi harinya. Cukup berdoa: "Yesus, aku percaya Engkau mati untuk dosa-dosaku. Aku menerima karunia keselamatan-Mu. Masuklah ke dalam hidupku dan jadilah Tuhanku."',
+        },
+        duration_minutes: 15,
+        order: 1,
+      },
+      {
+        id: 'lesson_003_2',
+        title: { en: 'The Trinity: One God, Three Persons', id: 'Tritunggal: Satu Allah, Tiga Pribadi' },
+        content: {
+          en: `One of Christianity's most distinctive beliefs is the Trinity—one God existing as three persons: Father, Son, and Holy Spirit.
+
+**Not Three Gods**
+Christianity is monotheistic. "Hear, O Israel: The LORD our God, the LORD is one." (Deuteronomy 6:4)
+
+**Not One Person**
+Yet Scripture reveals three distinct persons:
+- The Father sends the Son (John 3:16)
+- The Son prays to the Father (John 17)
+- The Spirit proceeds from both (John 15:26)
+
+**One God in Three Persons**
+At Jesus' baptism, we see all three: The Son is baptized, the Spirit descends like a dove, and the Father speaks from heaven (Matthew 3:16-17).
+
+**Why Does This Matter?**
+The Trinity shows us that God is relational at His core. Love has existed eternally within the Godhead. And this loving God invites us into relationship with Him.
+
+**Analogies (Imperfect but Helpful)**
+- Water exists as liquid, ice, and steam—same substance, different forms
+- The sun: the star, its light, and its heat
+- An egg: shell, white, and yolk
+
+No analogy is perfect, but they help us approach this mystery.`,
+          id: `Salah satu keyakinan paling khas dari Kekristenan adalah Tritunggal—satu Allah yang ada sebagai tiga pribadi: Bapa, Anak, dan Roh Kudus.`,
+        },
+        summary: { en: 'God exists as one God in three persons—Father, Son, and Holy Spirit.', id: 'Allah ada sebagai satu Allah dalam tiga pribadi—Bapa, Anak, dan Roh Kudus.' },
+        scripture_references: [
+          { ...createBibleRef('Matthew', 3, 16, 17), text: 'As soon as Jesus was baptized, he went up out of the water. At that moment heaven was opened, and he saw the Spirit of God descending like a dove and alighting on him. And a voice from heaven said, "This is my Son, whom I love."' },
+          { ...createBibleRef('Matthew', 28, 19), text: 'Go and make disciples of all nations, baptizing them in the name of the Father and of the Son and of the Holy Spirit.' },
+        ],
+        discussion_questions: {
+          en: [
+            'How does understanding the Trinity affect your view of God?',
+            'Which person of the Trinity do you relate to most? Which least?',
+          ],
+          id: [
+            'Bagaimana memahami Tritunggal mempengaruhi pandanganmu tentang Allah?',
+            'Pribadi Tritunggal mana yang paling kamu hubungkan? Mana yang paling tidak?',
+          ],
+        },
+        duration_minutes: 15,
+        order: 2,
+      },
+      {
+        id: 'lesson_003_3',
+        title: { en: 'The Bible: God\'s Word to Us', id: 'Alkitab: Firman Allah Kepada Kita' },
+        content: {
+          en: `The Bible is unlike any other book—it's God's written revelation to humanity.
+
+**Inspiration**
+"All Scripture is God-breathed and is useful for teaching, rebuking, correcting and training in righteousness." (2 Timothy 3:16)
+
+The Bible wasn't dictated like a secretary takes notes. God used human authors with their personalities, backgrounds, and writing styles—yet He superintended the process so that what they wrote was exactly what He wanted said.
+
+**Authority**
+Because the Bible is God's Word, it has authority over our lives. It's not just a good book with helpful suggestions—it's the standard by which we measure everything else.
+
+**Sufficiency**
+Scripture contains everything we need for life and godliness (2 Peter 1:3). We don't need extra revelations to know God's will for our lives.
+
+**How to Read the Bible**
+1. **Pray first** - Ask the Holy Spirit to illuminate your reading
+2. **Read in context** - Who wrote it? To whom? Why?
+3. **Look for Jesus** - He's the hero of every story
+4. **Apply it personally** - Ask: What does this mean for my life today?`,
+          id: `Alkitab tidak seperti buku lainnya—ini adalah wahyu tertulis Allah kepada umat manusia.`,
+        },
+        summary: { en: 'The Bible is God\'s inspired, authoritative, and sufficient Word for us.', id: 'Alkitab adalah Firman Allah yang diilhami, berwibawa, dan cukup bagi kita.' },
+        scripture_references: [
+          { ...createBibleRef('2 Timothy', 3, 16, 17), text: 'All Scripture is God-breathed and is useful for teaching, rebuking, correcting and training in righteousness, so that the servant of God may be thoroughly equipped for every good work.' },
+          { ...createBibleRef('Psalm', 119, 105), text: 'Your word is a lamp for my feet, a light on my path.' },
+        ],
+        discussion_questions: {
+          en: [
+            'What challenges do you face in reading the Bible regularly?',
+            'How has Scripture impacted your life?',
+          ],
+          id: [
+            'Tantangan apa yang kamu hadapi dalam membaca Alkitab secara teratur?',
+            'Bagaimana Alkitab telah mempengaruhi hidupmu?',
+          ],
+        },
+        application: {
+          en: 'Commit to reading the Bible daily, even if just for 10 minutes. Start with the Gospel of John.',
+          id: 'Berkomitmenlah untuk membaca Alkitab setiap hari, bahkan hanya 10 menit. Mulailah dengan Injil Yohanes.',
+        },
+        duration_minutes: 15,
+        order: 3,
+      },
+    ],
+    lesson_count: 3,
+    estimated_duration_minutes: 45,
+    main_passage: createBibleRef('Ephesians', 2, 1, 10),
+    supporting_verses: [
+      createBibleRef('John', 3, 16),
+      createBibleRef('2 Timothy', 3, 16),
+    ],
+    categories: ['Foundations', 'New Believers', 'Theology'],
+    category: 'topical',
+    difficulty: 'beginner',
+    cover_image_url: 'https://images.unsplash.com/photo-1519677100203-a0e668c92439?w=800&q=80',
+    completion_count: 6542,
+    average_rating: 4.7,
+    ratings_count: 892,
+    ai_generated: false,
+    status: 'published',
+    published_at: '2025-01-14T00:00:00Z',
+    created_by: 'system',
+    created_at: '2025-01-12T10:00:00Z',
+    deleted: false,
   },
 ];
 
 // ============================================================================
-// TOPICAL VERSES
+// TOPICAL CATEGORIES
 // ============================================================================
 
-export const mockTopicalCategories = [
+export const mockTopicalCategories: TopicalCategory[] = [
   {
     id: 'topic_001',
-    name: {
-      en: 'Faith & Trust',
-      id: 'Iman & Kepercayaan',
-    },
+    scope: 'global',
+    name: { en: 'Faith & Trust', id: 'Iman & Kepercayaan' },
     description: {
       en: 'Verses about building faith and learning to trust God in all circumstances.',
       id: 'Ayat-ayat tentang membangun iman dan belajar mempercayai Tuhan dalam segala keadaan.',
     },
-    versesCount: 24,
     icon: '🙏',
     color: '#3b82f6',
+    sort_order: 1,
+    status: 'published',
+    created_by: 'system',
+    created_at: '2025-01-01T00:00:00Z',
+    deleted: false,
   },
   {
     id: 'topic_002',
-    name: {
-      en: 'Peace & Anxiety',
-      id: 'Damai & Kecemasan',
-    },
+    scope: 'global',
+    name: { en: 'Peace & Anxiety', id: 'Damai & Kecemasan' },
     description: {
-      en: 'Find God\'s peace in the midst of worry, stress, and anxious thoughts.',
+      en: "Find God's peace in the midst of worry, stress, and anxious thoughts.",
       id: 'Temukan damai Tuhan di tengah kekhawatiran, stres, dan pikiran cemas.',
     },
-    versesCount: 18,
     icon: '🕊️',
     color: '#10b981',
+    sort_order: 2,
+    status: 'published',
+    created_by: 'system',
+    created_at: '2025-01-01T00:00:00Z',
+    deleted: false,
   },
   {
     id: 'topic_003',
-    name: {
-      en: 'Love & Relationships',
-      id: 'Kasih & Hubungan',
-    },
+    scope: 'global',
+    name: { en: 'Love & Relationships', id: 'Kasih & Hubungan' },
     description: {
-      en: 'God\'s wisdom for loving others, building healthy relationships, and showing compassion.',
+      en: "God's wisdom for loving others, building healthy relationships, and showing compassion.",
       id: 'Hikmat Tuhan untuk mengasihi orang lain, membangun hubungan yang sehat, dan menunjukkan belas kasihan.',
     },
-    versesCount: 32,
     icon: '❤️',
     color: '#ef4444',
+    sort_order: 3,
+    status: 'published',
+    created_by: 'system',
+    created_at: '2025-01-01T00:00:00Z',
+    deleted: false,
   },
   {
     id: 'topic_004',
-    name: {
-      en: 'Strength & Courage',
-      id: 'Kekuatan & Keberanian',
-    },
+    scope: 'global',
+    name: { en: 'Strength & Courage', id: 'Kekuatan & Keberanian' },
     description: {
       en: 'Scriptures to strengthen you when facing challenges, fear, or difficult decisions.',
       id: 'Ayat-ayat untuk menguatkanmu saat menghadapi tantangan, ketakutan, atau keputusan sulit.',
     },
-    versesCount: 20,
     icon: '💪',
     color: '#f59e0b',
+    sort_order: 4,
+    status: 'published',
+    created_by: 'system',
+    created_at: '2025-01-01T00:00:00Z',
+    deleted: false,
   },
   {
     id: 'topic_005',
-    name: {
-      en: 'Wisdom & Guidance',
-      id: 'Hikmat & Bimbingan',
-    },
+    scope: 'global',
+    name: { en: 'Wisdom & Guidance', id: 'Hikmat & Bimbingan' },
     description: {
-      en: 'Seek God\'s wisdom for decision-making and discovering His will for your life.',
+      en: "Seek God's wisdom for decision-making and discovering His will for your life.",
       id: 'Carilah hikmat Tuhan untuk pengambilan keputusan dan menemukan kehendak-Nya untuk hidupmu.',
     },
-    versesCount: 28,
     icon: '🧠',
     color: '#8b5cf6',
+    sort_order: 5,
+    status: 'published',
+    created_by: 'system',
+    created_at: '2025-01-01T00:00:00Z',
+    deleted: false,
   },
   {
     id: 'topic_006',
-    name: {
-      en: 'Hope & Encouragement',
-      id: 'Harapan & Dorongan',
-    },
+    scope: 'global',
+    name: { en: 'Hope & Encouragement', id: 'Harapan & Dorongan' },
     description: {
       en: 'Uplifting verses for when you need hope, encouragement, and renewed strength.',
       id: 'Ayat-ayat yang mengangkat ketika kamu membutuhkan harapan, dorongan, dan kekuatan yang diperbarui.',
     },
-    versesCount: 26,
     icon: '🌟',
     color: '#06b6d4',
+    sort_order: 6,
+    status: 'published',
+    created_by: 'system',
+    created_at: '2025-01-01T00:00:00Z',
+    deleted: false,
   },
 ];
 

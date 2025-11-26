@@ -101,7 +101,10 @@ export interface VerseOfTheDay {
   // Bible reference
   verse: BibleReference;
 
-  // Multilingual commentary
+  // Multilingual verse text (the actual Scripture)
+  verse_text?: MultilingualText;
+
+  // Multilingual commentary (theological explanation)
   commentary?: MultilingualText;
   reflection_prompt?: MultilingualText;
 
@@ -169,6 +172,28 @@ export interface BibleFigureOfTheDay {
   deleted_at?: string;
 }
 
+/**
+ * Bible Figure (for figures library)
+ * Extended type with biography and timeline for detailed figure screens
+ */
+export interface BibleFigure extends BibleFigureOfTheDay {
+  // Extended biography content
+  biography?: MultilingualText;
+
+  // Timeline events
+  timeline?: Array<{
+    date?: string;
+    event: MultilingualText;
+    verse?: BibleReference;
+  }>;
+
+  // Testament categorization
+  testament?: 'old' | 'new';
+
+  // Life lessons learned from this figure
+  life_lessons?: MultilingualText[];
+}
+
 // ==================== QUIZ ====================
 
 export interface QuizQuestion {
@@ -216,6 +241,53 @@ export interface DailyQuiz {
 
 // ==================== SELF-PACED CONTENT ====================
 
+/**
+ * Individual lesson within a Bible Study
+ * E-learning style with comprehensive content for each lesson
+ */
+export interface StudyLesson {
+  id: string;
+  title: MultilingualText;
+  content: MultilingualText;
+  summary?: MultilingualText;
+
+  // Scripture references for this lesson (with verse text)
+  scripture_references?: Array<BibleReference & { text?: string }>;
+
+  // Legacy field name (for backwards compatibility)
+  verses?: BibleReference[];
+
+  // Discussion/reflection questions for this lesson
+  discussion_questions?: {
+    en?: string[];
+    id?: string[];
+  };
+
+  // Legacy field name
+  questions?: MultilingualText[];
+
+  // Practical application section
+  application?: MultilingualText;
+
+  // Key takeaways/bullet points
+  key_takeaways?: MultilingualText[];
+
+  // Prayer prompt for the lesson
+  prayer?: MultilingualText;
+
+  // Lesson duration in minutes
+  duration_minutes?: number;
+
+  // Order within the study
+  order: number;
+
+  // Visual (optional lesson-specific image)
+  image_url?: string;
+
+  // Video content (optional)
+  video_url?: string;
+}
+
 export interface BibleStudy {
   id: string;
   scope: ContentScope;
@@ -227,8 +299,23 @@ export interface BibleStudy {
   description: MultilingualText;
   full_content: MultilingualText;
 
-  // Study structure
-  sections: Array<{
+  // Introduction (what users will learn)
+  introduction?: MultilingualText;
+
+  // Learning objectives/outcomes
+  learning_objectives?: MultilingualText[];
+
+  // Target audience
+  target_audience?: MultilingualText;
+
+  // Study structure - lessons for the reader
+  lessons: StudyLesson[];
+
+  // Computed fields from lessons
+  lesson_count?: number;
+
+  // Legacy: sections (for backwards compatibility)
+  sections?: Array<{
     title: string;
     content: string;
     verses?: BibleReference[];
@@ -241,12 +328,27 @@ export interface BibleStudy {
 
   // Categorization
   categories: string[];
+  category?: string; // Primary category (old_testament, new_testament, topical)
   difficulty: DifficultyLevel;
   series_id?: string;
   series_order?: number;
 
   // Visual
   cover_image_url?: string;
+  thumbnail_url?: string;
+
+  // Instructor/Author info
+  author?: MultilingualText;
+  author_title?: MultilingualText;
+  author_image_url?: string;
+
+  // Engagement metrics
+  completion_count?: number;
+  average_rating?: number;
+  ratings_count?: number;
+
+  // Prerequisites
+  prerequisites?: string[]; // IDs of studies that should be completed first
 
   // AI generation
   ai_generated: boolean;
@@ -417,8 +519,10 @@ export type ExploreContent =
   | DailyDevotion
   | VerseOfTheDay
   | BibleFigureOfTheDay
+  | BibleFigure
   | DailyQuiz
   | BibleStudy
+  | StudyLesson
   | TopicalCategory
   | TopicalVerse
   | DevotionPlan
