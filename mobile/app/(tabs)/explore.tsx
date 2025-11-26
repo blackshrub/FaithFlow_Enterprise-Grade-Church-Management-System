@@ -13,7 +13,11 @@ import { ScrollView, View, Text, StyleSheet, RefreshControl, Pressable } from 'r
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { ExploreColors, ExploreTypography, ExploreSpacing } from '@/constants/explore/designSystem';
-import { useExploreHome, useUserProgress, useCurrentStreak } from '@/hooks/explore/useExplore';
+import {
+  useExploreHomeMock as useExploreHome,
+  useUserProgress,
+  useCurrentStreak,
+} from '@/hooks/explore/useExploreMock';
 import { useExploreStore } from '@/stores/explore/exploreStore';
 
 // Components
@@ -282,7 +286,7 @@ export default function ExploreScreen() {
                       : 'Ikuti rencana renungan multi-hari'
                   }
                   icon="📅"
-                  onPress={() => router.push('/explore/plans')}
+                  onPress={() => router.push('/explore/studies')}
                   contentLanguage={contentLanguage}
                 />
               </View>
