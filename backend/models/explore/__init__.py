@@ -27,6 +27,7 @@ from .content import (
     QuizQuestion,
     DailyQuiz,
     # Self-paced content
+    StudyLesson,
     BibleStudy,
     TopicalCategory,
     TopicalVerse,
@@ -53,6 +54,29 @@ from .settings import (
     ContentAnalytics,
 )
 
+from .prompt_config import (
+    # Enums
+    DoctrinalFoundation,
+    ToneOfVoice,
+    TargetAudience,
+    ReadingLevel,
+    ContentLength,
+    # Content type configs
+    DailyDevotionConfig,
+    VerseOfTheDayConfig,
+    BibleFigureConfig,
+    DailyQuizConfig,
+    BibleStudyConfig,
+    TopicalCategoryConfig,
+    TopicalVerseConfig,
+    DevotionPlanConfig,
+    ShareableImageConfig,
+    # Master config
+    ExplorePromptConfiguration,
+    # Helpers
+    get_config_schema_with_placeholders,
+)
+
 __all__ = [
     # Enums
     "ContentScope",
@@ -71,6 +95,7 @@ __all__ = [
     "QuizQuestion",
     "DailyQuiz",
     # Self-paced content
+    "StudyLesson",
     "BibleStudy",
     "TopicalCategory",
     "TopicalVerse",
@@ -92,4 +117,22 @@ __all__ = [
     "UserExploreProgress",
     # Analytics
     "ContentAnalytics",
+    # Prompt Configuration Enums
+    "DoctrinalFoundation",
+    "ToneOfVoice",
+    "TargetAudience",
+    "ReadingLevel",
+    "ContentLength",
+    # Prompt Configurations
+    "DailyDevotionConfig",
+    "VerseOfTheDayConfig",
+    "BibleFigureConfig",
+    "DailyQuizConfig",
+    "BibleStudyConfig",
+    "TopicalCategoryConfig",
+    "TopicalVerseConfig",
+    "DevotionPlanConfig",
+    "ShareableImageConfig",
+    "ExplorePromptConfiguration",
+    "get_config_schema_with_placeholders",
 ]

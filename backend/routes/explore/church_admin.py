@@ -105,6 +105,196 @@ async def update_church_settings(
     return {"status": "success", "settings": settings}
 
 
+# ==================== AI PROMPT CONFIGURATION ====================
+
+
+@router.get("/ai/prompt-config")
+async def get_prompt_configuration(
+    current_user=Depends(require_admin),
+    church_id: str = Depends(get_session_church_id),
+    db=Depends(get_db),
+):
+    """Get church's AI prompt configuration for all content types"""
+    from models.explore import get_config_schema_with_placeholders, ExplorePromptConfiguration
+
+    config = await db.church_prompt_configs.find_one(
+        {"church_id": church_id, "deleted": {"$ne": True}}
+    )
+
+    if not config:
+        # Return default configuration
+        default_config = ExplorePromptConfiguration(church_id=church_id)
+        return {
+            "config": default_config.model_dump(),
+            "schema": get_config_schema_with_placeholders(),
+            "is_default": True,
+        }
+
+    config.pop("_id", None)
+    return {
+        "config": config,
+        "schema": get_config_schema_with_placeholders(),
+        "is_default": False,
+    }
+
+
+@router.get("/ai/prompt-config/{content_type}")
+async def get_content_type_prompt_config(
+    content_type: str,
+    current_user=Depends(require_admin),
+    church_id: str = Depends(get_session_church_id),
+    db=Depends(get_db),
+):
+    """Get prompt configuration for a specific content type"""
+    from models.explore import get_config_schema_with_placeholders
+
+    config = await db.church_prompt_configs.find_one(
+        {"church_id": church_id, "deleted": {"$ne": True}}
+    )
+
+    schema = get_config_schema_with_placeholders()
+
+    if content_type not in schema:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unknown content type: {content_type}. Valid types: {list(schema.keys())}"
+        )
+
+    type_config = config.get(content_type, {}) if config else {}
+
+    return {
+        "content_type": content_type,
+        "config": type_config,
+        "schema": schema[content_type],
+        "is_default": not bool(type_config),
+    }
+
+
+@router.put("/ai/prompt-config")
+async def update_prompt_configuration(
+    config: Dict[str, Any] = Body(...),
+    current_user=Depends(require_admin),
+    church_id: str = Depends(get_session_church_id),
+    db=Depends(get_db),
+):
+    """Update entire prompt configuration"""
+    config["church_id"] = church_id
+    config["updated_by"] = current_user["id"]
+    config["updated_at"] = datetime.now()
+
+    existing = await db.church_prompt_configs.find_one(
+        {"church_id": church_id, "deleted": {"$ne": True}}
+    )
+
+    if existing:
+        await db.church_prompt_configs.update_one(
+            {"church_id": church_id, "deleted": {"$ne": True}},
+            {"$set": config}
+        )
+    else:
+        config["created_by"] = current_user["id"]
+        config["created_at"] = datetime.now()
+        config["deleted"] = False
+        await db.church_prompt_configs.insert_one(config)
+
+    config.pop("_id", None)
+    return {"status": "success", "config": config}
+
+
+@router.patch("/ai/prompt-config/{content_type}")
+async def update_content_type_config(
+    content_type: str,
+    type_config: Dict[str, Any] = Body(...),
+    current_user=Depends(require_admin),
+    church_id: str = Depends(get_session_church_id),
+    db=Depends(get_db),
+):
+    """Update configuration for a specific content type only"""
+    from models.explore import get_config_schema_with_placeholders
+
+    schema = get_config_schema_with_placeholders()
+
+    if content_type not in schema:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unknown content type: {content_type}"
+        )
+
+    update_data = {
+        content_type: type_config,
+        "updated_by": current_user["id"],
+        "updated_at": datetime.now(),
+    }
+
+    existing = await db.church_prompt_configs.find_one(
+        {"church_id": church_id, "deleted": {"$ne": True}}
+    )
+
+    if existing:
+        await db.church_prompt_configs.update_one(
+            {"church_id": church_id, "deleted": {"$ne": True}},
+            {"$set": update_data}
+        )
+    else:
+        update_data["church_id"] = church_id
+        update_data["created_by"] = current_user["id"]
+        update_data["created_at"] = datetime.now()
+        update_data["deleted"] = False
+        await db.church_prompt_configs.insert_one(update_data)
+
+    return {
+        "status": "success",
+        "content_type": content_type,
+        "config": type_config,
+    }
+
+
+@router.post("/ai/prompt-config/reset")
+async def reset_prompt_configuration(
+    content_type: Optional[str] = Body(None, embed=True),
+    current_user=Depends(require_admin),
+    church_id: str = Depends(get_session_church_id),
+    db=Depends(get_db),
+):
+    """Reset prompt configuration to defaults (optionally for specific content type)"""
+    from models.explore import ExplorePromptConfiguration
+
+    if content_type:
+        # Reset only specific content type
+        default_config = ExplorePromptConfiguration(church_id=church_id)
+        default_type_config = getattr(default_config, content_type, None)
+
+        if default_type_config is None:
+            raise HTTPException(status_code=400, detail=f"Unknown content type: {content_type}")
+
+        await db.church_prompt_configs.update_one(
+            {"church_id": church_id, "deleted": {"$ne": True}},
+            {
+                "$set": {
+                    content_type: default_type_config.model_dump(),
+                    "updated_by": current_user["id"],
+                    "updated_at": datetime.now(),
+                }
+            }
+        )
+
+        return {
+            "status": "success",
+            "message": f"Reset {content_type} configuration to defaults",
+        }
+    else:
+        # Reset entire configuration
+        await db.church_prompt_configs.update_one(
+            {"church_id": church_id, "deleted": {"$ne": True}},
+            {"$set": {"deleted": True, "deleted_at": datetime.now()}}
+        )
+
+        return {
+            "status": "success",
+            "message": "Reset all prompt configurations to defaults",
+        }
+
+
 # ==================== TAKEOVER MANAGEMENT ====================
 
 

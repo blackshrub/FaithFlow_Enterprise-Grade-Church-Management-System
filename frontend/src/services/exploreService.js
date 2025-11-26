@@ -202,6 +202,50 @@ export const exploreService = {
     return data;
   },
 
+  // ==================== AI PROMPT CONFIGURATION ====================
+
+  /**
+   * Get all prompt configurations for church
+   */
+  getPromptConfig: async () => {
+    const { data } = await api.get('/api/explore/church/ai/prompt-config');
+    return data;
+  },
+
+  /**
+   * Get prompt configuration for specific content type
+   */
+  getPromptConfigByType: async (contentType) => {
+    const { data } = await api.get(`/api/explore/church/ai/prompt-config/${contentType}`);
+    return data;
+  },
+
+  /**
+   * Update all prompt configurations
+   */
+  updatePromptConfig: async (config) => {
+    const { data } = await api.put('/api/explore/church/ai/prompt-config', config);
+    return data;
+  },
+
+  /**
+   * Update prompt configuration for specific content type
+   */
+  updatePromptConfigByType: async (contentType, config) => {
+    const { data } = await api.patch(`/api/explore/church/ai/prompt-config/${contentType}`, config);
+    return data;
+  },
+
+  /**
+   * Reset prompt configuration to defaults
+   */
+  resetPromptConfig: async (contentTypes = null) => {
+    const { data } = await api.post('/api/explore/church/ai/prompt-config/reset', {
+      content_types: contentTypes
+    });
+    return data;
+  },
+
   // ==================== SETTINGS ====================
 
   /**

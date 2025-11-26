@@ -64,6 +64,7 @@ import ExploreContentList from "./pages/Explore/ExploreContentList";
 import SchedulingCalendar from "./pages/Explore/SchedulingCalendar";
 import AnalyticsDashboard from "./pages/Explore/AnalyticsDashboard";
 import AIGenerationHub from "./pages/Explore/AIGenerationHub";
+import AIPromptConfig from "./pages/Explore/AIPromptConfig";
 import ChurchSettings from "./pages/Explore/ChurchSettings";
 import DevotionEditor from "./pages/Explore/DevotionEditor";
 import VerseEditor from "./pages/Explore/VerseEditor";
@@ -209,6 +210,7 @@ function App() {
               <Route path="content-center/schedule" element={<SchedulingCalendar />} />
               <Route path="content-center/analytics" element={<AnalyticsDashboard />} />
               <Route path="content-center/ai" element={<AIGenerationHub />} />
+              <Route path="content-center/ai/prompts" element={<AIPromptConfig />} />
               <Route path="content-center/settings" element={<ChurchSettings />} />
 
               {/* Daily Devotion */}
