@@ -1772,6 +1772,172 @@
       "closed": "Tutup"
     }
   },
+  "communities": {
+    "title": "Komunitas",
+    "subtitle": "Kelola komunitas dan pelayanan gereja",
+    "actions": {
+      "create": "Buat Komunitas",
+      "edit": "Edit Komunitas",
+      "delete": "Hapus Komunitas",
+      "viewMembers": "Lihat Anggota"
+    },
+    "filters": {
+      "searchPlaceholder": "Cari komunitas berdasarkan nama, kategori, atau pemimpin...",
+      "categoryPlaceholder": "Filter berdasarkan kategori",
+      "allCategories": "Semua Kategori",
+      "openStatusPlaceholder": "Filter berdasarkan status",
+      "openStatus": {
+        "all": "Semua Komunitas",
+        "open": "Terbuka untuk Bergabung",
+        "closed": "Tutup"
+      }
+    },
+    "categories": {
+      "cellGroup": "Kelompok Sel",
+      "ministryTeam": "Tim Pelayanan",
+      "activityGroup": "Kelompok Aktivitas",
+      "supportGroup": "Kelompok Dukungan",
+      "prayerGroup": "Kelompok Doa",
+      "youthGroup": "Kelompok Pemuda",
+      "worshipTeam": "Tim Pujian",
+      "serviceTeam": "Tim Pelayanan",
+      "other": "Lainnya"
+    },
+    "form": {
+      "name": "Nama Komunitas",
+      "category": "Kategori",
+      "description": "Deskripsi",
+      "leaderName": "Pemimpin Komunitas",
+      "meetingSchedule": "Jadwal Pertemuan",
+      "location": "Lokasi Pertemuan",
+      "maxMembers": "Anggota Maksimal",
+      "maxMembersPlaceholder": "Kosongkan untuk tanpa batas",
+      "openForJoin": "Terbuka untuk anggota baru bergabung",
+      "coverImage": "Gambar Sampul",
+      "uploadCoverImage": "Unggah Gambar Sampul",
+      "coverImageHelper": "Unggah gambar untuk komunitas ini",
+      "noCoverImage": "Tidak ada gambar sampul",
+      "noLeaderSelected": "Belum ada pemimpin dipilih",
+      "searchLeader": "Cari anggota...",
+      "selectLeader": "Pilih pemimpin komunitas",
+      "openForJoinHelper": "Izinkan anggota untuk meminta bergabung dengan komunitas ini melalui aplikasi mobile",
+      "uploadCover": "Unggah Gambar Sampul",
+      "removeCover": "Hapus Sampul",
+      "changeCover": "Ubah Sampul",
+      "noMembersFound": "Anggota tidak ditemukan"
+    },
+    "editor": {
+      "createTitle": "Buat Komunitas Baru",
+      "editTitle": "Edit Komunitas",
+      "subtitle": "Isi detail komunitas di bawah ini"
+    },
+    "emptyStates": {
+      "noCommunities": "Komunitas tidak ditemukan",
+      "noCommunitiesYet": "Belum ada komunitas yang dibuat",
+      "createFirstCommunity": "Buat komunitas pertama Anda untuk memulai"
+    },
+    "messages": {
+      "createSuccess": "Komunitas berhasil dibuat",
+      "updateSuccess": "Komunitas berhasil diperbarui",
+      "deleteSuccess": "Komunitas berhasil dihapus",
+      "createError": "Gagal membuat komunitas",
+      "updateError": "Gagal memperbarui komunitas",
+      "deleteError": "Gagal menghapus komunitas",
+      "loadError": "Gagal memuat komunitas",
+      "saveError": "Gagal menyimpan komunitas",
+      "coverRemoved": "Gambar sampul berhasil dihapus"
+    },
+    "delete": {
+      "confirmTitle": "Hapus komunitas ini?",
+      "confirmDescription": "Tindakan ini tidak dapat dibatalkan. Komunitas akan dihapus secara permanen.",
+      "cannotDeleteWithMembers": "Tidak dapat menghapus komunitas dengan anggota aktif. Harap hapus semua anggota terlebih dahulu."
+    },
+    "members": {
+      "title": "Anggota Komunitas",
+      "addMember": "Tambah Anggota",
+      "removeMember": "Hapus",
+      "noMembers": "Belum ada anggota dalam komunitas ini",
+      "memberCount": "{{count}} anggota",
+      "confirmRemove": "Hapus anggota ini dari komunitas?",
+      "searchPlaceholder": "Cari anggota...",
+      "subtitle": "Kelola anggota komunitas",
+      "searchResults": "Hasil pencarian",
+      "emptyStates": {
+        "noMembers": "Belum ada anggota dalam komunitas ini"
+      },
+      "actions": {
+        "addMember": "Tambah Anggota",
+        "addToCommunity": "Tambahkan ke Komunitas",
+        "remove": "Hapus"
+      },
+      "table": {
+        "member": "Anggota",
+        "contact": "Kontak",
+        "status": "Status",
+        "role": "Peran",
+        "joinedAt": "Bergabung",
+        "actions": "Aksi"
+      },
+      "roles": {
+        "member": "Anggota",
+        "admin": "Admin",
+        "leader": "Pemimpin"
+      },
+      "messages": {
+        "addSuccess": "Anggota berhasil ditambahkan ke komunitas",
+        "addError": "Gagal menambahkan anggota ke komunitas",
+        "removeSuccess": "Anggota berhasil dihapus dari komunitas",
+        "removeError": "Gagal menghapus anggota dari komunitas",
+        "searchError": "Gagal mencari anggota",
+        "roleUpdateSuccess": "Peran anggota berhasil diperbarui",
+        "roleUpdateError": "Gagal memperbarui peran anggota"
+      },
+      "delete": {
+        "confirmTitle": "Hapus anggota dari komunitas?",
+        "confirmDescription": "Anggota ini akan dihapus dari komunitas."
+      }
+    },
+    "joinRequests": {
+      "title": "Permintaan Bergabung",
+      "pending": "Permintaan Tertunda",
+      "approve": "Setujui",
+      "reject": "Tolak",
+      "noRequests": "Tidak ada permintaan bergabung tertunda",
+      "subtitle": "Kelola permintaan bergabung yang tertunda",
+      "table": {
+        "member": "Anggota",
+        "community": "Komunitas",
+        "message": "Pesan",
+        "requestedAt": "Diminta",
+        "actions": "Aksi"
+      }
+    },
+    "leaveRequests": {
+      "title": "Permintaan Keluar",
+      "pending": "Permintaan Keluar Tertunda",
+      "approve": "Setujui",
+      "noRequests": "Tidak ada permintaan keluar tertunda",
+      "subtitle": "Kelola permintaan keluar yang tertunda",
+      "table": {
+        "member": "Anggota",
+        "community": "Komunitas",
+        "reason": "Alasan",
+        "joinedAt": "Bergabung",
+        "actions": "Aksi"
+      }
+    },
+    "table": {
+      "leader": "Pemimpin",
+      "membersCount": "Anggota",
+      "openForJoin": "Terbuka untuk Bergabung",
+      "noLeader": "Belum ada pemimpin"
+    },
+    "status": {
+      "open": "Terbuka",
+      "close": "Tutup",
+      "closed": "Tutup"
+    }
+  },
   "memberStatus": {
     "title": "Otomasi Status Jemaat",
     "subtitle": "Kelola status jemaat dan aturan otomasi",

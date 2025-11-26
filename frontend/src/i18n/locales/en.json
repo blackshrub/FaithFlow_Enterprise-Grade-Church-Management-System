@@ -1781,6 +1781,172 @@
       "closed": "Closed"
     }
   },
+  "communities": {
+    "title": "Communities",
+    "subtitle": "Manage church communities and ministries",
+    "actions": {
+      "create": "Create Community",
+      "edit": "Edit Community",
+      "delete": "Delete Community",
+      "viewMembers": "View Members"
+    },
+    "filters": {
+      "searchPlaceholder": "Search communities by name, category, or leader...",
+      "categoryPlaceholder": "Filter by category",
+      "allCategories": "All Categories",
+      "openStatusPlaceholder": "Filter by status",
+      "openStatus": {
+        "all": "All Communities",
+        "open": "Open for Join",
+        "closed": "Closed"
+      }
+    },
+    "categories": {
+      "cellGroup": "Cell Group",
+      "ministryTeam": "Ministry Team",
+      "activityGroup": "Activity Group",
+      "supportGroup": "Support Group",
+      "prayerGroup": "Prayer Group",
+      "youthGroup": "Youth Group",
+      "worshipTeam": "Worship Team",
+      "serviceTeam": "Service Team",
+      "other": "Other"
+    },
+    "form": {
+      "name": "Community Name",
+      "category": "Category",
+      "description": "Description",
+      "leaderName": "Community Leader",
+      "meetingSchedule": "Meeting Schedule",
+      "location": "Meeting Location",
+      "maxMembers": "Maximum Members",
+      "maxMembersPlaceholder": "Leave empty for unlimited",
+      "openForJoin": "Open for new members to join",
+      "coverImage": "Cover Image",
+      "uploadCoverImage": "Upload Cover Image",
+      "coverImageHelper": "Upload an image for this community",
+      "noCoverImage": "No cover image",
+      "noLeaderSelected": "No leader selected",
+      "searchLeader": "Search for a member...",
+      "selectLeader": "Select community leader",
+      "openForJoinHelper": "Allow members to request to join this community via mobile app",
+      "uploadCover": "Upload Cover Image",
+      "removeCover": "Remove Cover",
+      "changeCover": "Change Cover",
+      "noMembersFound": "No members found"
+    },
+    "editor": {
+      "createTitle": "Create New Community",
+      "editTitle": "Edit Community",
+      "subtitle": "Fill in the community details below"
+    },
+    "emptyStates": {
+      "noCommunities": "No communities found",
+      "noCommunitiesYet": "No communities have been created yet",
+      "createFirstCommunity": "Create your first community to get started"
+    },
+    "messages": {
+      "createSuccess": "Community created successfully",
+      "updateSuccess": "Community updated successfully",
+      "deleteSuccess": "Community deleted successfully",
+      "createError": "Failed to create community",
+      "updateError": "Failed to update community",
+      "deleteError": "Failed to delete community",
+      "loadError": "Failed to load communities",
+      "saveError": "Failed to save community",
+      "coverRemoved": "Cover image removed successfully"
+    },
+    "delete": {
+      "confirmTitle": "Delete this community?",
+      "confirmDescription": "This action cannot be undone. The community will be permanently deleted.",
+      "cannotDeleteWithMembers": "Cannot delete community with active members. Please remove all members first."
+    },
+    "members": {
+      "title": "Community Members",
+      "addMember": "Add Member",
+      "removeMember": "Remove",
+      "noMembers": "No members in this community yet",
+      "memberCount": "{{count}} members",
+      "confirmRemove": "Remove this member from the community?",
+      "searchPlaceholder": "Search for a member...",
+      "subtitle": "Manage community members",
+      "searchResults": "Search results",
+      "emptyStates": {
+        "noMembers": "No members in this community yet"
+      },
+      "actions": {
+        "addMember": "Add Member",
+        "addToCommunity": "Add to Community",
+        "remove": "Remove"
+      },
+      "table": {
+        "member": "Member",
+        "contact": "Contact",
+        "status": "Status",
+        "role": "Role",
+        "joinedAt": "Joined",
+        "actions": "Actions"
+      },
+      "roles": {
+        "member": "Member",
+        "admin": "Admin",
+        "leader": "Leader"
+      },
+      "messages": {
+        "addSuccess": "Member added to community successfully",
+        "addError": "Failed to add member to community",
+        "removeSuccess": "Member removed from community successfully",
+        "removeError": "Failed to remove member from community",
+        "searchError": "Failed to search members",
+        "roleUpdateSuccess": "Member role updated successfully",
+        "roleUpdateError": "Failed to update member role"
+      },
+      "delete": {
+        "confirmTitle": "Remove member from community?",
+        "confirmDescription": "This member will be removed from the community."
+      }
+    },
+    "joinRequests": {
+      "title": "Join Requests",
+      "pending": "Pending Requests",
+      "approve": "Approve",
+      "reject": "Reject",
+      "noRequests": "No pending join requests",
+      "subtitle": "Manage pending join requests",
+      "table": {
+        "member": "Member",
+        "community": "Community",
+        "message": "Message",
+        "requestedAt": "Requested",
+        "actions": "Actions"
+      }
+    },
+    "leaveRequests": {
+      "title": "Leave Requests",
+      "pending": "Pending Leave Requests",
+      "approve": "Approve",
+      "noRequests": "No pending leave requests",
+      "subtitle": "Manage pending leave requests",
+      "table": {
+        "member": "Member",
+        "community": "Community",
+        "reason": "Reason",
+        "joinedAt": "Joined",
+        "actions": "Actions"
+      }
+    },
+    "table": {
+      "leader": "Leader",
+      "membersCount": "Members",
+      "openForJoin": "Open for Join",
+      "noLeader": "No leader assigned"
+    },
+    "status": {
+      "open": "Open",
+      "close": "Closed",
+      "closed": "Closed"
+    }
+  },
   "memberStatus": {
     "title": "Member Status Automation",
     "subtitle": "Manage member statuses and automation rules",

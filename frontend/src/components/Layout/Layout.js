@@ -118,7 +118,8 @@ export default function Layout() {
     // People Section
     { type: 'section', label: 'PEOPLE' },
     { icon: Users, label: t('nav.members'), path: '/members' },
-    { icon: UsersRound, label: t('nav.groups'), path: '/groups' },
+    { icon: UsersRound, label: t('nav.communities') || 'Communities', path: '/communities' },
+    { icon: UsersRound, label: t('nav.groups') + ' (Legacy)', path: '/groups', hidden: true },
     
     // Worship & Events Section
     { type: 'section', label: 'WORSHIP & EVENTS' },

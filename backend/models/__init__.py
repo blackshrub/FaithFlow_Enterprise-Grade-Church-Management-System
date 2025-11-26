@@ -2,7 +2,22 @@
 from .church import Church, ChurchCreate, ChurchUpdate
 from .user import User, UserCreate, UserLogin, UserResponse
 from .member import Member, MemberCreate, MemberUpdate
-from .group import Group, GroupCreate, GroupUpdate
+# Community models (formerly Group)
+from .community import (
+    Community, CommunityCreate, CommunityUpdate, CommunitySettings,
+    # Backward compatibility aliases
+    Group, GroupCreate, GroupUpdate
+)
+from .community_membership import (
+    CommunityMembership, CommunityMembershipCreate, CommunityMembershipUpdate,
+    # Backward compatibility aliases
+    GroupMembership, GroupMembershipCreate, GroupMembershipUpdate
+)
+from .community_join_request import (
+    CommunityJoinRequest, CommunityJoinRequestCreate, CommunityJoinRequestUpdate,
+    # Backward compatibility aliases
+    GroupJoinRequest, GroupJoinRequestCreate, GroupJoinRequestUpdate
+)
 from .event import Event, EventCreate, EventUpdate
 from .donation import Donation, DonationCreate, DonationUpdate
 from .prayer_request import PrayerRequest, PrayerRequestCreate, PrayerRequestUpdate
@@ -21,7 +36,14 @@ __all__ = [
     'Church', 'ChurchCreate', 'ChurchUpdate',
     'User', 'UserCreate', 'UserLogin', 'UserResponse',
     'Member', 'MemberCreate', 'MemberUpdate',
+    # Community (new naming)
+    'Community', 'CommunityCreate', 'CommunityUpdate', 'CommunitySettings',
+    'CommunityMembership', 'CommunityMembershipCreate', 'CommunityMembershipUpdate',
+    'CommunityJoinRequest', 'CommunityJoinRequestCreate', 'CommunityJoinRequestUpdate',
+    # Backward compatibility (deprecated)
     'Group', 'GroupCreate', 'GroupUpdate',
+    'GroupMembership', 'GroupMembershipCreate', 'GroupMembershipUpdate',
+    'GroupJoinRequest', 'GroupJoinRequestCreate', 'GroupJoinRequestUpdate',
     'Event', 'EventCreate', 'EventUpdate',
     'Donation', 'DonationCreate', 'DonationUpdate',
     'PrayerRequest', 'PrayerRequestCreate', 'PrayerRequestUpdate',

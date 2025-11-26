@@ -45,13 +45,21 @@ export const API_ENDPOINTS = {
   EVENT_RSVP: (id: string) => `/api/events/${id}/rsvp`,
   MY_RSVPS: '/api/events/my-rsvps',
 
-  // Groups
+  // Groups (legacy - use Communities instead)
   GROUPS_PUBLIC: '/api/public/groups',
   MY_GROUPS: '/api/groups/my-groups',
   GROUP_DETAIL: (id: string) => `/api/groups/${id}`,
   GROUP_JOIN: (id: string) => `/api/groups/${id}/join`,
   GROUP_LEAVE: (id: string) => `/api/groups/${id}/leave`,
   GROUP_MEMBERS: (id: string) => `/api/groups/${id}/members`,
+
+  // Communities (new - replacing Groups)
+  COMMUNITIES_PUBLIC: (churchId: string) => `/api/public/communities/${churchId}`,
+  MY_COMMUNITIES: '/api/v1/communities/my-communities',
+  COMMUNITY_DETAIL: (id: string) => `/api/v1/communities/${id}`,
+  COMMUNITY_JOIN: (communityId: string) => `/api/public/communities/${communityId}/join-request`,
+  COMMUNITY_LEAVE: (communityId: string) => `/api/public/communities/${communityId}/leave-request`,
+  COMMUNITY_MEMBERS: (churchId: string, communityId: string) => `/api/public/communities/${churchId}/${communityId}/members`,
 
   // Prayer Requests
   PRAYER_REQUESTS: '/api/prayer-requests',
@@ -106,11 +114,17 @@ export const QUERY_KEYS = {
   EVENT_DETAIL: ['event', 'detail'],
   EVENT_CATEGORIES: ['events', 'categories'],
 
-  // Groups
+  // Groups (legacy)
   GROUPS: ['groups'],
   MY_GROUPS: ['groups', 'my'],
   GROUP_DETAIL: ['group', 'detail'],
   GROUP_MEMBERS: ['group', 'members'],
+
+  // Communities (new)
+  COMMUNITIES: ['communities'],
+  MY_COMMUNITIES: ['communities', 'my'],
+  COMMUNITY_DETAIL: (id: string) => ['community', 'detail', id],
+  COMMUNITY_MEMBERS: (communityId: string) => ['community', 'members', communityId],
 
   // Prayer
   PRAYER_REQUESTS: ['prayer', 'requests'],
@@ -134,7 +148,8 @@ export const CACHE_TIMES = {
   BIBLE: 1000 * 60 * 60 * 24 * 7, // 1 week (rarely changes)
   GIVING: 1000 * 60 * 5, // 5 minutes
   EVENTS: 1000 * 60 * 5, // 5 minutes
-  GROUPS: 1000 * 60 * 5, // 5 minutes
+  GROUPS: 1000 * 60 * 5, // 5 minutes (legacy)
+  COMMUNITIES: 1000 * 60 * 5, // 5 minutes
   PRAYER: 1000 * 60 * 3, // 3 minutes
   PROFILE: 1000 * 60 * 30, // 30 minutes
 };

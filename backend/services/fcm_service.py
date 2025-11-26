@@ -166,7 +166,8 @@ class FCMService:
             # Check type-specific preferences
             type_pref_map = {
                 "event": "events_enabled",
-                "group": "groups_enabled",
+                "community": "communities_enabled",  # New community notifications
+                "group": "communities_enabled",      # Legacy alias for backward compatibility
                 "prayer": "prayers_enabled",
                 "devotion": "devotions_enabled",
                 "announcement": "announcements_enabled",

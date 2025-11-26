@@ -75,12 +75,17 @@ import TopicalCategoryEditor from "./pages/Explore/TopicalCategoryEditor";
 import TopicalVerseEditor from "./pages/Explore/TopicalVerseEditor";
 import DevotionPlanEditor from "./pages/Explore/DevotionPlanEditor";
 
-// Groups pages
+// Groups pages (legacy - keeping for backward compatibility)
 import GroupsListPage from "./pages/Groups/GroupsListPage";
 import GroupEditorPage from "./pages/Groups/GroupEditorPage";
 import GroupMembersPage from "./pages/Groups/GroupMembersPage";
 import JoinRequestsPage from "./pages/Groups/JoinRequestsPage";
 import LeaveRequestsPage from "./pages/Groups/LeaveRequestsPage";
+
+// Communities pages (new - replacing Groups)
+import CommunitiesListPage from "./pages/Communities/CommunitiesListPage";
+import CommunityEditorPage from "./pages/Communities/CommunityEditorPage";
+import CommunityMembersPage from "./pages/Communities/CommunityMembersPage";
 
 // Counseling pages
 import {
@@ -189,13 +194,19 @@ function App() {
               <Route path="prayer-requests/new" element={<PrayerRequestForm />} />
               <Route path="prayer-requests/:id" element={<PrayerRequestForm />} />
               
-              {/* Groups Routes */}
+              {/* Groups Routes (legacy - keeping for backward compatibility) */}
               <Route path="groups" element={<GroupsListPage />} />
               <Route path="groups/new" element={<GroupEditorPage />} />
               <Route path="groups/:id/edit" element={<GroupEditorPage />} />
               <Route path="groups/:groupId/members" element={<GroupMembersPage />} />
               <Route path="groups/join-requests" element={<JoinRequestsPage />} />
               <Route path="groups/leave-requests" element={<LeaveRequestsPage />} />
+
+              {/* Communities Routes (new - replacing Groups) */}
+              <Route path="communities" element={<CommunitiesListPage />} />
+              <Route path="communities/new" element={<CommunityEditorPage />} />
+              <Route path="communities/:id/edit" element={<CommunityEditorPage />} />
+              <Route path="communities/:communityId/members" element={<CommunityMembersPage />} />
               
               {/* Counseling Routes */}
               <Route path="counseling" element={<CounselingDashboard />} />

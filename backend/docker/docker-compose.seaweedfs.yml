@@ -1,0 +1,91 @@
+version: '3.8'
+
+# SeaweedFS - Self-hosted distributed file storage for FaithFlow Community media
+# Documentation: https://github.com/seaweedfs/seaweedfs
+
+services:
+  # Master server - manages file ID allocation and volume locations
+  seaweedfs-master:
+    image: chrislusf/seaweedfs:3.59
+    container_name: faithflow-seaweedfs-master
+    ports:
+      - "9333:9333"     # Master HTTP API
+      - "19333:19333"   # Master gRPC
+    command: >
+      master
+      -ip=seaweedfs-master
+      -ip.bind=0.0.0.0
+      -port=9333
+      -mdir=/data
+      -defaultReplication=000
+    volumes:
+      - seaweedfs-master-data:/data
+    networks:
+      - faithflow-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://localhost:9333/cluster/status"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Volume server - stores actual file data
+  seaweedfs-volume:
+    image: chrislusf/seaweedfs:3.59
+    container_name: faithflow-seaweedfs-volume
+    ports:
+      - "8080:8080"     # Volume HTTP (for file access)
+      - "18080:18080"   # Volume gRPC
+    command: >
+      volume
+      -mserver=seaweedfs-master:9333
+      -ip.bind=0.0.0.0
+      -port=8080
+      -dir=/data
+      -max=100
+      -compactionMBps=40
+      -fileSizeLimitMB=100
+    volumes:
+      - seaweedfs-volume-data:/data
+    networks:
+      - faithflow-network
+    depends_on:
+      seaweedfs-master:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Filer server - provides S3/HTTP file system interface
+  seaweedfs-filer:
+    image: chrislusf/seaweedfs:3.59
+    container_name: faithflow-seaweedfs-filer
+    ports:
+      - "8888:8888"     # Filer HTTP
+      - "18888:18888"   # Filer gRPC
+      - "8333:8333"     # S3 compatible API (optional)
+    command: >
+      filer
+      -master=seaweedfs-master:9333
+      -ip.bind=0.0.0.0
+      -port=8888
+      -s3
+      -s3.port=8333
+    volumes:
+      - seaweedfs-filer-data:/data
+    networks:
+      - faithflow-network
+    depends_on:
+      - seaweedfs-master
+      - seaweedfs-volume
+    restart: unless-stopped
+
+networks:
+  faithflow-network:
+    driver: bridge
+
+volumes:
+  seaweedfs-master-data:
+    driver: local
+  seaweedfs-volume-data:
+    driver: local
+  seaweedfs-filer-data:
+    driver: local

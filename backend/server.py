@@ -38,8 +38,12 @@ from routes import (
 from routes import (
     articles, article_categories, article_tags, article_comments,
     articles_public, article_preview, prayer_requests,
+    # Legacy group routes (backward compatibility during migration)
     groups, group_memberships, groups_public,
-    group_join_requests, group_leave_requests
+    group_join_requests, group_leave_requests,
+    # New community routes (replacing groups)
+    communities, community_memberships, communities_public,
+    community_join_requests, community_leave_requests
 )
 
 ROOT_DIR = Path(__file__).parent
@@ -157,6 +161,12 @@ api_v1_router.include_router(group_memberships.router)
 api_v1_router.include_router(group_join_requests.router)
 api_v1_router.include_router(group_leave_requests.router)
 
+# New Community routes (replacing Groups - keeping both during migration)
+api_v1_router.include_router(communities.router)
+api_v1_router.include_router(community_memberships.router)
+api_v1_router.include_router(community_join_requests.router)
+api_v1_router.include_router(community_leave_requests.router)
+
 # Include counseling routes (v1)
 api_v1_router.include_router(counseling_admin.router)
 
@@ -170,6 +180,7 @@ api_router.include_router(api_v1_router)
 api_router.include_router(articles_public.router)
 api_router.include_router(article_preview.router)
 api_router.include_router(groups_public.router)
+api_router.include_router(communities_public.router)  # New community public routes
 api_router.include_router(counseling_public.router)
 api_router.include_router(kiosk.router)
 
