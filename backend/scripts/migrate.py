@@ -89,6 +89,21 @@ async def create_indexes(db):
     await db.demographic_presets.create_index([("church_id", 1), ("order", 1)])
     print("✓ Settings indexes")
 
+    # Explore indexes
+    await db.church_explore_settings.create_index("church_id", unique=True)
+    await db.content_schedule.create_index([("church_id", 1), ("content_type", 1), ("date", 1)])
+    await db.content_schedule.create_index([("church_id", 1), ("is_takeover", 1)])
+    await db.user_explore_progress.create_index([("church_id", 1), ("user_id", 1)], unique=True)
+    await db.user_explore_progress.create_index([("church_id", 1), ("streak.current_streak", -1)])
+    await db.daily_devotions.create_index([("scope", 1), ("status", 1), ("published_at", 1)])
+    await db.daily_devotions.create_index([("scope", 1), ("church_id", 1)])
+    await db.verses_of_the_day.create_index([("scope", 1), ("status", 1), ("published_at", 1)])
+    await db.bible_figures_of_the_day.create_index([("scope", 1), ("status", 1), ("published_at", 1)])
+    await db.daily_quizzes.create_index([("scope", 1), ("status", 1), ("published_at", 1)])
+    await db.bible_studies.create_index([("scope", 1), ("status", 1)])
+    await db.topical_categories.create_index([("scope", 1), ("order", 1)])
+    print("✓ Explore indexes")
+
     print("\n✅ All indexes created/updated successfully")
 
 
