@@ -61,6 +61,12 @@ from .prompt_config import (
     TargetAudience,
     ReadingLevel,
     ContentLength,
+    # Image generation enums
+    ImageStyle,
+    ImageMood,
+    ImageColorPalette,
+    # Image configuration
+    GlobalImageConfig,
     # Content type configs
     DailyDevotionConfig,
     VerseOfTheDayConfig,
@@ -123,6 +129,11 @@ __all__ = [
     "TargetAudience",
     "ReadingLevel",
     "ContentLength",
+    # Image Generation Enums & Config
+    "ImageStyle",
+    "ImageMood",
+    "ImageColorPalette",
+    "GlobalImageConfig",
     # Prompt Configurations
     "DailyDevotionConfig",
     "VerseOfTheDayConfig",

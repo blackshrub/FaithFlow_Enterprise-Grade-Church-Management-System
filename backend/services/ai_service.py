@@ -14,6 +14,8 @@ import anthropic
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from utils.logger import get_logger
+from utils.system_config import get_ai_settings
+from services.image_prompt_builder import ImagePromptBuilder, build_image_prompt
 
 logger = get_logger(__name__)
 
@@ -22,25 +24,53 @@ class AIService:
     """
     World-class AI service for generating spiritual content
     Uses Anthropic Claude for text generation and Stability AI for images
+    Settings are loaded from database (System Settings page) with .env fallback.
     """
 
     def __init__(self, db: AsyncIOMotorDatabase):
         self.db = db
-        self.anthropic_api_key = os.getenv("ANTHROPIC_API_KEY")
-        self.stability_api_key = os.getenv("STABILITY_API_KEY")
-
-        if not self.anthropic_api_key:
-            logger.warning("ANTHROPIC_API_KEY not set - AI text generation will not work")
-
-        if not self.stability_api_key:
-            logger.warning("STABILITY_API_KEY not set - Image generation will not work")
-
-        self.client = anthropic.Anthropic(api_key=self.anthropic_api_key) if self.anthropic_api_key else None
+        self._anthropic_api_key: Optional[str] = None
+        self._stability_api_key: Optional[str] = None
+        self._client: Optional[anthropic.Anthropic] = None
+        self._initialized = False
 
         # Generation queue collection
         self.queue_collection = db.ai_generation_queue
 
-        logger.info(f"AI Service initialized (Claude: {'✓' if self.anthropic_api_key else '✗'}, Stability: {'✓' if self.stability_api_key else '✗'})")
+        logger.info("AI Service created (settings will be loaded from database on first use)")
+
+    async def _ensure_initialized(self):
+        """Lazy initialization - load settings from database on first use"""
+        if self._initialized:
+            return
+
+        ai_settings = await get_ai_settings(self.db)
+
+        self._anthropic_api_key = ai_settings.get("anthropic_api_key")
+        self._stability_api_key = ai_settings.get("stability_api_key")
+
+        if not self._anthropic_api_key:
+            logger.warning("Anthropic API key not configured - AI text generation will not work")
+        else:
+            self._client = anthropic.Anthropic(api_key=self._anthropic_api_key)
+
+        if not self._stability_api_key:
+            logger.warning("Stability API key not configured - Image generation will not work")
+
+        self._initialized = True
+        logger.info(f"AI Service initialized (Claude: {'✓' if self._anthropic_api_key else '✗'}, Stability: {'✓' if self._stability_api_key else '✗'})")
+
+    @property
+    def anthropic_api_key(self) -> Optional[str]:
+        return self._anthropic_api_key
+
+    @property
+    def stability_api_key(self) -> Optional[str]:
+        return self._stability_api_key
+
+    @property
+    def client(self) -> Optional[anthropic.Anthropic]:
+        return self._client
 
     async def get_ai_config(self, church_id: str) -> Dict[str, Any]:
         """Get AI configuration for a church"""
@@ -82,9 +112,11 @@ class AIService:
         Queue content generation job
         Returns job ID for tracking
         """
+        # Ensure settings are loaded from database
+        await self._ensure_initialized()
 
         if not self.client:
-            raise ValueError("AI service not configured - missing ANTHROPIC_API_KEY")
+            raise ValueError("AI service not configured - please configure Anthropic API key in System Settings")
 
         # Create generation job
         job = {
@@ -155,13 +187,37 @@ class AIService:
             else:
                 raise ValueError(f"Unknown content type: {content_type}")
 
-            # Generate cover image for the content
+            # Generate cover image for the content using enhanced prompt builder
             logger.info(f"Generating cover image for {content_type}...")
-            image_prompt = self._get_image_prompt_for_content(content_type, generated)
-            image_url = await self.generate_image(image_prompt, content_type, style="spiritual-art")
+
+            # Get church-specific image configuration if available
+            church_image_config = await self._get_church_image_config(church_id)
+
+            # Build enhanced image prompt using the ImagePromptBuilder
+            prompt_result = build_image_prompt(
+                content_type=content_type,
+                content_data=generated,
+                church_config=church_image_config
+            )
+
+            logger.info(f"Built enhanced image prompt for {content_type}. Themes: {prompt_result.get('extracted_themes', [])}")
+
+            # Generate image with enhanced prompt and negative prompt
+            image_url = await self.generate_image_enhanced(
+                prompt=prompt_result["prompt"],
+                negative_prompt=prompt_result.get("negative_prompt", ""),
+                content_type=content_type,
+                aspect_ratio=church_image_config.get("aspect_ratio", "16:9") if church_image_config else "16:9"
+            )
 
             if image_url:
                 generated["image_url"] = image_url
+                generated["image_metadata"] = {
+                    "prompt_used": prompt_result["prompt"][:500],  # Store truncated prompt for reference
+                    "extracted_mood": prompt_result.get("extracted_mood"),
+                    "extracted_themes": prompt_result.get("extracted_themes", [])[:5],
+                    "generated_at": datetime.utcnow().isoformat()
+                }
                 logger.info(f"Successfully generated image for job {job_id}")
             else:
                 logger.warning(f"Image generation failed for job {job_id}, continuing without image")
@@ -279,26 +335,51 @@ Return JSON with English only, in this exact format:
         custom_prompt: Optional[str],
         generate_both_languages: bool
     ) -> Dict[str, Any]:
-        """Generate a verse of the day with commentary"""
+        """Generate a verse of the day with all 4 required fields:
+        - verse: BibleReference object (book, chapter, verse_start, verse_end, translation)
+        - verse_text: The actual Scripture text (multilingual)
+        - commentary: Theological explanation (multilingual)
+        - reflection_prompt: Practical application prompt for personal reflection (multilingual)
+        """
 
         base_prompt = custom_prompt or self._get_verse_prompt()
 
         if generate_both_languages:
             prompt = f"""{base_prompt}
 
-Return JSON in this exact format:
+CRITICAL: Return JSON in this EXACT format with all 4 required fields:
 {{
-  "bible_reference": "Book Chapter:Verse",
-  "verse_text": {{"en": "English verse", "id": "Indonesian verse"}},
-  "commentary": {{"en": "English commentary (200-300 words)", "id": "Indonesian commentary"}},
-  "application": {{"en": "English practical application", "id": "Indonesian application"}},
-  "theme": "main-theme",
-  "tags": ["faith", "hope"]
-}}"""
+  "verse": {{
+    "book": "Book Name",
+    "chapter": 1,
+    "verse_start": 1,
+    "verse_end": 2,
+    "translation": "NIV"
+  }},
+  "verse_text": {{
+    "en": "The actual Scripture verse text in English (exactly as written in the Bible)",
+    "id": "Teks ayat Alkitab yang sebenarnya dalam Bahasa Indonesia"
+  }},
+  "commentary": {{
+    "en": "Rich theological commentary (200-300 words) explaining the verse's context, meaning, and significance",
+    "id": "Komentar teologis yang kaya (200-300 kata) menjelaskan konteks, makna, dan signifikansi ayat"
+  }},
+  "reflection_prompt": {{
+    "en": "A thoughtful question or prompt for personal reflection and application (50-100 words)",
+    "id": "Pertanyaan atau dorongan yang bijaksana untuk refleksi dan aplikasi pribadi (50-100 kata)"
+  }},
+  "theme": "main-theme-keyword",
+  "tags": ["faith", "hope", "encouragement"]
+}}
+
+IMPORTANT:
+- verse_text MUST contain the actual Scripture text from the Bible (not a paraphrase)
+- commentary should explain the theological meaning and context
+- reflection_prompt should help the reader apply this verse to their daily life"""
         else:
             prompt = f"""{base_prompt}
 
-Return JSON with English only."""
+Return JSON with English only, same structure but only "en" field for text."""
 
         message = self.client.messages.create(
             model=model,
@@ -438,17 +519,29 @@ The devotion should help readers grow in their faith and apply Scripture to dail
         """Get default prompt for verse generation"""
         return """You are a biblical scholar and theologian with expertise in hermeneutics and practical theology.
 
-Generate a verse of the day with:
-1. A meaningful, well-known Bible verse (not obscure)
-2. Rich theological commentary (200-300 words) explaining:
+Generate a "Verse of the Day" with ALL 4 required components:
+
+1. VERSE REFERENCE: Choose a meaningful, encouraging Bible verse (can be 1-3 verses max)
+   - Prefer well-known, uplifting verses
+   - Include book, chapter, verse numbers, and translation (NIV)
+
+2. VERSE TEXT: The EXACT Scripture text as written in the Bible
+   - Must be word-for-word from the Bible (NIV translation)
+   - No paraphrasing or summarizing
+   - Include the full text of all verses referenced
+
+3. COMMENTARY: Rich theological explanation (200-300 words)
    - Historical and cultural context
-   - Original meaning in Hebrew/Greek
+   - Original Hebrew/Greek meaning (briefly)
    - Theological significance
    - How it fits in the broader biblical narrative
-3. Practical application for modern Christians
-4. A thematic tag
 
-The commentary should be scholarly yet accessible, theologically sound, and practically applicable."""
+4. REFLECTION PROMPT: A personal application question (50-100 words)
+   - Help the reader connect the verse to their daily life
+   - Ask a thought-provoking question for meditation
+   - Encourage practical steps of faith
+
+The content should be scholarly yet accessible, theologically sound, and spiritually encouraging."""
 
     def _get_figure_prompt(self) -> str:
         """Get default prompt for Bible figure generation"""
@@ -626,6 +719,9 @@ Questions should be engaging, educational, and encourage deeper Bible study."""
         Generate image using Stability AI
         Returns base64 encoded image or empty string if fails
         """
+        # Ensure settings are loaded from database
+        await self._ensure_initialized()
+
         if not self.stability_api_key:
             logger.warning("Stability AI key not set - skipping image generation")
             return ""
@@ -669,6 +765,120 @@ Questions should be engaging, educational, and encourage deeper Bible study."""
         except Exception as e:
             logger.error(f"Image generation failed: {str(e)}")
             return ""
+
+    async def generate_image_enhanced(
+        self,
+        prompt: str,
+        negative_prompt: str = "",
+        content_type: str = "devotion",
+        aspect_ratio: str = "16:9"
+    ) -> str:
+        """
+        Enhanced image generation using Stability AI with negative prompts.
+        This is the new method that uses the ImagePromptBuilder's rich prompts.
+
+        Args:
+            prompt: The detailed, context-aware image prompt
+            negative_prompt: Things to avoid in the image
+            content_type: Type of content for logging
+            aspect_ratio: Image aspect ratio (16:9, 1:1, 4:3, 9:16, 3:2)
+
+        Returns:
+            Base64 encoded image URL or empty string if fails
+        """
+        await self._ensure_initialized()
+
+        if not self.stability_api_key:
+            logger.warning("Stability AI key not set - skipping image generation")
+            return ""
+
+        try:
+            # Validate aspect ratio
+            valid_ratios = ["16:9", "1:1", "4:3", "9:16", "3:2", "21:9", "2:3", "4:5", "5:4"]
+            if aspect_ratio not in valid_ratios:
+                aspect_ratio = "16:9"
+
+            # Build the request data
+            request_data = {
+                "prompt": prompt,
+                "output_format": "png",
+                "aspect_ratio": aspect_ratio,
+            }
+
+            # Add negative prompt if provided (Stability AI Ultra supports this)
+            if negative_prompt:
+                request_data["negative_prompt"] = negative_prompt
+
+            logger.info(f"Generating enhanced image for {content_type} with {len(prompt)} char prompt")
+            logger.debug(f"Negative prompt: {negative_prompt[:200]}..." if negative_prompt else "No negative prompt")
+
+            # Call Stability AI API (using Ultra model for best quality)
+            async with httpx.AsyncClient(timeout=90.0) as client:
+                response = await client.post(
+                    "https://api.stability.ai/v2beta/stable-image/generate/ultra",
+                    headers={
+                        "authorization": f"Bearer {self.stability_api_key}",
+                        "accept": "image/*"
+                    },
+                    files={"none": ''},
+                    data=request_data
+                )
+
+                if response.status_code == 200:
+                    # Convert to base64 for storage
+                    image_data = base64.b64encode(response.content).decode('utf-8')
+                    logger.info(f"Successfully generated enhanced image for {content_type}")
+                    return f"data:image/png;base64,{image_data}"
+                else:
+                    logger.error(f"Stability AI error: {response.status_code} - {response.text}")
+                    # Fall back to legacy method if enhanced fails
+                    logger.info("Falling back to legacy image generation...")
+                    return await self.generate_image(prompt[:500], content_type, "spiritual-art")
+
+        except Exception as e:
+            logger.error(f"Enhanced image generation failed: {str(e)}")
+            # Fall back to legacy method
+            try:
+                return await self.generate_image(prompt[:500], content_type, "spiritual-art")
+            except Exception:
+                return ""
+
+    async def _get_church_image_config(self, church_id: str) -> Optional[Dict[str, Any]]:
+        """
+        Get the church's image generation configuration from their prompt config.
+
+        Args:
+            church_id: The church's ID
+
+        Returns:
+            Dictionary with image configuration or None if not found
+        """
+        try:
+            # Try to get church's prompt configuration from database
+            prompt_config = await self.db.explore_prompt_configs.find_one({
+                "church_id": church_id
+            })
+
+            if prompt_config and "image_config" in prompt_config:
+                image_config = prompt_config["image_config"]
+                logger.debug(f"Found custom image config for church {church_id}")
+                return image_config
+
+            # Return default configuration if no custom config found
+            logger.debug(f"Using default image config for church {church_id}")
+            return {
+                "image_style": "spiritual_art",
+                "image_mood": "peaceful",
+                "color_palette": "warm_golden",
+                "aspect_ratio": "16:9",
+                "include_people": True,
+                "people_style": "silhouette",
+                "avoid_elements": ["text_on_image", "modern_technology", "violence"],
+            }
+
+        except Exception as e:
+            logger.warning(f"Error fetching church image config: {str(e)}")
+            return None
 
     def _get_image_prompt_for_content(self, content_type: str, content_data: Dict[str, Any]) -> str:
         """Generate appropriate image prompt based on content type and data"""

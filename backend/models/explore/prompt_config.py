@@ -58,6 +58,198 @@ class ContentLength(str, Enum):
     COMPREHENSIVE = "comprehensive"  # 800+ words
 
 
+# ==================== IMAGE GENERATION ENUMS ====================
+
+
+class ImageStyle(str, Enum):
+    """Visual style for AI-generated images"""
+    SPIRITUAL_ART = "spiritual_art"  # Soft, ethereal spiritual artwork
+    BIBLICAL_CLASSICAL = "biblical_classical"  # Renaissance religious art style
+    MODERN_MINIMAL = "modern_minimal"  # Clean, contemporary design
+    PHOTOREALISTIC = "photorealistic"  # Natural photography style
+    WATERCOLOR = "watercolor"  # Artistic watercolor painting
+    STAINED_GLASS = "stained_glass"  # Cathedral stained glass aesthetic
+    CONTEMPORARY_WORSHIP = "contemporary_worship"  # Modern church/worship style
+    NATURE_INSPIRED = "nature_inspired"  # God's creation, landscapes
+
+
+class ImageMood(str, Enum):
+    """Mood/atmosphere for generated images"""
+    PEACEFUL = "peaceful"  # Serene, tranquil, restful
+    JOYFUL = "joyful"  # Celebration, brightness, gratitude
+    REVERENT = "reverent"  # Sacred, holy, worship
+    POWERFUL = "powerful"  # Dramatic, majestic, strong
+    CONTEMPLATIVE = "contemplative"  # Reflective, meditative, deep
+    HOPEFUL = "hopeful"  # Optimistic, new beginnings, light
+    COMFORTING = "comforting"  # Warm, reassuring, safe
+    CELEBRATORY = "celebratory"  # Festive, praise, thanksgiving
+
+
+class ImageColorPalette(str, Enum):
+    """Color palette preferences for images"""
+    WARM_GOLDEN = "warm_golden"  # Gold, amber, sunset tones
+    COOL_SERENE = "cool_serene"  # Blue, teal, calming tones
+    EARTH_TONES = "earth_tones"  # Brown, green, natural colors
+    VIBRANT = "vibrant"  # Bold, saturated colors
+    PASTEL = "pastel"  # Soft, muted, gentle colors
+    MONOCHROME = "monochrome"  # Single hue with accents
+    ROYAL_DEEP = "royal_deep"  # Deep purple, blue, gold
+    SUNRISE_SUNSET = "sunrise_sunset"  # Pink, orange, purple gradient
+
+
+# ==================== IMAGE CONFIGURATION ====================
+
+
+class GlobalImageConfig(BaseModel):
+    """
+    Global image generation settings that apply across all content types.
+    These settings control the visual style of AI-generated images.
+    """
+
+    # Primary Style
+    default_style: ImageStyle = Field(
+        default=ImageStyle.SPIRITUAL_ART,
+        description="Default visual style for all generated images"
+    )
+    style_notes: Optional[str] = Field(
+        default=None,
+        description="Additional style guidance for image generation",
+        json_schema_extra={
+            "placeholder": "e.g., 'Prefer warm lighting. Avoid dark/moody images. Include subtle cross imagery when appropriate.'"
+        }
+    )
+
+    # Mood & Atmosphere
+    default_mood: ImageMood = Field(
+        default=ImageMood.PEACEFUL,
+        description="Default mood/atmosphere for images"
+    )
+    mood_auto_detect: bool = Field(
+        default=True,
+        description="Automatically detect mood from content (overrides default when confident)"
+    )
+
+    # Color Preferences
+    color_palette: ImageColorPalette = Field(
+        default=ImageColorPalette.WARM_GOLDEN,
+        description="Preferred color palette for images"
+    )
+    brand_colors: Optional[List[str]] = Field(
+        default=None,
+        description="Church brand colors to subtly incorporate (hex codes)",
+        json_schema_extra={
+            "placeholder": "e.g., ['#1E40AF', '#F59E0B', '#10B981']"
+        }
+    )
+
+    # Quality & Technical
+    aspect_ratio: str = Field(
+        default="16:9",
+        description="Default aspect ratio for generated images",
+        json_schema_extra={
+            "options": ["16:9", "1:1", "4:3", "9:16", "3:2"],
+            "placeholder": "16:9 - Ideal for cover images and headers"
+        }
+    )
+    quality_level: str = Field(
+        default="high",
+        description="Image quality/detail level",
+        json_schema_extra={
+            "options": ["standard", "high", "ultra"],
+            "placeholder": "high - Good balance of quality and generation speed"
+        }
+    )
+
+    # Content Guidelines
+    include_people: bool = Field(
+        default=True,
+        description="Allow human figures in generated images"
+    )
+    people_style: str = Field(
+        default="silhouette",
+        description="How to represent people when included",
+        json_schema_extra={
+            "options": ["silhouette", "back_view", "partial", "full_figure", "avoid"],
+            "placeholder": "silhouette - Recognizable but not detailed faces"
+        }
+    )
+    cultural_sensitivity: str = Field(
+        default="diverse",
+        description="Approach to cultural representation",
+        json_schema_extra={
+            "options": ["diverse", "middle_eastern", "universal", "local_context"],
+            "placeholder": "diverse - Inclusive representation when people appear"
+        }
+    )
+
+    # Content-Specific Overrides
+    devotion_style: Optional[ImageStyle] = Field(
+        default=None,
+        description="Style override specifically for devotions (uses default if not set)"
+    )
+    verse_style: Optional[ImageStyle] = Field(
+        default=None,
+        description="Style override specifically for verse images"
+    )
+    figure_style: Optional[ImageStyle] = Field(
+        default=ImageStyle.BIBLICAL_CLASSICAL,
+        description="Style specifically for biblical figure portraits"
+    )
+    quiz_style: Optional[ImageStyle] = Field(
+        default=ImageStyle.MODERN_MINIMAL,
+        description="Style specifically for quiz cover images"
+    )
+    study_style: Optional[ImageStyle] = Field(
+        default=None,
+        description="Style override specifically for Bible study covers"
+    )
+    shareable_style: Optional[ImageStyle] = Field(
+        default=ImageStyle.MODERN_MINIMAL,
+        description="Style specifically for shareable social images"
+    )
+
+    # Things to Avoid (Negative Prompts)
+    avoid_elements: List[str] = Field(
+        default=["text_on_image", "modern_technology", "violence"],
+        description="Elements to explicitly avoid in images",
+        json_schema_extra={
+            "options": [
+                "text_on_image",
+                "modern_technology",
+                "violence",
+                "dark_imagery",
+                "cartoon_style",
+                "fantasy_elements",
+                "branded_items",
+                "specific_faces",
+                "denominational_symbols"
+            ],
+            "placeholder": "Select elements that should never appear in generated images"
+        }
+    )
+    custom_avoid: Optional[str] = Field(
+        default=None,
+        description="Additional elements to avoid in image generation",
+        json_schema_extra={
+            "placeholder": "e.g., 'Avoid Catholic-specific imagery like rosaries. No Halloween-themed elements.'"
+        }
+    )
+
+    # Advanced
+    seed_consistency: bool = Field(
+        default=False,
+        description="Use consistent seeds for similar content (experimental)"
+    )
+    regeneration_variation: str = Field(
+        default="moderate",
+        description="How different regenerated images should be",
+        json_schema_extra={
+            "options": ["subtle", "moderate", "significant"],
+            "placeholder": "moderate - Noticeable but thematically consistent variation"
+        }
+    )
+
+
 # ==================== CONTENT TYPE CONFIGURATIONS ====================
 
 
@@ -787,6 +979,9 @@ class ExplorePromptConfiguration(BaseModel):
     updated_by: Optional[str] = None
     updated_at: Optional[str] = None
 
+    # Global image generation settings
+    image_config: GlobalImageConfig = Field(default_factory=GlobalImageConfig)
+
     # Per-content-type configurations
     daily_devotion: DailyDevotionConfig = Field(default_factory=DailyDevotionConfig)
     verse_of_the_day: VerseOfTheDayConfig = Field(default_factory=VerseOfTheDayConfig)
@@ -805,6 +1000,11 @@ class ExplorePromptConfiguration(BaseModel):
 def get_config_schema_with_placeholders() -> Dict[str, Any]:
     """Get the full schema with placeholders for UI display"""
     return {
+        "image_config": {
+            "label": "Image Generation",
+            "description": "Configure visual style for AI-generated images across all content types",
+            "config": GlobalImageConfig.model_json_schema(),
+        },
         "daily_devotion": {
             "label": "Daily Devotion",
             "description": "Configure AI generation for daily devotional content",
