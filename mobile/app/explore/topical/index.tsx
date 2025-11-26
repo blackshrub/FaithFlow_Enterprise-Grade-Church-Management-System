@@ -13,7 +13,7 @@ import { ScrollView, View, Text, StyleSheet, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { ExploreColors, ExploreTypography, ExploreSpacing } from '@/constants/explore/designSystem';
-import { useTopicalCategories } from '@/hooks/explore/useExplore';
+import { useTopicalCategories } from '@/hooks/explore/useExploreMock';
 import { useExploreStore } from '@/stores/explore/exploreStore';
 import type { TopicalCategory } from '@/types/explore';
 import {

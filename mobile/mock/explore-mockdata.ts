@@ -16,6 +16,8 @@ import type {
   DailyQuiz,
   BibleStudy,
   TopicalCategory,
+  DevotionPlan,
+  DevotionPlanDay,
   BibleReference,
   MultilingualText,
 } from '@/types/explore';
@@ -1723,6 +1725,461 @@ export const mockTopicalCategories: TopicalCategory[] = [
 ];
 
 // ============================================================================
+// DEVOTION PLANS (Multi-Day Series)
+// ============================================================================
+
+export const mockDevotionPlans: DevotionPlan[] = [
+  {
+    id: 'plan_001',
+    scope: 'global',
+    title: {
+      en: 'Finding Peace: A 5-Day Journey Through Anxiety',
+      id: 'Menemukan Damai: Perjalanan 5 Hari Melewati Kecemasan',
+    },
+    subtitle: {
+      en: 'Biblical strategies for overcoming worry and fear',
+      id: 'Strategi alkitabiah untuk mengatasi kekhawatiran dan ketakutan',
+    },
+    description: {
+      en: 'Anxiety affects millions of people daily. In this 5-day plan, discover practical biblical wisdom for finding lasting peace in an anxious world. Each day builds on the previous, guiding you from understanding the roots of anxiety to walking in supernatural peace.',
+      id: 'Kecemasan mempengaruhi jutaan orang setiap hari. Dalam rencana 5 hari ini, temukan hikmat alkitabiah praktis untuk menemukan damai yang kekal di dunia yang penuh kecemasan.',
+    },
+    introduction: {
+      en: 'If you struggle with anxiety, worry, or fear—you are not alone. Jesus understands, and He has given us powerful tools to overcome. Let\'s walk through this journey together.',
+      id: 'Jika Anda berjuang dengan kecemasan, kekhawatiran, atau ketakutan—Anda tidak sendirian. Yesus memahami, dan Dia telah memberi kita alat yang kuat untuk mengatasi.',
+    },
+    duration_days: 5,
+    plan_days: [
+      {
+        day_number: 1,
+        title: { en: 'Understanding Anxiety', id: 'Memahami Kecemasan' },
+        content: {
+          en: `Before we can overcome anxiety, we must understand what it is and why it affects us.
+
+**What is Anxiety?**
+
+Anxiety is a natural response to perceived threats. It's our body's alarm system. But when this alarm goes off constantly—even when there's no real danger—it becomes a problem.
+
+**The Bible and Anxiety**
+
+Scripture acknowledges that anxiety is real. Even Jesus in the garden of Gethsemane experienced such distress that His sweat became like drops of blood. The Bible doesn't dismiss our struggles—it meets us in them.
+
+**Why Do We Worry?**
+
+At its core, anxiety often stems from:
+- A desire for control
+- Fear of the unknown
+- Past hurts or trauma
+- Feeling overwhelmed by circumstances
+
+**Today's Truth**
+
+"Cast all your anxiety on him because he cares for you." (1 Peter 5:7)
+
+Notice it says "cast"—this is an active choice. And notice why—because He cares. God isn't annoyed by your worries. He wants to carry them.`,
+          id: `Sebelum kita dapat mengatasi kecemasan, kita harus memahami apa itu dan mengapa itu mempengaruhi kita.
+
+**Apa itu Kecemasan?**
+
+Kecemasan adalah respons alami terhadap ancaman yang dirasakan. Ini adalah sistem alarm tubuh kita.`,
+        },
+        summary: { en: 'Understanding anxiety as a common human experience that God meets us in.', id: 'Memahami kecemasan sebagai pengalaman manusia umum yang Tuhan temui kita di dalamnya.' },
+        main_verse: { ...createBibleRef('1 Peter', 5, 7), text: 'Cast all your anxiety on him because he cares for you.' },
+        reflection_questions: [
+          { en: 'What situations trigger the most anxiety for you?', id: 'Situasi apa yang paling memicu kecemasan untukmu?' },
+          { en: 'How does knowing God cares about your worries change your perspective?', id: 'Bagaimana mengetahui Tuhan peduli tentang kekhawatiranmu mengubah perspektifmu?' },
+        ],
+        prayer: {
+          en: 'Lord, I confess that I often carry my anxieties alone. Today I choose to cast them on You, trusting that You care deeply for me. Help me understand the root of my worries. Amen.',
+          id: 'Tuhan, aku mengaku bahwa aku sering membawa kecemasanku sendirian. Hari ini aku memilih untuk menyerahkannya kepada-Mu. Amin.',
+        },
+        reading_time_minutes: 5,
+      },
+      {
+        day_number: 2,
+        title: { en: 'The Antidote: Prayer', id: 'Penangkalnya: Doa' },
+        content: {
+          en: `Yesterday we acknowledged anxiety. Today we discover God's primary antidote: prayer with thanksgiving.
+
+**The Philippians 4 Prescription**
+
+"Do not be anxious about anything, but in every situation, by prayer and petition, with thanksgiving, present your requests to God. And the peace of God, which transcends all understanding, will guard your hearts and your minds in Christ Jesus." (Philippians 4:6-7)
+
+This isn't just positive thinking—it's a spiritual exchange. We give God our anxiety. He gives us His peace.
+
+**Three Parts of This Prayer**
+
+1. **Prayer** - General conversation with God
+2. **Petition** - Specific requests
+3. **Thanksgiving** - Gratitude even before the answer comes
+
+**Why Thanksgiving?**
+
+Gratitude shifts our focus from what's wrong to what God has already done. It builds our faith by reminding us of His faithfulness.
+
+**The Promise**
+
+When we pray this way, peace "guards" our hearts and minds. The Greek word for "guard" (phroureo) is a military term—peace becomes a sentinel protecting us from anxiety's invasion.
+
+**Practice Today**
+
+Instead of rehearsing your worries, try praying them. For every anxious thought, counter it with a specific prayer and something you're thankful for.`,
+          id: `Kemarin kita mengakui kecemasan. Hari ini kita menemukan penangkal utama Tuhan: doa dengan ucapan syukur.`,
+        },
+        summary: { en: 'Prayer with thanksgiving is God\'s prescription for anxiety.', id: 'Doa dengan ucapan syukur adalah resep Tuhan untuk kecemasan.' },
+        main_verse: { ...createBibleRef('Philippians', 4, 6, 7), text: 'Do not be anxious about anything, but in every situation, by prayer and petition, with thanksgiving, present your requests to God.' },
+        reflection_questions: [
+          { en: 'What are three things you can thank God for right now?', id: 'Apa tiga hal yang bisa kamu syukuri kepada Tuhan sekarang?' },
+          { en: 'How often do you pray about your anxieties instead of just worrying?', id: 'Seberapa sering kamu berdoa tentang kecemasanmu alih-alih hanya khawatir?' },
+        ],
+        prayer: {
+          en: 'Father, I bring my specific anxieties to You today: [name them]. Thank You for Your faithfulness in the past. I trust You with my future. Let Your peace guard my heart. In Jesus\' name, Amen.',
+          id: 'Bapa, aku membawa kecemasan spesifikku kepada-Mu hari ini. Terima kasih atas kesetiaan-Mu di masa lalu. Amin.',
+        },
+        reading_time_minutes: 5,
+      },
+      {
+        day_number: 3,
+        title: { en: 'Renewing Your Mind', id: 'Memperbarui Pikiranmu' },
+        content: {
+          en: `Anxiety often starts in the mind. Today we learn to take our thoughts captive.
+
+**The Battle is in the Mind**
+
+"We demolish arguments and every pretension that sets itself up against the knowledge of God, and we take captive every thought to make it obedient to Christ." (2 Corinthians 10:5)
+
+Anxious thoughts are often lies dressed as truth. "What if I fail?" "What if the worst happens?" "I can't handle this."
+
+**Truth vs. Lies**
+
+For every anxious thought, ask: Is this true? Is this helpful? Is this from God?
+
+Common anxiety lies and their truths:
+- Lie: "I can't handle this" → Truth: "I can do all things through Christ" (Phil 4:13)
+- Lie: "Things will never get better" → Truth: "God is working all things for good" (Rom 8:28)
+- Lie: "I'm all alone" → Truth: "God will never leave me" (Heb 13:5)
+
+**The Philippians 4:8 Filter**
+
+"Finally, brothers and sisters, whatever is true, whatever is noble, whatever is right, whatever is pure, whatever is lovely, whatever is admirable—if anything is excellent or praiseworthy—think about such things."
+
+This isn't denial—it's intentional focus. We acknowledge reality but fix our minds on what is good, true, and hopeful.`,
+          id: `Kecemasan sering dimulai di pikiran. Hari ini kita belajar menawan pikiran kita.`,
+        },
+        summary: { en: 'Taking anxious thoughts captive and replacing lies with God\'s truth.', id: 'Menawan pikiran cemas dan mengganti kebohongan dengan kebenaran Tuhan.' },
+        main_verse: { ...createBibleRef('2 Corinthians', 10, 5), text: 'We take captive every thought to make it obedient to Christ.' },
+        additional_verses: [
+          { ...createBibleRef('Philippians', 4, 8), text: 'Whatever is true, whatever is noble, whatever is right... think about such things.' },
+        ],
+        reflection_questions: [
+          { en: 'What anxious thought keeps recurring in your mind?', id: 'Pikiran cemas apa yang terus berulang di pikiranmu?' },
+          { en: 'What Scripture truth can you use to counter that lie?', id: 'Kebenaran Alkitab apa yang bisa kamu gunakan untuk melawan kebohongan itu?' },
+        ],
+        reading_time_minutes: 6,
+      },
+      {
+        day_number: 4,
+        title: { en: 'Living in the Present', id: 'Hidup di Masa Kini' },
+        content: {
+          en: `Most anxiety is about the future. Today we learn to live in the present moment.
+
+**Tomorrow's Troubles**
+
+"Therefore do not worry about tomorrow, for tomorrow will worry about itself. Each day has enough trouble of its own." (Matthew 6:34)
+
+Jesus isn't saying planning is wrong. He's saying we shouldn't let future possibilities steal today's peace.
+
+**The Manna Principle**
+
+When Israel was in the desert, God provided manna—but only enough for one day. Those who hoarded it found it rotted. God was teaching them: trust Me daily.
+
+We often try to stockpile grace for future problems. But God's grace is fresh each morning (Lamentations 3:23).
+
+**Practical Present Living**
+
+1. When your mind drifts to "what ifs," gently bring it back to "what is"
+2. Ask: "What does God want me to do TODAY?"
+3. Practice noticing: What do I see, hear, feel right now?
+4. Thank God for this moment
+
+**Jesus' Example**
+
+Jesus lived fully present. He wasn't worried about tomorrow's opposition while teaching today. He trusted His Father with His future while focusing on His present mission.`,
+          id: `Sebagian besar kecemasan adalah tentang masa depan. Hari ini kita belajar hidup di saat ini.`,
+        },
+        summary: { en: 'Trusting God with tomorrow while living fully in today.', id: 'Mempercayai Tuhan dengan hari esok sambil hidup sepenuhnya di hari ini.' },
+        main_verse: { ...createBibleRef('Matthew', 6, 34), text: 'Therefore do not worry about tomorrow, for tomorrow will worry about itself. Each day has enough trouble of its own.' },
+        reflection_questions: [
+          { en: 'What future worry is stealing your present peace?', id: 'Kekhawatiran masa depan apa yang mencuri damaimu saat ini?' },
+          { en: 'What can you thank God for about TODAY?', id: 'Apa yang bisa kamu syukuri kepada Tuhan tentang HARI INI?' },
+        ],
+        reading_time_minutes: 5,
+      },
+      {
+        day_number: 5,
+        title: { en: 'Walking in Lasting Peace', id: 'Berjalan dalam Damai yang Kekal' },
+        content: {
+          en: `We've learned about anxiety's roots, prayer, renewed thinking, and present living. Today we put it all together for lasting peace.
+
+**Peace as a Practice**
+
+Peace isn't a feeling we wait for—it's a practice we cultivate. Like a muscle, it grows stronger with use.
+
+**Daily Peace Practices**
+
+1. **Morning Surrender**: Start each day giving God your concerns
+2. **Anxiety Alarm**: When worry strikes, use it as a cue to pray
+3. **Gratitude Moments**: Find three things to thank God for daily
+4. **Truth Declarations**: Speak Scripture over your anxious thoughts
+5. **Evening Review**: End the day releasing tomorrow to God
+
+**The Peace of God vs Peace WITH God**
+
+Through Jesus, we have peace WITH God—our relationship is restored (Romans 5:1). Now we can experience the peace OF God—His supernatural calm in every storm.
+
+**Your Identity Shift**
+
+You are not an anxious person. You are a child of God who sometimes experiences anxiety. Your struggles don't define you—His love does.
+
+**Moving Forward**
+
+Anxiety may still knock on your door. But now you have tools to answer differently. You can acknowledge the worry, take it to God, replace lies with truth, focus on today, and walk in His peace.
+
+The journey continues. Some days will be harder than others. But you're not alone. The Prince of Peace walks with you.`,
+          id: `Kita telah belajar tentang akar kecemasan, doa, pikiran yang diperbarui, dan hidup saat ini. Hari ini kita menyatukan semuanya untuk damai yang kekal.`,
+        },
+        summary: { en: 'Putting all the pieces together for a lifestyle of peace.', id: 'Menyatukan semua bagian untuk gaya hidup damai.' },
+        main_verse: { ...createBibleRef('John', 14, 27), text: 'Peace I leave with you; my peace I give you. I do not give to you as the world gives. Do not let your hearts be troubled and do not be afraid.' },
+        reflection_questions: [
+          { en: 'Which of the five daily practices will you start with?', id: 'Praktik harian mana dari lima yang akan kamu mulai?' },
+          { en: 'How has your understanding of peace changed through this plan?', id: 'Bagaimana pemahamanmu tentang damai berubah melalui rencana ini?' },
+        ],
+        prayer: {
+          en: 'Prince of Peace, thank You for walking with me through this journey. I commit to practicing peace daily. When anxiety comes, remind me of Your truth. Fill me with Your supernatural peace that guards my heart and mind. I am Yours, and You are with me. Amen.',
+          id: 'Pangeran Damai, terima kasih telah berjalan bersamaku melalui perjalanan ini. Aku berkomitmen untuk mempraktikkan damai setiap hari. Amin.',
+        },
+        reading_time_minutes: 6,
+      },
+    ],
+    categories: ['Peace', 'Mental Health', 'Spiritual Growth'],
+    tags: ['anxiety', 'peace', 'worry', 'mental health'],
+    difficulty: 'beginner',
+    target_audience: { en: 'Anyone struggling with anxiety, worry, or fear', id: 'Siapa pun yang berjuang dengan kecemasan, kekhawatiran, atau ketakutan' },
+    cover_image_url: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80',
+    author: { en: 'Pastor Michael Chen', id: 'Pendeta Michael Chen' },
+    subscriber_count: 8432,
+    completion_count: 5621,
+    average_rating: 4.9,
+    ratings_count: 1247,
+    status: 'published',
+    published_at: '2025-01-01T00:00:00Z',
+    created_by: 'system',
+    created_at: '2024-12-15T10:00:00Z',
+    deleted: false,
+  },
+  {
+    id: 'plan_002',
+    scope: 'global',
+    title: {
+      en: 'Building Unshakeable Faith: A 7-Day Plan',
+      id: 'Membangun Iman yang Tak Tergoyahkan: Rencana 7 Hari',
+    },
+    subtitle: {
+      en: 'Strengthen your trust in God through life\'s challenges',
+      id: 'Perkuat kepercayaanmu kepada Tuhan melalui tantangan hidup',
+    },
+    description: {
+      en: 'Faith is the foundation of our walk with God. This 7-day plan will help you understand what faith really is, how to grow it, and how to maintain it when life gets hard.',
+      id: 'Iman adalah fondasi perjalanan kita dengan Tuhan. Rencana 7 hari ini akan membantumu memahami apa itu iman sebenarnya, bagaimana menumbuhkannya, dan bagaimana mempertahankannya.',
+    },
+    duration_days: 7,
+    plan_days: [
+      {
+        day_number: 1,
+        title: { en: 'What is Faith?', id: 'Apa itu Iman?' },
+        content: {
+          en: `"Now faith is confidence in what we hope for and assurance about what we do not see." (Hebrews 11:1)
+
+Faith isn't blind belief or wishful thinking. It's confident trust based on who God is and what He's promised.
+
+**Faith Has an Object**
+
+The power of faith isn't in itself—it's in who we place our faith in. Small faith in a big God is far better than big faith in ourselves.
+
+**Faith is Active**
+
+True faith shows itself through action. James says faith without works is dead. This doesn't mean we earn anything—it means real faith naturally produces fruit.
+
+Today, examine the foundation of your faith. Is it built on feelings, circumstances, or the unchanging character of God?`,
+          id: `Iman bukanlah keyakinan buta atau angan-angan. Ini adalah kepercayaan yang yakin berdasarkan siapa Tuhan dan apa yang telah Dia janjikan.`,
+        },
+        main_verse: { ...createBibleRef('Hebrews', 11, 1), text: 'Now faith is confidence in what we hope for and assurance about what we do not see.' },
+        reading_time_minutes: 4,
+      },
+      {
+        day_number: 2,
+        title: { en: 'Faith Comes by Hearing', id: 'Iman Datang dari Mendengar' },
+        content: {
+          en: `"Faith comes from hearing the message, and the message is heard through the word about Christ." (Romans 10:17)
+
+Want stronger faith? The answer is simple but profound: immerse yourself in God's Word.
+
+**Why the Word?**
+
+Scripture reveals God's character, promises, and faithfulness. The more we know Him, the more we trust Him.
+
+**Practical Steps**
+
+1. Read the Bible daily—even 10 minutes counts
+2. Listen to Scripture being read
+3. Memorize key promises
+4. Discuss God's Word with others
+
+Your faith will grow as your knowledge of God deepens.`,
+          id: `Ingin iman yang lebih kuat? Jawabannya sederhana tapi mendalam: benamkan dirimu dalam Firman Tuhan.`,
+        },
+        main_verse: { ...createBibleRef('Romans', 10, 17), text: 'Faith comes from hearing the message, and the message is heard through the word about Christ.' },
+        reading_time_minutes: 4,
+      },
+      {
+        day_number: 3,
+        title: { en: 'Faith Through Trials', id: 'Iman Melalui Pencobaan' },
+        content: {
+          en: `"Consider it pure joy, my brothers and sisters, whenever you face trials of many kinds, because you know that the testing of your faith produces perseverance." (James 1:2-3)
+
+Nobody wants trials. But they're one of faith's greatest growth tools.
+
+**Why Trials Strengthen Faith**
+
+- They reveal where our trust really lies
+- They force us to depend on God
+- They prove God's faithfulness when He comes through
+- They prepare us for greater challenges ahead
+
+Don't waste your pain. Let trials develop your faith.`,
+          id: `Tidak ada yang menginginkan pencobaan. Tapi mereka adalah salah satu alat pertumbuhan iman terbesar.`,
+        },
+        main_verse: { ...createBibleRef('James', 1, 2, 3), text: 'Consider it pure joy when you face trials of many kinds, because the testing of your faith produces perseverance.' },
+        reading_time_minutes: 4,
+      },
+    ],
+    categories: ['Faith', 'Spiritual Growth', 'Trust'],
+    tags: ['faith', 'trust', 'trials', 'growth'],
+    difficulty: 'beginner',
+    cover_image_url: 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=800&q=80',
+    author: { en: 'Pastor Sarah Johnson', id: 'Pendeta Sarah Johnson' },
+    subscriber_count: 6218,
+    completion_count: 4102,
+    average_rating: 4.8,
+    ratings_count: 892,
+    status: 'published',
+    published_at: '2025-01-05T00:00:00Z',
+    created_by: 'system',
+    created_at: '2024-12-20T10:00:00Z',
+    deleted: false,
+  },
+  {
+    id: 'plan_003',
+    scope: 'global',
+    title: {
+      en: 'The Power of Gratitude: 3-Day Reset',
+      id: 'Kekuatan Syukur: Reset 3 Hari',
+    },
+    subtitle: {
+      en: 'Transform your perspective through thankfulness',
+      id: 'Ubah perspektifmu melalui ucapan syukur',
+    },
+    description: {
+      en: 'Feeling overwhelmed or negative? This quick 3-day plan will help you reset your heart and mind through the practice of gratitude. Discover how thankfulness can transform your entire outlook.',
+      id: 'Merasa kewalahan atau negatif? Rencana cepat 3 hari ini akan membantumu mereset hati dan pikiranmu melalui praktik syukur.',
+    },
+    duration_days: 3,
+    plan_days: [
+      {
+        day_number: 1,
+        title: { en: 'Gratitude Changes Everything', id: 'Syukur Mengubah Segalanya' },
+        content: {
+          en: `"Give thanks in all circumstances; for this is God's will for you in Christ Jesus." (1 Thessalonians 5:18)
+
+Notice it says "in" all circumstances, not "for" all circumstances. We don't thank God for evil or suffering—but we can find things to thank Him for even in difficult times.
+
+Gratitude shifts our focus from what we lack to what we have. From problems to possibilities. From despair to hope.
+
+**Today's Challenge**
+
+Write down 10 things you're grateful for. Don't stop until you reach 10. Watch how your mood shifts as you count your blessings.`,
+          id: `Perhatikan dikatakan "dalam" segala keadaan, bukan "untuk" segala keadaan. Syukur mengalihkan fokus kita.`,
+        },
+        main_verse: { ...createBibleRef('1 Thessalonians', 5, 18), text: 'Give thanks in all circumstances; for this is God\'s will for you in Christ Jesus.' },
+        reading_time_minutes: 4,
+      },
+      {
+        day_number: 2,
+        title: { en: 'Gratitude in Difficulty', id: 'Syukur dalam Kesulitan' },
+        content: {
+          en: `"And we know that in all things God works for the good of those who love him." (Romans 8:28)
+
+It's easy to be grateful when life is good. The real test is finding thankfulness in the valleys.
+
+Paul wrote his most joyful letter (Philippians) from prison. His circumstances were terrible, but his perspective was transformed by gratitude.
+
+**Finding Light in Darkness**
+
+Even in your hardest situation, God is present. His love hasn't changed. His promises still stand. There is always something to thank Him for.
+
+**Today's Challenge**
+
+Think of your biggest current struggle. Now find three things about that situation you can thank God for. It might be growth, perspective, or His presence with you.`,
+          id: `Mudah untuk bersyukur ketika hidup baik. Ujian sebenarnya adalah menemukan ucapan syukur di lembah.`,
+        },
+        main_verse: { ...createBibleRef('Romans', 8, 28), text: 'And we know that in all things God works for the good of those who love him.' },
+        reading_time_minutes: 4,
+      },
+      {
+        day_number: 3,
+        title: { en: 'A Lifestyle of Gratitude', id: 'Gaya Hidup Syukur' },
+        content: {
+          en: `"Enter his gates with thanksgiving and his courts with praise." (Psalm 100:4)
+
+Gratitude isn't just a practice—it's a way of life. It's how we enter God's presence.
+
+**Building Gratitude Habits**
+
+1. Start each morning naming three blessings
+2. Keep a gratitude journal
+3. Express thanks to people, not just God
+4. Look for hidden blessings in ordinary moments
+5. End each day with thanksgiving
+
+When gratitude becomes habit, negativity loses its grip. Joy becomes your default, not a destination.
+
+**Your Gratitude Reset**
+
+Over these three days, you've seen how thankfulness transforms perspective. Don't let this be a one-time exercise. Make gratitude your daily companion.`,
+          id: `Syukur bukan hanya praktik—ini adalah cara hidup. Ini adalah cara kita memasuki hadirat Tuhan.`,
+        },
+        main_verse: { ...createBibleRef('Psalm', 100, 4), text: 'Enter his gates with thanksgiving and his courts with praise.' },
+        reading_time_minutes: 4,
+      },
+    ],
+    categories: ['Gratitude', 'Joy', 'Mindset'],
+    tags: ['gratitude', 'thankfulness', 'joy', 'perspective'],
+    difficulty: 'beginner',
+    cover_image_url: 'https://images.unsplash.com/photo-1502139214982-d0ad755818d8?w=800&q=80',
+    author: { en: 'Pastor Emily Davis', id: 'Pendeta Emily Davis' },
+    subscriber_count: 12450,
+    completion_count: 9832,
+    average_rating: 4.7,
+    ratings_count: 2156,
+    status: 'published',
+    published_at: '2025-01-08T00:00:00Z',
+    created_by: 'system',
+    created_at: '2024-12-25T10:00:00Z',
+    deleted: false,
+  },
+];
+
+// ============================================================================
 // EXPORT ALL MOCK DATA
 // ============================================================================
 
@@ -1733,4 +2190,5 @@ export default {
   dailyQuizzes: mockDailyQuizzes,
   bibleStudies: mockBibleStudies,
   topicalCategories: mockTopicalCategories,
+  devotionPlans: mockDevotionPlans,
 };

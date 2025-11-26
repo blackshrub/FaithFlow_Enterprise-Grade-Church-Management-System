@@ -23,6 +23,11 @@ interface ExploreStore {
   startReading: () => void;
   endReading: () => number; // Returns seconds elapsed
 
+  // Content completion tracking (for mock mode)
+  completedContentIds: Set<string>;
+  markContentComplete: (contentId: string) => void;
+  isContentCompleted: (contentId: string) => boolean;
+
   // Celebration modal
   showCelebration: boolean;
   celebrationType: 'streak' | 'quiz_perfect' | 'milestone' | null;
@@ -56,6 +61,14 @@ export const useExploreStore = create<ExploreStore>((set, get) => ({
     set({ readingStartTime: null });
     return seconds;
   },
+
+  // Content completion tracking (for mock mode)
+  completedContentIds: new Set<string>(),
+  markContentComplete: (contentId) =>
+    set((state) => ({
+      completedContentIds: new Set([...state.completedContentIds, contentId]),
+    })),
+  isContentCompleted: (contentId) => get().completedContentIds.has(contentId),
 
   // Celebration modal
   showCelebration: false,

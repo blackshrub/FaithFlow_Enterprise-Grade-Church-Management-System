@@ -231,8 +231,10 @@ const styles = StyleSheet.create({
   container: {
     width: width * 0.85,
     backgroundColor: '#FFFFFF',
-    borderRadius: 24,
-    padding: ExploreSpacing['2xl'],
+    borderRadius: 28,
+    paddingTop: 32,
+    paddingBottom: 28,
+    paddingHorizontal: ExploreSpacing['2xl'],
     alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 10 },
@@ -241,13 +243,16 @@ const styles = StyleSheet.create({
     elevation: 10,
   },
   iconContainer: {
-    marginBottom: ExploreSpacing.lg,
+    marginBottom: ExploreSpacing.xl,
+    padding: ExploreSpacing.lg,
+    borderRadius: 50,
+    backgroundColor: ExploreColors.neutral[50],
   },
   title: {
     ...ExploreTypography.h2,
     color: ExploreColors.neutral[900],
     textAlign: 'center',
-    marginBottom: ExploreSpacing.sm,
+    marginBottom: ExploreSpacing.md,
   },
   message: {
     ...ExploreTypography.body,
@@ -255,6 +260,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: ExploreSpacing.xl,
     lineHeight: 24,
+    paddingHorizontal: ExploreSpacing.sm,
   },
   sparklesContainer: {
     marginBottom: ExploreSpacing.lg,
@@ -262,9 +268,9 @@ const styles = StyleSheet.create({
   button: {
     backgroundColor: ExploreColors.primary[500],
     paddingHorizontal: ExploreSpacing['2xl'],
-    paddingVertical: ExploreSpacing.md,
+    paddingVertical: ExploreSpacing.md + 2,
     borderRadius: 16,
-    minWidth: 160,
+    minWidth: 180,
     alignItems: 'center',
   },
   buttonText: {

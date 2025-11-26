@@ -18,7 +18,7 @@ import {
   useContentById,
   useTrackContentStart,
   useSubmitQuizAnswer,
-} from '@/hooks/explore/useExplore';
+} from '@/hooks/explore/useExploreMock';
 import { useExploreStore } from '@/stores/explore/exploreStore';
 import type { DailyQuiz, QuizQuestion } from '@/types/explore';
 import { ArrowLeft, Check, X, Lightbulb, ArrowRight } from 'lucide-react-native';
@@ -73,17 +73,16 @@ export default function DailyQuizScreen() {
   const totalQuestions = quiz?.questions.length || 0;
   const progressPercentage = ((progress.currentQuestionIndex + 1) / totalQuestions) * 100;
 
+  // Auto-check answer when option is selected
   const handleOptionSelect = (optionIndex: number) => {
-    if (!isAnswerChecked) {
-      Haptics.selectionAsync();
-      setSelectedOption(optionIndex);
-    }
-  };
+    if (isAnswerChecked || !currentQuestion) return;
 
-  const handleCheckAnswer = () => {
-    if (selectedOption === null || !currentQuestion) return;
+    // Set selected option first
+    setSelectedOption(optionIndex);
 
-    const isCorrect = selectedOption === currentQuestion.correct_answer;
+    // Immediately check the answer
+    const correctIndex = (currentQuestion as any).correct_answer_index ?? currentQuestion.correct_answer;
+    const isCorrect = optionIndex === correctIndex;
 
     // Provide haptic feedback based on correctness
     if (isCorrect) {
@@ -102,7 +101,7 @@ export default function DailyQuizScreen() {
         ...prev.answers,
         {
           questionId: currentQuestion.id || `q${progress.currentQuestionIndex}`,
-          selectedAnswer: selectedOption,
+          selectedAnswer: optionIndex,
           isCorrect,
         },
       ],
@@ -113,7 +112,7 @@ export default function DailyQuizScreen() {
       submitAnswer.mutate({
         quizId: id as string,
         questionId: currentQuestion.id || `q${progress.currentQuestionIndex}`,
-        selectedAnswer: selectedOption,
+        selectedAnswer: optionIndex,
         isCorrect,
       });
     }
@@ -161,9 +160,18 @@ export default function DailyQuizScreen() {
   }
 
   const questionText = currentQuestion.question[contentLanguage] || currentQuestion.question.en;
-  const options = currentQuestion.options[contentLanguage] || currentQuestion.options.en;
+  // Options can be either array of {en, id} objects OR {en: string[], id: string[]}
+  // Handle both formats for flexibility
+  const rawOptions = currentQuestion.options;
+  const options = Array.isArray(rawOptions) && rawOptions.length > 0
+    ? (typeof rawOptions[0] === 'object' && 'en' in rawOptions[0]
+        ? rawOptions.map((opt: any) => opt[contentLanguage] || opt.en)
+        : rawOptions)
+    : (rawOptions as any)?.[contentLanguage] || (rawOptions as any)?.en || [];
   const explanation =
     currentQuestion.explanation?.[contentLanguage] || currentQuestion.explanation?.en;
+  // Handle both correct_answer and correct_answer_index
+  const correctAnswerIndex = (currentQuestion as any).correct_answer_index ?? currentQuestion.correct_answer;
 
   const currentAnswer = progress.answers.find(
     (a) => a.questionId === (currentQuestion.id || `q${progress.currentQuestionIndex}`)
@@ -285,9 +293,9 @@ export default function DailyQuizScreen() {
 
           {/* Options */}
           <View style={styles.optionsContainer}>
-            {options.map((option, index) => {
+            {options.map((option: string, index: number) => {
               const isSelected = selectedOption === index;
-              const isCorrectOption = index === currentQuestion.correct_answer;
+              const isCorrectOption = index === correctAnswerIndex;
               const showCorrect = isAnswerChecked && isCorrectOption;
               const showIncorrect = isAnswerChecked && isSelected && !isCorrectOption;
 
@@ -388,27 +396,9 @@ export default function DailyQuizScreen() {
         </Animated.View>
       </ScrollView>
 
-      {/* Action Button */}
-      <View style={styles.bottomContainer}>
-        {!isAnswerChecked ? (
-          <Pressable
-            onPress={handleCheckAnswer}
-            style={[styles.actionButton, selectedOption === null && styles.actionButtonDisabled]}
-            disabled={selectedOption === null}
-            accessibilityRole="button"
-            accessibilityLabel={contentLanguage === 'en' ? 'Check your answer' : 'Periksa jawaban Anda'}
-            accessibilityHint={
-              contentLanguage === 'en'
-                ? 'Double tap to submit your answer and see if it is correct'
-                : 'Ketuk dua kali untuk mengirim jawaban dan melihat apakah benar'
-            }
-            accessibilityState={{ disabled: selectedOption === null }}
-          >
-            <Text style={styles.actionButtonText}>
-              {contentLanguage === 'en' ? 'Check Answer' : 'Periksa Jawaban'}
-            </Text>
-          </Pressable>
-        ) : (
+      {/* Action Button - Only shows after answer is checked */}
+      {isAnswerChecked && (
+        <View style={styles.bottomContainer}>
           <Pressable
             onPress={handleNextQuestion}
             style={styles.actionButton}
@@ -443,8 +433,8 @@ export default function DailyQuizScreen() {
             </Text>
             <ArrowRight size={20} color="#FFFFFF" />
           </Pressable>
-        )}
-      </View>
+        </View>
+      )}
     </SafeAreaView>
   );
 }

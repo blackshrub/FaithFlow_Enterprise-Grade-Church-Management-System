@@ -14,7 +14,7 @@ import { ScrollView, View, Text, StyleSheet, Pressable, Share } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ExploreColors, ExploreTypography, ExploreSpacing } from '@/constants/explore/designSystem';
-import { useTrackContentComplete } from '@/hooks/explore/useExplore';
+import { useTrackContentComplete } from '@/hooks/explore/useExploreMock';
 import { useExploreStore } from '@/stores/explore/exploreStore';
 import { Trophy, Star, Share2, ArrowRight, Sparkles } from 'lucide-react-native';
 import Animated, {
@@ -82,9 +82,9 @@ export default function QuizResultsScreen() {
       withSequence(withSpring(1.2), withSpring(1))
     );
 
-    // Show celebration for perfect score
+    // Show celebration for perfect score - immediately
     if (percentage === 100) {
-      setTimeout(() => setShowCelebration(true), 1000);
+      setShowCelebration(true);
     }
   }, []);
 
@@ -348,11 +348,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
+    flexGrow: 1,
     paddingBottom: ExploreSpacing.xl,
+    justifyContent: 'center',
   },
   contentContainer: {
     paddingHorizontal: ExploreSpacing.screenMargin,
-    paddingTop: ExploreSpacing['2xl'],
+    paddingVertical: ExploreSpacing['2xl'],
     alignItems: 'center',
   },
   starsContainer: {

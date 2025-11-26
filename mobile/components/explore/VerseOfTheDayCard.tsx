@@ -1,15 +1,20 @@
 /**
- * VerseOfTheDayCard - Card component for daily verse
+ * VerseOfTheDayCard - Premium card component for daily verse
  *
- * Design: Spiritual blue accent with elegant typography
+ * Design: World-class UI with elegant Scripture display
+ * - Large, beautiful verse text as the star
+ * - Subtle gradient background
+ * - Premium shadows and typography
  */
 
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { ExploreCard } from './ExploreCard';
-import { ExploreColors, ExploreTypography, ExploreSpacing } from '@/constants/explore/designSystem';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { ExploreColors, ExploreSpacing, ExploreBorderRadius, ExploreShadows } from '@/constants/explore/designSystem';
+import { formatBibleReference } from '@/constants/explore/bibleBooks';
 import type { VerseOfTheDay } from '@/types/explore';
-import { Share2 } from 'lucide-react-native';
+import { Share2, BookOpen } from 'lucide-react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 
 interface VerseOfTheDayCardProps {
   verse: VerseOfTheDay;
@@ -18,87 +23,174 @@ interface VerseOfTheDayCardProps {
   onShare?: () => void;
 }
 
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
 export function VerseOfTheDayCard({
   verse,
   language,
   onPress,
   onShare,
 }: VerseOfTheDayCardProps) {
-  const verseText = verse.verse_text[language] || verse.verse_text.en;
-  const reflection = verse.reflection?.[language] || verse.reflection?.en;
+  const scale = useSharedValue(1);
+
+  // Null safety
+  if (!verse) return null;
+
+  const reference = verse.verse;
+  if (!reference) return null;
+
+  // Get the actual Scripture text (verse_text) - this is the star of the show
+  const verseText = verse.verse_text
+    ? (verse.verse_text[language] || verse.verse_text.en || '')
+    : '';
+
+  // Format reference string with localized book name and translation
+  const referenceText = formatBibleReference(reference, language);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const handlePressIn = () => {
+    scale.value = withSpring(0.98, { damping: 15, stiffness: 300 });
+  };
+
+  const handlePressOut = () => {
+    scale.value = withSpring(1, { damping: 15, stiffness: 300 });
+  };
 
   return (
-    <ExploreCard onPress={onPress} variant="elevated" testID="verse-of-the-day-card">
-      {/* Accent Bar */}
-      <View style={styles.accentBar} />
+    <AnimatedPressable
+      onPress={onPress}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      style={[styles.container, animatedStyle]}
+      testID="verse-of-the-day-card"
+    >
+      {/* Gradient Background */}
+      <LinearGradient
+        colors={['#EFF6FF', '#DBEAFE', '#BFDBFE']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.gradient}
+      />
+
+      {/* Decorative Quote Mark */}
+      <View style={styles.quoteMarkContainer}>
+        <Text style={styles.quoteMark}>"</Text>
+      </View>
 
       {/* Content */}
       <View style={styles.content}>
-        {/* Verse Text */}
-        <Text style={styles.verseText}>
-          "{verseText}"
-        </Text>
-
-        {/* Reference */}
-        <Text style={styles.reference}>
-          {verse.reference.book} {verse.reference.chapter}:
-          {verse.reference.verse_start}
-          {verse.reference.verse_end && verse.reference.verse_end !== verse.reference.verse_start
-            ? `-${verse.reference.verse_end}`
-            : ''}
-        </Text>
-
-        {/* Reflection Preview */}
-        {reflection && (
-          <Text style={styles.reflection} numberOfLines={2}>
-            {reflection}
+        {/* Scripture Text - The Star */}
+        {verseText ? (
+          <Text style={styles.verseText} numberOfLines={5}>
+            {verseText}
+          </Text>
+        ) : (
+          <Text style={styles.verseText} numberOfLines={5}>
+            <Text style={styles.placeholderText}>Tap to read today's verse</Text>
           </Text>
         )}
 
-        {/* Share Icon */}
-        {onShare && (
-          <View style={styles.shareContainer}>
-            <Share2 size={20} color={ExploreColors.spiritual[500]} />
+        {/* Reference Badge */}
+        <View style={styles.referenceContainer}>
+          <View style={styles.referenceBadge}>
+            <BookOpen size={14} color={ExploreColors.spiritual[600]} />
+            <Text style={styles.referenceText}>{referenceText}</Text>
           </View>
-        )}
+
+          {/* Share Button */}
+          {onShare && (
+            <Pressable
+              onPress={(e) => {
+                e.stopPropagation?.();
+                onShare();
+              }}
+              style={styles.shareButton}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Share2 size={18} color={ExploreColors.spiritual[500]} />
+            </Pressable>
+          )}
+        </View>
       </View>
-    </ExploreCard>
+
+      {/* Accent Line */}
+      <View style={styles.accentLine} />
+    </AnimatedPressable>
   );
 }
 
 const styles = StyleSheet.create({
-  accentBar: {
+  container: {
+    borderRadius: ExploreBorderRadius.card,
+    overflow: 'hidden',
+    backgroundColor: '#FFFFFF',
+    ...ExploreShadows.level1,
+  },
+  gradient: {
+    ...StyleSheet.absoluteFillObject,
+    opacity: 0.9,
+  },
+  quoteMarkContainer: {
+    position: 'absolute',
+    top: 8,
+    left: 16,
+    opacity: 0.15,
+  },
+  quoteMark: {
+    fontSize: 80,
+    fontWeight: '700',
+    color: ExploreColors.spiritual[600],
+    lineHeight: 80,
+  },
+  content: {
+    padding: ExploreSpacing.lg + 4,
+    paddingTop: ExploreSpacing.xl,
+  },
+  verseText: {
+    fontSize: 19,
+    fontWeight: '500',
+    lineHeight: 30,
+    color: ExploreColors.neutral[800],
+    fontStyle: 'italic',
+    marginBottom: ExploreSpacing.lg,
+  },
+  placeholderText: {
+    fontStyle: 'normal',
+    color: ExploreColors.neutral[500],
+  },
+  referenceContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  referenceBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
+  referenceText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: ExploreColors.spiritual[700],
+  },
+  shareButton: {
+    padding: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    borderRadius: 20,
+  },
+  accentLine: {
     position: 'absolute',
     left: 0,
     top: 0,
     bottom: 0,
     width: 4,
     backgroundColor: ExploreColors.spiritual[500],
-    borderTopLeftRadius: 16,
-    borderBottomLeftRadius: 16,
-  },
-  content: {
-    paddingLeft: ExploreSpacing.md,
-    gap: ExploreSpacing.sm,
-  },
-  verseText: {
-    ...ExploreTypography.h4,
-    color: ExploreColors.neutral[900],
-    lineHeight: 28,
-    fontStyle: 'italic',
-  },
-  reference: {
-    ...ExploreTypography.body,
-    color: ExploreColors.spiritual[600],
-    fontWeight: '600',
-  },
-  reflection: {
-    ...ExploreTypography.body,
-    color: ExploreColors.neutral[600],
-    marginTop: ExploreSpacing.xs,
-  },
-  shareContainer: {
-    alignSelf: 'flex-end',
-    marginTop: ExploreSpacing.xs,
   },
 });

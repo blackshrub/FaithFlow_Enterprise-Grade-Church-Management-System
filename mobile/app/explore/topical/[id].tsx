@@ -13,12 +13,13 @@ import { ScrollView, View, Text, StyleSheet, Pressable, Share } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ExploreColors, ExploreTypography, ExploreSpacing } from '@/constants/explore/designSystem';
+import { formatBibleReference } from '@/constants/explore/bibleBooks';
 import {
   useTopicalCategory,
   useTopicalVerses,
   useBookmarkVerse,
   useIsVerseBookmarked,
-} from '@/hooks/explore/useExplore';
+} from '@/hooks/explore/useExploreMock';
 import { useExploreStore } from '@/stores/explore/exploreStore';
 import type { TopicalVerse } from '@/types/explore';
 import {
@@ -172,29 +173,20 @@ function VerseCard({ verse, contentLanguage, index }: VerseCardProps) {
   const isBookmarked = useIsVerseBookmarked(verse.id);
   const bookmarkMutation = useBookmarkVerse();
 
+  // Format the reference with localized book name and translation
+  const lang = contentLanguage as 'en' | 'id';
+  const verseText = verse.text[lang] || verse.text.en;
+  const reference = formatBibleReference(verse.reference as any, lang);
+
   const handleBookmark = () => {
     bookmarkMutation.mutate({ verseId: verse.id, bookmarked: !isBookmarked });
   };
 
   const handleCopy = async () => {
-    const verseText = verse.text[contentLanguage] || verse.text.en;
-    const reference = `${verse.reference.book} ${verse.reference.chapter}:${verse.reference.verse_start}${
-      verse.reference.verse_end && verse.reference.verse_end !== verse.reference.verse_start
-        ? `-${verse.reference.verse_end}`
-        : ''
-    }`;
-
     await Clipboard.setStringAsync(`"${verseText}"\n\n${reference}`);
   };
 
   const handleShare = async () => {
-    const verseText = verse.text[contentLanguage] || verse.text.en;
-    const reference = `${verse.reference.book} ${verse.reference.chapter}:${verse.reference.verse_start}${
-      verse.reference.verse_end && verse.reference.verse_end !== verse.reference.verse_start
-        ? `-${verse.reference.verse_end}`
-        : ''
-    }`;
-
     try {
       await Share.share({
         message: `"${verseText}"\n\n${reference}\n\nShared from FaithFlow`,
@@ -203,13 +195,6 @@ function VerseCard({ verse, contentLanguage, index }: VerseCardProps) {
       console.error('Error sharing:', error);
     }
   };
-
-  const verseText = verse.text[contentLanguage] || verse.text.en;
-  const reference = `${verse.reference.book} ${verse.reference.chapter}:${verse.reference.verse_start}${
-    verse.reference.verse_end && verse.reference.verse_end !== verse.reference.verse_start
-      ? `-${verse.reference.verse_end}`
-      : ''
-  }`;
 
   return (
     <Animated.View entering={FadeInDown.duration(400).delay(index * 50)}>

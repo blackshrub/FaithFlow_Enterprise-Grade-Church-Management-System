@@ -187,6 +187,73 @@ export const ExploreTypography = {
   },
 } as const;
 
+// Composed Typography Styles (ready to use)
+Object.assign(ExploreTypography, {
+  // Display headlines
+  h1: {
+    fontSize: 36,
+    fontWeight: '800' as const,
+    lineHeight: 44,
+    letterSpacing: -0.5,
+  },
+  h2: {
+    fontSize: 28,
+    fontWeight: '700' as const,
+    lineHeight: 36,
+    letterSpacing: -0.3,
+  },
+  h3: {
+    fontSize: 22,
+    fontWeight: '600' as const,
+    lineHeight: 28,
+  },
+  h4: {
+    fontSize: 18,
+    fontWeight: '600' as const,
+    lineHeight: 24,
+  },
+  // Body text
+  body: {
+    fontSize: 16,
+    fontWeight: '400' as const,
+    lineHeight: 24,
+  },
+  bodyLarge: {
+    fontSize: 18,
+    fontWeight: '400' as const,
+    lineHeight: 28,
+  },
+  bodySemibold: {
+    fontSize: 16,
+    fontWeight: '600' as const,
+    lineHeight: 24,
+  },
+  // Small text
+  caption: {
+    fontSize: 13,
+    fontWeight: '500' as const,
+    lineHeight: 18,
+  },
+  captionSmall: {
+    fontSize: 11,
+    fontWeight: '500' as const,
+    lineHeight: 16,
+  },
+  // Scripture text (special)
+  scripture: {
+    fontSize: 20,
+    fontWeight: '500' as const,
+    lineHeight: 32,
+    fontStyle: 'italic' as const,
+  },
+  scriptureLarge: {
+    fontSize: 24,
+    fontWeight: '500' as const,
+    lineHeight: 38,
+    fontStyle: 'italic' as const,
+  },
+});
+
 // ==================== SPACING ====================
 
 export const ExploreSpacing = {
@@ -203,6 +270,17 @@ export const ExploreSpacing = {
   16: 64,
   20: 80,
   24: 96,
+  // Named shortcuts
+  xs: 4,
+  sm: 8,
+  md: 12,
+  lg: 16,
+  xl: 24,
+  xxl: 32,
+  // Layout
+  screenMargin: 20,
+  cardPadding: 16,
+  sectionGap: 24,
 } as const;
 
 // ==================== BORDER RADIUS ====================
@@ -216,6 +294,9 @@ export const ExploreBorderRadius = {
   xl: 20,
   '2xl': 24,
   full: 9999,
+  card: 20,
+  cardInner: 16,
+  button: 12,
 } as const;
 
 // ==================== SHADOWS ====================
@@ -255,6 +336,29 @@ export const ExploreShadows = {
     shadowOpacity: 0.18,
     shadowRadius: 24,
     elevation: 12,
+  },
+  // Named levels for cards
+  level1: {
+    shadowColor: 'rgba(0, 0, 0, 0.08)',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 1,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  level2: {
+    shadowColor: 'rgba(0, 0, 0, 0.12)',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 1,
+    shadowRadius: 20,
+    elevation: 8,
+  },
+  // Warm shadow for spiritual content
+  warm: {
+    shadowColor: 'rgba(139, 92, 246, 0.15)',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 1,
+    shadowRadius: 16,
+    elevation: 6,
   },
 } as const;
 

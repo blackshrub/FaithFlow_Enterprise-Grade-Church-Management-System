@@ -13,7 +13,7 @@ import { ScrollView, View, Text, Image, StyleSheet, Pressable, TextInput } from 
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { ExploreColors, ExploreTypography, ExploreSpacing } from '@/constants/explore/designSystem';
-import { useBibleFigures } from '@/hooks/explore/useExplore';
+import { useBibleFigures } from '@/hooks/explore/useExploreMock';
 import { useExploreStore } from '@/stores/explore/exploreStore';
 import type { BibleFigure } from '@/types/explore';
 import {

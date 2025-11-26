@@ -425,6 +425,31 @@ export interface TopicalVerse {
   deleted_at?: string;
 }
 
+/**
+ * Day within a devotion plan
+ * Self-contained daily devotion content
+ */
+export interface DevotionPlanDay {
+  day_number: number;
+  title: MultilingualText;
+  content: MultilingualText;
+  summary?: MultilingualText;
+
+  // Scripture for this day
+  main_verse?: BibleReference & { text?: string };
+  additional_verses?: Array<BibleReference & { text?: string }>;
+
+  // Reflection/prayer
+  reflection_questions?: MultilingualText[];
+  prayer?: MultilingualText;
+
+  // Visual
+  image_url?: string;
+
+  // Reading time
+  reading_time_minutes?: number;
+}
+
 export interface DevotionPlan {
   id: string;
   scope: ContentScope;
@@ -432,18 +457,41 @@ export interface DevotionPlan {
 
   // Plan info
   title: MultilingualText;
+  subtitle?: MultilingualText;
   description: MultilingualText;
+  introduction?: MultilingualText;
   duration_days: number;
 
-  // Days
-  days: string[]; // DailyDevotion IDs
+  // Days - inline devotion content (self-contained)
+  plan_days: DevotionPlanDay[];
+
+  // Legacy field for linking to separate devotions
+  days?: string[]; // DailyDevotion IDs (for backwards compatibility)
 
   // Categorization
   categories: string[];
+  tags?: string[];
   difficulty: DifficultyLevel;
+
+  // Target audience
+  target_audience?: MultilingualText;
 
   // Visual
   cover_image_url?: string;
+  thumbnail_url?: string;
+
+  // Author
+  author?: MultilingualText;
+
+  // Engagement metrics
+  subscriber_count?: number;
+  completion_count?: number;
+  average_rating?: number;
+  ratings_count?: number;
+
+  // AI generation
+  ai_generated?: boolean;
+  ai_metadata?: AIGenerationMetadata;
 
   // Status
   status: ContentStatus;

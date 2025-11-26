@@ -12,17 +12,16 @@ import { ScrollView, View, Text, StyleSheet, Pressable, Share } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ExploreColors, ExploreTypography, ExploreSpacing } from '@/constants/explore/designSystem';
+import { formatBibleReference } from '@/constants/explore/bibleBooks';
 import {
   useContentById,
   useTrackContentStart,
   useTrackContentComplete,
-  useBookmarkContent,
-  useIsBookmarked,
   useIsCompleted,
-} from '@/hooks/explore/useExplore';
+} from '@/hooks/explore/useExploreMock';
 import { useExploreStore } from '@/stores/explore/exploreStore';
 import type { VerseOfTheDay } from '@/types/explore';
-import { ArrowLeft, BookmarkIcon, Check, Share2, Copy } from 'lucide-react-native';
+import { ArrowLeft, Check, Share2, Copy } from 'lucide-react-native';
 import { VerseOfTheDaySkeleton } from '@/components/explore/LoadingSkeleton';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import * as Clipboard from 'expo-clipboard';
@@ -38,13 +37,11 @@ export default function VerseOfTheDayScreen() {
 
   // Data queries
   const { data: verse, isLoading } = useContentById<VerseOfTheDay>('verse', id as string);
-  const isBookmarked = useIsBookmarked(id as string);
   const isCompleted = useIsCompleted(id as string);
 
   // Mutations
   const trackStart = useTrackContentStart();
   const trackComplete = useTrackContentComplete();
-  const bookmarkMutation = useBookmarkContent();
 
   // Track content start on mount
   useEffect(() => {
@@ -61,24 +58,34 @@ export default function VerseOfTheDayScreen() {
     }
   };
 
-  const handleBookmark = () => {
-    if (id) {
-      Haptics.selectionAsync();
-      bookmarkMutation.mutate({ contentId: id as string, bookmarked: !isBookmarked });
+  // Build full shareable content with verse, commentary, and reflection
+  const buildShareContent = () => {
+    if (!verse) return '';
+
+    const verseText = verse.verse_text?.[contentLanguage] || verse.verse_text?.en || '';
+    const reference = formatBibleReference(verse.verse, contentLanguage);
+    const commentary = verse.commentary?.[contentLanguage] || verse.commentary?.en || '';
+    const reflection = verse.reflection_prompt?.[contentLanguage] || verse.reflection_prompt?.en || '';
+
+    const vodLabel = contentLanguage === 'en' ? 'Verse of the Day' : 'Ayat Hari Ini';
+    const commentaryLabel = contentLanguage === 'en' ? 'Commentary' : 'Komentar';
+    const reflectLabel = contentLanguage === 'en' ? 'Reflect' : 'Renungkan';
+
+    let content = `📖 ${vodLabel}\n\n"${verseText}"\n— ${reference}`;
+    if (commentary) {
+      content += `\n\n💭 ${commentaryLabel}:\n${commentary}`;
     }
+    if (reflection) {
+      content += `\n\n🙏 ${reflectLabel}:\n${reflection}`;
+    }
+    content += '\n\n— Shared from FaithFlow';
+    return content;
   };
 
   const handleCopy = async () => {
     if (!verse) return;
 
-    const verseText = verse.verse_text[contentLanguage] || verse.verse_text.en;
-    const reference = `${verse.reference.book} ${verse.reference.chapter}:${verse.reference.verse_start}${
-      verse.reference.verse_end && verse.reference.verse_end !== verse.reference.verse_start
-        ? `-${verse.reference.verse_end}`
-        : ''
-    }`;
-
-    await Clipboard.setStringAsync(`"${verseText}"\n\n${reference}`);
+    await Clipboard.setStringAsync(buildShareContent());
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -87,16 +94,9 @@ export default function VerseOfTheDayScreen() {
   const handleShare = async () => {
     if (!verse) return;
 
-    const verseText = verse.verse_text[contentLanguage] || verse.verse_text.en;
-    const reference = `${verse.reference.book} ${verse.reference.chapter}:${verse.reference.verse_start}${
-      verse.reference.verse_end && verse.reference.verse_end !== verse.reference.verse_start
-        ? `-${verse.reference.verse_end}`
-        : ''
-    }`;
-
     try {
       await Share.share({
-        message: `"${verseText}"\n\n${reference}\n\nShared from FaithFlow`,
+        message: buildShareContent(),
       });
     } catch (error) {
       console.error('Error sharing:', error);
@@ -118,9 +118,9 @@ export default function VerseOfTheDayScreen() {
     );
   }
 
-  const verseText = verse.verse_text[contentLanguage] || verse.verse_text.en;
-  const reflection = verse.reflection?.[contentLanguage] || verse.reflection?.en;
-  const application = verse.application?.[contentLanguage] || verse.application?.en;
+  const verseText = verse.verse_text?.[contentLanguage] || verse.verse_text?.en || '';
+  const commentary = verse.commentary?.[contentLanguage] || verse.commentary?.en;
+  const reflection = verse.reflection_prompt?.[contentLanguage] || verse.reflection_prompt?.en;
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -165,37 +165,6 @@ export default function VerseOfTheDayScreen() {
           </Pressable>
 
           <Pressable
-            onPress={handleBookmark}
-            style={styles.iconButton}
-            accessibilityRole="button"
-            accessibilityLabel={
-              isBookmarked
-                ? contentLanguage === 'en'
-                  ? 'Remove bookmark'
-                  : 'Hapus penanda'
-                : contentLanguage === 'en'
-                ? 'Bookmark this verse'
-                : 'Tandai ayat ini'
-            }
-            accessibilityHint={
-              isBookmarked
-                ? contentLanguage === 'en'
-                  ? 'Double tap to remove from your saved verses'
-                  : 'Ketuk dua kali untuk menghapus dari ayat tersimpan'
-                : contentLanguage === 'en'
-                ? 'Double tap to save this verse for later'
-                : 'Ketuk dua kali untuk menyimpan ayat ini'
-            }
-            accessibilityState={{ selected: isBookmarked }}
-          >
-            <BookmarkIcon
-              size={24}
-              color={isBookmarked ? ExploreColors.primary[500] : ExploreColors.neutral[400]}
-              fill={isBookmarked ? ExploreColors.primary[500] : 'transparent'}
-            />
-          </Pressable>
-
-          <Pressable
             onPress={handleShare}
             style={styles.iconButton}
             accessibilityRole="button"
@@ -224,8 +193,8 @@ export default function VerseOfTheDayScreen() {
             accessible={true}
             accessibilityLabel={
               contentLanguage === 'en'
-                ? `Verse of the day: ${verseText}. From ${verse.reference.book} chapter ${verse.reference.chapter}, verse ${verse.reference.verse_start}`
-                : `Ayat hari ini: ${verseText}. Dari ${verse.reference.book} pasal ${verse.reference.chapter}, ayat ${verse.reference.verse_start}`
+                ? `Verse of the day: ${verseText}. ${formatBibleReference(verse.verse, contentLanguage)}`
+                : `Ayat hari ini: ${verseText}. ${formatBibleReference(verse.verse, contentLanguage)}`
             }
             accessibilityRole="text"
           >
@@ -233,16 +202,26 @@ export default function VerseOfTheDayScreen() {
             <View style={styles.verseContent}>
               <Text style={styles.verseText}>"{verseText}"</Text>
               <Text style={styles.verseReference}>
-                {verse.reference.book} {verse.reference.chapter}:{verse.reference.verse_start}
-                {verse.reference.verse_end &&
-                verse.reference.verse_end !== verse.reference.verse_start
-                  ? `-${verse.reference.verse_end}`
-                  : ''}
+                {formatBibleReference(verse.verse, contentLanguage)}
               </Text>
             </View>
           </View>
 
-          {/* Reflection */}
+          {/* Commentary */}
+          {commentary && (
+            <View style={styles.section}>
+              <Text
+                style={styles.sectionTitle}
+                accessibilityRole="header"
+                accessibilityLevel={2}
+              >
+                {contentLanguage === 'en' ? 'Commentary' : 'Komentar'}
+              </Text>
+              <Text style={styles.sectionContent}>{commentary}</Text>
+            </View>
+          )}
+
+          {/* Reflection Prompt */}
           {reflection && (
             <View style={styles.section}>
               <Text
@@ -250,63 +229,9 @@ export default function VerseOfTheDayScreen() {
                 accessibilityRole="header"
                 accessibilityLevel={2}
               >
-                {contentLanguage === 'en' ? 'Reflection' : 'Renungan'}
+                {contentLanguage === 'en' ? 'Reflect' : 'Renungkan'}
               </Text>
               <Text style={styles.sectionContent}>{reflection}</Text>
-            </View>
-          )}
-
-          {/* Application */}
-          {application && (
-            <View style={styles.section}>
-              <Text
-                style={styles.sectionTitle}
-                accessibilityRole="header"
-                accessibilityLevel={2}
-              >
-                {contentLanguage === 'en' ? 'Application' : 'Aplikasi'}
-              </Text>
-              <Text style={styles.sectionContent}>{application}</Text>
-            </View>
-          )}
-
-          {/* Prayer Points */}
-          {verse.prayer_points && verse.prayer_points[contentLanguage]?.length > 0 && (
-            <View style={styles.section}>
-              <Text
-                style={styles.sectionTitle}
-                accessibilityRole="header"
-                accessibilityLevel={2}
-              >
-                {contentLanguage === 'en' ? 'Prayer Points' : 'Poin Doa'}
-              </Text>
-              {verse.prayer_points[contentLanguage].map((point, index) => (
-                <View
-                  key={index}
-                  style={styles.prayerPoint}
-                  accessible={true}
-                  accessibilityLabel={
-                    contentLanguage === 'en'
-                      ? `Prayer point ${index + 1}: ${point}`
-                      : `Poin doa ${index + 1}: ${point}`
-                  }
-                  accessibilityRole="text"
-                >
-                  <View style={styles.bullet} />
-                  <Text style={styles.prayerPointText}>{point}</Text>
-                </View>
-              ))}
-            </View>
-          )}
-
-          {/* Tags */}
-          {verse.tags && verse.tags.length > 0 && (
-            <View style={styles.tagsContainer}>
-              {verse.tags.map((tag, index) => (
-                <View key={index} style={styles.tag}>
-                  <Text style={styles.tagText}>{tag}</Text>
-                </View>
-              ))}
             </View>
           )}
 
@@ -471,41 +396,6 @@ const styles = StyleSheet.create({
     ...ExploreTypography.body,
     color: ExploreColors.neutral[800],
     lineHeight: 28,
-  },
-  prayerPoint: {
-    flexDirection: 'row',
-    marginBottom: ExploreSpacing.sm,
-  },
-  bullet: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: ExploreColors.spiritual[500],
-    marginTop: 10,
-    marginRight: ExploreSpacing.sm,
-  },
-  prayerPointText: {
-    ...ExploreTypography.body,
-    color: ExploreColors.neutral[800],
-    flex: 1,
-    lineHeight: 24,
-  },
-  tagsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: ExploreSpacing.sm,
-    marginBottom: ExploreSpacing.lg,
-  },
-  tag: {
-    backgroundColor: ExploreColors.spiritual[50],
-    paddingHorizontal: ExploreSpacing.md,
-    paddingVertical: ExploreSpacing.xs,
-    borderRadius: 16,
-  },
-  tagText: {
-    ...ExploreTypography.caption,
-    color: ExploreColors.spiritual[700],
-    fontWeight: '600',
   },
   bottomContainer: {
     position: 'absolute',

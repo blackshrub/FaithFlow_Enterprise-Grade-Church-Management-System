@@ -22,7 +22,7 @@ import {
   useBookmarkContent,
   useIsBookmarked,
   useLessonProgress,
-} from '@/hooks/explore/useExplore';
+} from '@/hooks/explore/useExploreMock';
 import { useExploreStore } from '@/stores/explore/exploreStore';
 import type { BibleStudy, StudyLesson } from '@/types/explore';
 import {

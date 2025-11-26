@@ -17,13 +17,11 @@ import {
   useContentById,
   useTrackContentStart,
   useTrackContentComplete,
-  useBookmarkContent,
-  useIsBookmarked,
   useIsCompleted,
-} from '@/hooks/explore/useExplore';
+} from '@/hooks/explore/useExploreMock';
 import { useExploreStore } from '@/stores/explore/exploreStore';
 import type { BibleFigure } from '@/types/explore';
-import { ArrowLeft, BookmarkIcon, Check, Share2, Calendar, BookOpen } from 'lucide-react-native';
+import { ArrowLeft, Check, Share2, Calendar, BookOpen } from 'lucide-react-native';
 import { BibleFigureSkeleton } from '@/components/explore/LoadingSkeleton';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
@@ -37,13 +35,11 @@ export default function BibleFigureScreen() {
 
   // Data queries
   const { data: figure, isLoading } = useContentById<BibleFigure>('figure', id as string);
-  const isBookmarked = useIsBookmarked(id as string);
   const isCompleted = useIsCompleted(id as string);
 
   // Mutations
   const trackStart = useTrackContentStart();
   const trackComplete = useTrackContentComplete();
-  const bookmarkMutation = useBookmarkContent();
 
   // Track content start on mount
   useEffect(() => {
@@ -57,13 +53,6 @@ export default function BibleFigureScreen() {
     if (id && !isCompleted) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       trackComplete.mutate({ contentId: id as string, contentType: 'figure' });
-    }
-  };
-
-  const handleBookmark = () => {
-    if (id) {
-      Haptics.selectionAsync();
-      bookmarkMutation.mutate({ contentId: id as string, bookmarked: !isBookmarked });
     }
   };
 
@@ -105,51 +94,18 @@ export default function BibleFigureScreen() {
           <ArrowLeft size={24} color={ExploreColors.neutral[900]} />
         </Pressable>
 
-        <View style={styles.headerActions}>
-          <Pressable
-            onPress={handleBookmark}
-            style={styles.iconButton}
-            accessibilityRole="button"
-            accessibilityLabel={
-              isBookmarked
-                ? contentLanguage === 'en'
-                  ? 'Remove bookmark'
-                  : 'Hapus penanda'
-                : contentLanguage === 'en'
-                ? 'Bookmark this Bible figure'
-                : 'Tandai tokoh Alkitab ini'
-            }
-            accessibilityHint={
-              isBookmarked
-                ? contentLanguage === 'en'
-                  ? 'Double tap to remove from your saved Bible figures'
-                  : 'Ketuk dua kali untuk menghapus dari tokoh Alkitab tersimpan'
-                : contentLanguage === 'en'
-                ? 'Double tap to save this Bible figure for later'
-                : 'Ketuk dua kali untuk menyimpan tokoh Alkitab ini'
-            }
-            accessibilityState={{ selected: isBookmarked }}
-          >
-            <BookmarkIcon
-              size={24}
-              color={isBookmarked ? ExploreColors.primary[500] : ExploreColors.neutral[400]}
-              fill={isBookmarked ? ExploreColors.primary[500] : 'transparent'}
-            />
-          </Pressable>
-
-          <Pressable
-            style={styles.iconButton}
-            accessibilityRole="button"
-            accessibilityLabel={contentLanguage === 'en' ? 'Share this Bible figure' : 'Bagikan tokoh Alkitab ini'}
-            accessibilityHint={
-              contentLanguage === 'en'
-                ? 'Double tap to share with others'
-                : 'Ketuk dua kali untuk membagikan dengan orang lain'
-            }
-          >
-            <Share2 size={24} color={ExploreColors.neutral[400]} />
-          </Pressable>
-        </View>
+        <Pressable
+          style={styles.iconButton}
+          accessibilityRole="button"
+          accessibilityLabel={contentLanguage === 'en' ? 'Share this Bible figure' : 'Bagikan tokoh Alkitab ini'}
+          accessibilityHint={
+            contentLanguage === 'en'
+              ? 'Double tap to share with others'
+              : 'Ketuk dua kali untuk membagikan dengan orang lain'
+          }
+        >
+          <Share2 size={24} color={ExploreColors.neutral[400]} />
+        </Pressable>
       </View>
 
       {/* Content */}
@@ -422,10 +378,6 @@ const styles = StyleSheet.create({
   },
   backButton: {
     padding: ExploreSpacing.xs,
-  },
-  headerActions: {
-    flexDirection: 'row',
-    gap: ExploreSpacing.sm,
   },
   iconButton: {
     padding: ExploreSpacing.xs,
