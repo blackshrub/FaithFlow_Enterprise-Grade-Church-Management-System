@@ -1,5 +1,5 @@
 from fastapi import FastAPI, APIRouter, Request, Response
-from starlette.middleware.gzip import GZIPMiddleware
+from starlette.middleware.gzip import GZipMiddleware
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -176,7 +176,7 @@ api_router.include_router(kiosk.router)
 app.include_router(api_router)
 
 # Add GZIP compression middleware (compress responses > 500 bytes)
-app.add_middleware(GZIPMiddleware, minimum_size=500)
+app.add_middleware(GZipMiddleware, minimum_size=500)
 
 app.add_middleware(
     CORSMiddleware,
