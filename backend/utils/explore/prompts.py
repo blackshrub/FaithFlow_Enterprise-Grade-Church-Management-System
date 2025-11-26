@@ -320,6 +320,267 @@ Pedoman:
 - Gunakan format markdown dengan bagian yang jelas
 
 Jadikan transformatif.""",
+
+    # Topical Category
+    "topical_category:en": """You are creating topical Bible study categories.
+
+Create a category description for: $category_name
+
+Include:
+1. Name: A clear, searchable name (3-5 words max)
+2. Description: A 50-75 word description explaining what verses in this category address
+3. Suggested icon: One of (heart, book-open, cross, star, shield, sun, moon, cloud, flame, crown, dove, lamp, mountain, water, tree, hand-praying, lightbulb, compass, anchor, users)
+4. Color suggestion: A hex color that fits the theme
+
+Guidelines:
+- Make it relatable to everyday life
+- Focus on the felt need this category addresses
+- Use inclusive, welcoming language
+- Be specific but not too narrow
+
+Format as JSON with keys: name, description, icon, color""",
+
+    "topical_category:id": """Anda sedang membuat kategori studi Alkitab topikal.
+
+Buat deskripsi kategori untuk: $category_name
+
+Termasuk:
+1. Nama: Nama yang jelas dan dapat dicari (maksimal 3-5 kata)
+2. Deskripsi: Deskripsi 50-75 kata yang menjelaskan apa yang dibahas ayat-ayat dalam kategori ini
+3. Ikon yang disarankan: Salah satu dari (heart, book-open, cross, star, shield, sun, moon, cloud, flame, crown, dove, lamp, mountain, water, tree, hand-praying, lightbulb, compass, anchor, users)
+4. Saran warna: Warna hex yang sesuai dengan tema
+
+Pedoman:
+- Buat relevan dengan kehidupan sehari-hari
+- Fokus pada kebutuhan yang dirasakan yang ditangani kategori ini
+- Gunakan bahasa yang inklusif dan menyambut
+- Spesifik tapi tidak terlalu sempit
+
+Format sebagai JSON dengan kunci: name, description, icon, color""",
+
+    # Topical Verse Commentary
+    "topical_verse:en": """You are a biblical commentator explaining Scripture for practical application.
+
+Write commentary and application for this verse:
+Verse: $verse_reference
+Text: $verse_text
+Topic/Category: $category
+
+Provide:
+1. Commentary (100-150 words):
+   - Historical/cultural context
+   - What this meant to original readers
+   - Key words and their meanings
+   - Connection to broader biblical themes
+
+2. Application (75-100 words):
+   - How this applies to modern life
+   - Specific, actionable guidance
+   - A question for personal reflection
+
+Guidelines:
+- Write accessibly for general audience
+- Be encouraging yet truthful
+- Connect to real-life situations
+- Avoid theological jargon
+
+Format as JSON with keys: commentary, application""",
+
+    "topical_verse:id": """Anda adalah seorang komentator alkitabiah yang menjelaskan Alkitab untuk aplikasi praktis.
+
+Tulis komentar dan aplikasi untuk ayat ini:
+Ayat: $verse_reference
+Teks: $verse_text
+Topik/Kategori: $category
+
+Berikan:
+1. Komentar (100-150 kata):
+   - Konteks historis/budaya
+   - Apa arti ini bagi pembaca asli
+   - Kata-kata kunci dan maknanya
+   - Koneksi ke tema alkitabiah yang lebih luas
+
+2. Aplikasi (75-100 kata):
+   - Bagaimana ini berlaku untuk kehidupan modern
+   - Panduan yang spesifik dan dapat ditindaklanjuti
+   - Pertanyaan untuk refleksi pribadi
+
+Pedoman:
+- Tulis secara mudah diakses untuk audiens umum
+- Jadilah mendorong namun jujur
+- Hubungkan dengan situasi kehidupan nyata
+- Hindari jargon teologis
+
+Format sebagai JSON dengan kunci: commentary, application""",
+
+    # Devotion Plan
+    "devotion_plan:en": """You are creating a multi-day devotion plan for spiritual growth.
+
+Create a $duration_days day devotion plan on: $theme
+
+Structure:
+1. Plan Overview:
+   - Title (compelling, memorable)
+   - Subtitle (what readers will gain)
+   - Description (100 words): Theme, why it matters, what to expect
+   - Introduction (150 words): Set up the journey
+
+2. For each day (Day 1 to Day $duration_days):
+   - Title: Unique title for the day
+   - Main verse: Scripture reference with full text
+   - Content (200-300 words): Teaching, story, or reflection
+   - Reflection questions (2-3): For deeper thought
+   - Prayer (50-75 words): Closing prayer for the day
+
+Guidelines:
+- Create a logical progression through the theme
+- Each day should build on previous days
+- Make it doable in 10-15 minutes per day
+- Include practical applications
+- Vary the approach (stories, teachings, reflections)
+- End with transformation/action
+
+Format as JSON with structure matching DevotionPlan model.""",
+
+    "devotion_plan:id": """Anda sedang membuat rencana renungan multi-hari untuk pertumbuhan spiritual.
+
+Buat rencana renungan $duration_days hari tentang: $theme
+
+Struktur:
+1. Gambaran Rencana:
+   - Judul (menarik, mudah diingat)
+   - Subjudul (apa yang akan didapat pembaca)
+   - Deskripsi (100 kata): Tema, mengapa penting, apa yang diharapkan
+   - Pendahuluan (150 kata): Siapkan perjalanan
+
+2. Untuk setiap hari (Hari 1 sampai Hari $duration_days):
+   - Judul: Judul unik untuk hari itu
+   - Ayat utama: Referensi Alkitab dengan teks lengkap
+   - Konten (200-300 kata): Pengajaran, cerita, atau refleksi
+   - Pertanyaan refleksi (2-3): Untuk pemikiran lebih dalam
+   - Doa (50-75 kata): Doa penutup untuk hari itu
+
+Pedoman:
+- Buat progresi logis melalui tema
+- Setiap hari harus membangun dari hari-hari sebelumnya
+- Buat dapat diselesaikan dalam 10-15 menit per hari
+- Sertakan aplikasi praktis
+- Variasikan pendekatan (cerita, pengajaran, refleksi)
+- Akhiri dengan transformasi/tindakan
+
+Format sebagai JSON dengan struktur yang cocok dengan model DevotionPlan.""",
+
+    # Shareable Image
+    "shareable_image:en": """You are creating social media-ready Bible verse images.
+
+Create content for a shareable verse image:
+Verse: $verse_reference
+Text: $verse_text
+Theme: $theme
+
+Provide:
+1. Overlay Text: A shortened, impactful version of the verse (max 50 words)
+   - May paraphrase for impact
+   - Focus on the key message
+   - Should be readable on an image
+
+2. Caption: A 20-30 word caption for social media sharing
+
+3. Design suggestions:
+   - Text position: top, center, or bottom
+   - Font style: serif, sans-serif, or script
+   - Color scheme: light, dark, or colorful
+   - Mood: peaceful, powerful, joyful, contemplative
+
+Guidelines:
+- Make it shareable and visually appealing
+- The message should stand alone
+- Consider Instagram/Facebook formatting
+
+Format as JSON with keys: overlay_text, caption, text_position, font_style, color_scheme, mood""",
+
+    "shareable_image:id": """Anda sedang membuat gambar ayat Alkitab yang siap untuk media sosial.
+
+Buat konten untuk gambar ayat yang dapat dibagikan:
+Ayat: $verse_reference
+Teks: $verse_text
+Tema: $theme
+
+Berikan:
+1. Teks Overlay: Versi ayat yang dipersingkat dan berdampak (maksimal 50 kata)
+   - Dapat parafrase untuk dampak
+   - Fokus pada pesan kunci
+   - Harus dapat dibaca pada gambar
+
+2. Caption: Caption 20-30 kata untuk berbagi di media sosial
+
+3. Saran desain:
+   - Posisi teks: atas, tengah, atau bawah
+   - Gaya font: serif, sans-serif, atau script
+   - Skema warna: terang, gelap, atau berwarna
+   - Suasana: damai, kuat, gembira, kontemplatif
+
+Pedoman:
+- Buat dapat dibagikan dan menarik secara visual
+- Pesan harus berdiri sendiri
+- Pertimbangkan format Instagram/Facebook
+
+Format sebagai JSON dengan kunci: overlay_text, caption, text_position, font_style, color_scheme, mood""",
+
+    # Verse of the Day (enhanced)
+    "verse_of_the_day:en": """You are creating a Verse of the Day experience.
+
+Create content for this verse:
+Verse: $verse_reference
+Text: $verse_text
+
+Provide:
+1. Commentary (150-200 words):
+   - What does this verse mean?
+   - Historical/literary context
+   - Key insights
+
+2. Reflection Prompt (50 words):
+   - A thought-provoking question or statement
+   - Helps readers apply the verse personally
+
+3. Suggested background:
+   - Color: A calming hex color that matches the mood
+   - Image keywords: 3-5 keywords for finding suitable background images
+
+Guidelines:
+- Make it suitable for morning meditation
+- Keep the tone peaceful and encouraging
+- Focus on one main takeaway
+
+Format as JSON with keys: commentary, reflection_prompt, background_color, image_keywords""",
+
+    "verse_of_the_day:id": """Anda sedang membuat pengalaman Ayat Hari Ini.
+
+Buat konten untuk ayat ini:
+Ayat: $verse_reference
+Teks: $verse_text
+
+Berikan:
+1. Komentar (150-200 kata):
+   - Apa arti ayat ini?
+   - Konteks historis/sastra
+   - Wawasan kunci
+
+2. Prompt Refleksi (50 kata):
+   - Pertanyaan atau pernyataan yang memancing pemikiran
+   - Membantu pembaca menerapkan ayat secara pribadi
+
+3. Latar belakang yang disarankan:
+   - Warna: Warna hex yang menenangkan yang cocok dengan suasana
+   - Kata kunci gambar: 3-5 kata kunci untuk menemukan gambar latar yang sesuai
+
+Pedoman:
+- Buat cocok untuk meditasi pagi
+- Jaga nada damai dan mendorong
+- Fokus pada satu takeaway utama
+
+Format sebagai JSON dengan kunci: commentary, reflection_prompt, background_color, image_keywords""",
 }
 
 

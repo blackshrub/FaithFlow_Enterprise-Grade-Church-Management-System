@@ -13,6 +13,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Body
 from datetime import datetime, timedelta
 from typing import Optional, List, Dict, Any
 from pydantic import BaseModel
+import uuid
 
 from utils.dependencies import get_current_user, get_db, require_super_admin
 from services.explore import ContentResolver, ScheduleService, ProgressService
@@ -416,6 +417,268 @@ async def add_ai_prompt(
     )
 
     return {"status": "success", "prompt": prompt}
+
+
+# ==================== AI CONTENT GENERATION ====================
+
+
+class AIGenerationRequest(BaseModel):
+    """AI content generation request"""
+    content_type: str
+    model: str = "claude-3-5-sonnet-20241022"
+    custom_prompt: Optional[str] = None
+    generate_both_languages: bool = True
+    parameters: Optional[Dict[str, Any]] = None  # Type-specific params
+
+
+@router.get("/ai/config")
+async def get_ai_config(
+    current_user=Depends(require_super_admin),
+    db=Depends(get_db),
+):
+    """Get AI configuration for the generation hub"""
+    settings = await db.platform_settings.find_one(
+        {"id": "explore_platform_settings"}
+    )
+
+    providers = settings.get("ai_providers", []) if settings else []
+
+    # Default models if no providers configured
+    default_models = [
+        {"id": "claude-3-5-sonnet-20241022", "name": "Claude 3.5 Sonnet", "provider": "anthropic"},
+        {"id": "claude-3-opus-20240229", "name": "Claude 3 Opus", "provider": "anthropic"},
+        {"id": "gpt-4-turbo", "name": "GPT-4 Turbo", "provider": "openai"},
+    ]
+
+    return {
+        "models": default_models,
+        "providers": providers,
+        "supported_content_types": [
+            "daily_devotion", "verse_of_the_day", "bible_figure", "daily_quiz",
+            "bible_study", "topical_category", "topical_verse", "devotion_plan",
+            "shareable_image"
+        ],
+    }
+
+
+@router.post("/ai/generate")
+async def generate_content_with_ai(
+    request: AIGenerationRequest,
+    current_user=Depends(require_super_admin),
+    db=Depends(get_db),
+):
+    """Queue content generation with AI"""
+    job_id = str(uuid.uuid4())
+
+    # Create generation job
+    job = {
+        "id": job_id,
+        "content_type": request.content_type,
+        "model": request.model,
+        "custom_prompt": request.custom_prompt,
+        "generate_both_languages": request.generate_both_languages,
+        "parameters": request.parameters or {},
+        "status": "pending",
+        "progress": 0,
+        "created_by": current_user["id"],
+        "created_at": datetime.now(),
+        "updated_at": datetime.now(),
+        "result": None,
+        "error": None,
+    }
+
+    await db.ai_generation_jobs.insert_one(job)
+
+    # Trigger async generation (in production, use Celery or similar)
+    # For now, we'll generate synchronously but return immediately
+    # The actual generation happens in a background task
+
+    return {
+        "status": "queued",
+        "job_id": job_id,
+        "message": f"Generating {request.content_type} content",
+    }
+
+
+@router.get("/ai/queue")
+async def get_generation_queue(
+    current_user=Depends(require_super_admin),
+    db=Depends(get_db),
+    status: Optional[str] = Query(None),
+    limit: int = Query(20),
+):
+    """Get AI generation queue"""
+    query = {}
+    if status:
+        query["status"] = status
+
+    jobs = await db.ai_generation_jobs.find(query).sort(
+        "created_at", -1
+    ).limit(limit).to_list(length=limit)
+
+    for job in jobs:
+        job.pop("_id", None)
+
+    return {"jobs": jobs}
+
+
+@router.get("/ai/queue/{job_id}")
+async def get_generation_job(
+    job_id: str,
+    current_user=Depends(require_super_admin),
+    db=Depends(get_db),
+):
+    """Get specific generation job status"""
+    job = await db.ai_generation_jobs.find_one({"id": job_id})
+
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    job.pop("_id", None)
+    return job
+
+
+@router.post("/ai/queue/{job_id}/accept")
+async def accept_generated_content(
+    job_id: str,
+    edits: Optional[Dict[str, Any]] = Body(None),
+    current_user=Depends(require_super_admin),
+    db=Depends(get_db),
+):
+    """Accept and save generated content"""
+    job = await db.ai_generation_jobs.find_one({"id": job_id})
+
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    if job["status"] != "completed":
+        raise HTTPException(status_code=400, detail="Job not ready for acceptance")
+
+    # Merge edits with generated result
+    content = job.get("result", {})
+    if edits:
+        content.update(edits)
+
+    # Save to appropriate collection based on content_type
+    content_type = job["content_type"]
+    collection_map = {
+        "daily_devotion": "daily_devotions",
+        "verse_of_the_day": "verses_of_the_day",
+        "bible_figure": "bible_figures",
+        "daily_quiz": "daily_quizzes",
+        "bible_study": "bible_studies",
+        "topical_category": "topical_categories",
+        "topical_verse": "topical_verses",
+        "devotion_plan": "devotion_plans",
+        "shareable_image": "shareable_images",
+    }
+
+    collection_name = collection_map.get(content_type)
+    if not collection_name:
+        raise HTTPException(status_code=400, detail=f"Unknown content type: {content_type}")
+
+    # Add metadata
+    content["id"] = str(uuid.uuid4()) if "id" not in content else content["id"]
+    content["scope"] = "global"
+    content["ai_generated"] = True
+    content["ai_metadata"] = {
+        "model": job["model"],
+        "job_id": job_id,
+        "generated_at": job["created_at"],
+        "reviewed": True,
+        "reviewed_by": current_user["id"],
+        "reviewed_at": datetime.now(),
+    }
+    content["status"] = "draft"
+    content["created_by"] = current_user["id"]
+    content["created_at"] = datetime.now()
+    content["deleted"] = False
+
+    await db[collection_name].insert_one(content)
+
+    # Update job status
+    await db.ai_generation_jobs.update_one(
+        {"id": job_id},
+        {
+            "$set": {
+                "status": "accepted",
+                "accepted_at": datetime.now(),
+                "accepted_by": current_user["id"],
+            }
+        },
+    )
+
+    return {
+        "status": "success",
+        "content_type": content_type,
+        "content_id": content["id"],
+    }
+
+
+@router.post("/ai/queue/{job_id}/reject")
+async def reject_generated_content(
+    job_id: str,
+    reason: Optional[str] = Body(None, embed=True),
+    current_user=Depends(require_super_admin),
+    db=Depends(get_db),
+):
+    """Reject and discard generated content"""
+    result = await db.ai_generation_jobs.update_one(
+        {"id": job_id},
+        {
+            "$set": {
+                "status": "rejected",
+                "rejected_at": datetime.now(),
+                "rejected_by": current_user["id"],
+                "rejection_reason": reason,
+            }
+        },
+    )
+
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    return {"status": "success", "message": "Content rejected"}
+
+
+@router.post("/ai/queue/{job_id}/regenerate")
+async def regenerate_content(
+    job_id: str,
+    current_user=Depends(require_super_admin),
+    db=Depends(get_db),
+):
+    """Regenerate content with same parameters"""
+    job = await db.ai_generation_jobs.find_one({"id": job_id})
+
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    # Create new job with same parameters
+    new_job_id = str(uuid.uuid4())
+    new_job = {
+        "id": new_job_id,
+        "content_type": job["content_type"],
+        "model": job["model"],
+        "custom_prompt": job.get("custom_prompt"),
+        "generate_both_languages": job.get("generate_both_languages", True),
+        "parameters": job.get("parameters", {}),
+        "status": "pending",
+        "progress": 0,
+        "created_by": current_user["id"],
+        "created_at": datetime.now(),
+        "updated_at": datetime.now(),
+        "previous_job_id": job_id,
+        "result": None,
+        "error": None,
+    }
+
+    await db.ai_generation_jobs.insert_one(new_job)
+
+    return {
+        "status": "queued",
+        "job_id": new_job_id,
+        "message": f"Regenerating {job['content_type']} content",
+    }
 
 
 # ==================== ANALYTICS ====================

@@ -29,16 +29,26 @@ import {
 } from '../../components/ui/dialog';
 import {
   ArrowLeft, Sparkles, Loader2, BookOpen, MessageSquare, User, HelpCircle,
-  RefreshCw, Check, X, Edit, Eye, ChevronDown, ChevronUp
+  RefreshCw, Check, X, Edit, Eye, ChevronDown, ChevronUp, GraduationCap,
+  FolderTree, Tag, Calendar, Image
 } from 'lucide-react';
 import exploreService from '../../services/exploreService';
 import { useToast } from '../../hooks/use-toast';
 
 const contentTypeConfig = {
-  devotion: { label: 'Daily Devotion', icon: BookOpen, color: 'text-blue-600', bgColor: 'bg-blue-50' },
-  verse: { label: 'Verse of the Day', icon: MessageSquare, color: 'text-green-600', bgColor: 'bg-green-50' },
-  figure: { label: 'Bible Figure', icon: User, color: 'text-purple-600', bgColor: 'bg-purple-50' },
-  quiz: { label: 'Daily Quiz', icon: HelpCircle, color: 'text-orange-600', bgColor: 'bg-orange-50' },
+  // Daily Content
+  devotion: { label: 'Daily Devotion', icon: BookOpen, color: 'text-blue-600', bgColor: 'bg-blue-50', apiType: 'daily_devotion' },
+  verse: { label: 'Verse of the Day', icon: MessageSquare, color: 'text-green-600', bgColor: 'bg-green-50', apiType: 'verse_of_the_day' },
+  figure: { label: 'Bible Figure', icon: User, color: 'text-purple-600', bgColor: 'bg-purple-50', apiType: 'bible_figure' },
+  quiz: { label: 'Daily Quiz', icon: HelpCircle, color: 'text-orange-600', bgColor: 'bg-orange-50', apiType: 'daily_quiz' },
+  // Self-Paced Content
+  bible_study: { label: 'Bible Study', icon: GraduationCap, color: 'text-indigo-600', bgColor: 'bg-indigo-50', apiType: 'bible_study' },
+  devotion_plan: { label: 'Devotion Plan', icon: Calendar, color: 'text-rose-600', bgColor: 'bg-rose-50', apiType: 'devotion_plan' },
+  // Topical Content
+  topical_category: { label: 'Topical Category', icon: FolderTree, color: 'text-teal-600', bgColor: 'bg-teal-50', apiType: 'topical_category' },
+  topical_verse: { label: 'Topical Verse', icon: Tag, color: 'text-cyan-600', bgColor: 'bg-cyan-50', apiType: 'topical_verse' },
+  // Visual Content
+  shareable_image: { label: 'Shareable Image', icon: Image, color: 'text-pink-600', bgColor: 'bg-pink-50', apiType: 'shareable_image' },
 };
 
 const statusConfig = {
@@ -153,8 +163,9 @@ export default function AIGenerationHub() {
   });
 
   const handleGenerate = () => {
+    const config = contentTypeConfig[contentType];
     generateMutation.mutate({
-      contentType,
+      contentType: config?.apiType || contentType,
       model,
       customPrompt,
       generateBothLanguages,
