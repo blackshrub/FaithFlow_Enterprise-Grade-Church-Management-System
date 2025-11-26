@@ -12,7 +12,7 @@ export const exploreService = {
    * Get Explore dashboard statistics
    */
   getDashboardStats: async () => {
-    const { data } = await api.get('/api/explore/admin/stats');
+    const { data } = await api.get('/explore/admin/stats');
     return data;
   },
 
@@ -22,7 +22,7 @@ export const exploreService = {
    * List content by type with filters
    */
   listContent: async (contentType, params = {}) => {
-    const { data } = await api.get(`/api/explore/admin/content/${contentType}`, { params });
+    const { data } = await api.get(`/explore/admin/content/${contentType}`, { params });
     return data;
   },
 
@@ -30,7 +30,7 @@ export const exploreService = {
    * Get single content item
    */
   getContent: async (contentType, contentId) => {
-    const { data } = await api.get(`/api/explore/admin/content/${contentType}/${contentId}`);
+    const { data } = await api.get(`/explore/admin/content/${contentType}/${contentId}`);
     return data;
   },
 
@@ -38,7 +38,7 @@ export const exploreService = {
    * Create new content
    */
   createContent: async (contentType, contentData) => {
-    const { data } = await api.post(`/api/explore/admin/content/${contentType}`, contentData);
+    const { data } = await api.post(`/explore/admin/content/${contentType}`, contentData);
     return data;
   },
 
@@ -46,7 +46,7 @@ export const exploreService = {
    * Update existing content
    */
   updateContent: async (contentType, contentId, contentData) => {
-    const { data } = await api.put(`/api/explore/admin/content/${contentType}/${contentId}`, contentData);
+    const { data } = await api.put(`/explore/admin/content/${contentType}/${contentId}`, contentData);
     return data;
   },
 
@@ -54,7 +54,7 @@ export const exploreService = {
    * Delete content
    */
   deleteContent: async (contentType, contentId) => {
-    const { data } = await api.delete(`/api/explore/admin/content/${contentType}/${contentId}`);
+    const { data } = await api.delete(`/explore/admin/content/${contentType}/${contentId}`);
     return data;
   },
 
@@ -62,7 +62,7 @@ export const exploreService = {
    * Bulk delete content
    */
   bulkDeleteContent: async (contentType, contentIds) => {
-    const { data } = await api.post(`/api/explore/admin/content/${contentType}/bulk-delete`, { content_ids: contentIds });
+    const { data } = await api.post(`/explore/admin/content/${contentType}/bulk-delete`, { content_ids: contentIds });
     return data;
   },
 
@@ -72,7 +72,7 @@ export const exploreService = {
    * Get schedule for a date range
    */
   getSchedule: async (startDate, endDate) => {
-    const { data } = await api.get('/api/explore/admin/schedule', {
+    const { data } = await api.get('/explore/admin/schedule', {
       params: { start_date: startDate, end_date: endDate }
     });
     return data;
@@ -82,7 +82,7 @@ export const exploreService = {
    * Get scheduled content with filters
    */
   getScheduledContent: async (params = {}) => {
-    const { data } = await api.get('/api/explore/admin/scheduled-content', { params });
+    const { data } = await api.get('/explore/admin/scheduled-content', { params });
     return data;
   },
 
@@ -90,7 +90,7 @@ export const exploreService = {
    * Schedule content for a specific date
    */
   scheduleContent: async (contentType, contentId, scheduledDate) => {
-    const { data } = await api.post('/api/explore/admin/schedule', {
+    const { data } = await api.post('/explore/admin/schedule', {
       content_type: contentType,
       content_id: contentId,
       scheduled_date: scheduledDate
@@ -102,7 +102,7 @@ export const exploreService = {
    * Unschedule content
    */
   unscheduleContent: async (contentType, contentId) => {
-    const { data} = await api.delete(`/api/explore/admin/unschedule/${contentType}/${contentId}`);
+    const { data} = await api.delete(`/explore/admin/unschedule/${contentType}/${contentId}`);
     return data;
   },
 
@@ -112,7 +112,7 @@ export const exploreService = {
    * Get content analytics
    */
   getContentAnalytics: async (contentType, contentId, dateRange) => {
-    const { data } = await api.get(`/api/explore/admin/analytics/${contentType}/${contentId}`, {
+    const { data } = await api.get(`/explore/admin/analytics/${contentType}/${contentId}`, {
       params: dateRange
     });
     return data;
@@ -122,7 +122,7 @@ export const exploreService = {
    * Get overall Explore analytics
    */
   getOverallAnalytics: async (dateRange) => {
-    const { data } = await api.get('/api/explore/admin/analytics/overall', {
+    const { data } = await api.get('/explore/admin/analytics/overall', {
       params: dateRange
     });
     return data;
@@ -132,7 +132,7 @@ export const exploreService = {
    * Get comprehensive analytics with filters
    */
   getAnalytics: async (params = {}) => {
-    const { data } = await api.get('/api/explore/admin/analytics', { params });
+    const { data } = await api.get('/explore/admin/analytics', { params });
     return data;
   },
 
@@ -140,7 +140,7 @@ export const exploreService = {
    * Get top performing content
    */
   getTopContent: async (params = {}) => {
-    const { data } = await api.get('/api/explore/admin/analytics/top-content', { params });
+    const { data } = await api.get('/explore/admin/analytics/top-content', { params });
     return data;
   },
 
@@ -150,7 +150,7 @@ export const exploreService = {
    * Get AI configuration
    */
   getAIConfig: async () => {
-    const { data } = await api.get('/api/explore/admin/ai/config');
+    const { data } = await api.get('/explore/admin/ai/config');
     return data;
   },
 
@@ -158,7 +158,7 @@ export const exploreService = {
    * Generate content using AI
    */
   generateContent: async (params) => {
-    const { data } = await api.post('/api/explore/admin/ai/generate', params);
+    const { data } = await api.post('/explore/admin/ai/generate', params);
     return data;
   },
 
@@ -166,7 +166,7 @@ export const exploreService = {
    * Get AI generation queue
    */
   getGenerationQueue: async () => {
-    const { data } = await api.get('/api/explore/admin/ai/queue');
+    const { data } = await api.get('/explore/admin/ai/queue');
     return data;
   },
 
@@ -174,7 +174,7 @@ export const exploreService = {
    * Get AI generation status
    */
   getGenerationStatus: async (jobId) => {
-    const { data } = await api.get(`/api/explore/admin/ai/status/${jobId}`);
+    const { data } = await api.get(`/explore/admin/ai/status/${jobId}`);
     return data;
   },
 
@@ -182,7 +182,7 @@ export const exploreService = {
    * Accept generated content and publish
    */
   acceptGeneratedContent: async (jobId, edits = null) => {
-    const { data } = await api.post(`/api/explore/admin/ai/accept/${jobId}`, { edits });
+    const { data } = await api.post(`/explore/admin/ai/accept/${jobId}`, { edits });
     return data;
   },
 
@@ -190,7 +190,7 @@ export const exploreService = {
    * Reject generated content
    */
   rejectGeneratedContent: async (jobId) => {
-    const { data } = await api.post(`/api/explore/admin/ai/reject/${jobId}`);
+    const { data } = await api.post(`/explore/admin/ai/reject/${jobId}`);
     return data;
   },
 
@@ -198,7 +198,7 @@ export const exploreService = {
    * Regenerate content with same parameters
    */
   regenerateContent: async (jobId) => {
-    const { data } = await api.post(`/api/explore/admin/ai/regenerate/${jobId}`);
+    const { data } = await api.post(`/explore/admin/ai/regenerate/${jobId}`);
     return data;
   },
 
@@ -208,7 +208,7 @@ export const exploreService = {
    * Get all prompt configurations for church
    */
   getPromptConfig: async () => {
-    const { data } = await api.get('/api/explore/church/ai/prompt-config');
+    const { data } = await api.get('/explore/church/ai/prompt-config');
     return data;
   },
 
@@ -216,7 +216,7 @@ export const exploreService = {
    * Get prompt configuration for specific content type
    */
   getPromptConfigByType: async (contentType) => {
-    const { data } = await api.get(`/api/explore/church/ai/prompt-config/${contentType}`);
+    const { data } = await api.get(`/explore/church/ai/prompt-config/${contentType}`);
     return data;
   },
 
@@ -224,7 +224,7 @@ export const exploreService = {
    * Update all prompt configurations
    */
   updatePromptConfig: async (config) => {
-    const { data } = await api.put('/api/explore/church/ai/prompt-config', config);
+    const { data } = await api.put('/explore/church/ai/prompt-config', config);
     return data;
   },
 
@@ -232,7 +232,7 @@ export const exploreService = {
    * Update prompt configuration for specific content type
    */
   updatePromptConfigByType: async (contentType, config) => {
-    const { data } = await api.patch(`/api/explore/church/ai/prompt-config/${contentType}`, config);
+    const { data } = await api.patch(`/explore/church/ai/prompt-config/${contentType}`, config);
     return data;
   },
 
@@ -240,7 +240,7 @@ export const exploreService = {
    * Reset prompt configuration to defaults
    */
   resetPromptConfig: async (contentTypes = null) => {
-    const { data } = await api.post('/api/explore/church/ai/prompt-config/reset', {
+    const { data } = await api.post('/explore/church/ai/prompt-config/reset', {
       content_types: contentTypes
     });
     return data;
@@ -252,7 +252,7 @@ export const exploreService = {
    * Get platform settings
    */
   getPlatformSettings: async () => {
-    const { data } = await api.get('/api/explore/admin/settings');
+    const { data } = await api.get('/explore/admin/settings');
     return data;
   },
 
@@ -260,7 +260,7 @@ export const exploreService = {
    * Update platform settings
    */
   updatePlatformSettings: async (settings) => {
-    const { data } = await api.put('/api/explore/admin/settings', settings);
+    const { data } = await api.put('/explore/admin/settings', settings);
     return data;
   },
 
@@ -270,7 +270,7 @@ export const exploreService = {
    * Get church Explore settings
    */
   getChurchSettings: async () => {
-    const { data } = await api.get('/api/explore/church/settings');
+    const { data } = await api.get('/explore/church/settings');
     return data;
   },
 
@@ -278,7 +278,7 @@ export const exploreService = {
    * Update church Explore settings
    */
   updateChurchSettings: async (settings) => {
-    const { data } = await api.put('/api/explore/church/settings', settings);
+    const { data } = await api.put('/explore/church/settings', settings);
     return data;
   },
 
@@ -286,7 +286,7 @@ export const exploreService = {
    * Get church content adoption status
    */
   getAdoptionStatus: async () => {
-    const { data } = await api.get('/api/explore/church/adoption');
+    const { data } = await api.get('/explore/church/adoption');
     return data;
   },
 
@@ -294,7 +294,7 @@ export const exploreService = {
    * Adopt or unadopt platform content
    */
   updateContentAdoption: async (contentType, contentId, adopted) => {
-    const { data } = await api.post('/api/explore/church/adoption', {
+    const { data } = await api.post('/explore/church/adoption', {
       content_type: contentType,
       content_id: contentId,
       adopted

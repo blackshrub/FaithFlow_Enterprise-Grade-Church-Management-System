@@ -26,16 +26,44 @@ export default function ExploreContentList() {
   const { toast } = useToast();
   const { t } = useTranslation();
 
-  // Extract content type from URL path (e.g., /content-center/devotion -> devotion)
+  // Map URL path names to API content type names
+  const urlToApiContentType = {
+    'devotion': 'daily_devotion',
+    'verse': 'verse_of_the_day',
+    'figure': 'bible_figure',
+    'quiz': 'daily_quiz',
+    'bible_study': 'bible_study',
+    'bible-study': 'bible_study',
+    'devotion_plan': 'devotion_plan',
+    'devotion-plan': 'devotion_plan',
+    'topical': 'topical_category',          // /content-center/topical -> categories
+    'topical/verses': 'topical_verse',      // /content-center/topical/verses -> verses
+    'topical_verse': 'topical_verse',
+    'topical-verse': 'topical_verse',
+    'topical_category': 'topical_category',
+    'topical-category': 'topical_category',
+  };
+
+  // Extract content type from URL path (e.g., /content-center/devotion -> daily_devotion)
   const contentType = useMemo(() => {
     const pathParts = location.pathname.split('/').filter(Boolean);
     // Get the segment after 'content-center'
     const ccIndex = pathParts.indexOf('content-center');
+    let urlType = '';
     if (ccIndex !== -1 && pathParts[ccIndex + 1]) {
-      // Convert hyphenated to underscore for API (bible-study -> bible_study)
-      return pathParts[ccIndex + 1].replace(/-/g, '_');
+      // Handle nested paths like /content-center/topical/verses
+      const contentSegments = pathParts.slice(ccIndex + 1);
+      // Join first two segments for nested content types
+      if (contentSegments.length >= 2 && contentSegments[0] === 'topical') {
+        urlType = `${contentSegments[0]}/${contentSegments[1]}`;
+      } else {
+        urlType = contentSegments[0].replace(/-/g, '_');
+      }
+    } else {
+      urlType = pathParts[pathParts.length - 1]?.replace(/-/g, '_') || 'devotion';
     }
-    return pathParts[pathParts.length - 1]?.replace(/-/g, '_') || 'devotion';
+    // Map to API content type
+    return urlToApiContentType[urlType] || urlType.replace(/-/g, '_');
   }, [location.pathname]);
 
   // URL-friendly content type (with hyphens for routes)
@@ -104,13 +132,13 @@ export default function ExploreContentList() {
   };
 
   const contentTypeLabels = {
-    devotion: 'Daily Devotions',
-    verse: 'Verse of the Day',
-    figure: 'Bible Figures',
-    quiz: 'Daily Quizzes',
+    daily_devotion: 'Daily Devotions',
+    verse_of_the_day: 'Verse of the Day',
+    bible_figure: 'Bible Figures',
+    daily_quiz: 'Daily Quizzes',
     bible_study: 'Bible Studies',
     devotion_plan: 'Devotion Plans',
-    topical: 'Topical Verses',
+    topical_verse: 'Topical Verses',
     topical_category: 'Topical Categories',
   };
 
@@ -199,7 +227,7 @@ export default function ExploreContentList() {
               <AlertCircle className="h-12 w-12 mb-3" />
               <p>Error loading content: {error.message}</p>
             </div>
-          ) : !data?.content || data.content.length === 0 ? (
+          ) : !data?.items || data.items.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-gray-500">
               <Plus className="h-12 w-12 mb-3 text-gray-300" />
               <p>No content found</p>
@@ -216,10 +244,10 @@ export default function ExploreContentList() {
                   <TableHead className="w-12">
                     <input
                       type="checkbox"
-                      checked={selectedItems.length === data.content.length}
+                      checked={selectedItems.length === data.items.length}
                       onChange={(e) => {
                         if (e.target.checked) {
-                          setSelectedItems(data.content.map(item => item.id));
+                          setSelectedItems(data.items.map(item => item.id));
                         } else {
                           setSelectedItems([]);
                         }
@@ -235,7 +263,7 @@ export default function ExploreContentList() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {data.content.map((item) => (
+                {data.items.map((item) => (
                   <TableRow key={item.id}>
                     <TableCell>
                       <input
@@ -300,10 +328,10 @@ export default function ExploreContentList() {
       </Card>
 
       {/* Pagination (Placeholder) */}
-      {data?.content && data.content.length > 0 && (
+      {data?.items && data.items.length > 0 && (
         <div className="flex items-center justify-between text-sm text-gray-600">
           <div>
-            Showing {data.content.length} of {data.total || data.content.length} results
+            Showing {data.items.length} of {data.total || data.items.length} results
           </div>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" disabled>
