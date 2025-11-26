@@ -99,6 +99,8 @@ echo -e "${MAGENTA}🚀 Step 1/8: Syncing files from git to deployment...${NC}"
 progress
 
 info "Copying updated files to $DEST_DIR..."
+# -a = archive mode (preserves permissions, timestamps, includes dotfiles)
+# Note: -a includes hidden files (.env.example, .gitignore, etc.)
 rsync -a \
   --exclude='.git/' \
   --exclude='node_modules/' \
@@ -109,7 +111,7 @@ rsync -a \
   --exclude='*.log' \
   "$SOURCE_DIR/" "$DEST_DIR/" > /dev/null
 
-success "Files synced to $DEST_DIR"
+success "Files synced to $DEST_DIR (including .env.example templates)"
 echo ""
 sleep 1
 
@@ -212,16 +214,42 @@ progress
 
 if [ "$FRONTEND_CHANGED" = true ]; then
     cd "$DEST_DIR/frontend"
-    
+
     info "Creating optimized production build..."
     echo -e "${CYAN}   🏗️  This may take 2-3 minutes...${NC}"
-    yarn build > /dev/null 2>&1
-    
-    if [ -d "build" ] && [ -f "build/index.html" ]; then
-        success "Production build created successfully!"
-        echo -e "${GREEN}   📦 Static files ready in frontend/build/${NC}"
+
+    # Create temp log file for build output
+    BUILD_LOG="/tmp/faithflow-update-build-$$.log"
+
+    # Run build with error capture
+    if yarn build > "$BUILD_LOG" 2>&1; then
+        if [ -d "build" ] && [ -f "build/index.html" ]; then
+            success "Production build created successfully!"
+            echo -e "${GREEN}   📦 Static files ready in frontend/build/${NC}"
+            rm -f "$BUILD_LOG"
+        else
+            warn "Build completed but output files missing"
+            echo -e "${YELLOW}   Check build log: $BUILD_LOG${NC}"
+        fi
     else
-        warn "Build may have issues. Check logs if site doesn't work."
+        echo -e "${RED}❌ Frontend build FAILED!${NC}"
+        echo -e "${RED}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+        echo -e "${YELLOW}Error log (last 30 lines):${NC}"
+        tail -n 30 "$BUILD_LOG"
+        echo -e "${RED}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+        echo -e "${YELLOW}Full build log saved to: $BUILD_LOG${NC}"
+        echo -e "${YELLOW}Common fixes:${NC}"
+        echo -e "${YELLOW}  1. Check for Node.js version compatibility${NC}"
+        echo -e "${YELLOW}  2. Run: cd frontend && yarn install --force${NC}"
+        echo -e "${YELLOW}  3. Check for missing dependencies or syntax errors${NC}"
+        echo ""
+        warn "Build failed. Please fix errors and run update.sh again."
+        echo -e "${YELLOW}   The update will continue, but frontend may not work correctly.${NC}"
+        echo ""
+        read -p "Continue anyway? (y/n) " CONTINUE_ANYWAY
+        if [ "$CONTINUE_ANYWAY" != "y" ]; then
+            exit 1
+        fi
     fi
 else
     info "Frontend unchanged, skipping build (saves 2-3 minutes!)"

@@ -201,8 +201,9 @@ fi
 if [ "$SCRIPT_DIR" != "$INSTALL_DIR" ]; then
     info "Copying files from $SCRIPT_DIR to $INSTALL_DIR..."
     # Use rsync with proper flags
-    # -a = archive mode (preserves permissions, timestamps)
+    # -a = archive mode (preserves permissions, timestamps, includes dotfiles)
     # --exclude = skip these directories/files
+    # Note: -a includes hidden files (.env.example, .gitignore, etc.)
     rsync -a \
       --exclude='.git/' \
       --exclude='node_modules/' \
@@ -212,7 +213,7 @@ if [ "$SCRIPT_DIR" != "$INSTALL_DIR" ]; then
       --exclude='frontend/build/' \
       --exclude='*.log' \
       "$SCRIPT_DIR/" "$INSTALL_DIR/" > /dev/null
-    success "Files copied to $INSTALL_DIR"
+    success "Files copied to $INSTALL_DIR (including .env.example templates)"
     
     # Verify critical files exist
     if [ ! -f "$INSTALL_DIR/frontend/public/index.html" ]; then
@@ -317,13 +318,36 @@ fi
 
 info "Building production frontend (this may take 3-5 minutes)..."
 echo -e "${CYAN}   🏗️  Creating optimized production build...${NC}"
-yarn build > /dev/null 2>&1
 
-if [ -d "build" ] && [ -f "build/index.html" ]; then
-    success "Frontend built successfully!"
-    echo -e "${GREEN}   📦 Production build ready in frontend/build/${NC}"
+# Create temp log file for build output
+BUILD_LOG="/tmp/faithflow-build-$$.log"
+
+# Run build with error capture
+if yarn build > "$BUILD_LOG" 2>&1; then
+    if [ -d "build" ] && [ -f "build/index.html" ]; then
+        success "Frontend built successfully!"
+        echo -e "${GREEN}   📦 Production build ready in frontend/build/${NC}"
+        rm -f "$BUILD_LOG"
+    else
+        warn "Build completed but output files missing"
+        echo -e "${YELLOW}   Check build log: $BUILD_LOG${NC}"
+    fi
 else
-    warn "Frontend build may have issues. Check logs if site doesn't work."
+    echo -e "${RED}❌ Frontend build FAILED!${NC}"
+    echo -e "${RED}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo -e "${YELLOW}Error log (last 30 lines):${NC}"
+    tail -n 30 "$BUILD_LOG"
+    echo -e "${RED}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo -e "${YELLOW}Full build log saved to: $BUILD_LOG${NC}"
+    echo -e "${YELLOW}Common fixes:${NC}"
+    echo -e "${YELLOW}  1. Check for Node.js version compatibility${NC}"
+    echo -e "${YELLOW}  2. Run: cd frontend && yarn install --force${NC}"
+    echo -e "${YELLOW}  3. Check for missing dependencies or syntax errors${NC}"
+    echo ""
+    read -p "Continue anyway? (y/n) " CONTINUE_ANYWAY
+    if [ "$CONTINUE_ANYWAY" != "y" ]; then
+        exit 1
+    fi
 fi
 
 success "Frontend setup complete!"
