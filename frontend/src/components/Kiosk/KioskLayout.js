@@ -28,7 +28,7 @@ const KioskLayout = ({ children, showBack = false, showHome = true, onBack = nul
   // Apply inactivity timeout (except for staff check-in)
   useKioskInactivity(2); // 2 minutes default
   
-  const isHome = location.pathname === '/kiosk';
+  const isHome = location.pathname === '/kiosk' || location.pathname === '/kiosk/home';
   
   const handleBack = () => {
     if (onBack) {

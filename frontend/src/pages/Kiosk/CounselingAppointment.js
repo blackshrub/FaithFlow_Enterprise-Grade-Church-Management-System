@@ -208,7 +208,7 @@ const CounselingKiosk = () => {
   // STEP: Counseling Form
   if (step === 'counseling_form') {
     return (
-      <KioskLayout showBack showHome onBack={() => navigate('/kiosk')}>
+      <KioskLayout showBack showHome onBack={() => navigate('/kiosk/home')}>
         <motion.div className="bg-white rounded-3xl shadow-2xl p-12 max-w-3xl mx-auto space-y-8" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
           <div className="text-center">
             <h2 className="text-4xl font-bold mb-2">{t('counseling.step_details')}</h2>
@@ -396,7 +396,7 @@ const CounselingKiosk = () => {
             <p className="text-2xl text-gray-600">{t('counseling.success_text')}</p>
           </div>
           
-          <Button onClick={() => navigate('/kiosk')} className="w-full h-16 text-xl rounded-xl">
+          <Button onClick={() => navigate('/kiosk/home')} className="w-full h-16 text-xl rounded-xl">
             {t('counseling.success_back')}
           </Button>
         </motion.div>

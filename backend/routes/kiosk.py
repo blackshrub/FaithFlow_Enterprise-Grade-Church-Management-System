@@ -381,6 +381,68 @@ async def join_group_kiosk(
         raise HTTPException(status_code=500, detail="Failed to create join request")
 
 
+@router.get("/settings")
+async def get_public_kiosk_settings(
+    church_id: str = Query(..., description="Church ID"),
+    db: AsyncIOMotorDatabase = Depends(get_db)
+):
+    """Get public kiosk settings for a church (no auth required).
+
+    Returns which kiosk services are enabled and timeout settings.
+    """
+    try:
+        settings = await db.church_settings.find_one(
+            {"church_id": church_id},
+            {"_id": 0, "kiosk_settings": 1}
+        )
+
+        if settings and settings.get("kiosk_settings"):
+            kiosk_settings = settings["kiosk_settings"]
+            # Return only public-facing settings
+            return {
+                "enable_kiosk": kiosk_settings.get("enable_kiosk", True),
+                "enable_event_registration": kiosk_settings.get("enable_event_registration", True),
+                "enable_prayer": kiosk_settings.get("enable_prayer", True),
+                "enable_counseling": kiosk_settings.get("enable_counseling", True),
+                "enable_groups": kiosk_settings.get("enable_groups", True),
+                "enable_profile_update": kiosk_settings.get("enable_profile_update", True),
+                "timeout_minutes": kiosk_settings.get("timeout_minutes", 2),
+                "default_language": kiosk_settings.get("default_language", "id"),
+                "home_title": kiosk_settings.get("home_title", ""),
+                "home_subtitle": kiosk_settings.get("home_subtitle", "")
+            }
+
+        # Return defaults if no settings found
+        return {
+            "enable_kiosk": True,
+            "enable_event_registration": True,
+            "enable_prayer": True,
+            "enable_counseling": True,
+            "enable_groups": True,
+            "enable_profile_update": True,
+            "timeout_minutes": 2,
+            "default_language": "id",
+            "home_title": "",
+            "home_subtitle": ""
+        }
+
+    except Exception as e:
+        logger.error(f"Error fetching kiosk settings: {e}")
+        # Return defaults on error
+        return {
+            "enable_kiosk": True,
+            "enable_event_registration": True,
+            "enable_prayer": True,
+            "enable_counseling": True,
+            "enable_groups": True,
+            "enable_profile_update": True,
+            "timeout_minutes": 2,
+            "default_language": "id",
+            "home_title": "",
+            "home_subtitle": ""
+        }
+
+
 @router.get("/lookup-member")
 async def lookup_member_by_phone(
     phone: str = Query(..., description="Phone number to lookup"),

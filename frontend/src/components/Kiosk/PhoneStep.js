@@ -147,7 +147,12 @@ const PhoneStep = ({ onMemberFound, onMemberNotFound, onError, churchId }) => {
           className="w-full h-16 text-xl rounded-xl"
           size="lg"
         >
-          {loading ? t('phone.lookup_error') : t('phone.continue')}
+          {loading ? (
+            <span className="flex items-center gap-2">
+              <span className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></span>
+              {t('otp.verifying')}
+            </span>
+          ) : t('phone.continue')}
         </Button>
       </div>
     </motion.div>

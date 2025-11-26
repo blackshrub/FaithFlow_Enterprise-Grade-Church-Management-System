@@ -141,7 +141,7 @@ const JoinGroupKiosk = () => {
   
   if (step === 'select_group') {
     return (
-      <KioskLayout showBack showHome onBack={() => navigate('/kiosk')}>
+      <KioskLayout showBack showHome onBack={() => navigate('/kiosk/home')}>
         <div className="space-y-8">
           <div className="text-center">
             <h2 className="text-4xl font-bold mb-2">{t('groups.step_list')}</h2>
@@ -168,7 +168,7 @@ const JoinGroupKiosk = () => {
                   transition={{ delay: index * 0.1 }}
                 >
                   <h3 className="text-2xl font-bold mb-2">{group.name}</h3>
-                  {group.description && <p className="text-lg text-gray-600 mb-2">{group.description.slice(0, 150)}...</p>}
+                  {group.description && <p className="text-lg text-gray-600 mb-2 line-clamp-2">{group.description}</p>}
                   {group.meeting_schedule && <p className="text-lg text-gray-500">📅 {group.meeting_schedule}</p>}
                   {group.leader_name && <p className="text-lg text-gray-500">👤 {group.leader_name}</p>}
                 </motion.button>
@@ -219,7 +219,7 @@ const JoinGroupKiosk = () => {
             <h2 className="text-5xl font-bold">{t('groups.success_title')}</h2>
             <p className="text-2xl text-gray-600">{t('groups.success_text')}</p>
           </div>
-          <Button onClick={() => navigate('/kiosk')} className="w-full h-16 text-xl rounded-xl">{t('groups.success_back')}</Button>
+          <Button onClick={() => navigate('/kiosk/home')} className="w-full h-16 text-xl rounded-xl">{t('groups.success_back')}</Button>
         </motion.div>
       </KioskLayout>
     );

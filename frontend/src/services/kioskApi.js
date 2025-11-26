@@ -65,6 +65,29 @@ export const kioskApi = {
 
   // ==================== KIOSK SETTINGS ====================
 
+  // Public endpoint for kiosk home - doesn't require auth
+  getPublicKioskSettings: async (churchId) => {
+    try {
+      const response = await api.get('/kiosk/settings', {
+        params: { church_id: churchId }
+      });
+      return response.data || {};
+    } catch (error) {
+      console.error('Failed to fetch public kiosk settings:', error);
+      // Return defaults so kiosk continues working
+      return {
+        enable_kiosk: true,
+        enable_event_registration: true,
+        enable_prayer: true,
+        enable_counseling: true,
+        enable_groups: true,
+        enable_profile_update: true,
+        timeout_minutes: 2
+      };
+    }
+  },
+
+  // Admin endpoint - requires auth (used by KioskSettings admin page)
   getKioskSettings: async () => {
     const response = await api.get('/settings/church-settings');
     return response.data?.kiosk_settings || {};

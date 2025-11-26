@@ -86,13 +86,24 @@ const EventRegistrationKiosk = () => {
   const handleOtpComplete = async (code) => {
     setOtpError('');
     setVerifying(true);
-    
+
     try {
       const result = await kioskApi.verifyOTP(phone, code);
-      
+
       if (result.success) {
-        // If new member and no member object, we need to create one
-        // For now, assume backend created or we have member_id
+        // Ensure member is set before proceeding
+        if (!member) {
+          console.warn('⚠️ Member not set after OTP verification');
+          // Try to fetch member by phone if not set
+          try {
+            const foundMember = await kioskApi.lookupMemberByPhone(phone, churchId);
+            if (foundMember) {
+              setMember(foundMember);
+            }
+          } catch (lookupError) {
+            console.error('Member lookup after OTP failed:', lookupError);
+          }
+        }
         setStep('select_event');
       } else {
         setOtpError(t('existing_profile.otp_error'));
@@ -124,7 +135,7 @@ const EventRegistrationKiosk = () => {
   };
   
   const handleBackToStart = () => {
-    navigate('/kiosk');
+    navigate('/kiosk/home');
   };
   
   // STEP: Phone Number

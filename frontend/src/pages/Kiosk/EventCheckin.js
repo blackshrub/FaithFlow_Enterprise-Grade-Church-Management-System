@@ -1,53 +1,91 @@
 /**
  * Event Check-In Kiosk (Staff Only)
- * 
+ *
  * Flow:
  * 1. PIN entry (6-digit)
  * 2. Select event
  * 3. QR scan or search member
  * 4. Check-in confirmation
- * 
+ *
  * NO INACTIVITY TIMEOUT for this page
  */
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ClipboardCheck, QrCode, Search, UserCheck, Camera as CameraIcon } from 'lucide-react';
+import { ClipboardCheck, QrCode, Search, UserCheck, Camera as CameraIcon, Check, ArrowLeft } from 'lucide-react';
 import { motion } from 'framer-motion';
 import KioskLayout from '../../components/Kiosk/KioskLayout';
 import OTPInput from '../../components/Kiosk/OTPInput';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
-import { Label } from '../../components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
-import { Card } from '../../components/ui/card';
 import MemberAvatar from '../../components/MemberAvatar';
 import kioskApi from '../../services/kioskApi';
-import { useAuth } from '../../context/AuthContext';
+import api from '../../services/api';
 import QrScanner from 'qr-scanner';
 
 const EventCheckinKiosk = () => {
   const navigate = useNavigate();
   const { t } = useTranslation('kiosk');
-  const { church } = useAuth();
   const videoRef = useRef(null);
   const qrScannerRef = useRef(null);
-  
-  const [step, setStep] = useState('pin'); // pin, select_event, scan_or_search, confirm
+
+  // Get church_id from localStorage (set during church selection)
+  const churchId = localStorage.getItem('kiosk_church_id');
+
+  const [step, setStep] = useState('pin'); // pin, select_event, scan_or_search, success
   const [pin, setPin] = useState('');
   const [verifying, setVerifying] = useState(false);
   const [pinError, setPinError] = useState('');
   const [staff, setStaff] = useState(null);
-  
+
   const [events, setEvents] = useState([]);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [mode, setMode] = useState('scan'); // scan or search
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState([]);
-  const [selectedMember, setSelectedMember] = useState(null);
+  const [checkinInProgress, setCheckinInProgress] = useState(false);
   const [scanning, setScanning] = useState(false);
-  
+  const [lastCheckedIn, setLastCheckedIn] = useState(null);
+  const [checkinError, setCheckinError] = useState('');
+  const [recentCheckins, setRecentCheckins] = useState([]);
+
+  // Check-in API call
+  const performCheckin = useCallback(async (memberId, memberName, qrCode = null) => {
+    if (checkinInProgress) return;
+
+    setCheckinInProgress(true);
+    setCheckinError('');
+
+    try {
+      // Call the events check-in API
+      const response = await api.post(`/events/${selectedEvent.id}/check-in`, {
+        member_id: memberId,
+        qr_code: qrCode,
+        source: 'kiosk'
+      });
+
+      if (response.data) {
+        // Success - add to recent checkins and show success
+        setLastCheckedIn({ name: memberName, time: new Date() });
+        setRecentCheckins(prev => [
+          { name: memberName, time: new Date() },
+          ...prev.slice(0, 9)
+        ]);
+        setStep('success');
+      }
+    } catch (error) {
+      console.error('Check-in error:', error);
+      const errorMessage = error.response?.data?.detail || t('errors.generic');
+      setCheckinError(errorMessage);
+
+      // Auto-clear error after 3 seconds
+      setTimeout(() => setCheckinError(''), 3000);
+    } finally {
+      setCheckinInProgress(false);
+    }
+  }, [selectedEvent, checkinInProgress, t]);
+
   // QR scanning with qr-scanner library
   useEffect(() => {
     if (scanning && videoRef.current) {
@@ -59,9 +97,9 @@ const EventCheckinKiosk = () => {
           highlightCodeOutline: true,
         }
       );
-      
+
       qrScannerRef.current.start();
-      
+
       return () => {
         if (qrScannerRef.current) {
           qrScannerRef.current.stop();
@@ -70,55 +108,61 @@ const EventCheckinKiosk = () => {
       };
     }
   }, [scanning]);
-  
+
   const handleQRScanned = async (qrData) => {
     if (qrScannerRef.current) {
       qrScannerRef.current.stop();
     }
     setScanning(false);
-    
-    // Extract member ID from QR
+
     try {
-      const memberId = qrData; // Assume QR contains member ID
-      // Fetch member and check in
-      // TODO: Call check-in API
-      console.log('Scanned member:', memberId);
-      alert(`Scanned: ${memberId}`);
+      // QR data might be member ID or formatted QR code
+      // Try to parse it - could be JSON or plain member ID
+      let memberId = qrData;
+      let memberName = 'Member';
+
+      try {
+        const parsed = JSON.parse(qrData);
+        memberId = parsed.member_id || parsed.memberId || qrData;
+        memberName = parsed.member_name || parsed.name || 'Member';
+      } catch {
+        // Not JSON, use as-is (plain member ID)
+        memberId = qrData;
+      }
+
+      // Perform check-in with QR code
+      await performCheckin(memberId, memberName, qrData);
     } catch (error) {
       console.error('QR scan error:', error);
+      setCheckinError('Invalid QR code');
+      setTimeout(() => setCheckinError(''), 3000);
     }
   };
-  
+
   useEffect(() => {
     if (step === 'select_event') {
       loadEvents();
     }
   }, [step]);
-  
+
   const loadEvents = async () => {
     try {
       const data = await kioskApi.getUpcomingEvents();
-      console.log('📅 Events API response:', data);
-      console.log('📅 Events array:', Array.isArray(data) ? data : data?.data);
-      
-      // Handle both array and object response
       const eventList = Array.isArray(data) ? data : (data?.data || []);
-      console.log('📅 Final events:', eventList);
-      
       setEvents(eventList);
     } catch (error) {
       console.error('Failed to load events:', error);
       setEvents([]);
     }
   };
-  
+
   const handlePinComplete = async (code) => {
     setPinError('');
     setVerifying(true);
-    
+
     try {
-      const result = await kioskApi.verifyPIN(church?.id, code);
-      
+      const result = await kioskApi.verifyPIN(churchId, code);
+
       if (result.success) {
         setStaff(result.user);
         setStep('select_event');
@@ -134,17 +178,30 @@ const EventCheckinKiosk = () => {
       setVerifying(false);
     }
   };
-  
+
   const handleSearch = async () => {
     if (!searchTerm.trim()) return;
     try {
-      const response = await kioskApi.lookupMemberByPhone(searchTerm);
+      // Include church_id in the lookup
+      const response = await kioskApi.lookupMemberByPhone(searchTerm, churchId);
       setSearchResults(response ? [response] : []);
     } catch (error) {
       console.error('Search error:', error);
+      setSearchResults([]);
     }
   };
-  
+
+  const handleMemberCheckin = async (member) => {
+    await performCheckin(member.id, member.full_name);
+  };
+
+  const handleContinueChecking = () => {
+    setLastCheckedIn(null);
+    setSearchTerm('');
+    setSearchResults([]);
+    setStep('scan_or_search');
+  };
+
   // STEP: PIN Entry
   if (step === 'pin') {
     return (
@@ -157,7 +214,7 @@ const EventCheckinKiosk = () => {
             <h2 className="text-4xl font-bold">{t('pin.title')}</h2>
             <p className="text-xl text-gray-600">{t('pin.description')}</p>
           </div>
-          
+
           <div className="space-y-6">
             <OTPInput
               length={6}
@@ -166,7 +223,7 @@ const EventCheckinKiosk = () => {
               onComplete={handlePinComplete}
               disabled={verifying}
             />
-            
+
             {pinError && (
               <motion.p className="text-center text-lg text-red-600" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                 {pinError}
@@ -177,7 +234,7 @@ const EventCheckinKiosk = () => {
       </KioskLayout>
     );
   }
-  
+
   // STEP: Select Event
   if (step === 'select_event') {
     return (
@@ -187,10 +244,10 @@ const EventCheckinKiosk = () => {
             <h2 className="text-4xl font-bold mb-2">Select Event</h2>
             <p className="text-xl text-gray-600">Logged in as: {staff?.full_name}</p>
           </div>
-          
+
           {events.length === 0 ? (
             <div className="bg-white rounded-3xl p-12 text-center">
-              <p className="text-2xl text-gray-600">No events available</p>
+              <p className="text-2xl text-gray-600">{t('event_registration.no_events')}</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-4">
@@ -217,16 +274,25 @@ const EventCheckinKiosk = () => {
       </KioskLayout>
     );
   }
-  
+
   // STEP: Scan or Search
   if (step === 'scan_or_search') {
     return (
       <KioskLayout showBack showHome onBack={() => setStep('select_event')}>
-        <div className="space-y-8">
+        <div className="space-y-6">
           <div className="text-center">
             <h2 className="text-4xl font-bold mb-2">Check-In: {selectedEvent?.name}</h2>
+            {checkinError && (
+              <motion.p
+                className="text-lg text-red-600 mt-2"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+              >
+                {checkinError}
+              </motion.p>
+            )}
           </div>
-          
+
           {/* Mode Toggle */}
           <div className="flex gap-4 justify-center">
             <Button
@@ -246,14 +312,18 @@ const EventCheckinKiosk = () => {
               Search
             </Button>
           </div>
-          
+
           {/* Scan Mode */}
           {mode === 'scan' && (
             <motion.div className="bg-white rounded-3xl p-8 shadow-xl" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
               {!scanning ? (
                 <div className="text-center space-y-6">
                   <QrCode className="w-32 h-32 mx-auto text-gray-300" />
-                  <Button onClick={() => setScanning(true)} className="h-16 px-12 text-xl rounded-xl">
+                  <Button
+                    onClick={() => setScanning(true)}
+                    className="h-16 px-12 text-xl rounded-xl"
+                    disabled={checkinInProgress}
+                  >
                     <CameraIcon className="mr-2 h-6 w-6" />
                     Start Scanning
                   </Button>
@@ -277,7 +347,7 @@ const EventCheckinKiosk = () => {
               )}
             </motion.div>
           )}
-          
+
           {/* Search Mode */}
           {mode === 'search' && (
             <motion.div className="bg-white rounded-3xl p-8 shadow-xl space-y-6" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
@@ -293,36 +363,99 @@ const EventCheckinKiosk = () => {
                   Search
                 </Button>
               </div>
-              
+
               {searchResults.length > 0 && (
                 <div className="space-y-3">
                   {searchResults.map(member => (
                     <button
                       key={member.id}
-                      onClick={() => {
-                        setSelectedMember(member);
-                        // TODO: Call check-in API
-                        alert(`Checked in: ${member.full_name}`);
-                      }}
-                      className="w-full bg-blue-50 rounded-xl p-4 flex items-center gap-4 hover:bg-blue-100 transition-all"
+                      onClick={() => handleMemberCheckin(member)}
+                      disabled={checkinInProgress}
+                      className="w-full bg-blue-50 rounded-xl p-4 flex items-center gap-4 hover:bg-blue-100 transition-all disabled:opacity-50"
                     >
                       <MemberAvatar name={member.full_name} photo={member.photo_base64} size="md" />
                       <div className="text-left flex-1">
                         <p className="text-xl font-bold">{member.full_name}</p>
                         <p className="text-lg text-gray-600">{member.phone_whatsapp}</p>
                       </div>
-                      <UserCheck className="w-8 h-8 text-green-600" />
+                      {checkinInProgress ? (
+                        <span className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></span>
+                      ) : (
+                        <UserCheck className="w-8 h-8 text-green-600" />
+                      )}
                     </button>
                   ))}
                 </div>
               )}
             </motion.div>
           )}
+
+          {/* Recent Check-ins */}
+          {recentCheckins.length > 0 && (
+            <div className="bg-white rounded-2xl p-4 shadow">
+              <p className="text-lg font-medium text-gray-700 mb-3">Recent Check-ins ({recentCheckins.length})</p>
+              <div className="flex gap-2 overflow-x-auto">
+                {recentCheckins.slice(0, 6).map((item, idx) => (
+                  <div key={idx} className="flex-shrink-0 bg-green-50 rounded-lg p-2 border border-green-200">
+                    <p className="text-sm font-medium text-green-900 truncate max-w-[120px]">
+                      {item.name}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </KioskLayout>
     );
   }
-  
+
+  // STEP: Success
+  if (step === 'success') {
+    return (
+      <KioskLayout showBack={false} showHome={false}>
+        <motion.div
+          className="bg-white rounded-3xl shadow-2xl p-12 max-w-2xl mx-auto space-y-8 text-center"
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+        >
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+          >
+            <div className="w-32 h-32 bg-green-100 rounded-full flex items-center justify-center mx-auto">
+              <Check className="w-16 h-16 text-green-600" />
+            </div>
+          </motion.div>
+
+          <div className="space-y-4">
+            <h2 className="text-5xl font-bold text-gray-900">Check-In Complete!</h2>
+            <p className="text-3xl text-blue-600 font-bold">{lastCheckedIn?.name}</p>
+            <p className="text-xl text-gray-600">has been checked in successfully.</p>
+          </div>
+
+          <div className="flex gap-4">
+            <Button
+              variant="outline"
+              onClick={() => navigate('/kiosk/home')}
+              className="flex-1 h-16 text-xl rounded-xl"
+            >
+              <ArrowLeft className="mr-2 h-6 w-6" />
+              {t('home.back_to_start')}
+            </Button>
+            <Button
+              onClick={handleContinueChecking}
+              className="flex-1 h-16 text-xl rounded-xl"
+            >
+              Check In Another
+            </Button>
+          </div>
+        </motion.div>
+      </KioskLayout>
+    );
+  }
+
   return null;
 };
 

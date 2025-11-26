@@ -200,7 +200,7 @@ const PrayerRequestKiosk = () => {
   // STEP: Prayer Form
   if (step === 'prayer_form') {
     return (
-      <KioskLayout showBack showHome onBack={() => navigate('/kiosk')}>
+      <KioskLayout showBack showHome onBack={() => navigate('/kiosk/home')}>
         <motion.div
           className="bg-white rounded-3xl shadow-2xl p-12 max-w-3xl mx-auto space-y-8"
           initial={{ opacity: 0 }}
@@ -240,12 +240,12 @@ const PrayerRequestKiosk = () => {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="health" className="text-xl">Health</SelectItem>
-                  <SelectItem value="family" className="text-xl">Family</SelectItem>
-                  <SelectItem value="work" className="text-xl">Work</SelectItem>
-                  <SelectItem value="financial" className="text-xl">Financial</SelectItem>
-                  <SelectItem value="guidance" className="text-xl">Guidance</SelectItem>
-                  <SelectItem value="other" className="text-xl">Other</SelectItem>
+                  <SelectItem value="health" className="text-xl">{t('prayer.category_health') || 'Health'}</SelectItem>
+                  <SelectItem value="family" className="text-xl">{t('prayer.category_family') || 'Family'}</SelectItem>
+                  <SelectItem value="work" className="text-xl">{t('prayer.category_work') || 'Work'}</SelectItem>
+                  <SelectItem value="financial" className="text-xl">{t('prayer.category_financial') || 'Financial'}</SelectItem>
+                  <SelectItem value="guidance" className="text-xl">{t('prayer.category_guidance') || 'Guidance'}</SelectItem>
+                  <SelectItem value="other" className="text-xl">{t('prayer.category_other') || 'Other'}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -317,7 +317,7 @@ const PrayerRequestKiosk = () => {
           </div>
           
           <Button
-            onClick={() => navigate('/kiosk')}
+            onClick={() => navigate('/kiosk/home')}
             className="w-full h-16 text-xl rounded-xl"
           >
             {t('prayer.success_back')}

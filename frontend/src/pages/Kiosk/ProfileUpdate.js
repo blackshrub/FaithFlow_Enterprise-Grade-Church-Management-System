@@ -38,8 +38,9 @@ const ProfileUpdateKiosk = () => {
   };
   
   const handleMemberNotFound = (foundPhone) => {
-    alert(t('errors.generic'));
-    setStep('phone');
+    // Show a helpful message instead of generic error
+    setStep('not_found');
+    setPhone(foundPhone);
   };
   
   const handleOtpComplete = async (code) => {
@@ -119,6 +120,51 @@ const ProfileUpdateKiosk = () => {
     );
   }
   
+  if (step === 'not_found') {
+    return (
+      <KioskLayout showBack showHome onBack={() => setStep('phone')}>
+        <motion.div className="bg-white rounded-3xl shadow-2xl p-12 max-w-2xl mx-auto space-y-8 text-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+          <div className="w-32 h-32 bg-blue-100 rounded-full flex items-center justify-center mx-auto">
+            <UserCog className="w-16 h-16 text-blue-600" />
+          </div>
+          <div className="space-y-4">
+            <h2 className="text-4xl font-bold">
+              {t('new_profile.title')}
+            </h2>
+            <p className="text-2xl text-gray-600">
+              {t('new_profile.description')}
+            </p>
+            <p className="text-xl text-gray-500">
+              Phone: {phone}
+            </p>
+          </div>
+          <div className="space-y-4">
+            <Button
+              onClick={() => navigate('/kiosk/events/register', { state: { phone } })}
+              className="w-full h-16 text-xl rounded-xl"
+            >
+              Register as New Member
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setStep('phone')}
+              className="w-full h-16 text-xl rounded-xl"
+            >
+              Try Another Number
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={() => navigate('/kiosk/home')}
+              className="w-full h-14 text-lg"
+            >
+              {t('home.back_to_start')}
+            </Button>
+          </div>
+        </motion.div>
+      </KioskLayout>
+    );
+  }
+
   if (step === 'not_allowed') {
     return (
       <KioskLayout showBack={false} showHome={false}>
@@ -130,7 +176,7 @@ const ProfileUpdateKiosk = () => {
             <h2 className="text-4xl font-bold">{t('profile_update.not_allowed_title')}</h2>
             <p className="text-2xl text-gray-600">{t('profile_update.not_allowed_text')}</p>
           </div>
-          <Button onClick={() => navigate('/kiosk')} className="w-full h-16 text-xl rounded-xl">{t('home.back_to_start')}</Button>
+          <Button onClick={() => navigate('/kiosk/home')} className="w-full h-16 text-xl rounded-xl">{t('home.back_to_start')}</Button>
         </motion.div>
       </KioskLayout>
     );
@@ -138,7 +184,7 @@ const ProfileUpdateKiosk = () => {
   
   if (step === 'edit_form') {
     return (
-      <KioskLayout showBack showHome onBack={() => navigate('/kiosk')}>
+      <KioskLayout showBack showHome onBack={() => navigate('/kiosk/home')}>
         <motion.div className="bg-white rounded-3xl shadow-2xl p-12 max-w-3xl mx-auto space-y-8" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
           <div className="text-center">
             <h2 className="text-4xl font-bold mb-2">{t('profile_update.step_edit')}</h2>
@@ -184,7 +230,7 @@ const ProfileUpdateKiosk = () => {
             <h2 className="text-5xl font-bold">{t('profile_update.success_title')}</h2>
             <p className="text-2xl text-gray-600">{t('profile_update.success_text')}</p>
           </div>
-          <Button onClick={() => navigate('/kiosk')} className="w-full h-16 text-xl rounded-xl">{t('profile_update.success_back')}</Button>
+          <Button onClick={() => navigate('/kiosk/home')} className="w-full h-16 text-xl rounded-xl">{t('profile_update.success_back')}</Button>
         </motion.div>
       </KioskLayout>
     );
