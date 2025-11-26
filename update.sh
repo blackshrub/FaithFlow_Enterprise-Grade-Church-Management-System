@@ -183,6 +183,125 @@ get_elapsed_time() {
     echo "${minutes}m ${seconds}s"
 }
 
+# Show diagnostic information for debugging
+show_diagnostic_info() {
+    echo ""
+    echo -e "${YELLOW}  ┌─────────────────────────────────────────────────────────────────────┐${NC}"
+    echo -e "${YELLOW}  │  ${WHITE}System Diagnostics${YELLOW}                                                 │${NC}"
+    echo -e "${YELLOW}  └─────────────────────────────────────────────────────────────────────┘${NC}"
+    echo ""
+
+    # Disk space
+    echo -e "${CYAN}  Disk Space:${NC}"
+    df -h / | tail -1 | awk '{printf "    Used: %s / %s (%s available)\n", $3, $2, $4}'
+    echo ""
+
+    # Memory
+    echo -e "${CYAN}  Memory:${NC}"
+    free -h | grep Mem | awk '{printf "    Used: %s / %s (%s available)\n", $3, $2, $4}'
+    echo ""
+
+    # Python version
+    echo -e "${CYAN}  Python:${NC}"
+    if command_exists python3.11; then
+        echo "    $(python3.11 --version)"
+    else
+        echo "    Python 3.11 not found!"
+    fi
+
+    # Node version
+    echo -e "${CYAN}  Node.js:${NC}"
+    if command_exists node; then
+        echo "    $(node --version)"
+    else
+        echo "    Node.js not found!"
+    fi
+    echo ""
+}
+
+# Show detailed build error with context
+show_build_error() {
+    local log_file="$1"
+    local build_type="$2"
+    local lines="${3:-40}"
+
+    echo ""
+    echo -e "${RED}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo -e "${RED}  BUILD FAILED: ${WHITE}$build_type${NC}"
+    echo -e "${RED}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo ""
+
+    if [ -f "$log_file" ]; then
+        # Show error summary first
+        echo -e "${YELLOW}  Error Summary:${NC}"
+        echo -e "${GRAY}  ─────────────────────────────────────────────────────────────────────────${NC}"
+
+        # Extract key errors (Python/Node specific patterns)
+        grep -iE "(error|failed|cannot|unable|not found|permission denied|no space|memory)" "$log_file" 2>/dev/null | head -10 | while read line; do
+            echo -e "${RED}    ✗ ${line:0:75}${NC}"
+        done
+        echo ""
+
+        # Show last N lines for context
+        echo -e "${YELLOW}  Last $lines lines of output:${NC}"
+        echo -e "${GRAY}  ─────────────────────────────────────────────────────────────────────────${NC}"
+        tail -n "$lines" "$log_file" | while IFS= read -r line; do
+            # Highlight errors in red
+            if echo "$line" | grep -qiE "(error|failed|cannot|unable)"; then
+                echo -e "${RED}    $line${NC}"
+            else
+                echo -e "${GRAY}    $line${NC}"
+            fi
+        done
+        echo ""
+
+        # Save to main log
+        echo "=== $build_type BUILD ERROR ===" >> "$LOG_FILE"
+        cat "$log_file" >> "$LOG_FILE"
+
+        echo -e "${YELLOW}  Full log saved to: ${WHITE}$log_file${NC}"
+        echo -e "${YELLOW}  Main log: ${WHITE}$LOG_FILE${NC}"
+    else
+        echo -e "${RED}    No log file available${NC}"
+    fi
+
+    echo ""
+    echo -e "${RED}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+
+    # Show diagnostic info
+    show_diagnostic_info
+
+    # Show common fixes based on build type
+    echo -e "${CYAN}  Common Fixes for $build_type failures:${NC}"
+    echo -e "${GRAY}  ─────────────────────────────────────────────────────────────────────────${NC}"
+
+    case "$build_type" in
+        "pip"*|"Python"*|"requirements"*|"backend"*)
+            echo -e "${WHITE}    1. Check disk space: ${CYAN}df -h${NC}"
+            echo -e "${WHITE}    2. Check memory: ${CYAN}free -h${NC}"
+            echo -e "${WHITE}    3. Install build tools: ${CYAN}apt install build-essential python3-dev${NC}"
+            echo -e "${WHITE}    4. Clear pip cache: ${CYAN}pip cache purge${NC}"
+            echo -e "${WHITE}    5. Recreate venv: ${CYAN}rm -rf venv && python3.11 -m venv venv${NC}"
+            ;;
+        "yarn"*|"npm"*|"frontend"*|"JavaScript"*)
+            echo -e "${WHITE}    1. Check disk space: ${CYAN}df -h${NC}"
+            echo -e "${WHITE}    2. Check memory (Node needs ~2GB): ${CYAN}free -h${NC}"
+            echo -e "${WHITE}    3. Clear yarn cache: ${CYAN}yarn cache clean${NC}"
+            echo -e "${WHITE}    4. Remove node_modules: ${CYAN}rm -rf node_modules && yarn install${NC}"
+            echo -e "${WHITE}    5. Check Node version: ${CYAN}node --version${NC} (need v20+)"
+            echo -e "${WHITE}    6. Increase Node memory: ${CYAN}export NODE_OPTIONS=\"--max-old-space-size=4096\"${NC}"
+            ;;
+        *)
+            echo -e "${WHITE}    1. Check the error messages above${NC}"
+            echo -e "${WHITE}    2. Check disk space: ${CYAN}df -h${NC}"
+            echo -e "${WHITE}    3. Check memory: ${CYAN}free -h${NC}"
+            echo -e "${WHITE}    4. Review full log: ${CYAN}cat $log_file${NC}"
+            ;;
+    esac
+
+    echo ""
+}
+
 # =============================================================================
 # BACKUP FUNCTIONS
 # =============================================================================
@@ -463,19 +582,51 @@ update_backend() {
 
     cd "$INSTALL_DIR/backend"
 
+    local pip_log="/tmp/faithflow-update-pip-$$.log"
+
     if [ -d "venv" ]; then
         source venv/bin/activate
-        pip install --upgrade pip >> "$LOG_FILE" 2>&1
-        pip install -r requirements.txt >> "$LOG_FILE" 2>&1
-        deactivate
-        print_success "Backend dependencies updated"
+
+        print_detail "Upgrading pip..."
+        if ! pip install --upgrade pip > "$pip_log" 2>&1; then
+            print_error "Failed to upgrade pip!"
+            show_build_error "$pip_log" "pip upgrade"
+            deactivate
+            return 1
+        fi
+
+        print_detail "Installing requirements..."
+        if pip install -r requirements.txt > "$pip_log" 2>&1; then
+            deactivate
+            print_success "Backend dependencies updated"
+            rm -f "$pip_log"
+        else
+            print_error "Failed to install Python dependencies!"
+            show_build_error "$pip_log" "backend pip install"
+            deactivate
+            return 1
+        fi
     else
         print_warn "Virtual environment not found, creating..."
-        python3.11 -m venv venv
+
+        if ! python3.11 -m venv venv 2>&1 | tee -a "$LOG_FILE"; then
+            print_error "Failed to create virtual environment!"
+            show_diagnostic_info
+            return 1
+        fi
+
         source venv/bin/activate
-        pip install -r requirements.txt >> "$LOG_FILE" 2>&1
-        deactivate
-        print_success "Backend environment created"
+
+        if pip install -r requirements.txt > "$pip_log" 2>&1; then
+            deactivate
+            print_success "Backend environment created"
+            rm -f "$pip_log"
+        else
+            print_error "Failed to install Python dependencies!"
+            show_build_error "$pip_log" "backend pip install"
+            deactivate
+            return 1
+        fi
     fi
 }
 
@@ -490,15 +641,20 @@ update_frontend() {
     cd "$INSTALL_DIR/frontend"
 
     # Install dependencies
-    yarn install >> "$LOG_FILE" 2>&1 &
+    local yarn_log="/tmp/faithflow-update-yarn-$$.log"
+
+    yarn install > "$yarn_log" 2>&1 &
     local pid=$!
     spinner "$pid" "Installing JavaScript packages..."
     wait "$pid"
+    local yarn_status=$?
 
-    if [ $? -eq 0 ]; then
+    if [ $yarn_status -eq 0 ]; then
         print_success "Frontend dependencies updated"
+        rm -f "$yarn_log"
     else
-        print_error "Failed to update dependencies"
+        print_error "Failed to install JavaScript dependencies!"
+        show_build_error "$yarn_log" "yarn install"
         return 1
     fi
 
@@ -527,14 +683,7 @@ update_frontend() {
         rm -f "$build_log"
     else
         print_error "Frontend build failed!"
-        echo ""
-        echo -e "${YELLOW}  Last 20 lines of build log:${NC}"
-        tail -20 "$build_log" 2>/dev/null | while read line; do
-            echo -e "${GRAY}    $line${NC}"
-        done
-        echo ""
-        echo -e "${YELLOW}  Full log: $build_log${NC}"
-        cat "$build_log" >> "$LOG_FILE"
+        show_build_error "$build_log" "frontend build (yarn build)"
         return 1
     fi
 }
