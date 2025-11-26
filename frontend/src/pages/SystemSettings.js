@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import axios from 'axios';
+import api from '../services/api';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
@@ -19,8 +19,6 @@ import {
 import { Separator } from '../components/ui/separator';
 import { toast } from 'sonner';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
-
 function SystemSettings() {
   const [showKeys, setShowKeys] = useState({});
   const queryClient = useQueryClient();
@@ -29,7 +27,7 @@ function SystemSettings() {
   const { data: settings, isLoading } = useQuery({
     queryKey: ['systemSettings'],
     queryFn: async () => {
-      const { data } = await axios.get(`${API_URL}/api/system/settings`);
+      const { data } = await api.get('/system/settings');
       return data;
     },
   });
@@ -37,7 +35,7 @@ function SystemSettings() {
   // Update system settings mutation
   const updateMutation = useMutation({
     mutationFn: async (updates) => {
-      const { data } = await axios.put(`${API_URL}/api/system/settings`, updates);
+      const { data } = await api.put('/system/settings', updates);
       return data;
     },
     onSuccess: () => {
@@ -52,7 +50,7 @@ function SystemSettings() {
   // Test AI connection
   const testAIMutation = useMutation({
     mutationFn: async () => {
-      const { data } = await axios.post(`${API_URL}/api/system/settings/test-ai-connection`);
+      const { data } = await api.post('/system/settings/test-ai-connection');
       return data;
     },
     onSuccess: (data) => {
@@ -66,7 +64,7 @@ function SystemSettings() {
   // Test Stability AI connection
   const testStabilityMutation = useMutation({
     mutationFn: async () => {
-      const { data } = await axios.post(`${API_URL}/api/system/settings/test-stability-connection`);
+      const { data } = await api.post('/system/settings/test-stability-connection');
       return data;
     },
     onSuccess: (data) => {
