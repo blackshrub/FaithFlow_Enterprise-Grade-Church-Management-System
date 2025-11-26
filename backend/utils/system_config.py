@@ -7,13 +7,13 @@ Falls back to environment variables if database settings are not available.
 """
 
 import os
+import logging
 from typing import Dict, Any, Optional
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from utils.encryption import decrypt_sensitive_data
-from utils.logger import get_logger
 
-logger = get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 # Cache for system settings (refresh every 5 minutes)
 _settings_cache: Dict[str, Any] = {}
