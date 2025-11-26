@@ -267,6 +267,10 @@
     "groupCategoriesDesc": "Customize group category labels for your church",
     "groupCategoryCode": "Category Code",
     "groupCategoryLabel": "Display Label",
+    "communityCategoriesTitle": "Community Categories",
+    "communityCategoriesDesc": "Customize community category labels for your church",
+    "sendCommunityNotifications": "Send Community Notifications",
+    "sendCommunityNotificationsDesc": "Notify members about community updates and announcements",
     "webhooks": {
       "title": "Webhooks",
       "description": "Configure webhooks to sync member data with external applications",

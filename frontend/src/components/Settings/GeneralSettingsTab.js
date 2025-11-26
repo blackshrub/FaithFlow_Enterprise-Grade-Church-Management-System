@@ -233,12 +233,12 @@ export default function GeneralSettingsTab() {
         </CardContent>
       </Card>
 
-      {/* Group Categories */}
+      {/* Community Categories */}
       <Card>
         <CardHeader>
-          <CardTitle>{t('settings.groupCategoriesTitle') || 'Group Categories'}</CardTitle>
+          <CardTitle>{t('settings.communityCategoriesTitle') || t('settings.groupCategoriesTitle') || 'Community Categories'}</CardTitle>
           <CardDescription>
-            {t('settings.groupCategoriesDesc') || 'Configure labels for each group category type.'}
+            {t('settings.communityCategoriesDesc') || t('settings.groupCategoriesDesc') || 'Configure labels for each community category type.'}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -366,10 +366,10 @@ export default function GeneralSettingsTab() {
               <div className="flex items-center justify-between mt-4">
                 <div className="flex-1">
                   <Label htmlFor="send_group_notifications" className="font-medium">
-                    {t('settings.sendGroupNotifications')}
+                    {t('settings.sendCommunityNotifications') || t('settings.sendGroupNotifications')}
                   </Label>
                   <p className="text-sm text-gray-500 mt-1">
-                    {t('settings.sendGroupNotificationsDesc')}
+                    {t('settings.sendCommunityNotificationsDesc') || t('settings.sendGroupNotificationsDesc')}
                   </p>
                 </div>
                 <input

@@ -267,6 +267,10 @@
     "groupCategoriesDesc": "Sesuaikan label kategori kelompok untuk gereja Anda",
     "groupCategoryCode": "Kode Kategori",
     "groupCategoryLabel": "Label Tampilan",
+    "communityCategoriesTitle": "Kategori Komunitas",
+    "communityCategoriesDesc": "Sesuaikan label kategori komunitas untuk gereja Anda",
+    "sendCommunityNotifications": "Kirim Notifikasi Komunitas",
+    "sendCommunityNotificationsDesc": "Beritahukan anggota tentang pembaruan dan pengumuman komunitas",
     "webhooks": {
       "title": "Webhook",
       "description": "Konfigurasi webhook untuk sinkronisasi data anggota dengan aplikasi eksternal",
