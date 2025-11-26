@@ -7,6 +7,9 @@
 #              Enterprise Church Management System - Automated Setup           #
 #                           For Debian 12+ / Ubuntu 22.04+                     #
 #                                                                              #
+#  This is the BARE-METAL installation script.                                 #
+#  For Docker/Traefik deployment, use: ./docker-install.sh                     #
+#                                                                              #
 #  Features:                                                                   #
 #  - Pre-flight system checks (CPU, RAM, Disk)                                 #
 #  - Parallel installations for speed                                          #

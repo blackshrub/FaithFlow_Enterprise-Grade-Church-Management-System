@@ -1,30 +1,48 @@
 import axios from 'axios';
 
-// Force HTTPS for API calls to avoid mixed content issues
-// CRITICAL: Always use current window.location to avoid mixed content
+/**
+ * FaithFlow API Configuration
+ *
+ * Supports two deployment modes:
+ * 1. Subdomain-based (recommended): api.yourdomain.com
+ * 2. Path-based (legacy): yourdomain.com/api
+ *
+ * Priority order for API URL:
+ * 1. Runtime config (window.__RUNTIME_CONFIG__.API_URL) - For Docker deployments
+ * 2. Environment variable (REACT_APP_API_URL) - For build-time config
+ * 3. Auto-detect from window.location - Fallback for legacy deployments
+ */
 const getAPIBaseURL = () => {
-  // ALWAYS use window.location.origin to ensure same protocol
+  // 1. Check runtime config (injected by Docker entrypoint)
+  if (window.__RUNTIME_CONFIG__?.API_URL) {
+    console.log('✅ Using runtime config API URL:', window.__RUNTIME_CONFIG__.API_URL);
+    return window.__RUNTIME_CONFIG__.API_URL;
+  }
+
+  // 2. Check environment variable
+  if (process.env.REACT_APP_API_URL) {
+    console.log('✅ Using env var API URL:', process.env.REACT_APP_API_URL);
+    return process.env.REACT_APP_API_URL;
+  }
+
+  // 3. Fallback: Auto-detect from current URL (legacy path-based mode)
   const origin = window.location.origin;
-  console.log('🔍 window.location.origin:', origin);
-  console.log('🔍 window.location.protocol:', window.location.protocol);
-  
-  // Ensure HTTPS
   const secureOrigin = origin.replace('http://', 'https://');
-  const finalURL = `${secureOrigin}/api`;
-  
-  console.log('✅ Final API Base URL:', finalURL);
-  
-  return finalURL;
+  const fallbackURL = `${secureOrigin}/api`;
+
+  console.log('⚠️ Using fallback API URL (path-based):', fallbackURL);
+  return fallbackURL;
 };
 
 const API_BASE_URL = getAPIBaseURL();
 
-// Debug logging
-console.log('🔍 API Configuration:');
-console.log('  window.location.origin:', window.location.origin);
-console.log('  window.location.protocol:', window.location.protocol);
-console.log('  REACT_APP_BACKEND_URL:', process.env.REACT_APP_BACKEND_URL);
-console.log('  API_BASE_URL:', API_BASE_URL);
+// Debug logging (only in development)
+if (process.env.NODE_ENV === 'development') {
+  console.log('🔍 API Configuration:');
+  console.log('  Runtime Config:', window.__RUNTIME_CONFIG__?.API_URL || '(not set)');
+  console.log('  Env Var:', process.env.REACT_APP_API_URL || '(not set)');
+  console.log('  Final API_BASE_URL:', API_BASE_URL);
+}
 
 const api = axios.create({
   baseURL: API_BASE_URL,

@@ -6,6 +6,9 @@
 #                                                                              #
 #              Zero-Downtime Update with Automatic Rollback                    #
 #                                                                              #
+#  This is the BARE-METAL update script.                                       #
+#  For Docker/Traefik deployment, use: ./docker-update.sh                      #
+#                                                                              #
 #  Features:                                                                   #
 #  - Pre-update backup (database + files)                                      #
 #  - Smart change detection (only rebuild what changed)                        #

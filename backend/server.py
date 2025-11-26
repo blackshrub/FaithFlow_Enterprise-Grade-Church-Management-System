@@ -49,6 +49,11 @@ from routes import (
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
+# API Prefix Configuration
+# Set API_PREFIX="" for subdomain deployment (api.domain.com)
+# Set API_PREFIX="/api" for path-based deployment (domain.com/api)
+API_PREFIX = os.environ.get('API_PREFIX', '/api')
+
 # MongoDB connection with optimized connection pooling
 mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(
@@ -67,26 +72,43 @@ db = client[os.environ['DB_NAME']]
 app = FastAPI(
     title="Church Management API",
     description="Enterprise Church Management System API",
-    version="1.0.0"
+    version="2.0.0",
+    docs_url=f"{API_PREFIX}/docs" if API_PREFIX else "/docs",
+    redoc_url=f"{API_PREFIX}/redoc" if API_PREFIX else "/redoc",
+    openapi_url=f"{API_PREFIX}/openapi.json" if API_PREFIX else "/openapi.json"
 )
 
-# Create a router with the /api prefix
-api_router = APIRouter(prefix="/api")
+# Create a router with configurable prefix
+# - For subdomain deployment (api.domain.com): API_PREFIX=""
+# - For path-based deployment (domain.com/api): API_PREFIX="/api"
+api_router = APIRouter(prefix=API_PREFIX)
 
-# Health check endpoint
+# Root-level health check endpoint (for Docker/Traefik health checks)
+@app.get("/health")
+async def root_health_check():
+    """Health check endpoint at root level for Docker/Traefik."""
+    return {
+        "status": "healthy",
+        "database": "connected",
+        "api_prefix": API_PREFIX or "(subdomain mode)"
+    }
+
+# Health check endpoint under API prefix
 @api_router.get("/")
 async def root():
     return {
         "message": "Church Management API",
-        "version": "1.0.0",
-        "status": "running"
+        "version": "2.0.0",
+        "status": "running",
+        "api_prefix": API_PREFIX or "(subdomain mode)"
     }
 
 @api_router.get("/health")
 async def health_check():
     return {
         "status": "healthy",
-        "database": "connected"
+        "database": "connected",
+        "api_prefix": API_PREFIX or "(subdomain mode)"
     }
 
 @api_router.get("/performance")
@@ -226,6 +248,12 @@ from scheduler import setup_scheduler, start_scheduler, shutdown_scheduler
 @app.on_event("startup")
 async def startup_event():
     """Initialize scheduler and services on startup."""
+    # Log API configuration
+    if API_PREFIX:
+        logger.info(f"✓ API running in PATH mode: {API_PREFIX}/* (e.g., domain.com{API_PREFIX}/auth/login)")
+    else:
+        logger.info("✓ API running in SUBDOMAIN mode: /* (e.g., api.domain.com/auth/login)")
+
     # Initialize performance optimizations (indexes, caching)
     try:
         from utils.performance import initialize_performance_optimizations

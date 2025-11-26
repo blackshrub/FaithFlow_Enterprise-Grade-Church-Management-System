@@ -1,0 +1,111 @@
+# =============================================================================
+# FaithFlow Docker Compose - Development Configuration
+# =============================================================================
+#
+# Usage:
+#   docker compose up -d              # Start all services
+#   docker compose up -d --build      # Rebuild and start
+#   docker compose logs -f backend    # View backend logs
+#   docker compose down               # Stop all services
+#
+# =============================================================================
+
+services:
+  # ===========================================================================
+  # MongoDB Database
+  # ===========================================================================
+  mongodb:
+    image: mongo:7.0
+    container_name: faithflow-mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_DATABASE: faithflow
+    volumes:
+      - mongodb_data:/data/db
+      - mongodb_config:/data/configdb
+    ports:
+      - "27017:27017"
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    networks:
+      - faithflow-network
+
+  # ===========================================================================
+  # Backend API (FastAPI)
+  # ===========================================================================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: faithflow-backend
+    restart: unless-stopped
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    environment:
+      - MONGO_URL=mongodb://mongodb:27017
+      - DB_NAME=faithflow
+      - JWT_SECRET=${JWT_SECRET:-change-this-in-production}
+      - JWT_ALGORITHM=HS256
+      - CORS_ORIGINS=http://localhost:3000,http://localhost,http://app.localhost
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./backend:/app:cached
+      - backend_uploads:/app/uploads
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - faithflow-network
+
+  # ===========================================================================
+  # Frontend (React - Development with hot reload)
+  # ===========================================================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - REACT_APP_API_URL=http://localhost:8000
+    container_name: faithflow-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      - REACT_APP_API_URL=http://localhost:8000
+    ports:
+      - "3000:80"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - faithflow-network
+
+# =============================================================================
+# Networks
+# =============================================================================
+networks:
+  faithflow-network:
+    driver: bridge
+
+# =============================================================================
+# Volumes
+# =============================================================================
+volumes:
+  mongodb_data:
+    driver: local
+  mongodb_config:
+    driver: local
+  backend_uploads:
+    driver: local

@@ -1,0 +1,218 @@
+# =============================================================================
+# FaithFlow Docker Compose - Production Configuration with Traefik
+# =============================================================================
+#
+# Architecture:
+#   - api.yourdomain.com  -> Backend (FastAPI)
+#   - yourdomain.com      -> Frontend (React/Nginx)
+#   - traefik.yourdomain.com -> Traefik Dashboard (optional)
+#
+# Usage:
+#   1. Copy .env.example to .env and configure your domain
+#   2. docker compose -f docker-compose.prod.yml up -d
+#   3. SSL certificates will be auto-generated via Let's Encrypt
+#
+# Required Environment Variables:
+#   - DOMAIN (e.g., faithflow.church)
+#   - ACME_EMAIL (your email for Let's Encrypt)
+#   - JWT_SECRET (secure random string)
+#
+# =============================================================================
+
+services:
+  # ===========================================================================
+  # Traefik Reverse Proxy
+  # ===========================================================================
+  traefik:
+    image: traefik:v3.0
+    container_name: faithflow-traefik
+    restart: unless-stopped
+    command:
+      # API & Dashboard
+      - "--api.dashboard=true"
+      - "--api.insecure=false"
+      # Providers
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--providers.docker.network=faithflow-network"
+      # Entrypoints
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      # HTTP to HTTPS redirect
+      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+      # Let's Encrypt
+      - "--certificatesresolvers.letsencrypt.acme.tlschallenge=true"
+      - "--certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL}"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
+      # Logging
+      - "--log.level=INFO"
+      - "--accesslog=true"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - traefik_letsencrypt:/letsencrypt
+      - traefik_logs:/var/log/traefik
+    labels:
+      # Dashboard
+      - "traefik.enable=true"
+      - "traefik.http.routers.traefik.rule=Host(`traefik.${DOMAIN}`)"
+      - "traefik.http.routers.traefik.entrypoints=websecure"
+      - "traefik.http.routers.traefik.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.traefik.service=api@internal"
+      # Basic auth for dashboard (generate with: htpasswd -nb admin password)
+      - "traefik.http.routers.traefik.middlewares=traefik-auth"
+      - "traefik.http.middlewares.traefik-auth.basicauth.users=${TRAEFIK_DASHBOARD_AUTH:-admin:$$apr1$$ruca84Hq$$mbjdMZBAG.KWn7vfN/SNK/}"
+    healthcheck:
+      test: ["CMD", "traefik", "healthcheck", "--ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - faithflow-network
+
+  # ===========================================================================
+  # MongoDB Database
+  # ===========================================================================
+  mongodb:
+    image: mongo:7.0
+    container_name: faithflow-mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_DATABASE: faithflow
+    volumes:
+      - mongodb_data:/data/db
+      - mongodb_config:/data/configdb
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    networks:
+      - faithflow-network
+    # MongoDB should NOT be exposed externally in production
+    # Access via docker exec or internal network only
+
+  # ===========================================================================
+  # Backend API (FastAPI) - api.yourdomain.com
+  # ===========================================================================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: faithflow-backend
+    restart: unless-stopped
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    environment:
+      - MONGO_URL=mongodb://mongodb:27017
+      - DB_NAME=faithflow
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_ALGORITHM=HS256
+      - CORS_ORIGINS=https://${DOMAIN},https://app.${DOMAIN}
+      - PYTHONUNBUFFERED=1
+      # Optional services
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - STABILITY_API_KEY=${STABILITY_API_KEY:-}
+      - WHATSAPP_API_URL=${WHATSAPP_API_URL:-}
+      - WHATSAPP_USERNAME=${WHATSAPP_USERNAME:-}
+      - WHATSAPP_PASSWORD=${WHATSAPP_PASSWORD:-}
+    volumes:
+      - backend_uploads:/app/uploads
+      - backend_logs:/app/logs
+    labels:
+      - "traefik.enable=true"
+      # API subdomain routing
+      - "traefik.http.routers.backend.rule=Host(`api.${DOMAIN}`)"
+      - "traefik.http.routers.backend.entrypoints=websecure"
+      - "traefik.http.routers.backend.tls.certresolver=letsencrypt"
+      - "traefik.http.services.backend.loadbalancer.server.port=8000"
+      # Security headers
+      - "traefik.http.middlewares.backend-headers.headers.accesscontrolallowmethods=GET,POST,PUT,PATCH,DELETE,OPTIONS"
+      - "traefik.http.middlewares.backend-headers.headers.accesscontrolallowheaders=Content-Type,Authorization"
+      - "traefik.http.middlewares.backend-headers.headers.accesscontrolalloworiginlist=https://${DOMAIN},https://app.${DOMAIN}"
+      - "traefik.http.middlewares.backend-headers.headers.accesscontrolmaxage=86400"
+      - "traefik.http.routers.backend.middlewares=backend-headers"
+      # Rate limiting
+      - "traefik.http.middlewares.backend-ratelimit.ratelimit.average=100"
+      - "traefik.http.middlewares.backend-ratelimit.ratelimit.burst=50"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - faithflow-network
+
+  # ===========================================================================
+  # Frontend (React/Nginx) - yourdomain.com
+  # ===========================================================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - REACT_APP_API_URL=https://api.${DOMAIN}
+        - REACT_APP_NAME=FaithFlow
+        - REACT_APP_VERSION=2.0.0
+    container_name: faithflow-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      - REACT_APP_API_URL=https://api.${DOMAIN}
+      - REACT_APP_NAME=FaithFlow
+    labels:
+      - "traefik.enable=true"
+      # Main domain routing
+      - "traefik.http.routers.frontend.rule=Host(`${DOMAIN}`) || Host(`www.${DOMAIN}`)"
+      - "traefik.http.routers.frontend.entrypoints=websecure"
+      - "traefik.http.routers.frontend.tls.certresolver=letsencrypt"
+      - "traefik.http.services.frontend.loadbalancer.server.port=80"
+      # www to non-www redirect
+      - "traefik.http.middlewares.www-redirect.redirectregex.regex=^https://www\\.(.*)"
+      - "traefik.http.middlewares.www-redirect.redirectregex.replacement=https://$${1}"
+      - "traefik.http.middlewares.www-redirect.redirectregex.permanent=true"
+      - "traefik.http.routers.frontend.middlewares=www-redirect"
+      # Security headers
+      - "traefik.http.middlewares.frontend-headers.headers.framedeny=true"
+      - "traefik.http.middlewares.frontend-headers.headers.contenttypenosniff=true"
+      - "traefik.http.middlewares.frontend-headers.headers.browserxssfilter=true"
+      # Compression
+      - "traefik.http.middlewares.frontend-compress.compress=true"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - faithflow-network
+
+# =============================================================================
+# Networks
+# =============================================================================
+networks:
+  faithflow-network:
+    driver: bridge
+
+# =============================================================================
+# Volumes
+# =============================================================================
+volumes:
+  traefik_letsencrypt:
+    driver: local
+  traefik_logs:
+    driver: local
+  mongodb_data:
+    driver: local
+  mongodb_config:
+    driver: local
+  backend_uploads:
+    driver: local
+  backend_logs:
+    driver: local
