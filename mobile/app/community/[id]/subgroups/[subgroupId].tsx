@@ -24,7 +24,12 @@ import {
   Mic,
   X,
   MoreVertical,
+  Timer,
+  Info,
+  MessageSquare,
+  Settings,
 } from 'lucide-react-native';
+import BottomSheet, { BottomSheetBackdrop } from '@gorhom/bottom-sheet';
 import * as Haptics from 'expo-haptics';
 import { FlashList } from '@shopify/flash-list';
 import { Image } from 'expo-image';
@@ -392,7 +397,11 @@ export default function SubgroupChatScreen() {
   const [showDisappearingSettings, setShowDisappearingSettings] = useState(false);
   const [disappearingDuration, setDisappearingDuration] = useState<DisappearingDuration>('off');
 
+  // Menu state
+  const [showMenu, setShowMenu] = useState(false);
+
   const inputRef = useRef<TextInput>(null);
+  const menuSheetRef = useRef<BottomSheet>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const listRef = useRef<any>(null);
 
@@ -1010,7 +1019,10 @@ export default function SubgroupChatScreen() {
           </VStack>
 
           <Pressable
-            onPress={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              setShowMenu(true);
+            }}
             className="active:opacity-70 p-2"
           >
             <Icon as={MoreVertical} size="md" style={{ color: '#FFFFFF' }} />
@@ -1334,6 +1346,105 @@ export default function SubgroupChatScreen() {
         }}
         isAdmin={isLeader}
       />
+
+      {/* Subgroup Menu Bottom Sheet */}
+      <BottomSheet
+        ref={menuSheetRef}
+        index={showMenu ? 0 : -1}
+        snapPoints={['35%']}
+        enablePanDownToClose
+        onClose={() => setShowMenu(false)}
+        backdropComponent={(props) => (
+          <BottomSheetBackdrop
+            {...props}
+            disappearsOnIndex={-1}
+            appearsOnIndex={0}
+            opacity={0.5}
+            pressBehavior="close"
+          />
+        )}
+        handleIndicatorStyle={{ backgroundColor: colors.gray[300] }}
+        backgroundStyle={{ backgroundColor: colors.white }}
+      >
+        <VStack className="p-4" space="sm">
+          <Text className="text-lg font-bold text-gray-900 px-2 mb-2">
+            {subgroup?.name || 'Subgroup'} Options
+          </Text>
+
+          {/* Disappearing Messages */}
+          <Pressable
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              setShowMenu(false);
+              setTimeout(() => setShowDisappearingSettings(true), 300);
+            }}
+            className="flex-row items-center px-2 py-3 rounded-lg active:bg-gray-100"
+          >
+            <View
+              className="w-10 h-10 rounded-full items-center justify-center mr-3"
+              style={{ backgroundColor: colors.warning[100] }}
+            >
+              <Icon as={Timer} size="md" style={{ color: colors.warning[600] }} />
+            </View>
+            <VStack className="flex-1">
+              <Text className="text-base text-gray-900">Disappearing Messages</Text>
+              <Text className="text-sm text-gray-500">
+                {disappearingDuration === 'off' ? 'Off' : `Messages disappear after ${disappearingDuration}`}
+              </Text>
+            </VStack>
+            {disappearingDuration !== 'off' && (
+              <DisappearingIndicator duration={disappearingDuration} />
+            )}
+          </Pressable>
+
+          {/* Subgroup Info */}
+          <Pressable
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              setShowMenu(false);
+              // Navigate to subgroup info screen (if available)
+              Alert.alert(
+                subgroup?.name || 'Subgroup Info',
+                `Members: ${subgroup?.member_count || 0}\nDescription: ${subgroup?.description || 'No description'}\n\nCreated within: ${community?.name || 'Unknown community'}`,
+                [{ text: 'OK' }]
+              );
+            }}
+            className="flex-row items-center px-2 py-3 rounded-lg active:bg-gray-100"
+          >
+            <View
+              className="w-10 h-10 rounded-full items-center justify-center mr-3"
+              style={{ backgroundColor: colors.primary[100] }}
+            >
+              <Icon as={Info} size="md" style={{ color: colors.primary[600] }} />
+            </View>
+            <VStack className="flex-1">
+              <Text className="text-base text-gray-900">Subgroup Info</Text>
+              <Text className="text-sm text-gray-500">{subgroup?.member_count || 0} members</Text>
+            </VStack>
+          </Pressable>
+
+          {/* Back to Main Chat */}
+          <Pressable
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              setShowMenu(false);
+              router.replace(`/community/${communityId}/chat`);
+            }}
+            className="flex-row items-center px-2 py-3 rounded-lg active:bg-gray-100"
+          >
+            <View
+              className="w-10 h-10 rounded-full items-center justify-center mr-3"
+              style={{ backgroundColor: colors.secondary[100] }}
+            >
+              <Icon as={MessageSquare} size="md" style={{ color: colors.secondary[600] }} />
+            </View>
+            <VStack className="flex-1">
+              <Text className="text-base text-gray-900">Back to Main Chat</Text>
+              <Text className="text-sm text-gray-500">{community?.name || 'Community'}</Text>
+            </VStack>
+          </Pressable>
+        </VStack>
+      </BottomSheet>
     </SafeAreaView>
   );
 }
