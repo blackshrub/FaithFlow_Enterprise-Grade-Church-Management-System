@@ -46,3 +46,8 @@ anthropic>=0.39.0
 # If torch is not installed, system will automatically fall back to gTTS
 python-slugify>=8.0.0
 bleach>=6.0.0
+
+# Voice/Video Calling
+livekit>=1.0.0
+livekit-api>=1.0.0
+paho-mqtt>=2.0.0

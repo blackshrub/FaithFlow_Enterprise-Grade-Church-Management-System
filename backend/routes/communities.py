@@ -12,7 +12,7 @@ import uuid
 import base64
 
 from models.community import CommunityBase, CommunityUpdate, Community
-from utils.dependencies import get_db, get_current_user
+from utils.dependencies import get_db, get_current_user, get_current_member
 from utils.dependencies import get_session_church_id
 from services import audit_service
 from utils.error_response import error_response
@@ -20,6 +20,131 @@ from utils.validation import sanitize_regex_pattern
 
 router = APIRouter(prefix="/communities", tags=["Communities"])
 
+
+# =============================================================================
+# MOBILE MEMBER ENDPOINTS
+# =============================================================================
+
+@router.get("/my-communities")
+async def get_my_communities(
+    limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0),
+    current_member: dict = Depends(get_current_member),
+    db: AsyncIOMotorDatabase = Depends(get_db),
+):
+    """
+    Get communities the authenticated mobile member belongs to.
+
+    Returns communities where the member has an active membership,
+    including their role and unread message counts.
+    """
+    member_id = current_member.get("id")
+    church_id = current_member.get("church_id")
+
+    # Get member's active community memberships
+    pipeline = [
+        {
+            "$match": {
+                "church_id": church_id,
+                "member_id": member_id,
+                "status": "active"
+            }
+        },
+        {"$sort": {"joined_at": -1}},
+        {
+            "$facet": {
+                "metadata": [{"$count": "total"}],
+                "data": [
+                    {"$skip": offset},
+                    {"$limit": limit},
+                    # Join with communities collection
+                    {
+                        "$lookup": {
+                            "from": "communities",
+                            "let": {"community_id": "$community_id", "church_id": "$church_id"},
+                            "pipeline": [
+                                {
+                                    "$match": {
+                                        "$expr": {
+                                            "$and": [
+                                                {"$eq": ["$id", "$$community_id"]},
+                                                {"$eq": ["$church_id", "$$church_id"]}
+                                            ]
+                                        }
+                                    }
+                                }
+                            ],
+                            "as": "community"
+                        }
+                    },
+                    {"$unwind": "$community"},
+                    # Get member count for each community
+                    {
+                        "$lookup": {
+                            "from": "community_memberships",
+                            "let": {"community_id": "$community_id", "church_id": "$church_id"},
+                            "pipeline": [
+                                {
+                                    "$match": {
+                                        "$expr": {
+                                            "$and": [
+                                                {"$eq": ["$community_id", "$$community_id"]},
+                                                {"$eq": ["$church_id", "$$church_id"]},
+                                                {"$eq": ["$status", "active"]}
+                                            ]
+                                        }
+                                    }
+                                },
+                                {"$count": "count"}
+                            ],
+                            "as": "member_count_result"
+                        }
+                    },
+                    # Get unread messages count (future: when messages are implemented)
+                    # For now, return 0
+                    {
+                        "$addFields": {
+                            "community.members_count": {
+                                "$ifNull": [
+                                    {"$arrayElemAt": ["$member_count_result.count", 0]},
+                                    0
+                                ]
+                            },
+                            "community.my_role": "$role",
+                            "community.joined_at": "$joined_at",
+                            "community.notifications_enabled": {"$ifNull": ["$notifications_enabled", True]},
+                            "community.muted_until": "$muted_until",
+                            "community.unread_count": 0  # TODO: Implement when messages collection exists
+                        }
+                    },
+                    # Project final shape
+                    {
+                        "$replaceRoot": {"newRoot": "$community"}
+                    },
+                    {"$project": {"_id": 0, "member_count_result": 0}}
+                ]
+            }
+        }
+    ]
+
+    result = await db.community_memberships.aggregate(pipeline).to_list(length=1)
+    total = result[0]["metadata"][0]["total"] if result[0]["metadata"] else 0
+    communities = result[0]["data"] if result else []
+
+    return {
+        "data": communities,
+        "pagination": {
+            "total": total,
+            "limit": limit,
+            "offset": offset,
+            "has_more": (offset + limit) < total,
+        },
+    }
+
+
+# =============================================================================
+# ADMIN/STAFF ENDPOINTS
+# =============================================================================
 
 @router.get("/")
 async def list_communities(

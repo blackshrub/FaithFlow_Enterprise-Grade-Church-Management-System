@@ -276,3 +276,41 @@ fcm_service = FCMService()
 def get_fcm_service() -> FCMService:
     """Get FCM service instance."""
     return fcm_service
+
+
+# Module-level convenience function for direct import
+async def send_push_notification(
+    expo_tokens: List[str],
+    title: str,
+    body: str,
+    data: Optional[Dict[str, Any]] = None,
+    sound: str = "default",
+    badge: Optional[int] = None,
+    channel_id: str = "default"
+) -> tuple[bool, Optional[str]]:
+    """
+    Send push notification via Expo Push Service.
+
+    This is a module-level wrapper for FCMService.send_push_notification().
+
+    Args:
+        expo_tokens: List of Expo push tokens
+        title: Notification title
+        body: Notification body
+        data: Custom data payload
+        sound: Sound to play
+        badge: Badge count (iOS)
+        channel_id: Android notification channel
+
+    Returns:
+        Tuple of (success, error_message)
+    """
+    return await fcm_service.send_push_notification(
+        expo_tokens=expo_tokens,
+        title=title,
+        body=body,
+        data=data,
+        sound=sound,
+        badge=badge,
+        channel_id=channel_id
+    )

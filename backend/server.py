@@ -15,7 +15,8 @@ from routes import (
     seat_layouts, events, bible, devotions, webhooks, api_keys,
     status_rules, status_conflicts, status_history, member_status_automation, public_members,
     counseling_admin, counseling_public, kiosk, user_management, files,
-    giving, member_auth, notifications, rating_review, system_settings
+    giving, member_auth, notifications, rating_review, system_settings,
+    call  # Voice/Video calling
 )
 
 # Import Explore routes
@@ -43,7 +44,9 @@ from routes import (
     group_join_requests, group_leave_requests,
     # New community routes (replacing groups)
     communities, community_memberships, communities_public,
-    community_join_requests, community_leave_requests
+    community_join_requests, community_leave_requests,
+    # Community messaging and sub-groups
+    community_messages, community_subgroups
 )
 
 ROOT_DIR = Path(__file__).parent
@@ -144,6 +147,9 @@ api_router.include_router(giving.router)  # Giving/offering with iPaymu
 api_router.include_router(notifications.router)  # Push notifications
 api_router.include_router(rating_review.router)  # Event ratings & reviews
 api_router.include_router(prayer_requests.router)  # Prayer requests (mobile compatibility)
+api_router.include_router(community_messages.mobile_router)  # Community messaging (mobile)
+api_router.include_router(community_subgroups.mobile_router)  # Community sub-groups (mobile)
+api_router.include_router(call.router)  # Voice/Video calling (LiveKit)
 
 # Public API (no auth required)
 app.include_router(public_members.router)
@@ -188,6 +194,8 @@ api_v1_router.include_router(communities.router)
 api_v1_router.include_router(community_memberships.router)
 api_v1_router.include_router(community_join_requests.router)
 api_v1_router.include_router(community_leave_requests.router)
+api_v1_router.include_router(community_messages.router)  # Community messaging (admin)
+api_v1_router.include_router(community_subgroups.router)  # Community sub-groups (admin)
 
 # Include counseling routes (v1)
 api_v1_router.include_router(counseling_admin.router)
