@@ -4,10 +4,16 @@
  * Full-screen overlay for incoming calls.
  * Shows caller info and accept/reject buttons.
  * Displayed as a modal over all other content.
+ *
  * Features:
  * - Ringtone playback
  * - Vibration pattern
- * - CallKit integration for native UI
+ * - In-app call UI (WhatsApp-style)
+ *
+ * Note: We do NOT use CallKit here because:
+ * 1. iOS only supports CallKit with VoIP PushKit (we use standard FCM)
+ * 2. When app is foregrounded, in-app UI provides better UX
+ * 3. Android notification already shows Accept/Decline buttons
  */
 
 import React, { useEffect } from 'react';
@@ -24,7 +30,6 @@ import { colors, shadows } from '@/constants/theme';
 import { useCallStore, useIncomingCall } from '@/stores/call';
 import { CallType } from '@/types/call';
 import { useRingtone } from '@/services/audio/ringtone';
-import { callKitService } from '@/services/callkit';
 
 const { width, height } = Dimensions.get('window');
 
@@ -34,19 +39,11 @@ export function IncomingCallOverlay() {
   const { acceptCall, rejectCall } = useCallStore();
   const { startRingtone, stopRingtone } = useRingtone();
 
-  // Play ringtone and show native call UI
+  // Play ringtone when incoming call arrives
   useEffect(() => {
     if (incomingCall) {
-      // Start ringtone (includes vibration)
+      // Start ringtone (includes vibration pattern)
       startRingtone();
-
-      // Show on native call UI (CallKit/ConnectionService)
-      callKitService.displayIncomingCall(
-        incomingCall.call_id,
-        incomingCall.caller.name,
-        incomingCall.caller.id || 'FaithFlow',
-        incomingCall.call_type === CallType.VIDEO
-      );
 
       return () => {
         stopRingtone();
@@ -65,14 +62,10 @@ export function IncomingCallOverlay() {
     stopRingtone();
     try {
       await acceptCall(incomingCall.call_id);
-      // Report to CallKit that call is connected
-      callKitService.reportCallConnected(incomingCall.call_id);
       // Navigate to the call screen
       router.push(`/call/${incomingCall.call_id}`);
     } catch (error) {
       console.error('Failed to accept call:', error);
-      // Report call failed to CallKit
-      callKitService.reportEndCall(incomingCall.call_id, 1); // 1 = failed
     }
   };
 
@@ -81,8 +74,6 @@ export function IncomingCallOverlay() {
     stopRingtone();
     try {
       await rejectCall(incomingCall.call_id, 'rejected');
-      // Report to CallKit that call was declined
-      callKitService.reportEndCall(incomingCall.call_id, 5); // 5 = declined
     } catch (error) {
       console.error('Failed to reject call:', error);
     }

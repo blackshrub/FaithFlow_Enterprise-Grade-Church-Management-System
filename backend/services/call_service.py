@@ -232,15 +232,21 @@ class CallService:
 
         # Send high-priority push notification to wake up app when backgrounded/killed
         # This is critical for reliable call delivery on both iOS and Android
-        call_type_label = "video" if call_type == CallType.VIDEO else "voice"
+        #
+        # Platform behavior:
+        # - Android: Full-screen call notification with Accept/Decline buttons
+        # - iOS: Standard notification with "Tap to answer" - user taps to open in-app call screen
+        #
+        call_type_label = "Video" if call_type == CallType.VIDEO else "Voice"
         for callee in callees:
             try:
                 await fcm_service.send_to_member(
                     db=self.db,
                     member_id=callee.member_id,
                     church_id=church_id,
-                    title=f"Incoming {call_type_label} call",
-                    body=f"{caller_info['name']} is calling you",
+                    # Title/body for iOS (Android will show custom notification UI)
+                    title=f"📞 Incoming {call_type_label} Call",
+                    body=f"{caller_info['name']} is calling. Tap to answer.",
                     notification_type="call",  # Uses high-priority call channel
                     data={
                         "type": "incoming_call",
@@ -249,11 +255,11 @@ class CallService:
                         "call_type": call_type.value,
                         "caller_id": caller_id,
                         "caller_name": caller_info["name"],
-                        "caller_avatar": caller_info.get("avatar"),
-                        "community_id": community_id,
-                        "community_name": community_name,
+                        "caller_avatar": caller_info.get("avatar") or "",
+                        "community_id": community_id or "",
+                        "community_name": community_name or "",
                         "livekit_url": livekit_url,
-                        # High priority flags for FCM
+                        # High priority flags
                         "priority": "high",
                         "content_available": "true",  # iOS background wake
                         "mutable_content": "true"  # iOS notification extension

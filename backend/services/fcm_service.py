@@ -73,6 +73,11 @@ class FCMService:
                         message["priority"] = "high"
                         message["_contentAvailable"] = True  # iOS background wake
                         message["categoryId"] = "incoming_call"  # iOS action category
+                        message["channelId"] = "calls"  # Android high-priority call channel
+                        # Add Android-specific notification actions
+                        message["data"]["android_channel_id"] = "calls"
+                        message["data"]["android_actions"] = "accept,decline"  # Custom actions for Android
+                        message["data"]["show_fullscreen"] = "true"  # Trigger full-screen intent on Android
 
                 if badge is not None:
                     message["badge"] = badge

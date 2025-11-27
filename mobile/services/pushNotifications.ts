@@ -110,7 +110,47 @@ export const NOTIFICATION_CHANNELS: NotificationChannels = {
   calls: 'calls',
 };
 
+/**
+ * Set up notification categories with actions
+ * On Android: Shows Accept/Decline buttons on incoming call notifications
+ * On iOS: Categories are set but iOS doesn't show action buttons on lock screen
+ *         for standard notifications (only VoIP push can do that)
+ */
+async function setupNotificationCategories(): Promise<void> {
+  // Only Android benefits from notification actions for calls
+  // iOS requires VoIP PushKit for inline call actions (which we're not using)
+  if (Platform.OS !== 'android') return;
+
+  try {
+    // Set up incoming call category with Accept/Decline buttons
+    await Notifications.setNotificationCategoryAsync('incoming_call', [
+      {
+        identifier: 'accept',
+        buttonTitle: '✓ Accept',
+        options: {
+          opensAppToForeground: true, // Open app when Accept is pressed
+        },
+      },
+      {
+        identifier: 'decline',
+        buttonTitle: '✕ Decline',
+        options: {
+          opensAppToForeground: false, // Don't open app when Decline is pressed
+          isDestructive: true, // Show in red on iOS (ignored on Android but good practice)
+        },
+      },
+    ]);
+
+    console.log('[Push] Notification categories configured');
+  } catch (error) {
+    console.error('[Push] Failed to set up notification categories:', error);
+  }
+}
+
 async function setupNotificationChannels(): Promise<void> {
+  // Set up notification categories for actionable notifications (both platforms)
+  await setupNotificationCategories();
+
   if (Platform.OS !== 'android') return;
 
   // Messages channel (high priority for chat)
@@ -150,16 +190,23 @@ async function setupNotificationChannels(): Promise<void> {
   });
 
   // Calls channel (highest priority for incoming calls)
+  // On Android, this enables:
+  // - Full-screen intent (shows over lock screen)
+  // - Heads-up notification (appears at top of screen)
+  // - Bypass DND (ring even in Do Not Disturb mode)
+  // - Custom ringtone sound
   await Notifications.setNotificationChannelAsync(NOTIFICATION_CHANNELS.calls, {
-    name: 'Calls',
-    description: 'Voice and video calls',
+    name: 'Incoming Calls',
+    description: 'Voice and video call notifications - high priority',
     importance: Notifications.AndroidImportance.MAX,
-    vibrationPattern: [0, 500, 200, 500, 200, 500],
+    vibrationPattern: [0, 500, 200, 500, 200, 500, 200, 500], // WhatsApp-style ring pattern
     lightColor: '#25D366',
     sound: 'ringtone.wav',
     enableVibrate: true,
     enableLights: true,
     bypassDnd: true, // Bypass Do Not Disturb for calls
+    lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC, // Show on lock screen
+    showBadge: true,
   });
 }
 
@@ -334,32 +381,98 @@ function handleNotificationNavigation(data: PushNotificationPayload): void {
 let notificationReceivedListener: Notifications.Subscription | null = null;
 let notificationResponseListener: Notifications.Subscription | null = null;
 
+// =============================================================================
+// ANDROID CALL NOTIFICATION ACTION HANDLERS
+// =============================================================================
+
+/**
+ * Handle Accept action from Android notification button
+ * Sets up call in store and navigates to call screen
+ */
+async function handleCallAcceptFromNotification(data: PushNotificationPayload): Promise<void> {
+  try {
+    const { acceptCall, handleIncomingCall } = useCallStore.getState();
+
+    // First, set up the incoming call in the store
+    handleIncomingCall({
+      type: CallSignalType.INVITE,
+      call_id: data.callId!,
+      room_name: (data.data as any)?.room_name || data.callId!,
+      call_type: data.callType === 'video' ? CallType.VIDEO : CallType.VOICE,
+      caller: {
+        id: data.callerId || '',
+        name: data.callerName || 'Unknown',
+        avatar: data.callerAvatar || null,
+      },
+      callee_ids: [],
+      community_id: data.communityId || null,
+      community_name: (data.data as any)?.community_name || null,
+      livekit_url: (data.data as any)?.livekit_url || '',
+      timestamp: new Date().toISOString(),
+    });
+
+    // Accept the call
+    await acceptCall(data.callId!);
+
+    // Navigate to call screen
+    router.push(`/call/${data.callId}` as any);
+  } catch (error) {
+    console.error('[Push] Failed to accept call from notification:', error);
+  }
+}
+
+/**
+ * Handle Decline action from Android notification button
+ * Rejects the call without opening the app UI
+ */
+async function handleCallDeclineFromNotification(data: PushNotificationPayload): Promise<void> {
+  try {
+    const { rejectCall, handleIncomingCall } = useCallStore.getState();
+
+    // Set up the call in store first (needed for rejection)
+    handleIncomingCall({
+      type: CallSignalType.INVITE,
+      call_id: data.callId!,
+      room_name: (data.data as any)?.room_name || data.callId!,
+      call_type: data.callType === 'video' ? CallType.VIDEO : CallType.VOICE,
+      caller: {
+        id: data.callerId || '',
+        name: data.callerName || 'Unknown',
+        avatar: data.callerAvatar || null,
+      },
+      callee_ids: [],
+      community_id: data.communityId || null,
+      community_name: (data.data as any)?.community_name || null,
+      livekit_url: (data.data as any)?.livekit_url || '',
+      timestamp: new Date().toISOString(),
+    });
+
+    // Reject the call
+    await rejectCall(data.callId!, 'rejected');
+  } catch (error) {
+    console.error('[Push] Failed to decline call from notification:', error);
+  }
+}
+
 export function setupNotificationListeners(): () => void {
   // Handle notifications received while app is in foreground
   notificationReceivedListener = Notifications.addNotificationReceivedListener(
     (notification) => {
       const data = notification.request.content.data as unknown as PushNotificationPayload | undefined;
-      console.log('Notification received in foreground:', data);
+      console.log('[Push] Notification received in foreground:', data?.type);
 
-      // Handle incoming call from push notification
-      // This triggers when app is backgrounded and push wakes it
+      // Handle incoming call from push notification when app is in FOREGROUND
+      // When app is foregrounded, we show the in-app call UI directly
       if (data?.type === 'incoming_call' && data.callId) {
-        console.log('[Push] Handling incoming call notification:', data.callId);
+        console.log('[Push] Incoming call received while app in foreground:', data.callId);
 
-        // Show on native call UI (CallKit/ConnectionService)
-        callKitService.displayIncomingCall(
-          data.callId,
-          data.callerName || 'Unknown',
-          data.callerId || 'FaithFlow',
-          data.callType === 'video'
-        );
-
-        // Also update call store to show in-app UI
+        // Update call store to show in-app incoming call overlay
+        // This works the same on iOS and Android when app is foregrounded
         const { handleIncomingCall } = useCallStore.getState();
         handleIncomingCall({
           type: CallSignalType.INVITE,
           call_id: data.callId,
-          room_name: (data.data as any)?.room_name || '',
+          room_name: (data.data as any)?.room_name || data.callId,
           call_type: data.callType === 'video' ? CallType.VIDEO : CallType.VOICE,
           caller: {
             id: data.callerId || '',
@@ -372,18 +485,77 @@ export function setupNotificationListeners(): () => void {
           livekit_url: (data.data as any)?.livekit_url || '',
           timestamp: new Date().toISOString(),
         });
+
+        // Note: We do NOT call CallKit here for iOS since:
+        // 1. iOS doesn't support CallKit from standard push notifications (requires VoIP PushKit)
+        // 2. When app is foregrounded, we show in-app UI which is better UX anyway
+        //
+        // For Android:
+        // - When app is foregrounded, notification won't show (suppressed by foreground handler)
+        // - We show in-app overlay directly which is better UX
       }
     }
   );
 
-  // Handle user tapping on notification
+  // Handle user tapping on notification (app was backgrounded/killed)
+  // This is the primary way iOS users will answer calls since:
+  // - iOS doesn't allow Accept/Decline buttons on standard notifications
+  // - User must tap notification first, then see in-app call screen
   notificationResponseListener = Notifications.addNotificationResponseReceivedListener(
     (response) => {
       const data = response.notification.request.content
         .data as unknown as PushNotificationPayload;
-      console.log('Notification tapped:', data);
+      const actionId = response.actionIdentifier;
 
-      // Navigate to appropriate screen
+      console.log('[Push] Notification response:', { type: data?.type, actionId });
+
+      // Handle Android notification actions (Accept/Decline buttons)
+      if (Platform.OS === 'android' && data?.type === 'incoming_call' && data.callId) {
+        if (actionId === 'accept') {
+          console.log('[Push] Android: Accept button pressed');
+          handleCallAcceptFromNotification(data);
+          return;
+        } else if (actionId === 'decline') {
+          console.log('[Push] Android: Decline button pressed');
+          handleCallDeclineFromNotification(data);
+          return;
+        }
+      }
+
+      // Handle notification tap (default action)
+      // For incoming calls, show the in-app call screen
+      if (data?.type === 'incoming_call' && data.callId) {
+        console.log('[Push] Call notification tapped - showing in-app call screen');
+
+        // Set up the incoming call in store first
+        const { handleIncomingCall, incomingCall } = useCallStore.getState();
+
+        // Only set up if not already handling this call
+        if (!incomingCall || incomingCall.call_id !== data.callId) {
+          handleIncomingCall({
+            type: CallSignalType.INVITE,
+            call_id: data.callId,
+            room_name: (data.data as any)?.room_name || data.callId,
+            call_type: data.callType === 'video' ? CallType.VIDEO : CallType.VOICE,
+            caller: {
+              id: data.callerId || '',
+              name: data.callerName || 'Unknown',
+              avatar: data.callerAvatar || null,
+            },
+            callee_ids: [],
+            community_id: data.communityId || null,
+            community_name: (data.data as any)?.community_name || null,
+            livekit_url: (data.data as any)?.livekit_url || '',
+            timestamp: new Date().toISOString(),
+          });
+        }
+
+        // The IncomingCallOverlay will show automatically when incomingCall is set
+        // No need to navigate - the overlay appears over everything
+        return;
+      }
+
+      // Navigate to appropriate screen for other notification types
       handleNotificationNavigation(data);
     }
   );
