@@ -2,7 +2,7 @@
 
 ################################################################################
 #                                                                              #
-#                         FaithFlow Installer v2.0                             #
+#                         FaithFlow Installer v3.0                             #
 #                                                                              #
 #              Enterprise Church Management System - Automated Setup           #
 #                           For Debian 12+ / Ubuntu 22.04+                     #
@@ -10,9 +10,19 @@
 #  This is the BARE-METAL installation script.                                 #
 #  For Docker/Traefik deployment, use: ./docker-install.sh                     #
 #                                                                              #
+#  Components Installed:                                                       #
+#  - Python 3.11 + FastAPI Backend                                             #
+#  - Node.js 20.x + React Frontend                                             #
+#  - MongoDB 7.0 Database                                                      #
+#  - LiveKit (Voice/Video WebRTC SFU)                                          #
+#  - EMQX (MQTT Message Broker)                                                #
+#  - coTURN (TURN/STUN NAT Traversal)                                          #
+#  - SeaweedFS (Distributed File Storage)                                      #
+#  - Nginx Reverse Proxy + SSL                                                 #
+#  - UFW Firewall + Security                                                   #
+#                                                                              #
 #  Features:                                                                   #
 #  - Pre-flight system checks (CPU, RAM, Disk)                                 #
-#  - Parallel installations for speed                                          #
 #  - Auto-generated secure secrets                                             #
 #  - Health checks and validation                                              #
 #  - Performance tuning                                                        #
@@ -27,20 +37,33 @@ set -euo pipefail
 # CONFIGURATION
 # =============================================================================
 
-readonly VERSION="2.0.0"
+readonly VERSION="3.0.0"
 readonly INSTALL_DIR="/opt/faithflow"
 readonly LOG_DIR="/var/log/faithflow"
 readonly LOG_FILE="$LOG_DIR/install-$(date +%Y%m%d-%H%M%S).log"
 readonly BACKUP_DIR="/opt/faithflow-backups"
+readonly SEAWEED_DIR="/opt/seaweedfs"
+readonly LIVEKIT_DIR="/opt/livekit"
 
-# Minimum system requirements
-readonly MIN_RAM_MB=2048
-readonly MIN_DISK_GB=20
+# Minimum system requirements (increased for voice/video services)
+readonly MIN_RAM_MB=4096
+readonly MIN_DISK_GB=30
 readonly MIN_CPU_CORES=2
 
 # Default ports
 DEFAULT_BACKEND_PORT=8001
 DEFAULT_FRONTEND_PORT=3000
+
+# Service ports
+LIVEKIT_PORT=7880
+LIVEKIT_RTC_PORT=7881
+EMQX_MQTT_PORT=1883
+EMQX_WS_PORT=8083
+COTURN_PORT=3478
+COTURN_TLS_PORT=5349
+SEAWEED_MASTER_PORT=9333
+SEAWEED_VOLUME_PORT=8080
+SEAWEED_FILER_PORT=8888
 
 # =============================================================================
 # TERMINAL STYLING
@@ -382,18 +405,31 @@ show_welcome() {
     ║                           🙏  FaithFlow  🙏                               ║
     ║                                                                           ║
     ║              Enterprise Church Management System Installer                ║
+    ║                          FULL STACK - Bare Metal                          ║
     ║                                                                           ║
     ╠═══════════════════════════════════════════════════════════════════════════╣
     ║                                                                           ║
-    ║   This installer will set up:                                             ║
+    ║   This installer will set up ALL services:                                ║
     ║                                                                           ║
+    ║   CORE SERVICES:                                                          ║
     ║   ✦ Python 3.11 + FastAPI Backend                                         ║
     ║   ✦ Node.js 20.x + React Frontend                                         ║
     ║   ✦ MongoDB 7.0 Database                                                  ║
-    ║   ✦ Nginx Reverse Proxy                                                   ║
-    ║   ✦ SSL/TLS Certificates (optional)                                       ║
-    ║   ✦ Systemd Service Management                                            ║
+    ║                                                                           ║
+    ║   VOICE/VIDEO CALLING:                                                    ║
+    ║   ✦ LiveKit Server (WebRTC SFU for voice/video)                           ║
+    ║   ✦ coTURN (TURN/STUN for NAT traversal)                                  ║
+    ║                                                                           ║
+    ║   REAL-TIME MESSAGING:                                                    ║
+    ║   ✦ EMQX (MQTT broker for chat & notifications)                           ║
+    ║                                                                           ║
+    ║   FILE STORAGE:                                                           ║
+    ║   ✦ SeaweedFS (Distributed file storage for media)                        ║
+    ║                                                                           ║
+    ║   INFRASTRUCTURE:                                                         ║
+    ║   ✦ Nginx Reverse Proxy + SSL (Let's Encrypt)                             ║
     ║   ✦ UFW Firewall Configuration                                            ║
+    ║   ✦ Systemd Service Management                                            ║
     ║   ✦ Log Rotation & Monitoring                                             ║
     ║                                                                           ║
     ╚═══════════════════════════════════════════════════════════════════════════╝
@@ -406,7 +442,14 @@ EOF
     echo -e "  ${GRAY}Log File:          ${WHITE}$LOG_FILE${NC}"
     echo ""
 
-    sleep 2
+    echo -e "${YELLOW}  ⚠ IMPORTANT: This installation requires:${NC}"
+    echo -e "${YELLOW}    - At least 4GB RAM (for voice/video services)${NC}"
+    echo -e "${YELLOW}    - At least 30GB disk space${NC}"
+    echo -e "${YELLOW}    - Public IP address (for voice/video)${NC}"
+    echo -e "${YELLOW}    - Domain name (recommended)${NC}"
+    echo ""
+
+    sleep 3
 }
 
 # =============================================================================
@@ -505,7 +548,7 @@ preflight_checks() {
 # =============================================================================
 
 CURRENT_STEP=""
-TOTAL_STEPS=12
+TOTAL_STEPS=16
 
 step_system_update() {
     CURRENT_STEP="System Update"
@@ -648,9 +691,361 @@ step_install_nginx() {
     print_success "Nginx enabled on boot"
 }
 
+step_install_livekit() {
+    CURRENT_STEP="LiveKit Installation"
+    print_step 6 $TOTAL_STEPS "Installing LiveKit Server (Voice/Video)"
+
+    mkdir -p "$LIVEKIT_DIR"
+
+    # Download LiveKit Server
+    print_info "Downloading LiveKit Server..."
+    local livekit_version="1.5.3"
+    local arch="amd64"
+
+    # Detect architecture
+    case $(uname -m) in
+        x86_64) arch="amd64" ;;
+        aarch64) arch="arm64" ;;
+        *) print_error "Unsupported architecture: $(uname -m)"; return 1 ;;
+    esac
+
+    local livekit_url="https://github.com/livekit/livekit/releases/download/v${livekit_version}/livekit_${livekit_version}_linux_${arch}.tar.gz"
+
+    if curl -fsSL "$livekit_url" -o /tmp/livekit.tar.gz 2>&1 | tee -a "$LOG_FILE"; then
+        tar -xzf /tmp/livekit.tar.gz -C "$LIVEKIT_DIR"
+        chmod +x "$LIVEKIT_DIR/livekit-server"
+        rm /tmp/livekit.tar.gz
+        print_success "LiveKit Server downloaded"
+    else
+        print_warn "Could not download LiveKit. Voice/video features may not work."
+        return 0
+    fi
+
+    # Generate API credentials
+    LIVEKIT_API_KEY=$(generate_secret 16 | tr '[:upper:]' '[:lower:]')
+    LIVEKIT_API_SECRET=$(generate_secret 32)
+
+    # Create LiveKit configuration
+    print_info "Configuring LiveKit..."
+    cat > "$LIVEKIT_DIR/livekit.yaml" << LIVEKIT_CONF
+# LiveKit Server Configuration
+port: 7880
+rtc:
+  port_range_start: 50000
+  port_range_end: 50100
+  tcp_port: 7881
+  use_external_ip: true
+  enable_loopback_candidate: false
+keys:
+  ${LIVEKIT_API_KEY}: ${LIVEKIT_API_SECRET}
+logging:
+  level: info
+  pion_level: warn
+turn:
+  enabled: true
+  udp_port: 3478
+  tls_port: 5349
+webhook:
+  urls: []
+LIVEKIT_CONF
+    print_success "LiveKit configuration created"
+
+    # Create systemd service
+    cat > /etc/systemd/system/livekit.service << LIVEKIT_SERVICE
+[Unit]
+Description=LiveKit WebRTC SFU Server
+Documentation=https://docs.livekit.io
+After=network.target
+
+[Service]
+Type=simple
+User=root
+ExecStart=${LIVEKIT_DIR}/livekit-server --config ${LIVEKIT_DIR}/livekit.yaml
+Restart=always
+RestartSec=5
+StandardOutput=append:${LOG_DIR}/livekit.log
+StandardError=append:${LOG_DIR}/livekit.error.log
+
+[Install]
+WantedBy=multi-user.target
+LIVEKIT_SERVICE
+
+    systemctl daemon-reload
+    systemctl enable livekit.service >> "$LOG_FILE" 2>&1
+    systemctl start livekit.service
+
+    if wait_for_service livekit 30; then
+        print_success "LiveKit Server started (port 7880)"
+    else
+        print_warn "LiveKit failed to start. Check: journalctl -u livekit -f"
+    fi
+}
+
+step_install_coturn() {
+    CURRENT_STEP="coTURN Installation"
+    print_step 7 $TOTAL_STEPS "Installing coTURN (NAT Traversal)"
+
+    if command_exists turnserver; then
+        print_success "coTURN already installed"
+    else
+        print_info "Installing coTURN..."
+        run_silent apt install -y coturn
+        print_success "coTURN installed"
+    fi
+
+    # Generate TURN secret
+    TURN_SECRET=$(generate_secret 32)
+
+    # Get server's public IP
+    SERVER_IP=$(curl -s ifconfig.me 2>/dev/null || curl -s icanhazip.com 2>/dev/null || echo "auto")
+
+    # Configure coTURN
+    print_info "Configuring coTURN..."
+    cat > /etc/turnserver.conf << TURN_CONF
+# coTURN Configuration for FaithFlow
+# Generated: $(date)
+
+# Network settings
+listening-port=3478
+tls-listening-port=5349
+fingerprint
+lt-cred-mech
+use-auth-secret
+static-auth-secret=${TURN_SECRET}
+
+# Realm (use domain if available)
+realm=faithflow.local
+
+# External IP (auto-detected or set manually)
+external-ip=${SERVER_IP}
+
+# Relay ports
+min-port=50000
+max-port=50100
+
+# Security
+no-multicast-peers
+no-cli
+denied-peer-ip=10.0.0.0-10.255.255.255
+denied-peer-ip=192.168.0.0-192.168.255.255
+denied-peer-ip=172.16.0.0-172.31.255.255
+
+# Logging
+log-file=/var/log/faithflow/turnserver.log
+verbose
+
+# Performance
+total-quota=100
+max-bps=0
+TURN_CONF
+
+    # Enable coTURN
+    if [ -f /etc/default/coturn ]; then
+        sed -i 's/^#TURNSERVER_ENABLED=1/TURNSERVER_ENABLED=1/' /etc/default/coturn
+    fi
+
+    systemctl daemon-reload
+    systemctl enable coturn >> "$LOG_FILE" 2>&1
+    systemctl restart coturn
+
+    if wait_for_service coturn 15; then
+        print_success "coTURN started (UDP 3478, TLS 5349)"
+    else
+        print_warn "coTURN failed to start. Check: journalctl -u coturn -f"
+    fi
+}
+
+step_install_emqx() {
+    CURRENT_STEP="EMQX Installation"
+    print_step 8 $TOTAL_STEPS "Installing EMQX (MQTT Broker)"
+
+    # Check if EMQX is already installed
+    if command_exists emqx; then
+        print_success "EMQX already installed"
+    else
+        print_info "Installing EMQX MQTT broker..."
+
+        # Add EMQX repository
+        curl -fsSL https://packages.emqx.com/install/emqx-ce/deb/debian/emqx.gpg | \
+            gpg --dearmor -o /usr/share/keyrings/emqx-archive-keyring.gpg 2>/dev/null
+
+        echo "deb [signed-by=/usr/share/keyrings/emqx-archive-keyring.gpg] https://packages.emqx.com/install/emqx-ce/deb/debian bullseye main" | \
+            tee /etc/apt/sources.list.d/emqx.list > /dev/null
+
+        run_silent apt update
+
+        if run_silent apt install -y emqx; then
+            print_success "EMQX installed"
+        else
+            print_warn "Could not install EMQX from repository. Installing via tarball..."
+
+            # Fallback: download binary
+            local emqx_version="5.4.1"
+            curl -fsSL "https://www.emqx.com/en/downloads/broker/${emqx_version}/emqx-${emqx_version}-ubuntu22.04-amd64.tar.gz" \
+                -o /tmp/emqx.tar.gz
+            mkdir -p /opt/emqx
+            tar -xzf /tmp/emqx.tar.gz -C /opt/emqx --strip-components=1
+            rm /tmp/emqx.tar.gz
+            print_success "EMQX installed (manual)"
+        fi
+    fi
+
+    # Configure EMQX
+    print_info "Configuring EMQX..."
+
+    # Generate dashboard credentials
+    EMQX_DASHBOARD_PASSWORD=$(generate_secret 16)
+
+    # Basic EMQX configuration
+    if [ -f /etc/emqx/emqx.conf ]; then
+        # Update main config for package installation
+        cat >> /etc/emqx/emqx.conf << EMQX_CONF
+
+# FaithFlow MQTT Configuration
+# Allow anonymous for development (secure in production)
+authentication.enable = false
+
+# Listeners
+listeners.tcp.default.bind = "0.0.0.0:1883"
+listeners.ws.default.bind = "0.0.0.0:8083"
+
+# Dashboard
+dashboard.listeners.http.bind = "0.0.0.0:18083"
+EMQX_CONF
+    fi
+
+    # Start EMQX
+    systemctl daemon-reload
+    systemctl enable emqx >> "$LOG_FILE" 2>&1 || true
+    systemctl start emqx || /opt/emqx/bin/emqx start
+
+    sleep 5  # Give EMQX time to start
+
+    if pgrep -x "beam.smp" > /dev/null || service_active emqx; then
+        print_success "EMQX MQTT broker started (TCP 1883, WS 8083)"
+        print_info "Dashboard: http://localhost:18083 (admin/public)"
+    else
+        print_warn "EMQX may not have started. Check: systemctl status emqx"
+    fi
+}
+
+step_install_seaweedfs() {
+    CURRENT_STEP="SeaweedFS Installation"
+    print_step 9 $TOTAL_STEPS "Installing SeaweedFS (File Storage)"
+
+    mkdir -p "$SEAWEED_DIR"/{master,volume,filer}
+    mkdir -p "$SEAWEED_DIR/data"
+
+    # Download SeaweedFS
+    print_info "Downloading SeaweedFS..."
+    local seaweed_version="3.59"
+    local arch="amd64"
+
+    case $(uname -m) in
+        x86_64) arch="amd64" ;;
+        aarch64) arch="arm64" ;;
+    esac
+
+    local seaweed_url="https://github.com/seaweedfs/seaweedfs/releases/download/${seaweed_version}/linux_${arch}.tar.gz"
+
+    if curl -fsSL "$seaweed_url" -o /tmp/seaweedfs.tar.gz 2>&1; then
+        tar -xzf /tmp/seaweedfs.tar.gz -C "$SEAWEED_DIR"
+        rm /tmp/seaweedfs.tar.gz
+        chmod +x "$SEAWEED_DIR/weed"
+        print_success "SeaweedFS downloaded"
+    else
+        print_warn "Could not download SeaweedFS. File storage may not work."
+        return 0
+    fi
+
+    # Create SeaweedFS Master service
+    cat > /etc/systemd/system/seaweedfs-master.service << SEAWEED_MASTER
+[Unit]
+Description=SeaweedFS Master Server
+After=network.target
+
+[Service]
+Type=simple
+User=root
+ExecStart=${SEAWEED_DIR}/weed master -ip=localhost -port=9333 -mdir=${SEAWEED_DIR}/master
+Restart=always
+RestartSec=5
+StandardOutput=append:${LOG_DIR}/seaweed-master.log
+StandardError=append:${LOG_DIR}/seaweed-master.error.log
+
+[Install]
+WantedBy=multi-user.target
+SEAWEED_MASTER
+
+    # Create SeaweedFS Volume service
+    cat > /etc/systemd/system/seaweedfs-volume.service << SEAWEED_VOLUME
+[Unit]
+Description=SeaweedFS Volume Server
+After=seaweedfs-master.service
+Requires=seaweedfs-master.service
+
+[Service]
+Type=simple
+User=root
+ExecStart=${SEAWEED_DIR}/weed volume -mserver=localhost:9333 -port=8080 -dir=${SEAWEED_DIR}/data -max=100
+Restart=always
+RestartSec=5
+StandardOutput=append:${LOG_DIR}/seaweed-volume.log
+StandardError=append:${LOG_DIR}/seaweed-volume.error.log
+
+[Install]
+WantedBy=multi-user.target
+SEAWEED_VOLUME
+
+    # Create SeaweedFS Filer service
+    cat > /etc/systemd/system/seaweedfs-filer.service << SEAWEED_FILER
+[Unit]
+Description=SeaweedFS Filer Server
+After=seaweedfs-volume.service
+Requires=seaweedfs-volume.service
+
+[Service]
+Type=simple
+User=root
+ExecStart=${SEAWEED_DIR}/weed filer -master=localhost:9333 -port=8888
+Restart=always
+RestartSec=5
+StandardOutput=append:${LOG_DIR}/seaweed-filer.log
+StandardError=append:${LOG_DIR}/seaweed-filer.error.log
+
+[Install]
+WantedBy=multi-user.target
+SEAWEED_FILER
+
+    systemctl daemon-reload
+
+    # Start services in order
+    systemctl enable seaweedfs-master seaweedfs-volume seaweedfs-filer >> "$LOG_FILE" 2>&1
+    systemctl start seaweedfs-master
+    sleep 3
+    systemctl start seaweedfs-volume
+    sleep 2
+    systemctl start seaweedfs-filer
+
+    # Verify services
+    local seaweed_ok=true
+    for svc in seaweedfs-master seaweedfs-volume seaweedfs-filer; do
+        if ! wait_for_service "$svc" 15; then
+            print_warn "$svc failed to start"
+            seaweed_ok=false
+        fi
+    done
+
+    if [ "$seaweed_ok" = true ]; then
+        print_success "SeaweedFS started (Master 9333, Volume 8080, Filer 8888)"
+    else
+        print_warn "Some SeaweedFS services may not have started"
+    fi
+}
+
 step_copy_files() {
     CURRENT_STEP="Copy Files"
-    print_step 6 $TOTAL_STEPS "Setting Up FaithFlow Directory"
+    print_step 10 $TOTAL_STEPS "Setting Up FaithFlow Directory"
 
     local script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
@@ -707,7 +1102,7 @@ step_copy_files() {
 
 step_setup_backend() {
     CURRENT_STEP="Backend Setup"
-    print_step 7 $TOTAL_STEPS "Setting Up Backend (FastAPI)"
+    print_step 11 $TOTAL_STEPS "Setting Up Backend (FastAPI)"
 
     cd "$INSTALL_DIR/backend"
 
@@ -798,7 +1193,7 @@ BACKEND_ENV
 
 step_setup_frontend() {
     CURRENT_STEP="Frontend Setup"
-    print_step 8 $TOTAL_STEPS "Setting Up Frontend (React)"
+    print_step 12 $TOTAL_STEPS "Setting Up Frontend (React)"
 
     cd "$INSTALL_DIR/frontend"
 
@@ -905,7 +1300,7 @@ FRONTEND_ENV
 
 step_configure_services() {
     CURRENT_STEP="Service Configuration"
-    print_step 9 $TOTAL_STEPS "Configuring System Services"
+    print_step 13 $TOTAL_STEPS "Configuring System Services"
 
     # Ask for backend port
     echo ""
@@ -1011,7 +1406,7 @@ LOGROTATE
 
 step_init_database() {
     CURRENT_STEP="Database Initialization"
-    print_step 10 $TOTAL_STEPS "Initializing Database"
+    print_step 14 $TOTAL_STEPS "Initializing Database"
 
     cd "$INSTALL_DIR/backend"
     source venv/bin/activate
@@ -1045,7 +1440,7 @@ step_init_database() {
 
 step_configure_nginx() {
     CURRENT_STEP="Nginx Configuration"
-    print_step 11 $TOTAL_STEPS "Configuring Nginx & SSL"
+    print_step 15 $TOTAL_STEPS "Configuring Nginx & SSL"
 
     echo ""
     echo -e "${CYAN}  Domain Configuration:${NC}"
@@ -1251,7 +1646,7 @@ NGINX_LOCAL
 
 step_configure_firewall() {
     CURRENT_STEP="Firewall Configuration"
-    print_step 12 $TOTAL_STEPS "Configuring Firewall"
+    print_step 16 $TOTAL_STEPS "Configuring Firewall"
 
     print_info "Setting up UFW firewall..."
 
@@ -1261,13 +1656,28 @@ step_configure_firewall() {
     ufw --force reset >> "$LOG_FILE" 2>&1
     ufw default deny incoming >> "$LOG_FILE" 2>&1
     ufw default allow outgoing >> "$LOG_FILE" 2>&1
+
+    # Basic ports
     ufw allow 22/tcp >> "$LOG_FILE" 2>&1    # SSH
     ufw allow 80/tcp >> "$LOG_FILE" 2>&1    # HTTP
     ufw allow 443/tcp >> "$LOG_FILE" 2>&1   # HTTPS
 
+    # Voice/Video calling ports
+    ufw allow 3478/tcp >> "$LOG_FILE" 2>&1  # TURN TCP
+    ufw allow 3478/udp >> "$LOG_FILE" 2>&1  # TURN UDP
+    ufw allow 5349/tcp >> "$LOG_FILE" 2>&1  # TURN TLS
+    ufw allow 5349/udp >> "$LOG_FILE" 2>&1  # TURN DTLS
+    ufw allow 7881/tcp >> "$LOG_FILE" 2>&1  # LiveKit RTC
+    ufw allow 50000:50100/udp >> "$LOG_FILE" 2>&1  # WebRTC UDP range
+
+    # MQTT ports (if needed externally)
+    # ufw allow 1883/tcp >> "$LOG_FILE" 2>&1  # MQTT
+    # ufw allow 8083/tcp >> "$LOG_FILE" 2>&1  # MQTT WebSocket
+
     ufw --force enable >> "$LOG_FILE" 2>&1
 
-    print_success "Firewall configured (SSH, HTTP, HTTPS allowed)"
+    print_success "Firewall configured"
+    print_info "Open ports: 22, 80, 443, 3478, 5349, 7881, 50000-50100/udp"
 }
 
 # =============================================================================
@@ -1299,11 +1709,24 @@ EOF
     echo -e "${CYAN}  ┌─────────────────────────────────────────────────────────────────────┐${NC}"
     echo -e "${CYAN}  │  ${WHITE}Components Installed${CYAN}                                              │${NC}"
     echo -e "${CYAN}  ├─────────────────────────────────────────────────────────────────────┤${NC}"
+    echo -e "${CYAN}  │  ${WHITE}CORE SERVICES${CYAN}                                                     │${NC}"
     echo -e "${CYAN}  │  ${GREEN}✓${NC} Python 3.11        ${GRAY}Backend runtime${CYAN}                           │${NC}"
     echo -e "${CYAN}  │  ${GREEN}✓${NC} Node.js 20.x       ${GRAY}Frontend build${CYAN}                            │${NC}"
     echo -e "${CYAN}  │  ${GREEN}✓${NC} MongoDB 7.0        ${GRAY}Database${CYAN}                                  │${NC}"
     echo -e "${CYAN}  │  ${GREEN}✓${NC} Nginx              ${GRAY}Web server & proxy${CYAN}                        │${NC}"
-    echo -e "${CYAN}  │  ${GREEN}✓${NC} UFW Firewall       ${GRAY}Security${CYAN}                                  │${NC}"
+    echo -e "${CYAN}  │                                                                     │${NC}"
+    echo -e "${CYAN}  │  ${WHITE}VOICE/VIDEO CALLING${CYAN}                                               │${NC}"
+    echo -e "${CYAN}  │  ${GREEN}✓${NC} LiveKit Server     ${GRAY}WebRTC SFU (port 7880)${CYAN}                    │${NC}"
+    echo -e "${CYAN}  │  ${GREEN}✓${NC} coTURN             ${GRAY}TURN/STUN NAT (ports 3478, 5349)${CYAN}          │${NC}"
+    echo -e "${CYAN}  │                                                                     │${NC}"
+    echo -e "${CYAN}  │  ${WHITE}REAL-TIME MESSAGING${CYAN}                                               │${NC}"
+    echo -e "${CYAN}  │  ${GREEN}✓${NC} EMQX               ${GRAY}MQTT broker (ports 1883, 8083)${CYAN}            │${NC}"
+    echo -e "${CYAN}  │                                                                     │${NC}"
+    echo -e "${CYAN}  │  ${WHITE}FILE STORAGE${CYAN}                                                      │${NC}"
+    echo -e "${CYAN}  │  ${GREEN}✓${NC} SeaweedFS          ${GRAY}Distributed storage (ports 9333, 8080, 8888)${CYAN}│${NC}"
+    echo -e "${CYAN}  │                                                                     │${NC}"
+    echo -e "${CYAN}  │  ${WHITE}SECURITY${CYAN}                                                          │${NC}"
+    echo -e "${CYAN}  │  ${GREEN}✓${NC} UFW Firewall       ${GRAY}Configured with all ports${CYAN}                 │${NC}"
     echo -e "${CYAN}  │  ${GREEN}✓${NC} Systemd            ${GRAY}Service management${CYAN}                        │${NC}"
     echo -e "${CYAN}  └─────────────────────────────────────────────────────────────────────┘${NC}"
     echo ""
@@ -1326,14 +1749,34 @@ EOF
     echo ""
 
     echo -e "${MAGENTA}  ┌─────────────────────────────────────────────────────────────────────┐${NC}"
-    echo -e "${MAGENTA}  │  ${WHITE}Useful Commands${MAGENTA}                                                  │${NC}"
+    echo -e "${MAGENTA}  │  ${WHITE}Service Management Commands${MAGENTA}                                    │${NC}"
     echo -e "${MAGENTA}  ├─────────────────────────────────────────────────────────────────────┤${NC}"
-    echo -e "${MAGENTA}  │  ${CYAN}View logs:${NC}        tail -f /var/log/faithflow/backend.out.log${MAGENTA}  │${NC}"
-    echo -e "${MAGENTA}  │  ${CYAN}Check status:${NC}     systemctl status faithflow-backend${MAGENTA}         │${NC}"
-    echo -e "${MAGENTA}  │  ${CYAN}Restart backend:${NC}  systemctl restart faithflow-backend${MAGENTA}        │${NC}"
-    echo -e "${MAGENTA}  │  ${CYAN}Update app:${NC}       cd $INSTALL_DIR && sudo ./update.sh${MAGENTA}        │${NC}"
+    echo -e "${MAGENTA}  │  ${CYAN}Backend:${NC}    systemctl status faithflow-backend${MAGENTA}                │${NC}"
+    echo -e "${MAGENTA}  │  ${CYAN}LiveKit:${NC}    systemctl status livekit${MAGENTA}                          │${NC}"
+    echo -e "${MAGENTA}  │  ${CYAN}coTURN:${NC}     systemctl status coturn${MAGENTA}                           │${NC}"
+    echo -e "${MAGENTA}  │  ${CYAN}EMQX:${NC}       systemctl status emqx${MAGENTA}                             │${NC}"
+    echo -e "${MAGENTA}  │  ${CYAN}SeaweedFS:${NC}  systemctl status seaweedfs-master${MAGENTA}                 │${NC}"
+    echo -e "${MAGENTA}  │  ${CYAN}MongoDB:${NC}    systemctl status mongod${MAGENTA}                           │${NC}"
+    echo -e "${MAGENTA}  │  ${CYAN}Nginx:${NC}      systemctl status nginx${MAGENTA}                            │${NC}"
+    echo -e "${MAGENTA}  ├─────────────────────────────────────────────────────────────────────┤${NC}"
+    echo -e "${MAGENTA}  │  ${CYAN}Logs:${NC}       tail -f /var/log/faithflow/backend.out.log${MAGENTA}        │${NC}"
+    echo -e "${MAGENTA}  │  ${CYAN}Restart all:${NC} sudo systemctl restart faithflow-backend livekit${MAGENTA} │${NC}"
+    echo -e "${MAGENTA}  │  ${CYAN}Update:${NC}     cd $INSTALL_DIR && sudo ./update.sh${MAGENTA}               │${NC}"
     echo -e "${MAGENTA}  └─────────────────────────────────────────────────────────────────────┘${NC}"
     echo ""
+
+    # Show generated credentials
+    if [ -n "${LIVEKIT_API_KEY:-}" ]; then
+        echo -e "${BLUE}  ┌─────────────────────────────────────────────────────────────────────┐${NC}"
+        echo -e "${BLUE}  │  ${WHITE}Generated Credentials (SAVE THESE!)${BLUE}                             │${NC}"
+        echo -e "${BLUE}  ├─────────────────────────────────────────────────────────────────────┤${NC}"
+        echo -e "${BLUE}  │  ${CYAN}LiveKit API Key:${NC}    ${LIVEKIT_API_KEY}${BLUE}                         │${NC}"
+        echo -e "${BLUE}  │  ${CYAN}LiveKit Secret:${NC}     ${LIVEKIT_API_SECRET}${BLUE}                      │${NC}"
+        echo -e "${BLUE}  │  ${CYAN}TURN Secret:${NC}        ${TURN_SECRET:-auto}${BLUE}                       │${NC}"
+        echo -e "${BLUE}  │  ${CYAN}Server IP:${NC}          ${SERVER_IP:-auto}${BLUE}                         │${NC}"
+        echo -e "${BLUE}  └─────────────────────────────────────────────────────────────────────┘${NC}"
+        echo ""
+    fi
 
     echo -e "${GREEN}  🙏 Thank you for choosing FaithFlow!${NC}"
     echo -e "${GREEN}  ❤️  May this system bless your church ministry.${NC}"
@@ -1352,7 +1795,8 @@ main() {
 
     # Initialize log
     echo "========================================" >> "$LOG_FILE"
-    echo "FaithFlow Installation Log" >> "$LOG_FILE"
+    echo "FaithFlow Full Stack Installation Log" >> "$LOG_FILE"
+    echo "Version: $VERSION" >> "$LOG_FILE"
     echo "Started: $(date)" >> "$LOG_FILE"
     echo "========================================" >> "$LOG_FILE"
 
@@ -1365,25 +1809,36 @@ main() {
     # Pre-flight checks
     preflight_checks
 
-    # Installation steps
-    step_system_update
-    step_install_python
-    step_install_nodejs
-    step_install_mongodb
-    step_install_nginx
-    step_copy_files
-    step_setup_backend
-    step_setup_frontend
-    step_configure_services
-    step_init_database
-    step_configure_nginx
-    step_configure_firewall
+    # Core infrastructure (Steps 1-5)
+    step_system_update           # Step 1
+    step_install_python          # Step 2
+    step_install_nodejs          # Step 3
+    step_install_mongodb         # Step 4
+    step_install_nginx           # Step 5
+
+    # Voice/Video & Messaging services (Steps 6-9)
+    step_install_livekit         # Step 6 - Voice/Video WebRTC
+    step_install_coturn          # Step 7 - TURN/STUN NAT traversal
+    step_install_emqx            # Step 8 - MQTT messaging
+    step_install_seaweedfs       # Step 9 - File storage
+
+    # Application setup (Steps 10-14)
+    step_copy_files              # Step 10
+    step_setup_backend           # Step 11
+    step_setup_frontend          # Step 12
+    step_configure_services      # Step 13
+    step_init_database           # Step 14
+
+    # Final configuration (Steps 15-16)
+    step_configure_nginx         # Step 15
+    step_configure_firewall      # Step 16
 
     # Show completion
     show_completion
 
     # Log completion
     log_info "Installation completed successfully"
+    log_info "Components installed: Backend, Frontend, MongoDB, LiveKit, coTURN, EMQX, SeaweedFS"
 }
 
 # Run main

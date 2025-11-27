@@ -1,408 +1,705 @@
 # FaithFlow - Church Management System
 
-## 🎯 Overview
-
-FaithFlow is an enterprise-grade, multi-tenant church management system designed for modern churches. It combines comprehensive admin tools with a public-facing kiosk system for visitor and member self-service.
-
-## ✨ Key Features
-
-### **Member Management**
-- Complete CRUD with advanced filtering
-- Import/Export (Excel, CSV)
-- Photo management with base64 storage
-- QR code generation for check-in
-- Automated status updates with rule engine
-- Soft delete with trash bin (14-day retention)
-- Demographics tracking
-- Document management
-
-### **Events & Worship**
-- Event creation and management
-- RSVP system with seat assignments
-- QR code ticketing
-- Event check-in (web + kiosk)
-- Seat layout designer
-- Photo uploads for events
-- Calendar view (list + grid)
-- Attendance tracking
-
-### **Spiritual Care**
-- Prayer request management
-- Counseling appointment system
-  - Counselor profiles
-  - Recurring availability rules
-  - Time slot generation
-  - Appointment workflows (pending → approved → completed)
-  - Calendar view
-
-### **Groups & Community**
-- Small group management
-- Group categories (Cell, Ministry, Activity, Support)
-- Member management
-- Join/Leave request workflows
-- Group directory
-
-### **Content & Communication**
-- Devotional management
-- Article publishing system
-  - Categories and tags
-  - Comment moderation
-  - Scheduled publishing
-  - Preview links
-- WhatsApp notifications
-
-### **Finance**
-- Full accounting system (Chart of Accounts, Journals, Budgets)
-- Fixed assets management
-- Bank reconciliation
-- Fiscal periods
-- Responsibility centers
-- Reports and year-end closing
-- Audit logs
-
-### **Public Kiosk System** 🆕
-- Full-screen public interface
-- Event registration
-- Prayer request submission
-- Counseling appointment booking
-- Group join requests
-- Member profile updates
-- Staff event check-in (PIN-protected)
-- Multi-tenant church selector
-- Phone + OTP authentication via WhatsApp
-- Auto Pre-Visitor creation
-- Inactivity timeout
-- Multi-language (EN + ID)
-- Framer Motion animations
-
-### **Admin Features**
-- Multi-tenant with church_id scoping
-- Role-based access (Super Admin, Admin, Staff)
-- JWT authentication
-- Webhook system
-- API key management
-- Import/Export tools
-- Comprehensive settings
-- Audit trails
-
-## 🏗️ Tech Stack
-
-### **Backend**
-- **Framework:** FastAPI (Python)
-- **Database:** MongoDB (Motor async driver)
-- **Authentication:** JWT
-- **Scheduler:** APScheduler
-- **Process Manager:** Supervisor
-
-### **Frontend**
-- **Framework:** React + Vite
-- **UI Library:** shadcn/ui + Tailwind CSS
-- **State Management:** TanStack React Query
-- **Routing:** React Router v6
-- **Animations:** Framer Motion
-- **i18n:** react-i18next (English + Indonesian)
-- **Forms:** React Hook Form
-- **Icons:** Lucide React
-
-### **Infrastructure**
-- **Deployment:** Kubernetes (Emergent platform)
-- **Build:** Kaniko
-- **Process Management:** Supervisord
-- **Database:** MongoDB Atlas (production) / Local MongoDB (development)
-
-## 🌍 Multi-Language Support
-
-- **English (en)**
-- **Bahasa Indonesia (id)**
-- All UI elements translated
-- Admin and kiosk interfaces
-- 2000+ translation keys
-
-## 🔐 Security Features
-
-- JWT-based authentication
-- Role-based access control
-- API key system for external integrations
-- 6-digit PIN for staff kiosk access
-- OTP verification via WhatsApp (4-digit)
-- Multi-tenant data isolation
-- Audit logging for all actions
-- Webhook signature verification
-
-## 📊 Architecture
-
-### **Multi-Tenant Design**
-- All data scoped by `church_id`
-- Complete data isolation
-- Church selector for public kiosk
-- Separate settings per church
-
-### **API-First**
-- RESTful API design
-- OpenAPI/Swagger documentation
-- Public and protected endpoints
-- Ready for mobile app integration
-
-### **Modular Structure**
-```
-/app/
-├── backend/
-│   ├── models/          # Pydantic models
-│   ├── routes/          # API endpoints
-│   ├── services/        # Business logic
-│   ├── utils/           # Utilities
-│   └── server.py        # FastAPI app
-└── frontend/
-    ├── src/
-    │   ├── components/  # React components
-    │   ├── pages/       # Page components
-    │   ├── hooks/       # Custom hooks
-    │   ├── services/    # API services
-    │   └── i18n/        # Translations
-    └── public/
-```
-
-## 📱 Mobile App Ready
-
-- Public API endpoints for mobile
-- Member authentication ready
-- RESTful API design
-- JSON responses
-- Ready for React Native integration
-
-## 🚀 Getting Started
-
-### Deployment Options
-
-FaithFlow supports two deployment methods:
-
-| Method | Best For | SSL | Scaling |
-|--------|----------|-----|---------|
-| **Docker + Traefik** | Production, VPS | Auto (Let's Encrypt) | Easy horizontal |
-| **Bare Metal** | Custom setups | Manual (Certbot) | Manual |
+> Enterprise-grade, multi-tenant church management system with voice/video calling, real-time messaging, and mobile app support.
 
 ---
 
-## 🐳 Docker Deployment (Recommended)
+## Table of Contents
 
-### Prerequisites
+1. [What is FaithFlow?](#what-is-faithflow)
+2. [Features](#features)
+3. [System Requirements](#system-requirements)
+4. [Deployment Options](#deployment-options)
+5. [Docker Installation (Recommended)](#docker-installation-recommended)
+6. [Manual Installation](#manual-installation-bare-metal)
+7. [Updating FaithFlow](#updating-faithflow)
+8. [Troubleshooting](#troubleshooting)
+9. [File Storage (SeaweedFS)](#file-storage-seaweedfs)
+10. [Mobile App Setup](#mobile-app-setup)
+11. [FAQ](#faq)
+12. [Architecture Overview](#architecture-overview)
 
-- **Server**: Ubuntu 22.04+ or Debian 12+ with 2GB+ RAM
-- **Docker**: Docker Engine 24+ and Docker Compose v2+
-- **Domain**: A domain name you control
-- **DNS Access**: Ability to create A records
+---
 
-### Step 1: Domain & DNS Setup
+## What is FaithFlow?
 
-You need **3 DNS records** pointing to your server's IP address:
+FaithFlow is a complete church management system that helps you:
 
-| Type | Name | Value | Purpose |
-|------|------|-------|---------|
-| A | `@` or `yourdomain.com` | `YOUR_SERVER_IP` | Frontend (React app) |
-| A | `api` | `YOUR_SERVER_IP` | Backend API |
-| A | `traefik` | `YOUR_SERVER_IP` | Admin dashboard (optional) |
+- **Manage Members**: Track members, visitors, attendance, and demographics
+- **Organize Events**: Create events, manage RSVPs, and handle check-ins
+- **Voice/Video Calls**: Make calls directly in the app (like WhatsApp)
+- **Groups & Communities**: Manage small groups, ministries, and cell groups
+- **Spiritual Care**: Handle prayer requests and counseling appointments
+- **Giving & Finance**: Track donations and manage church finances
+- **Content Publishing**: Post devotionals, articles, and announcements
+- **Multi-Church Support**: One installation can serve multiple churches
 
-#### Example DNS Configuration
+---
 
-If your domain is `faithflow.church` and server IP is `203.0.113.50`:
+## Features
 
+### For Church Staff
+
+| Feature | Description |
+|---------|-------------|
+| Member Management | Complete database with photos, contact info, family relationships |
+| Event Management | Create events, manage RSVPs, seat assignments, QR tickets |
+| Group Management | Small groups, ministries, join/leave workflows |
+| Prayer Requests | Receive and track prayer requests |
+| Counseling | Book appointments with counselors |
+| Content | Publish devotionals, articles, announcements |
+| Finance | Accounting, donations, budgets, reports |
+| Reports | Attendance, growth, giving reports |
+
+### For Members (Mobile App)
+
+| Feature | Description |
+|---------|-------------|
+| Voice/Video Calls | Call other members directly |
+| Chat | Send messages, photos, files |
+| Events | View and register for events |
+| Groups | Join groups, see members |
+| Bible & Devotions | Daily readings, Bible study |
+| Giving | Make donations securely |
+| Profile | Update personal information |
+
+### Technical Features
+
+| Feature | Description |
+|---------|-------------|
+| Multi-tenant | One server, multiple churches |
+| Role-based Access | Admin, Staff, Member roles |
+| API-first | RESTful API for mobile apps |
+| Real-time | Live updates via MQTT |
+| Secure | JWT auth, encrypted data |
+| Multi-language | English + Indonesian |
+
+---
+
+## System Requirements
+
+### Minimum Server Requirements
+
+| Component | Minimum | Recommended |
+|-----------|---------|-------------|
+| **CPU** | 2 cores | 4 cores |
+| **RAM** | 2 GB | 4 GB |
+| **Storage** | 20 GB | 50 GB SSD |
+| **OS** | Ubuntu 22.04 or Debian 12 | Ubuntu 22.04 LTS |
+| **Network** | Public IP, ports 80/443 | Static IP |
+
+### Required Software
+
+**For Docker Installation:**
+- Docker Engine 24+
+- Docker Compose v2+
+
+**For Manual Installation:**
+- Python 3.11+
+- Node.js 20+
+- MongoDB 7.0
+- Nginx
+
+### Domain & DNS
+
+You need a domain name (e.g., `mychurch.com`) with these DNS records:
+
+| Record Type | Name | Points To | Purpose |
+|-------------|------|-----------|---------|
+| A | `@` or `mychurch.com` | Your server IP | Main website |
+| A | `api` | Your server IP | Backend API |
+| A | `livekit` | Your server IP | Voice/Video calls |
+| A | `files` | Your server IP | Media file storage |
+
+---
+
+## Deployment Options
+
+| Method | Best For | Difficulty | SSL |
+|--------|----------|------------|-----|
+| **Docker** (Recommended) | Most users | Easy | Automatic |
+| **Manual** | Custom setups | Advanced | Manual |
+
+**We recommend Docker** for most users because:
+- One-command installation
+- Automatic SSL certificates
+- Easy updates
+- All services included
+
+---
+
+## Docker Installation (Recommended)
+
+This guide assumes you're starting with a fresh server. Follow every step exactly.
+
+### Step 1: Get a Server
+
+**Option A: Cloud VPS (Recommended)**
+
+Popular providers:
+- [DigitalOcean](https://www.digitalocean.com/) - $12/month for 2GB RAM
+- [Vultr](https://www.vultr.com/) - $10/month for 2GB RAM
+- [Linode](https://www.linode.com/) - $10/month for 2GB RAM
+- [Hetzner](https://www.hetzner.com/) - €4/month for 2GB RAM
+
+When creating your server:
+- **Choose**: Ubuntu 22.04 LTS
+- **Size**: At least 2GB RAM, 2 CPU cores
+- **Region**: Choose one close to your users
+
+**Option B: Your Own Server**
+
+Make sure it:
+- Has a public IP address
+- Can receive traffic on ports 80 and 443
+- Runs Ubuntu 22.04 or Debian 12
+
+### Step 2: Connect to Your Server
+
+**On Mac/Linux:**
+Open Terminal and run:
+```bash
+ssh root@YOUR_SERVER_IP
 ```
-faithflow.church.        A    203.0.113.50
-api.faithflow.church.    A    203.0.113.50
-traefik.faithflow.church. A   203.0.113.50
+
+**On Windows:**
+1. Download [PuTTY](https://www.putty.org/)
+2. Enter your server IP
+3. Click "Open"
+4. Login as `root`
+
+**What you should see:**
+```
+root@your-server:~#
 ```
 
-#### How to Add DNS Records
+### Step 3: Update Your Server
 
-**Cloudflare:**
-1. Go to DNS settings for your domain
+Copy and paste these commands one at a time:
+
+```bash
+# Update package lists
+apt update
+
+# Upgrade installed packages
+apt upgrade -y
+
+# Install required tools
+apt install -y curl git
+```
+
+**What each command does:**
+- `apt update`: Refreshes the list of available software
+- `apt upgrade -y`: Updates all installed software to latest versions
+- `apt install -y curl git`: Installs tools needed for installation
+
+### Step 4: Set Up Your Domain
+
+Before continuing, you need DNS records pointing to your server.
+
+**Find Your Server IP:**
+```bash
+curl ifconfig.me
+```
+This shows your server's public IP address. Write it down.
+
+**Add DNS Records:**
+
+Go to your domain registrar (where you bought your domain) and add these records:
+
+| Type | Name | Value | TTL |
+|------|------|-------|-----|
+| A | @ | YOUR_SERVER_IP | 3600 |
+| A | api | YOUR_SERVER_IP | 3600 |
+| A | livekit | YOUR_SERVER_IP | 3600 |
+| A | files | YOUR_SERVER_IP | 3600 |
+| A | traefik | YOUR_SERVER_IP | 3600 |
+
+**Examples by Provider:**
+
+<details>
+<summary>Cloudflare</summary>
+
+1. Go to your domain's DNS settings
 2. Click "Add record"
-3. Type: A, Name: `@`, IPv4: `YOUR_SERVER_IP`, Proxy: OFF (gray cloud)
-4. Repeat for `api` and `traefik` subdomains
+3. For each record:
+   - Type: A
+   - Name: @ (or api, or livekit)
+   - IPv4 address: Your server IP
+   - Proxy status: DNS only (gray cloud)
+   - TTL: Auto
+4. Click "Save"
+</details>
 
-**Namecheap:**
+<details>
+<summary>Namecheap</summary>
+
 1. Go to Domain List → Manage → Advanced DNS
-2. Add A Record: Host: `@`, Value: `YOUR_SERVER_IP`, TTL: Automatic
-3. Add A Record: Host: `api`, Value: `YOUR_SERVER_IP`, TTL: Automatic
-4. Add A Record: Host: `traefik`, Value: `YOUR_SERVER_IP`, TTL: Automatic
+2. Click "Add New Record"
+3. For each record:
+   - Type: A Record
+   - Host: @ (or api, or livekit)
+   - Value: Your server IP
+   - TTL: Automatic
+4. Click the checkmark to save
+</details>
 
-**GoDaddy:**
+<details>
+<summary>GoDaddy</summary>
+
 1. Go to My Products → DNS
 2. Click "Add" under Records
-3. Type: A, Name: `@`, Value: `YOUR_SERVER_IP`, TTL: 1 Hour
-4. Repeat for `api` and `traefik`
+3. For each record:
+   - Type: A
+   - Name: @ (or api, or livekit)
+   - Value: Your server IP
+   - TTL: 1 Hour
+4. Click "Add Record"
+</details>
 
-> **Important**: Wait 5-15 minutes for DNS propagation before proceeding.
-
-#### Verify DNS Setup
-
+**Wait for DNS to propagate:**
+DNS changes take 5-30 minutes. Verify with:
 ```bash
-# Test DNS resolution (replace with your domain)
-dig +short faithflow.church
-dig +short api.faithflow.church
-
-# Both should return your server IP
+dig +short yourdomain.com
+dig +short api.yourdomain.com
 ```
+Both should show your server IP.
 
-### Step 2: Server Preparation
-
-SSH into your server and install Docker:
-
-```bash
-# Update system
-sudo apt update && sudo apt upgrade -y
-
-# Install Docker
-curl -fsSL https://get.docker.com | sh
-
-# Add your user to docker group
-sudo usermod -aG docker $USER
-
-# Install Docker Compose plugin
-sudo apt install docker-compose-plugin -y
-
-# Verify installation
-docker --version
-docker compose version
-
-# Log out and back in for group changes
-exit
-```
-
-### Step 3: Clone Repository
+### Step 5: Download FaithFlow
 
 ```bash
-# Clone FaithFlow
+# Go to home directory
+cd ~
+
+# Clone the repository
 git clone https://github.com/your-org/faithflow.git
+
+# Enter the directory
 cd faithflow
+```
 
-# Or download and extract
+**If git clone fails:**
+```bash
+# Alternative: Download as zip
 wget https://github.com/your-org/faithflow/archive/main.zip
-unzip main.zip && cd faithflow-main
+unzip main.zip
+mv faithflow-main faithflow
+cd faithflow
 ```
 
-### Step 4: Configure Environment
+### Step 6: Run the Installer
 
 ```bash
-# Copy environment template
-cp .env.docker.example .env
-
-# Edit configuration
-nano .env
-```
-
-**Required settings in `.env`:**
-
-```env
-# Your domain (without https://)
-DOMAIN=faithflow.church
-
-# Email for Let's Encrypt SSL certificates
-ACME_EMAIL=admin@faithflow.church
-
-# Generate secure JWT secret (run this command to generate):
-# openssl rand -base64 64 | tr -d '\n'
-JWT_SECRET=your-64-character-random-string-here
-
-# Optional: AI features
-ANTHROPIC_API_KEY=sk-ant-...
-STABILITY_API_KEY=sk-...
-```
-
-### Step 5: Deploy with Docker
-
-**Option A: Using the install script (recommended)**
-
-```bash
-# Make executable
+# Make the installer executable
 chmod +x docker-install.sh
 
-# Run installer
+# Run the installer
 sudo ./docker-install.sh
 ```
 
-**Option B: Manual deployment**
+**The installer will:**
+1. Check your server meets requirements
+2. Install Docker (if not installed)
+3. Ask for your domain name
+4. Ask for your email (for SSL certificates)
+5. Generate secure passwords
+6. Build and start all services
+7. Initialize the database
 
-```bash
-# Build and start all services
-docker compose -f docker-compose.prod.yml up -d
-
-# View logs
-docker compose -f docker-compose.prod.yml logs -f
+**You'll be asked:**
+```
+Enter your domain name (e.g., faithflow.church): mychurch.com
+Enter email for SSL certificates: admin@mychurch.com
 ```
 
-### Step 6: Verify Deployment
+**Installation takes 5-15 minutes** depending on your server speed.
 
-Wait 2-3 minutes for SSL certificates, then test:
+### Step 7: Verify Installation
+
+After installation completes, check that everything is running:
 
 ```bash
-# Check all services are running
 docker compose -f docker-compose.prod.yml ps
-
-# Test endpoints
-curl -I https://yourdomain.com
-curl -I https://api.yourdomain.com/health
 ```
 
-### Step 7: Initialize Database
-
-```bash
-# Run database initialization
-docker compose -f docker-compose.prod.yml exec backend python scripts/init_db.py
+**You should see:**
 ```
-
-**Default admin credentials:**
-- Email: `admin@gkbjtamankencana.org`
-- Password: `admin123`
-
-> ⚠️ **Change this password immediately after first login!**
+NAME                        STATUS          PORTS
+faithflow-backend           Up (healthy)    8000/tcp
+faithflow-coturn            Up (healthy)    3478/tcp, 5349/tcp
+faithflow-emqx              Up (healthy)    1883/tcp, 8083/tcp
+faithflow-frontend          Up (healthy)    80/tcp
+faithflow-livekit           Up (healthy)    7880/tcp, 7881/tcp
+faithflow-mongodb           Up (healthy)    27017/tcp
+faithflow-seaweedfs-master  Up (healthy)    9333/tcp
+faithflow-seaweedfs-volume  Up              8080/tcp
+faithflow-seaweedfs-filer   Up              8888/tcp
+faithflow-traefik           Up (healthy)    80/tcp, 443/tcp
+```
 
 ### Step 8: Access Your Application
 
+Wait 2-3 minutes for SSL certificates to be generated, then:
+
 | Service | URL |
 |---------|-----|
-| **Frontend** | `https://yourdomain.com` |
-| **Admin Panel** | `https://yourdomain.com/admin` |
-| **API Docs** | `https://api.yourdomain.com/docs` |
-| **Traefik Dashboard** | `https://traefik.yourdomain.com` |
+| **Web App** | https://yourdomain.com |
+| **Admin Panel** | https://yourdomain.com/admin |
+| **API Docs** | https://api.yourdomain.com/docs |
+| **Files/Media** | https://files.yourdomain.com |
+
+**Default Login Credentials:**
+```
+Email: admin@gkbjtamankencana.org
+Password: admin123
+```
+
+**IMPORTANT: Change this password immediately after first login!**
+
+### Step 9: First Login
+
+1. Go to https://yourdomain.com
+2. Click "Login" or go to /admin
+3. Enter the default credentials
+4. Go to Settings → Profile
+5. Change your password
+
+### Congratulations!
+
+FaithFlow is now installed. See [After Installation](#after-installation) for next steps.
 
 ---
 
-## 🔄 Updating FaithFlow (Docker)
+## Manual Installation (Bare Metal)
+
+For advanced users who want more control over their setup.
+
+### Prerequisites
+
+- Ubuntu 22.04 LTS or Debian 12
+- Root access
+- Basic command line knowledge
+
+### Step 1: Update System
 
 ```bash
-# Pull latest code
-git pull
+apt update && apt upgrade -y
+```
 
-# Run zero-downtime update
-sudo ./docker-update.sh
+### Step 2: Install Python 3.11
 
-# Or update specific service
-sudo ./docker-update.sh --backend
-sudo ./docker-update.sh --frontend
+```bash
+apt install -y python3.11 python3.11-venv python3.11-dev python3-pip
+```
+
+### Step 3: Install Node.js 20
+
+```bash
+curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+apt install -y nodejs
+npm install -g yarn
+```
+
+### Step 4: Install MongoDB 7.0
+
+```bash
+# Add MongoDB GPG key
+curl -fsSL https://www.mongodb.org/static/pgp/server-7.0.asc | \
+    gpg -o /usr/share/keyrings/mongodb-server-7.0.gpg --dearmor
+
+# Add repository
+echo "deb [ signed-by=/usr/share/keyrings/mongodb-server-7.0.gpg ] http://repo.mongodb.org/apt/debian bookworm/mongodb-org/7.0 main" | \
+    tee /etc/apt/sources.list.d/mongodb-org-7.0.list
+
+# Install
+apt update
+apt install -y mongodb-org
+
+# Start and enable
+systemctl start mongod
+systemctl enable mongod
+```
+
+### Step 5: Install Nginx
+
+```bash
+apt install -y nginx
+systemctl enable nginx
+```
+
+### Step 6: Download FaithFlow
+
+```bash
+cd /opt
+git clone https://github.com/your-org/faithflow.git
+cd faithflow
+```
+
+### Step 7: Setup Backend
+
+```bash
+cd /opt/faithflow/backend
+
+# Create virtual environment
+python3.11 -m venv venv
+source venv/bin/activate
+
+# Install dependencies
+pip install --upgrade pip
+pip install -r requirements.txt
+
+# Create environment file
+cp .env.example .env
+
+# Edit environment file
+nano .env
+```
+
+**Configure .env:**
+```
+MONGO_URL=mongodb://localhost:27017
+DB_NAME=faithflow
+JWT_SECRET=your-64-character-secret-here
+CORS_ORIGINS=https://yourdomain.com
+```
+
+Generate a secure JWT secret:
+```bash
+openssl rand -hex 32
+```
+
+### Step 8: Setup Frontend
+
+```bash
+cd /opt/faithflow/frontend
+
+# Install dependencies
+yarn install
+
+# Create environment file
+cp .env.example .env
+
+# Edit environment file
+nano .env
+```
+
+**Configure .env:**
+```
+REACT_APP_BACKEND_URL=https://yourdomain.com
+```
+
+**Build production:**
+```bash
+yarn build
+```
+
+### Step 9: Create Systemd Service
+
+```bash
+cat > /etc/systemd/system/faithflow-backend.service << 'EOF'
+[Unit]
+Description=FaithFlow Backend
+After=network.target mongod.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/faithflow/backend
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/opt/faithflow/backend/venv/bin/uvicorn server:app --host 0.0.0.0 --port 8001 --workers 4
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+systemctl daemon-reload
+systemctl enable faithflow-backend
+systemctl start faithflow-backend
+```
+
+### Step 10: Configure Nginx
+
+```bash
+cat > /etc/nginx/sites-available/faithflow << 'EOF'
+upstream backend {
+    server 127.0.0.1:8001;
+}
+
+server {
+    listen 80;
+    server_name yourdomain.com;
+
+    client_max_body_size 50M;
+
+    location /api {
+        proxy_pass http://backend;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+
+    location /docs {
+        proxy_pass http://backend;
+    }
+
+    location /public {
+        proxy_pass http://backend;
+    }
+
+    location / {
+        root /opt/faithflow/frontend/build;
+        try_files $uri /index.html;
+    }
+}
+EOF
+
+ln -sf /etc/nginx/sites-available/faithflow /etc/nginx/sites-enabled/
+rm -f /etc/nginx/sites-enabled/default
+nginx -t && systemctl reload nginx
+```
+
+### Step 11: Install SSL Certificate
+
+```bash
+apt install -y certbot python3-certbot-nginx
+certbot --nginx -d yourdomain.com -d api.yourdomain.com
+```
+
+### Step 12: Initialize Database
+
+```bash
+cd /opt/faithflow/backend
+source venv/bin/activate
+python scripts/init_db.py
+```
+
+### Step 13: Configure Firewall
+
+```bash
+apt install -y ufw
+ufw allow 22/tcp
+ufw allow 80/tcp
+ufw allow 443/tcp
+ufw --force enable
 ```
 
 ---
 
-## 🛠️ Docker Commands Reference
+## Updating FaithFlow
+
+### Docker Update
 
 ```bash
-# View all service status
-docker compose -f docker-compose.prod.yml ps
+cd ~/faithflow
 
-# View logs
+# Pull latest code
+git pull
+
+# Run update script
+sudo ./docker-update.sh
+```
+
+### Manual Update
+
+```bash
+cd /opt/faithflow
+
+# Pull latest code
+git pull
+
+# Update backend
+cd backend
+source venv/bin/activate
+pip install -r requirements.txt
+deactivate
+
+# Update frontend
+cd ../frontend
+yarn install
+yarn build
+
+# Restart services
+systemctl restart faithflow-backend
+systemctl reload nginx
+```
+
+---
+
+## Troubleshooting
+
+### Common Issues
+
+#### SSL Certificate Not Working
+
+**Symptoms:** Browser shows "Not Secure" or certificate errors
+
+**Solutions:**
+1. Wait 2-3 minutes - certificates take time to generate
+2. Check DNS is correct: `dig +short yourdomain.com`
+3. Check Traefik logs: `docker compose logs traefik`
+4. Verify ports 80/443 are open: `ufw status`
+
+#### Services Not Starting
+
+**Symptoms:** `docker compose ps` shows services as "Exited"
+
+**Solutions:**
+1. Check logs: `docker compose -f docker-compose.prod.yml logs backend`
+2. Check disk space: `df -h`
+3. Check memory: `free -h`
+4. Restart: `docker compose -f docker-compose.prod.yml restart`
+
+#### Cannot Login
+
+**Symptoms:** Login page shows error
+
+**Solutions:**
+1. Check backend is running: `docker compose ps`
+2. Check API: `curl https://api.yourdomain.com/health`
+3. Check logs: `docker compose logs backend`
+4. Try default credentials exactly as shown
+
+#### Voice/Video Calls Not Working
+
+**Symptoms:** Calls fail to connect
+
+**Solutions:**
+1. Check LiveKit is running: `docker compose ps livekit`
+2. Check firewall ports:
+   ```bash
+   ufw status
+   # Should show: 3478, 5349, 7881, 50000:50100/udp
+   ```
+3. Check TURN server: `docker compose logs coturn`
+4. Verify SERVER_IP is correct in .env file
+
+### Viewing Logs
+
+```bash
+# All services
 docker compose -f docker-compose.prod.yml logs -f
-docker compose -f docker-compose.prod.yml logs -f backend  # specific service
 
-# Restart a service
+# Specific service
+docker compose -f docker-compose.prod.yml logs -f backend
+docker compose -f docker-compose.prod.yml logs -f frontend
+docker compose -f docker-compose.prod.yml logs -f traefik
+docker compose -f docker-compose.prod.yml logs -f mongodb
+```
+
+### Restarting Services
+
+```bash
+# Restart all
+docker compose -f docker-compose.prod.yml restart
+
+# Restart specific service
 docker compose -f docker-compose.prod.yml restart backend
+```
 
-# Stop all services
-docker compose -f docker-compose.prod.yml down
+### Database Access
 
-# Rebuild and restart
-docker compose -f docker-compose.prod.yml up -d --build
-
+```bash
 # Access MongoDB shell
 docker compose -f docker-compose.prod.yml exec mongodb mongosh faithflow
 
@@ -413,40 +710,360 @@ docker cp faithflow-mongodb:/backup ./backup-$(date +%Y%m%d)
 
 ---
 
-## 🖥️ Bare Metal Installation
+## File Storage (SeaweedFS)
 
-For traditional installation without Docker:
+FaithFlow uses **SeaweedFS** for storing all media files - photos, videos, documents, and attachments. This section explains how it works and how to verify it's running correctly.
 
-```bash
-# Run bare metal installer
-sudo ./install.sh
+### What is SeaweedFS?
 
-# Update bare metal installation
-sudo ./update.sh
+SeaweedFS is a distributed file storage system. Think of it like "Dropbox for your server" - it stores files and makes them accessible via URLs. It's much better than storing files directly in your database or on the filesystem because:
+
+- **Scalable**: Can handle millions of files
+- **Fast**: Optimized for file serving
+- **Reliable**: Data is stored with redundancy
+- **S3-Compatible**: Works with existing tools
+
+### How SeaweedFS Works
+
+SeaweedFS has three main components (all run automatically in Docker):
+
+```
+┌─────────────────┐      ┌─────────────────┐      ┌─────────────────┐
+│     MASTER      │      │     VOLUME      │      │     FILER       │
+│   (Manager)     │◀────▶│   (Storage)     │◀────▶│    (Access)     │
+│   Port: 9333    │      │   Port: 8080    │      │   Port: 8888    │
+└─────────────────┘      └─────────────────┘      └─────────────────┘
+        │                         │                        │
+        │    Manages file IDs     │   Stores actual       │   Provides URLs &
+        │    and locations        │   file bytes          │   S3-compatible API
+        └─────────────────────────┴────────────────────────┘
 ```
 
-See [INSTALLATION.md](INSTALLATION.md) for detailed bare metal setup.
+**Simple explanation:**
+1. **Master** = The manager who knows where all files are stored
+2. **Volume** = The warehouse where actual file data is saved
+3. **Filer** = The front desk that gives you URLs to access files
+
+### Accessing Your Files
+
+After installation, your files are available at:
+
+| URL | Purpose |
+|-----|---------|
+| `https://files.yourdomain.com/` | Public file access |
+| `https://files.yourdomain.com/ui/` | Web-based file browser |
+
+### Verifying SeaweedFS is Working
+
+**Step 1: Check containers are running**
+
+```bash
+docker compose -f docker-compose.prod.yml ps | grep seaweed
+```
+
+You should see:
+```
+faithflow-seaweedfs-master  Up (healthy)    9333/tcp
+faithflow-seaweedfs-volume  Up              8080/tcp
+faithflow-seaweedfs-filer   Up              8888/tcp
+```
+
+**Step 2: Check the health endpoint**
+
+```bash
+curl http://localhost:9333/cluster/status
+```
+
+You should see JSON output showing the cluster is healthy.
+
+**Step 3: Test file upload (from inside the server)**
+
+```bash
+# Create a test file
+echo "Hello FaithFlow!" > /tmp/test.txt
+
+# Upload it via curl
+curl -F file=@/tmp/test.txt "http://localhost:8888/test/"
+
+# You should get a response with the file path
+```
+
+**Step 4: Access via browser**
+
+1. Open `https://files.yourdomain.com/ui/`
+2. You should see a file browser interface
+3. Navigate to see your uploaded files
+
+### Understanding File URLs
+
+When you upload a file through FaithFlow, it gets a URL like:
+
+```
+https://files.yourdomain.com/members/photos/abc123.jpg
+```
+
+The structure is:
+- `files.yourdomain.com` - Your file server
+- `members/photos/` - Category folder
+- `abc123.jpg` - The actual file
+
+### Storage Location
+
+Files are stored in Docker volumes:
+- `seaweedfs_master_data` - Metadata about files
+- `seaweedfs_volume_data` - Actual file contents
+- `seaweedfs_filer_data` - File system index
+
+To see storage usage:
+```bash
+docker volume ls | grep seaweed
+docker system df -v | grep seaweed
+```
+
+### Backing Up SeaweedFS Data
+
+**Option 1: Volume backup (recommended)**
+```bash
+# Stop services first
+docker compose -f docker-compose.prod.yml stop
+
+# Backup volumes
+docker run --rm -v faithflow_seaweedfs_volume_data:/data -v $(pwd):/backup \
+    alpine tar czf /backup/seaweedfs-backup-$(date +%Y%m%d).tar.gz /data
+
+# Restart services
+docker compose -f docker-compose.prod.yml start
+```
+
+**Option 2: Export via Filer**
+```bash
+# Export all files to a local directory
+docker compose exec seaweedfs-filer sh -c "weed filer.backup -dir /data/export"
+```
+
+### Restoring SeaweedFS Data
+
+```bash
+# Stop services
+docker compose -f docker-compose.prod.yml stop
+
+# Remove old volume
+docker volume rm faithflow_seaweedfs_volume_data
+
+# Restore from backup
+docker run --rm -v faithflow_seaweedfs_volume_data:/data -v $(pwd):/backup \
+    alpine tar xzf /backup/seaweedfs-backup-YYYYMMDD.tar.gz -C /
+
+# Start services
+docker compose -f docker-compose.prod.yml start
+```
+
+### Troubleshooting SeaweedFS
+
+#### Files Not Loading
+
+**Symptoms:** Images/files show as broken in the app
+
+**Solutions:**
+1. Check Filer is running: `docker compose ps seaweedfs-filer`
+2. Check DNS: `dig +short files.yourdomain.com`
+3. Check SSL: `curl -v https://files.yourdomain.com/`
+4. View logs: `docker compose logs seaweedfs-filer`
+
+#### Upload Fails
+
+**Symptoms:** File upload returns error
+
+**Solutions:**
+1. Check Volume server: `docker compose ps seaweedfs-volume`
+2. Check disk space: `df -h`
+3. Check file size limit (default 100MB)
+4. View logs: `docker compose logs seaweedfs-volume`
+
+#### Master Not Healthy
+
+**Symptoms:** Health check fails
+
+**Solutions:**
+1. Restart master: `docker compose restart seaweedfs-master`
+2. Check port 9333 is not in use: `netstat -tlnp | grep 9333`
+3. View logs: `docker compose logs seaweedfs-master`
+
+### File Size Limits
+
+Default limits in FaithFlow:
+- Images: 10 MB
+- Videos: 100 MB
+- Documents: 25 MB
+
+To change limits, edit your `.env` file:
+```
+SEAWEEDFS_MAX_IMAGE_SIZE=10485760
+SEAWEEDFS_MAX_VIDEO_SIZE=104857600
+SEAWEEDFS_MAX_DOCUMENT_SIZE=26214400
+```
 
 ---
 
-## 📖 Documentation
+## Mobile App Setup
 
-- [Docker Deployment Guide](docs/DOCKER_DEPLOYMENT.md) - Full Docker/Traefik guide
-- [Installation Guide](INSTALLATION.md) - Fresh Debian 12 bare-metal installation
-- [Deployment Guide](DEPLOYMENT.md) - Production deployment
-- [Configuration Guide](CONFIGURATION.md) - System configuration
-- [Kiosk Setup](KIOSK_SETUP.md) - Public kiosk deployment
-- [API Documentation](API.md) - API endpoints reference
-- [Troubleshooting](TROUBLESHOOTING.md) - Common issues
+### For Developers
 
-## 👥 Team
+The mobile app is built with React Native (Expo).
 
-Built with ❤️ for churches worldwide
+```bash
+cd mobile
 
-## 📄 License
+# Install dependencies
+npm install
+
+# Start development server
+npx expo start
+```
+
+### Building for Production
+
+```bash
+# iOS (requires Mac)
+eas build --platform ios
+
+# Android
+eas build --platform android
+```
+
+### Configuring the Mobile App
+
+Edit `mobile/app.json`:
+```json
+{
+  "extra": {
+    "apiUrl": "https://api.yourdomain.com"
+  }
+}
+```
+
+---
+
+## FAQ
+
+### General Questions
+
+**Q: How much does FaithFlow cost?**
+A: FaithFlow is open-source and free to use. You only pay for server hosting.
+
+**Q: Can I use FaithFlow for multiple churches?**
+A: Yes! FaithFlow is multi-tenant. One installation can serve multiple churches with complete data isolation.
+
+**Q: Do I need technical knowledge to install?**
+A: The Docker installation is designed to be simple. If you can follow instructions, you can install FaithFlow.
+
+### Technical Questions
+
+**Q: Can I use my own MongoDB?**
+A: Yes. Edit the MONGO_URL in your .env file.
+
+**Q: How do I backup my data?**
+A: For Docker:
+```bash
+docker compose exec mongodb mongodump --out /backup
+docker cp faithflow-mongodb:/backup ./my-backup
+```
+
+**Q: How do I restore from backup?**
+A:
+```bash
+docker cp ./my-backup faithflow-mongodb:/backup
+docker compose exec mongodb mongorestore /backup
+```
+
+**Q: What ports need to be open?**
+A:
+- 80 (HTTP)
+- 443 (HTTPS)
+- 3478/udp, 3478/tcp (STUN/TURN)
+- 5349/tcp, 5349/udp (STUN/TURN TLS)
+- 7881/tcp (LiveKit)
+- 50000-50100/udp (WebRTC)
+
+### Support
+
+**Q: Where can I get help?**
+A:
+- GitHub Issues: Report bugs and request features
+- Documentation: This README and /docs folder
+- Community: Join our Discord server
+
+---
+
+## Architecture Overview
+
+```
+┌───────────────────────────────────────────────────────────────────────────────┐
+│                                  INTERNET                                      │
+└───────────────────────────────────────┬───────────────────────────────────────┘
+                                        │
+                                        ▼
+┌───────────────────────────────────────────────────────────────────────────────┐
+│                          TRAEFIK (Reverse Proxy)                               │
+│                    Handles SSL, routing, load balancing                        │
+│                              Ports: 80, 443                                    │
+│   yourdomain.com │ api.* │ livekit.* │ files.*                                │
+└────┬─────────────────┬───────────────┬───────────────┬───────────────┬────────┘
+     │                 │               │               │               │
+     ▼                 ▼               ▼               ▼               ▼
+┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐
+│ FRONTEND │    │ BACKEND  │    │ LIVEKIT  │    │ SEAWEED  │    │   EMQX   │
+│  (React) │    │(FastAPI) │    │ (WebRTC) │    │ (Files)  │    │  (MQTT)  │
+│ Port: 80 │    │Port: 8000│    │Port: 7880│    │Port: 8888│    │Port: 1883│
+└──────────┘    └────┬─────┘    └────┬─────┘    └────┬─────┘    └──────────┘
+                     │               │               │
+                     ▼               ▼               ▼
+               ┌──────────┐    ┌──────────┐    ┌──────────────────────────┐
+               │ MONGODB  │    │  COTURN  │    │      SEAWEEDFS           │
+               │ Database │    │(TURN/NAT)│    │ Master (9333)            │
+               │Port:27017│    │Port: 3478│    │ Volume (8080)            │
+               └──────────┘    └──────────┘    │ Filer  (8888)            │
+                                               └──────────────────────────┘
+```
+
+**Service Roles:**
+
+| Service | Purpose | Access URL |
+|---------|---------|------------|
+| **Traefik** | SSL termination, routing | Internal |
+| **Frontend** | Web application UI | https://yourdomain.com |
+| **Backend** | REST API, business logic | https://api.yourdomain.com |
+| **LiveKit** | Voice/video calls | https://livekit.yourdomain.com |
+| **SeaweedFS** | File storage (photos, videos) | https://files.yourdomain.com |
+| **EMQX** | Real-time messaging (MQTT) | wss://yourdomain.com/mqtt |
+| **MongoDB** | Database | Internal only |
+| **coTURN** | NAT traversal for calls | Internal (UDP 3478, 5349) |
+
+---
+
+## License
 
 Proprietary - All rights reserved
 
-## 🆘 Support
+---
 
-For support, please contact your administrator.
+## Credits
+
+Built with these amazing open-source projects:
+
+| Technology | Purpose | Website |
+|------------|---------|---------|
+| **FastAPI** | Backend API framework | [fastapi.tiangolo.com](https://fastapi.tiangolo.com/) |
+| **React** | Frontend web framework | [react.dev](https://react.dev/) |
+| **React Native** | Mobile app framework | [reactnative.dev](https://reactnative.dev/) |
+| **MongoDB** | Database | [mongodb.com](https://www.mongodb.com/) |
+| **LiveKit** | Voice/Video WebRTC SFU | [livekit.io](https://livekit.io/) |
+| **EMQX** | MQTT message broker | [emqx.io](https://www.emqx.io/) |
+| **coTURN** | TURN/STUN server for NAT | [github.com/coturn](https://github.com/coturn/coturn) |
+| **SeaweedFS** | Distributed file storage | [seaweedfs.com](https://seaweedfs.com/) |
+| **Traefik** | Reverse proxy & SSL | [traefik.io](https://traefik.io/) |
+| **Docker** | Containerization | [docker.com](https://www.docker.com/) |
+
+---
+
+*FaithFlow - Empowering churches with technology*

@@ -1,47 +1,81 @@
 # =============================================================================
-# FaithFlow Docker Compose - Production Configuration with Traefik
+# FaithFlow Docker Compose - Complete Production Configuration
 # =============================================================================
 #
+# This file contains ALL services needed for FaithFlow including:
+# - Core Services: MongoDB, Backend (FastAPI), Frontend (React/Nginx)
+# - Reverse Proxy: Traefik with automatic SSL (Let's Encrypt)
+# - Voice/Video Calling: LiveKit (WebRTC SFU), coTURN (NAT traversal)
+# - Real-time Messaging: EMQX (MQTT broker)
+# - File Storage: SeaweedFS (distributed file system for media)
+#
 # Architecture:
-#   - api.yourdomain.com  -> Backend (FastAPI)
-#   - yourdomain.com      -> Frontend (React/Nginx)
+#   - yourdomain.com       -> Frontend (React/Nginx)
+#   - api.yourdomain.com   -> Backend (FastAPI)
 #   - traefik.yourdomain.com -> Traefik Dashboard (optional)
+#   - livekit.yourdomain.com -> LiveKit Server (WebRTC)
+#   - files.yourdomain.com -> SeaweedFS Filer (file access)
 #
-# Usage:
-#   1. Copy .env.example to .env and configure your domain
-#   2. docker compose -f docker-compose.prod.yml up -d
-#   3. SSL certificates will be auto-generated via Let's Encrypt
+# =============================================================================
+# QUICK START (5 Steps):
+# =============================================================================
 #
-# Required Environment Variables:
-#   - DOMAIN (e.g., faithflow.church)
-#   - ACME_EMAIL (your email for Let's Encrypt)
-#   - JWT_SECRET (secure random string)
+# Step 1: Copy and configure environment file
+#   cp .env.docker.example .env
+#   nano .env   # Edit with your domain and email
+#
+# Step 2: Create required directories
+#   mkdir -p docker/livekit docker/emqx
+#
+# Step 3: Generate secrets (copy the output)
+#   openssl rand -hex 32
+#
+# Step 4: Start all services
+#   docker compose -f docker-compose.prod.yml up -d
+#
+# Step 5: Check everything is running
+#   docker compose -f docker-compose.prod.yml ps
+#
+# =============================================================================
+# REQUIRED ENVIRONMENT VARIABLES (set in .env file):
+# =============================================================================
+#
+#   DOMAIN=yourdomain.com          # Your domain (without https://)
+#   ACME_EMAIL=admin@domain.com    # Email for Let's Encrypt SSL
+#   JWT_SECRET=your-64-char-secret # Generate with: openssl rand -hex 32
+#   SERVER_IP=1.2.3.4              # Your server's public IP address
 #
 # =============================================================================
 
 services:
   # ===========================================================================
-  # Traefik Reverse Proxy
+  # TRAEFIK - Reverse Proxy with Automatic SSL
+  # ===========================================================================
+  # Traefik handles:
+  # - Routing requests to correct services based on domain
+  # - Automatic HTTPS with Let's Encrypt certificates
+  # - HTTP to HTTPS redirection
+  # - Security headers
   # ===========================================================================
   traefik:
     image: traefik:v3.0
     container_name: faithflow-traefik
     restart: unless-stopped
     command:
-      # API & Dashboard
+      # Enable Traefik dashboard (for monitoring)
       - "--api.dashboard=true"
       - "--api.insecure=false"
-      # Providers
+      # Docker provider (auto-discovers containers)
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
       - "--providers.docker.network=faithflow-network"
-      # Entrypoints
+      # Entry points (where traffic comes in)
       - "--entrypoints.web.address=:80"
       - "--entrypoints.websecure.address=:443"
-      # HTTP to HTTPS redirect
+      # Automatic HTTPS redirect
       - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
       - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
-      # Let's Encrypt
+      # Let's Encrypt SSL certificates
       - "--certificatesresolvers.letsencrypt.acme.tlschallenge=true"
       - "--certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL}"
       - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
@@ -49,20 +83,20 @@ services:
       - "--log.level=INFO"
       - "--accesslog=true"
     ports:
-      - "80:80"
-      - "443:443"
+      - "80:80"      # HTTP (redirects to HTTPS)
+      - "443:443"    # HTTPS
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - traefik_letsencrypt:/letsencrypt
       - traefik_logs:/var/log/traefik
     labels:
-      # Dashboard
+      # Enable Traefik dashboard at traefik.yourdomain.com
       - "traefik.enable=true"
       - "traefik.http.routers.traefik.rule=Host(`traefik.${DOMAIN}`)"
       - "traefik.http.routers.traefik.entrypoints=websecure"
       - "traefik.http.routers.traefik.tls.certresolver=letsencrypt"
       - "traefik.http.routers.traefik.service=api@internal"
-      # Basic auth for dashboard (generate with: htpasswd -nb admin password)
+      # Dashboard password protection (default: admin/admin - CHANGE THIS!)
       - "traefik.http.routers.traefik.middlewares=traefik-auth"
       - "traefik.http.middlewares.traefik-auth.basicauth.users=${TRAEFIK_DASHBOARD_AUTH:-admin:$$apr1$$ruca84Hq$$mbjdMZBAG.KWn7vfN/SNK/}"
     healthcheck:
@@ -74,7 +108,12 @@ services:
       - faithflow-network
 
   # ===========================================================================
-  # MongoDB Database
+  # MONGODB - Database
+  # ===========================================================================
+  # MongoDB stores all FaithFlow data:
+  # - Members, events, groups, donations
+  # - Church settings, users, content
+  # - All data is isolated per church (multi-tenant)
   # ===========================================================================
   mongodb:
     image: mongo:7.0
@@ -93,11 +132,17 @@ services:
       start_period: 20s
     networks:
       - faithflow-network
-    # MongoDB should NOT be exposed externally in production
-    # Access via docker exec or internal network only
+    # MongoDB is NOT exposed externally for security
+    # Access via: docker compose exec mongodb mongosh faithflow
 
   # ===========================================================================
-  # Backend API (FastAPI) - api.yourdomain.com
+  # BACKEND - FastAPI Application
+  # ===========================================================================
+  # The brain of FaithFlow:
+  # - REST API for all operations
+  # - JWT authentication
+  # - Business logic and data validation
+  # - Integrations (WhatsApp, payments, AI)
   # ===========================================================================
   backend:
     build:
@@ -109,13 +154,28 @@ services:
       mongodb:
         condition: service_healthy
     environment:
+      # Database
       - MONGO_URL=mongodb://mongodb:27017
       - DB_NAME=faithflow
+      # Authentication
       - JWT_SECRET=${JWT_SECRET}
       - JWT_ALGORITHM=HS256
+      # CORS (allowed origins)
       - CORS_ORIGINS=https://${DOMAIN},https://app.${DOMAIN}
+      # Python settings
       - PYTHONUNBUFFERED=1
-      # Optional services
+      # Voice/Video Calling (LiveKit)
+      - LIVEKIT_URL=wss://livekit.${DOMAIN}
+      - LIVEKIT_API_KEY=${LIVEKIT_API_KEY:-devkey}
+      - LIVEKIT_API_SECRET=${LIVEKIT_API_SECRET:-faithflow-development-secret-key-2024}
+      # Real-time Messaging (MQTT/EMQX)
+      - MQTT_BROKER_URL=mqtt://emqx:1883
+      - MQTT_WS_URL=ws://emqx:8083/mqtt
+      # File Storage (SeaweedFS)
+      - SEAWEEDFS_MASTER_URL=http://seaweedfs-master:9333
+      - SEAWEEDFS_VOLUME_URL=http://seaweedfs-volume:8080
+      - SEAWEEDFS_FILER_URL=http://seaweedfs-filer:8888
+      # Optional services (configure in admin dashboard after installation)
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
       - STABILITY_API_KEY=${STABILITY_API_KEY:-}
       - WHATSAPP_API_URL=${WHATSAPP_API_URL:-}
@@ -126,18 +186,18 @@ services:
       - backend_logs:/app/logs
     labels:
       - "traefik.enable=true"
-      # API subdomain routing
+      # API routing: api.yourdomain.com -> backend:8000
       - "traefik.http.routers.backend.rule=Host(`api.${DOMAIN}`)"
       - "traefik.http.routers.backend.entrypoints=websecure"
       - "traefik.http.routers.backend.tls.certresolver=letsencrypt"
       - "traefik.http.services.backend.loadbalancer.server.port=8000"
-      # Security headers
+      # CORS headers
       - "traefik.http.middlewares.backend-headers.headers.accesscontrolallowmethods=GET,POST,PUT,PATCH,DELETE,OPTIONS"
       - "traefik.http.middlewares.backend-headers.headers.accesscontrolallowheaders=Content-Type,Authorization"
       - "traefik.http.middlewares.backend-headers.headers.accesscontrolalloworiginlist=https://${DOMAIN},https://app.${DOMAIN}"
       - "traefik.http.middlewares.backend-headers.headers.accesscontrolmaxage=86400"
       - "traefik.http.routers.backend.middlewares=backend-headers"
-      # Rate limiting
+      # Rate limiting (100 requests/second average, 50 burst)
       - "traefik.http.middlewares.backend-ratelimit.ratelimit.average=100"
       - "traefik.http.middlewares.backend-ratelimit.ratelimit.burst=50"
     healthcheck:
@@ -150,7 +210,12 @@ services:
       - faithflow-network
 
   # ===========================================================================
-  # Frontend (React/Nginx) - yourdomain.com
+  # FRONTEND - React Application (served by Nginx)
+  # ===========================================================================
+  # The face of FaithFlow:
+  # - Admin dashboard
+  # - Public kiosk interface
+  # - Member portal
   # ===========================================================================
   frontend:
     build:
@@ -160,6 +225,7 @@ services:
         - REACT_APP_API_URL=https://api.${DOMAIN}
         - REACT_APP_NAME=FaithFlow
         - REACT_APP_VERSION=2.0.0
+        - REACT_APP_LIVEKIT_URL=wss://livekit.${DOMAIN}
     container_name: faithflow-frontend
     restart: unless-stopped
     depends_on:
@@ -169,12 +235,12 @@ services:
       - REACT_APP_NAME=FaithFlow
     labels:
       - "traefik.enable=true"
-      # Main domain routing
+      # Main domain routing: yourdomain.com -> frontend:80
       - "traefik.http.routers.frontend.rule=Host(`${DOMAIN}`) || Host(`www.${DOMAIN}`)"
       - "traefik.http.routers.frontend.entrypoints=websecure"
       - "traefik.http.routers.frontend.tls.certresolver=letsencrypt"
       - "traefik.http.services.frontend.loadbalancer.server.port=80"
-      # www to non-www redirect
+      # Redirect www to non-www
       - "traefik.http.middlewares.www-redirect.redirectregex.regex=^https://www\\.(.*)"
       - "traefik.http.middlewares.www-redirect.redirectregex.replacement=https://$${1}"
       - "traefik.http.middlewares.www-redirect.redirectregex.permanent=true"
@@ -193,26 +259,257 @@ services:
     networks:
       - faithflow-network
 
+  # ===========================================================================
+  # LIVEKIT - Voice/Video Calling Server (WebRTC SFU)
+  # ===========================================================================
+  # LiveKit enables real-time voice and video calling:
+  # - One-on-one calls between members
+  # - Group video calls
+  # - Screen sharing
+  # - Recording (optional)
+  # ===========================================================================
+  livekit:
+    image: livekit/livekit-server:latest
+    container_name: faithflow-livekit
+    restart: unless-stopped
+    command: --config /livekit.yaml
+    ports:
+      # WebRTC UDP ports (must be exposed directly, not through Traefik)
+      - "7881:7881"                    # WebRTC TCP
+      - "50000-50100:50000-50100/udp"  # WebRTC UDP range
+    volumes:
+      - ./docker/livekit/livekit.yaml:/livekit.yaml:ro
+    environment:
+      - LIVEKIT_KEYS=${LIVEKIT_API_KEY:-devkey}:${LIVEKIT_API_SECRET:-faithflow-development-secret-key-2024}
+    labels:
+      - "traefik.enable=true"
+      # LiveKit WebSocket: livekit.yourdomain.com -> livekit:7880
+      - "traefik.http.routers.livekit.rule=Host(`livekit.${DOMAIN}`)"
+      - "traefik.http.routers.livekit.entrypoints=websecure"
+      - "traefik.http.routers.livekit.tls.certresolver=letsencrypt"
+      - "traefik.http.services.livekit.loadbalancer.server.port=7880"
+      # WebSocket support
+      - "traefik.http.routers.livekit.middlewares=livekit-ws"
+      - "traefik.http.middlewares.livekit-ws.headers.customRequestHeaders.Upgrade=websocket"
+      - "traefik.http.middlewares.livekit-ws.headers.customRequestHeaders.Connection=upgrade"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:7880"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    depends_on:
+      - coturn
+    networks:
+      - faithflow-network
+
+  # ===========================================================================
+  # COTURN - TURN/STUN Server for NAT Traversal
+  # ===========================================================================
+  # coTURN helps with connectivity:
+  # - STUN: Helps clients discover their public IP
+  # - TURN: Relays traffic when direct connection fails
+  # - Essential for video calls behind firewalls/NAT
+  # ===========================================================================
+  coturn:
+    image: coturn/coturn:latest
+    container_name: faithflow-coturn
+    restart: unless-stopped
+    ports:
+      - "3478:3478"            # STUN/TURN UDP
+      - "3478:3478/udp"
+      - "5349:5349"            # STUN/TURN TLS
+      - "5349:5349/udp"
+      - "49152-49200:49152-49200/udp"  # Relay ports
+    volumes:
+      - ./docker/livekit/turnserver.conf:/etc/turnserver.conf:ro
+    command: -c /etc/turnserver.conf
+    environment:
+      - TURN_SECRET=${TURN_SECRET:-faithflow-turn-secret-change-in-production}
+      - TURN_REALM=${DOMAIN:-faithflow.local}
+      - EXTERNAL_IP=${SERVER_IP:-}
+    healthcheck:
+      test: ["CMD", "turnutils_stunclient", "localhost"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - faithflow-network
+
+  # ===========================================================================
+  # EMQX - MQTT Broker for Real-time Messaging
+  # ===========================================================================
+  # EMQX enables real-time features:
+  # - Call signaling (incoming call notifications)
+  # - Chat message delivery
+  # - Presence updates (online/offline status)
+  # - Push notifications trigger
+  # ===========================================================================
+  emqx:
+    image: emqx/emqx:5.3
+    container_name: faithflow-emqx
+    restart: unless-stopped
+    environment:
+      - EMQX_NAME=faithflow-emqx
+      - EMQX_HOST=emqx.${DOMAIN:-localhost}
+      # Dashboard credentials
+      - EMQX_DASHBOARD__DEFAULT_USERNAME=${EMQX_DASHBOARD_USER:-admin}
+      - EMQX_DASHBOARD__DEFAULT_PASSWORD=${EMQX_DASHBOARD_PASSWORD:-faithflow123}
+      # Listener ports
+      - EMQX_LISTENERS__TCP__DEFAULT__BIND=0.0.0.0:1883
+      - EMQX_LISTENERS__WS__DEFAULT__BIND=0.0.0.0:8083
+      - EMQX_LISTENERS__WSS__DEFAULT__BIND=0.0.0.0:8084
+      # Authentication (disabled for simplicity, enable in production)
+      - EMQX_AUTHENTICATION__1__MECHANISM=password_based
+      - EMQX_AUTHENTICATION__1__BACKEND=built_in_database
+      - EMQX_ALLOW_ANONYMOUS=true
+    ports:
+      # MQTT ports (internal network, not exposed publicly)
+      - "1883:1883"    # MQTT TCP
+      - "8083:8083"    # MQTT WebSocket
+      - "8084:8084"    # MQTT WebSocket Secure
+      - "18083:18083"  # EMQX Dashboard
+    volumes:
+      - emqx_data:/opt/emqx/data
+      - emqx_log:/opt/emqx/log
+    healthcheck:
+      test: ["CMD", "emqx", "ctl", "status"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - faithflow-network
+
+  # ===========================================================================
+  # SEAWEEDFS - Distributed File Storage System
+  # ===========================================================================
+  # SeaweedFS stores media files for community features:
+  # - Images, videos, audio files from chat
+  # - Document uploads
+  # - Profile pictures
+  # - Thumbnails auto-generation
+  #
+  # Architecture:
+  #   Master: Manages file IDs and volume locations
+  #   Volume: Actually stores the file data
+  #   Filer: Provides filesystem-like API and S3-compatible access
+  # ===========================================================================
+
+  # SeaweedFS Master - Manages file ID allocation and volume locations
+  seaweedfs-master:
+    image: chrislusf/seaweedfs:3.59
+    container_name: faithflow-seaweedfs-master
+    restart: unless-stopped
+    command: >
+      master
+      -ip=seaweedfs-master
+      -ip.bind=0.0.0.0
+      -port=9333
+      -mdir=/data
+      -defaultReplication=000
+    volumes:
+      - seaweedfs_master_data:/data
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://localhost:9333/cluster/status"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - faithflow-network
+
+  # SeaweedFS Volume - Stores actual file data
+  seaweedfs-volume:
+    image: chrislusf/seaweedfs:3.59
+    container_name: faithflow-seaweedfs-volume
+    restart: unless-stopped
+    command: >
+      volume
+      -mserver=seaweedfs-master:9333
+      -ip.bind=0.0.0.0
+      -port=8080
+      -dir=/data
+      -max=100
+      -compactionMBps=40
+      -fileSizeLimitMB=100
+    volumes:
+      - seaweedfs_volume_data:/data
+    depends_on:
+      seaweedfs-master:
+        condition: service_healthy
+    networks:
+      - faithflow-network
+
+  # SeaweedFS Filer - Provides filesystem and S3-compatible API
+  seaweedfs-filer:
+    image: chrislusf/seaweedfs:3.59
+    container_name: faithflow-seaweedfs-filer
+    restart: unless-stopped
+    command: >
+      filer
+      -master=seaweedfs-master:9333
+      -ip.bind=0.0.0.0
+      -port=8888
+      -s3
+      -s3.port=8333
+    volumes:
+      - seaweedfs_filer_data:/data
+    depends_on:
+      - seaweedfs-master
+      - seaweedfs-volume
+    labels:
+      - "traefik.enable=true"
+      # File access: files.yourdomain.com -> seaweedfs-filer:8888
+      - "traefik.http.routers.seaweedfs.rule=Host(`files.${DOMAIN}`)"
+      - "traefik.http.routers.seaweedfs.entrypoints=websecure"
+      - "traefik.http.routers.seaweedfs.tls.certresolver=letsencrypt"
+      - "traefik.http.services.seaweedfs.loadbalancer.server.port=8888"
+    networks:
+      - faithflow-network
+
 # =============================================================================
-# Networks
+# NETWORKS
+# =============================================================================
+# All services communicate through this internal network
+# Only Traefik exposes services to the internet
 # =============================================================================
 networks:
   faithflow-network:
     driver: bridge
 
 # =============================================================================
-# Volumes
+# VOLUMES - Persistent Data Storage
+# =============================================================================
+# These volumes store data that persists across container restarts
 # =============================================================================
 volumes:
+  # Traefik SSL certificates
   traefik_letsencrypt:
     driver: local
   traefik_logs:
     driver: local
+
+  # MongoDB data
   mongodb_data:
     driver: local
   mongodb_config:
     driver: local
+
+  # Backend uploads and logs
   backend_uploads:
     driver: local
   backend_logs:
+    driver: local
+
+  # EMQX data and logs
+  emqx_data:
+    driver: local
+  emqx_log:
+    driver: local
+
+  # SeaweedFS data (file storage)
+  seaweedfs_master_data:
+    driver: local
+  seaweedfs_volume_data:
+    driver: local
+  seaweedfs_filer_data:
     driver: local

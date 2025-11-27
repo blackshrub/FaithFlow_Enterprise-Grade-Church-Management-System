@@ -2,15 +2,32 @@
 
 ################################################################################
 #                                                                              #
-#                    FaithFlow Docker Installer v1.0                           #
+#                    FaithFlow Docker Installer v2.0                           #
 #                                                                              #
 #              Enterprise Church Management System - Docker Setup              #
 #                     With Traefik + Let's Encrypt SSL                         #
 #                                                                              #
-#  Architecture:                                                               #
-#    - api.yourdomain.com  -> Backend API (FastAPI)                            #
-#    - yourdomain.com      -> Frontend (React)                                 #
-#    - traefik.yourdomain.com -> Traefik Dashboard                             #
+#  This script will:                                                           #
+#  1. Check your server meets minimum requirements                             #
+#  2. Install Docker if not already installed                                  #
+#  3. Configure your domain and SSL certificates                               #
+#  4. Start all FaithFlow services                                             #
+#  5. Initialize the database with default admin account                       #
+#                                                                              #
+#  What gets installed:                                                        #
+#  - FaithFlow Web Application (React frontend)                                #
+#  - FaithFlow API Server (FastAPI backend)                                    #
+#  - MongoDB Database                                                          #
+#  - Traefik Reverse Proxy with automatic SSL                                  #
+#  - LiveKit (Voice/Video Calling)                                             #
+#  - coTURN (NAT Traversal for video calls)                                    #
+#  - EMQX (Real-time messaging)                                                #
+#                                                                              #
+#  Architecture (all on your server):                                          #
+#    yourdomain.com        -> Frontend (React app)                             #
+#    api.yourdomain.com    -> Backend API (FastAPI)                            #
+#    livekit.yourdomain.com -> Voice/Video Server                              #
+#    traefik.yourdomain.com -> Admin Dashboard (optional)                      #
 #                                                                              #
 #  Usage:                                                                      #
 #    sudo ./docker-install.sh                                                  #
@@ -24,7 +41,7 @@ set -euo pipefail
 # CONFIGURATION
 # =============================================================================
 
-readonly VERSION="1.0.0"
+readonly VERSION="2.0.0"
 readonly SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 readonly LOG_FILE="/var/log/faithflow-docker-install.log"
 
@@ -32,6 +49,11 @@ readonly LOG_FILE="/var/log/faithflow-docker-install.log"
 DEV_MODE=false
 DOMAIN=""
 ACME_EMAIL=""
+SERVER_IP=""
+
+# Minimum requirements
+readonly MIN_RAM_MB=2048
+readonly MIN_DISK_GB=20
 
 # =============================================================================
 # TERMINAL STYLING
@@ -43,6 +65,7 @@ readonly YELLOW='\033[1;33m'
 readonly BLUE='\033[0;34m'
 readonly CYAN='\033[0;36m'
 readonly WHITE='\033[1;37m'
+readonly GRAY='\033[0;90m'
 readonly NC='\033[0m'
 
 readonly CHECK='\xE2\x9C\x94'
@@ -83,12 +106,28 @@ print_error() {
     log "ERROR: $1"
 }
 
+print_detail() {
+    echo -e "${GRAY}    $1${NC}"
+}
+
 command_exists() {
     command -v "$1" >/dev/null 2>&1
 }
 
 generate_secret() {
-    openssl rand -base64 64 | tr -dc 'a-zA-Z0-9' | head -c 64
+    openssl rand -hex 32 2>/dev/null || cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 64 | head -n 1
+}
+
+get_public_ip() {
+    curl -s ifconfig.me 2>/dev/null || curl -s ipinfo.io/ip 2>/dev/null || curl -s icanhazip.com 2>/dev/null || echo ""
+}
+
+get_memory_mb() {
+    free -m 2>/dev/null | awk '/^Mem:/{print $2}' || echo "0"
+}
+
+get_disk_gb() {
+    df -BG / 2>/dev/null | awk 'NR==2 {print int($4)}' || echo "0"
 }
 
 # =============================================================================
@@ -104,23 +143,24 @@ show_welcome() {
     ║                                                                           ║
     ║                    🐳  FaithFlow Docker Installer  🐳                     ║
     ║                                                                           ║
-    ║              Enterprise Church Management System                          ║
+    ║              Enterprise Church Management System v2.0                     ║
     ║            With Traefik Reverse Proxy & Auto SSL                          ║
     ║                                                                           ║
     ╠═══════════════════════════════════════════════════════════════════════════╣
     ║                                                                           ║
-    ║   Architecture:                                                           ║
+    ║   What this installer does:                                               ║
     ║                                                                           ║
-    ║   ┌─────────────┐     ┌─────────────┐     ┌─────────────┐                ║
-    ║   │   Traefik   │────▸│   Backend   │────▸│   MongoDB   │                ║
-    ║   │ :80 / :443  │     │  api.domain │     │   :27017    │                ║
-    ║   └──────┬──────┘     └─────────────┘     └─────────────┘                ║
-    ║          │                                                                ║
-    ║          ▼                                                                ║
-    ║   ┌─────────────┐                                                        ║
-    ║   │  Frontend   │                                                        ║
-    ║   │   domain    │                                                        ║
-    ║   └─────────────┘                                                        ║
+    ║   1. Checks your server meets requirements                                ║
+    ║   2. Installs Docker (if not already installed)                           ║
+    ║   3. Sets up your domain with automatic SSL                               ║
+    ║   4. Starts all FaithFlow services                                        ║
+    ║   5. Creates your admin account                                           ║
+    ║                                                                           ║
+    ║   Services included:                                                      ║
+    ║   ✦ Web Dashboard & Mobile API                                            ║
+    ║   ✦ Voice/Video Calling (LiveKit)                                         ║
+    ║   ✦ Real-time Messaging (MQTT)                                            ║
+    ║   ✦ Automatic HTTPS (Let's Encrypt)                                       ║
     ║                                                                           ║
     ╚═══════════════════════════════════════════════════════════════════════════╝
 
@@ -134,196 +174,522 @@ EOF
 }
 
 # =============================================================================
-# INSTALLATION STEPS
+# PREREQUISITE CHECKS
 # =============================================================================
 
 check_prerequisites() {
-    print_header "Checking Prerequisites"
+    print_header "Step 1/7: Checking Prerequisites"
 
     # Check root
+    print_info "Checking if running as root..."
     if [ "$EUID" -ne 0 ]; then
         print_error "This script requires root privileges"
-        echo -e "${YELLOW}   Please run: sudo ./docker-install.sh${NC}"
+        echo ""
+        echo -e "${YELLOW}  How to fix:${NC}"
+        echo -e "${WHITE}    Run the command with sudo:${NC}"
+        echo -e "${CYAN}    sudo ./docker-install.sh${NC}"
+        echo ""
         exit 1
     fi
     print_success "Running as root"
 
-    # Check Docker
-    if command_exists docker; then
-        print_success "Docker installed: $(docker --version | cut -d',' -f1)"
+    # Check OS
+    print_info "Checking operating system..."
+    if [ -f /etc/os-release ]; then
+        source /etc/os-release
+        print_success "Operating System: $PRETTY_NAME"
     else
-        print_info "Installing Docker..."
+        print_warn "Could not detect OS version"
+    fi
+
+    # Check memory
+    print_info "Checking system memory..."
+    local mem_mb=$(get_memory_mb)
+    if [ "$mem_mb" -ge "$MIN_RAM_MB" ]; then
+        print_success "RAM: ${mem_mb}MB (minimum required: ${MIN_RAM_MB}MB)"
+    else
+        print_error "Insufficient RAM: ${mem_mb}MB (minimum required: ${MIN_RAM_MB}MB)"
+        echo ""
+        echo -e "${YELLOW}  How to fix:${NC}"
+        echo -e "${WHITE}    Upgrade your server to at least 2GB RAM${NC}"
+        echo ""
+        exit 1
+    fi
+
+    # Check disk
+    print_info "Checking disk space..."
+    local disk_gb=$(get_disk_gb)
+    if [ "$disk_gb" -ge "$MIN_DISK_GB" ]; then
+        print_success "Disk Space: ${disk_gb}GB available (minimum required: ${MIN_DISK_GB}GB)"
+    else
+        print_error "Insufficient disk space: ${disk_gb}GB (minimum required: ${MIN_DISK_GB}GB)"
+        echo ""
+        echo -e "${YELLOW}  How to fix:${NC}"
+        echo -e "${WHITE}    Free up disk space or upgrade your server${NC}"
+        echo ""
+        exit 1
+    fi
+
+    # Check network
+    print_info "Checking network connectivity..."
+    if ping -c 1 google.com &>/dev/null || ping -c 1 cloudflare.com &>/dev/null; then
+        print_success "Network: Connected to internet"
+    else
+        print_error "No internet connection"
+        echo ""
+        echo -e "${YELLOW}  How to fix:${NC}"
+        echo -e "${WHITE}    Make sure your server has internet access${NC}"
+        echo ""
+        exit 1
+    fi
+
+    # Check required files
+    print_info "Checking required files..."
+    if [ ! -f "$SCRIPT_DIR/docker-compose.prod.yml" ]; then
+        print_error "docker-compose.prod.yml not found"
+        echo ""
+        echo -e "${YELLOW}  How to fix:${NC}"
+        echo -e "${WHITE}    Make sure you're running from the FaithFlow directory${NC}"
+        echo -e "${WHITE}    The docker-compose.prod.yml file should be in the same folder${NC}"
+        echo ""
+        exit 1
+    fi
+    print_success "All required files found"
+
+    echo ""
+    echo -e "${GREEN}  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo -e "${GREEN}  All prerequisite checks passed!${NC}"
+    echo -e "${GREEN}  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo ""
+}
+
+# =============================================================================
+# DOCKER INSTALLATION
+# =============================================================================
+
+install_docker() {
+    print_header "Step 2/7: Installing Docker"
+
+    # Check if Docker is already installed
+    if command_exists docker; then
+        print_success "Docker already installed: $(docker --version | cut -d',' -f1)"
+    else
+        print_info "Docker not found. Installing Docker..."
+        echo ""
+        echo -e "${GRAY}    This may take a few minutes...${NC}"
+        echo ""
+
+        # Install Docker using official script
         curl -fsSL https://get.docker.com | bash >> "$LOG_FILE" 2>&1
-        systemctl enable docker >> "$LOG_FILE" 2>&1
-        systemctl start docker >> "$LOG_FILE" 2>&1
-        print_success "Docker installed"
+
+        if command_exists docker; then
+            systemctl enable docker >> "$LOG_FILE" 2>&1
+            systemctl start docker >> "$LOG_FILE" 2>&1
+            print_success "Docker installed successfully"
+        else
+            print_error "Docker installation failed"
+            echo ""
+            echo -e "${YELLOW}  How to fix:${NC}"
+            echo -e "${WHITE}    Try installing Docker manually:${NC}"
+            echo -e "${CYAN}    curl -fsSL https://get.docker.com | bash${NC}"
+            echo ""
+            echo -e "${WHITE}    Check the log file for details:${NC}"
+            echo -e "${CYAN}    cat $LOG_FILE${NC}"
+            echo ""
+            exit 1
+        fi
     fi
 
     # Check Docker Compose
     if docker compose version &>/dev/null; then
-        print_success "Docker Compose installed: $(docker compose version --short)"
+        print_success "Docker Compose: $(docker compose version --short)"
     else
-        print_error "Docker Compose (v2) not found. Please install Docker with Compose v2"
+        print_error "Docker Compose (v2) not found"
+        echo ""
+        echo -e "${YELLOW}  How to fix:${NC}"
+        echo -e "${WHITE}    Install Docker Compose plugin:${NC}"
+        echo -e "${CYAN}    apt install docker-compose-plugin${NC}"
+        echo ""
         exit 1
     fi
-
-    # Check if running from correct directory
-    if [ ! -f "$SCRIPT_DIR/docker-compose.prod.yml" ]; then
-        print_error "docker-compose.prod.yml not found in $SCRIPT_DIR"
-        exit 1
-    fi
-    print_success "Docker Compose files found"
 }
 
-configure_environment() {
-    print_header "Configuration"
+# =============================================================================
+# DOMAIN CONFIGURATION
+# =============================================================================
+
+configure_domain() {
+    print_header "Step 3/7: Domain Configuration"
 
     if [ "$DEV_MODE" = true ]; then
         print_info "Development mode enabled (no SSL, localhost)"
         DOMAIN="localhost"
         ACME_EMAIL="dev@localhost"
-    else
-        echo ""
-        echo -e "${CYAN}  Domain Configuration:${NC}"
-        echo ""
-
-        read -p "  Enter your domain (e.g., faithflow.church): " DOMAIN
-
-        if [ -z "$DOMAIN" ]; then
-            print_error "Domain is required"
-            exit 1
-        fi
-
-        read -p "  Enter email for SSL certificate (Let's Encrypt): " ACME_EMAIL
-
-        if [ -z "$ACME_EMAIL" ]; then
-            ACME_EMAIL="admin@$DOMAIN"
-            print_warn "Using default email: $ACME_EMAIL"
-        fi
+        SERVER_IP="127.0.0.1"
+        return
     fi
 
+    # Get server's public IP
+    print_info "Detecting your server's public IP address..."
+    SERVER_IP=$(get_public_ip)
+
+    if [ -n "$SERVER_IP" ]; then
+        print_success "Server IP: $SERVER_IP"
+    else
+        print_warn "Could not auto-detect IP address"
+        echo ""
+        read -p "  Please enter your server's public IP address: " SERVER_IP
+        echo ""
+    fi
+
+    # Get domain
+    echo ""
+    echo -e "${CYAN}  ┌─────────────────────────────────────────────────────────────────────┐${NC}"
+    echo -e "${CYAN}  │  ${WHITE}IMPORTANT: Before continuing, make sure your DNS is set up!${CYAN}        │${NC}"
+    echo -e "${CYAN}  │                                                                     │${NC}"
+    echo -e "${CYAN}  │  ${WHITE}You need these DNS records pointing to: ${YELLOW}$SERVER_IP${CYAN}${NC}"
+    echo -e "${CYAN}  │                                                                     │${NC}"
+    echo -e "${CYAN}  │  ${WHITE}  yourdomain.com        -> $SERVER_IP${CYAN}                          ${NC}"
+    echo -e "${CYAN}  │  ${WHITE}  api.yourdomain.com    -> $SERVER_IP${CYAN}                          ${NC}"
+    echo -e "${CYAN}  │  ${WHITE}  livekit.yourdomain.com -> $SERVER_IP${CYAN}                         ${NC}"
+    echo -e "${CYAN}  │  ${WHITE}  files.yourdomain.com  -> $SERVER_IP${CYAN}                          ${NC}"
+    echo -e "${CYAN}  └─────────────────────────────────────────────────────────────────────┘${NC}"
+    echo ""
+
+    read -p "  Enter your domain name (e.g., faithflow.church): " DOMAIN
+
+    if [ -z "$DOMAIN" ]; then
+        print_error "Domain name is required"
+        exit 1
+    fi
+
+    # Validate domain format
+    if [[ ! "$DOMAIN" =~ ^[a-zA-Z0-9][-a-zA-Z0-9]*\.[a-zA-Z]{2,}$ ]] && [[ ! "$DOMAIN" =~ ^[a-zA-Z0-9][-a-zA-Z0-9]*\.[a-zA-Z0-9][-a-zA-Z0-9]*\.[a-zA-Z]{2,}$ ]]; then
+        print_warn "Domain format looks unusual. Please double-check: $DOMAIN"
+    fi
+
+    # Get email for SSL
+    read -p "  Enter email for SSL certificates (Let's Encrypt): " ACME_EMAIL
+
+    if [ -z "$ACME_EMAIL" ]; then
+        ACME_EMAIL="admin@$DOMAIN"
+        print_info "Using default email: $ACME_EMAIL"
+    fi
+
+    echo ""
     print_success "Domain: $DOMAIN"
     print_success "Email: $ACME_EMAIL"
+    print_success "Server IP: $SERVER_IP"
 
-    # Generate secrets
-    JWT_SECRET=$(generate_secret)
+    # DNS verification
+    echo ""
+    print_info "Verifying DNS configuration..."
 
-    # Create .env file
-    print_info "Creating environment configuration..."
+    local dns_ok=true
+
+    # Check main domain
+    local domain_ip=$(dig +short "$DOMAIN" 2>/dev/null | head -1)
+    if [ "$domain_ip" = "$SERVER_IP" ]; then
+        print_success "$DOMAIN -> $SERVER_IP (correct)"
+    else
+        print_warn "$DOMAIN -> ${domain_ip:-NOT FOUND} (should be $SERVER_IP)"
+        dns_ok=false
+    fi
+
+    # Check API subdomain
+    local api_ip=$(dig +short "api.$DOMAIN" 2>/dev/null | head -1)
+    if [ "$api_ip" = "$SERVER_IP" ]; then
+        print_success "api.$DOMAIN -> $SERVER_IP (correct)"
+    else
+        print_warn "api.$DOMAIN -> ${api_ip:-NOT FOUND} (should be $SERVER_IP)"
+        dns_ok=false
+    fi
+
+    # Check LiveKit subdomain
+    local livekit_ip=$(dig +short "livekit.$DOMAIN" 2>/dev/null | head -1)
+    if [ "$livekit_ip" = "$SERVER_IP" ]; then
+        print_success "livekit.$DOMAIN -> $SERVER_IP (correct)"
+    else
+        print_warn "livekit.$DOMAIN -> ${livekit_ip:-NOT FOUND} (should be $SERVER_IP)"
+        dns_ok=false
+    fi
+
+    # Check Files subdomain (SeaweedFS)
+    local files_ip=$(dig +short "files.$DOMAIN" 2>/dev/null | head -1)
+    if [ "$files_ip" = "$SERVER_IP" ]; then
+        print_success "files.$DOMAIN -> $SERVER_IP (correct)"
+    else
+        print_warn "files.$DOMAIN -> ${files_ip:-NOT FOUND} (should be $SERVER_IP)"
+        dns_ok=false
+    fi
+
+    if [ "$dns_ok" = false ]; then
+        echo ""
+        echo -e "${YELLOW}  ⚠ Some DNS records are not configured correctly.${NC}"
+        echo ""
+        echo -e "${WHITE}  The installation will continue, but SSL certificates may fail${NC}"
+        echo -e "${WHITE}  if DNS is not properly configured.${NC}"
+        echo ""
+        echo -e "${WHITE}  DNS changes can take 5-30 minutes to propagate.${NC}"
+        echo ""
+        read -p "  Continue anyway? (y/n): " -n 1 -r
+        echo
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            echo ""
+            echo -e "${CYAN}  Please configure your DNS and run this script again.${NC}"
+            exit 0
+        fi
+    fi
+}
+
+# =============================================================================
+# ENVIRONMENT CONFIGURATION
+# =============================================================================
+
+create_environment() {
+    print_header "Step 4/7: Creating Configuration"
+
+    print_info "Generating secure secrets..."
+    local jwt_secret=$(generate_secret)
+    local turn_secret=$(generate_secret)
+    local livekit_key=$(openssl rand -hex 16 2>/dev/null || echo "faithflow-key")
+    local livekit_secret=$(openssl rand -hex 32 2>/dev/null || echo "faithflow-secret-$(date +%s)")
+
+    print_info "Creating environment configuration file..."
 
     cat > "$SCRIPT_DIR/.env" << EOF
-# FaithFlow Docker Configuration
+# =============================================================================
+# FaithFlow Configuration
+# =============================================================================
 # Generated: $(date)
+# DO NOT share this file - it contains secrets!
+# =============================================================================
 
 # Domain Configuration
 DOMAIN=$DOMAIN
 ACME_EMAIL=$ACME_EMAIL
+SERVER_IP=$SERVER_IP
 
-# Security
-JWT_SECRET=$JWT_SECRET
+# Security (auto-generated - keep these secret!)
+JWT_SECRET=$jwt_secret
 
-# Traefik Dashboard Auth (admin:admin - CHANGE THIS!)
-# Generate with: htpasswd -nb admin yourpassword
-TRAEFIK_DASHBOARD_AUTH=admin:\$apr1\$ruca84Hq\$mbjdMZBAG.KWn7vfN/SNK/
+# Voice/Video Calling (LiveKit)
+LIVEKIT_API_KEY=$livekit_key
+LIVEKIT_API_SECRET=$livekit_secret
+TURN_SECRET=$turn_secret
 
-# Database
+# Traefik Dashboard (default: admin/admin - CHANGE THIS!)
+TRAEFIK_DASHBOARD_AUTH=admin:\$\$apr1\$\$ruca84Hq\$\$mbjdMZBAG.KWn7vfN/SNK/
+
+# EMQX Dashboard
+EMQX_DASHBOARD_USER=admin
+EMQX_DASHBOARD_PASSWORD=faithflow123
+
+# Internal Configuration (don't change)
+COMPOSE_PROJECT_NAME=faithflow
 MONGO_URL=mongodb://mongodb:27017
 DB_NAME=faithflow
-
-# Optional Services (configure in admin dashboard after installation)
-ANTHROPIC_API_KEY=
-STABILITY_API_KEY=
-WHATSAPP_API_URL=
-WHATSAPP_USERNAME=
-WHATSAPP_PASSWORD=
 EOF
 
     print_success "Environment file created: $SCRIPT_DIR/.env"
 
-    # Update backend .env for subdomain mode
-    print_info "Configuring backend for subdomain mode..."
-    if [ -f "$SCRIPT_DIR/backend/.env" ]; then
-        sed -i 's/^API_PREFIX=.*/API_PREFIX=/' "$SCRIPT_DIR/backend/.env" 2>/dev/null || true
-    else
-        echo "API_PREFIX=" > "$SCRIPT_DIR/backend/.env"
-        echo "MONGO_URL=mongodb://mongodb:27017" >> "$SCRIPT_DIR/backend/.env"
-        echo "DB_NAME=faithflow" >> "$SCRIPT_DIR/backend/.env"
-        echo "JWT_SECRET=$JWT_SECRET" >> "$SCRIPT_DIR/backend/.env"
-        echo "CORS_ORIGINS=https://$DOMAIN,https://app.$DOMAIN" >> "$SCRIPT_DIR/backend/.env"
+    # Update LiveKit configuration with server IP
+    print_info "Configuring LiveKit for your server..."
+
+    mkdir -p "$SCRIPT_DIR/docker/livekit"
+
+    cat > "$SCRIPT_DIR/docker/livekit/livekit.yaml" << EOF
+# LiveKit Server Configuration
+# Generated for: $DOMAIN
+
+port: 7880
+log_level: info
+
+keys:
+  $livekit_key: $livekit_secret
+
+rtc:
+  tcp_port: 7881
+  port_range_start: 50000
+  port_range_end: 50100
+  use_external_ip: true
+EOF
+
+    # Add node_ip if we have a server IP
+    if [ -n "$SERVER_IP" ] && [ "$SERVER_IP" != "127.0.0.1" ]; then
+        echo "  node_ip: $SERVER_IP" >> "$SCRIPT_DIR/docker/livekit/livekit.yaml"
     fi
-    print_success "Backend configured for subdomain mode"
+
+    cat >> "$SCRIPT_DIR/docker/livekit/livekit.yaml" << 'EOF'
+
+turn:
+  enabled: false
+
+room:
+  auto_create: true
+  empty_timeout: 300
+  max_participants: 100
+
+limit:
+  num_tracks: 10
+EOF
+
+    print_success "LiveKit configuration created"
+
+    # Update TURN server configuration
+    print_info "Configuring TURN server..."
+
+    cat > "$SCRIPT_DIR/docker/livekit/turnserver.conf" << EOF
+# coTURN Configuration
+# Generated for: $DOMAIN
+
+listening-port=3478
+tls-listening-port=5349
+listening-ip=0.0.0.0
+relay-ip=0.0.0.0
+min-port=49152
+max-port=49200
+
+realm=$DOMAIN
+static-auth-secret=$turn_secret
+
+lt-cred-mech
+fingerprint
+no-tlsv1
+no-tlsv1_1
+
+relay-threads=4
+max-allocate-lifetime=3600
+channel-lifetime=600
+permission-lifetime=300
+
+log-file=stdout
+mobility
+max-bps=3000000
+EOF
+
+    if [ -n "$SERVER_IP" ] && [ "$SERVER_IP" != "127.0.0.1" ]; then
+        echo "external-ip=$SERVER_IP" >> "$SCRIPT_DIR/docker/livekit/turnserver.conf"
+    fi
+
+    print_success "TURN server configuration created"
 }
 
-build_images() {
-    print_header "Building Docker Images"
+# =============================================================================
+# BUILD AND START SERVICES
+# =============================================================================
+
+build_and_start() {
+    print_header "Step 5/7: Building and Starting Services"
 
     cd "$SCRIPT_DIR"
 
-    print_info "Building backend image..."
+    print_info "Pulling Docker images (this may take a few minutes)..."
+    docker compose -f docker-compose.prod.yml pull >> "$LOG_FILE" 2>&1 || true
+
+    print_info "Building custom images..."
+    echo -e "${GRAY}    Building backend (FastAPI)...${NC}"
     docker compose -f docker-compose.prod.yml build backend >> "$LOG_FILE" 2>&1
-    print_success "Backend image built"
 
-    print_info "Building frontend image (this may take a few minutes)..."
+    echo -e "${GRAY}    Building frontend (React) - this takes longest...${NC}"
     docker compose -f docker-compose.prod.yml build frontend >> "$LOG_FILE" 2>&1
-    print_success "Frontend image built"
-}
 
-start_services() {
-    print_header "Starting Services"
+    print_success "All images built successfully"
 
-    cd "$SCRIPT_DIR"
-
-    if [ "$DEV_MODE" = true ]; then
-        print_info "Starting development stack..."
-        docker compose up -d >> "$LOG_FILE" 2>&1
-    else
-        print_info "Starting production stack with Traefik..."
-        docker compose -f docker-compose.prod.yml up -d >> "$LOG_FILE" 2>&1
-    fi
+    print_info "Starting all services..."
+    docker compose -f docker-compose.prod.yml up -d >> "$LOG_FILE" 2>&1
 
     print_success "Services started"
 
-    # Wait for services to be ready
-    print_info "Waiting for services to initialize (30 seconds)..."
-    sleep 30
+    # Wait for services to be healthy
+    print_info "Waiting for services to initialize (60 seconds)..."
+    echo ""
 
-    # Check service health
-    print_info "Checking service health..."
+    local services=("mongodb" "backend" "frontend" "traefik")
+    local total=${#services[@]}
+    local healthy=0
 
-    if docker compose -f docker-compose.prod.yml ps | grep -q "healthy"; then
-        print_success "Services are healthy"
+    for i in {1..60}; do
+        healthy=0
+        for service in "${services[@]}"; do
+            if docker compose -f docker-compose.prod.yml ps "$service" 2>/dev/null | grep -q "healthy\|running"; then
+                ((healthy++))
+            fi
+        done
+
+        # Progress bar
+        local pct=$((i * 100 / 60))
+        local filled=$((i * 40 / 60))
+        local empty=$((40 - filled))
+        printf "\r  ${CYAN}[%${filled}s%${empty}s]${NC} %3d%% - Services ready: %d/%d" \
+            "$(printf '#%.0s' $(seq 1 $filled 2>/dev/null) || echo "")" \
+            "$(printf '-%.0s' $(seq 1 $empty 2>/dev/null) || echo "")" \
+            "$pct" "$healthy" "$total"
+
+        if [ "$healthy" -eq "$total" ]; then
+            break
+        fi
+
+        sleep 1
+    done
+    echo ""
+
+    if [ "$healthy" -eq "$total" ]; then
+        print_success "All core services are running"
     else
         print_warn "Some services may still be starting up"
     fi
 }
 
+# =============================================================================
+# DATABASE INITIALIZATION
+# =============================================================================
+
 initialize_database() {
-    print_header "Initializing Database"
+    print_header "Step 6/7: Initializing Database"
 
     cd "$SCRIPT_DIR"
 
-    print_info "Running database initialization..."
+    print_info "Waiting for MongoDB to be ready..."
+    sleep 5
 
-    # Execute init script in backend container
-    docker compose -f docker-compose.prod.yml exec -T backend python scripts/init_db.py >> "$LOG_FILE" 2>&1 || {
-        print_warn "Database initialization script not found or failed"
-        print_info "You can initialize the database later via the admin panel"
-    }
+    print_info "Creating database indexes and default admin account..."
 
-    print_success "Database initialized"
+    # Run init script in backend container
+    if docker compose -f docker-compose.prod.yml exec -T backend python scripts/init_db.py >> "$LOG_FILE" 2>&1; then
+        print_success "Database initialized successfully"
+    else
+        print_warn "Database initialization script not found or had issues"
+        print_info "You can initialize later via the admin panel"
+    fi
 }
 
+# =============================================================================
+# FIREWALL CONFIGURATION
+# =============================================================================
+
 configure_firewall() {
-    print_header "Configuring Firewall"
+    print_header "Step 7/7: Configuring Firewall"
 
     if command_exists ufw; then
         print_info "Configuring UFW firewall..."
-        ufw allow 80/tcp >> "$LOG_FILE" 2>&1 || true
-        ufw allow 443/tcp >> "$LOG_FILE" 2>&1 || true
-        ufw allow 22/tcp >> "$LOG_FILE" 2>&1 || true
-        print_success "Firewall configured (HTTP, HTTPS, SSH allowed)"
+
+        ufw allow 22/tcp >> "$LOG_FILE" 2>&1 || true    # SSH
+        ufw allow 80/tcp >> "$LOG_FILE" 2>&1 || true    # HTTP
+        ufw allow 443/tcp >> "$LOG_FILE" 2>&1 || true   # HTTPS
+        ufw allow 3478/udp >> "$LOG_FILE" 2>&1 || true  # STUN/TURN
+        ufw allow 3478/tcp >> "$LOG_FILE" 2>&1 || true  # STUN/TURN
+        ufw allow 5349/tcp >> "$LOG_FILE" 2>&1 || true  # STUN/TURN TLS
+        ufw allow 5349/udp >> "$LOG_FILE" 2>&1 || true  # STUN/TURN TLS
+        ufw allow 7881/tcp >> "$LOG_FILE" 2>&1 || true  # LiveKit TCP
+        ufw allow 50000:50100/udp >> "$LOG_FILE" 2>&1 || true  # WebRTC UDP
+        ufw allow 49152:49200/udp >> "$LOG_FILE" 2>&1 || true  # TURN relay
+
+        print_success "Firewall rules added"
+        print_detail "Allowed: SSH(22), HTTP(80), HTTPS(443), TURN(3478,5349), LiveKit(7881,50000-50100)"
     else
         print_info "UFW not installed, skipping firewall configuration"
+        print_detail "Make sure ports 80, 443, 3478, 5349, 7881, 50000-50100 are open"
     fi
 }
 
@@ -332,6 +698,10 @@ configure_firewall() {
 # =============================================================================
 
 show_completion() {
+    local elapsed=$SECONDS
+    local minutes=$((elapsed / 60))
+    local seconds=$((elapsed % 60))
+
     echo ""
     echo -e "${GREEN}"
     cat << 'EOF'
@@ -345,6 +715,9 @@ show_completion() {
 EOF
     echo -e "${NC}"
 
+    echo -e "  ${GRAY}Installation time: ${WHITE}${minutes}m ${seconds}s${NC}"
+    echo ""
+
     echo -e "${CYAN}  ┌─────────────────────────────────────────────────────────────────────┐${NC}"
     echo -e "${CYAN}  │  ${WHITE}Access Your Application${CYAN}                                          │${NC}"
     echo -e "${CYAN}  ├─────────────────────────────────────────────────────────────────────┤${NC}"
@@ -354,41 +727,44 @@ EOF
         echo -e "${CYAN}  │  ${WHITE}Backend:${NC}    http://localhost:8000${CYAN}                              │${NC}"
         echo -e "${CYAN}  │  ${WHITE}API Docs:${NC}   http://localhost:8000/docs${CYAN}                         │${NC}"
     else
-        echo -e "${CYAN}  │  ${WHITE}Frontend:${NC}   https://$DOMAIN${CYAN}                              │${NC}"
-        echo -e "${CYAN}  │  ${WHITE}API:${NC}        https://api.$DOMAIN${CYAN}                          │${NC}"
-        echo -e "${CYAN}  │  ${WHITE}API Docs:${NC}   https://api.$DOMAIN/docs${CYAN}                      │${NC}"
-        echo -e "${CYAN}  │  ${WHITE}Traefik:${NC}    https://traefik.$DOMAIN${CYAN}                       │${NC}"
+        echo -e "${CYAN}  │  ${WHITE}Web App:${NC}    https://$DOMAIN${CYAN}"
+        echo -e "${CYAN}  │  ${WHITE}API:${NC}        https://api.$DOMAIN${CYAN}"
+        echo -e "${CYAN}  │  ${WHITE}API Docs:${NC}   https://api.$DOMAIN/docs${CYAN}"
+        echo -e "${CYAN}  │  ${WHITE}Traefik:${NC}    https://traefik.$DOMAIN${CYAN}"
     fi
 
     echo -e "${CYAN}  └─────────────────────────────────────────────────────────────────────┘${NC}"
     echo ""
 
     echo -e "${YELLOW}  ┌─────────────────────────────────────────────────────────────────────┐${NC}"
-    echo -e "${YELLOW}  │  ${WHITE}Default Admin Credentials${YELLOW}                                        │${NC}"
+    echo -e "${YELLOW}  │  ${WHITE}Default Admin Login${YELLOW}                                              │${NC}"
     echo -e "${YELLOW}  ├─────────────────────────────────────────────────────────────────────┤${NC}"
     echo -e "${YELLOW}  │  ${CYAN}Email:${NC}    admin@gkbjtamankencana.org${YELLOW}                          │${NC}"
     echo -e "${YELLOW}  │  ${CYAN}Password:${NC} admin123${YELLOW}                                            │${NC}"
     echo -e "${YELLOW}  │                                                                     │${NC}"
-    echo -e "${YELLOW}  │  ${RED}⚠ Change this password immediately after login!${YELLOW}                │${NC}"
+    echo -e "${YELLOW}  │  ${RED}⚠ IMPORTANT: Change this password after first login!${YELLOW}           │${NC}"
     echo -e "${YELLOW}  └─────────────────────────────────────────────────────────────────────┘${NC}"
     echo ""
 
     echo -e "${BLUE}  ┌─────────────────────────────────────────────────────────────────────┐${NC}"
-    echo -e "${BLUE}  │  ${WHITE}Useful Docker Commands${BLUE}                                            │${NC}"
+    echo -e "${BLUE}  │  ${WHITE}Useful Commands${BLUE}                                                   │${NC}"
     echo -e "${BLUE}  ├─────────────────────────────────────────────────────────────────────┤${NC}"
     echo -e "${BLUE}  │  ${CYAN}View logs:${NC}      docker compose -f docker-compose.prod.yml logs -f${BLUE}│${NC}"
-    echo -e "${BLUE}  │  ${CYAN}Stop:${NC}           docker compose -f docker-compose.prod.yml down${BLUE}   │${NC}"
+    echo -e "${BLUE}  │  ${CYAN}Check status:${NC}   docker compose -f docker-compose.prod.yml ps${BLUE}     │${NC}"
+    echo -e "${BLUE}  │  ${CYAN}Stop all:${NC}       docker compose -f docker-compose.prod.yml down${BLUE}   │${NC}"
     echo -e "${BLUE}  │  ${CYAN}Restart:${NC}        docker compose -f docker-compose.prod.yml restart${BLUE}│${NC}"
     echo -e "${BLUE}  │  ${CYAN}Update:${NC}         ./docker-update.sh${BLUE}                              │${NC}"
     echo -e "${BLUE}  └─────────────────────────────────────────────────────────────────────┘${NC}"
     echo ""
 
     if [ "$DEV_MODE" = false ]; then
-        echo -e "${YELLOW}  ⚠ Make sure DNS for $DOMAIN and api.$DOMAIN point to this server!${NC}"
+        echo -e "${YELLOW}  Note: SSL certificates are being generated. If you see certificate${NC}"
+        echo -e "${YELLOW}  errors, wait 2-3 minutes for Let's Encrypt to complete.${NC}"
         echo ""
     fi
 
     echo -e "${GREEN}  🙏 Thank you for choosing FaithFlow!${NC}"
+    echo -e "${GREEN}  ❤️  May this system bless your church ministry.${NC}"
     echo ""
 }
 
@@ -412,10 +788,23 @@ parse_args() {
                 echo "  --dev, --development    Install in development mode (localhost, no SSL)"
                 echo "  --help, -h              Show this help message"
                 echo ""
+                echo "Requirements:"
+                echo "  - Linux server (Ubuntu 22.04+ or Debian 12+ recommended)"
+                echo "  - Minimum 2GB RAM"
+                echo "  - Minimum 20GB disk space"
+                echo "  - Root/sudo access"
+                echo "  - Domain name with DNS pointing to your server"
+                echo ""
+                echo "DNS records needed (replace yourdomain.com with your domain):"
+                echo "  yourdomain.com        -> Your server IP"
+                echo "  api.yourdomain.com    -> Your server IP"
+                echo "  livekit.yourdomain.com -> Your server IP"
+                echo ""
                 exit 0
                 ;;
             *)
                 echo "Unknown option: $1"
+                echo "Use --help for usage information"
                 exit 1
                 ;;
         esac
@@ -427,19 +816,25 @@ parse_args() {
 # =============================================================================
 
 main() {
+    SECONDS=0
     parse_args "$@"
 
     # Create log file
     mkdir -p "$(dirname "$LOG_FILE")"
     touch "$LOG_FILE"
+    chmod 644 "$LOG_FILE"
 
+    log "=========================================="
     log "FaithFlow Docker Installation started"
+    log "Version: $VERSION"
+    log "=========================================="
 
     show_welcome
     check_prerequisites
-    configure_environment
-    build_images
-    start_services
+    install_docker
+    configure_domain
+    create_environment
+    build_and_start
     initialize_database
     configure_firewall
     show_completion
