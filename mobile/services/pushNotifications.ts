@@ -30,11 +30,18 @@ export interface PushNotificationPayload {
     | 'community_invite'
     | 'event_reminder'
     | 'prayer_request'
-    | 'announcement';
+    | 'announcement'
+    | 'incoming_call'
+    | 'missed_call';
   communityId?: string;
   subgroupId?: string;
   messageId?: string;
   eventId?: string;
+  callId?: string;
+  callType?: 'voice' | 'video';
+  callerId?: string;
+  callerName?: string;
+  callerAvatar?: string;
   title: string;
   body: string;
   data?: Record<string, string>;
@@ -45,6 +52,7 @@ export interface NotificationChannels {
   communities: string;
   events: string;
   announcements: string;
+  calls: string;
 }
 
 // =============================================================================
@@ -63,6 +71,18 @@ Notifications.setNotificationHandler({
     if (data?.type === 'new_message' || data?.type === 'mention' || data?.type === 'reaction') {
       // Suppress notification if user is viewing the same chat
       shouldShowNotification = !isViewingChat(data.communityId, data.subgroupId);
+    }
+
+    // Incoming calls should always show with high priority
+    if (data?.type === 'incoming_call') {
+      return {
+        shouldShowAlert: true,
+        shouldPlaySound: true,
+        shouldSetBadge: true,
+        shouldShowBanner: true,
+        shouldShowList: true,
+        priority: Notifications.AndroidNotificationPriority.MAX,
+      };
     }
 
     return {
@@ -84,6 +104,7 @@ export const NOTIFICATION_CHANNELS: NotificationChannels = {
   communities: 'communities',
   events: 'events',
   announcements: 'announcements',
+  calls: 'calls',
 };
 
 async function setupNotificationChannels(): Promise<void> {
@@ -123,6 +144,19 @@ async function setupNotificationChannels(): Promise<void> {
     description: 'Church announcements',
     importance: Notifications.AndroidImportance.MAX,
     sound: 'notification.wav',
+  });
+
+  // Calls channel (highest priority for incoming calls)
+  await Notifications.setNotificationChannelAsync(NOTIFICATION_CHANNELS.calls, {
+    name: 'Calls',
+    description: 'Voice and video calls',
+    importance: Notifications.AndroidImportance.MAX,
+    vibrationPattern: [0, 500, 200, 500, 200, 500],
+    lightColor: '#25D366',
+    sound: 'ringtone.wav',
+    enableVibrate: true,
+    enableLights: true,
+    bypassDnd: true, // Bypass Do Not Disturb for calls
   });
 }
 
@@ -270,6 +304,19 @@ function handleNotificationNavigation(data: PushNotificationPayload): void {
 
     case 'prayer_request':
       router.push('/(tabs)/home' as any);
+      break;
+
+    case 'incoming_call':
+      // Incoming call handled by IncomingCallOverlay via call store
+      // Navigation to call screen happens after accepting
+      if (data.callId) {
+        router.push(`/call/${data.callId}` as any);
+      }
+      break;
+
+    case 'missed_call':
+      // Navigate to call history
+      router.push('/call-history' as any);
       break;
 
     default:
