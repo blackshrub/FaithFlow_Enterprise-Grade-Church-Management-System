@@ -1,0 +1,75 @@
+# FaithFlow EMQX Docker Compose
+# MQTT Broker for real-time community messaging
+#
+# Usage:
+#   cd backend/docker
+#   docker-compose -f docker-compose.emqx.yml up -d
+#
+# Dashboard: http://localhost:18083 (admin / public - CHANGE THIS!)
+#
+# Ports:
+#   - 1883:  MQTT
+#   - 8083:  MQTT over WebSocket (for mobile/web)
+#   - 8084:  MQTT over WebSocket (SSL)
+#   - 8883:  MQTT (SSL)
+#   - 18083: Dashboard & REST API
+
+services:
+  emqx:
+    image: emqx/emqx:6.0.1
+    container_name: faithflow-emqx
+    hostname: emqx
+    ports:
+      - "1883:1883"     # MQTT
+      - "8083:8083"     # MQTT over WebSocket
+      - "8084:8084"     # MQTT over WebSocket (SSL)
+      - "8883:8883"     # MQTT (SSL)
+      - "18083:18083"   # Dashboard & REST API
+    environment:
+      # Node name
+      - EMQX_NAME=emqx
+      - EMQX_HOST=127.0.0.1
+
+      # Dashboard admin password (CHANGE IN PRODUCTION!)
+      - EMQX_DASHBOARD__DEFAULT_PASSWORD=${EMQX_DASHBOARD_PASSWORD:-public}
+
+      # Listeners
+      - EMQX_LISTENERS__TCP__DEFAULT__MAX_CONNECTIONS=100000
+      - EMQX_LISTENERS__WS__DEFAULT__MAX_CONNECTIONS=100000
+
+      # Session settings
+      - EMQX_MQTT__MAX_INFLIGHT=32
+      - EMQX_MQTT__MAX_MQUEUE_LEN=1000
+
+      # Retain messages
+      - EMQX_RETAINER__ENABLE=true
+
+      # Allow anonymous for initial testing (disable in production!)
+      - EMQX_ALLOW_ANONYMOUS=true
+
+      # Logging
+      - EMQX_LOG__CONSOLE_HANDLER__LEVEL=info
+    volumes:
+      - emqx-data:/opt/emqx/data
+      - emqx-log:/opt/emqx/log
+      - ./emqx/emqx.conf:/opt/emqx/etc/emqx.conf:ro
+    healthcheck:
+      test: ["CMD", "/opt/emqx/bin/emqx", "ctl", "status"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+    networks:
+      - faithflow-network
+
+networks:
+  faithflow-network:
+    name: faithflow-network
+    driver: bridge
+
+volumes:
+  emqx-data:
+    name: faithflow-emqx-data
+  emqx-log:
+    name: faithflow-emqx-log
