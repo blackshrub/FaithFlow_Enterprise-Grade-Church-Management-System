@@ -42,6 +42,11 @@ import { LinkPreview } from '@/components/chat/LinkPreview';
 import { MessageActionsSheet, ForwardMessageModal } from '@/components/chat/MessageActions';
 import { LocationSharer, LocationPreview, LocationData, LiveLocationData } from '@/components/chat/LocationSharing';
 
+// NEW: Enhanced WhatsApp-style components
+import { EmojiPickerSheet } from '@/components/chat/EmojiPicker';
+import { GifPickerSheet, GifButton, type GifItem } from '@/components/chat/GifPicker';
+import { MediaGalleryViewer, type MediaItem } from '@/components/chat/MediaGallery';
+
 // Chat performance optimizations
 import {
   SendButton,
@@ -66,6 +71,7 @@ import {
   useMarkAsRead,
   useReactToMessage,
   useDeleteMessage,
+  useEditMessage,
   useForwardMessage,
   useStarMessage,
   useStarredMessages,
@@ -343,6 +349,14 @@ export default function SubgroupChatScreen() {
   const [showLocationSharer, setShowLocationSharer] = useState(false);
   const [starredMessages, setStarredMessages] = useState<Set<string>>(new Set());
 
+  // NEW: Enhanced chat feature states
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [showGifPicker, setShowGifPicker] = useState(false);
+  const [reactionTargetMessage, setReactionTargetMessage] = useState<CommunityMessage | null>(null);
+  const [mediaGalleryItems, setMediaGalleryItems] = useState<MediaItem[]>([]);
+  const [mediaGalleryIndex, setMediaGalleryIndex] = useState(0);
+  const [showMediaGallery, setShowMediaGallery] = useState(false);
+
   const inputRef = useRef<TextInput>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const listRef = useRef<any>(null);
@@ -417,6 +431,7 @@ export default function SubgroupChatScreen() {
   const markAsReadMutation = useMarkAsRead();
   const reactToMessageMutation = useReactToMessage();
   const deleteMessageMutation = useDeleteMessage();
+  const editMessageMutation = useEditMessage();
   const forwardMessageMutation = useForwardMessage();
   const starMessageMutation = useStarMessage();
 
@@ -438,15 +453,112 @@ export default function SubgroupChatScreen() {
 
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
+    // Determine if adding or removing reaction
+    const existingReaction = messages.find(m => m.id === messageId)?.reactions?.[emoji];
+    const hasReacted = existingReaction?.includes(member.id);
+
     reactToMessageMutation.mutate({
       messageId,
       emoji,
-      action: 'add',
+      action: hasReacted ? 'remove' : 'add',
       communityId,
       channelType: 'subgroup',
       subgroupId,
     });
-  }, [member, reactToMessageMutation, communityId, subgroupId]);
+  }, [member, reactToMessageMutation, messages, communityId, subgroupId]);
+
+  // Collect all media items from messages for gallery viewer
+  const allMediaItems = useMemo((): MediaItem[] => {
+    return messages
+      .filter((m) => (m.message_type === 'image' || m.message_type === 'video') && m.media?.url)
+      .map((m) => ({
+        id: m.id,
+        type: m.message_type as 'image' | 'video',
+        uri: m.media!.url,
+        thumbnail_uri: m.media!.thumbnail_url,
+        width: m.media!.width,
+        height: m.media!.height,
+        sender_name: m.sender?.name || m.sender_name || 'Unknown',
+        created_at: m.created_at,
+      }));
+  }, [messages]);
+
+  // Handle opening media gallery
+  const handleOpenMediaGallery = useCallback((uri: string) => {
+    const index = allMediaItems.findIndex((item) => item.uri === uri);
+    if (index !== -1) {
+      setMediaGalleryItems(allMediaItems);
+      setMediaGalleryIndex(index);
+      setShowMediaGallery(true);
+    }
+  }, [allMediaItems]);
+
+  // Handle full emoji picker selection for reactions
+  const handleOpenEmojiPicker = useCallback((message: CommunityMessage) => {
+    setReactionTargetMessage(message);
+    setShowEmojiPicker(true);
+  }, []);
+
+  const handleEmojiSelect = useCallback((emoji: string) => {
+    if (reactionTargetMessage) {
+      handleReaction(reactionTargetMessage.id, emoji);
+    }
+    setShowEmojiPicker(false);
+    setReactionTargetMessage(null);
+  }, [reactionTargetMessage, handleReaction]);
+
+  // Handle GIF selection
+  // NOTE: GIF sending requires media upload support - for now send as text with URL
+  const handleGifSelect = useCallback(async (gif: GifItem) => {
+    if (!member) return;
+
+    setShowGifPicker(false);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+    try {
+      // Send GIF URL as text message (backend would need to support GIF media type)
+      await sendMessageMutation.mutateAsync({
+        communityId,
+        channelType: 'subgroup',
+        subgroupId,
+        message: {
+          message_type: 'text',
+          text: gif.url, // Send GIF URL as message text
+        },
+      });
+    } catch (error) {
+      Alert.alert('Error', 'Failed to send GIF');
+    }
+  }, [member, communityId, subgroupId, sendMessageMutation]);
+
+  // Handle edit message
+  const handleEditMessage = useCallback(async (newText: string) => {
+    if (!selectedMessage) return;
+
+    try {
+      await editMessageMutation.mutateAsync({
+        messageId: selectedMessage.id,
+        text: newText,
+      });
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch (error) {
+      console.error('[EditMessage] Failed:', error);
+      Alert.alert('Error', 'Could not edit message. Please try again.');
+    }
+  }, [selectedMessage, editMessageMutation]);
+
+  // Check if message can be edited (within 15 minutes)
+  const canEditMessage = useCallback((message: CommunityMessage): boolean => {
+    if (!message || !member) return false;
+    if (message.sender_member_id !== member.id) return false;
+    if (message.message_type !== 'text') return false;
+    if (message.is_deleted) return false;
+
+    const createdAt = new Date(message.created_at).getTime();
+    const now = Date.now();
+    const fifteenMinutes = 15 * 60 * 1000;
+    return (now - createdAt) < fifteenMinutes;
+  }, [member]);
 
   const handleTyping = useCallback(() => {
     const now = Date.now();
@@ -960,6 +1072,9 @@ export default function SubgroupChatScreen() {
               onPress={() => setShowAttachmentPicker(true)}
             />
 
+            {/* GIF button */}
+            <GifButton onPress={() => setShowGifPicker(true)} />
+
             {/* Text input */}
             <View
               className="flex-1 rounded-3xl px-4 py-2"
@@ -1051,6 +1166,7 @@ export default function SubgroupChatScreen() {
         }}
         isOwnMessage={selectedMessage?.sender_member_id === member?.id}
         isStarred={selectedMessage ? starredMessages.has(selectedMessage.id) : false}
+        canEdit={selectedMessage ? canEditMessage(selectedMessage) : false}
         onReply={() => {
           if (selectedMessage) {
             setReplyingTo(selectedMessage);
@@ -1067,6 +1183,7 @@ export default function SubgroupChatScreen() {
           }
         }}
         onCopy={() => {}}
+        onEdit={handleEditMessage}
         onDelete={(forEveryone) => {
           if (selectedMessage) {
             handleDeleteMessage(selectedMessage.id, forEveryone);
@@ -1107,6 +1224,33 @@ export default function SubgroupChatScreen() {
         onShareLocation={handleShareLocation}
         onShareLiveLocation={handleShareLiveLocation}
       />
+
+      {/* NEW: Full Emoji Picker for reactions */}
+      <EmojiPickerSheet
+        visible={showEmojiPicker}
+        onClose={() => {
+          setShowEmojiPicker(false);
+          setReactionTargetMessage(null);
+        }}
+        onEmojiSelect={handleEmojiSelect}
+      />
+
+      {/* NEW: GIF Picker */}
+      <GifPickerSheet
+        visible={showGifPicker}
+        onClose={() => setShowGifPicker(false)}
+        onGifSelect={handleGifSelect}
+      />
+
+      {/* NEW: Media Gallery Viewer */}
+      {showMediaGallery && mediaGalleryItems.length > 0 && (
+        <MediaGalleryViewer
+          media={mediaGalleryItems}
+          initialIndex={mediaGalleryIndex}
+          visible={showMediaGallery}
+          onClose={() => setShowMediaGallery(false)}
+        />
+      )}
     </SafeAreaView>
   );
 }

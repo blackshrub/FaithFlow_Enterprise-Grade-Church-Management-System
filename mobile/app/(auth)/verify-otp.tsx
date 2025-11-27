@@ -54,7 +54,7 @@ export default function VerifyOTPScreen() {
 
       // Navigation handled by useVerifyOTP success callback
       // User will be redirected to tabs automatically via index.tsx
-      router.replace("/(tabs)/home");
+      router.replace("/(tabs)");
     } catch (error: any) {
       setError(error.response?.data?.detail || "Kode OTP tidak valid");
       setOtp("");

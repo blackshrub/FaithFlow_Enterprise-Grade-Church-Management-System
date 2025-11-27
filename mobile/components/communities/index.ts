@@ -11,3 +11,14 @@ export { CreatePollModal } from './CreatePollModal';
 // Cards
 export { PollCard } from './PollCard';
 export type { Poll, PollOption } from './PollCard';
+
+// Member Management (NEW)
+export {
+  MemberManagementSheet,
+  MemberCard,
+  MemberList,
+  RolePickerSheet,
+  RoleBadge,
+  type CommunityMember,
+  type MemberRole,
+} from './MemberManagement';

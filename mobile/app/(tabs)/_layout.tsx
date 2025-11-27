@@ -47,6 +47,7 @@ export default function TabsLayout() {
       />
       <Tabs.Screen name="bible" />
       <Tabs.Screen name="give" />
+      <Tabs.Screen name="groups" />
       <Tabs.Screen name="explore" />
       <Tabs.Screen name="events" />
       <Tabs.Screen name="profile" />

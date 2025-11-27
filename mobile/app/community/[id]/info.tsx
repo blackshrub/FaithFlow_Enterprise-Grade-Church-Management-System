@@ -63,6 +63,14 @@ import { useAuthStore } from '@/stores/auth';
 import { colors, spacing, borderRadius, shadows } from '@/constants/theme';
 import type { CommunityMember } from '@/types/communities';
 
+// Member Management Component
+import {
+  MemberManagementSheet,
+  MemberList,
+  type CommunityMember as MemberType,
+  type MemberRole,
+} from '@/components/communities/MemberManagement';
+
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const HEADER_HEIGHT = 200;
 
@@ -73,6 +81,8 @@ export default function CommunityInfoScreen() {
   const { member } = useAuthStore();
 
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [showMemberManagement, setShowMemberManagement] = useState(false);
+  const [selectedMember, setSelectedMember] = useState<MemberType | null>(null);
 
   // Fetch community details
   const { data: community, isLoading: isLoadingCommunity } = useCommunity(id);
@@ -164,6 +174,53 @@ export default function CommunityInfoScreen() {
       [{ text: t('common.ok') }]
     );
   }, [t]);
+
+  // Transform members for MemberManagement component
+  const managementMembers: MemberType[] = members.map((m: CommunityMember) => ({
+    id: m.id,
+    member_id: m.id,
+    name: m.full_name || 'Unknown',
+    avatar_url: m.profile_photo,
+    role: (m.role as MemberRole) || 'member',
+    joined_at: m.joined_at || new Date().toISOString(),
+    is_online: false,
+  }));
+
+  // Get current user's role for member management
+  const currentUserRole: MemberRole = (community?.my_role as MemberRole) || 'member';
+
+  // Member management handlers
+  const handlePromoteMember = useCallback((memberId: string, newRole: MemberRole) => {
+    const memberToChange = members.find((m: CommunityMember) => m.id === memberId);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    // TODO: Call API to promote member
+    Alert.alert('Success', `${memberToChange?.full_name} promoted to ${newRole}`);
+    setShowMemberManagement(false);
+    setSelectedMember(null);
+  }, [members]);
+
+  const handleDemoteMember = useCallback((memberId: string, newRole: MemberRole) => {
+    const memberToChange = members.find((m: CommunityMember) => m.id === memberId);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    // TODO: Call API to demote member
+    Alert.alert('Success', `${memberToChange?.full_name} demoted to ${newRole}`);
+    setShowMemberManagement(false);
+    setSelectedMember(null);
+  }, [members]);
+
+  const handleKickMember = useCallback((memberId: string) => {
+    const memberToKick = members.find((m: CommunityMember) => m.id === memberId);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    // TODO: Call API to kick member
+    Alert.alert('Success', `${memberToKick?.full_name} has been removed from the community.`);
+    setShowMemberManagement(false);
+    setSelectedMember(null);
+  }, [members]);
+
+  const handleMemberPress = useCallback((memberData: MemberType) => {
+    setSelectedMember(memberData);
+    setShowMemberManagement(true);
+  }, []);
 
   const getRoleIcon = (role?: string) => {
     switch (role) {
@@ -589,6 +646,25 @@ export default function CommunityInfoScreen() {
                       </Text>
                     </Pressable>
                   )}
+
+                  {/* Manage Members button for leaders */}
+                  {isLeader && (
+                    <Pressable
+                      onPress={() => {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        setShowMemberManagement(true);
+                      }}
+                      className="py-3 px-4 mt-2 rounded-xl items-center active:opacity-70"
+                      style={{ backgroundColor: colors.primary[50] }}
+                    >
+                      <HStack space="sm" className="items-center">
+                        <Icon as={Settings} size="sm" style={{ color: colors.primary[600] }} />
+                        <Text className="text-primary-600 font-medium">
+                          Manage Members
+                        </Text>
+                      </HStack>
+                    </Pressable>
+                  )}
                 </VStack>
               )}
             </View>
@@ -698,6 +774,21 @@ export default function CommunityInfoScreen() {
           <View style={{ height: 40 }} />
         </VStack>
       </ScrollView>
+
+      {/* Member Management Sheet */}
+      <MemberManagementSheet
+        visible={showMemberManagement}
+        onClose={() => {
+          setShowMemberManagement(false);
+          setSelectedMember(null);
+        }}
+        member={selectedMember}
+        currentUserRole={currentUserRole}
+        onPromote={handlePromoteMember}
+        onDemote={handleDemoteMember}
+        onKick={handleKickMember}
+        communityName={community?.name}
+      />
     </View>
   );
 }
