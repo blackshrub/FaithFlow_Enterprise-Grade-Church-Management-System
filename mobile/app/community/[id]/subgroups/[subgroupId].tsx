@@ -113,6 +113,7 @@ interface MessageBubbleProps {
   showSender: boolean;
   onLongPress?: () => void;
   onReact?: (emoji: string) => void;
+  onReadReceiptPress?: (message: CommunityMessage) => void;
 }
 
 // Custom comparison for optimal re-renders
@@ -137,7 +138,7 @@ const areMessagePropsEqual = (
 };
 
 const MessageBubble = React.memo(
-  ({ message, isOwnMessage, showSender, onLongPress, onReact }: MessageBubbleProps) => {
+  ({ message, isOwnMessage, showSender, onLongPress, onReact, onReadReceiptPress }: MessageBubbleProps) => {
     const formatTime = (dateString: string) => {
       const date = new Date(dateString);
       return date.toLocaleTimeString('en-US', {
@@ -263,10 +264,22 @@ const MessageBubble = React.memo(
               <Text className="text-xs text-gray-500">
                 {formatTime(message.created_at)}
               </Text>
-              <MessageStatusIndicator
-                status={getMessageStatus()}
-                isOwnMessage={isOwnMessage}
-              />
+              {isOwnMessage && onReadReceiptPress ? (
+                <Pressable
+                  onPress={() => onReadReceiptPress(message)}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                >
+                  <MessageStatusIndicator
+                    status={getMessageStatus()}
+                    isOwnMessage={isOwnMessage}
+                  />
+                </Pressable>
+              ) : (
+                <MessageStatusIndicator
+                  status={getMessageStatus()}
+                  isOwnMessage={isOwnMessage}
+                />
+              )}
             </HStack>
           </View>
 
@@ -919,6 +932,11 @@ export default function SubgroupChatScreen() {
               showSender={showSender}
               onLongPress={() => handleMessageLongPress(message)}
               onReact={(emoji) => handleReaction(message.id, emoji)}
+              onReadReceiptPress={(msg) => {
+                setReadReceiptMessage(msg);
+                setShowReadReceiptList(true);
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              }}
             />
           </DoubleTapReaction>
         </SwipeToReplyWrapper>
@@ -978,9 +996,17 @@ export default function SubgroupChatScreen() {
             <Text className="font-bold text-base" style={{ color: '#FFFFFF' }} numberOfLines={1}>
               {subgroup.name}
             </Text>
-            <Text className="text-xs" style={{ color: 'rgba(255,255,255,0.8)' }}>
-              {subgroup.member_count} members • {community?.name}
-            </Text>
+            {typingIndicatorText ? (
+              <HStack space="xs" style={{ alignItems: 'center' }}>
+                <Text className="text-xs italic" style={{ color: '#25D366' }}>
+                  {typingIndicatorText}
+                </Text>
+              </HStack>
+            ) : (
+              <Text className="text-xs" style={{ color: 'rgba(255,255,255,0.8)' }}>
+                {subgroup.member_count} members • {community?.name}
+              </Text>
+            )}
           </VStack>
 
           <Pressable
