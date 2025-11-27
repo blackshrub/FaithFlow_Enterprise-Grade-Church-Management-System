@@ -52,6 +52,8 @@ export interface PrayerRequest {
  */
 export interface PrayerRequestWithStatus extends PrayerRequest {
   has_prayed: boolean;
+  // Alias for backwards compatibility with mock data
+  content?: string;
 }
 
 /**

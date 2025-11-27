@@ -246,7 +246,7 @@ export const useStableValue = <T>(factory: () => T, deps: React.DependencyList):
  * Hook to track if a value has changed (for debugging re-renders)
  */
 export const useWhyDidYouUpdate = (name: string, props: Record<string, any>) => {
-  const previousProps = useRef<Record<string, any>>();
+  const previousProps = useRef<Record<string, any> | undefined>(undefined);
 
   if (previousProps.current) {
     const allKeys = Object.keys({ ...previousProps.current, ...props });
@@ -280,7 +280,7 @@ export const debounce = <T extends (...args: any[]) => any>(
   func: T,
   wait: number
 ): ((...args: Parameters<T>) => void) => {
-  let timeout: NodeJS.Timeout | null = null;
+  let timeout: ReturnType<typeof setTimeout> | null = null;
 
   return (...args: Parameters<T>) => {
     if (timeout) clearTimeout(timeout);
@@ -389,6 +389,328 @@ export const isLowMemoryDevice = () => {
   // Android devices with < 2GB RAM or older iOS devices
   return Platform.OS === 'android' && Platform.Version < 26;
 };
+
+// ============================================================================
+// COMMUNITIES-SPECIFIC OPTIMIZATIONS
+// ============================================================================
+
+import type { CommunityMessage } from '@/types/communities';
+import { InteractionManager } from 'react-native';
+
+/**
+ * Message key extractor - stable reference for FlashList
+ */
+export const messageKeyExtractor = (item: CommunityMessage) => item.id;
+
+/**
+ * Estimate message item height for FlashList virtualization
+ */
+export const getMessageItemHeight = (message: CommunityMessage): number => {
+  if (message.is_deleted) return 50;
+  if (message.message_type === 'poll') return 300;
+  if (message.message_type === 'image' || message.message_type === 'video') {
+    return 260 + (message.text ? 40 : 0);
+  }
+  if (message.message_type === 'document') return 100;
+  if (message.message_type === 'audio') return 80;
+
+  // Text message - estimate based on length
+  const textLength = message.text?.length || 0;
+  const lines = Math.ceil(textLength / 38);
+  return 60 + lines * 22 + (message.reply_to ? 55 : 0);
+};
+
+/**
+ * FlashList props optimized for chat messages
+ */
+export const CHAT_LIST_PROPS = {
+  estimatedItemSize: 80,
+  drawDistance: 500, // Pre-render items 500px outside viewport
+  overrideItemLayout: undefined, // Enable when item heights are known
+} as const;
+
+/**
+ * Create optimistic message for immediate display
+ */
+export const createOptimisticMessage = (
+  text: string,
+  memberId: string,
+  memberName: string,
+  memberAvatar: string | undefined,
+  communityId: string,
+  channelType: string,
+  subgroupId?: string,
+  replyTo?: CommunityMessage | null
+): CommunityMessage => {
+  const now = new Date().toISOString();
+  return {
+    id: `optimistic-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    church_id: '',
+    community_id: communityId,
+    channel_type: channelType as any,
+    subgroup_id: subgroupId,
+    sender_member_id: memberId,
+    sender_name: memberName,
+    sender_avatar_fid: memberAvatar,
+    message_type: 'text',
+    text,
+    created_at: now,
+    updated_at: now,
+    is_deleted: false,
+    is_edited: false,
+    read_by: [],
+    reactions: {},
+    reply_to: replyTo
+      ? {
+          message_id: replyTo.id,
+          sender_name: replyTo.sender_name || 'Unknown',
+          preview: replyTo.text?.substring(0, 60) || '[Media]',
+        }
+      : undefined,
+    sender: {
+      id: memberId,
+      name: memberName,
+      avatar_url: memberAvatar,
+    },
+    _optimistic: true,
+  } as unknown as CommunityMessage & { _optimistic?: boolean };
+};
+
+/**
+ * Add optimistic message to cache
+ */
+export const addOptimisticMessageToCache = (
+  queryClient: any,
+  queryKey: any[],
+  message: CommunityMessage
+): void => {
+  queryClient.setQueryData(queryKey, (oldData: any) => {
+    if (!oldData?.pages?.[0]) {
+      return {
+        pages: [{ messages: [message], has_more: false }],
+        pageParams: [undefined],
+      };
+    }
+
+    return {
+      ...oldData,
+      pages: [
+        {
+          ...oldData.pages[0],
+          messages: [message, ...oldData.pages[0].messages],
+        },
+        ...oldData.pages.slice(1),
+      ],
+    };
+  });
+};
+
+/**
+ * Replace optimistic message with real message
+ */
+export const replaceOptimisticMessage = (
+  queryClient: any,
+  queryKey: any[],
+  optimisticId: string,
+  realMessage: CommunityMessage
+): void => {
+  queryClient.setQueryData(queryKey, (oldData: any) => {
+    if (!oldData?.pages) return oldData;
+
+    return {
+      ...oldData,
+      pages: oldData.pages.map((page: any) => ({
+        ...page,
+        messages: page.messages.map((msg: CommunityMessage) =>
+          msg.id === optimisticId ? realMessage : msg
+        ),
+      })),
+    };
+  });
+};
+
+/**
+ * Remove optimistic message from cache (on error)
+ */
+export const removeOptimisticMessage = (
+  queryClient: any,
+  queryKey: any[],
+  optimisticId: string
+): void => {
+  queryClient.setQueryData(queryKey, (oldData: any) => {
+    if (!oldData?.pages) return oldData;
+
+    return {
+      ...oldData,
+      pages: oldData.pages.map((page: any) => ({
+        ...page,
+        messages: page.messages.filter(
+          (msg: CommunityMessage) => msg.id !== optimisticId
+        ),
+      })),
+    };
+  });
+};
+
+/**
+ * Optimistically update reaction in cache
+ */
+export const updateReactionInCache = (
+  queryClient: any,
+  queryKey: any[],
+  messageId: string,
+  emoji: string,
+  memberId: string,
+  action: 'add' | 'remove'
+): { previousData: any } => {
+  const previousData = queryClient.getQueryData(queryKey);
+
+  queryClient.setQueryData(queryKey, (oldData: any) => {
+    if (!oldData?.pages) return oldData;
+
+    return {
+      ...oldData,
+      pages: oldData.pages.map((page: any) => ({
+        ...page,
+        messages: page.messages.map((msg: CommunityMessage) => {
+          if (msg.id !== messageId) return msg;
+
+          const reactions = { ...msg.reactions };
+          const currentVoters = reactions[emoji] || [];
+
+          if (action === 'add') {
+            reactions[emoji] = [...currentVoters, memberId];
+          } else {
+            reactions[emoji] = currentVoters.filter((id: string) => id !== memberId);
+            if (reactions[emoji].length === 0) {
+              delete reactions[emoji];
+            }
+          }
+
+          return { ...msg, reactions };
+        }),
+      })),
+    };
+  });
+
+  return { previousData };
+};
+
+/**
+ * Optimistically update poll vote in cache
+ */
+export const updatePollVoteInCache = (
+  queryClient: any,
+  messageId: string,
+  optionId: string,
+  memberId: string,
+  action: 'add' | 'remove'
+): void => {
+  // Update all message queries that might contain this poll
+  queryClient.setQueriesData(
+    { queryKey: ['community', 'messages'], exact: false },
+    (oldData: any) => {
+      if (!oldData?.pages) return oldData;
+
+      return {
+        ...oldData,
+        pages: oldData.pages.map((page: any) => ({
+          ...page,
+          messages: page.messages.map((msg: CommunityMessage) => {
+            if (msg.id !== messageId || !msg.poll) return msg;
+
+            const poll = { ...msg.poll };
+            poll.options = poll.options.map((opt: any) => {
+              if (opt.id !== optionId) return opt;
+
+              const voters = opt.voters || [];
+              const newVoters =
+                action === 'add'
+                  ? [...voters, memberId]
+                  : voters.filter((id: string) => id !== memberId);
+
+              return {
+                ...opt,
+                voters: newVoters,
+                vote_count: newVoters.length,
+              };
+            });
+
+            // Recalculate total votes
+            poll.total_votes = poll.options.reduce(
+              (sum: number, opt: any) => sum + (opt.vote_count || 0),
+              0
+            );
+
+            return { ...msg, poll };
+          }),
+        })),
+      };
+    }
+  );
+};
+
+/**
+ * Prefetch community data when hovering/long-pressing
+ */
+export const prefetchCommunityData = (
+  queryClient: any,
+  communityId: string
+): void => {
+  InteractionManager.runAfterInteractions(() => {
+    // Prefetch community detail
+    queryClient.prefetchQuery({
+      queryKey: ['community', 'detail', communityId],
+      staleTime: 1000 * 60 * 5,
+    });
+
+    // Prefetch members
+    queryClient.prefetchQuery({
+      queryKey: ['community', 'members', communityId],
+      staleTime: 1000 * 60 * 5,
+    });
+  });
+};
+
+/**
+ * Trim old messages from cache to prevent memory bloat
+ */
+export const trimMessageCache = (
+  queryClient: any,
+  queryKey: any[],
+  maxPages: number = 5
+): void => {
+  queryClient.setQueryData(queryKey, (oldData: any) => {
+    if (!oldData?.pages || oldData.pages.length <= maxPages) return oldData;
+
+    return {
+      ...oldData,
+      pages: oldData.pages.slice(0, maxPages),
+      pageParams: oldData.pageParams.slice(0, maxPages),
+    };
+  });
+};
+
+/**
+ * Query options for community messages (real-time)
+ */
+export const MESSAGE_QUERY_OPTIONS = {
+  staleTime: 1000 * 30, // 30 seconds
+  gcTime: 1000 * 60 * 60, // Keep for 1 hour
+  refetchOnWindowFocus: false,
+  refetchOnMount: true,
+  retry: 2,
+} as const;
+
+/**
+ * Query options for community list
+ */
+export const COMMUNITY_LIST_QUERY_OPTIONS = {
+  staleTime: 1000 * 60 * 5, // 5 minutes
+  gcTime: 1000 * 60 * 60, // 1 hour
+  refetchOnWindowFocus: false,
+  refetchOnMount: 'always' as const,
+} as const;
 
 // ============================================================================
 // EXPORTS

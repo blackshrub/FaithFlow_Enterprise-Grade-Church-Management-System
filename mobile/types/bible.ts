@@ -72,39 +72,45 @@ export type BibleTranslation = 'NIV' | 'ESV' | 'NKJV' | 'NLT' | 'TB' | 'CHS';
 
 export const BIBLE_TRANSLATIONS: Record<
   BibleTranslation,
-  { code: string; name: string; language: string; flag: string }
+  { id: string; code: string; name: string; language: string; flag: string }
 > = {
   NIV: {
+    id: 'NIV',
     code: 'NIV',
     name: 'New International Version',
     language: 'English',
     flag: '🇺🇸',
   },
   ESV: {
+    id: 'ESV',
     code: 'ESV',
     name: 'English Standard Version',
     language: 'English',
     flag: '🇺🇸',
   },
   NKJV: {
+    id: 'NKJV',
     code: 'NKJV',
     name: 'New King James Version',
     language: 'English',
     flag: '🇺🇸',
   },
   NLT: {
+    id: 'NLT',
     code: 'NLT',
     name: 'New Living Translation',
     language: 'English',
     flag: '🇺🇸',
   },
   TB: {
+    id: 'TB',
     code: 'TB',
     name: 'Terjemahan Baru',
     language: 'Indonesian',
     flag: '🇮🇩',
   },
   CHS: {
+    id: 'CHS',
     code: 'CHS',
     name: 'Chinese Union Simplified',
     language: 'Chinese',

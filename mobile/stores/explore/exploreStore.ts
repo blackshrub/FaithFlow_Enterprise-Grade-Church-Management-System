@@ -30,9 +30,9 @@ interface ExploreStore {
 
   // Celebration modal
   showCelebration: boolean;
-  celebrationType: 'streak' | 'quiz_perfect' | 'milestone' | null;
+  celebrationType: 'streak' | 'quiz_perfect' | 'milestone' | 'complete' | null;
   celebrationData: any;
-  triggerCelebration: (type: 'streak' | 'quiz_perfect' | 'milestone', data: any) => void;
+  triggerCelebration: (type: 'streak' | 'quiz_perfect' | 'milestone' | 'complete', data: any) => void;
   closeCelebration: () => void;
 }
 

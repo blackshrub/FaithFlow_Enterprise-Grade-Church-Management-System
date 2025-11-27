@@ -40,7 +40,13 @@ export function useVerifyOTP() {
     },
     onSuccess: async (data) => {
       // Store token and member data
-      await login(data.access_token, data.member);
+      // Map API member to store member format
+      const member = {
+        ...data.member,
+        full_name: data.member.name || data.member.name || '',
+        avatar_url: data.member.profile_photo_url,
+      };
+      await login(data.access_token, member as any);
     },
   });
 }

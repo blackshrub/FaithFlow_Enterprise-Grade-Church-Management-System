@@ -295,11 +295,11 @@ export class OptimizedBibleLoader {
       const lowerText = entry.t.toLowerCase();
 
       if (lowerText.includes(lowerQuery)) {
-        const book = this.bookMap.get(entry.b);
+        const book = this.bookMap?.get(entry.b) ?? null;
 
         results.push({
           book: entry.b,
-          bookName: book?.n || `Book ${entry.b}`,
+          bookName: book?.n ?? `Book ${entry.b}`,
           chapter: entry.c,
           verse: entry.v,
           text: entry.t,

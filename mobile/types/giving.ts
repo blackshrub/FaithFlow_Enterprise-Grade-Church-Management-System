@@ -13,6 +13,7 @@
  */
 export interface Fund {
   _id: string;
+  id?: string; // Alias for _id (for compatibility)
   church_id: string;
   name: string;
   description: string;
@@ -41,6 +42,7 @@ export type PaymentMethodType =
   | 'gopay'
   | 'ovo'
   | 'dana'
+  | 'e_wallet'
   | 'manual';
 
 /**
@@ -74,6 +76,8 @@ export interface GivingTransaction {
  */
 export interface GivingHistoryItem extends GivingTransaction {
   fund?: Fund;
+  // Alias for backwards compatibility with mock data
+  status?: PaymentStatus;
 }
 
 /**

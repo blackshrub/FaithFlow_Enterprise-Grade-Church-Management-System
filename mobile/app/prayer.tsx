@@ -18,20 +18,16 @@ import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import * as Haptics from 'expo-haptics';
 import { MotiView } from 'moti';
-import {
-  View,
-  VStack,
-  HStack,
-  Text,
-  Heading,
-  Card,
-  Button,
-  ButtonText,
-  Icon,
-  Badge,
-  BadgeText,
-  Pressable,
-} from '@gluestack-ui/themed';
+import { View } from 'react-native';
+import { VStack } from '@/components/ui/vstack';
+import { HStack } from '@/components/ui/hstack';
+import { Text } from '@/components/ui/text';
+import { Heading } from '@/components/ui/heading';
+import { Card } from '@/components/ui/card';
+import { Button, ButtonText } from '@/components/ui/button';
+import { Icon } from '@/components/ui/icon';
+import { Badge, BadgeText } from '@/components/ui/badge';
+import { Pressable } from '@/components/ui/pressable';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SkeletonText } from '@/components/ui/skeleton';
 import {

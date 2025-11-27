@@ -83,86 +83,86 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
 
   // Listen for messages from parent website (iframe communication)
   useEffect(() => {
-    if (Platform.OS === "web") {
-      const handleMessage = (event: MessageEvent) => {
-        // Allowlist of parent origins (adjust for your deployment)
-        // Match the same pattern as color-context for consistency
-        const ALLOWED_PARENTS = [
-          "https://pro.gluestack.io",
-          "https://gluestack.pro", // Legacy domain
-          "http://localhost:3000",
-          "http://localhost:3001",
-        ];
+    if (Platform.OS !== "web") return;
 
-        console.log("Theme Context - Received message from:", event.origin);
-        console.log("Theme Context - Message data:", event.data);
-        console.log("Theme Context - Allowed origins:", ALLOWED_PARENTS);
+    const handleMessage = (event: MessageEvent) => {
+      // Allowlist of parent origins (adjust for your deployment)
+      // Match the same pattern as color-context for consistency
+      const ALLOWED_PARENTS = [
+        "https://pro.gluestack.io",
+        "https://gluestack.pro", // Legacy domain
+        "http://localhost:3000",
+        "http://localhost:3001",
+      ];
 
-        // Use simple includes check like color-context (works for exact matches)
-        // Also handle trailing slashes by normalizing
-        const normalizedOrigin = event.origin.replace(/\/$/, "");
-        const isAllowed = ALLOWED_PARENTS.some(
-          (allowed) => allowed.replace(/\/$/, "") === normalizedOrigin
-        );
+      console.log("Theme Context - Received message from:", event.origin);
+      console.log("Theme Context - Message data:", event.data);
+      console.log("Theme Context - Allowed origins:", ALLOWED_PARENTS);
 
-        if (!isAllowed) {
-          console.warn("Theme Context - Origin not allowed:", event.origin);
-          return;
-        }
+      // Use simple includes check like color-context (works for exact matches)
+      // Also handle trailing slashes by normalizing
+      const normalizedOrigin = event.origin.replace(/\/$/, "");
+      const isAllowed = ALLOWED_PARENTS.some(
+        (allowed) => allowed.replace(/\/$/, "") === normalizedOrigin
+      );
 
-        // Handle PARENT_UPDATE message
-        // Match color-context pattern: check type AND property exists
-        if (event.data?.type === "PARENT_UPDATE" && event.data.mode) {
-          const {
+      if (!isAllowed) {
+        console.warn("Theme Context - Origin not allowed:", event.origin);
+        return;
+      }
+
+      // Handle PARENT_UPDATE message
+      // Match color-context pattern: check type AND property exists
+      if (event.data?.type === "PARENT_UPDATE" && event.data.mode) {
+        const {
+          mode,
+          showFab: shouldShowFab,
+          showHeader: shouldShowHeader,
+          rtl,
+        } = event.data;
+        console.log("Theme Context - Received PARENT_UPDATE:", event.data);
+
+        // Check if mode is valid (like color-context validates color)
+        const modeValue = mode.toLowerCase();
+        if (modeValue === "light" || modeValue === "dark") {
+          console.log("Theme Context - Updating mode to:", modeValue);
+          setColorModeState(modeValue as "light" | "dark");
+        } else {
+          console.warn(
+            "Theme Context - Invalid mode received:",
             mode,
-            showFab: shouldShowFab,
-            showHeader: shouldShowHeader,
-            rtl,
-          } = event.data;
-          console.log("Theme Context - Received PARENT_UPDATE:", event.data);
-
-          // Check if mode is valid (like color-context validates color)
-          const modeValue = mode.toLowerCase();
-          if (modeValue === "light" || modeValue === "dark") {
-            console.log("Theme Context - Updating mode to:", modeValue);
-            setColorModeState(modeValue as "light" | "dark");
-          } else {
-            console.warn(
-              "Theme Context - Invalid mode received:",
-              mode,
-              "Expected 'light' or 'dark'"
-            );
-          }
-
-          if (typeof shouldShowFab === "boolean") {
-            console.log("Theme Context - Updating showFab to:", shouldShowFab);
-            setShowFab(shouldShowFab);
-          }
-
-          if (typeof shouldShowHeader === "boolean") {
-            console.log(
-              "Theme Context - Updating showHeader to:",
-              shouldShowHeader
-            );
-            setShowHeader(shouldShowHeader);
-          }
-
-          // Forward RTL updates to RTL context
-          if (typeof rtl === "boolean") {
-            console.log("Theme Context - Forwarding RTL update:", { rtl });
-            // The RTL context will handle these updates through its own message listener
-          }
+            "Expected 'light' or 'dark'"
+          );
         }
-      };
 
-      console.log("Theme Context - Setting up postMessage listener");
-      window.addEventListener("message", handleMessage);
+        if (typeof shouldShowFab === "boolean") {
+          console.log("Theme Context - Updating showFab to:", shouldShowFab);
+          setShowFab(shouldShowFab);
+        }
 
-      return () => {
-        console.log("Theme Context - Removing postMessage listener");
-        window.removeEventListener("message", handleMessage);
-      };
-    }
+        if (typeof shouldShowHeader === "boolean") {
+          console.log(
+            "Theme Context - Updating showHeader to:",
+            shouldShowHeader
+          );
+          setShowHeader(shouldShowHeader);
+        }
+
+        // Forward RTL updates to RTL context
+        if (typeof rtl === "boolean") {
+          console.log("Theme Context - Forwarding RTL update:", { rtl });
+          // The RTL context will handle these updates through its own message listener
+        }
+      }
+    };
+
+    console.log("Theme Context - Setting up postMessage listener");
+    window.addEventListener("message", handleMessage);
+
+    return () => {
+      console.log("Theme Context - Removing postMessage listener");
+      window.removeEventListener("message", handleMessage);
+    };
   }, []);
 
   const value = {

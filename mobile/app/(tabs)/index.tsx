@@ -29,24 +29,19 @@ import {
   Users,
   MessageCircle,
   DollarSign,
-  TrendingUp,
+  TrendingUp as _TrendingUp,
 } from 'lucide-react-native';
-import {
-  View as GView,
-  Text,
-  Heading,
-  VStack,
-  HStack,
-  Card,
-  Icon,
-  Badge,
-  BadgeText,
-} from '@gluestack-ui/themed';
-import { Skeleton } from '@/components/ui/skeleton';
-import { SkeletonText } from '@/components/ui/skeleton';
+import { Text } from '@/components/ui/text';
+import { Heading } from '@/components/ui/heading';
+import { VStack } from '@/components/ui/vstack';
+import { HStack } from '@/components/ui/hstack';
+import { Card } from '@/components/ui/card';
+import { Icon } from '@/components/ui/icon';
+import { Badge as _Badge, BadgeText as _BadgeText } from '@/components/ui/badge';
+import { Skeleton, SkeletonText } from '@/components/ui/skeleton';
 
 import { useAuthStore } from '@/stores/auth';
-import { colors, spacing, borderRadius, shadows } from '@/constants/theme';
+import { colors, spacing as _spacing, borderRadius, shadows } from '@/constants/theme';
 import { useGivingSummary } from '@/hooks/useGiving';
 import { usePrayerRequests } from '@/hooks/usePrayer';
 import { useUpcomingEvents } from '@/hooks/useEvents';

@@ -68,7 +68,7 @@ import {
   usePaymentConfig,
   useCreateGiving,
   useGivingHistory,
-  useGivingSummary,
+  useGivingSummary as _useGivingSummary,
 } from '@/hooks/useGiving';
 import type { Fund, PaymentMethodType } from '@/types/giving';
 
@@ -170,7 +170,7 @@ const PAYMENT_INFO: Record<string, { icon: any; name: string; description: strin
 };
 
 export default function GiveScreen() {
-  const { t } = useTranslation();
+  const { t: _t } = useTranslation();
   const scrollRef = useRef<ScrollView>(null);
 
   // State
@@ -281,7 +281,7 @@ export default function GiveScreen() {
 
     createGiving(
       {
-        fund_id: selectedFund._id || selectedFund.id,
+        fund_id: selectedFund._id || selectedFund.id || '',
         amount: parseFloat(amount),
         payment_method: selectedMethod,
         is_anonymous: isAnonymous,
@@ -304,7 +304,7 @@ export default function GiveScreen() {
               [
                 {
                   text: 'Continue',
-                  onPress: () => Linking.openURL(data.payment_url),
+                  onPress: () => Linking.openURL(data.payment_url!),
                 },
               ]
             );

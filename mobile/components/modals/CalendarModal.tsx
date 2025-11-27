@@ -394,7 +394,6 @@ export function CalendarModal() {
                 }),
               },
             }}
-            getItemLayout={(data, index) => ({ length: 56, offset: 56 * index, index })}
           />
 
           {/* Colored Dots Overlay on Calendar Dates */}

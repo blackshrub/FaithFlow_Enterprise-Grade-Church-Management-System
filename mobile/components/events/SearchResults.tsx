@@ -334,7 +334,7 @@ export function SearchResults({ groupedResults, counts }: SearchResultsProps) {
         <FlashList
           data={filteredEvents}
           renderItem={renderItem}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item: FilteredEvent) => item.id}
           estimatedItemSize={120}
           contentContainerStyle={{ paddingTop: 8, paddingBottom: 80 }}
         />

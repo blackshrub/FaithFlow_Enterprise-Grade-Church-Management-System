@@ -6,10 +6,11 @@ interface Member {
   full_name: string;
   first_name?: string;
   last_name?: string;
+  name?: string; // From API - alternate name field
   email?: string;
   phone_whatsapp?: string;
   date_of_birth?: string;
-  gender?: 'Male' | 'Female';
+  gender?: 'Male' | 'Female' | 'male' | 'female';
   address?: string;
   city?: string;
   state?: string;
@@ -18,9 +19,13 @@ interface Member {
   occupation?: string;
   baptism_date?: string;
   membership_date?: string;
+  member_since?: string; // From API
   notes?: string;
   church_id: string;
   church_name?: string;
+  profile_photo_url?: string; // From API
+  avatar_url?: string; // Alias for avatar
+  is_active?: boolean; // From API
 }
 
 interface AuthState {

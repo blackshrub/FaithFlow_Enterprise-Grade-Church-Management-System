@@ -65,7 +65,8 @@ export function ChapterReader({
     flashHighlights,
   } = useBibleStore();
   const latinFont = useLatinBibleFont(); // Get Latin Bible font selection
-  const flashListRef = useRef<FlashList<BibleVerse>>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const flashListRef = useRef<any>(null);
 
   // Get appropriate font based on Bible version
   // Latin Bibles: use selected custom font
@@ -275,7 +276,7 @@ export function ChapterReader({
         data={verses}
         renderItem={renderVerse}
         estimatedItemSize={100}
-        keyExtractor={(item) => `${item.verse}`}
+        keyExtractor={(item: BibleVerse) => `${item.verse}`}
         showsVerticalScrollIndicator={false}
         onScroll={onScroll}
         scrollEventThrottle={16}

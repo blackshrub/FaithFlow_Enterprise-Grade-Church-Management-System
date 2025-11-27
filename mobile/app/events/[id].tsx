@@ -232,10 +232,12 @@ export default function EventDetailScreen() {
     );
   }
 
-  const [gradientStart, gradientEnd] = getEventTypeGradient(event.event_type);
+  const [gradientStart, gradientEnd] = getEventTypeGradient(event.event_type as 'single' | 'series' | undefined);
   const hasRSVP = !!event.my_rsvp;
   const hasAttended = !!event.my_attendance;
   const canRSVP = event.requires_rsvp && event.can_rsvp && !hasRSVP && !hasAttended;
+  // Extract EventRSVP object if my_rsvp is not a boolean
+  const rsvpData = typeof event.my_rsvp === 'object' ? event.my_rsvp : undefined;
 
   return (
     <View className="flex-1 bg-gray-50">
@@ -513,7 +515,7 @@ export default function EventDetailScreen() {
             </Card>
 
             {/* Series Sessions */}
-            {event.event_type === 'series' && event.sessions.length > 0 && (
+            {event.event_type === 'series' && (event.sessions?.length ?? 0) > 0 && (
               <Card style={{ ...shadows.sm, borderRadius: borderRadius.xl }}>
                 <View className="p-5">
                   <HStack space="sm" className="items-center mb-4">
@@ -524,12 +526,12 @@ export default function EventDetailScreen() {
                       <Icon as={Tag} size="md" className="text-secondary-600" />
                     </View>
                     <Heading size="lg" className="text-gray-900 font-bold">
-                      {t('events.sessions')} ({event.sessions.length})
+                      {t('events.sessions')} ({event.sessions?.length ?? 0})
                     </Heading>
                   </HStack>
 
                   <VStack space="sm">
-                    {event.sessions.map((session, index) => (
+                    {event.sessions?.map((session, index) => (
                       <View
                         key={index}
                         className="p-4 rounded-xl border border-gray-200"
@@ -549,7 +551,7 @@ export default function EventDetailScreen() {
             )}
 
             {/* QR Code - Only if RSVP'd */}
-            {hasRSVP && event.my_rsvp?.qr_data && (
+            {hasRSVP && rsvpData?.qr_data && (
               <Card style={{ ...shadows.sm, borderRadius: borderRadius.xl }}>
                 <View className="p-5 items-center">
                   <HStack space="sm" className="items-center mb-4">
@@ -560,11 +562,11 @@ export default function EventDetailScreen() {
                   </HStack>
 
                   <View className="p-6 bg-white rounded-2xl" style={shadows.md}>
-                    <QRCodeSVG value={event.my_rsvp.qr_data} size={200} />
+                    <QRCodeSVG value={rsvpData.qr_data} size={200} />
                   </View>
 
                   <Text className="text-gray-500 text-sm mt-4 text-center">
-                    {t('events.confirmationCode')}: {event.my_rsvp.confirmation_code}
+                    {t('events.confirmationCode')}: {rsvpData.confirmation_code}
                   </Text>
                 </View>
               </Card>

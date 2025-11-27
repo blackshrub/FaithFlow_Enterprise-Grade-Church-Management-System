@@ -38,6 +38,7 @@
     "home": "Home",
     "bible": "Bible",
     "give": "Give",
+    "communities": "Groups",
     "explore": "Explore",
     "events": "Events",
     "profile": "Profile"
@@ -756,6 +757,70 @@
     "start": "Start",
     "dayOf": "Day {{current}} of {{total}}",
     "resume": "Resume"
+  },
+  "communities": {
+    "title": "Communities",
+    "subtitle": "Connect with your church family",
+    "myCommunities": "My Communities",
+    "discover": "Discover",
+    "discoverComingSoon": "Community discovery is coming soon. Check back later!",
+    "noCommunitiesTitle": "No Communities Yet",
+    "noCommunitiesDesc": "You haven't joined any communities yet. Discover and join communities to connect with others.",
+    "members": "members",
+    "member": "member",
+    "online": "online",
+    "typing": "typing...",
+    "typeMessage": "Type a message...",
+    "sendError": "Failed to send message. Please try again.",
+    "loadError": "Failed to load messages",
+    "chat": {
+      "title": "Chat",
+      "noMessages": "No messages yet",
+      "startConversation": "Start the conversation!",
+      "messageDeleted": "This message was deleted",
+      "edited": "edited",
+      "reply": "Reply",
+      "copy": "Copy",
+      "edit": "Edit",
+      "delete": "Delete",
+      "deleteForMe": "Delete for Me",
+      "deleteForEveryone": "Delete for Everyone",
+      "forward": "Forward",
+      "react": "React",
+      "photo": "Photo",
+      "video": "Video",
+      "audio": "Audio",
+      "document": "Document",
+      "voiceMessage": "Voice Message",
+      "sendingMedia": "Sending media...",
+      "mediaError": "Failed to send media"
+    },
+    "info": {
+      "title": "Community Info",
+      "description": "Description",
+      "membersList": "Members",
+      "media": "Shared Media",
+      "settings": "Settings",
+      "muteNotifications": "Mute Notifications",
+      "leaveGroup": "Leave Community",
+      "reportGroup": "Report Community"
+    },
+    "roles": {
+      "leader": "Leader",
+      "assistant": "Assistant",
+      "member": "Member"
+    },
+    "category": {
+      "cellGroup": "Cell Group",
+      "ministryTeam": "Ministry",
+      "activity": "Activity",
+      "supportGroup": "Support"
+    },
+    "status": {
+      "sent": "Sent",
+      "delivered": "Delivered",
+      "read": "Read"
+    }
   },
   "validation": {
     "required": "This field is required",

@@ -61,7 +61,7 @@ export const initializeI18n = async (): Promise<void> => {
       react: {
         useSuspense: false, // Disable suspense for React Native
       },
-      compatibilityJSON: 'v3', // Use i18next v3 format
+      compatibilityJSON: 'v4', // Use i18next v4 format
     });
 };
 

@@ -5,12 +5,13 @@ import { SafeAreaView } from "@/components/ui/safe-area-view";
 import { VStack } from "@/components/ui/vstack";
 import { Heading } from "@/components/ui/heading";
 import { Text } from "@/components/ui/text";
-import { Button, ButtonText, ButtonSpinner } from "@/components/ui/button";
+import { Button as _Button, ButtonText as _ButtonText, ButtonSpinner } from "@/components/ui/button";
 import { Input, InputField, InputIcon, InputSlot } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Pressable } from "@/components/ui/pressable";
 import { Search, ChevronRight } from "lucide-react-native";
 import { useSendOTP } from "@/hooks/useAuth";
+import { showErrorToast } from "@/components/ui/Toast";
 
 // Mock church data - in production, this would come from an API
 const MOCK_CHURCHES = [
@@ -52,7 +53,10 @@ export default function SelectChurchScreen() {
     } catch (error: any) {
       console.error("Error sending OTP:", error);
       setSelectedChurch(null);
-      // TODO: Show error toast
+      showErrorToast(
+        "Gagal mengirim OTP",
+        error.response?.data?.detail || "Silakan coba lagi"
+      );
     }
   };
 

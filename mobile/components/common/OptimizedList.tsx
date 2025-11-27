@@ -216,20 +216,21 @@ function OptimizedListInner<T extends Record<string, any>>(
     );
   }
 
-  return (
-    <FlatList<T>
-      ref={ref}
-      data={data}
-      keyExtractor={keyExtractor}
-      getItemLayout={getItemLayout}
-      ItemSeparatorComponent={ItemSeparatorComponent}
-      ListEmptyComponent={ListEmptyComponent}
-      refreshControl={refreshControl}
-      showsVerticalScrollIndicator={false}
-      {...performanceProps}
-      {...restProps}
-    />
-  );
+  // Build props object to avoid overload issues
+  const flatListProps = {
+    ref,
+    data,
+    keyExtractor,
+    ...(getItemLayout ? { getItemLayout } : {}),
+    ItemSeparatorComponent,
+    ListEmptyComponent,
+    refreshControl,
+    showsVerticalScrollIndicator: false,
+    ...performanceProps,
+    ...restProps,
+  };
+
+  return <FlatList<T> {...(flatListProps as any)} />;
 }
 
 // Forward ref with proper typing

@@ -34,11 +34,14 @@ export interface BibleReference {
   verse_start: number;
   verse_end?: number;
   translation: string;
+  // Optional pre-fetched verse text for display (string for single language, MultilingualText for multilingual)
+  text?: string | MultilingualText;
 }
 
 export interface MultilingualText {
   en: string;
   id: string;
+  [key: string]: string; // Allow dynamic language key access
 }
 
 export interface AIGenerationMetadata {
@@ -192,6 +195,19 @@ export interface BibleFigure extends BibleFigureOfTheDay {
 
   // Life lessons learned from this figure
   life_lessons?: MultilingualText[];
+
+  // Legacy compatibility fields
+  key_events?: Array<{
+    date?: string;
+    event: MultilingualText;
+    verse?: BibleReference;
+    // Alternative field names used in some contexts
+    title?: MultilingualText | string;
+    description?: MultilingualText | string;
+    scripture_reference?: BibleReference | string;
+  }>;
+  related_scriptures?: BibleReference[];
+  tags?: string[];
 }
 
 // ==================== QUIZ ====================
@@ -204,6 +220,9 @@ export interface QuizQuestion {
   explanation: MultilingualText;
   difficulty: QuizDifficulty;
   related_verse?: BibleReference;
+  // Alternative field names
+  correct_answer?: number | string;
+  scripture_reference?: BibleReference | string;
 }
 
 export interface DailyQuiz {
@@ -220,6 +239,9 @@ export interface DailyQuiz {
   questions: QuizQuestion[];
   time_limit_seconds?: number;
   passing_score_percentage: number;
+
+  // Quiz-level difficulty (derived from questions or set explicitly)
+  difficulty?: QuizDifficulty;
 
   // AI generation
   ai_generated: boolean;
@@ -381,6 +403,11 @@ export interface TopicalCategory {
   // Hierarchy
   parent_category_id?: string;
   sort_order: number;
+
+  // Related data
+  related_categories?: string[];
+  verse_count?: number;
+  is_popular?: boolean;
 
   // Status
   status: ContentStatus;

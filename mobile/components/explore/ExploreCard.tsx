@@ -8,7 +8,7 @@
  */
 
 import React from 'react';
-import { Pressable, View, ViewStyle, PressableProps } from 'react-native';
+import { Pressable, View, ViewStyle, StyleProp, PressableProps } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -20,7 +20,7 @@ interface ExploreCardProps extends Omit<PressableProps, 'style'> {
   children: React.ReactNode;
   onPress?: () => void;
   variant?: 'default' | 'elevated' | 'outlined';
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
   disabled?: boolean;
   testID?: string;
 }

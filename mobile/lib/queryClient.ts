@@ -46,7 +46,7 @@ export const queryClient = new QueryClient({
       // Refetch configuration
       refetchOnWindowFocus: false, // Disable for mobile (no concept of window focus)
       refetchOnReconnect: true, // Refetch when internet reconnects
-      refetchOnMount: 'stale', // Only refetch if data is stale
+      refetchOnMount: true, // Refetch on mount when data is stale
 
       // Network mode
       networkMode: 'online', // Only fetch when online

@@ -28,23 +28,22 @@ import {
   Briefcase,
   Heart,
 } from 'lucide-react-native';
+import { View } from 'react-native';
+import { Text } from '@/components/ui/text';
+import { Heading } from '@/components/ui/heading';
+import { VStack } from '@/components/ui/vstack';
+import { HStack } from '@/components/ui/hstack';
+import { Card } from '@/components/ui/card';
+import { Icon } from '@/components/ui/icon';
+import { Button, ButtonText } from '@/components/ui/button';
+import { Input, InputField } from '@/components/ui/input';
+import { Textarea, TextareaInput } from '@/components/ui/textarea';
 import {
-  View,
-  Text,
-  Heading,
-  VStack,
-  HStack,
-  Card,
-  Icon,
-  Button,
-  ButtonText,
-  Input,
-  InputField,
-  Textarea,
-  TextareaInput,
   FormControl,
   FormControlLabel,
   FormControlLabelText,
+} from '@/components/ui/form-control';
+import {
   Select,
   SelectTrigger,
   SelectInput,
@@ -55,8 +54,8 @@ import {
   SelectDragIndicatorWrapper,
   SelectDragIndicator,
   SelectItem,
-  Spinner,
-} from '@gluestack-ui/themed';
+} from '@/components/ui/select';
+import { Spinner } from '@/components/ui/spinner';
 
 import { useAuthStore } from '@/stores/auth';
 import { colors, borderRadius, spacing, shadows } from '@/constants/theme';
@@ -92,7 +91,14 @@ export default function ProfileEditScreen() {
   const [dateOfBirth, setDateOfBirth] = useState<Date | undefined>(
     member?.date_of_birth ? new Date(member.date_of_birth) : undefined
   );
-  const [gender, setGender] = useState<'Male' | 'Female' | undefined>(member?.gender);
+  // Normalize gender value to expected case
+  const normalizeGender = (g: string | undefined): 'Male' | 'Female' | undefined => {
+    if (!g) return undefined;
+    if (g.toLowerCase() === 'male') return 'Male';
+    if (g.toLowerCase() === 'female') return 'Female';
+    return undefined;
+  };
+  const [gender, setGender] = useState<'Male' | 'Female' | undefined>(normalizeGender(member?.gender));
   const [address, setAddress] = useState(member?.address || '');
   const [city, setCity] = useState(member?.city || '');
   const [state, setState] = useState(member?.state || '');

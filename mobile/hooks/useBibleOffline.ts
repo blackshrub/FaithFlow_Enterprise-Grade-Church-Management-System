@@ -34,7 +34,7 @@ function transformBooks(version: BibleTranslation, books: BibleBook[]) {
       book_number: book.number,
       name_local: book.name,
       chapter_count: book.chapters,
-      testament: book.number <= 39 ? 'OT' : 'NT',
+      testament: (book.number <= 39 ? 'OT' : 'NT') as 'OT' | 'NT',
     };
   });
 }

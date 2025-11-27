@@ -35,33 +35,30 @@ import {
   Calendar,
   Edit3,
 } from 'lucide-react-native';
+import { View } from 'react-native';
+import { Text } from '@/components/ui/text';
+import { Heading } from '@/components/ui/heading';
+import { VStack } from '@/components/ui/vstack';
+import { HStack } from '@/components/ui/hstack';
+import { Card } from '@/components/ui/card';
+import { Icon } from '@/components/ui/icon';
+import { Avatar, AvatarFallbackText } from '@/components/ui/avatar';
+import { Button, ButtonText } from '@/components/ui/button';
 import {
-  View,
-  Text,
-  Heading,
-  VStack,
-  HStack,
-  Card,
-  Icon,
-  Avatar,
-  AvatarFallbackText,
-  Button,
-  ButtonText,
   AlertDialog,
   AlertDialogBackdrop,
   AlertDialogContent,
   AlertDialogHeader,
   AlertDialogBody,
   AlertDialogFooter,
-} from '@gluestack-ui/themed';
-import { Skeleton } from '@/components/ui/skeleton';
-import { SkeletonText } from '@/components/ui/skeleton';
+} from '@/components/ui/alert-dialog';
+import { Skeleton, SkeletonText } from '@/components/ui/skeleton';
 
 import { useAuthStore } from '@/stores/auth';
-import { colors, borderRadius, shadows, spacing } from '@/constants/theme';
+import { colors, borderRadius, shadows, spacing as _spacing } from '@/constants/theme';
 import { useGivingSummary } from '@/hooks/useGiving';
 import { usePrayerRequests } from '@/hooks/usePrayer';
-import { useUpcomingEvents } from '@/hooks/useEvents';
+import { useUpcomingEvents, useAttendedEvents } from '@/hooks/useEvents';
 import { showSuccessToast } from '@/components/ui/Toast';
 
 export default function ProfileScreen() {
@@ -74,7 +71,8 @@ export default function ProfileScreen() {
   // Fetch stats data
   const { data: givingSummary, isLoading: givingLoading, refetch: refetchGiving } = useGivingSummary();
   const { data: prayerRequests, isLoading: prayerLoading, refetch: refetchPrayer } = usePrayerRequests();
-  const { data: upcomingEvents, isLoading: eventsLoading, refetch: refetchEvents } = useUpcomingEvents();
+  const { data: _upcomingEvents, isLoading: eventsLoading, refetch: refetchEvents } = useUpcomingEvents();
+  const { data: attendedEvents, refetch: refetchAttended } = useAttendedEvents();
 
   // Calculate stats - memoized
   const totalGiven = useMemo(() => givingSummary?.total_given || 0, [givingSummary]);
@@ -82,7 +80,7 @@ export default function ProfileScreen() {
     () => prayerRequests?.filter((r) => r.member_id === member?.id).length || 0,
     [prayerRequests, member?.id]
   );
-  const attendedEventsCount = 0; // TODO: Get from RSVP history
+  const attendedEventsCount = useMemo(() => attendedEvents?.length || 0, [attendedEvents]);
 
   // Format currency - memoized formatter
   const formatCurrency = useCallback((amount: number) => {
@@ -98,9 +96,9 @@ export default function ProfileScreen() {
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    await Promise.all([refetchGiving(), refetchPrayer(), refetchEvents()]);
+    await Promise.all([refetchGiving(), refetchPrayer(), refetchEvents(), refetchAttended()]);
     setRefreshing(false);
-  }, [refetchGiving, refetchPrayer, refetchEvents]);
+  }, [refetchGiving, refetchPrayer, refetchEvents, refetchAttended]);
 
   // Stats cards - memoized
   const statsCards = useMemo(() => [

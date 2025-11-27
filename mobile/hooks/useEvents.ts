@@ -320,7 +320,7 @@ export function useRSVP() {
                     status: 'confirmed' as const,
                     confirmation_code: 'PENDING',
                   },
-                  total_rsvps: event.total_rsvps + 1,
+                  total_rsvps: (event.total_rsvps ?? 0) + 1,
                   available_seats: event.available_seats
                     ? event.available_seats - 1
                     : undefined,
@@ -344,7 +344,7 @@ export function useRSVP() {
               status: 'confirmed' as const,
               confirmation_code: 'PENDING',
             },
-            total_rsvps: old.total_rsvps + 1,
+            total_rsvps: (old.total_rsvps ?? 0) + 1,
             available_seats: old.available_seats
               ? old.available_seats - 1
               : undefined,
@@ -428,7 +428,7 @@ export function useCancelRSVP() {
               ? {
                   ...event,
                   my_rsvp: undefined,
-                  total_rsvps: Math.max(0, event.total_rsvps - 1),
+                  total_rsvps: Math.max(0, (event.total_rsvps ?? 0) - 1),
                   available_seats: event.available_seats
                     ? event.available_seats + 1
                     : undefined,
@@ -445,7 +445,7 @@ export function useCancelRSVP() {
           return {
             ...old,
             my_rsvp: undefined,
-            total_rsvps: Math.max(0, old.total_rsvps - 1),
+            total_rsvps: Math.max(0, (old.total_rsvps ?? 0) - 1),
             available_seats: old.available_seats
               ? old.available_seats + 1
               : undefined,

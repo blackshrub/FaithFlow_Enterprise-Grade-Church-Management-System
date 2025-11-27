@@ -17,7 +17,7 @@ import {
   RefreshControl,
   Pressable,
   StatusBar,
-  Platform,
+  Platform as _Platform,
   FlatList,
   Dimensions,
   ImageBackground,
@@ -54,8 +54,8 @@ import {
   Users,
   Tag,
   Calendar,
-  GraduationCap,
-  Play,
+  GraduationCap as _GraduationCap,
+  Play as _Play,
   Clock,
   Star,
 } from 'lucide-react-native';
@@ -73,7 +73,7 @@ export default function ExploreScreen() {
 
   // Data queries
   const { data: homeData, isLoading, error, refetch } = useExploreHome();
-  const { data: progressData } = useUserProgress();
+  const { data: _progressData } = useUserProgress();
   const { data: bibleStudies } = useBibleStudies();
   const currentStreak = useCurrentStreak();
 
@@ -106,7 +106,6 @@ export default function ExploreScreen() {
           <Text
             style={styles.headerTitle}
             accessibilityRole="header"
-            accessibilityLevel={1}
           >
             {t('explore.title')}
           </Text>
@@ -186,8 +185,7 @@ export default function ExploreScreen() {
                 <Text
                   style={styles.sectionTitle}
                   accessibilityRole="header"
-                  accessibilityLevel={2}
-                >
+                      >
                   {t('explore.todaysDevotions')}
                 </Text>
                 <DailyDevotionCard
@@ -207,8 +205,7 @@ export default function ExploreScreen() {
                 <Text
                   style={styles.sectionTitle}
                   accessibilityRole="header"
-                  accessibilityLevel={2}
-                >
+                      >
                   {t('explore.verseOfTheDay')}
                 </Text>
                 <VerseOfTheDayCard
@@ -227,8 +224,7 @@ export default function ExploreScreen() {
                 <Text
                   style={styles.sectionTitle}
                   accessibilityRole="header"
-                  accessibilityLevel={2}
-                >
+                      >
                   {t('explore.bibleFigureOfTheDay')}
                 </Text>
                 <BibleFigureCard
@@ -247,8 +243,7 @@ export default function ExploreScreen() {
                 <Text
                   style={styles.sectionTitle}
                   accessibilityRole="header"
-                  accessibilityLevel={2}
-                >
+                      >
                   {t('explore.dailyChallenge')}
                 </Text>
                 <DailyQuizCard
@@ -258,7 +253,7 @@ export default function ExploreScreen() {
                     router.push(`/explore/quiz/${homeData.daily_quiz?.id}`)
                   }
                   completed={homeData.daily_quiz.completed}
-                  score={homeData.daily_quiz.score}
+                  score={homeData.daily_quiz.score ?? undefined}
                 />
               </View>
             ) : null}
@@ -270,8 +265,7 @@ export default function ExploreScreen() {
                   <Text
                     style={styles.sectionTitle}
                     accessibilityRole="header"
-                    accessibilityLevel={2}
-                  >
+                          >
                     {t('explore.bibleStudies')}
                   </Text>
                   <Pressable
@@ -310,8 +304,7 @@ export default function ExploreScreen() {
                 <Text
                   style={styles.sectionTitle}
                   accessibilityRole="header"
-                  accessibilityLevel={2}
-                >
+                      >
                   {t('explore.exploreMore')}
                 </Text>
               </View>
@@ -371,7 +364,7 @@ interface BibleStudyCardProps {
 const STUDY_CARD_WIDTH = (SCREEN_WIDTH - 20 - 12) / 1.5; // ~239px on 390px screen
 
 function BibleStudyCard({ study, onPress, contentLanguage, index }: BibleStudyCardProps) {
-  const { t } = useTranslation(); // UI language
+  const { t: _t } = useTranslation(); // UI language
   const title = study.title[contentLanguage] || study.title.en;
   const subtitle = study.subtitle?.[contentLanguage] || study.subtitle?.en;
   const lessonCount = study.lesson_count || study.lessons?.length || 0;

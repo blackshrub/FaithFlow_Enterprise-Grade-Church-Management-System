@@ -6,6 +6,18 @@
 
 export type EventType = 'single' | 'series';
 
+// Event categories used for filtering and display colors
+export type EventCategoryType =
+  | 'worship'
+  | 'bible_study'
+  | 'fellowship'
+  | 'prayer'
+  | 'community_service'
+  | 'youth'
+  | 'children'
+  | 'special'
+  | 'other';
+
 export interface EventSession {
   name: string;
   date: string; // ISO 8601
@@ -71,18 +83,37 @@ export interface Event {
 /**
  * Event with member's personal RSVP and attendance status
  */
-export interface EventWithMemberStatus extends Event {
-  // Member's RSVP status for this event
-  my_rsvp?: EventRSVP; // null if not registered
-  my_attendance?: EventAttendance; // null if not checked in
+export interface EventWithMemberStatus extends Partial<Omit<Event, 'event_type'>> {
+  // Required identity fields
+  id: string;
+  church_id: string;
+  name: string;
 
-  // Calculated fields
-  total_rsvps: number; // rsvp_list.length
-  total_attendance: number; // attendance_list.length
+  // Member's RSVP status for this event (supports both object and boolean for backwards compatibility)
+  my_rsvp?: EventRSVP | boolean; // EventRSVP object or boolean for mock data
+  my_attendance?: EventAttendance | boolean; // EventAttendance object or boolean for mock data
+
+  // Calculated fields (optional for mock data)
+  total_rsvps?: number; // rsvp_list.length
+  total_attendance?: number; // attendance_list.length
   available_seats?: number; // If seat selection enabled
-  is_past: boolean; // event_date < now
-  is_upcoming: boolean; // event_date > now
-  can_rsvp: boolean; // Within reservation window and has capacity
+  is_past?: boolean; // event_date < now
+  is_upcoming?: boolean; // event_date > now
+  can_rsvp?: boolean; // Within reservation window and has capacity
+
+  // Legacy compatibility fields
+  max_attendees?: number; // Alias for seat_capacity
+  attendee_count?: number; // Alias for total_rsvps
+  current_attendees?: number; // Alias for total_rsvps
+
+  // Event category support (can also use event_type for category)
+  event_category?: EventCategoryType | string;
+
+  // Allow event_type to also be category string for mock data compatibility
+  event_type?: EventType | EventCategoryType | string;
+
+  // Simplified required fields for mock data
+  deleted?: boolean;
 }
 
 /**

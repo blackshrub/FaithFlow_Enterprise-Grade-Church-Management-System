@@ -205,3 +205,49 @@ export const UserIcon: React.FC<IconProps> = ({ size = 24, color = '#000', isAct
     />
   </Svg>
 );
+
+export const CommunityIcon: React.FC<IconProps> = ({ size = 24, color = '#000', isActive = false }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    {/* Multiple users icon for community */}
+    {/* Left person (head) */}
+    <Circle
+      cx="9"
+      cy="7"
+      r="3"
+      fill={isActive ? color : 'none'}
+      stroke={color}
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    {/* Left person (body) */}
+    <Path
+      d="M2 21V18C2 16.3431 3.34315 15 5 15H13C14.6569 15 16 16.3431 16 18V21"
+      fill={isActive ? color : 'none'}
+      stroke={color}
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    {/* Right person (head) - slightly behind */}
+    <Circle
+      cx="17"
+      cy="7"
+      r="3"
+      fill={isActive ? color : 'none'}
+      stroke={color}
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    {/* Right person (body) - slightly behind */}
+    <Path
+      d="M16 15H19C20.6569 15 22 16.3431 22 18V21"
+      fill={isActive ? color : 'none'}
+      stroke={color}
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </Svg>
+);

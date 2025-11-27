@@ -10,6 +10,7 @@ import { Button, ButtonText, ButtonSpinner } from "@/components/ui/button";
 import { Pressable } from "@/components/ui/pressable";
 import { OTPInput } from "@/components/forms/OTPInput";
 import { useSendOTP, useVerifyOTP } from "@/hooks/useAuth";
+import { showSuccessToast } from "@/components/ui/Toast";
 
 export default function VerifyOTPScreen() {
   const router = useRouter();
@@ -70,7 +71,7 @@ export default function VerifyOTPScreen() {
       setCountdown(300); // Reset countdown
       setError("");
       setOtp("");
-      // TODO: Show success toast
+      showSuccessToast("OTP Terkirim", "Kode OTP baru telah dikirim ke WhatsApp Anda");
     } catch (error: any) {
       setError(error.response?.data?.detail || "Gagal mengirim ulang OTP");
     }

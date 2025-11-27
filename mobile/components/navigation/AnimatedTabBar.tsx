@@ -20,6 +20,7 @@ import {
   HomeIcon,
   BibleIcon,
   HeartIcon,
+  CommunityIcon,
   CompassIcon,
   CalendarIcon,
   UserIcon,
@@ -50,6 +51,12 @@ const TABS: Tab[] = [
     icon: HeartIcon,
     label: 'tabs.give',
     route: '/(tabs)/give',
+  },
+  {
+    name: 'groups',
+    icon: CommunityIcon,
+    label: 'tabs.communities',
+    route: '/(tabs)/groups',
   },
   {
     name: 'explore',

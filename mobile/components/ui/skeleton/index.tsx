@@ -8,11 +8,14 @@ type ISkeletonProps = React.ComponentProps<typeof View> &
     isLoaded?: boolean;
     startColor?: string;
     speed?: number | string;
+    height?: number | string;
+    width?: number | string;
   };
 
 type ISkeletonTextProps = React.ComponentProps<typeof View> &
   VariantProps<typeof skeletonTextStyle> & {
     _lines?: number;
+    lines?: number;
     isLoaded?: boolean;
     startColor?: string;
   };
@@ -28,10 +31,18 @@ const Skeleton = forwardRef<
     startColor = 'bg-background-200',
     isLoaded = false,
     speed = 2,
+    height,
+    width,
+    style,
     ...props
   },
   ref
 ) {
+  const customStyle = {
+    ...(typeof style === 'object' ? style : {}),
+    ...(height !== undefined ? { height } : {}),
+    ...(width !== undefined ? { width } : {}),
+  };
   const pulseAnim = new Animated.Value(1);
   const customTimingFunction = Easing.bezier(0.4, 0, 0.6, 1);
   const fadeDuration = 0.6;
@@ -62,7 +73,7 @@ const Skeleton = forwardRef<
     Animated.loop(pulse).start();
     return (
       <Animated.View
-        style={{ opacity: pulseAnim }}
+        style={[{ opacity: pulseAnim }, customStyle] as any}
         className={`${startColor} ${skeletonStyle({
           variant,
           class: className,
@@ -85,6 +96,7 @@ const SkeletonText = forwardRef<
   {
     className,
     _lines,
+    lines,
     isLoaded = false,
     startColor = 'bg-background-200',
     gap = 2,
@@ -93,8 +105,9 @@ const SkeletonText = forwardRef<
   },
   ref
 ) {
+  const lineCount = lines ?? _lines;
   if (!isLoaded) {
-    if (_lines) {
+    if (lineCount) {
       return (
         <View
           className={`${skeletonTextStyle({
@@ -102,7 +115,7 @@ const SkeletonText = forwardRef<
           })}`}
           ref={ref}
         >
-          {Array.from({ length: _lines }).map((_, index) => (
+          {Array.from({ length: lineCount }).map((_, index) => (
             <Skeleton
               key={index}
               className={`${startColor} ${skeletonTextStyle({

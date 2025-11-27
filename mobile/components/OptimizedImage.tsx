@@ -240,10 +240,10 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
           style,
           { opacity: fadeAnim },
         ]}
-        resizeMode={resizeMode}
         accessibilityLabel={accessibilityLabel}
         testID={testID}
         {...memoryProps}
+        resizeMode={resizeMode}
         onError={(error) => {
           console.error('Image render error:', error);
           if (retryCount < retry) {

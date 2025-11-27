@@ -46,21 +46,31 @@ const MOCK_FUNDS: Fund[] = [
 const MOCK_GIVING_HISTORY: GivingHistoryItem[] = [
   {
     _id: 'giving_001',
+    church_id: 'demo-church-123',
+    member_id: 'demo-member-123',
     fund_id: 'fund_tithe',
     fund_name: 'Tithe',
     amount: 500000,
     payment_method: 'bank_transfer',
-    status: 'completed',
+    payment_status: 'success',
+    status: 'success', // Alias
+    is_anonymous: false,
     created_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+    updated_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
   },
   {
     _id: 'giving_002',
+    church_id: 'demo-church-123',
+    member_id: 'demo-member-123',
     fund_id: 'fund_building',
     fund_name: 'Building Fund',
     amount: 250000,
     payment_method: 'e_wallet',
-    status: 'completed',
+    payment_status: 'success',
+    status: 'success', // Alias
+    is_anonymous: false,
     created_at: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(),
+    updated_at: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(),
   },
 ];
 

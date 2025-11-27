@@ -38,6 +38,7 @@
     "home": "Beranda",
     "bible": "Alkitab",
     "give": "Beri",
+    "communities": "Grup",
     "explore": "Jelajahi",
     "events": "Acara",
     "profile": "Profil"
@@ -752,6 +753,70 @@
     "start": "Mulai",
     "dayOf": "Hari {{current}} dari {{total}}",
     "resume": "Lanjutkan"
+  },
+  "communities": {
+    "title": "Komunitas",
+    "subtitle": "Terhubung dengan keluarga gereja",
+    "myCommunities": "Komunitas Saya",
+    "discover": "Temukan",
+    "discoverComingSoon": "Penemuan komunitas akan segera hadir. Nantikan!",
+    "noCommunitiesTitle": "Belum Ada Komunitas",
+    "noCommunitiesDesc": "Anda belum bergabung dengan komunitas manapun. Temukan dan bergabunglah dengan komunitas untuk terhubung dengan yang lain.",
+    "members": "anggota",
+    "member": "anggota",
+    "online": "online",
+    "typing": "mengetik...",
+    "typeMessage": "Ketik pesan...",
+    "sendError": "Gagal mengirim pesan. Silakan coba lagi.",
+    "loadError": "Gagal memuat pesan",
+    "chat": {
+      "title": "Obrolan",
+      "noMessages": "Belum ada pesan",
+      "startConversation": "Mulai percakapan!",
+      "messageDeleted": "Pesan ini telah dihapus",
+      "edited": "diedit",
+      "reply": "Balas",
+      "copy": "Salin",
+      "edit": "Edit",
+      "delete": "Hapus",
+      "deleteForMe": "Hapus untuk Saya",
+      "deleteForEveryone": "Hapus untuk Semua",
+      "forward": "Teruskan",
+      "react": "Reaksi",
+      "photo": "Foto",
+      "video": "Video",
+      "audio": "Audio",
+      "document": "Dokumen",
+      "voiceMessage": "Pesan Suara",
+      "sendingMedia": "Mengirim media...",
+      "mediaError": "Gagal mengirim media"
+    },
+    "info": {
+      "title": "Info Komunitas",
+      "description": "Deskripsi",
+      "membersList": "Anggota",
+      "media": "Media Bersama",
+      "settings": "Pengaturan",
+      "muteNotifications": "Bisukan Notifikasi",
+      "leaveGroup": "Keluar Komunitas",
+      "reportGroup": "Laporkan Komunitas"
+    },
+    "roles": {
+      "leader": "Pemimpin",
+      "assistant": "Asisten",
+      "member": "Anggota"
+    },
+    "category": {
+      "cellGroup": "Kelompok Sel",
+      "ministryTeam": "Pelayanan",
+      "activity": "Aktivitas",
+      "supportGroup": "Pendukung"
+    },
+    "status": {
+      "sent": "Terkirim",
+      "delivered": "Diterima",
+      "read": "Dibaca"
+    }
   },
   "validation": {
     "required": "Kolom ini wajib diisi",

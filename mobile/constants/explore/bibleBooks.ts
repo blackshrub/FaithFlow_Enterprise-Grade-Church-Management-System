@@ -5,7 +5,7 @@
  * for displaying Bible references in multiple languages.
  */
 
-import type { BibleReference } from '@/types/explore';
+import type { BibleReference, Language } from '@/types/explore';
 
 // ============================================================================
 // BIBLE BOOK NAME TRANSLATIONS
@@ -108,7 +108,7 @@ export const BIBLE_TRANSLATION_MAPPING: Record<string, { en: string; id: string 
 /**
  * Get the localized Bible book name
  */
-export function getLocalizedBookName(bookName: string, language: 'en' | 'id'): string {
+export function getLocalizedBookName(bookName: string, language: Language): string {
   const translation = BIBLE_BOOK_TRANSLATIONS[bookName];
   if (translation) {
     return translation[language];
@@ -120,7 +120,7 @@ export function getLocalizedBookName(bookName: string, language: 'en' | 'id'): s
 /**
  * Get the localized Bible translation/version name
  */
-export function getLocalizedTranslation(translation: string, language: 'en' | 'id'): string {
+export function getLocalizedTranslation(translation: string, language: Language): string {
   const mapping = BIBLE_TRANSLATION_MAPPING[translation];
   if (mapping) {
     return mapping[language];
@@ -138,7 +138,7 @@ export function getLocalizedTranslation(translation: string, language: 'en' | 'i
  */
 export function formatBibleReference(
   reference: BibleReference | null | undefined,
-  language: 'en' | 'id',
+  language: Language,
   options?: {
     showTranslation?: boolean;
   }
@@ -176,7 +176,7 @@ export function formatBibleReference(
 export function formatSimpleBibleReference(
   book: string,
   chapter: number,
-  language: 'en' | 'id'
+  language: Language
 ): string {
   const bookName = getLocalizedBookName(book, language);
   return `${bookName} ${chapter}`;

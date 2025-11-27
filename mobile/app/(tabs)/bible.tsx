@@ -18,11 +18,11 @@ import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
 
 import { Text } from '@/components/ui/text';
-import { Heading } from '@/components/ui/heading';
+import { Heading as _Heading } from '@/components/ui/heading';
 import { HStack } from '@/components/ui/hstack';
 import { Icon } from '@/components/ui/icon';
 
-import { ChapterReader, MemoizedChapterReader } from '@/components/bible/ChapterReader';
+import { ChapterReader as _ChapterReader, MemoizedChapterReader } from '@/components/bible/ChapterReader';
 import { ContinuousScrollReader } from '@/components/bible/ContinuousScrollReader';
 import { BookSelectorModal } from '@/components/bible/BookSelectorModal';
 import { ReadingPreferencesModal } from '@/components/bible/ReadingPreferencesModal';
@@ -89,7 +89,7 @@ export default function BibleScreen() {
 
   // Fetch current chapter (offline)
   // Use isFetching instead of isLoading to avoid showing loader for cached data
-  const { data: verses, isLoading: isLoadingChapter, isFetching: isFetchingChapter } = useBibleChapterOffline(
+  const { data: verses, isLoading: isLoadingChapter, isFetching: _isFetchingChapter } = useBibleChapterOffline(
     version,
     currentBook,
     currentChapter
@@ -100,7 +100,7 @@ export default function BibleScreen() {
   const shouldShowLoading = isLoadingChapter && !verses;
 
   // Fetch books for navigation (offline)
-  const { data: books = [], isLoading: isLoadingBooks, error: booksError } = useBibleBooksOffline(version);
+  const { data: books = [], isLoading: _isLoadingBooks, error: _booksError } = useBibleBooksOffline(version);
 
   // Bible versions are now hardcoded since they're offline
   const versions = Object.values(BIBLE_TRANSLATIONS);
@@ -796,7 +796,7 @@ export default function BibleScreen() {
           initialBook={getBookNumber(currentBook) || 1}
           initialChapter={currentChapter}
           scrollToVerse={scrollToVerseNumber}
-          onChapterChange={(book, chapter) => {
+          onChapterChange={(_book, _chapter) => {
             // Update header to show current visible chapter
             // NOTE: We DO NOT call setCurrentPosition here to avoid refresh loop
             // The header will update automatically when scrolling

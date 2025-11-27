@@ -62,7 +62,8 @@ export function ContinuousScrollReader({
   const latinFont = useLatinBibleFont();
   const appliedFont = getAppliedBibleFont(version, latinFont);
 
-  const flashListRef = useRef<FlashList<StreamItem>>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const flashListRef = useRef<any>(null);
   const streamLoaderRef = useRef<ChapterStreamLoader | null>(null);
   const [items, setItems] = useState<StreamItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -472,7 +473,7 @@ export function ContinuousScrollReader({
       renderItem={renderItem}
       getItemType={getItemType}
       estimatedItemSize={100}
-      keyExtractor={(item) => item.id}
+      keyExtractor={(item: StreamItem) => item.id}
       showsVerticalScrollIndicator={false}
       onScroll={onScroll}
       scrollEventThrottle={16}

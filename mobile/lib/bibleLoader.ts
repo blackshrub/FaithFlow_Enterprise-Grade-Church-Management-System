@@ -74,7 +74,7 @@ export class BibleLoader {
     return new Promise((resolve, reject) => {
       try {
         // Load JSON synchronously (React Native requires)
-        this.bible = BIBLE_FILES[this.translation] as NormalizedBible;
+        this.bible = BIBLE_FILES[this.translation] as unknown as NormalizedBible;
 
         console.log(
           `   ✅ Loaded ${this.bible.verses.length.toLocaleString()} verses`

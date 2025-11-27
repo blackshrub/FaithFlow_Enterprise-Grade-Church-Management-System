@@ -55,7 +55,7 @@ export function OTPInput({
             className="w-14 h-14"
           >
             <InputField
-              ref={(ref) => (inputRefs.current[index] = ref)}
+              ref={(ref: any) => (inputRefs.current[index] = ref)}
               value={value[index] || ""}
               onChangeText={(text) => handleChange(text, index)}
               onKeyPress={(e) => handleKeyPress(e, index)}

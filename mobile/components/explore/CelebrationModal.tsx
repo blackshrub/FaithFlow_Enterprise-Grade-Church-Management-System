@@ -26,7 +26,7 @@ import { Trophy, Sparkles, Target, Flame } from 'lucide-react-native';
 
 const { width, height } = Dimensions.get('window');
 
-type CelebrationType = 'streak' | 'quiz_perfect' | 'milestone';
+type CelebrationType = 'streak' | 'quiz_perfect' | 'milestone' | 'complete';
 
 interface CelebrationConfig {
   icon: React.ReactNode;
@@ -70,6 +70,15 @@ function getCelebrationConfig(
           ? `You've reached an important milestone. Well done!`
           : 'Anda telah mencapai pencapaian penting. Kerja bagus!',
       color: ExploreColors.spiritual[500],
+    },
+    complete: {
+      icon: <Sparkles size={64} color={ExploreColors.primary[400]} />,
+      title: language === 'en' ? 'Completed!' : 'Selesai!',
+      message:
+        language === 'en'
+          ? `Great job! You've completed this content.`
+          : 'Kerja bagus! Anda telah menyelesaikan konten ini.',
+      color: ExploreColors.primary[400],
     },
   };
 

@@ -51,7 +51,7 @@ export function Skeleton({ width = '100%', height = 20, borderRadius = 8, style 
         },
         animatedStyle,
         style,
-      ]}
+      ] as any}
     />
   );
 }
@@ -202,6 +202,98 @@ export function CompactListItemSkeleton() {
         <Skeleton height={20} width="70%" />
         <Skeleton height={16} width="50%" />
       </View>
+    </View>
+  );
+}
+
+/**
+ * Bible figure list skeleton (for figure list screen)
+ */
+export function BibleFigureListSkeleton() {
+  return (
+    <View style={{ gap: ExploreSpacing.md }}>
+      {[1, 2, 3, 4].map((i) => (
+        <View key={i} style={[styles.card, { flexDirection: 'row', gap: ExploreSpacing.md }]}>
+          <Skeleton width={80} height={80} borderRadius={12} />
+          <View style={{ flex: 1, gap: ExploreSpacing.xs }}>
+            <Skeleton height={20} width="70%" />
+            <Skeleton height={16} width="50%" />
+            <Skeleton height={14} width="90%" />
+          </View>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+/**
+ * Bible study card skeleton
+ */
+export function BibleStudySkeleton() {
+  return (
+    <View style={styles.card}>
+      {/* Image */}
+      <Skeleton height={160} borderRadius={12} style={{ marginBottom: ExploreSpacing.md }} />
+
+      {/* Title */}
+      <Skeleton height={24} width="80%" style={{ marginBottom: ExploreSpacing.sm }} />
+
+      {/* Description */}
+      <Skeleton height={16} width="100%" style={{ marginBottom: ExploreSpacing.xs }} />
+      <Skeleton height={16} width="90%" style={{ marginBottom: ExploreSpacing.md }} />
+
+      {/* Meta row */}
+      <View style={{ flexDirection: 'row', gap: ExploreSpacing.md }}>
+        <Skeleton height={16} width={80} />
+        <Skeleton height={16} width={60} />
+      </View>
+    </View>
+  );
+}
+
+/**
+ * Bible study list skeleton
+ */
+export function BibleStudyListSkeleton() {
+  return (
+    <View style={{ gap: ExploreSpacing.md }}>
+      {[1, 2, 3].map((i) => (
+        <BibleStudySkeleton key={i} />
+      ))}
+    </View>
+  );
+}
+
+/**
+ * Topical verses skeleton
+ */
+export function TopicalVersesSkeleton() {
+  return (
+    <View style={{ gap: ExploreSpacing.md }}>
+      {[1, 2, 3, 4, 5].map((i) => (
+        <View key={i} style={styles.card}>
+          <Skeleton height={18} width="100%" style={{ marginBottom: ExploreSpacing.xs }} />
+          <Skeleton height={18} width="90%" style={{ marginBottom: ExploreSpacing.sm }} />
+          <Skeleton height={14} width="40%" />
+        </View>
+      ))}
+    </View>
+  );
+}
+
+/**
+ * Topical categories skeleton
+ */
+export function TopicalCategoriesSkeleton() {
+  return (
+    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: ExploreSpacing.md }}>
+      {[1, 2, 3, 4, 5, 6].map((i) => (
+        <View key={i} style={[styles.card, { width: '47%', minHeight: 100 }]}>
+          <Skeleton width={40} height={40} borderRadius={20} style={{ marginBottom: ExploreSpacing.sm }} />
+          <Skeleton height={18} width="80%" style={{ marginBottom: ExploreSpacing.xs }} />
+          <Skeleton height={14} width="50%" />
+        </View>
+      ))}
     </View>
   );
 }

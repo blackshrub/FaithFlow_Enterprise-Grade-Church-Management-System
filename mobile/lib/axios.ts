@@ -1,5 +1,6 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
 import * as SecureStore from "expo-secure-store";
+import { router } from "expo-router";
 import { API_BASE_URL, STORAGE_KEYS } from "./constants";
 
 // Create axios instance
@@ -61,8 +62,15 @@ api.interceptors.response.use(
         await SecureStore.deleteItemAsync(STORAGE_KEYS.AUTH_TOKEN);
         await SecureStore.deleteItemAsync(STORAGE_KEYS.AUTH_MEMBER);
 
-        // TODO: Navigate to login screen
-        // This will be handled by the auth store or navigation logic
+        // Navigate to login screen
+        // Use setTimeout to allow the error to propagate first
+        setTimeout(() => {
+          try {
+            router.replace("/(auth)/login");
+          } catch {
+            // Navigation might fail if router not ready, ignore
+          }
+        }, 100);
       }
 
       // Handle 403 Forbidden

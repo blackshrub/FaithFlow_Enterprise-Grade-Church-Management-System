@@ -164,11 +164,11 @@ export const ExploreTypography = {
 
   // Font Weights
   fontWeight: {
-    normal: '400',
-    medium: '500',
-    semibold: '600',
-    bold: '700',
-    extrabold: '800',
+    normal: '400' as const,
+    medium: '500' as const,
+    semibold: '600' as const,
+    bold: '700' as const,
+    extrabold: '800' as const,
   },
 
   // Line Heights
@@ -185,10 +185,8 @@ export const ExploreTypography = {
     normal: 0,
     wide: 0.5,
   },
-} as const;
 
-// Composed Typography Styles (ready to use)
-Object.assign(ExploreTypography, {
+  // Composed Typography Styles (ready to use)
   // Display headlines
   h1: {
     fontSize: 36,
@@ -252,7 +250,7 @@ Object.assign(ExploreTypography, {
     lineHeight: 38,
     fontStyle: 'italic' as const,
   },
-});
+} as const;
 
 // ==================== SPACING ====================
 
@@ -276,6 +274,8 @@ export const ExploreSpacing = {
   md: 12,
   lg: 16,
   xl: 24,
+  '2xl': 32,
+  '3xl': 48,
   xxl: 32,
   // Layout
   screenMargin: 20,
@@ -293,6 +293,7 @@ export const ExploreBorderRadius = {
   lg: 16,
   xl: 20,
   '2xl': 24,
+  '3xl': 32,
   full: 9999,
   card: 20,
   cardInner: 16,

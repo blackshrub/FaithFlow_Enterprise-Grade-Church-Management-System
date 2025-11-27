@@ -157,6 +157,8 @@ export const QUERY_KEYS = {
   MY_COMMUNITIES: ['communities', 'my'],
   COMMUNITY_DETAIL: (id: string) => ['community', 'detail', id],
   COMMUNITY_MEMBERS: (communityId: string) => ['community', 'members', communityId],
+  COMMUNITY_MESSAGES: (communityId: string, channelType: string, subgroupId?: string) =>
+    ['community', 'messages', communityId, channelType, subgroupId],
 
   // Prayer
   PRAYER_REQUESTS: ['prayer', 'requests'],
@@ -175,13 +177,48 @@ export const QUERY_KEYS = {
   PROFILE: (memberId: string) => ['profile', memberId],
 };
 
-// Cache times
+// Cache times (staleTime - how long data is considered fresh)
 export const CACHE_TIMES = {
   BIBLE: 1000 * 60 * 60 * 24 * 7, // 1 week (rarely changes)
   GIVING: 1000 * 60 * 5, // 5 minutes
   EVENTS: 1000 * 60 * 5, // 5 minutes
   GROUPS: 1000 * 60 * 5, // 5 minutes (legacy)
   COMMUNITIES: 1000 * 60 * 5, // 5 minutes
+  COMMUNITY_MESSAGES: 1000 * 30, // 30 seconds (real-time via MQTT)
   PRAYER: 1000 * 60 * 3, // 3 minutes
   PROFILE: 1000 * 60 * 30, // 30 minutes
+  MEMBERS: 1000 * 60 * 10, // 10 minutes
+  SUBGROUPS: 1000 * 60 * 5, // 5 minutes
+  SEARCH: 1000 * 60 * 2, // 2 minutes
+};
+
+// GC times (gcTime - how long to keep inactive cache)
+export const GC_TIMES = {
+  DEFAULT: 1000 * 60 * 30, // 30 minutes
+  MESSAGES: 1000 * 60 * 60, // 1 hour (keep longer for offline)
+  COMMUNITIES: 1000 * 60 * 60, // 1 hour
+  MEMBERS: 1000 * 60 * 60, // 1 hour
+};
+
+// Retry configurations
+export const RETRY_CONFIG = {
+  DEFAULT: 3,
+  MUTATIONS: 1, // Don't retry mutations by default
+  MESSAGES: 2, // Retry message fetches twice
+};
+
+// Refetch intervals (for background refetching)
+export const REFETCH_INTERVALS = {
+  MESSAGES_ACTIVE: 1000 * 10, // 10s when chat is active (backup for MQTT)
+  MESSAGES_BACKGROUND: false, // Disabled when not focused
+  COMMUNITIES: 1000 * 60 * 5, // 5 minutes
+  TYPING: 1000 * 3, // 3s for typing status
+};
+
+// Pagination
+export const PAGINATION = {
+  MESSAGES_PAGE_SIZE: 50,
+  MEMBERS_PAGE_SIZE: 30,
+  SEARCH_PAGE_SIZE: 30,
+  INFINITE_SCROLL_THRESHOLD: 0.3, // Load more at 30% from bottom
 };

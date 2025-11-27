@@ -28,27 +28,24 @@ import {
   MapPin,
   Hash,
 } from 'lucide-react-native';
+import { View } from 'react-native';
+import { Text } from '@/components/ui/text';
+import { Heading } from '@/components/ui/heading';
+import { VStack } from '@/components/ui/vstack';
+import { HStack } from '@/components/ui/hstack';
+import { Card } from '@/components/ui/card';
+import { Icon } from '@/components/ui/icon';
+import { Button, ButtonText } from '@/components/ui/button';
+import { Input, InputField } from '@/components/ui/input';
+import { Textarea, TextareaInput } from '@/components/ui/textarea';
 import {
-  View,
-  Text,
-  Heading,
-  VStack,
-  HStack,
-  Card,
-  Icon,
-  Button,
-  ButtonText,
-  Input,
-  InputField,
-  Textarea,
-  TextareaInput,
   FormControl,
   FormControlLabel,
   FormControlLabelText,
   FormControlHelper,
   FormControlHelperText,
-  Spinner,
-} from '@gluestack-ui/themed';
+} from '@/components/ui/form-control';
+import { Spinner } from '@/components/ui/spinner';
 
 import { useAuthStore } from '@/stores/auth';
 import { colors, borderRadius, spacing, shadows } from '@/constants/theme';

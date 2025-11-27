@@ -12,7 +12,7 @@
  */
 
 import React, { useState, useCallback, useMemo } from 'react';
-import { View, Pressable, RefreshControl, Share, Alert, Animated } from 'react-native';
+import { View, Pressable, RefreshControl, Share, Alert, Animated as _Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useRouter } from 'expo-router';
@@ -24,13 +24,13 @@ import {
   X,
   Share2,
   Clock,
-  Tag,
+  Tag as _Tag,
   Filter,
   ChevronRight,
   Sparkles,
-  Info,
+  Info as _Info,
   Star,
-  CheckCircle2,
+  CheckCircle2 as _CheckCircle2,
   Edit3,
 } from 'lucide-react-native';
 import { MotiView } from 'moti';
@@ -45,7 +45,7 @@ import { VStack } from '@/components/ui/vstack';
 import { HStack } from '@/components/ui/hstack';
 import { Card } from '@/components/ui/card';
 import { Icon } from '@/components/ui/icon';
-import { Badge, BadgeText } from '@/components/ui/badge';
+import { Badge as _Badge, BadgeText as _BadgeText } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ScrollView } from '@/components/ui/scroll-view';
 import { Button, ButtonText } from '@/components/ui/button';
@@ -377,12 +377,14 @@ export default function EventsScreen() {
 
   // Premium event card - MOVED HERE TO FIX HOOKS VIOLATION
   // (Must be called before any early returns to maintain hook order)
-  const renderEvent = useCallback(({ item: event, index }: { item: EventWithMemberStatus; index: number }) => {
+  const renderEvent = useCallback(({ item: event, index: _index }: { item: EventWithMemberStatus; index: number }) => {
     const showRSVPButton = activeTab === 'upcoming' && event.requires_rsvp && event.can_rsvp;
+    // Kept for future UI enhancement: show different state when RSVP not required
     const showNoRSVPButton = activeTab === 'upcoming' && !event.requires_rsvp;
+    void showNoRSVPButton; // Intentionally unused - reserved for future UI enhancement
     const showCancelButton = activeTab === 'my_rsvps' && event.my_rsvp;
     const showAttendedBadge = activeTab === 'attended' && event.my_attendance;
-    const [gradientStart, gradientEnd] = getEventTypeGradient(event.event_type);
+    const [gradientStart, gradientEnd] = getEventTypeGradient((event.event_type || 'single') as 'single' | 'series');
 
     return (
       <MotiView
@@ -1003,7 +1005,7 @@ export default function EventsScreen() {
               key={activeTab}
               data={events}
               renderItem={renderEvent}
-              keyExtractor={(item) => item.id}
+              keyExtractor={(item: EventWithMemberStatus) => item.id}
               estimatedItemSize={380}
               contentContainerStyle={{
                 paddingHorizontal: spacing.lg,

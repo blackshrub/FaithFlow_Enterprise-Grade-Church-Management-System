@@ -15,8 +15,11 @@ import { NoteEditorModal } from '@/components/bible/NoteEditorModal';
 import { CategoryFilterModal } from '@/components/modals/CategoryFilterModal';
 import { CalendarModal } from '@/components/modals/CalendarModal';
 import { StreakDetailsSheet } from '@/components/explore/StreakDetailsSheet';
+import { MQTTProvider } from '@/components/providers/MQTTProvider';
 import { queryClient } from '@/lib/queryClient';
 import { preloadBiblesOffline } from '@/hooks/useBibleOffline';
+import { IncomingCallOverlay } from '@/components/call';
+import { useCallSignalingInit } from '@/hooks/useCallSignaling';
 
 /**
  * INSTANT BIBLE ACCESS - Preload default Bible translation on app startup
@@ -29,12 +32,15 @@ export default function RootLayout() {
   const { colorScheme } = useColorScheme();
   const [i18nInitialized, setI18nInitialized] = useState(false);
 
+  // Initialize call signaling when authenticated
+  useCallSignalingInit();
+
   /**
    * Load Bible reading fonts
    * These fonts are ONLY used in Bible reader components
    * The rest of the app uses Gluestack UI default fonts
    */
-  const [fontsLoaded, fontError] = useFonts(BIBLE_FONT_FILES);
+  const [fontsLoaded, _fontError] = useFonts(BIBLE_FONT_FILES);
 
   useEffect(() => {
     initializeI18n().then(() => {
@@ -62,26 +68,39 @@ export default function RootLayout() {
       <QueryClientProvider client={queryClient}>
         <GluestackUIProvider mode={colorScheme ?? "light"}>
           <BottomSheetModalProvider>
-            <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
+            {/* MQTT Provider for real-time messaging */}
+            <MQTTProvider>
+              <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
 
-            <Stack
-              screenOptions={{
-                headerShown: false,
-                animation: "fade",
-              }}
-            >
-              <Stack.Screen name="(auth)" />
-              <Stack.Screen name="(tabs)" />
-            </Stack>
+              <Stack
+                screenOptions={{
+                  headerShown: false,
+                  animation: "fade",
+                }}
+              >
+                <Stack.Screen name="(auth)" />
+                <Stack.Screen name="(tabs)" />
+                <Stack.Screen
+                  name="call/[id]"
+                  options={{
+                    animation: 'fade',
+                    gestureEnabled: false, // Prevent accidental swipe-back during call
+                  }}
+                />
+              </Stack>
 
-            {/* Global bottom sheets - MUST be at root level */}
-            <NoteEditorModal />
-            <CategoryFilterModal />
-            <CalendarModal />
-            <StreakDetailsSheet />
+              {/* Global bottom sheets - MUST be at root level */}
+              <NoteEditorModal />
+              <CategoryFilterModal />
+              <CalendarModal />
+              <StreakDetailsSheet />
 
-            {/* Toast must be rendered at root level */}
-            <Toast />
+              {/* Toast must be rendered at root level */}
+              <Toast />
+
+              {/* Incoming call overlay - displays over all content */}
+              <IncomingCallOverlay />
+            </MQTTProvider>
           </BottomSheetModalProvider>
         </GluestackUIProvider>
       </QueryClientProvider>
