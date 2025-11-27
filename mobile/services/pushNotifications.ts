@@ -18,7 +18,6 @@ import { router } from 'expo-router';
 import { api } from '@/services/api';
 import { isViewingChat } from '@/stores/navigation';
 import { useCallStore } from '@/stores/call';
-import { callKitService } from '@/services/callkit';
 import { CallType, CallSignalType } from '@/types/call';
 
 // =============================================================================

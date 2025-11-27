@@ -20,7 +20,8 @@ import { queryClient } from '@/lib/queryClient';
 import { preloadBiblesOffline } from '@/hooks/useBibleOffline';
 import { IncomingCallOverlay } from '@/components/call';
 import { useCallSignalingInit } from '@/hooks/useCallSignaling';
-import { callKitService } from '@/services/callkit';
+// Note: We do NOT use CallKit because iOS requires VoIP PushKit for CallKit (we use standard FCM)
+// The in-app IncomingCallOverlay provides a WhatsApp-style UI instead
 
 /**
  * INSTANT BIBLE ACCESS - Preload default Bible translation on app startup
@@ -47,15 +48,6 @@ export default function RootLayout() {
     initializeI18n().then(() => {
       setI18nInitialized(true);
     });
-  }, []);
-
-  // Initialize CallKit for native call UI
-  useEffect(() => {
-    callKitService.setup().catch(console.error);
-
-    return () => {
-      callKitService.cleanup();
-    };
   }, []);
 
   // Preload additional Bible translations after fonts are ready
