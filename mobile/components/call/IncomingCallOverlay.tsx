@@ -4,6 +4,10 @@
  * Full-screen overlay for incoming calls.
  * Shows caller info and accept/reject buttons.
  * Displayed as a modal over all other content.
+ * Features:
+ * - Ringtone playback
+ * - Vibration pattern
+ * - CallKit integration for native UI
  */
 
 import React, { useEffect } from 'react';
@@ -18,29 +22,37 @@ import { CallerInfo } from './CallerInfo';
 import { colors, shadows } from '@/constants/theme';
 import { useCallStore, useIncomingCall } from '@/stores/call';
 import { CallType } from '@/types/call';
+import { useRingtone } from '@/services/audio/ringtone';
+import { callKitService } from '@/services/callkit';
 
 const { width, height } = Dimensions.get('window');
 
 export function IncomingCallOverlay() {
   const incomingCall = useIncomingCall();
   const { acceptCall, rejectCall } = useCallStore();
+  const { startRingtone, stopRingtone } = useRingtone();
 
-  // Vibrate on incoming call
+  // Play ringtone and show native call UI
   useEffect(() => {
     if (incomingCall) {
-      // Continuous vibration pattern for incoming call
-      const vibrate = async () => {
-        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+      // Start ringtone (includes vibration)
+      startRingtone();
+
+      // Show on native call UI (CallKit/ConnectionService)
+      callKitService.displayIncomingCall(
+        incomingCall.call_id,
+        incomingCall.caller.name,
+        incomingCall.caller.id || 'FaithFlow',
+        incomingCall.call_type === CallType.VIDEO
+      );
+
+      return () => {
+        stopRingtone();
       };
-
-      vibrate();
-      const interval = setInterval(vibrate, 1500);
-
-      return () => clearInterval(interval);
     }
 
     return undefined;
-  }, [incomingCall]);
+  }, [incomingCall, startRingtone, stopRingtone]);
 
   if (!incomingCall) return null;
 
@@ -48,17 +60,25 @@ export function IncomingCallOverlay() {
 
   const handleAccept = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    stopRingtone();
     try {
       await acceptCall(incomingCall.call_id);
+      // Report to CallKit that call is connected
+      callKitService.reportCallConnected(incomingCall.call_id);
     } catch (error) {
       console.error('Failed to accept call:', error);
+      // Report call failed to CallKit
+      callKitService.reportEndCall(incomingCall.call_id, 1); // 1 = failed
     }
   };
 
   const handleReject = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    stopRingtone();
     try {
       await rejectCall(incomingCall.call_id, 'rejected');
+      // Report to CallKit that call was declined
+      callKitService.reportEndCall(incomingCall.call_id, 5); // 5 = declined
     } catch (error) {
       console.error('Failed to reject call:', error);
     }

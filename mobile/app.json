@@ -18,9 +18,17 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.faithflow.app",
       "infoPlist": {
-        "NSCameraUsageDescription": "Allow FaithFlow to access your camera for profile photos",
-        "NSPhotoLibraryUsageDescription": "Allow FaithFlow to access your photos for profile pictures"
-      }
+        "NSCameraUsageDescription": "Allow FaithFlow to access your camera for video calls and profile photos",
+        "NSPhotoLibraryUsageDescription": "Allow FaithFlow to access your photos for profile pictures",
+        "NSMicrophoneUsageDescription": "Allow FaithFlow to access your microphone for voice and video calls",
+        "UIBackgroundModes": [
+          "audio",
+          "voip",
+          "fetch",
+          "remote-notification"
+        ]
+      },
+      "backgroundColor": "#FFFFFF"
     },
     "android": {
       "adaptiveIcon": {
@@ -30,8 +38,20 @@
       "package": "com.faithflow.app",
       "permissions": [
         "CAMERA",
+        "RECORD_AUDIO",
+        "MODIFY_AUDIO_SETTINGS",
         "READ_EXTERNAL_STORAGE",
-        "WRITE_EXTERNAL_STORAGE"
+        "WRITE_EXTERNAL_STORAGE",
+        "VIBRATE",
+        "WAKE_LOCK",
+        "FOREGROUND_SERVICE",
+        "FOREGROUND_SERVICE_PHONE_CALL",
+        "USE_FULL_SCREEN_INTENT",
+        "CALL_PHONE",
+        "MANAGE_OWN_CALLS",
+        "READ_PHONE_STATE",
+        "BLUETOOTH",
+        "BLUETOOTH_CONNECT"
       ]
     },
     "web": {
