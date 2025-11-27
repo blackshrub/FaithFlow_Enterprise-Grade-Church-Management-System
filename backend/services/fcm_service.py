@@ -68,6 +68,11 @@ class FCMService:
 
                 if data:
                     message["data"] = data
+                    # For incoming calls, set additional high-priority flags
+                    if data.get("type") == "incoming_call":
+                        message["priority"] = "high"
+                        message["_contentAvailable"] = True  # iOS background wake
+                        message["categoryId"] = "incoming_call"  # iOS action category
 
                 if badge is not None:
                     message["badge"] = badge

@@ -154,6 +154,87 @@ def setup_scheduler(db: AsyncIOMotorDatabase):
         replace_existing=True
     )
     
+    # Add job: Cleanup stale calls (mark as missed) every 30 seconds
+    async def cleanup_stale_calls_job():
+        """Mark ringing calls that have timed out as missed and send notifications"""
+        try:
+            from datetime import timedelta
+            from services.fcm_service import fcm_service
+
+            # 45 second timeout for ringing calls
+            timeout = datetime.now(timezone.utc) - timedelta(seconds=45)
+
+            # Find stale calls before marking them (to get details for notification)
+            stale_calls = await db.calls.find({
+                "status": "ringing",
+                "initiated_at": {"$lt": timeout}
+            }).to_list(100)
+
+            if not stale_calls:
+                return
+
+            # Mark all as missed
+            await db.calls.update_many(
+                {
+                    "status": "ringing",
+                    "initiated_at": {"$lt": timeout}
+                },
+                {
+                    "$set": {
+                        "status": "missed",
+                        "end_reason": "missed",
+                        "ended_at": datetime.now(timezone.utc),
+                        "updated_at": datetime.now(timezone.utc)
+                    }
+                }
+            )
+
+            logger.info(f"Marked {len(stale_calls)} stale calls as missed")
+
+            # Send missed call notifications to each callee
+            for call in stale_calls:
+                try:
+                    church_id = call.get("church_id")
+                    caller_id = call.get("caller_id")
+                    call_type = call.get("call_type", "voice")
+
+                    # Get caller info
+                    caller_info = await db.members.find_one({"id": caller_id})
+                    caller_name = caller_info.get("full_name", "Unknown") if caller_info else "Unknown"
+
+                    for participant in call.get("participants", []):
+                        if participant.get("role") == "callee":
+                            callee_id = participant.get("member_id")
+                            if callee_id and church_id:
+                                await fcm_service.send_to_member(
+                                    db=db,
+                                    member_id=callee_id,
+                                    church_id=church_id,
+                                    title="Missed Call",
+                                    body=f"You missed a {'video' if call_type == 'video' else 'voice'} call from {caller_name}",
+                                    notification_type="call",
+                                    data={
+                                        "type": "missed_call",
+                                        "call_id": call.get("call_id"),
+                                        "caller_id": caller_id,
+                                        "caller_name": caller_name,
+                                        "call_type": call_type
+                                    }
+                                )
+                except Exception as e:
+                    logger.error(f"Error sending missed call notification: {e}")
+
+        except Exception as e:
+            logger.error(f"Error in stale call cleanup job: {e}")
+
+    scheduler.add_job(
+        func=lambda: cleanup_stale_calls_job(),
+        trigger=IntervalTrigger(seconds=30),
+        id='cleanup_stale_calls',
+        name='Cleanup Stale Calls',
+        replace_existing=True
+    )
+
     # Add job: Generate counseling slots for all churches
     async def generate_counseling_slots():
         """Generate counseling slots for all churches based on their settings"""
@@ -199,7 +280,7 @@ def setup_scheduler(db: AsyncIOMotorDatabase):
         replace_existing=True
     )
     
-    logger.info("APScheduler configured with article publishing, webhook processing, status automation, trash cleanup, and counseling slot generation jobs")
+    logger.info("APScheduler configured with article publishing, webhook processing, status automation, trash cleanup, counseling slot generation, and call cleanup jobs")
     
     return scheduler
 

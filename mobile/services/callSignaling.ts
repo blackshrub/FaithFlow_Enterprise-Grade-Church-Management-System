@@ -86,9 +86,13 @@ class CallSignalingService {
   private client: MqttClient | null = null;
   private churchId: string = '';
   private memberId: string = '';
+  private token: string = '';
   private currentCallId: string | null = null;
   private isConnected: boolean = false;
   private isConnecting: boolean = false;
+  private reconnectAttempts: number = 0;
+  private maxReconnectAttempts: number = 10;
+  private disconnectTimer: ReturnType<typeof setTimeout> | null = null;
 
   // ---------------------------------------------------------------------------
   // Connection Management
@@ -108,6 +112,8 @@ class CallSignalingService {
     this.isConnecting = true;
     this.churchId = options.churchId;
     this.memberId = options.memberId;
+    this.token = options.token;
+    this.reconnectAttempts = 0;
 
     const brokerUrl = getBrokerUrl();
     console.log('[CallSignaling] Connecting to:', brokerUrl);
@@ -130,8 +136,21 @@ class CallSignalingService {
           console.log('[CallSignaling] Connected');
           this.isConnected = true;
           this.isConnecting = false;
+          this.reconnectAttempts = 0;
+          this.clearDisconnectTimer();
           this.subscribeToMemberTopics();
           resolve();
+        });
+
+        this.client.on('reconnect', () => {
+          this.reconnectAttempts++;
+          console.log(`[CallSignaling] Reconnecting... attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts}`);
+
+          // If we're in an active call and reconnection is taking too long
+          if (this.currentCallId && this.reconnectAttempts >= this.maxReconnectAttempts) {
+            console.error('[CallSignaling] Max reconnect attempts reached during active call');
+            this.handleReconnectFailure();
+          }
         });
 
         this.client.on('error', (error) => {
@@ -142,6 +161,16 @@ class CallSignalingService {
 
         this.client.on('close', () => {
           console.log('[CallSignaling] Disconnected');
+          this.isConnected = false;
+
+          // Start a timer to handle prolonged disconnection during calls
+          if (this.currentCallId) {
+            this.startDisconnectTimer();
+          }
+        });
+
+        this.client.on('offline', () => {
+          console.log('[CallSignaling] Offline');
           this.isConnected = false;
         });
 
@@ -163,6 +192,7 @@ class CallSignalingService {
   }
 
   disconnect(): void {
+    this.clearDisconnectTimer();
     if (this.client) {
       this.unsubscribeFromCallTopics();
       this.client.end(true);
@@ -170,8 +200,82 @@ class CallSignalingService {
       this.isConnected = false;
       this.churchId = '';
       this.memberId = '';
+      this.token = '';
       this.currentCallId = null;
+      this.reconnectAttempts = 0;
       console.log('[CallSignaling] Disconnected');
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Reconnection Safety
+  // ---------------------------------------------------------------------------
+
+  private startDisconnectTimer(): void {
+    // Clear any existing timer
+    this.clearDisconnectTimer();
+
+    // If disconnected for more than 30 seconds during a call, notify user
+    this.disconnectTimer = setTimeout(() => {
+      if (this.currentCallId && !this.isConnected) {
+        console.error('[CallSignaling] Connection lost during call for too long');
+        this.handleReconnectFailure();
+      }
+    }, 30000);
+  }
+
+  private clearDisconnectTimer(): void {
+    if (this.disconnectTimer) {
+      clearTimeout(this.disconnectTimer);
+      this.disconnectTimer = null;
+    }
+  }
+
+  private handleReconnectFailure(): void {
+    console.error('[CallSignaling] Reconnection failed - ending call');
+
+    // Notify the call store that connection was lost
+    const store = useCallStore.getState();
+    const { currentCall, uiState } = store;
+
+    if (currentCall && (uiState === 'active' || uiState === 'connecting')) {
+      // Set error state and end call gracefully
+      store.endCall('network_error').catch(console.error);
+    }
+
+    // Clear the current call ID
+    this.currentCallId = null;
+  }
+
+  /**
+   * Manually trigger reconnection (e.g., when app comes to foreground)
+   */
+  async ensureConnected(): Promise<boolean> {
+    if (this.isConnected) {
+      return true;
+    }
+
+    if (!this.churchId || !this.memberId || !this.token) {
+      console.warn('[CallSignaling] Cannot reconnect - missing credentials');
+      return false;
+    }
+
+    try {
+      await this.connect({
+        churchId: this.churchId,
+        memberId: this.memberId,
+        token: this.token,
+      });
+
+      // Re-subscribe to call topics if we have an active call
+      if (this.currentCallId) {
+        this.subscribeToCallTopics(this.currentCallId);
+      }
+
+      return true;
+    } catch (error) {
+      console.error('[CallSignaling] Failed to reconnect:', error);
+      return false;
     }
   }
 

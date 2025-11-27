@@ -9,8 +9,9 @@
  * - Platform-specific handling
  */
 
-import { Platform } from 'react-native';
+import { Platform, NativeModules } from 'react-native';
 import { create } from 'zustand';
+import { AudioSession } from '@livekit/react-native';
 
 // =============================================================================
 // TYPES
@@ -131,24 +132,47 @@ export function getAudioOutputLabel(output: AudioOutput): string {
  */
 export async function configureLiveKitAudio(speakerOn: boolean): Promise<void> {
   try {
-    // LiveKit React Native handles audio routing through the Room
-    // The audio mode is set when connecting to the room
-    // For runtime switching, LiveKit provides methods through the room instance
+    console.log('[AudioRouting] Setting speaker:', speakerOn ? 'ON' : 'OFF');
 
-    if (Platform.OS === 'ios') {
-      // iOS: AVAudioSession is managed by LiveKit
-      // Speaker routing is done via AVAudioSession.PortOverrideSpeaker
-      console.log('[AudioRouting] iOS speaker:', speakerOn ? 'ON' : 'OFF');
-    } else {
-      // Android: AudioManager.setSpeakerphoneOn()
-      // This is handled by LiveKit's native module
-      console.log('[AudioRouting] Android speaker:', speakerOn ? 'ON' : 'OFF');
-    }
+    // Use LiveKit's AudioSession to configure audio output
+    // This handles both iOS (AVAudioSession) and Android (AudioManager)
+    await AudioSession.configureAudio({
+      android: {
+        // For Android, set the audio mode
+        preferredOutputList: speakerOn
+          ? ['speaker', 'earpiece']
+          : ['earpiece', 'speaker'],
+        audioTypeOptions: {
+          manageAudioFocus: true,
+          audioMode: 'inCommunication',
+          audioFocusMode: 'gain',
+          audioStreamType: 'voiceCall',
+          audioAttributesUsageType: 'voiceCommunication',
+        },
+      },
+      ios: {
+        // For iOS, set the category options
+        defaultOutput: speakerOn ? 'speaker' : 'earpiece',
+      },
+    });
 
-    // The actual audio routing is handled by LiveKit when we update
-    // the track settings. The store state is used to track the UI state.
+    console.log('[AudioRouting] Audio configured successfully');
   } catch (error) {
     console.error('[AudioRouting] Failed to configure audio:', error);
+
+    // Fallback: Try using native modules directly
+    try {
+      if (Platform.OS === 'android') {
+        // Android fallback using InCallManager if available
+        const InCallManager = NativeModules.InCallManager;
+        if (InCallManager?.setSpeakerphoneOn) {
+          InCallManager.setSpeakerphoneOn(speakerOn);
+          console.log('[AudioRouting] Android speaker set via InCallManager');
+        }
+      }
+    } catch (fallbackError) {
+      console.error('[AudioRouting] Fallback also failed:', fallbackError);
+    }
   }
 }
 

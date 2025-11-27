@@ -81,12 +81,14 @@ function CallScreenContent() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
-  // Keep screen awake during call
-  useKeepAwake();
-
   // Call state from store
   const uiState = useCallUIState();
   const currentCall = useCurrentCall();
+
+  // Keep screen awake only for video calls
+  // For voice calls, let OS/CallKit handle proximity sensor (screen off when near ear)
+  const isVideoCall = currentCall?.call_type === CallType.VIDEO;
+  useKeepAwake(isVideoCall ? 'video-call' : undefined);
   const localParticipantState = useLocalParticipantStore();
   const callDuration = useCallDuration();
   const networkQuality = useNetworkQuality();
@@ -109,8 +111,6 @@ function CallScreenContent() {
     toggleVideo,
     toggleSpeaker,
   } = useCallStore();
-
-  const isVideoCall = currentCall?.call_type === CallType.VIDEO;
 
   // Filter remote participants
   const remoteParticipants = useMemo(() => {

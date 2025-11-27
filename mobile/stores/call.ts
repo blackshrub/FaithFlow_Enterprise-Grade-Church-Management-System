@@ -70,10 +70,17 @@ function formatDuration(totalSeconds: number): CallDuration {
 }
 
 // =============================================================================
+// Constants
+// =============================================================================
+
+const CALL_RING_TIMEOUT_MS = 45000; // 45 seconds to match backend timeout
+
+// =============================================================================
 // Store
 // =============================================================================
 
 let durationInterval: ReturnType<typeof setInterval> | null = null;
+let ringTimeoutTimer: ReturnType<typeof setTimeout> | null = null;
 
 export const useCallStore = create<CallStore>((set, get) => ({
   // ---------------------------------------------------------------------------
@@ -143,8 +150,36 @@ export const useCallStore = create<CallStore>((set, get) => ({
         },
       });
 
+      // Start ring timeout - auto-cancel if not answered in 45 seconds
+      if (ringTimeoutTimer) {
+        clearTimeout(ringTimeoutTimer);
+      }
+      ringTimeoutTimer = setTimeout(() => {
+        const { uiState, currentCall } = get();
+        // Only timeout if still in outgoing state (not yet accepted/rejected)
+        if (uiState === 'outgoing' && currentCall) {
+          console.log('[Call] Ring timeout - no answer');
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+          // Report to CallKit that call timed out (unanswered)
+          callKitService.reportEndCall(currentCall.call_id, 3); // 3 = unanswered
+          set({
+            uiState: 'ended',
+            error: 'No answer - call timed out',
+          });
+          // Reset after showing message
+          setTimeout(() => {
+            get().reset();
+          }, 2000);
+        }
+      }, CALL_RING_TIMEOUT_MS);
+
     } catch (error: any) {
       console.error('Failed to initiate call:', error);
+      // Clear timeout on error
+      if (ringTimeoutTimer) {
+        clearTimeout(ringTimeoutTimer);
+        ringTimeoutTimer = null;
+      }
       set({
         uiState: 'idle',
         error: error.message || 'Failed to initiate call',
@@ -346,6 +381,12 @@ export const useCallStore = create<CallStore>((set, get) => ({
 
     if (!currentCall || currentCall.call_id !== signal.call_id) return;
 
+    // Clear ring timeout - call was answered
+    if (ringTimeoutTimer) {
+      clearTimeout(ringTimeoutTimer);
+      ringTimeoutTimer = null;
+    }
+
     // Haptic feedback
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
@@ -373,6 +414,11 @@ export const useCallStore = create<CallStore>((set, get) => ({
     );
 
     if (remainingCallees.length === 0) {
+      // Clear ring timeout - call was declined
+      if (ringTimeoutTimer) {
+        clearTimeout(ringTimeoutTimer);
+        ringTimeoutTimer = null;
+      }
       // Report to CallKit that call was declined
       callKitService.reportEndCall(signal.call_id, 5); // 5 = declined elsewhere
       set({ uiState: 'ended' });
@@ -626,6 +672,12 @@ export const useCallStore = create<CallStore>((set, get) => ({
     if (durationInterval) {
       clearInterval(durationInterval);
       durationInterval = null;
+    }
+
+    // Clear ring timeout
+    if (ringTimeoutTimer) {
+      clearTimeout(ringTimeoutTimer);
+      ringTimeoutTimer = null;
     }
 
     set({

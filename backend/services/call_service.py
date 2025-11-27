@@ -35,6 +35,7 @@ from models.call import (
 )
 from services.livekit_service import LiveKitService, get_livekit_service
 from services.call_signaling_service import CallSignalingService, get_call_signaling_service
+from services.fcm_service import fcm_service
 
 logger = logging.getLogger(__name__)
 
@@ -228,6 +229,38 @@ class CallService:
             community_name=community_name,
             livekit_url=livekit_url
         )
+
+        # Send high-priority push notification to wake up app when backgrounded/killed
+        # This is critical for reliable call delivery on both iOS and Android
+        call_type_label = "video" if call_type == CallType.VIDEO else "voice"
+        for callee in callees:
+            try:
+                await fcm_service.send_to_member(
+                    db=self.db,
+                    member_id=callee.member_id,
+                    church_id=church_id,
+                    title=f"Incoming {call_type_label} call",
+                    body=f"{caller_info['name']} is calling you",
+                    notification_type="call",  # Uses high-priority call channel
+                    data={
+                        "type": "incoming_call",
+                        "call_id": call_id,
+                        "room_name": room_name,
+                        "call_type": call_type.value,
+                        "caller_id": caller_id,
+                        "caller_name": caller_info["name"],
+                        "caller_avatar": caller_info.get("avatar"),
+                        "community_id": community_id,
+                        "community_name": community_name,
+                        "livekit_url": livekit_url,
+                        # High priority flags for FCM
+                        "priority": "high",
+                        "content_available": "true",  # iOS background wake
+                        "mutable_content": "true"  # iOS notification extension
+                    }
+                )
+            except Exception as e:
+                logger.error(f"Failed to send call push notification to {callee.member_id}: {e}")
 
         logger.info(f"Call {call_id} initiated by {caller_id} to {[c.member_id for c in callees]}")
 

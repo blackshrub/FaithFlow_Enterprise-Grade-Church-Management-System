@@ -17,6 +17,9 @@ import Constants from 'expo-constants';
 import { router } from 'expo-router';
 import { api } from '@/services/api';
 import { isViewingChat } from '@/stores/navigation';
+import { useCallStore } from '@/stores/call';
+import { callKitService } from '@/services/callkit';
+import { CallType, CallSignalType } from '@/types/call';
 
 // =============================================================================
 // TYPES
@@ -338,7 +341,38 @@ export function setupNotificationListeners(): () => void {
       const data = notification.request.content.data as unknown as PushNotificationPayload | undefined;
       console.log('Notification received in foreground:', data);
 
-      // You can emit events here to update UI (e.g., increment unread count)
+      // Handle incoming call from push notification
+      // This triggers when app is backgrounded and push wakes it
+      if (data?.type === 'incoming_call' && data.callId) {
+        console.log('[Push] Handling incoming call notification:', data.callId);
+
+        // Show on native call UI (CallKit/ConnectionService)
+        callKitService.displayIncomingCall(
+          data.callId,
+          data.callerName || 'Unknown',
+          data.callerId || 'FaithFlow',
+          data.callType === 'video'
+        );
+
+        // Also update call store to show in-app UI
+        const { handleIncomingCall } = useCallStore.getState();
+        handleIncomingCall({
+          type: CallSignalType.INVITE,
+          call_id: data.callId,
+          room_name: (data.data as any)?.room_name || '',
+          call_type: data.callType === 'video' ? CallType.VIDEO : CallType.VOICE,
+          caller: {
+            id: data.callerId || '',
+            name: data.callerName || 'Unknown',
+            avatar: data.callerAvatar || null,
+          },
+          callee_ids: [],
+          community_id: data.communityId || null,
+          community_name: (data.data as any)?.community_name || null,
+          livekit_url: (data.data as any)?.livekit_url || '',
+          timestamp: new Date().toISOString(),
+        });
+      }
     }
   );
 
