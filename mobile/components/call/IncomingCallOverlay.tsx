@@ -16,6 +16,7 @@ import { MotiView } from 'moti';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Phone, PhoneOff, Video } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
+import { useRouter } from 'expo-router';
 
 import { Text } from '@/components/ui/text';
 import { CallerInfo } from './CallerInfo';
@@ -28,6 +29,7 @@ import { callKitService } from '@/services/callkit';
 const { width, height } = Dimensions.get('window');
 
 export function IncomingCallOverlay() {
+  const router = useRouter();
   const incomingCall = useIncomingCall();
   const { acceptCall, rejectCall } = useCallStore();
   const { startRingtone, stopRingtone } = useRingtone();
@@ -65,6 +67,8 @@ export function IncomingCallOverlay() {
       await acceptCall(incomingCall.call_id);
       // Report to CallKit that call is connected
       callKitService.reportCallConnected(incomingCall.call_id);
+      // Navigate to the call screen
+      router.push(`/call/${incomingCall.call_id}`);
     } catch (error) {
       console.error('Failed to accept call:', error);
       // Report call failed to CallKit
