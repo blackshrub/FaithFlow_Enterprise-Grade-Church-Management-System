@@ -121,7 +121,7 @@ export default function TopicalVersesScreen() {
           />
         ) : (
           <View style={styles.versesList}>
-            {verses.map((verse, index) => (
+            {verses.map((verse: Partial<TopicalVerse> & { id: string }, index: number) => (
               <VerseCard
                 key={verse.id}
                 verse={verse}
@@ -163,8 +163,9 @@ export default function TopicalVersesScreen() {
   );
 }
 
+// Use partial type since mock data may not have all fields
 interface VerseCardProps {
-  verse: TopicalVerse;
+  verse: Partial<TopicalVerse> & { id: string };
   contentLanguage: string;
   index: number;
 }

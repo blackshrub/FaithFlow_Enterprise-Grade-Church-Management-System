@@ -89,7 +89,8 @@ export default function BibleStudiesBrowserScreen() {
 
   const getStudyProgress = (studyId: string) => {
     // progressData is an object keyed by study ID, not an array
-    const progress = progressData?.[studyId];
+    // Cast to Record to allow dynamic key access
+    const progress = (progressData as Record<string, { current_lesson: number; total_lessons: number } | undefined>)?.[studyId];
     if (!progress) return 0;
     return Math.round((progress.current_lesson / progress.total_lessons) * 100);
   };

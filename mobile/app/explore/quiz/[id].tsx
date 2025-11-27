@@ -286,7 +286,6 @@ export default function DailyQuizScreen() {
           <Text
             style={styles.questionText}
             accessibilityRole="header"
-            accessibilityLevel={1}
           >
             {questionText}
           </Text>
@@ -387,7 +386,11 @@ export default function DailyQuizScreen() {
               <Text style={styles.scriptureRefLabel}>
                 {contentLanguage === 'en' ? 'Based on:' : 'Berdasarkan:'}
               </Text>
-              <Text style={styles.scriptureRefText}>{currentQuestion.scripture_reference}</Text>
+              <Text style={styles.scriptureRefText}>
+                {typeof currentQuestion.scripture_reference === 'string'
+                  ? currentQuestion.scripture_reference
+                  : `${currentQuestion.scripture_reference.book} ${currentQuestion.scripture_reference.chapter}:${currentQuestion.scripture_reference.verse_start}${currentQuestion.scripture_reference.verse_end ? `-${currentQuestion.scripture_reference.verse_end}` : ''}`}
+              </Text>
             </View>
           )}
 

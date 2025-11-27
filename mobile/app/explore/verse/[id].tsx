@@ -214,7 +214,6 @@ export default function VerseOfTheDayScreen() {
               <Text
                 style={styles.sectionTitle}
                 accessibilityRole="header"
-                accessibilityLevel={2}
               >
                 {contentLanguage === 'en' ? 'Commentary' : 'Komentar'}
               </Text>
@@ -228,7 +227,6 @@ export default function VerseOfTheDayScreen() {
               <Text
                 style={styles.sectionTitle}
                 accessibilityRole="header"
-                accessibilityLevel={2}
               >
                 {contentLanguage === 'en' ? 'Reflect' : 'Renungkan'}
               </Text>

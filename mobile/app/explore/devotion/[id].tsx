@@ -34,7 +34,7 @@ import {
   useCompletePlanDay,
 } from '@/hooks/explore/useExploreMock';
 import { useExploreStore } from '@/stores/explore/exploreStore';
-import type { DevotionPlan, DevotionPlanDay, DailyDevotion } from '@/types/explore';
+import type { DevotionPlan, DevotionPlanDay, DailyDevotion, Language } from '@/types/explore';
 import {
   ArrowLeft,
   Share2,
@@ -133,7 +133,7 @@ export default function DevotionDetailScreen() {
 
 interface DailyDevotionViewProps {
   devotion: DailyDevotion;
-  contentLanguage: string;
+  contentLanguage: Language;
   onBack: () => void;
 }
 
@@ -227,7 +227,9 @@ function DailyDevotionView({ devotion, contentLanguage, onBack }: DailyDevotionV
               <View style={styles.verseAccent} />
               <View style={styles.verseContent}>
                 <Text style={styles.verseText}>
-                  "{devotion.main_verse.text || ''}"
+                  "{typeof devotion.main_verse.text === 'string'
+                    ? devotion.main_verse.text
+                    : devotion.main_verse.text?.[contentLanguage] || devotion.main_verse.text?.en || ''}"
                 </Text>
                 <Text style={styles.verseReference}>
                   {formatBibleReference(devotion.main_verse, contentLanguage)}
@@ -248,7 +250,9 @@ function DailyDevotionView({ devotion, contentLanguage, onBack }: DailyDevotionV
               {devotion.additional_verses.map((verse, index) => (
                 <View key={index} style={styles.additionalVerse}>
                   <Text style={styles.additionalVerseText}>
-                    "{verse.text || ''}"
+                    "{typeof verse.text === 'string'
+                      ? verse.text
+                      : verse.text?.[contentLanguage] || verse.text?.en || ''}"
                   </Text>
                   <Text style={styles.additionalVerseReference}>
                     {formatBibleReference(verse, contentLanguage)}
@@ -283,7 +287,7 @@ function DailyDevotionView({ devotion, contentLanguage, onBack }: DailyDevotionV
 
 interface DevotionPlanViewProps {
   plan: DevotionPlan;
-  contentLanguage: string;
+  contentLanguage: Language;
   onBack: () => void;
 }
 
@@ -671,7 +675,7 @@ interface DayContentViewProps {
   onComplete: () => void;
   onPrevDay: () => void;
   onNextDay: () => void;
-  contentLanguage: string;
+  contentLanguage: Language;
   isPending: boolean;
 }
 
@@ -1280,8 +1284,8 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: ExploreColors.primary[100],
     textAlign: 'center',
-    lineHeight: 24,
     ...ExploreTypography.caption,
+    lineHeight: 24,
     color: ExploreColors.primary[700],
     fontWeight: '700',
   },

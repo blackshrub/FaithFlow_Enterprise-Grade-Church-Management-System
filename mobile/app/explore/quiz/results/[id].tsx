@@ -48,7 +48,6 @@ export default function QuizResultsScreen() {
   const total = parseInt(totalParam as string, 10);
   const percentage = Math.round((score / total) * 100);
 
-  const [showCelebration, setShowCelebration] = useState(false);
   const trackComplete = useTrackContentComplete();
 
   // Animations
@@ -57,13 +56,14 @@ export default function QuizResultsScreen() {
   const starScale2 = useSharedValue(0);
   const starScale3 = useSharedValue(0);
 
+  const { triggerCelebration } = useExploreStore();
+
   useEffect(() => {
     // Track completion
     if (id) {
       trackComplete.mutate({
         contentId: id as string,
         contentType: 'quiz',
-        metadata: { score, total, percentage },
       });
     }
 
@@ -84,7 +84,7 @@ export default function QuizResultsScreen() {
 
     // Show celebration for perfect score - immediately
     if (percentage === 100) {
-      setShowCelebration(true);
+      triggerCelebration('quiz_perfect', { score, total, percentage });
     }
   }, []);
 
@@ -322,19 +322,8 @@ export default function QuizResultsScreen() {
         </Animated.View>
       </ScrollView>
 
-      {/* Celebration Modal */}
-      {showCelebration && (
-        <CelebrationModal
-          visible={showCelebration}
-          onClose={() => setShowCelebration(false)}
-          type="quiz_perfect"
-          message={
-            contentLanguage === 'en'
-              ? 'Perfect Score! Amazing!'
-              : 'Nilai Sempurna! Luar Biasa!'
-          }
-        />
-      )}
+      {/* Celebration Modal - uses store state */}
+      <CelebrationModal />
     </SafeAreaView>
   );
 }

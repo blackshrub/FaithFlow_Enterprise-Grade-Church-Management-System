@@ -30,7 +30,7 @@ import { BibleFigureListSkeleton } from '@/components/explore/LoadingSkeleton';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
 type ViewMode = 'grid' | 'list';
-type FilterTestament = 'all' | 'old_testament' | 'new_testament';
+type FilterTestament = 'all' | 'old' | 'new';
 
 export default function BibleFiguresLibraryScreen() {
   const router = useRouter();

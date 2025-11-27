@@ -425,7 +425,7 @@ export default function BibleStudyReaderScreen() {
 
           {/* Discussion Questions */}
           {currentLesson.discussion_questions &&
-            currentLesson.discussion_questions[contentLanguage]?.length > 0 && (
+            (currentLesson.discussion_questions[contentLanguage]?.length ?? 0) > 0 && (
               <View style={styles.section}>
                 <View style={styles.sectionHeader}>
                   <MessageCircle size={20} color={ExploreColors.secondary[600]} />
@@ -434,7 +434,7 @@ export default function BibleStudyReaderScreen() {
                   </Text>
                 </View>
 
-                {currentLesson.discussion_questions[contentLanguage].map((question, index) => (
+                {(currentLesson.discussion_questions[contentLanguage] ?? []).map((question, index) => (
                   <View key={index} style={styles.questionItem}>
                     <View style={styles.questionNumber}>
                       <Text style={styles.questionNumberText}>{index + 1}</Text>

@@ -132,7 +132,6 @@ export default function BibleFigureScreen() {
               <Text
                 style={styles.heroName}
                 accessibilityRole="header"
-                accessibilityLevel={1}
               >
                 {name}
               </Text>
@@ -153,16 +152,19 @@ export default function BibleFigureScreen() {
                 <Text
                   style={styles.sectionTitle}
                   accessibilityRole="header"
-                  accessibilityLevel={2}
-                >
+                  >
                   {contentLanguage === 'en' ? 'Key Events' : 'Peristiwa Penting'}
                 </Text>
               </View>
 
               {figure.key_events.map((event, index) => {
-                const eventTitle = event.title[contentLanguage] || event.title.en;
-                const eventDescription = event.description?.[contentLanguage] || event.description?.en;
-                const isLast = index === figure.key_events!.length - 1;
+                const eventTitle = typeof event.title === 'string'
+                  ? event.title
+                  : ((event.title as any)?.[contentLanguage] || (event.title as any)?.en || '');
+                const eventDescription = typeof event.description === 'string'
+                  ? event.description
+                  : ((event.description as any)?.[contentLanguage] || (event.description as any)?.en || '');
+                const isLast = index === (figure.key_events?.length ?? 0) - 1;
 
                 return (
                   <View
@@ -191,7 +193,11 @@ export default function BibleFigureScreen() {
                       {event.scripture_reference && (
                         <View style={styles.scriptureRefContainer}>
                           <BookOpen size={14} color={ExploreColors.spiritual[600]} />
-                          <Text style={styles.scriptureRef}>{event.scripture_reference}</Text>
+                          <Text style={styles.scriptureRef}>
+                            {typeof event.scripture_reference === 'string'
+                              ? event.scripture_reference
+                              : `${event.scripture_reference.book} ${event.scripture_reference.chapter}:${event.scripture_reference.verse_start}${event.scripture_reference.verse_end ? `-${event.scripture_reference.verse_end}` : ''}`}
+                          </Text>
                         </View>
                       )}
                     </View>
@@ -207,7 +213,6 @@ export default function BibleFigureScreen() {
               <Text
                 style={styles.sectionTitle}
                 accessibilityRole="header"
-                accessibilityLevel={2}
               >
                 {contentLanguage === 'en' ? 'Biography' : 'Biografi'}
               </Text>
@@ -223,8 +228,7 @@ export default function BibleFigureScreen() {
                 <Text
                   style={styles.sectionTitle}
                   accessibilityRole="header"
-                  accessibilityLevel={2}
-                >
+                  >
                   {contentLanguage === 'en' ? 'Related Scriptures' : 'Ayat Terkait'}
                 </Text>
               </View>
@@ -236,12 +240,14 @@ export default function BibleFigureScreen() {
                   accessible={true}
                   accessibilityLabel={
                     contentLanguage === 'en'
-                      ? `Related scripture ${index + 1}: ${scripture.text}. From ${scripture.book} chapter ${scripture.chapter}, verse ${scripture.verse_start}`
-                      : `Ayat terkait ${index + 1}: ${scripture.text}. Dari ${scripture.book} pasal ${scripture.chapter}, ayat ${scripture.verse_start}`
+                      ? `Related scripture ${index + 1}: ${typeof scripture.text === 'string' ? scripture.text : scripture.text?.[contentLanguage] || scripture.text?.en || ''}. From ${scripture.book} chapter ${scripture.chapter}, verse ${scripture.verse_start}`
+                      : `Ayat terkait ${index + 1}: ${typeof scripture.text === 'string' ? scripture.text : scripture.text?.[contentLanguage] || scripture.text?.id || ''}. Dari ${scripture.book} pasal ${scripture.chapter}, ayat ${scripture.verse_start}`
                   }
                   accessibilityRole="text"
                 >
-                  <Text style={styles.scriptureText}>"{scripture.text}"</Text>
+                  <Text style={styles.scriptureText}>
+                    "{typeof scripture.text === 'string' ? scripture.text : scripture.text?.[contentLanguage] || scripture.text?.en || ''}"
+                  </Text>
                   <Text style={styles.scriptureReference}>
                     {scripture.book} {scripture.chapter}:{scripture.verse_start}
                     {scripture.verse_end && scripture.verse_end !== scripture.verse_start
@@ -254,33 +260,35 @@ export default function BibleFigureScreen() {
           )}
 
           {/* Life Lessons */}
-          {figure.life_lessons && figure.life_lessons[contentLanguage]?.length > 0 && (
+          {figure.life_lessons && figure.life_lessons.length > 0 && (
             <View style={styles.section}>
               <Text
                 style={styles.sectionTitle}
                 accessibilityRole="header"
-                accessibilityLevel={2}
               >
                 {contentLanguage === 'en' ? 'Life Lessons' : 'Pelajaran Hidup'}
               </Text>
-              {figure.life_lessons[contentLanguage].map((lesson, index) => (
-                <View
-                  key={index}
-                  style={styles.lessonItem}
-                  accessible={true}
-                  accessibilityLabel={
-                    contentLanguage === 'en'
-                      ? `Lesson ${index + 1}: ${lesson}`
-                      : `Pelajaran ${index + 1}: ${lesson}`
-                  }
-                  accessibilityRole="text"
-                >
-                  <View style={styles.lessonNumber}>
-                    <Text style={styles.lessonNumberText}>{index + 1}</Text>
+              {figure.life_lessons.map((lesson, index: number) => {
+                const lessonText = lesson[contentLanguage] || lesson.en || '';
+                return (
+                  <View
+                    key={index}
+                    style={styles.lessonItem}
+                    accessible={true}
+                    accessibilityLabel={
+                      contentLanguage === 'en'
+                        ? `Lesson ${index + 1}: ${lessonText}`
+                        : `Pelajaran ${index + 1}: ${lessonText}`
+                    }
+                    accessibilityRole="text"
+                  >
+                    <View style={styles.lessonNumber}>
+                      <Text style={styles.lessonNumberText}>{index + 1}</Text>
+                    </View>
+                    <Text style={styles.lessonText}>{lessonText}</Text>
                   </View>
-                  <Text style={styles.lessonText}>{lesson}</Text>
-                </View>
-              ))}
+                );
+              })}
             </View>
           )}
 
@@ -407,7 +415,6 @@ const styles = StyleSheet.create({
     right: 0,
     padding: ExploreSpacing.xl,
     paddingTop: ExploreSpacing['2xl'],
-    background: 'linear-gradient(transparent, rgba(0, 0, 0, 0.8))',
     // Note: React Native doesn't support linear gradient natively
     // Using solid dark overlay for now - can enhance with expo-linear-gradient
     backgroundColor: 'rgba(0, 0, 0, 0.6)',
