@@ -29,6 +29,7 @@ import {
   CallStore,
 } from '@/types/call';
 import { callApi } from '@/services/api/call';
+import { callKitService } from '@/services/callkit';
 
 // =============================================================================
 // Initial State
@@ -107,6 +108,18 @@ export const useCallStore = create<CallStore>((set, get) => ({
         call_type,
         community_id,
       });
+
+      // Get callee name for CallKit display
+      const calleeName = response.participants.find(p => p.role === 'callee')?.member_name || 'Unknown';
+      const calleeId = response.participants.find(p => p.role === 'callee')?.member_id || '';
+
+      // Show on native call UI (CallKit/ConnectionService)
+      callKitService.startCall(
+        response.call_id,
+        calleeName,
+        calleeId,
+        call_type === CallType.VIDEO
+      );
 
       // Update state with call info
       set({
@@ -222,11 +235,18 @@ export const useCallStore = create<CallStore>((set, get) => ({
       // Call API to cancel
       await callApi.cancelCall(currentCall.call_id);
 
+      // End CallKit call (reason 3 = unanswered/cancelled)
+      callKitService.reportEndCall(currentCall.call_id, 3);
+
       // Reset state
       get().reset();
 
     } catch (error: any) {
       console.error('Failed to cancel call:', error);
+      // Still end CallKit call
+      if (currentCall) {
+        callKitService.endCall(currentCall.call_id);
+      }
       // Still reset state even on error
       get().reset();
     }
@@ -247,6 +267,9 @@ export const useCallStore = create<CallStore>((set, get) => ({
       // Call API to end
       await callApi.endCall(currentCall.call_id, { reason });
 
+      // Report to CallKit that call ended
+      callKitService.reportEndCall(currentCall.call_id, 2); // 2 = remote ended (normal)
+
       // Set ended state briefly before resetting
       set({ uiState: 'ended' });
 
@@ -257,6 +280,10 @@ export const useCallStore = create<CallStore>((set, get) => ({
 
     } catch (error: any) {
       console.error('Failed to end call:', error);
+      // Still end CallKit call
+      if (currentCall) {
+        callKitService.endCall(currentCall.call_id);
+      }
       // Still reset state even on error
       get().reset();
     }
@@ -288,6 +315,8 @@ export const useCallStore = create<CallStore>((set, get) => ({
 
     // Check if this is for our incoming call
     if (incomingCall?.call_id === signal.call_id) {
+      // Report to CallKit that call was cancelled
+      callKitService.reportEndCall(signal.call_id, 6); // 6 = missed
       set({
         uiState: 'idle',
         incomingCall: null,
@@ -298,6 +327,8 @@ export const useCallStore = create<CallStore>((set, get) => ({
     // Check if this is for our current call
     if (currentCall?.call_id === signal.call_id) {
       get().stopDurationTimer();
+      // Report to CallKit that call ended
+      callKitService.reportEndCall(signal.call_id, 2); // 2 = remote ended
       set({ uiState: 'ended' });
 
       setTimeout(() => {
@@ -342,6 +373,8 @@ export const useCallStore = create<CallStore>((set, get) => ({
     );
 
     if (remainingCallees.length === 0) {
+      // Report to CallKit that call was declined
+      callKitService.reportEndCall(signal.call_id, 5); // 5 = declined elsewhere
       set({ uiState: 'ended' });
 
       setTimeout(() => {
@@ -369,6 +402,9 @@ export const useCallStore = create<CallStore>((set, get) => ({
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
     stopDurationTimer();
+
+    // Report to CallKit that call ended
+    callKitService.reportEndCall(signal.call_id, 2); // 2 = remote ended
 
     set({
       uiState: 'ended',
