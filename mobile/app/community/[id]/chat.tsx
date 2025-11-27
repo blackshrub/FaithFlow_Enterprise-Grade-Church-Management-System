@@ -75,6 +75,25 @@ import { LocationSharer, LocationPreview, LocationData, LiveLocationData } from 
 import { EmojiPickerSheet, QuickReactions } from '@/components/chat/EmojiPicker';
 import { GifPickerSheet, GifButton, type GifItem } from '@/components/chat/GifPicker';
 import { MediaGalleryViewer, type MediaItem } from '@/components/chat/MediaGallery';
+import {
+  ReadReceiptSummary,
+  ReadReceiptList,
+  type MessageStatus,
+  type ReadReceiptUser,
+} from '@/components/chat/ReadReceipts';
+import {
+  TypingIndicator as TypingIndicatorComponent,
+  TypingBubble as NewTypingBubble,
+  TypingStatus,
+  useTypingIndicator as useTypingIndicatorHook,
+  type TypingUser,
+} from '@/components/chat/TypingIndicator';
+import {
+  DisappearingMessagesSettings,
+  DisappearingIndicator,
+  DisappearingBadge,
+  type DisappearingDuration,
+} from '@/components/chat/DisappearingMessages';
 
 // Community components
 import { PollCard, Poll } from '@/components/communities/PollCard';
@@ -569,6 +588,12 @@ export default function CommunityChatScreen() {
   const [mediaGalleryItems, setMediaGalleryItems] = useState<MediaItem[]>([]);
   const [mediaGalleryIndex, setMediaGalleryIndex] = useState(0);
   const [showMediaGallery, setShowMediaGallery] = useState(false);
+
+  // NEW: Read receipts and disappearing messages states
+  const [showReadReceiptList, setShowReadReceiptList] = useState(false);
+  const [readReceiptMessage, setReadReceiptMessage] = useState<CommunityMessage | null>(null);
+  const [showDisappearingSettings, setShowDisappearingSettings] = useState(false);
+  const [disappearingDuration, setDisappearingDuration] = useState<DisappearingDuration>('off');
 
   // Track unread messages - the first unread message ID when chat opens
   const [firstUnreadMessageId, setFirstUnreadMessageId] = useState<string | null>(null);
@@ -1852,6 +1877,39 @@ export default function CommunityChatScreen() {
           onClose={() => setShowMediaGallery(false)}
         />
       )}
+
+      {/* NEW: Read Receipt List */}
+      {readReceiptMessage && (
+        <ReadReceiptList
+          visible={showReadReceiptList}
+          onClose={() => {
+            setShowReadReceiptList(false);
+            setReadReceiptMessage(null);
+          }}
+          messageId={readReceiptMessage.id}
+          readers={(readReceiptMessage.read_by || []).map((receipt) => ({
+            id: receipt.member_id,
+            name: receipt.member_name,
+            read_at: receipt.read_at,
+          }))}
+          totalMembers={community?.member_count || 0}
+          sentAt={readReceiptMessage.created_at}
+          deliveredAt={readReceiptMessage.created_at}
+        />
+      )}
+
+      {/* NEW: Disappearing Messages Settings */}
+      <DisappearingMessagesSettings
+        visible={showDisappearingSettings}
+        onClose={() => setShowDisappearingSettings(false)}
+        currentDuration={disappearingDuration}
+        onDurationChange={(duration) => {
+          setDisappearingDuration(duration);
+          setShowDisappearingSettings(false);
+          // TODO: Save to backend
+        }}
+        isAdmin={isLeader}
+      />
     </SafeAreaView>
   );
 }

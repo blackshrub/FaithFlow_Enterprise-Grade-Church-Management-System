@@ -76,6 +76,25 @@ export { MessageSearchHeader, HighlightedText, SearchContext, useMessageSearch }
 // Location Sharing
 export { LocationSharer, LocationPreview } from './LocationSharing';
 
+// Read Receipts (NEW)
+export {
+  MessageStatusIndicator as ReadReceiptStatus,
+  ReadReceiptSummary,
+  ReadReceiptList,
+  type MessageStatus,
+  type ReadReceiptUser,
+} from './ReadReceipts';
+
+// Typing Indicators (NEW)
+export {
+  TypingIndicator,
+  TypingDots,
+  TypingBubble as TypingIndicatorBubble,
+  TypingStatus,
+  useTypingIndicator,
+  type TypingUser,
+} from './TypingIndicator';
+
 // Performance Optimizations
 export {
   SendButton,
