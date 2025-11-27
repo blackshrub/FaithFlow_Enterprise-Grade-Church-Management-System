@@ -46,6 +46,22 @@ import { LocationSharer, LocationPreview, LocationData, LiveLocationData } from 
 import { EmojiPickerSheet } from '@/components/chat/EmojiPicker';
 import { GifPickerSheet, GifButton, type GifItem } from '@/components/chat/GifPicker';
 import { MediaGalleryViewer, type MediaItem } from '@/components/chat/MediaGallery';
+import {
+  ReadReceiptSummary,
+  ReadReceiptList,
+  type ReadReceiptUser,
+} from '@/components/chat/ReadReceipts';
+import {
+  TypingIndicator as TypingIndicatorComponent,
+  TypingBubble as NewTypingBubble,
+  TypingStatus,
+  type TypingUser,
+} from '@/components/chat/TypingIndicator';
+import {
+  DisappearingMessagesSettings,
+  DisappearingIndicator,
+  type DisappearingDuration,
+} from '@/components/chat/DisappearingMessages';
 
 // Chat performance optimizations
 import {
@@ -357,6 +373,12 @@ export default function SubgroupChatScreen() {
   const [mediaGalleryIndex, setMediaGalleryIndex] = useState(0);
   const [showMediaGallery, setShowMediaGallery] = useState(false);
 
+  // NEW: Read receipts and disappearing messages states
+  const [showReadReceiptList, setShowReadReceiptList] = useState(false);
+  const [readReceiptMessage, setReadReceiptMessage] = useState<CommunityMessage | null>(null);
+  const [showDisappearingSettings, setShowDisappearingSettings] = useState(false);
+  const [disappearingDuration, setDisappearingDuration] = useState<DisappearingDuration>('off');
+
   const inputRef = useRef<TextInput>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const listRef = useRef<any>(null);
@@ -377,6 +399,9 @@ export default function SubgroupChatScreen() {
   const { data: community } = useCommunity(communityId);
   const { data: subgroups } = useCommunitySubgroups(communityId);
   const subgroup = subgroups?.find(s => s.id === subgroupId);
+
+  // Check user permissions
+  const isLeader = community?.my_role === 'admin' || community?.my_role === 'leader';
 
   const {
     data: messagesData,
@@ -1251,6 +1276,38 @@ export default function SubgroupChatScreen() {
           onClose={() => setShowMediaGallery(false)}
         />
       )}
+
+      {/* NEW: Read Receipt List */}
+      {readReceiptMessage && (
+        <ReadReceiptList
+          visible={showReadReceiptList}
+          onClose={() => {
+            setShowReadReceiptList(false);
+            setReadReceiptMessage(null);
+          }}
+          messageId={readReceiptMessage.id}
+          readers={(readReceiptMessage.read_by || []).map((receipt) => ({
+            id: receipt.member_id,
+            name: receipt.member_name,
+            read_at: receipt.read_at,
+          }))}
+          totalMembers={subgroup?.member_count || community?.member_count || 0}
+          sentAt={readReceiptMessage.created_at}
+          deliveredAt={readReceiptMessage.created_at}
+        />
+      )}
+
+      {/* NEW: Disappearing Messages Settings */}
+      <DisappearingMessagesSettings
+        visible={showDisappearingSettings}
+        onClose={() => setShowDisappearingSettings(false)}
+        currentDuration={disappearingDuration}
+        onDurationChange={(duration) => {
+          setDisappearingDuration(duration);
+          setShowDisappearingSettings(false);
+        }}
+        isAdmin={isLeader}
+      />
     </SafeAreaView>
   );
 }

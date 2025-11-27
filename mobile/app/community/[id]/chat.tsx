@@ -46,6 +46,7 @@ import {
   FileText,
   Video,
   Phone,
+  Timer,
 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { FlashList } from '@shopify/flash-list';
@@ -154,6 +155,7 @@ interface MessageBubbleProps {
   onReact?: (emoji: string) => void;
   onImagePress?: (uri: string) => void;
   onReplyPreviewPress?: (messageId: string) => void;
+  onReadReceiptPress?: (message: CommunityMessage) => void;
 }
 
 // =============================================================================
@@ -192,7 +194,7 @@ const areMessagePropsEqual = (
 };
 
 const MessageBubble = React.memo(
-  ({ message, isOwnMessage, showSender, currentMemberId, onLongPress, onReply: _onReply, onReact, onImagePress, onReplyPreviewPress }: MessageBubbleProps) => {
+  ({ message, isOwnMessage, showSender, currentMemberId, onLongPress, onReply: _onReply, onReact, onImagePress, onReplyPreviewPress, onReadReceiptPress }: MessageBubbleProps) => {
     const formatTime = (dateString: string) => {
       const date = new Date(dateString);
       return date.toLocaleTimeString('en-US', {
@@ -464,10 +466,22 @@ const MessageBubble = React.memo(
               <Text className="text-xs text-gray-500">
                 {formatTime(message.created_at)}
               </Text>
-              <MessageStatusIndicator
-                status={getMessageStatus()}
-                isOwnMessage={isOwnMessage}
-              />
+              {isOwnMessage && onReadReceiptPress ? (
+                <Pressable
+                  onPress={() => onReadReceiptPress(message)}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                >
+                  <MessageStatusIndicator
+                    status={getMessageStatus()}
+                    isOwnMessage={isOwnMessage}
+                  />
+                </Pressable>
+              ) : (
+                <MessageStatusIndicator
+                  status={getMessageStatus()}
+                  isOwnMessage={isOwnMessage}
+                />
+              )}
             </HStack>
           </View>
 
@@ -602,7 +616,7 @@ export default function CommunityChatScreen() {
   const inputRef = useRef<TextInput>(null);
   const listRef = useRef<any>(null); // FlashList ref with complex generic
   const menuSheetRef = useRef<BottomSheet>(null);
-  const menuSnapPoints = useMemo(() => ['45%'], []);
+  const menuSnapPoints = useMemo(() => ['55%'], []);
 
   // Scroll position tracking for FAB
   const {
@@ -1295,6 +1309,11 @@ export default function CommunityChatScreen() {
                 onReact={(emoji) => handleReaction(message.id, emoji)}
                 onImagePress={handleOpenMediaGallery}
                 onReplyPreviewPress={scrollToMessage}
+                onReadReceiptPress={(msg) => {
+                  setReadReceiptMessage(msg);
+                  setShowReadReceiptList(true);
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                }}
               />
             </DoubleTapReaction>
           </SwipeToReplyWrapper>
@@ -1379,9 +1398,17 @@ export default function CommunityChatScreen() {
             <Text className="font-bold text-base" style={{ color: '#FFFFFF' }} numberOfLines={1}>
               {community?.name || 'Community'}
             </Text>
-            <Text className="text-xs" style={{ color: 'rgba(255,255,255,0.8)' }}>
-              {community?.member_count || 0} members
-            </Text>
+            {typingIndicatorText ? (
+              <HStack space="xs" style={{ alignItems: 'center' }}>
+                <Text className="text-xs italic" style={{ color: '#25D366' }}>
+                  {typingIndicatorText}
+                </Text>
+              </HStack>
+            ) : (
+              <Text className="text-xs" style={{ color: 'rgba(255,255,255,0.8)' }}>
+                {community?.member_count || 0} members
+              </Text>
+            )}
           </Pressable>
 
           {/* Voice call button */}
@@ -1824,6 +1851,32 @@ export default function CommunityChatScreen() {
               <Text className="text-gray-900 font-medium">Community Info</Text>
               <Text className="text-gray-500 text-xs">Members, description, media</Text>
             </VStack>
+          </Pressable>
+
+          {/* Disappearing Messages */}
+          <Pressable
+            onPress={() => {
+              setShowMenu(false);
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              setShowDisappearingSettings(true);
+            }}
+            className="flex-row items-center px-4 py-4 rounded-xl active:bg-gray-50"
+          >
+            <View
+              className="w-10 h-10 rounded-full items-center justify-center mr-4"
+              style={{ backgroundColor: colors.success[100] }}
+            >
+              <Icon as={Timer} size="md" style={{ color: colors.success[500] }} />
+            </View>
+            <VStack className="flex-1">
+              <Text className="text-gray-900 font-medium">Disappearing Messages</Text>
+              <Text className="text-gray-500 text-xs">
+                {disappearingDuration === 'off' ? 'Off' : `Messages disappear after ${disappearingDuration}`}
+              </Text>
+            </VStack>
+            {disappearingDuration !== 'off' && (
+              <DisappearingIndicator duration={disappearingDuration} size="sm" />
+            )}
           </Pressable>
 
           {/* Settings (Leaders only) */}
