@@ -12,7 +12,8 @@
 # Architecture:
 #   - yourdomain.com       -> Frontend (React/Nginx)
 #   - api.yourdomain.com   -> Backend (FastAPI)
-#   - traefik.yourdomain.com -> Traefik Dashboard (optional)
+#   - traefik.yourdomain.com -> Traefik Dashboard (admin)
+#   - emqx.yourdomain.com  -> EMQX Dashboard (admin)
 #   - livekit.yourdomain.com -> LiveKit Server (WebRTC)
 #   - files.yourdomain.com -> SeaweedFS Filer (file access)
 #
@@ -363,14 +364,20 @@ services:
       - EMQX_AUTHENTICATION__1__BACKEND=built_in_database
       - EMQX_ALLOW_ANONYMOUS=true
     ports:
-      # MQTT ports (internal network, not exposed publicly)
+      # MQTT ports (internal communication between services)
       - "1883:1883"    # MQTT TCP
       - "8083:8083"    # MQTT WebSocket
       - "8084:8084"    # MQTT WebSocket Secure
-      - "18083:18083"  # EMQX Dashboard
     volumes:
       - emqx_data:/opt/emqx/data
       - emqx_log:/opt/emqx/log
+    labels:
+      - "traefik.enable=true"
+      # EMQX Dashboard: emqx.yourdomain.com -> emqx:18083
+      - "traefik.http.routers.emqx.rule=Host(`emqx.${DOMAIN}`)"
+      - "traefik.http.routers.emqx.entrypoints=websecure"
+      - "traefik.http.routers.emqx.tls.certresolver=letsencrypt"
+      - "traefik.http.services.emqx.loadbalancer.server.port=18083"
     healthcheck:
       test: ["CMD", "emqx", "ctl", "status"]
       interval: 30s

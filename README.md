@@ -104,12 +104,14 @@ FaithFlow is a complete church management system that helps you:
 
 You need a domain name (e.g., `mychurch.com`) with these DNS records:
 
-| Record Type | Name | Points To | Purpose |
-|-------------|------|-----------|---------|
-| A | `@` or `mychurch.com` | Your server IP | Main website |
-| A | `api` | Your server IP | Backend API |
-| A | `livekit` | Your server IP | Voice/Video calls |
-| A | `files` | Your server IP | Media file storage |
+| Record Type | Name | Points To | Purpose | Required |
+|-------------|------|-----------|---------|----------|
+| A | `@` or `mychurch.com` | Your server IP | Main website | Yes |
+| A | `api` | Your server IP | Backend API | Yes |
+| A | `livekit` | Your server IP | Voice/Video calls | Yes |
+| A | `files` | Your server IP | Media file storage | Yes |
+| A | `traefik` | Your server IP | Traefik admin dashboard | Optional |
+| A | `emqx` | Your server IP | EMQX admin dashboard | Optional |
 
 ---
 
@@ -207,13 +209,14 @@ This shows your server's public IP address. Write it down.
 
 Go to your domain registrar (where you bought your domain) and add these records:
 
-| Type | Name | Value | TTL |
-|------|------|-------|-----|
-| A | @ | YOUR_SERVER_IP | 3600 |
-| A | api | YOUR_SERVER_IP | 3600 |
-| A | livekit | YOUR_SERVER_IP | 3600 |
-| A | files | YOUR_SERVER_IP | 3600 |
-| A | traefik | YOUR_SERVER_IP | 3600 |
+| Type | Name | Value | TTL | Required |
+|------|------|-------|-----|----------|
+| A | @ | YOUR_SERVER_IP | 3600 | Yes |
+| A | api | YOUR_SERVER_IP | 3600 | Yes |
+| A | livekit | YOUR_SERVER_IP | 3600 | Yes |
+| A | files | YOUR_SERVER_IP | 3600 | Yes |
+| A | traefik | YOUR_SERVER_IP | 3600 | Optional |
+| A | emqx | YOUR_SERVER_IP | 3600 | Optional |
 
 **Examples by Provider:**
 
@@ -341,12 +344,14 @@ faithflow-traefik           Up (healthy)    80/tcp, 443/tcp
 
 Wait 2-3 minutes for SSL certificates to be generated, then:
 
-| Service | URL |
-|---------|-----|
-| **Web App** | https://yourdomain.com |
-| **Admin Panel** | https://yourdomain.com/admin |
-| **API Docs** | https://api.yourdomain.com/docs |
-| **Files/Media** | https://files.yourdomain.com |
+| Service | URL | Notes |
+|---------|-----|-------|
+| **Web App** | https://yourdomain.com | Main application |
+| **Admin Panel** | https://yourdomain.com/admin | Church admin dashboard |
+| **API Docs** | https://api.yourdomain.com/docs | Swagger API documentation |
+| **Files/Media** | https://files.yourdomain.com | SeaweedFS file storage |
+| **Traefik Dashboard** | https://traefik.yourdomain.com | Reverse proxy admin (optional) |
+| **EMQX Dashboard** | https://emqx.yourdomain.com | MQTT broker admin (optional) |
 
 **Default Login Credentials:**
 ```

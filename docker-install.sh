@@ -24,10 +24,12 @@
 #  - EMQX (Real-time messaging)                                                #
 #                                                                              #
 #  Architecture (all on your server):                                          #
-#    yourdomain.com        -> Frontend (React app)                             #
-#    api.yourdomain.com    -> Backend API (FastAPI)                            #
+#    yourdomain.com         -> Frontend (React app)                            #
+#    api.yourdomain.com     -> Backend API (FastAPI)                           #
 #    livekit.yourdomain.com -> Voice/Video Server                              #
-#    traefik.yourdomain.com -> Admin Dashboard (optional)                      #
+#    files.yourdomain.com   -> File Storage (SeaweedFS)                        #
+#    traefik.yourdomain.com -> Traefik Dashboard (admin)                       #
+#    emqx.yourdomain.com    -> EMQX Dashboard (admin)                          #
 #                                                                              #
 #  Usage:                                                                      #
 #    sudo ./docker-install.sh                                                  #
@@ -349,10 +351,12 @@ configure_domain() {
     echo -e "${CYAN}  │                                                                     │${NC}"
     echo -e "${CYAN}  │  ${WHITE}You need these DNS records pointing to: ${YELLOW}$SERVER_IP${CYAN}${NC}"
     echo -e "${CYAN}  │                                                                     │${NC}"
-    echo -e "${CYAN}  │  ${WHITE}  yourdomain.com        -> $SERVER_IP${CYAN}                          ${NC}"
-    echo -e "${CYAN}  │  ${WHITE}  api.yourdomain.com    -> $SERVER_IP${CYAN}                          ${NC}"
+    echo -e "${CYAN}  │  ${WHITE}  yourdomain.com         -> $SERVER_IP${CYAN}                         ${NC}"
+    echo -e "${CYAN}  │  ${WHITE}  api.yourdomain.com     -> $SERVER_IP${CYAN}                         ${NC}"
     echo -e "${CYAN}  │  ${WHITE}  livekit.yourdomain.com -> $SERVER_IP${CYAN}                         ${NC}"
-    echo -e "${CYAN}  │  ${WHITE}  files.yourdomain.com  -> $SERVER_IP${CYAN}                          ${NC}"
+    echo -e "${CYAN}  │  ${WHITE}  files.yourdomain.com   -> $SERVER_IP${CYAN}                         ${NC}"
+    echo -e "${CYAN}  │  ${WHITE}  traefik.yourdomain.com -> $SERVER_IP (optional)${CYAN}              ${NC}"
+    echo -e "${CYAN}  │  ${WHITE}  emqx.yourdomain.com    -> $SERVER_IP (optional)${CYAN}              ${NC}"
     echo -e "${CYAN}  └─────────────────────────────────────────────────────────────────────┘${NC}"
     echo ""
 
@@ -421,6 +425,22 @@ configure_domain() {
     else
         print_warn "files.$DOMAIN -> ${files_ip:-NOT FOUND} (should be $SERVER_IP)"
         dns_ok=false
+    fi
+
+    # Check Traefik subdomain (optional admin dashboard)
+    local traefik_ip=$(dig +short "traefik.$DOMAIN" 2>/dev/null | head -1)
+    if [ "$traefik_ip" = "$SERVER_IP" ]; then
+        print_success "traefik.$DOMAIN -> $SERVER_IP (correct)"
+    else
+        print_info "traefik.$DOMAIN -> ${traefik_ip:-NOT FOUND} (optional - for admin dashboard)"
+    fi
+
+    # Check EMQX subdomain (optional admin dashboard)
+    local emqx_ip=$(dig +short "emqx.$DOMAIN" 2>/dev/null | head -1)
+    if [ "$emqx_ip" = "$SERVER_IP" ]; then
+        print_success "emqx.$DOMAIN -> $SERVER_IP (correct)"
+    else
+        print_info "emqx.$DOMAIN -> ${emqx_ip:-NOT FOUND} (optional - for MQTT admin dashboard)"
     fi
 
     if [ "$dns_ok" = false ]; then
@@ -730,7 +750,9 @@ EOF
         echo -e "${CYAN}  │  ${WHITE}Web App:${NC}    https://$DOMAIN${CYAN}"
         echo -e "${CYAN}  │  ${WHITE}API:${NC}        https://api.$DOMAIN${CYAN}"
         echo -e "${CYAN}  │  ${WHITE}API Docs:${NC}   https://api.$DOMAIN/docs${CYAN}"
-        echo -e "${CYAN}  │  ${WHITE}Traefik:${NC}    https://traefik.$DOMAIN${CYAN}"
+        echo -e "${CYAN}  │  ${WHITE}Files:${NC}      https://files.$DOMAIN${CYAN}"
+        echo -e "${CYAN}  │  ${WHITE}Traefik:${NC}    https://traefik.$DOMAIN (admin)${CYAN}"
+        echo -e "${CYAN}  │  ${WHITE}EMQX:${NC}       https://emqx.$DOMAIN (admin)${CYAN}"
     fi
 
     echo -e "${CYAN}  └─────────────────────────────────────────────────────────────────────┘${NC}"
@@ -796,9 +818,14 @@ parse_args() {
                 echo "  - Domain name with DNS pointing to your server"
                 echo ""
                 echo "DNS records needed (replace yourdomain.com with your domain):"
-                echo "  yourdomain.com        -> Your server IP"
-                echo "  api.yourdomain.com    -> Your server IP"
-                echo "  livekit.yourdomain.com -> Your server IP"
+                echo "  Required:"
+                echo "    yourdomain.com         -> Your server IP"
+                echo "    api.yourdomain.com     -> Your server IP"
+                echo "    livekit.yourdomain.com -> Your server IP"
+                echo "    files.yourdomain.com   -> Your server IP"
+                echo "  Optional (admin dashboards):"
+                echo "    traefik.yourdomain.com -> Your server IP"
+                echo "    emqx.yourdomain.com    -> Your server IP"
                 echo ""
                 exit 0
                 ;;
