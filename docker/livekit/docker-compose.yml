@@ -1,0 +1,106 @@
+# ============================================================================
+# LiveKit + coTURN Docker Compose
+# ============================================================================
+# This docker-compose file sets up:
+# - LiveKit Server (WebRTC SFU for voice/video calls)
+# - coTURN (TURN/STUN server for NAT traversal)
+#
+# Usage:
+#   Development:
+#     docker-compose up -d
+#
+#   Production:
+#     docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+#
+# Ports:
+#   - 7880: LiveKit HTTP/WS API
+#   - 7881: LiveKit RTC (TCP)
+#   - 7882: LiveKit RTC (TCP/TLS)
+#   - 50000-60000: LiveKit RTC (UDP range)
+#   - 3478: TURN/STUN (UDP/TCP)
+#   - 5349: TURN/STUN over TLS
+#   - 49152-65535: TURN relay ports
+# ============================================================================
+
+version: '3.8'
+
+services:
+  # ==========================================================================
+  # LiveKit Server
+  # ==========================================================================
+  livekit:
+    image: livekit/livekit-server:latest
+    container_name: faithflow-livekit
+    restart: unless-stopped
+    command: --config /livekit.yaml
+    ports:
+      - "7880:7880"      # HTTP API + WebSocket
+      - "7881:7881"      # WebRTC TCP
+      - "7882:7882"      # WebRTC TCP/TLS
+      - "50000-50050:50000-50050/udp"  # WebRTC UDP range (limited)
+    volumes:
+      - ./livekit.yaml:/livekit.yaml:ro
+    networks:
+      - faithflow-network
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:7880"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    depends_on:
+      - coturn
+
+  # ==========================================================================
+  # coTURN Server (TURN/STUN)
+  # ==========================================================================
+  coturn:
+    image: coturn/coturn:latest
+    container_name: faithflow-coturn
+    restart: unless-stopped
+    ports:
+      - "3478:3478"        # STUN/TURN UDP
+      - "3478:3478/udp"
+      - "5349:5349"        # STUN/TURN TLS
+      - "5349:5349/udp"
+      # Reduced port range to avoid conflicts
+      - "49152-49200:49152-49200/udp"  # Relay ports (limited range)
+    volumes:
+      - ./turnserver.conf:/etc/turnserver.conf:ro
+    command: -c /etc/turnserver.conf
+    networks:
+      - faithflow-network
+    healthcheck:
+      test: ["CMD", "turnutils_stunclient", "localhost"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ==========================================================================
+  # LiveKit Egress (Recording) - Optional
+  # ==========================================================================
+  # Uncomment if you need recording functionality
+  # egress:
+  #   image: livekit/egress:latest
+  #   container_name: faithflow-egress
+  #   restart: unless-stopped
+  #   environment:
+  #     - EGRESS_CONFIG_FILE=/egress.yaml
+  #   volumes:
+  #     - ./egress.yaml:/egress.yaml:ro
+  #     - ./recordings:/recordings
+  #   networks:
+  #     - faithflow-network
+  #   depends_on:
+  #     - livekit
+
+networks:
+  faithflow-network:
+    external: true
+    name: faithflow-network
+
+# ============================================================================
+# Volume Configuration (for production)
+# ============================================================================
+# volumes:
+#   livekit-data:
+#   recordings:
