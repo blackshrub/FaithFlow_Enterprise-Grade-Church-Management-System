@@ -85,7 +85,7 @@ const DEFAULT_SYSTEM_SETTINGS: SystemVoiceSettings = {
   voice_enabled: false,
   has_api_key: false,
   tts_voice: 'nova',
-  tts_model: 'tts-1',
+  tts_model: 'tts-1-hd', // HD model for better Indonesian pronunciation
   tts_speed: 1.0,
   stt_model: 'whisper-1',
 };

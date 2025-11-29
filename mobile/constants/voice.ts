@@ -41,10 +41,19 @@ export const IS_DEV_VOICE_ENABLED = !!DEV_OPENAI_API_KEY;
 
 /**
  * Default TTS settings
+ *
+ * Model options:
+ * - tts-1: Faster, lower quality (~0.5s latency)
+ * - tts-1-hd: Slower, higher quality (~1-2s latency)
+ *   Better pronunciation for non-English languages (Indonesian, etc.)
+ *
+ * Voice options: alloy, echo, fable, onyx, nova, shimmer
+ * - nova: Warm, friendly female voice (good for multilingual)
+ * - alloy: Neutral, balanced voice
  */
 export const DEFAULT_TTS_SETTINGS = {
   voice: 'nova' as const,
-  model: 'tts-1' as const,
+  model: 'tts-1-hd' as const, // HD model for better Indonesian pronunciation
   speed: 1.0,
   format: 'opus' as const, // opus is ~50% smaller than mp3
 };
