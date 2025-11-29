@@ -9,7 +9,14 @@
  * Development API keys - imported from secrets.ts
  * In production, these come from backend system settings.
  */
-export { DEV_OPENAI_API_KEY, DEV_GROQ_API_KEY } from './secrets';
+import {
+  DEV_OPENAI_API_KEY as _DEV_OPENAI_API_KEY,
+  DEV_GROQ_API_KEY as _DEV_GROQ_API_KEY,
+} from './secrets';
+
+// Re-export for other modules
+export const DEV_OPENAI_API_KEY = _DEV_OPENAI_API_KEY;
+export const DEV_GROQ_API_KEY = _DEV_GROQ_API_KEY;
 
 /**
  * STT Provider - which service to use for speech-to-text

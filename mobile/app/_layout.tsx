@@ -99,11 +99,9 @@ export default function RootLayout() {
     }
   }, [i18nInitialized, fontsLoaded]);
 
-  // Wait for i18n and fonts to initialize before rendering
-  // This prevents font flashing and ensures smooth reading experience
-  if (!i18nInitialized || !fontsLoaded) {
-    return null;
-  }
+  // Always render providers first to ensure React Query is available
+  // Wait for i18n and fonts before showing navigation content
+  const isReady = i18nInitialized && fontsLoaded;
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -113,6 +111,9 @@ export default function RootLayout() {
           <MQTTProvider>
             <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
 
+            {/* Show nothing until i18n and fonts are ready */}
+            {!isReady ? null : (
+            <>
             {/**
              * Stack Navigation with Premium Motion V7 Integration
              *
@@ -180,6 +181,8 @@ export default function RootLayout() {
 
             {/* DISABLED: Call feature temporarily disabled */}
             {/* <IncomingCallOverlay /> */}
+            </>
+            )}
           </MQTTProvider>
         </GluestackUIProvider>
       </QueryClientProvider>
