@@ -818,7 +818,6 @@ function CompanionScreen() {
   // Voice settings (for TTS)
   const {
     isEnabled: voiceEnabled,
-    userPreferences: voicePrefs,
     getEffectiveVoice,
     getEffectiveSpeed,
     updateUserPreferences: updateVoicePrefs,
@@ -889,7 +888,7 @@ function CompanionScreen() {
   /**
    * Send a message directly (used by both text input and voice input)
    */
-  const sendMessage = useCallback((text: string, autoPlayResponse = false) => {
+  const sendMessage = useCallback((text: string) => {
     const trimmedText = text.trim();
     if (!trimmedText || isLoading || isStreaming) return;
 
@@ -929,19 +928,9 @@ function CompanionScreen() {
         onToken: (_token, fullText) => {
           updateMessage(assistantMessageId, fullText);
         },
-        onComplete: (fullText) => {
+        onComplete: () => {
           stopStreaming();
-          // Auto-play response if enabled in settings OR if requested (voice input)
-          const shouldAutoPlay = autoPlayResponse || (voicePrefs.autoPlayResponses && voiceEnabled);
-          if (shouldAutoPlay && fullText) {
-            const apiKey = useVoiceSettingsStore.getState().getEffectiveApiKey();
-            if (apiKey) {
-              speakText(fullText, apiKey, {
-                voice: getEffectiveVoice(),
-                speed: getEffectiveSpeed(),
-              }).catch((err) => console.error('[VoiceChat] TTS error:', err));
-            }
-          }
+          // TTS is NOT auto-played - user must click Listen button explicitly
         },
         onError: (error) => {
           console.error('Stream error:', error);
@@ -953,7 +942,7 @@ function CompanionScreen() {
         },
       }
     );
-  }, [isLoading, isStreaming, messages, greeting, entryContext, contextData, language, addMessage, updateMessage, startStreaming, stopStreaming, setLoading, voicePrefs.autoPlayResponses, voiceEnabled, getEffectiveVoice, getEffectiveSpeed]);
+  }, [isLoading, isStreaming, messages, greeting, entryContext, contextData, language, addMessage, updateMessage, startStreaming, stopStreaming, setLoading]);
 
   const handleSend = useCallback(() => {
     if (!inputText.trim()) return;
@@ -1138,8 +1127,8 @@ function CompanionScreen() {
             {/* STT Button - Speech to text, sends immediately */}
             <VoiceButton
               onTranscription={(text) => {
-                // Immediately send transcribed text and auto-play response
-                sendMessage(text, true);
+                // Send transcribed text (no auto-play - user must click Listen)
+                sendMessage(text);
               }}
               onError={(error) => {
                 console.error('[Companion] Voice error:', error);
@@ -1382,32 +1371,6 @@ function CompanionScreen() {
                   ))}
                 </View>
               </View>
-
-              {/* Auto-play Toggle */}
-              <Pressable
-                style={styles.settingsToggleRow}
-                onPress={() => updateVoicePrefs({ autoPlayResponses: !voicePrefs.autoPlayResponses })}
-              >
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.settingsLabel}>
-                    {language === 'id' ? 'Auto-Play Respons' : 'Auto-Play Responses'}
-                  </Text>
-                  <Text style={styles.settingsHint}>
-                    {language === 'id'
-                      ? 'Otomatis membacakan respons AI'
-                      : 'Automatically read AI responses aloud'}
-                  </Text>
-                </View>
-                <View style={[
-                  styles.settingsToggle,
-                  voicePrefs.autoPlayResponses && styles.settingsToggleActive,
-                ]}>
-                  <View style={[
-                    styles.settingsToggleThumb,
-                    voicePrefs.autoPlayResponses && styles.settingsToggleThumbActive,
-                  ]} />
-                </View>
-              </Pressable>
             </View>
           )}
 
