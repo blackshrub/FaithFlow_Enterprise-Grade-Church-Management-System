@@ -74,7 +74,7 @@ import BottomSheet, { BottomSheetBackdrop, BottomSheetScrollView } from '@gorhom
 import { useCompanionStore, type CompanionMessage } from '@/stores/companionStore';
 import { VoiceButton } from '@/components/chat/VoiceButton';
 import { VoiceChatModal } from '@/components/chat/VoiceChatModal';
-import { speakText, stopSpeaking, pauseSpeaking, canResume } from '@/services/voice/speechService';
+import { speakText, speakTextStreaming, stopSpeaking, pauseSpeaking, canResume } from '@/services/voice/speechService';
 import { useVoiceSettingsStore, TTSVoice } from '@/stores/voiceSettings';
 import {
   useReadingPreferencesStore,
@@ -926,10 +926,12 @@ function CompanionScreen() {
           if (shouldAutoPlay && fullText) {
             const apiKey = useVoiceSettingsStore.getState().getEffectiveApiKey();
             if (apiKey) {
-              speakText(fullText, apiKey, {
+              // Use streaming TTS for faster first-audio on long responses
+              // Short text automatically falls back to regular speakText
+              speakTextStreaming(fullText, apiKey, {
                 voice: getEffectiveVoice(),
                 speed: getEffectiveSpeed(),
-              }).catch((err) => console.error('[VoiceChat] TTS error:', err));
+              }, 200).catch((err) => console.error('[VoiceChat] TTS error:', err));
             }
           }
         },
