@@ -74,7 +74,7 @@ import BottomSheet, { BottomSheetBackdrop, BottomSheetScrollView } from '@gorhom
 import { useCompanionStore, type CompanionMessage } from '@/stores/companionStore';
 import { VoiceButton } from '@/components/chat/VoiceButton';
 import { VoiceChatModal } from '@/components/chat/VoiceChatModal';
-import { speakText, speakTextStreaming, stopSpeaking, pauseSpeaking, canResume } from '@/services/voice/speechService';
+import { speakText, stopSpeaking, pauseSpeaking, canResume, clearSessionCache } from '@/services/voice/speechService';
 import { useVoiceSettingsStore, TTSVoice } from '@/stores/voiceSettings';
 import {
   useReadingPreferencesStore,
@@ -839,6 +839,13 @@ function CompanionScreen() {
   const setError = useCompanionStore((s) => s.setError);
   const clearChat = useCompanionStore((s) => s.clearChat);
 
+  // Cleanup on unmount - stop any playing TTS when leaving screen
+  useEffect(() => {
+    return () => {
+      stopSpeaking();
+    };
+  }, []);
+
   // Get appropriate greeting
   const greeting = COMPANION_GREETINGS[language]?.[entryContext] || COMPANION_GREETINGS[language]?.default || COMPANION_GREETINGS.en.default;
   const starters = CONVERSATION_STARTERS[language] || CONVERSATION_STARTERS.en;
@@ -886,6 +893,9 @@ function CompanionScreen() {
     const trimmedText = text.trim();
     if (!trimmedText || isLoading || isStreaming) return;
 
+    // Stop any playing TTS when sending a new message
+    stopSpeaking();
+
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     Keyboard.dismiss();
 
@@ -926,12 +936,10 @@ function CompanionScreen() {
           if (shouldAutoPlay && fullText) {
             const apiKey = useVoiceSettingsStore.getState().getEffectiveApiKey();
             if (apiKey) {
-              // Use streaming TTS for faster first-audio on long responses
-              // Short text automatically falls back to regular speakText
-              speakTextStreaming(fullText, apiKey, {
+              speakText(fullText, apiKey, {
                 voice: getEffectiveVoice(),
                 speed: getEffectiveSpeed(),
-              }, 200).catch((err) => console.error('[VoiceChat] TTS error:', err));
+              }).catch((err) => console.error('[VoiceChat] TTS error:', err));
             }
           }
         },
@@ -962,6 +970,9 @@ function CompanionScreen() {
 
   const handleNewChat = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    // Stop any playing TTS and clear session cache
+    stopSpeaking();
+    clearSessionCache();
     clearChat();
   }, [clearChat]);
 

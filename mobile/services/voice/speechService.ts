@@ -68,6 +68,10 @@ let isCachedAudio = false; // Track if current audio is from persistent cache (d
 let playbackSubscription: { remove: () => void } | null = null;
 let currentResolve: (() => void) | null = null;
 
+// Session cache - keeps TTS audio in memory during session
+// Cleared when user starts new conversation
+const sessionCache = new Map<string, string>(); // textHash -> filePath
+
 /**
  * Simple hash function to identify text content
  */
@@ -142,6 +146,78 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
 }
 
 /**
+ * Clear session cache (call when starting new conversation)
+ */
+export async function clearSessionCache(): Promise<void> {
+  console.log(`[SpeechService] Clearing session cache (${sessionCache.size} entries)`);
+
+  // Delete cached files
+  for (const filePath of sessionCache.values()) {
+    try {
+      await FileSystem.deleteAsync(filePath, { idempotent: true });
+    } catch {
+      // Ignore deletion errors
+    }
+  }
+
+  sessionCache.clear();
+}
+
+/**
+ * Play audio from file path (internal helper)
+ */
+async function playAudioFile(
+  filePath: string,
+  textHash: string,
+  isFromCache: boolean,
+  opts: Omit<Required<TTSOptions>, 'onPlaybackStart'> & { onPlaybackStart?: () => void }
+): Promise<void> {
+  currentAudioUri = filePath;
+  currentTextHash = textHash;
+  isCachedAudio = isFromCache;
+
+  // Configure audio mode for playback
+  await setAudioModeAsync({
+    playsInSilentMode: true,
+    shouldPlayInBackground: false,
+  });
+
+  // Create player and play
+  currentPlayer = createAudioPlayer(filePath);
+  isPlaying = true;
+  isPaused = false;
+
+  return new Promise((resolve) => {
+    if (!currentPlayer) {
+      resolve();
+      return;
+    }
+
+    currentResolve = resolve;
+    let hasStarted = false;
+
+    playbackSubscription = currentPlayer.addListener('playbackStatusUpdate', (status) => {
+      if (!hasStarted && status.playing) {
+        hasStarted = true;
+        opts.onPlaybackStart?.();
+      }
+
+      if (status.didJustFinish) {
+        isPlaying = false;
+        isPaused = false;
+        playbackSubscription?.remove();
+        playbackSubscription = null;
+        // Don't delete session cached files
+        currentResolve?.();
+        currentResolve = null;
+      }
+    });
+
+    currentPlayer.play();
+  });
+}
+
+/**
  * Convert text to speech and play audio
  *
  * @param text - Text to convert to speech
@@ -188,6 +264,19 @@ export async function speakText(
   );
 
   try {
+    // Check session cache first (instant playback for repeated content)
+    const cachedPath = sessionCache.get(textHash);
+    if (cachedPath) {
+      const fileInfo = await FileSystem.getInfoAsync(cachedPath);
+      if (fileInfo.exists) {
+        console.log('[SpeechService] Using session cache');
+        return playAudioFile(cachedPath, textHash, true, opts);
+      } else {
+        // Cache entry is stale, remove it
+        sessionCache.delete(textHash);
+      }
+    }
+
     // Request audio from OpenAI TTS API
     const response = await fetch('https://api.openai.com/v1/audio/speech', {
       method: 'POST',
@@ -223,9 +312,12 @@ export async function speakText(
       encoding: 'base64',
     });
 
+    // Save to session cache for instant replay later
+    sessionCache.set(textHash, tempFilePath);
+
     currentAudioUri = tempFilePath;
     currentTextHash = textHash; // Store hash for resume check
-    isCachedAudio = false; // Mark as temp file - can be deleted on cleanup
+    isCachedAudio = true; // Mark as session cached - don't delete on cleanup
 
     // Configure audio mode for playback
     await setAudioModeAsync({
@@ -877,6 +969,7 @@ export default {
   canResume,
   preloadAudio,
   isAudioCached,
+  clearSessionCache,
   getAvailableVoices,
   getVoiceDescription,
   getVoiceForLanguage,
