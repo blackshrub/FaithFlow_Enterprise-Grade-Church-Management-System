@@ -24,7 +24,8 @@ import {
   setAudioModeAsync,
   type AudioPlayer,
 } from 'expo-audio';
-import * as FileSystem from 'expo-file-system';
+// Use legacy API for file system operations (v54+ deprecated the main API)
+import * as FileSystem from 'expo-file-system/legacy';
 
 export type TTSModel = 'tts-1' | 'tts-1-hd';
 export type TTSVoice = 'alloy' | 'echo' | 'fable' | 'onyx' | 'nova' | 'shimmer';

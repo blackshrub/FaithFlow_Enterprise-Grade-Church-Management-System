@@ -12,6 +12,7 @@
  * - Manual cache invalidation supported
  */
 
+// Use legacy API for file system operations (v54+ deprecated the main API)
 import {
   cacheDirectory,
   getInfoAsync,
@@ -19,7 +20,7 @@ import {
   writeAsStringAsync,
   deleteAsync,
   makeDirectoryAsync,
-} from 'expo-file-system';
+} from 'expo-file-system/legacy';
 
 // Cache directory
 const TTS_CACHE_DIR = `${cacheDirectory}tts_cache/`;

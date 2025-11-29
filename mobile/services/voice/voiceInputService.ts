@@ -10,7 +10,8 @@
  */
 
 import { Audio } from 'expo-av';
-import * as FileSystem from 'expo-file-system';
+// Use legacy API for file system operations (v54+ deprecated the main API)
+import * as FileSystem from 'expo-file-system/legacy';
 import { Platform } from 'react-native';
 
 /**
