@@ -62,14 +62,20 @@ export async function preCheckPermission(): Promise<boolean> {
 
 /**
  * Start recording - with proper cleanup and error handling
+ *
+ * Uses Audio.Recording.createAsync which is the recommended pattern
+ * and handles prepare + start atomically to avoid "not prepared" errors.
  */
 export async function startRecording(): Promise<void> {
   // Clean up any existing recording first
   if (recording) {
     try {
-      await recording.stopAndUnloadAsync();
+      const status = await recording.getStatusAsync();
+      if (status.isRecording) {
+        await recording.stopAndUnloadAsync();
+      }
     } catch {
-      // Ignore cleanup errors
+      // Ignore cleanup errors - recording may already be unloaded
     }
     recording = null;
   }
@@ -84,32 +90,34 @@ export async function startRecording(): Promise<void> {
   }
 
   // Configure audio mode for recording
+  // Must be done BEFORE creating recording
   await Audio.setAudioModeAsync({
     allowsRecordingIOS: true,
     playsInSilentModeIOS: true,
+    staysActiveInBackground: false,
+    shouldDuckAndroid: true,
+    playThroughEarpieceAndroid: false,
   });
 
-  // Create recording using the explicit method for better compatibility
-  const newRecording = new Audio.Recording();
-
   try {
-    // Prepare the recording with the preset
-    await newRecording.prepareToRecordAsync(STT_RECORDING_PRESET);
-
-    // Start recording
-    await newRecording.startAsync();
+    // Use createAsync which handles prepare + start atomically
+    // This is more reliable than manual prepareToRecordAsync + startAsync
+    const { recording: newRecording } = await Audio.Recording.createAsync(
+      STT_RECORDING_PRESET,
+      undefined, // No status update callback needed
+      100 // Update interval in ms (not used without callback)
+    );
 
     recording = newRecording;
     recordingStartTime = Date.now();
 
     if (__DEV__) console.log('[STT] Recording started');
   } catch (error) {
-    // Clean up on error
-    try {
-      await newRecording.stopAndUnloadAsync();
-    } catch {
-      // Ignore
-    }
+    // Reset audio mode on error
+    await Audio.setAudioModeAsync({
+      allowsRecordingIOS: false,
+    }).catch(() => {});
+
     throw error;
   }
 }
