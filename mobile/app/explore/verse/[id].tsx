@@ -24,7 +24,7 @@ import type { VerseOfTheDay } from '@/types/explore';
 import { ArrowLeft, Check, Share2, Copy } from 'lucide-react-native';
 import { VerseOfTheDaySkeleton } from '@/components/explore/LoadingSkeleton';
 import { MarkdownText } from '@/components/explore/MarkdownText';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import Animated, { FadeInDown, SlideInRight } from 'react-native-reanimated';
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
 
@@ -125,7 +125,7 @@ export default function VerseOfTheDayScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Header */}
+      {/* Header - Static, not animated */}
       <View style={styles.header}>
         <Pressable
           onPress={() => router.back()}
@@ -181,13 +181,13 @@ export default function VerseOfTheDayScreen() {
         </View>
       </View>
 
-      {/* Content */}
+      {/* Content - Animated */}
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <Animated.View entering={FadeInDown.duration(500)} style={styles.contentContainer}>
+        <Animated.View entering={SlideInRight.duration(250)} style={styles.contentContainer}>
           {/* Verse Card */}
           <View
             style={styles.verseCard}

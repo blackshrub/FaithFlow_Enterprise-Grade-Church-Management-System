@@ -78,7 +78,8 @@
       "expo-asset"
     ],
     "experiments": {
-      "typedRoutes": true
+      "typedRoutes": true,
+      "turboModules": true
     },
     "extra": {
       "router": {

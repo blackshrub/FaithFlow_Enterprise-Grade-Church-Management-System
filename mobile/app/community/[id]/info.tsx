@@ -21,6 +21,9 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import Animated from 'react-native-reanimated';
+import { withPremiumMotionV10 } from '@/hoc';
+import { PMotionV10 } from '@/components/motion/premium-motion';
 import {
   ArrowLeft,
   Users,
@@ -51,7 +54,7 @@ import { Text } from '@/components/ui/text';
 import { Heading } from '@/components/ui/heading';
 import { VStack } from '@/components/ui/vstack';
 import { HStack } from '@/components/ui/hstack';
-import { Card } from '@/components/ui/card';
+import { PremiumCard3 } from '@/components/ui/premium-card';
 import { Icon } from '@/components/ui/icon';
 import { Badge, BadgeText } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -60,7 +63,7 @@ import { ScrollView } from '@/components/ui/scroll-view';
 
 import { useCommunity, useCommunityMembers, useLeaveCommunity, useUpdateNotificationPreference } from '@/hooks/useCommunities';
 import { useAuthStore } from '@/stores/auth';
-import { colors, spacing, borderRadius, shadows } from '@/constants/theme';
+import { colors, spacing, borderRadius } from '@/constants/theme';
 import type { CommunityMember } from '@/types/communities';
 
 // Member Management Component
@@ -74,7 +77,7 @@ import {
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const HEADER_HEIGHT = 200;
 
-export default function CommunityInfoScreen() {
+function CommunityInfoScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -370,10 +373,11 @@ export default function CommunityInfoScreen() {
         </View>
 
         {/* Content */}
+        <Animated.View entering={PMotionV10.screenFadeIn}>
         <VStack space="md" className="p-5">
           {/* Description */}
           {community?.description && (
-            <Card style={{ ...shadows.sm, borderRadius: borderRadius.xl }}>
+            <PremiumCard3>
               <View className="p-4">
                 <HStack space="sm" className="items-center mb-3">
                   <View
@@ -390,11 +394,11 @@ export default function CommunityInfoScreen() {
                   {community.description}
                 </Text>
               </View>
-            </Card>
+            </PremiumCard3>
           )}
 
           {/* Quick Actions */}
-          <Card style={{ ...shadows.sm, borderRadius: borderRadius.xl }}>
+          <PremiumCard3>
             <View>
               {/* Chat */}
               <Pressable
@@ -508,11 +512,11 @@ export default function CommunityInfoScreen() {
                 </Pressable>
               )}
             </View>
-          </Card>
+          </PremiumCard3>
 
           {/* Meeting info */}
           {(community?.meeting_schedule || community?.meeting_location) && (
-            <Card style={{ ...shadows.sm, borderRadius: borderRadius.xl }}>
+            <PremiumCard3>
               <View className="p-4">
                 <VStack space="md">
                   {community.meeting_schedule && (
@@ -554,11 +558,11 @@ export default function CommunityInfoScreen() {
                   )}
                 </VStack>
               </View>
-            </Card>
+            </PremiumCard3>
           )}
 
           {/* Members */}
-          <Card style={{ ...shadows.sm, borderRadius: borderRadius.xl }}>
+          <PremiumCard3>
             <View className="p-4">
               <HStack className="justify-between items-center mb-4">
                 <HStack space="sm" className="items-center">
@@ -668,10 +672,10 @@ export default function CommunityInfoScreen() {
                 </VStack>
               )}
             </View>
-          </Card>
+          </PremiumCard3>
 
           {/* Settings */}
-          <Card style={{ ...shadows.sm, borderRadius: borderRadius.xl }}>
+          <PremiumCard3>
             <View>
               {/* Notifications toggle */}
               <Pressable
@@ -726,10 +730,10 @@ export default function CommunityInfoScreen() {
                 </HStack>
               </Pressable>
             </View>
-          </Card>
+          </PremiumCard3>
 
           {/* Danger zone */}
-          <Card style={{ ...shadows.sm, borderRadius: borderRadius.xl }}>
+          <PremiumCard3>
             <View>
               {/* Leave community */}
               <Pressable
@@ -768,11 +772,12 @@ export default function CommunityInfoScreen() {
                 </HStack>
               </Pressable>
             </View>
-          </Card>
+          </PremiumCard3>
 
           {/* Bottom padding */}
           <View style={{ height: 40 }} />
         </VStack>
+        </Animated.View>
       </ScrollView>
 
       {/* Member Management Sheet */}
@@ -792,3 +797,6 @@ export default function CommunityInfoScreen() {
     </View>
   );
 }
+
+// Apply Premium Motion V10 Ultra HOC for production-grade transitions
+export default withPremiumMotionV10(CommunityInfoScreen);

@@ -8,12 +8,18 @@
  * - Retry on failure
  */
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Pressable, ActivityIndicator } from 'react-native';
 import { Image } from 'expo-image';
 import * as Haptics from 'expo-haptics';
 import { X, AlertCircle, RefreshCw, Check } from 'lucide-react-native';
-import { MotiView } from 'moti';
+import Animated, {
+  FadeInUp,
+  FadeOutUp,
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+} from 'react-native-reanimated';
 
 import { Text } from '@/components/ui/text';
 import { HStack } from '@/components/ui/hstack';
@@ -59,6 +65,16 @@ interface UploadProgressBarProps {
 // =============================================================================
 
 function UploadProgressBar({ progress, status }: UploadProgressBarProps) {
+  const widthProgress = useSharedValue(0);
+
+  useEffect(() => {
+    widthProgress.value = withTiming(progress, { duration: 200 });
+  }, [progress, widthProgress]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    width: `${widthProgress.value}%`,
+  }));
+
   const getBarColor = () => {
     switch (status) {
       case 'success':
@@ -75,14 +91,14 @@ function UploadProgressBar({ progress, status }: UploadProgressBarProps) {
       className="h-1 w-full rounded-full overflow-hidden"
       style={{ backgroundColor: colors.gray[200] }}
     >
-      <MotiView
-        from={{ width: '0%' }}
-        animate={{ width: `${progress}%` }}
-        transition={{ type: 'timing', duration: 200 }}
-        style={{
-          height: '100%',
-          backgroundColor: getBarColor(),
-        }}
+      <Animated.View
+        style={[
+          {
+            height: '100%',
+            backgroundColor: getBarColor(),
+          },
+          animatedStyle,
+        ]}
       />
     </View>
   );
@@ -159,11 +175,9 @@ export function UploadProgress({
   };
 
   return (
-    <MotiView
-      from={{ opacity: 0, translateY: 10 }}
-      animate={{ opacity: 1, translateY: 0 }}
-      exit={{ opacity: 0, translateY: -10 }}
-      transition={{ type: 'timing', duration: 200 }}
+    <Animated.View
+      entering={FadeInUp.duration(200)}
+      exiting={FadeOutUp.duration(200)}
       className="mx-4 mb-2"
     >
       <View
@@ -256,7 +270,7 @@ export function UploadProgress({
           </VStack>
         </HStack>
       </View>
-    </MotiView>
+    </Animated.View>
   );
 }
 

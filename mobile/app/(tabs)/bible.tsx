@@ -9,13 +9,14 @@
  * - Reading preferences (font size, theme)
  */
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback, memo } from 'react';
 import { View, Pressable, ActivityIndicator, Share, Animated } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { BookOpen, Languages, Search, Type, Bookmark as BookmarkIcon } from 'lucide-react-native';
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
+import ReAnimated from 'react-native-reanimated';
 
 import { Text } from '@/components/ui/text';
 import { Heading as _Heading } from '@/components/ui/heading';
@@ -41,9 +42,12 @@ import { useQueryClient } from '@tanstack/react-query';
 import { getBibleLoader } from '@/lib/bibleLoaderOptimized';
 import { getBookNumber } from '@/lib/bibleBookLookup';
 
-export default function BibleScreen() {
+function BibleScreen() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
+  const insets = useSafeAreaInsets();
+
+
   const [isBookSelectorOpen, setIsBookSelectorOpen] = useState(false);
   const [isPreferencesOpen, setIsPreferencesOpen] = useState(false);
   const [isVersionSelectorOpen, setIsVersionSelectorOpen] = useState(false);
@@ -51,15 +55,16 @@ export default function BibleScreen() {
   const [isBookmarksOpen, setIsBookmarksOpen] = useState(false);
   const [scrollToVerseNumber, setScrollToVerseNumber] = useState<number | null>(null);
 
-  // Global note editor store
-  const { openNoteEditor } = useBibleUIStore();
+  // Global note editor store and focus mode tab bar control
+  const { openNoteEditor, setFocusModeActive, setTabBarVisible } = useBibleUIStore();
 
   // NEW: Color picker state for highlight selection
   const [showColorPicker, setShowColorPicker] = useState(false);
 
   // Focus mode: animated header and tab bar visibility
-  const headerHeight = useRef(new Animated.Value(1)).current; // 1 = visible, 0 = hidden
+  // Using opacity + translateY for smoother animation (both support native driver)
   const headerOpacity = useRef(new Animated.Value(1)).current;
+  const headerTranslateY = useRef(new Animated.Value(0)).current;
   const lastScrollY = useRef(0);
 
   const {
@@ -116,8 +121,9 @@ export default function BibleScreen() {
 
   /**
    * Handle scroll for focus mode auto-hide behavior
-   * Scroll down = hide header completely, Scroll up = show header
-   * Also communicates with parent to hide tab bar
+   * Scroll down = hide header and tab bar IMMEDIATELY
+   * Scroll up = show header and tab bar IMMEDIATELY
+   * Uses parallel opacity + translateY for smooth, native-driven animations
    */
   const handleScroll = (event: { nativeEvent: { contentOffset: { y: number } } }) => {
     if (!preferences?.focusMode) return;
@@ -125,59 +131,66 @@ export default function BibleScreen() {
     const currentScrollY = event.nativeEvent.contentOffset.y;
     const scrollDelta = currentScrollY - lastScrollY.current;
 
-    // Only hide/show if scrolled more than threshold
-    const threshold = 5;
-
-    if (scrollDelta > threshold && currentScrollY > 50) {
-      // Scrolling down - hide header completely
+    // Immediate response - no threshold
+    if (scrollDelta > 0 && currentScrollY > 20) {
+      // ANY scroll down - hide header and tab bar immediately
       Animated.parallel([
         Animated.timing(headerOpacity, {
           toValue: 0,
-          duration: 250,
-          useNativeDriver: false, // Use false for both to avoid conflicts
+          duration: 150,
+          useNativeDriver: true,
         }),
-        Animated.timing(headerHeight, {
-          toValue: 0,
-          duration: 250,
-          useNativeDriver: false,
+        Animated.timing(headerTranslateY, {
+          toValue: -60,
+          duration: 150,
+          useNativeDriver: true,
         }),
       ]).start();
-    } else if (scrollDelta < -threshold) {
-      // Scrolling up - show header
+      // Hide tab bar
+      setTabBarVisible(false);
+    } else if (scrollDelta < 0) {
+      // ANY scroll up - show header and tab bar immediately
       Animated.parallel([
         Animated.timing(headerOpacity, {
           toValue: 1,
-          duration: 250,
-          useNativeDriver: false, // Use false for both to avoid conflicts
+          duration: 150,
+          useNativeDriver: true,
         }),
-        Animated.timing(headerHeight, {
-          toValue: 1,
-          duration: 250,
-          useNativeDriver: false,
+        Animated.timing(headerTranslateY, {
+          toValue: 0,
+          duration: 150,
+          useNativeDriver: true,
         }),
       ]).start();
+      // Show tab bar
+      setTabBarVisible(true);
     }
 
     lastScrollY.current = currentScrollY;
   };
 
-  // Reset header visibility when focus mode is toggled off
+  // Sync focus mode state with preferences and reset visibility when toggled off
   useEffect(() => {
+    setFocusModeActive(preferences?.focusMode ?? false);
+
     if (!preferences?.focusMode) {
+      // Reset header visibility
       Animated.parallel([
         Animated.timing(headerOpacity, {
           toValue: 1,
-          duration: 250,
-          useNativeDriver: false, // Use false for both to avoid conflicts
+          duration: 150,
+          useNativeDriver: true,
         }),
-        Animated.timing(headerHeight, {
-          toValue: 1,
-          duration: 250,
-          useNativeDriver: false,
+        Animated.timing(headerTranslateY, {
+          toValue: 0,
+          duration: 150,
+          useNativeDriver: true,
         }),
       ]).start();
+      // Ensure tab bar is visible when focus mode is off
+      setTabBarVisible(true);
     }
-  }, [preferences?.focusMode, headerOpacity, headerHeight]);
+  }, [preferences?.focusMode, headerOpacity, headerTranslateY, setFocusModeActive, setTabBarVisible]);
 
   // Navigation handlers
   const handlePreviousChapter = () => {
@@ -652,19 +665,26 @@ export default function BibleScreen() {
       edges={['top']}
       style={{ backgroundColor: currentTheme.background }}
     >
-      {/* Header - Minimal Design - Animated for focus mode */}
+      {/* Header - Minimal Design - Animated for focus mode (absolute position when focus mode active) */}
       <Animated.View
         className="px-4"
-        style={{
-          borderBottomWidth: 0.5,
-          borderBottomColor: currentTheme.verseNumber + '20',
-          opacity: headerOpacity,
-          maxHeight: headerHeight.interpolate({
-            inputRange: [0, 1],
-            outputRange: [0, 100], // Max 100px to accommodate content
-          }),
-          overflow: 'hidden',
-        }}
+        style={[
+          {
+            borderBottomWidth: 0.5,
+            borderBottomColor: currentTheme.verseNumber + '20',
+            backgroundColor: currentTheme.background,
+            opacity: headerOpacity,
+            transform: [{ translateY: headerTranslateY }],
+            zIndex: 100,
+          },
+          // Use absolute positioning when focus mode is active so header can truly hide
+          preferences?.focusMode && {
+            position: 'absolute',
+            top: insets.top, // Account for safe area when absolute positioned
+            left: 0,
+            right: 0,
+          },
+        ]}
       >
         <View className="py-2">
         <HStack className="items-center justify-between">
@@ -684,11 +704,10 @@ export default function BibleScreen() {
                 borderRadius: 8,
                 flexDirection: 'row',
                 alignItems: 'center',
-                gap: 6,
               }}
             >
               <Icon as={BookOpen} size="sm" className="text-gray-700" />
-              <Text className="text-gray-900 font-medium text-sm">
+              <Text className="text-gray-900 font-medium text-sm" style={{ marginLeft: 6 }}>
                 {displayBookName} {currentChapter}
               </Text>
             </Pressable>
@@ -707,11 +726,10 @@ export default function BibleScreen() {
                 borderRadius: 8,
                 flexDirection: 'row',
                 alignItems: 'center',
-                gap: 6,
               }}
             >
               <Icon as={Languages} size="sm" className="text-primary-600" />
-              <Text className="text-primary-600 font-medium text-sm">{currentVersion}</Text>
+              <Text className="text-primary-600 font-medium text-sm" style={{ marginLeft: 6 }}>{currentVersion}</Text>
             </Pressable>
           </HStack>
 
@@ -802,6 +820,7 @@ export default function BibleScreen() {
             // The header will update automatically when scrolling
           }}
           onScroll={handleScroll}
+          extraPaddingTop={preferences?.focusMode ? 56 : 0}
         />
       ) : verses && verses.length > 0 ? (
         // Paged mode - chapter by chapter navigation (memoized for performance)
@@ -815,6 +834,7 @@ export default function BibleScreen() {
           onPreviousChapter={handlePreviousChapter}
           onNextChapter={handleNextChapter}
           onScroll={handleScroll}
+          extraPaddingTop={preferences?.focusMode ? 56 : 0}
         />
       ) : (
         <View
@@ -894,3 +914,8 @@ export default function BibleScreen() {
     </SafeAreaView>
   );
 }
+
+// Memoize screen for performance
+const MemoizedBibleScreen = memo(BibleScreen);
+MemoizedBibleScreen.displayName = 'BibleScreen';
+export default MemoizedBibleScreen;

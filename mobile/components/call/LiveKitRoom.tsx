@@ -122,20 +122,17 @@ export function LiveKitRoom({
       audio={true}
       video={callType === CallType.VIDEO}
       onConnected={() => {
-        console.log('[LiveKit] Connected to room');
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
         // Mark call as connected on backend
-        callApi.markConnected(callId).catch(console.error);
+        callApi.markConnected(callId).catch(() => {});
 
         onConnected?.();
       }}
       onDisconnected={() => {
-        console.log('[LiveKit] Disconnected from room');
         onDisconnected?.();
       }}
       onError={(error) => {
-        console.error('[LiveKit] Room error:', error);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
         onError?.(error);
       }}
@@ -195,8 +192,6 @@ function RoomContent({ callType, callId, children }: RoomContentProps) {
 
   // Monitor connection state changes
   useEffect(() => {
-    console.log('[LiveKit] Connection state:', connectionState);
-
     if (connectionState === ConnectionState.Connected) {
       useCallStore.getState().startDurationTimer();
     }
@@ -207,12 +202,11 @@ function RoomContent({ callType, callId, children }: RoomContentProps) {
     if (!room) return;
 
     const handleParticipantConnected = (participant: RemoteParticipant) => {
-      console.log('[LiveKit] Participant connected:', participant.identity);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     };
 
     const handleParticipantDisconnected = (participant: RemoteParticipant) => {
-      console.log('[LiveKit] Participant disconnected:', participant.identity);
+      // Participant disconnected
     };
 
     const handleActiveSpeakersChanged = (speakers: Participant[]) => {
@@ -476,7 +470,7 @@ export function useScreenShare() {
       }
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     } catch (error) {
-      console.error('[ScreenShare] Error:', error);
+      // Screen share failed silently
     }
   }, [localParticipant, isScreenSharing]);
 

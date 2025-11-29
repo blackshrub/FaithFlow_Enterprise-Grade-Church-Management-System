@@ -9,15 +9,18 @@
  * - Typing indicator publishing
  */
 
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useMemo } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { AppState, AppStateStatus } from 'react-native';
 
 import { mqttService, MQTTPayload } from '@/services/mqtt';
-import { useMQTTStore } from '@/stores/mqtt';
+import { useMQTTStore, TypingUser } from '@/stores/mqtt';
 import { useAuthStore } from '@/stores/auth';
 import type { CommunityMessage, CommunityWithStatus } from '@/types/communities';
 import { QUERY_KEYS } from '@/constants/api';
+
+// Stable empty array reference to prevent infinite re-renders
+const EMPTY_TYPING_USERS: TypingUser[] = [];
 
 // =============================================================================
 // MAIN HOOK - useMQTT
@@ -211,9 +214,14 @@ export function useCommunitySubscription(
     [member?.church_id, communityId, channelType, subgroupId]
   );
 
+  // Get typing users with stable reference (prevents infinite loop)
+  const typingUsers = useMQTTStore(
+    useCallback((s) => s.typingUsers[communityId] ?? EMPTY_TYPING_USERS, [communityId])
+  );
+
   return {
     sendTyping,
-    typingUsers: useMQTTStore((s) => s.typingUsers[communityId] || []),
+    typingUsers,
   };
 }
 
@@ -476,18 +484,25 @@ export function useMQTTStatus() {
 
 /**
  * Get typing indicator text for a community
+ * Uses stable reference and useMemo to prevent infinite loops
  */
 export function useTypingIndicator(communityId: string): string | null {
-  const typingUsers = useMQTTStore((s) => s.typingUsers[communityId] || []);
+  // Use stable empty array reference
+  const typingUsers = useMQTTStore(
+    useCallback((s) => s.typingUsers[communityId] ?? EMPTY_TYPING_USERS, [communityId])
+  );
 
-  if (typingUsers.length === 0) return null;
-  if (typingUsers.length === 1) {
-    return `${typingUsers[0].memberName} is typing...`;
-  }
-  if (typingUsers.length === 2) {
-    return `${typingUsers[0].memberName} and ${typingUsers[1].memberName} are typing...`;
-  }
-  return `${typingUsers.length} people are typing...`;
+  // Memoize the text computation
+  return useMemo(() => {
+    if (typingUsers.length === 0) return null;
+    if (typingUsers.length === 1) {
+      return `${typingUsers[0].memberName} is typing...`;
+    }
+    if (typingUsers.length === 2) {
+      return `${typingUsers[0].memberName} and ${typingUsers[1].memberName} are typing...`;
+    }
+    return `${typingUsers.length} people are typing...`;
+  }, [typingUsers]);
 }
 
 export default useMQTT;

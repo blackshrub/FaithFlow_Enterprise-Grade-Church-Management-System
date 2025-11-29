@@ -1,31 +1,36 @@
 /**
- * Explore Home Screen
+ * Explore Home Screen - Premium Motion V10 Ultra
  *
  * Design Philosophy: "A sanctuary in your pocket"
+ * - Premium monochrome palette with gold accent
+ * - Full-bleed gradient header matching Today/Give/Events
  * - Progressive disclosure (show daily content first)
- * - Generous spacing and white space
- * - One primary action per card
- * - Celebration moments for achievements
+ * - Generous spacing and premium shadows
+ * - Celebration moments via unified overlay system
+ * - V10 Ultra smooth animations with card-level stagger
+ *
+ * Option D Makeover:
+ * - Unified overlay for CelebrationModal and StreakDetailsModal
+ * - No double-Pressable patterns (cards handle their own onPress)
+ * - PremiumCard3 wrapper for consistent card styling
+ * - Single sharedAxisX at screen level only
  */
 
-import React from 'react';
+import React, { useCallback, useEffect, useRef, memo } from 'react';
 import {
-  ScrollView,
   View,
-  Text,
   StyleSheet,
   RefreshControl,
   Pressable,
   StatusBar,
-  Platform as _Platform,
   FlatList,
   Dimensions,
   ImageBackground,
 } from 'react-native';
+import { Text } from '@/components/ui/text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { ExploreColors, ExploreTypography, ExploreSpacing } from '@/constants/explore/designSystem';
 import {
   useExploreHomeMock as useExploreHome,
   useUserProgress,
@@ -33,8 +38,16 @@ import {
   useBibleStudies,
 } from '@/hooks/explore/useExploreMock';
 import { useExploreStore } from '@/stores/explore/exploreStore';
-import { useStreakStore } from '@/stores/explore/streakStore';
+import {
+  useOverlay,
+  StreakDetailsModal,
+  CelebrationModal,
+  CompletedTodayModal,
+  StudiesModal,
+  type CelebrationPayload,
+} from '@/components/overlay';
 import type { BibleStudy } from '@/types/explore';
+import * as Haptics from 'expo-haptics';
 
 // Components
 import { DailyDevotionCard } from '@/components/explore/DailyDevotionCard';
@@ -43,7 +56,7 @@ import { BibleFigureCard } from '@/components/explore/BibleFigureCard';
 import { DailyQuizCard } from '@/components/explore/DailyQuizCard';
 import { ExploreHomeSkeleton } from '@/components/explore/LoadingSkeleton';
 import { NoContentEmptyState } from '@/components/explore/EmptyState';
-import { CelebrationModal } from '@/components/explore/CelebrationModal';
+import { FaithAssistantCard } from '@/components/companion';
 
 // Icons
 import {
@@ -54,466 +67,674 @@ import {
   Users,
   Tag,
   Calendar,
-  GraduationCap as _GraduationCap,
-  Play as _Play,
   Clock,
   Star,
+  Compass,
+  Sparkles,
 } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import Animated, { FadeInRight } from 'react-native-reanimated';
+import Animated, { useSharedValue } from 'react-native-reanimated';
+import { withPremiumMotionV10 } from '@/hoc';
+import { PMotionV10 } from '@/components/motion/premium-motion';
+import {
+  useTodayHeaderMotion,
+  useTodayCollapsibleHeader,
+  todayListItemMotion,
+} from '@/components/motion/today-motion';
+import { spacing } from '@/constants/theme';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-export default function ExploreScreen() {
+// Premium monochrome palette with gold accent (V10 aligned)
+const Colors = {
+  gradient: {
+    start: '#0f0f0f',
+    mid: '#1a1a1a',
+    end: '#252525',
+  },
+  accent: {
+    gold: '#d4af37',
+    goldLight: '#e8d5a8',
+    goldDark: '#b8960c',
+  },
+  neutral: {
+    50: '#FAFAFA',
+    100: '#F5F5F5',
+    200: '#E5E5E5',
+    300: '#D4D4D4',
+    400: '#A3A3A3',
+    500: '#737373',
+    600: '#525252',
+    700: '#404040',
+    800: '#262626',
+    900: '#171717',
+  },
+  white: '#FFFFFF',
+  streak: '#FF6B35',
+  success: '#10B981',
+  error: '#EF4444',
+};
+
+function ExploreScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { t } = useTranslation(); // UI language follows global setting
-  const contentLanguage = useExploreStore((state) => state.contentLanguage); // Content language is independent
+  const { t } = useTranslation();
+  const contentLanguage = useExploreStore((state) => state.contentLanguage);
   const setContentLanguage = useExploreStore((state) => state.setContentLanguage);
+
+  // Animation key - only changes on initial mount, not on every focus
+  // This prevents flickering when returning from sub-pages
+  const animationKeyRef = useRef(Date.now());
+  const animationKey = animationKeyRef.current;
 
   // Data queries
   const { data: homeData, isLoading, error, refetch } = useExploreHome();
-  const { data: _progressData } = useUserProgress();
+  const { data: progressData } = useUserProgress();
   const { data: bibleStudies } = useBibleStudies();
   const currentStreak = useCurrentStreak();
 
   const handleRefresh = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     refetch();
   };
 
   const handleLanguageToggle = () => {
-    // Toggle content language (independent from UI language)
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setContentLanguage(contentLanguage === 'en' ? 'id' : 'en');
   };
 
-  // Streak store for bottom sheet
-  const openStreakSheet = useStreakStore((state) => state.open);
+  // Unified Overlay System
+  const overlay = useOverlay();
+
+  // Watch for celebration triggers from exploreStore and show via unified overlay
+  const showCelebration = useExploreStore((state) => state.showCelebration);
+  const celebrationType = useExploreStore((state) => state.celebrationType);
+  const celebrationData = useExploreStore((state) => state.celebrationData);
+  const closeCelebration = useExploreStore((state) => state.closeCelebration);
+  const celebrationShownRef = useRef(false);
+
+  useEffect(() => {
+    if (showCelebration && celebrationType && !celebrationShownRef.current) {
+      celebrationShownRef.current = true;
+      const payload: CelebrationPayload = {
+        type: celebrationType,
+        data: celebrationData,
+        language: contentLanguage,
+      };
+      overlay.showCenterModal(
+        (props) => <CelebrationModal {...props} />,
+        payload
+      );
+      // Close the exploreStore celebration state after showing
+      closeCelebration();
+    }
+    if (!showCelebration) {
+      celebrationShownRef.current = false;
+    }
+  }, [showCelebration, celebrationType, celebrationData, contentLanguage, overlay, closeCelebration]);
 
   const handleStreakPress = () => {
-    openStreakSheet();
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } catch (e) {
+      // Haptics may not be available
+    }
+    // Open streak details via unified overlay bottom sheet
+    const longestStreak = progressData?.streak?.longest_streak || currentStreak;
+    // Calculate current week completion days (M-S)
+    const today = new Date().getDay();
+    const currentWeekDays = Array(7).fill(false).map((_, i) => {
+      // For demo, mark days up to today as completed if streak > 0
+      return currentStreak > 0 && i <= (today === 0 ? 6 : today - 1);
+    });
+    overlay.showBottomSheet(
+      (props) => <StreakDetailsModal {...props} />,
+      {
+        streakCount: currentStreak,
+        longestStreak: longestStreak,
+        currentWeekDays: currentWeekDays,
+      }
+    );
+  };
+
+  // Handler for Completed Today stat press
+  const handleCompletedTodayPress = () => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } catch (e) {
+      // Haptics may not be available
+    }
+    // Extract devotion title as string (handle multilingual object)
+    const devotionTitleRaw = homeData?.daily_devotion?.title;
+    const devotionTitle = typeof devotionTitleRaw === 'string'
+      ? devotionTitleRaw
+      : devotionTitleRaw?.[contentLanguage] || devotionTitleRaw?.en || '';
+
+    overlay.showBottomSheet(
+      (props) => <CompletedTodayModal {...props} />,
+      {
+        devotionCompleted: homeData?.daily_devotion?.completed ?? false,
+        devotionTitle,
+        quizzesCompleted: 0, // TODO: Track from progress
+        versesRead: 0, // TODO: Track from progress
+        totalActivities: 3,
+      }
+    );
+  };
+
+  // Handler for Studies stat press
+  const handleStudiesPress = () => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } catch (e) {
+      // Haptics may not be available
+    }
+    const studyList = bibleStudies?.map(study => ({
+      id: study.id,
+      title: typeof study.title === 'string' ? study.title : study.title?.[contentLanguage] || study.title?.en || '',
+      description: typeof study.description === 'string' ? study.description : study.description?.[contentLanguage] || study.description?.en || '',
+      totalDays: study.lesson_count || study.lessons?.length || 7,
+      completedDays: 0, // TODO: Track from progress
+      isActive: false,
+    })) || [];
+
+    overlay.showBottomSheet(
+      (props) => <StudiesModal {...props} />,
+      {
+        studies: studyList,
+        totalStudies: studyList.length,
+        completedStudies: 0, // TODO: Track from progress
+      }
+    );
+  };
+
+  // Shared header enter animation from today-motion
+  const { headerEnterStyle } = useTodayHeaderMotion();
+
+  // Collapsible header animation - using shared today-motion module
+  const scrollY = useSharedValue(0);
+
+  // Scroll handler - updates scrollY for collapsible header
+  const handleScrollEvent = useCallback((event: any) => {
+    scrollY.value = event.nativeEvent.contentOffset.y;
+  }, [scrollY]);
+
+  // Shared collapsible header styles from today-motion
+  const {
+    statsRowAnimatedStyle,
+    greetingAnimatedStyle: titleRowAnimatedStyle,
+  } = useTodayCollapsibleHeader(scrollY);
+
+  // Render premium header with shared today-motion
+  const renderHeader = () => (
+    <LinearGradient
+      colors={[Colors.gradient.start, Colors.gradient.mid, Colors.gradient.end]}
+      style={[styles.headerGradient, { paddingTop: insets.top + spacing.md }]}
+    >
+      {/* Animated content wrapper with shared headerEnterStyle */}
+      <Animated.View style={headerEnterStyle}>
+        {/* Title row - stagger index 0 */}
+        <Animated.View key={`title-${animationKey}`} entering={todayListItemMotion(0)} style={[styles.headerTop, titleRowAnimatedStyle]}>
+          <View style={styles.titleWrap}>
+            <View style={styles.titleRow}>
+              <Compass size={24} color={Colors.accent.gold} style={styles.titleIcon} />
+              <Text style={styles.headerTitle}>{t('explore.title', 'Explore')}</Text>
+            </View>
+            <Text style={styles.headerSubtitle}>{t('explore.subtitle', 'Discover your faith journey')}</Text>
+          </View>
+
+          {/* Language toggle */}
+          <Pressable
+            onPress={handleLanguageToggle}
+            className="active:scale-95 active:opacity-90"
+            style={styles.langBtn}
+          >
+            <Globe size={16} color={Colors.white} />
+            <Text style={styles.langText}>{contentLanguage.toUpperCase()}</Text>
+          </Pressable>
+        </Animated.View>
+
+        {/* Stats row - Collapsible with shared statsRowAnimatedStyle - stagger index 1 */}
+        <Animated.View key={`stats-${animationKey}`} entering={todayListItemMotion(1)} style={[styles.statsRow, statsRowAnimatedStyle]}>
+          {/* Streak */}
+          <Pressable
+            onPress={handleStreakPress}
+            className="active:scale-95 active:opacity-90"
+            style={styles.statItem}
+          >
+            <View style={styles.statIconWrap}>
+              <Flame size={18} color={Colors.streak} fill={Colors.streak} />
+            </View>
+            <View>
+              <Text style={styles.statValue}>{currentStreak ?? 0}</Text>
+              <Text style={styles.statLabel}>{t('explore.streak.label', 'Streak')}</Text>
+            </View>
+          </Pressable>
+
+          <View style={styles.statDivider} />
+
+          {/* Completed today */}
+          <Pressable
+            onPress={handleCompletedTodayPress}
+            className="active:scale-95 active:opacity-90"
+            style={styles.statItem}
+          >
+            <View style={styles.statIconWrap}>
+              <Sparkles size={18} color={Colors.accent.gold} />
+            </View>
+            <View>
+              <Text style={styles.statValue}>
+                {homeData?.daily_devotion?.completed ? 1 : 0}
+              </Text>
+              <Text style={styles.statLabel}>{t('explore.completedToday', 'Done')}</Text>
+            </View>
+          </Pressable>
+
+          <View style={styles.statDivider} />
+
+          {/* Studies */}
+          <Pressable
+            onPress={handleStudiesPress}
+            className="active:scale-95 active:opacity-90"
+            style={styles.statItem}
+          >
+            <View style={styles.statIconWrap}>
+              <BookOpen size={18} color={Colors.accent.gold} />
+            </View>
+            <View>
+              <Text style={styles.statValue}>{bibleStudies?.length || 0}</Text>
+              <Text style={styles.statLabel}>{t('explore.studies', 'Studies')}</Text>
+            </View>
+          </Pressable>
+        </Animated.View>
+      </Animated.View>
+    </LinearGradient>
+  );
+
+  // Render content with card-level V10 stagger animations
+  const renderContent = () => {
+    if (isLoading) {
+      return <ExploreHomeSkeleton />;
+    }
+
+    if (error) {
+      return (
+        <Animated.View
+          entering={PMotionV10.screenFadeIn}
+          style={styles.errorContainer}
+        >
+          <Text style={styles.errorText}>{t('explore.error.loadContent', 'Failed to load content')}</Text>
+        </Animated.View>
+      );
+    }
+
+    if (!homeData) {
+      return (
+        <Animated.View entering={PMotionV10.screenFadeIn}>
+          <NoContentEmptyState contentType="default" />
+        </Animated.View>
+      );
+    }
+
+    // Start at index 2 to continue after header animations (title=0, stats=1)
+    let sectionIndex = 2;
+
+    return (
+      <View style={styles.contentContainer}>
+        {/* Daily Devotion */}
+        {homeData.daily_devotion && (
+          <Animated.View
+            key={`devotion-${animationKey}`}
+            entering={todayListItemMotion(sectionIndex++)}
+            style={styles.section}
+          >
+            <Text style={styles.sectionTitle}>
+              {t('explore.todaysDevotions', "Today's Devotion")}
+            </Text>
+            <DailyDevotionCard
+              devotion={homeData.daily_devotion}
+              language={contentLanguage}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                router.push(`/explore/devotion/${homeData.daily_devotion?.id}`);
+              }}
+              completed={homeData.daily_devotion.completed}
+            />
+          </Animated.View>
+        )}
+
+        {/* Verse of the Day */}
+        {homeData.verse_of_the_day && (
+          <Animated.View
+            key={`verse-${animationKey}`}
+            entering={todayListItemMotion(sectionIndex++)}
+            style={styles.section}
+          >
+            <Text style={styles.sectionTitle}>
+              {t('explore.verseOfTheDay', 'Verse of the Day')}
+            </Text>
+            <VerseOfTheDayCard
+              verse={homeData.verse_of_the_day}
+              language={contentLanguage}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                router.push(`/explore/verse/${homeData.verse_of_the_day?.id}`);
+              }}
+            />
+          </Animated.View>
+        )}
+
+        {/* Bible Figure of the Day */}
+        {homeData.bible_figure && (
+          <Animated.View
+            key={`figure-${animationKey}`}
+            entering={todayListItemMotion(sectionIndex++)}
+            style={styles.section}
+          >
+            <Text style={styles.sectionTitle}>
+              {t('explore.bibleFigureOfTheDay', 'Bible Figure of the Day')}
+            </Text>
+            <BibleFigureCard
+              figure={homeData.bible_figure}
+              language={contentLanguage}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                router.push(`/explore/figure/${homeData.bible_figure?.id}`);
+              }}
+            />
+          </Animated.View>
+        )}
+
+        {/* Daily Quiz */}
+        {homeData.daily_quiz && (
+          <Animated.View
+            key={`quiz-${animationKey}`}
+            entering={todayListItemMotion(sectionIndex++)}
+            style={styles.section}
+          >
+            <Text style={styles.sectionTitle}>
+              {t('explore.dailyChallenge', 'Daily Challenge')}
+            </Text>
+            <DailyQuizCard
+              quiz={homeData.daily_quiz}
+              language={contentLanguage}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                router.push(`/explore/quiz/${homeData.daily_quiz?.id}`);
+              }}
+              completed={homeData.daily_quiz.completed}
+              score={homeData.daily_quiz.score ?? undefined}
+            />
+          </Animated.View>
+        )}
+
+        {/* Bible Studies Carousel */}
+        {bibleStudies && bibleStudies.length > 0 && (
+          <Animated.View
+            key={`studies-${animationKey}`}
+            entering={todayListItemMotion(sectionIndex++)}
+            style={styles.section}
+          >
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>
+                {t('explore.bibleStudies', 'Bible Studies')}
+              </Text>
+              <Pressable
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  router.push('/explore/studies');
+                }}
+                className="active:scale-95 active:opacity-90"
+                style={styles.viewAllBtn}
+              >
+                <Text style={styles.viewAllText}>{t('explore.viewAll', 'View All')}</Text>
+                <ChevronRight size={16} color={Colors.accent.goldDark} />
+              </Pressable>
+            </View>
+
+            <FlatList
+              data={bibleStudies.slice(0, 6)}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              keyExtractor={(item) => item.id}
+              style={styles.carouselContainer}
+              contentContainerStyle={styles.carousel}
+              renderItem={({ item, index }) => (
+                <Animated.View entering={todayListItemMotion(index)}>
+                  <BibleStudyCard
+                    study={item}
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      router.push(`/explore/studies/${item.id}`);
+                    }}
+                    contentLanguage={contentLanguage}
+                  />
+                </Animated.View>
+              )}
+            />
+          </Animated.View>
+        )}
+
+        {/* Faith Assistant - Spiritual Companion */}
+        <Animated.View
+          key={`companion-${animationKey}`}
+          entering={todayListItemMotion(sectionIndex++)}
+          style={styles.section}
+        >
+          <Text style={styles.sectionTitle}>
+            {t('companion.sectionTitle', 'Your Companion')}
+          </Text>
+          <FaithAssistantCard variant="compact" />
+        </Animated.View>
+
+        {/* Explore More */}
+        <Animated.View
+          key={`more-${animationKey}`}
+          entering={todayListItemMotion(sectionIndex++)}
+          style={styles.section}
+        >
+          <Text style={styles.sectionTitle}>
+            {t('explore.exploreMore', 'Explore More')}
+          </Text>
+
+          <View style={styles.quickGrid}>
+            <QuickCard
+              title={t('explore.bibleFigures', 'Bible Figures')}
+              desc={t('explore.heroesOfFaith', 'Heroes of Faith')}
+              icon={<Users size={22} color={Colors.white} />}
+              gradient={['#3B82F6', '#1D4ED8']}
+              onPress={() => router.push('/explore/figures')}
+            />
+            <QuickCard
+              title={t('explore.topicalVerses', 'Topical Verses')}
+              desc={t('explore.findByTheme', 'Find by Theme')}
+              icon={<Tag size={22} color={Colors.white} />}
+              gradient={['#10B981', '#059669']}
+              onPress={() => router.push('/explore/topical')}
+            />
+            <QuickCard
+              title={t('explore.devotionPlans', 'Devotion Plans')}
+              desc={t('explore.dailyJourney', 'Daily Journey')}
+              icon={<Calendar size={22} color={Colors.white} />}
+              gradient={['#F59E0B', '#D97706']}
+              onPress={() => router.push('/explore/devotions')}
+            />
+          </View>
+        </Animated.View>
+
+        {/* Bottom spacing */}
+        <View style={styles.bottomSpacer} />
+      </View>
+    );
   };
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor={ExploreColors.primary[600]} />
+    <Animated.View style={styles.container}>
+      <StatusBar barStyle="light-content" />
+      {renderHeader()}
 
-      {/* Full-bleed Header with Status Bar Coverage */}
-      <LinearGradient
-        colors={[ExploreColors.primary[600], ExploreColors.primary[500]]}
-        style={[styles.headerGradient, { paddingTop: insets.top }]}
-      >
-        <View style={styles.header}>
-          <Text
-            style={styles.headerTitle}
-            accessibilityRole="header"
-          >
-            {t('explore.title')}
-          </Text>
-
-          <View style={styles.headerActions}>
-            {/* Streak Badge - Inline styles for reliability */}
-            <Pressable
-              onPress={handleStreakPress}
-              accessibilityRole="button"
-              accessibilityLabel={`${t('explore.streak.current')}: ${currentStreak ?? 0} ${t(currentStreak === 1 ? 'explore.day' : 'explore.days')}. ${t('explore.streak.tapForDetails')}`}
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                backgroundColor: '#FFFFFF',
-                paddingHorizontal: 12,
-                paddingVertical: 6,
-                borderRadius: 20,
-                gap: 6,
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.15,
-                shadowRadius: 4,
-                elevation: 3,
-              }}
-            >
-              <Flame size={18} color="#FF6B35" fill="#FF6B35" />
-              <Text style={{ fontSize: 15, fontWeight: '700', color: '#FF6B35' }}>
-                {currentStreak ?? 0}
-              </Text>
-            </Pressable>
-
-            {/* Content Language Toggle - Shows which language content is in */}
-            <Pressable
-              onPress={handleLanguageToggle}
-              style={styles.languageButton}
-              accessibilityRole="button"
-              accessibilityLabel={`${t('explore.language.switchTo')} ${contentLanguage === 'en' ? t('explore.language.indonesian') : t('explore.language.english')}`}
-            >
-              <Globe size={18} color="#FFFFFF" />
-              <Text style={styles.languageText}>{contentLanguage.toUpperCase()}</Text>
-            </Pressable>
-          </View>
-        </View>
-      </LinearGradient>
-
-      {/* Content */}
-      <ScrollView
-        style={styles.scrollView}
+      <Animated.ScrollView
+        style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
+        onScroll={handleScrollEvent}
+        scrollEventThrottle={16}
         refreshControl={
           <RefreshControl
             refreshing={isLoading}
             onRefresh={handleRefresh}
-            tintColor={ExploreColors.primary[500]}
+            tintColor={Colors.accent.gold}
           />
         }
         showsVerticalScrollIndicator={false}
       >
-        {isLoading ? (
-          <ExploreHomeSkeleton />
-        ) : error ? (
-          <View
-            style={styles.errorContainer}
-            accessible={true}
-            accessibilityRole="alert"
-            accessibilityLiveRegion="assertive"
-          >
-            <Text style={styles.errorText}>
-              {t('explore.error.loadContent')}
-            </Text>
-          </View>
-        ) : homeData ? (
-          <View style={styles.contentContainer}>
-            {/* Daily Devotion */}
-            {homeData.daily_devotion ? (
-              <View style={styles.section}>
-                <Text
-                  style={styles.sectionTitle}
-                  accessibilityRole="header"
-                      >
-                  {t('explore.todaysDevotions')}
-                </Text>
-                <DailyDevotionCard
-                  devotion={homeData.daily_devotion}
-                  language={contentLanguage}
-                  onPress={() =>
-                    router.push(`/explore/devotion/${homeData.daily_devotion?.id}`)
-                  }
-                  completed={homeData.daily_devotion.completed}
-                />
-              </View>
-            ) : null}
+        {renderContent()}
+      </Animated.ScrollView>
 
-            {/* Verse of the Day */}
-            {homeData.verse_of_the_day ? (
-              <View style={styles.section}>
-                <Text
-                  style={styles.sectionTitle}
-                  accessibilityRole="header"
-                      >
-                  {t('explore.verseOfTheDay')}
-                </Text>
-                <VerseOfTheDayCard
-                  verse={homeData.verse_of_the_day}
-                  language={contentLanguage}
-                  onPress={() =>
-                    router.push(`/explore/verse/${homeData.verse_of_the_day?.id}`)
-                  }
-                />
-              </View>
-            ) : null}
-
-            {/* Bible Figure of the Day */}
-            {homeData.bible_figure ? (
-              <View style={styles.section}>
-                <Text
-                  style={styles.sectionTitle}
-                  accessibilityRole="header"
-                      >
-                  {t('explore.bibleFigureOfTheDay')}
-                </Text>
-                <BibleFigureCard
-                  figure={homeData.bible_figure}
-                  language={contentLanguage}
-                  onPress={() =>
-                    router.push(`/explore/figure/${homeData.bible_figure?.id}`)
-                  }
-                />
-              </View>
-            ) : null}
-
-            {/* Daily Quiz */}
-            {homeData.daily_quiz ? (
-              <View style={styles.section}>
-                <Text
-                  style={styles.sectionTitle}
-                  accessibilityRole="header"
-                      >
-                  {t('explore.dailyChallenge')}
-                </Text>
-                <DailyQuizCard
-                  quiz={homeData.daily_quiz}
-                  language={contentLanguage}
-                  onPress={() =>
-                    router.push(`/explore/quiz/${homeData.daily_quiz?.id}`)
-                  }
-                  completed={homeData.daily_quiz.completed}
-                  score={homeData.daily_quiz.score ?? undefined}
-                />
-              </View>
-            ) : null}
-
-            {/* Bible Studies - Featured Horizontal Carousel */}
-            {bibleStudies && bibleStudies.length > 0 && (
-              <View style={styles.section}>
-                <View style={styles.sectionHeaderRow}>
-                  <Text
-                    style={styles.sectionTitle}
-                    accessibilityRole="header"
-                          >
-                    {t('explore.bibleStudies')}
-                  </Text>
-                  <Pressable
-                    onPress={() => router.push('/explore/studies')}
-                    style={styles.viewAllButton}
-                  >
-                    <Text style={styles.viewAllText}>
-                      {t('explore.viewAll')}
-                    </Text>
-                    <ChevronRight size={16} color={ExploreColors.primary[600]} />
-                  </Pressable>
-                </View>
-
-                <FlatList
-                  data={bibleStudies.slice(0, 6)}
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  keyExtractor={(item) => item.id}
-                  style={styles.studiesCarouselContainer}
-                  contentContainerStyle={styles.studiesCarousel}
-                  renderItem={({ item, index }) => (
-                    <BibleStudyCard
-                      study={item}
-                      onPress={() => router.push(`/explore/studies/${item.id}`)}
-                      contentLanguage={contentLanguage}
-                      index={index}
-                    />
-                  )}
-                />
-              </View>
-            )}
-
-            {/* Self-Paced Content - Quick Access */}
-            <View style={styles.section}>
-              <View style={styles.sectionHeaderRow}>
-                <Text
-                  style={styles.sectionTitle}
-                  accessibilityRole="header"
-                      >
-                  {t('explore.exploreMore')}
-                </Text>
-              </View>
-
-              <View style={styles.quickAccessGrid}>
-                <QuickAccessCard
-                  title={t('explore.bibleFigures')}
-                  description={t('explore.heroesOfFaith')}
-                  icon={<Users size={24} color="#FFFFFF" />}
-                  color="#3B82F6"
-                  onPress={() => router.push('/explore/figures')}
-                />
-                <QuickAccessCard
-                  title={t('explore.topicalVerses')}
-                  description={t('explore.findByTheme')}
-                  icon={<Tag size={24} color="#FFFFFF" />}
-                  color="#10B981"
-                  onPress={() => router.push('/explore/topical')}
-                />
-                <QuickAccessCard
-                  title={t('explore.devotionPlans')}
-                  description={t('explore.dailyJourney')}
-                  icon={<Calendar size={24} color="#FFFFFF" />}
-                  color="#F59E0B"
-                  onPress={() => router.push('/explore/devotions')}
-                />
-              </View>
-            </View>
-
-            {/* Bottom spacing */}
-            <View style={{ height: 100 }} />
-          </View>
-        ) : (
-          <NoContentEmptyState contentType="default" />
-        )}
-      </ScrollView>
-
-      {/* Celebration Modal */}
-      <CelebrationModal />
-    </View>
+      {/* CelebrationModal and StreakDetailsModal now rendered via OverlayHost in _layout.tsx */}
+    </Animated.View>
   );
 }
 
-/**
- * Bible Study Card for horizontal carousel
- * Note: contentLanguage is used for content (title), but UI labels use useTranslation
- */
+// Memoize screen + Apply Premium Motion V10 Ultra HOC for zero-blink tab transitions
+const MemoizedExploreScreen = memo(ExploreScreen);
+MemoizedExploreScreen.displayName = 'ExploreScreen';
+export default withPremiumMotionV10(MemoizedExploreScreen);
+
+// Bible Study Card with V10 touch scaling
 interface BibleStudyCardProps {
   study: BibleStudy;
   onPress: () => void;
   contentLanguage: string;
-  index: number;
 }
 
-// Calculate card width at module level for 1.5 cards visibility (larger cards)
-// Formula: (screenWidth - leftPadding - 1*gap) / 1.5
-const STUDY_CARD_WIDTH = (SCREEN_WIDTH - 20 - 12) / 1.5; // ~239px on 390px screen
+const STUDY_CARD_WIDTH = (SCREEN_WIDTH - spacing.lg * 2 - spacing.md) / 1.8;
 
-function BibleStudyCard({ study, onPress, contentLanguage, index }: BibleStudyCardProps) {
-  const { t: _t } = useTranslation(); // UI language
+function BibleStudyCard({ study, onPress, contentLanguage }: BibleStudyCardProps) {
+  const { t } = useTranslation();
   const title = study.title[contentLanguage] || study.title.en;
-  const subtitle = study.subtitle?.[contentLanguage] || study.subtitle?.en;
   const lessonCount = study.lesson_count || study.lessons?.length || 0;
   const duration = study.estimated_duration_minutes || 0;
   const rating = study.average_rating || 0;
   const difficulty = study.difficulty || 'beginner';
 
-  // Format duration
   const formatDuration = (mins: number) => {
-    if (mins < 60) return `${mins}m`;
-    const hours = Math.floor(mins / 60);
-    return `${hours}h`;
+    if (mins < 60) return `${mins}${t('explore.time.minutes', 'm')}`;
+    return `${Math.floor(mins / 60)}${t('explore.time.hours', 'h')}`;
   };
 
-  // Difficulty color
   const difficultyColors: Record<string, string> = {
     beginner: '#10B981',
     intermediate: '#F59E0B',
     advanced: '#EF4444',
   };
-  const difficultyColor = difficultyColors[difficulty] || '#6B7280';
+
+  const getDifficultyLabel = (diff: string) => {
+    const labels: Record<string, string> = {
+      beginner: t('explore.difficulty.beginner', 'Beginner'),
+      intermediate: t('explore.difficulty.intermediate', 'Intermediate'),
+      advanced: t('explore.difficulty.advanced', 'Advanced'),
+    };
+    return labels[diff] || diff.charAt(0).toUpperCase() + diff.slice(1);
+  };
 
   return (
-    <Animated.View
-      entering={FadeInRight.duration(400).delay(index * 100)}
-      style={{ width: STUDY_CARD_WIDTH, marginRight: 12 }}
-    >
+    <View style={styles.studyCardWrapper}>
       <Pressable
         onPress={onPress}
-        style={({ pressed }) => [
-          styles.studyCard,
-          pressed && styles.studyCardPressed,
-        ]}
+        className="active:scale-95 active:opacity-90"
+        style={styles.studyCard}
       >
-        {/* Cover Image Section - Top Half */}
         <ImageBackground
           source={{
             uri: study.cover_image_url || 'https://images.unsplash.com/photo-1504052434569-70ad5836ab65?w=400',
           }}
-          style={styles.studyCardImage}
-          imageStyle={{ borderTopLeftRadius: 16, borderTopRightRadius: 16 }}
-          resizeMode="cover"
+          style={styles.studyImage}
+          imageStyle={styles.studyImageStyle}
         >
           <LinearGradient
-            colors={['rgba(0,0,0,0.1)', 'rgba(0,0,0,0.5)']}
-            style={styles.studyCardImageOverlay}
+            colors={['transparent', 'rgba(0,0,0,0.8)']}
+            style={styles.studyOverlay}
           >
-            {/* Difficulty Badge - Top Right */}
-            <View style={[styles.studyDifficultyBadge, { backgroundColor: difficultyColor }]}>
-              <Text style={styles.studyDifficultyText}>
-                {difficulty.charAt(0).toUpperCase() + difficulty.slice(1)}
+            <View
+              style={[
+                styles.difficultyBadge,
+                { backgroundColor: difficultyColors[difficulty] || Colors.neutral[500] },
+              ]}
+            >
+              <Text style={styles.difficultyText}>
+                {getDifficultyLabel(difficulty)}
               </Text>
+            </View>
+
+            <View style={styles.studyInfo}>
+              <Text style={styles.studyTitle} numberOfLines={2}>{title}</Text>
+              <View style={styles.studyMeta}>
+                <View style={styles.metaItem}>
+                  <BookOpen size={12} color={Colors.white} />
+                  <Text style={styles.metaText}>{lessonCount}</Text>
+                </View>
+                <View style={styles.metaItem}>
+                  <Clock size={12} color={Colors.white} />
+                  <Text style={styles.metaText}>{formatDuration(duration)}</Text>
+                </View>
+                {rating > 0 && (
+                  <View style={styles.metaItem}>
+                    <Star size={12} color="#F59E0B" fill="#F59E0B" />
+                    <Text style={styles.metaText}>{rating.toFixed(1)}</Text>
+                  </View>
+                )}
+              </View>
             </View>
           </LinearGradient>
         </ImageBackground>
-
-        {/* Content Section - Bottom Half */}
-        <View style={styles.studyCardContent}>
-          <Text style={styles.studyCardTitle} numberOfLines={2}>
-            {title}
-          </Text>
-          {subtitle && (
-            <Text style={styles.studyCardSubtitle} numberOfLines={1}>
-              {subtitle}
-            </Text>
-          )}
-
-          {/* Meta Info Row */}
-          <View style={styles.studyCardMeta}>
-            <View style={styles.studyMetaItem}>
-              <BookOpen size={12} color="#6B7280" />
-              <Text style={styles.studyMetaText}>{lessonCount}</Text>
-            </View>
-            <View style={styles.studyMetaItem}>
-              <Clock size={12} color="#6B7280" />
-              <Text style={styles.studyMetaText}>{formatDuration(duration)}</Text>
-            </View>
-            {rating > 0 && (
-              <View style={styles.studyMetaItem}>
-                <Star size={12} color="#F59E0B" fill="#F59E0B" />
-                <Text style={styles.studyMetaText}>{rating.toFixed(1)}</Text>
-              </View>
-            )}
-          </View>
-        </View>
       </Pressable>
-    </Animated.View>
+    </View>
   );
 }
 
-/**
- * Premium Quick access card - World-class design with proper icons
- */
-interface QuickAccessCardProps {
+// Quick Access Card - Optimized for instant response
+interface QuickCardProps {
   title: string;
-  description: string;
+  desc: string;
   icon: React.ReactNode;
-  color: string;
+  gradient: [string, string];
   onPress: () => void;
 }
 
-// Premium gradient colors for each card
-const cardGradients: Record<string, [string, string]> = {
-  '#3B82F6': ['#3B82F6', '#1D4ED8'], // Blue - Bible Figures
-  '#10B981': ['#10B981', '#059669'], // Green - Topical Verses
-  '#F59E0B': ['#F59E0B', '#D97706'], // Amber - Devotion Plans
-};
-
-function QuickAccessCard({ title, description, icon, color, onPress }: QuickAccessCardProps) {
-  const gradientColors = cardGradients[color] || [color, color];
+function QuickCard({ title, desc, icon, gradient, onPress }: QuickCardProps) {
+  const handlePress = () => {
+    // Fire haptics in background (non-blocking) and navigate immediately
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } catch (e) {
+      // Haptics may not be available
+    }
+    onPress();
+  };
 
   return (
     <Pressable
-      style={({ pressed }) => [
-        styles.quickAccessCard,
-        pressed && styles.quickAccessCardPressed,
-      ]}
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel={title}
-      accessibilityHint={description}
+      onPress={handlePress}
+      className="active:scale-95 active:opacity-90"
+      style={styles.quickCard}
     >
       <LinearGradient
-        colors={gradientColors}
+        colors={gradient}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
-        style={styles.quickAccessGradient}
+        style={styles.quickGradient}
       >
-        {/* Decorative background pattern */}
-        <View style={styles.quickAccessPattern}>
-          <View style={[styles.patternCircle, styles.patternCircle1]} />
-          <View style={[styles.patternCircle, styles.patternCircle2]} />
-        </View>
+        {/* Decorative circles */}
+        <View style={[styles.quickCircle, styles.quickCircle1]} />
+        <View style={[styles.quickCircle, styles.quickCircle2]} />
 
-        {/* Content */}
-        <View style={styles.quickAccessContent}>
-          <View style={styles.quickAccessIconContainer}>
-            {icon}
+        <View style={styles.quickContent}>
+          <View style={styles.quickIconWrap}>{icon}</View>
+          <View style={styles.quickTextWrap}>
+            <Text style={styles.quickTitle}>{title}</Text>
+            <Text style={styles.quickDesc}>{desc}</Text>
           </View>
-
-          <View style={styles.quickAccessTextContainer}>
-            <Text style={styles.quickAccessTitle} numberOfLines={1}>{title}</Text>
-            <Text style={styles.quickAccessSubtitle} numberOfLines={1}>
-              {description}
-            </Text>
-          </View>
-
-          {/* Arrow indicator */}
-          <View style={styles.quickAccessArrow}>
+          <View style={styles.quickArrow}>
             <ChevronRight size={18} color="rgba(255,255,255,0.7)" />
           </View>
         </View>
@@ -525,226 +746,196 @@ function QuickAccessCard({ title, description, icon, color, onPress }: QuickAcce
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: ExploreColors.neutral[50],
+    backgroundColor: Colors.neutral[100],
   },
+  // Header
   headerGradient: {
-    paddingBottom: ExploreSpacing.md,
+    paddingBottom: spacing.md,
+    paddingHorizontal: spacing.lg,
   },
-  header: {
+  headerTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: ExploreSpacing.screenMargin,
-    paddingVertical: ExploreSpacing.sm,
+    alignItems: 'flex-start',
+    marginBottom: spacing.sm,
   },
+  titleWrap: {
+    flex: 1,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: 4,
+  },
+  titleIcon: {},
   headerTitle: {
-    ...ExploreTypography.h2,
-    color: '#FFFFFF',
+    fontSize: 28,
     fontWeight: '700',
+    color: Colors.white,
+    letterSpacing: -0.5,
+    lineHeight: 32,
+    includeFontPadding: false,
   },
-  headerActions: {
+  headerSubtitle: {
+    fontSize: 15,
+    color: 'rgba(255,255,255,0.6)',
+  },
+  langBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 6,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: 20,
   },
-  streakBadge: {
+  langText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: Colors.white,
+  },
+  // Stats
+  statsRow: {
     flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderRadius: 16,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+  },
+  statItem: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  statIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: 'rgba(212,175,55,0.2)',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 4,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 16,
-    backgroundColor: '#FFFFFF',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 3,
-    minWidth: 56,
   },
-  streakBadgePressed: {
-    opacity: 0.85,
-    transform: [{ scale: 0.96 }],
-  },
-  streakText: {
-    fontSize: 14,
-    color: '#FF6B35',
+  statValue: {
+    fontSize: 18,
     fontWeight: '700',
+    color: Colors.white,
   },
-  languageButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+  statLabel: {
+    fontSize: 11,
+    color: 'rgba(255,255,255,0.6)',
+    fontWeight: '500',
   },
-  languageText: {
-    ...ExploreTypography.caption,
-    color: '#FFFFFF',
-    fontWeight: '600',
+  statDivider: {
+    width: 1,
+    height: 28,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    marginHorizontal: spacing.sm,
   },
-  scrollView: {
+  // Scroll
+  scroll: {
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: ExploreSpacing.screenMargin,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
   },
-  contentContainer: {
-    paddingTop: ExploreSpacing.lg,
-  },
+  contentContainer: {},
+  // Sections
   section: {
-    marginBottom: ExploreSpacing.xl,
+    marginBottom: spacing.xl,
   },
-  sectionHeaderRow: {
+  sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    // No paddingHorizontal - parent scrollContent provides it
-    marginBottom: ExploreSpacing.md,
+    marginBottom: spacing.md,
   },
   sectionTitle: {
-    ...ExploreTypography.h4,
-    color: ExploreColors.neutral[900],
-    marginBottom: ExploreSpacing.md, // Same spacing as sectionHeaderRow
+    fontSize: 20,
+    fontWeight: '700',
+    color: Colors.neutral[900],
+    marginBottom: spacing.md,
+    letterSpacing: -0.3,
   },
-  viewAllButton: {
+  viewAllBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
   },
   viewAllText: {
-    ...ExploreTypography.body,
-    color: ExploreColors.primary[600],
-    fontWeight: '600',
     fontSize: 14,
+    fontWeight: '600',
+    color: Colors.accent.goldDark,
   },
-  // Bible Studies Carousel - Shows 2.5 cards for scroll hint
-  // Uses negative margin to escape parent ScrollView padding for edge-to-edge scrolling
-  studiesCarouselContainer: {
-    marginHorizontal: -ExploreSpacing.screenMargin, // Escape parent padding
+  // Carousel
+  carouselContainer: {
+    marginHorizontal: -spacing.lg,
   },
-  studiesCarousel: {
-    paddingLeft: ExploreSpacing.screenMargin,
-    paddingRight: ExploreSpacing.screenMargin,
+  carousel: {
+    paddingHorizontal: spacing.lg,
   },
+  // Study Card
   studyCard: {
-    // Width controlled by STUDY_CARD_WIDTH constant on Animated.View wrapper
-    width: '100%',
-    height: 240,
+    height: 180,
     borderRadius: 16,
     overflow: 'hidden',
-    backgroundColor: '#FFFFFF',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    backgroundColor: Colors.neutral[200],
   },
-  studyCardPressed: {
-    opacity: 0.95,
-    transform: [{ scale: 0.98 }],
-  },
-  studyCardImage: {
-    width: '100%',
-    height: 120,
-  },
-  studyCardImageOverlay: {
+  studyImage: {
     flex: 1,
-    padding: 10,
-    justifyContent: 'flex-start',
-    alignItems: 'flex-end',
   },
-  studyDifficultyBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-  },
-  studyDifficultyText: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: '#FFFFFF',
-    textTransform: 'capitalize',
-  },
-  studyCardContent: {
-    flex: 1,
-    padding: 12,
-    justifyContent: 'space-between',
-    borderWidth: 1,
-    borderTopWidth: 0,
-    borderColor: ExploreColors.neutral[200],
+  studyImageStyle: {
     borderRadius: 16,
   },
-  studyCardImageStyle: {
-    borderRadius: 16,
-    resizeMode: 'cover',
-  },
-  studyCardGradient: {
+  studyOverlay: {
     flex: 1,
-    padding: ExploreSpacing.md,
+    padding: spacing.md,
     justifyContent: 'space-between',
   },
-  studyCardBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    gap: 4,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    paddingHorizontal: 8,
+  difficultyBadge: {
+    alignSelf: 'flex-end',
+    paddingHorizontal: spacing.sm,
     paddingVertical: 4,
     borderRadius: 8,
   },
-  studyCardBadgeText: {
+  difficultyText: {
     fontSize: 11,
-    color: '#FFFFFF',
-    fontWeight: '600',
-  },
-  studyCardTitle: {
-    fontSize: 14,
     fontWeight: '700',
-    color: ExploreColors.neutral[900],
-    lineHeight: 18,
+    color: Colors.white,
   },
-  studyCardSubtitle: {
-    fontSize: 12,
-    fontWeight: '400',
-    color: ExploreColors.neutral[500],
-    lineHeight: 16,
-    marginTop: 2,
+  studyInfo: {
+    gap: spacing.sm,
   },
-  studyCardMeta: {
+  studyTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: Colors.white,
+    lineHeight: 20,
+  },
+  studyMeta: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    marginTop: 8,
+    gap: spacing.md,
   },
-  studyMetaItem: {
+  metaItem: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
   },
-  studyMetaText: {
-    fontSize: 11,
+  metaText: {
+    fontSize: 12,
     fontWeight: '500',
-    color: ExploreColors.neutral[500],
+    color: 'rgba(255,255,255,0.8)',
   },
-  errorContainer: {
-    padding: ExploreSpacing.xl,
-    alignItems: 'center',
+  // Quick Access Cards
+  quickGrid: {
+    gap: spacing.md,
   },
-  errorText: {
-    ...ExploreTypography.body,
-    color: ExploreColors.error[600],
-    textAlign: 'center',
-  },
-  // World-class Explore More cards
-  quickAccessGrid: {
-    // No paddingHorizontal - parent scrollContent provides it
-    gap: 12,
-  },
-  quickAccessCard: {
+  quickCard: {
     borderRadius: 16,
     overflow: 'hidden',
     shadowColor: '#000',
@@ -753,46 +944,35 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 6,
   },
-  quickAccessCardPressed: {
-    transform: [{ scale: 0.98 }],
-    opacity: 0.95,
-  },
-  quickAccessGradient: {
-    paddingVertical: 16,
-    paddingHorizontal: 16,
+  quickGradient: {
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.md,
     position: 'relative',
     overflow: 'hidden',
   },
-  quickAccessPattern: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-  },
-  patternCircle: {
+  quickCircle: {
     position: 'absolute',
     borderRadius: 100,
     backgroundColor: 'rgba(255,255,255,0.1)',
   },
-  patternCircle1: {
+  quickCircle1: {
     width: 80,
     height: 80,
     top: -20,
     right: -20,
   },
-  patternCircle2: {
+  quickCircle2: {
     width: 60,
     height: 60,
     bottom: -30,
     left: 20,
   },
-  quickAccessContent: {
+  quickContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 14,
+    gap: spacing.md,
   },
-  quickAccessIconContainer: {
+  quickIconWrap: {
     width: 48,
     height: 48,
     borderRadius: 14,
@@ -800,26 +980,45 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  quickAccessTextContainer: {
+  quickTextWrap: {
     flex: 1,
+    gap: 2,
   },
-  quickAccessTitle: {
+  quickTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#FFFFFF',
-    marginBottom: 2,
+    color: Colors.white,
   },
-  quickAccessSubtitle: {
+  quickDesc: {
     fontSize: 13,
     fontWeight: '500',
     color: 'rgba(255,255,255,0.8)',
   },
-  quickAccessArrow: {
+  quickArrow: {
     width: 32,
     height: 32,
     borderRadius: 16,
     backgroundColor: 'rgba(255,255,255,0.2)',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  // Error
+  errorContainer: {
+    padding: spacing.xl,
+    alignItems: 'center',
+  },
+  errorText: {
+    fontSize: 15,
+    color: Colors.error,
+    textAlign: 'center',
+  },
+  // Bottom spacing
+  bottomSpacer: {
+    height: 120,
+  },
+  // Study card wrapper
+  studyCardWrapper: {
+    width: STUDY_CARD_WIDTH,
+    marginRight: spacing.md,
   },
 });

@@ -25,7 +25,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { FlashList } from '@shopify/flash-list';
 import { Image } from 'expo-image';
 import * as Haptics from 'expo-haptics';
-import { MotiView } from 'moti';
+import Animated, { FadeInUp } from 'react-native-reanimated';
 import {
   ArrowLeft,
   Megaphone,
@@ -100,11 +100,7 @@ function AnnouncementCard({
   };
 
   return (
-    <MotiView
-      from={{ opacity: 0, translateY: 20 }}
-      animate={{ opacity: 1, translateY: 0 }}
-      transition={{ type: 'timing', duration: 300 }}
-    >
+    <Animated.View entering={FadeInUp.duration(300)}>
       <View
         className="mx-4 my-2 rounded-xl bg-white overflow-hidden"
         style={shadows.md}
@@ -217,7 +213,7 @@ function AnnouncementCard({
           </Pressable>
         )}
       </View>
-    </MotiView>
+    </Animated.View>
   );
 }
 

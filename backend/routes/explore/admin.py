@@ -9,13 +9,21 @@ Endpoints for Super Admin only:
 - Analytics
 """
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Body
+from fastapi import APIRouter, Depends, HTTPException, Query, Body, UploadFile, File
 from datetime import datetime, timedelta
 from typing import Optional, List, Dict, Any
 from pydantic import BaseModel
 import uuid
+import logging
 
 from utils.dependencies import get_current_user, get_db, require_super_admin
+from services.seaweedfs_service import (
+    get_seaweedfs_service,
+    SeaweedFSError,
+    StorageCategory
+)
+
+logger = logging.getLogger(__name__)
 from services.explore import ContentResolver, ScheduleService, ProgressService
 from models.explore import (
     ContentType,
@@ -778,3 +786,218 @@ def _get_collection(db, content_type: ContentType):
         "shareable_image": db.shareable_images,
     }
     return collection_map.get(content_type)
+
+
+def _get_storage_category(content_type: str) -> StorageCategory:
+    """Map content type to SeaweedFS storage category"""
+    category_map = {
+        "daily_devotion": StorageCategory.EXPLORE_DEVOTION,
+        "devotion": StorageCategory.EXPLORE_DEVOTION,
+        "verse_of_the_day": StorageCategory.EXPLORE_VERSE,
+        "verse": StorageCategory.EXPLORE_VERSE,
+        "bible_figure_of_the_day": StorageCategory.EXPLORE_FIGURE,
+        "bible_figure": StorageCategory.EXPLORE_FIGURE,
+        "figure": StorageCategory.EXPLORE_FIGURE,
+        "daily_quiz": StorageCategory.EXPLORE_QUIZ,
+        "quiz": StorageCategory.EXPLORE_QUIZ,
+        "bible_study": StorageCategory.EXPLORE_DEVOTION,
+        "topical_category": StorageCategory.EXPLORE_VERSE,
+        "topical_verse": StorageCategory.EXPLORE_VERSE,
+        "devotion_plan": StorageCategory.EXPLORE_DEVOTION,
+        "shareable_image": StorageCategory.AI_GENERATED,
+    }
+    return category_map.get(content_type, StorageCategory.GENERAL)
+
+
+# ==================== IMAGE UPLOAD ENDPOINTS (SeaweedFS) ====================
+
+
+@router.post("/content/{content_type}/{content_id}/upload-image")
+async def upload_content_image(
+    content_type: ContentType,
+    content_id: str,
+    file: UploadFile = File(...),
+    image_field: str = Query("cover_image", description="Field name to store image URL"),
+    current_user=Depends(require_super_admin),
+    db=Depends(get_db),
+):
+    """
+    Upload image for any Explore content type to SeaweedFS.
+
+    Args:
+        content_type: Type of content (daily_devotion, verse_of_the_day, etc.)
+        content_id: ID of the content
+        file: Image file to upload
+        image_field: Field name to store the URL (default: cover_image)
+
+    Returns:
+        - image_url: URL to the uploaded image
+        - thumbnail_url: URL to the thumbnail
+    """
+    collection = _get_collection(db, content_type)
+    if not collection:
+        raise HTTPException(
+            status_code=400,
+            detail={"error_code": "INVALID_CONTENT_TYPE", "message": f"Unknown content type: {content_type}"}
+        )
+
+    # Verify content exists
+    content = await collection.find_one({"id": content_id, "deleted": False})
+    if not content:
+        raise HTTPException(
+            status_code=404,
+            detail={"error_code": "NOT_FOUND", "message": "Content not found"}
+        )
+
+    # Validate file type
+    allowed_types = ["image/jpeg", "image/jpg", "image/png", "image/webp"]
+    if file.content_type not in allowed_types:
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "error_code": "INVALID_FILE_TYPE",
+                "message": f"File type {file.content_type} not allowed. Use jpg, png, or webp"
+            }
+        )
+
+    # Read and validate size
+    file_content = await file.read()
+    if len(file_content) > 10 * 1024 * 1024:  # 10MB limit
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "error_code": "FILE_SIZE_EXCEEDED",
+                "message": "Image must be less than 10MB"
+            }
+        )
+
+    # Upload to SeaweedFS
+    try:
+        seaweedfs = get_seaweedfs_service()
+        storage_category = _get_storage_category(content_type.value)
+
+        result = await seaweedfs.upload_by_category(
+            content=file_content,
+            file_name=file.filename or "image.jpg",
+            mime_type=file.content_type,
+            church_id=content.get("church_id", "global"),
+            category=storage_category,
+            entity_id=content_id
+        )
+
+        # Update content with image URLs
+        update_data = {
+            image_field: result["url"],
+            f"{image_field}_thumbnail": result.get("thumbnail_url"),
+            f"{image_field}_fid": result.get("fid"),
+            f"{image_field}_path": result.get("path"),
+            "updated_by": current_user["id"],
+            "updated_at": datetime.now(),
+        }
+
+        await collection.update_one(
+            {"id": content_id},
+            {"$set": update_data}
+        )
+
+        logger.info(f"Explore {content_type} {content_id} image uploaded to SeaweedFS: {result['url']}")
+
+        return {
+            "status": "success",
+            "image_url": result["url"],
+            "thumbnail_url": result.get("thumbnail_url"),
+            "file_size": result.get("file_size"),
+            "width": result.get("width"),
+            "height": result.get("height"),
+            "field": image_field,
+        }
+
+    except SeaweedFSError as e:
+        logger.error(f"Failed to upload explore content image to SeaweedFS: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "error_code": "UPLOAD_FAILED",
+                "message": f"Failed to upload image: {str(e)}"
+            }
+        )
+
+
+@router.post("/upload-image")
+async def upload_general_explore_image(
+    file: UploadFile = File(...),
+    content_type: str = Query(..., description="Content type for organizing storage"),
+    entity_id: Optional[str] = Query(None, description="Optional entity ID"),
+    current_user=Depends(require_super_admin),
+    db=Depends(get_db),
+):
+    """
+    Upload image without associating to specific content (for new content creation).
+
+    Use this endpoint when creating new content and need to upload image first
+    before the content ID is generated.
+
+    Returns URL that can be used when creating the content.
+    """
+    # Validate file type
+    allowed_types = ["image/jpeg", "image/jpg", "image/png", "image/webp"]
+    if file.content_type not in allowed_types:
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "error_code": "INVALID_FILE_TYPE",
+                "message": f"File type {file.content_type} not allowed. Use jpg, png, or webp"
+            }
+        )
+
+    # Read and validate size
+    file_content = await file.read()
+    if len(file_content) > 10 * 1024 * 1024:  # 10MB limit
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "error_code": "FILE_SIZE_EXCEEDED",
+                "message": "Image must be less than 10MB"
+            }
+        )
+
+    # Upload to SeaweedFS
+    try:
+        seaweedfs = get_seaweedfs_service()
+        storage_category = _get_storage_category(content_type)
+
+        # Generate entity_id if not provided
+        actual_entity_id = entity_id or str(uuid.uuid4())
+
+        result = await seaweedfs.upload_by_category(
+            content=file_content,
+            file_name=file.filename or "image.jpg",
+            mime_type=file.content_type,
+            church_id="global",  # Explore content is global
+            category=storage_category,
+            entity_id=actual_entity_id
+        )
+
+        logger.info(f"Explore image uploaded to SeaweedFS: {result['url']}")
+
+        return {
+            "status": "success",
+            "image_url": result["url"],
+            "thumbnail_url": result.get("thumbnail_url"),
+            "fid": result.get("fid"),
+            "path": result.get("path"),
+            "file_size": result.get("file_size"),
+            "width": result.get("width"),
+            "height": result.get("height"),
+            "entity_id": actual_entity_id,
+        }
+
+    except SeaweedFSError as e:
+        logger.error(f"Failed to upload explore image to SeaweedFS: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "error_code": "UPLOAD_FAILED",
+                "message": f"Failed to upload image: {str(e)}"
+            }
+        )

@@ -19,8 +19,13 @@ import Animated, {
   withTiming,
   withDelay,
   interpolate,
+  FadeInUp,
+  FadeOutDown,
+  ZoomIn,
+  ZoomOut,
+  FadeIn,
+  FadeOut,
 } from 'react-native-reanimated';
-import { MotiView } from 'moti';
 
 import { Text } from '@/components/ui/text';
 import { HStack } from '@/components/ui/hstack';
@@ -187,11 +192,9 @@ export function TypingIndicator({
   }, [typingUsers, displayUsers, remainingCount, maxDisplay]);
 
   return (
-    <MotiView
-      from={{ opacity: 0, translateY: 10 }}
-      animate={{ opacity: 1, translateY: 0 }}
-      exit={{ opacity: 0, translateY: 10 }}
-      transition={{ type: 'timing', duration: 200 }}
+    <Animated.View
+      entering={FadeInUp.duration(200)}
+      exiting={FadeOutDown.duration(200)}
     >
       <View style={styles.indicatorContainer}>
         <HStack space="sm" style={{ alignItems: 'center' }}>
@@ -201,7 +204,7 @@ export function TypingIndicator({
           <Text style={styles.typingText}>{getTypingText()}</Text>
         </HStack>
       </View>
-    </MotiView>
+    </Animated.View>
   );
 }
 
@@ -215,11 +218,9 @@ export function TypingBubble({ typingUsers }: { typingUsers: TypingUser[] }) {
   const firstName = typingUsers[0].name.split(' ')[0];
 
   return (
-    <MotiView
-      from={{ opacity: 0, scale: 0.8 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.8 }}
-      transition={{ type: 'spring', damping: 15 }}
+    <Animated.View
+      entering={ZoomIn.springify().damping(15)}
+      exiting={ZoomOut.springify().damping(15)}
       style={styles.bubbleWrapper}
     >
       <View style={styles.bubble}>
@@ -234,7 +235,7 @@ export function TypingBubble({ typingUsers }: { typingUsers: TypingUser[] }) {
           {firstName} +{typingUsers.length - 1}
         </Text>
       )}
-    </MotiView>
+    </Animated.View>
   );
 }
 
@@ -383,17 +384,15 @@ export function TypingStatus({ typingUsers }: { typingUsers: TypingUser[] }) {
   };
 
   return (
-    <MotiView
-      from={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ type: 'timing', duration: 150 }}
+    <Animated.View
+      entering={FadeIn.duration(150)}
+      exiting={FadeOut.duration(150)}
     >
       <HStack space="xs" style={{ alignItems: 'center' }}>
         <TypingDots color={colors.primary[500]} size="sm" />
         <Text style={styles.headerTypingText}>{getText()}</Text>
       </HStack>
-    </MotiView>
+    </Animated.View>
   );
 }
 

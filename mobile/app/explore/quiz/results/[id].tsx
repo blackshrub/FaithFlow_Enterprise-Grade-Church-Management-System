@@ -26,7 +26,11 @@ import Animated, {
   withDelay,
   withSequence,
 } from 'react-native-reanimated';
-import { CelebrationModal } from '@/components/explore/CelebrationModal';
+import {
+  useOverlay,
+  CelebrationModal,
+  type CelebrationPayload,
+} from '@/components/overlay';
 
 interface PerformanceLevel {
   title: { en: string; id: string };
@@ -56,7 +60,7 @@ export default function QuizResultsScreen() {
   const starScale2 = useSharedValue(0);
   const starScale3 = useSharedValue(0);
 
-  const { triggerCelebration } = useExploreStore();
+  const overlay = useOverlay();
 
   useEffect(() => {
     // Track completion
@@ -82,9 +86,20 @@ export default function QuizResultsScreen() {
       withSequence(withSpring(1.2), withSpring(1))
     );
 
-    // Show celebration for perfect score - immediately
+    // Show celebration for perfect score via unified overlay
     if (percentage === 100) {
-      triggerCelebration('quiz_perfect', { score, total, percentage });
+      const payload: CelebrationPayload = {
+        type: 'quiz_perfect',
+        data: { score, total, percentage },
+        language: contentLanguage,
+      };
+      // Small delay to let entrance animations finish first
+      setTimeout(() => {
+        overlay.showCenterModal(
+          (props) => <CelebrationModal {...props} />,
+          payload
+        );
+      }, 1000);
     }
   }, []);
 
@@ -321,9 +336,6 @@ export default function QuizResultsScreen() {
           </Animated.View>
         </Animated.View>
       </ScrollView>
-
-      {/* Celebration Modal - uses store state */}
-      <CelebrationModal />
     </SafeAreaView>
   );
 }

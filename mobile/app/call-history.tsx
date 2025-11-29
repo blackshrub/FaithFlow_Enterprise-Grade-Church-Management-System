@@ -9,18 +9,18 @@
  * - Call duration and timestamp display
  */
 
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, memo } from 'react';
 import {
   View,
   StyleSheet,
-  FlatList,
   Pressable,
   RefreshControl,
 } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, Stack } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
-import { MotiView } from 'moti';
+import Animated, { FadeInLeft } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import {
   ArrowLeft,
@@ -147,7 +147,7 @@ interface CallItemProps {
   onCallPress: () => void;
 }
 
-function CallItem({ item, onPress, onCallPress }: CallItemProps) {
+const CallItem = memo(function CallItem({ item, onPress, onCallPress }: CallItemProps) {
   const isMissed = item.status === CallStatus.MISSED || item.status === CallStatus.REJECTED;
   const isOutgoing = !item.is_incoming;
   const isVideo = item.call_type === CallType.VIDEO;
@@ -157,11 +157,7 @@ function CallItem({ item, onPress, onCallPress }: CallItemProps) {
   const otherAvatar = item.is_incoming ? item.caller_avatar : null;
 
   return (
-    <MotiView
-      from={{ opacity: 0, translateX: -20 }}
-      animate={{ opacity: 1, translateX: 0 }}
-      transition={{ type: 'timing', duration: 200 }}
-    >
+    <Animated.View entering={FadeInLeft.duration(200)}>
       <Pressable onPress={onPress} style={styles.callItem}>
         <HStack space="md" style={{ alignItems: 'center' }}>
           {/* Avatar */}
@@ -235,9 +231,9 @@ function CallItem({ item, onPress, onCallPress }: CallItemProps) {
           </VStack>
         </HStack>
       </Pressable>
-    </MotiView>
+    </Animated.View>
   );
-}
+});
 
 // =============================================================================
 // EMPTY STATE
@@ -371,7 +367,7 @@ export default function CallHistoryScreen() {
         {isLoading ? (
           <LoadingSkeleton />
         ) : (
-          <FlatList
+          <FlashList
             data={filteredCalls}
             keyExtractor={(item: CallHistoryItem) => item.call_id}
             renderItem={({ item }) => (
@@ -391,6 +387,7 @@ export default function CallHistoryScreen() {
               filteredCalls.length === 0 ? { flex: 1 } : { paddingBottom: 100 }
             }
             showsVerticalScrollIndicator={false}
+            estimatedItemSize={80}
           />
         )}
       </SafeAreaView>

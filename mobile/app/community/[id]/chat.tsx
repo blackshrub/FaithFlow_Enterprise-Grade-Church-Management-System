@@ -22,7 +22,6 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
-  Keyboard as _Keyboard,
   Alert,
   ActivityIndicator,
   Linking,
@@ -30,12 +29,21 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import Animated, {
+  FadeInUp,
+  FadeOut,
+  useSharedValue,
+  useAnimatedStyle,
+  withRepeat,
+  withTiming,
+  withDelay,
+  interpolate,
+} from 'react-native-reanimated';
+import { withPremiumMotionV10 } from '@/hoc';
+import { PMotionV10 } from '@/components/motion/premium-motion';
 import {
   ArrowLeft,
-  Mic as _Mic,
   X,
-  Check as _Check,
-  CheckCheck as _CheckCheck,
   MoreVertical,
   Users,
   Info,
@@ -51,11 +59,9 @@ import {
 import * as Haptics from 'expo-haptics';
 import { FlashList } from '@shopify/flash-list';
 import { Image } from 'expo-image';
-import { MotiView } from 'moti';
 import BottomSheet, { BottomSheetBackdrop } from '@gorhom/bottom-sheet';
 
 import { Text } from '@/components/ui/text';
-import { Heading as _Heading } from '@/components/ui/heading';
 import { AttachmentPicker, MediaAttachment } from '@/components/chat/AttachmentPicker';
 import { VStack } from '@/components/ui/vstack';
 import { HStack } from '@/components/ui/hstack';
@@ -73,26 +79,13 @@ import { MessageActionsSheet, ForwardMessageModal } from '@/components/chat/Mess
 import { LocationSharer, LocationPreview, LocationData, LiveLocationData } from '@/components/chat/LocationSharing';
 
 // NEW: Enhanced WhatsApp-style components
-import { EmojiPickerSheet, QuickReactions } from '@/components/chat/EmojiPicker';
+import { EmojiPickerSheet } from '@/components/chat/EmojiPicker';
 import { GifPickerSheet, GifButton, type GifItem } from '@/components/chat/GifPicker';
 import { MediaGalleryViewer, type MediaItem } from '@/components/chat/MediaGallery';
-import {
-  ReadReceiptSummary,
-  ReadReceiptList,
-  type MessageStatus,
-  type ReadReceiptUser,
-} from '@/components/chat/ReadReceipts';
-import {
-  TypingIndicator as TypingIndicatorComponent,
-  TypingBubble as NewTypingBubble,
-  TypingStatus,
-  useTypingIndicator as useTypingIndicatorHook,
-  type TypingUser,
-} from '@/components/chat/TypingIndicator';
+import { ReadReceiptList } from '@/components/chat/ReadReceipts';
 import {
   DisappearingMessagesSettings,
   DisappearingIndicator,
-  DisappearingBadge,
   type DisappearingDuration,
 } from '@/components/chat/DisappearingMessages';
 
@@ -111,11 +104,9 @@ import {
   DoubleTapReaction,
   DateHeader,
   UnreadDivider,
-  TypingBubble as _TypingBubble,
   useScrollPosition,
   useMessageQueue,
   useMessageGrouping,
-  SPRING_CONFIGS as _SPRING_CONFIGS,
 } from '@/components/chat/ChatOptimizations';
 
 import {
@@ -139,7 +130,7 @@ import { useCallStore } from '@/stores/call';
 import { CallType } from '@/types/call';
 import { uploadMedia, UploadProgressCallback } from '@/services/mediaUpload';
 import { colors, spacing, borderRadius, shadows } from '@/constants/theme';
-import type { CommunityMessage, CommunityWithStatus as _CommunityWithStatus } from '@/types/communities';
+import type { CommunityMessage } from '@/types/communities';
 
 // =============================================================================
 // TYPES
@@ -195,6 +186,8 @@ const areMessagePropsEqual = (
 
 const MessageBubble = React.memo(
   ({ message, isOwnMessage, showSender, currentMemberId, onLongPress, onReply: _onReply, onReact, onImagePress, onReplyPreviewPress, onReadReceiptPress }: MessageBubbleProps) => {
+    const { t } = useTranslation();
+
     const formatTime = (dateString: string) => {
       const date = new Date(dateString);
       return date.toLocaleTimeString('en-US', {
@@ -240,7 +233,7 @@ const MessageBubble = React.memo(
             }}
           >
             <Text className="text-gray-500 italic text-sm">
-              This message was deleted
+              {t('chat.messageDeleted', 'This message was deleted')}
             </Text>
           </View>
         </View>
@@ -386,10 +379,10 @@ const MessageBubble = React.memo(
                       if (canOpen) {
                         await Linking.openURL(message.media.url);
                       } else {
-                        Alert.alert('Error', 'Cannot open this document');
+                        Alert.alert(t('common.error', 'Error'), t('chat.cannotOpenDocument', 'Cannot open this document'));
                       }
                     } catch (error) {
-                      Alert.alert('Error', 'Failed to open document');
+                      Alert.alert(t('common.error', 'Error'), t('chat.failedToOpenDocument', 'Failed to open document'));
                     }
                   }
                 }}
@@ -407,10 +400,10 @@ const MessageBubble = React.memo(
                 </View>
                 <VStack className="flex-1">
                   <Text className="font-medium text-gray-900" numberOfLines={1}>
-                    {message.media.file_name || 'Document'}
+                    {message.media.file_name || t('chat.document', 'Document')}
                   </Text>
                   <Text className="text-xs text-gray-500">
-                    {message.media.file_size ? `${Math.round(message.media.file_size / 1024)} KB` : 'File'}
+                    {message.media.file_size ? `${Math.round(message.media.file_size / 1024)} KB` : t('chat.file', 'File')}
                   </Text>
                 </VStack>
               </Pressable>
@@ -461,7 +454,7 @@ const MessageBubble = React.memo(
             {/* Time & status - WhatsApp style */}
             <HStack className="justify-end items-center mt-1">
               {message.is_edited && (
-                <Text className="text-xs mr-1 text-gray-500">edited</Text>
+                <Text className="text-xs mr-1 text-gray-500">{t('chat.edited', 'edited')}</Text>
               )}
               <Text className="text-xs text-gray-500">
                 {formatTime(message.created_at)}
@@ -517,15 +510,39 @@ MessageBubble.displayName = 'MessageBubble';
 // TYPING INDICATOR COMPONENT
 // =============================================================================
 
+// Animated dot for typing indicator
+function AnimatedDot({ delay }: { delay: number }) {
+  const progress = useSharedValue(0);
+
+  React.useEffect(() => {
+    progress.value = withDelay(
+      delay,
+      withRepeat(withTiming(1, { duration: 600 }), -1, true)
+    );
+  }, [delay, progress]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(progress.value, [0, 1], [0.4, 1]),
+    transform: [{ scale: interpolate(progress.value, [0, 1], [0.8, 1]) }],
+  }));
+
+  return (
+    <Animated.View
+      style={[
+        { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.gray[400] },
+        animatedStyle,
+      ]}
+    />
+  );
+}
+
 const TypingIndicator = ({ text }: { text: string | null }) => {
   if (!text) return null;
 
   return (
-    <MotiView
-      from={{ opacity: 0, translateY: 10 }}
-      animate={{ opacity: 1, translateY: 0 }}
-      exit={{ opacity: 0 }}
-      transition={{ type: 'timing', duration: 200 }}
+    <Animated.View
+      entering={FadeInUp.duration(200)}
+      exiting={FadeOut.duration(200)}
       className="px-4 py-2"
     >
       <HStack space="sm" className="items-center">
@@ -535,29 +552,14 @@ const TypingIndicator = ({ text }: { text: string | null }) => {
         >
           <HStack space="xs" className="items-center">
             {/* Animated dots */}
-            {[0, 1, 2].map((i) => (
-              <MotiView
-                key={i}
-                from={{ opacity: 0.4, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{
-                  type: 'timing',
-                  duration: 600,
-                  delay: i * 200,
-                  loop: true,
-                }}
-              >
-                <View
-                  className="w-2 h-2 rounded-full"
-                  style={{ backgroundColor: colors.gray[400] }}
-                />
-              </MotiView>
-            ))}
+            <AnimatedDot delay={0} />
+            <AnimatedDot delay={200} />
+            <AnimatedDot delay={400} />
           </HStack>
         </View>
         <Text className="text-gray-500 text-sm">{text}</Text>
       </HStack>
-    </MotiView>
+    </Animated.View>
   );
 };
 
@@ -565,7 +567,7 @@ const TypingIndicator = ({ text }: { text: string | null }) => {
 // MAIN SCREEN
 // =============================================================================
 
-export default function CommunityChatScreen() {
+function CommunityChatScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -783,11 +785,6 @@ export default function CommunityChatScreen() {
   }, [allMediaItems]);
 
   // Handle full emoji picker selection for reactions
-  const handleOpenEmojiPicker = useCallback((message: CommunityMessage) => {
-    setReactionTargetMessage(message);
-    setShowEmojiPicker(true);
-  }, []);
-
   const handleEmojiSelect = useCallback((emoji: string) => {
     if (reactionTargetMessage) {
       handleReaction(reactionTargetMessage.id, emoji);
@@ -815,7 +812,7 @@ export default function CommunityChatScreen() {
         },
       });
     } catch (error) {
-      Alert.alert('Error', 'Failed to send GIF');
+      Alert.alert(t('common.error', 'Error'), t('chat.failedToSendGif', 'Failed to send GIF'));
     }
   }, [member, id, sendMessageMutation]);
 
@@ -831,7 +828,7 @@ export default function CommunityChatScreen() {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (error) {
       console.error('[EditMessage] Failed:', error);
-      Alert.alert('Error', 'Could not edit message. Please try again.');
+      Alert.alert(t('common.error', 'Error'), t('chat.couldNotEditMessage', 'Could not edit message. Please try again.'));
     }
   }, [selectedMessage, editMessageMutation]);
 
@@ -999,7 +996,7 @@ export default function CommunityChatScreen() {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (error) {
       console.error('[DeleteMessage] Failed:', error);
-      Alert.alert('Error', 'Could not delete message. Please try again.');
+      Alert.alert(t('common.error', 'Error'), t('chat.couldNotDeleteMessage', 'Could not delete message. Please try again.'));
     }
   }, [deleteMessageMutation]);
 
@@ -1013,10 +1010,10 @@ export default function CommunityChatScreen() {
         targetCommunityIds: chatIds,
       });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      Alert.alert('Success', `Message forwarded to ${result.forwarded_count} chat(s)`);
+      Alert.alert(t('common.success', 'Success'), t('chat.messageForwardedTo', 'Message forwarded to {{count}} chat(s)', { count: result.forwarded_count }));
     } catch (error) {
       console.error('[ForwardMessage] Failed:', error);
-      Alert.alert('Error', 'Could not forward message. Please try again.');
+      Alert.alert(t('common.error', 'Error'), t('chat.couldNotForwardMessage', 'Could not forward message. Please try again.'));
     }
   }, [selectedMessage, forwardMessageMutation]);
 
@@ -1033,7 +1030,7 @@ export default function CommunityChatScreen() {
       router.push(`/call/${id}` as any);
     } catch (error) {
       console.error('[VoiceCall] Failed:', error);
-      Alert.alert(t('common.error'), 'Could not start voice call. Please try again.');
+      Alert.alert(t('common.error', 'Error'), t('chat.couldNotStartVoiceCall', 'Could not start voice call. Please try again.'));
     }
   }, [community, member, id, initiateCall, router, t]);
 
@@ -1050,7 +1047,7 @@ export default function CommunityChatScreen() {
       router.push(`/call/${id}` as any);
     } catch (error) {
       console.error('[VideoCall] Failed:', error);
-      Alert.alert(t('common.error'), 'Could not start video call. Please try again.');
+      Alert.alert(t('common.error', 'Error'), t('chat.couldNotStartVideoCall', 'Could not start video call. Please try again.'));
     }
   }, [community, member, id, initiateCall, router, t]);
 
@@ -1075,7 +1072,7 @@ export default function CommunityChatScreen() {
       });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (error) {
-      Alert.alert(t('common.error'), 'Failed to share location');
+      Alert.alert(t('common.error', 'Error'), t('chat.failedToShareLocation', 'Failed to share location'));
     }
   }, [id, member, sendMessageMutation, t]);
 
@@ -1101,7 +1098,7 @@ export default function CommunityChatScreen() {
       });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (error) {
-      Alert.alert(t('common.error'), 'Failed to share live location');
+      Alert.alert(t('common.error', 'Error'), t('chat.failedToShareLiveLocation', 'Failed to share live location'));
     }
   }, [id, member, sendMessageMutation, t]);
 
@@ -1175,7 +1172,7 @@ export default function CommunityChatScreen() {
       }, 1500);
     } catch (error) {
       setUploadStatus('error');
-      Alert.alert('Upload Failed', 'Could not upload media. Please try again.');
+      Alert.alert(t('chat.uploadFailed', 'Upload Failed'), t('chat.couldNotUploadMedia', 'Could not upload media. Please try again.'));
     }
   }, [id, member, inputText, sendMediaMutation]);
 
@@ -1237,7 +1234,7 @@ export default function CommunityChatScreen() {
     } catch (error) {
       console.error('[VoiceUpload] Failed:', error);
       setUploadStatus('error');
-      Alert.alert('Upload Failed', 'Could not send voice message. Please try again.');
+      Alert.alert(t('chat.uploadFailed', 'Upload Failed'), t('chat.couldNotSendVoiceMessage', 'Could not send voice message. Please try again.'));
     }
   }, [id, member, sendMediaMutation]);
 
@@ -1284,7 +1281,7 @@ export default function CommunityChatScreen() {
       const showUnreadDivider = message.id === firstUnreadMessageId && unreadCount > 0;
 
       return (
-        <>
+        <Animated.View entering={PMotionV10.cardStagger(index, 400)}>
           {/* Unread messages divider - shown above the first unread message */}
           {showUnreadDivider && <UnreadDivider count={unreadCount} />}
 
@@ -1317,7 +1314,7 @@ export default function CommunityChatScreen() {
               />
             </DoubleTapReaction>
           </SwipeToReplyWrapper>
-        </>
+        </Animated.View>
       );
     },
     [member?.id, groupedMessages, handleMessageLongPress, handleReaction, handleOpenMediaGallery, scrollToMessage, firstUnreadMessageId, unreadCount]
@@ -1358,7 +1355,9 @@ export default function CommunityChatScreen() {
   return (
     <SafeAreaView className="flex-1" style={{ backgroundColor: '#ECE5DD' }} edges={['top']}>
       {/* Header - WhatsApp teal color (#075E54 or #128C7E) */}
-      <View
+      <Animated.View
+        entering={PMotionV10.subtleSlide('right')}
+        exiting={PMotionV10.screenFadeOut}
         style={{
           backgroundColor: '#075E54',
           ...shadows.sm,
@@ -1406,7 +1405,7 @@ export default function CommunityChatScreen() {
               </HStack>
             ) : (
               <Text className="text-xs" style={{ color: 'rgba(255,255,255,0.8)' }}>
-                {community?.member_count || 0} members
+                {t('chat.memberCount', '{{count}} members', { count: community?.member_count || 0 })}
               </Text>
             )}
           </Pressable>
@@ -1449,7 +1448,7 @@ export default function CommunityChatScreen() {
             <Icon as={MoreVertical} size="md" style={{ color: '#FFFFFF' }} />
           </Pressable>
         </HStack>
-      </View>
+      </Animated.View>
 
       {/* Connection Status Banner */}
       <ConnectionBanner status={connectionStatus} />
@@ -1460,7 +1459,7 @@ export default function CommunityChatScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
       >
-        <View className="flex-1">
+        <Animated.View entering={PMotionV10.screenFadeIn} style={{ flex: 1 }}>
           <FlashList
             ref={listRef}
             data={groupedMessages}
@@ -1540,7 +1539,7 @@ export default function CommunityChatScreen() {
             newMessageCount={newMessageCount}
             onPress={handleScrollToBottom}
           />
-        </View>
+        </Animated.View>
 
         {/* Reply preview */}
         {replyingTo && (
@@ -1725,13 +1724,13 @@ export default function CommunityChatScreen() {
           if (selectedMessage) {
             const sentAt = new Date(selectedMessage.created_at).toLocaleString();
             const readCount = selectedMessage.read_by?.length || 0;
-            const readByNames = selectedMessage.read_by?.slice(0, 5).map(r => r.member_name).join(', ') || 'No one yet';
-            const moreReaders = readCount > 5 ? `\n+${readCount - 5} more` : '';
+            const readByNames = selectedMessage.read_by?.slice(0, 5).map(r => r.member_name).join(', ') || t('chat.noOneYet', 'No one yet');
+            const moreReaders = readCount > 5 ? `\n+${readCount - 5} ${t('chat.more', 'more')}` : '';
 
             Alert.alert(
-              'Message Info',
-              `Sent: ${sentAt}\n\nRead by (${readCount}):\n${readByNames}${moreReaders}`,
-              [{ text: 'OK' }]
+              t('chat.messageInfo', 'Message Info'),
+              `${t('chat.sent', 'Sent')}: ${sentAt}\n\n${t('chat.readBy', 'Read by')} (${readCount}):\n${readByNames}${moreReaders}`,
+              [{ text: t('common.ok', 'OK') }]
             );
           }
         }}
@@ -1785,8 +1784,8 @@ export default function CommunityChatScreen() {
               <Icon as={Megaphone} size="md" style={{ color: colors.warning[500] }} />
             </View>
             <VStack className="flex-1">
-              <Text className="text-gray-900 font-medium">Announcements</Text>
-              <Text className="text-gray-500 text-xs">Important updates from leaders</Text>
+              <Text className="text-gray-900 font-medium">{t('chat.menu.announcements', 'Announcements')}</Text>
+              <Text className="text-gray-500 text-xs">{t('chat.menu.announcementsDesc', 'Important updates from leaders')}</Text>
             </VStack>
           </Pressable>
 
@@ -1806,8 +1805,8 @@ export default function CommunityChatScreen() {
               <Icon as={Users} size="md" style={{ color: colors.secondary[500] }} />
             </View>
             <VStack className="flex-1">
-              <Text className="text-gray-900 font-medium">Sub-groups</Text>
-              <Text className="text-gray-500 text-xs">Smaller groups within community</Text>
+              <Text className="text-gray-900 font-medium">{t('chat.menu.subgroups', 'Sub-groups')}</Text>
+              <Text className="text-gray-500 text-xs">{t('chat.menu.subgroupsDesc', 'Smaller groups within community')}</Text>
             </VStack>
           </Pressable>
 
@@ -1827,8 +1826,8 @@ export default function CommunityChatScreen() {
               <Icon as={BarChart3} size="md" style={{ color: colors.info[500] }} />
             </View>
             <VStack className="flex-1">
-              <Text className="text-gray-900 font-medium">Create Poll</Text>
-              <Text className="text-gray-500 text-xs">Ask the community a question</Text>
+              <Text className="text-gray-900 font-medium">{t('chat.menu.createPoll', 'Create Poll')}</Text>
+              <Text className="text-gray-500 text-xs">{t('chat.menu.createPollDesc', 'Ask the community a question')}</Text>
             </VStack>
           </Pressable>
 
@@ -1848,8 +1847,8 @@ export default function CommunityChatScreen() {
               <Icon as={Info} size="md" style={{ color: colors.gray[500] }} />
             </View>
             <VStack className="flex-1">
-              <Text className="text-gray-900 font-medium">Community Info</Text>
-              <Text className="text-gray-500 text-xs">Members, description, media</Text>
+              <Text className="text-gray-900 font-medium">{t('chat.menu.communityInfo', 'Community Info')}</Text>
+              <Text className="text-gray-500 text-xs">{t('chat.menu.communityInfoDesc', 'Members, description, media')}</Text>
             </VStack>
           </Pressable>
 
@@ -1869,9 +1868,9 @@ export default function CommunityChatScreen() {
               <Icon as={Timer} size="md" style={{ color: colors.success[500] }} />
             </View>
             <VStack className="flex-1">
-              <Text className="text-gray-900 font-medium">Disappearing Messages</Text>
+              <Text className="text-gray-900 font-medium">{t('chat.menu.disappearingMessages', 'Disappearing Messages')}</Text>
               <Text className="text-gray-500 text-xs">
-                {disappearingDuration === 'off' ? 'Off' : `Messages disappear after ${disappearingDuration}`}
+                {disappearingDuration === 'off' ? t('chat.menu.off', 'Off') : t('chat.menu.messagesDisappearAfter', 'Messages disappear after {{duration}}', { duration: disappearingDuration })}
               </Text>
             </VStack>
             {disappearingDuration !== 'off' && (
@@ -1896,8 +1895,8 @@ export default function CommunityChatScreen() {
                 <Icon as={Settings} size="md" style={{ color: colors.primary[500] }} />
               </View>
               <VStack className="flex-1">
-                <Text className="text-gray-900 font-medium">Settings</Text>
-                <Text className="text-gray-500 text-xs">Manage community settings</Text>
+                <Text className="text-gray-900 font-medium">{t('chat.menu.settings', 'Settings')}</Text>
+                <Text className="text-gray-500 text-xs">{t('chat.menu.settingsDesc', 'Manage community settings')}</Text>
               </VStack>
             </Pressable>
           )}
@@ -1966,3 +1965,6 @@ export default function CommunityChatScreen() {
     </SafeAreaView>
   );
 }
+
+// Apply Premium Motion V10 Ultra HOC for production-grade transitions
+export default withPremiumMotionV10(CommunityChatScreen);

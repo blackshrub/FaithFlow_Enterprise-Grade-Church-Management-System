@@ -34,7 +34,6 @@ import {
   File,
   Maximize2,
 } from 'lucide-react-native';
-import { MotiView } from 'moti';
 
 import { Text } from '@/components/ui/text';
 import { HStack } from '@/components/ui/hstack';

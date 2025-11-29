@@ -7,7 +7,7 @@
  * - Premium shadows and typography
  */
 
-import React from 'react';
+import React, { memo } from 'react';
 import { View, Text, ImageBackground, StyleSheet, Pressable } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ExploreColors, ExploreSpacing, ExploreBorderRadius, ExploreShadows } from '@/constants/explore/designSystem';
@@ -29,7 +29,7 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 // Default image for when none is provided
 const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&q=80';
 
-export function DailyDevotionCard({
+export const DailyDevotionCard = memo(function DailyDevotionCard({
   devotion,
   language,
   onPress,
@@ -115,7 +115,7 @@ export function DailyDevotionCard({
       </ImageBackground>
     </AnimatedPressable>
   );
-}
+});
 
 const styles = StyleSheet.create({
   container: {

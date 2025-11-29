@@ -49,7 +49,7 @@ export function SearchBar() {
   }, [setSearchTerm]);
 
   return (
-    <View className="px-6 py-3">
+    <View className="mb-4">
       <View
         className="flex-row items-center px-4 py-3 rounded-xl bg-gray-50"
         style={{ borderWidth: 1, borderColor: colors.gray[200] }}

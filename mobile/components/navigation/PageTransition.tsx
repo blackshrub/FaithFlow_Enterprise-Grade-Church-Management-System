@@ -6,7 +6,7 @@
  */
 
 import React from 'react';
-import { MotiView } from 'moti';
+import Animated, { SlideInLeft, SlideInRight } from 'react-native-reanimated';
 import { useNavigationStore } from '@/stores/navigation';
 
 interface PageTransitionProps {
@@ -16,15 +16,18 @@ interface PageTransitionProps {
 export function PageTransition({ children }: PageTransitionProps) {
   const { slideDirection } = useNavigationStore();
 
+  // Choose animation based on direction
+  const enteringAnimation = slideDirection > 0
+    ? SlideInRight.duration(200)
+    : SlideInLeft.duration(200);
+
   return (
-    <MotiView
-      key={slideDirection} // Force re-mount on direction change
-      from={{ translateX: slideDirection }}
-      animate={{ translateX: 0 }}
-      transition={{ type: 'timing', duration: 300 }}
+    <Animated.View
+      key={slideDirection}
+      entering={enteringAnimation}
       style={{ flex: 1 }}
     >
       {children}
-    </MotiView>
+    </Animated.View>
   );
 }

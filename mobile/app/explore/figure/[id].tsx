@@ -23,7 +23,7 @@ import { useExploreStore } from '@/stores/explore/exploreStore';
 import type { BibleFigure } from '@/types/explore';
 import { ArrowLeft, Check, Share2, Calendar, BookOpen } from 'lucide-react-native';
 import { BibleFigureSkeleton } from '@/components/explore/LoadingSkeleton';
-import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeInDown, SlideInRight } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 
 export default function BibleFigureScreen() {
@@ -78,7 +78,7 @@ export default function BibleFigureScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Header */}
+      {/* Header - Static, not animated */}
       <View style={styles.header}>
         <Pressable
           onPress={() => router.back()}
@@ -108,15 +108,16 @@ export default function BibleFigureScreen() {
         </Pressable>
       </View>
 
-      {/* Content */}
+      {/* Content - Animated */}
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Hero Image with Name Overlay */}
-        {figure.image_url && (
-          <Animated.View entering={FadeIn.duration(400)} style={styles.heroContainer}>
+        <Animated.View entering={SlideInRight.duration(250)}>
+          {/* Hero Image with Name Overlay */}
+          {figure.image_url && (
+            <View style={styles.heroContainer}>
             <Image
               source={{ uri: figure.image_url }}
               style={styles.heroImage}
@@ -137,10 +138,10 @@ export default function BibleFigureScreen() {
               </Text>
               {title && <Text style={styles.heroTitle}>{title}</Text>}
             </View>
-          </Animated.View>
+          </View>
         )}
 
-        <Animated.View entering={FadeInDown.duration(500).delay(200)} style={styles.contentContainer}>
+        <View style={styles.contentContainer}>
           {/* Summary */}
           <Text style={styles.summary}>{summary}</Text>
 
@@ -305,6 +306,7 @@ export default function BibleFigureScreen() {
 
           {/* Bottom spacing for button */}
           <View style={{ height: 100 }} />
+        </View>
         </Animated.View>
       </ScrollView>
 

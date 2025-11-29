@@ -1,54 +1,37 @@
 /**
- * Events Screen - World-Class UI/UX
- *
- * Premium features:
- * - Segmented tab control with smooth animations
- * - Sophisticated event cards with proper hierarchy
- * - Category filtering with beautiful bottom sheet
- * - Micro-interactions and haptic feedback
- * - Professional skeleton loading
- * - Engaging empty states
- * - Pull-to-refresh with custom indicator
+ * Events Screen - Premium Redesign V11 (TodayStyle Architecture)
  */
 
-import React, { useState, useCallback, useMemo } from 'react';
-import { View, Pressable, RefreshControl, Share, Alert, Animated as _Animated } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import React, { useState, useCallback, useMemo, useRef, memo } from 'react';
+import {
+  View,
+  Text,
+  Pressable,
+  StyleSheet,
+  RefreshControl,
+  Share,
+  Alert,
+  StatusBar,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useRouter } from 'expo-router';
+import { withPremiumMotionV10 } from '@/hoc';
+import { PMotionV10 } from '@/components/motion/premium-motion';
+import { spacing, radius } from '@/constants/spacing';
 import {
-  Calendar,
-  MapPin,
-  Users,
-  Check,
-  X,
-  Share2,
-  Clock,
-  Tag as _Tag,
   Filter,
   ChevronRight,
   Sparkles,
-  Info as _Info,
-  Star,
-  CheckCircle2 as _CheckCircle2,
-  Edit3,
+  CalendarDays,
+  CheckCircle,
+  XCircle,
+  ArrowRight,
+  Heart,
 } from 'lucide-react-native';
-import { MotiView } from 'moti';
 import * as Haptics from 'expo-haptics';
 import { FlashList } from '@shopify/flash-list';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Image } from 'expo-image';
-
-import { Text } from '@/components/ui/text';
-import { Heading } from '@/components/ui/heading';
-import { VStack } from '@/components/ui/vstack';
-import { HStack } from '@/components/ui/hstack';
-import { Card } from '@/components/ui/card';
-import { Icon } from '@/components/ui/icon';
-import { Badge as _Badge, BadgeText as _BadgeText } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
-import { ScrollView } from '@/components/ui/scroll-view';
-import { Button, ButtonText } from '@/components/ui/button';
+import Animated, { useSharedValue } from 'react-native-reanimated';
 
 import {
   useUpcomingEvents,
@@ -59,40 +42,93 @@ import {
   useEventCategories,
 } from '@/hooks/useEvents';
 import { useAuthStore } from '@/stores/auth';
-import { useCategoryFilterStore } from '@/stores/categoryFilter';
-import { colors, spacing, borderRadius, shadows } from '@/constants/theme';
 import type { EventWithMemberStatus } from '@/types/events';
-import { RatingReviewModal } from '@/components/modals/RatingReviewModal';
-import { ratingService, getRatingColor } from '@/services/ratingService';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { ratingService } from '@/services/ratingService';
+import { useQueryClient } from '@tanstack/react-query';
 import { SearchBar } from '@/components/events/SearchBar';
 import { SearchResults } from '@/components/events/SearchResults';
 import { SearchEmptyState } from '@/components/events/SearchEmptyState';
-import { EventCardSkeletonList } from '@/components/events/EventCardSkeleton';
-import { ErrorState } from '@/components/events/ErrorState';
+import { EventCard } from '@/components/events/EventCard';
 import { useEventFiltersStore } from '@/stores/eventFilters';
-import { useCalendarModalStore } from '@/stores/calendarModal';
 import { filterEvents } from '@/utils/eventFilters';
+
+// Unified Overlay System
+import {
+  useOverlay,
+  RatingModal,
+  CategoryFilterSheet,
+  CalendarSheet,
+} from '@/components/overlay';
 import type { RSVP, Attendance, Event } from '@/utils/eventStatus';
 
-type Tab = 'upcoming' | 'my_rsvps' | 'attended';
+// New extracted header
+import { EventsHeader, type EventsTab } from '@/components/events/EventsHeader';
 
-export default function EventsScreen() {
+// Shared motion from today-motion module
+import { todayListItemMotion } from '@/components/motion/today-motion';
+
+// Premium monochrome palette with accent - consistent with other pages
+const Colors = {
+  gradient: {
+    start: '#1a1a2e',
+    mid: '#16213e',
+    end: '#0f3460',
+  },
+  accent: {
+    primary: '#d4af37',
+    light: '#f4d03f',
+    dark: '#b8860b',
+    sage: '#87a878',
+  },
+  neutral: {
+    50: '#fafafa',
+    100: '#f5f5f5',
+    200: '#e5e5e5',
+    300: '#d4d4d4',
+    400: '#a3a3a3',
+    500: '#737373',
+    600: '#525252',
+    700: '#404040',
+    800: '#262626',
+    900: '#171717',
+  },
+  white: '#ffffff',
+  success: '#22c55e',
+  warning: '#f59e0b',
+  error: '#ef4444',
+  primary: {
+    50: '#eff6ff',
+    100: '#dbeafe',
+    500: '#3b82f6',
+    600: '#2563eb',
+  },
+};
+
+type Tab = EventsTab;
+
+// Tab order for direction detection (Shared Axis X)
+const TAB_ORDER: Tab[] = ['upcoming', 'my_rsvps', 'attended'];
+
+function EventsScreen() {
   const { t } = useTranslation();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { member } = useAuthStore();
   const [activeTab, setActiveTab] = useState<Tab>('upcoming');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [slideDirection, setSlideDirection] = useState<number>(30); // positive = from right, negative = from left
 
-  // Category filter store
-  const categoryFilterStore = useCategoryFilterStore();
+  // Focus key for animations - kept static to avoid replaying on tab switch
+  const focusKey = 0;
+
+  // Track previous tab for Shared Axis X direction
+  const prevTabRef = useRef<Tab>('upcoming');
+  const [tabDirection, setTabDirection] = useState<'forward' | 'backward'>('forward');
+
+  // Unified Overlay System
+  const overlay = useOverlay();
 
   // Search store
   const { searchTerm, isSearching } = useEventFiltersStore();
-
-  // Calendar modal store
-  const calendarModalStore = useCalendarModalStore();
 
   // Fetch data for all tabs
   const upcomingQuery = useUpcomingEvents(
@@ -112,31 +148,106 @@ export default function EventsScreen() {
 
   const [refreshing, setRefreshing] = useState(false);
 
-  // Rating & Review Modal State
-  const queryClient = useQueryClient();
-  const [ratingModalVisible, setRatingModalVisible] = useState(false);
-  const [selectedEventForRating, setSelectedEventForRating] = useState<EventWithMemberStatus | null>(null);
-  const [existingRating, setExistingRating] = useState<number | undefined>(undefined);
-  const [existingReview, setExistingReview] = useState<string | undefined>(undefined);
+  // TodayStyle scroll value driving collapsible header
+  const scrollY = useSharedValue(0);
 
-  // Handle category filter open
+  const handleScrollEvent = useCallback((event: any) => {
+    const y = event.nativeEvent.contentOffset.y ?? 0;
+    scrollY.value = y;
+  }, [scrollY]);
+
+  // Query client for cache invalidation
+  const queryClient = useQueryClient();
+
+  // Stats
+  const upcomingCount = upcomingQuery.data?.length || 0;
+  const rsvpCount = rsvpsQuery.data?.length || 0;
+  const attendedCount = attendedQuery.data?.length || 0;
+
+  // Handle category filter open - using unified overlay
   const handleOpenCategoryFilter = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    categoryFilterStore.open(categories, selectedCategory, (categoryId) => {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      setSelectedCategory(categoryId);
+    overlay.showBottomSheet(CategoryFilterSheet, {
+      categories,
+      selectedCategory,
+      onSelect: (categoryId: string | null) => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        setSelectedCategory(categoryId);
+      },
     });
-  }, [categories, selectedCategory, categoryFilterStore]);
+  }, [categories, selectedCategory, overlay]);
 
-  // Handle tab change with directional animation
+  // Handle calendar bottom sheet
+  const handleOpenCalendar = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+    // Build events array with status for calendar markers
+    const calendarEvents: Array<{ id: string; date: string; status: 'upcoming' | 'rsvp' | 'attended' | 'passed' }> = [];
+
+    // Add upcoming events
+    upcomingQuery.data?.forEach((event) => {
+      if (event.event_date) {
+        const eventDate = new Date(event.event_date);
+        const isPassed = eventDate < new Date();
+        calendarEvents.push({
+          id: event.id,
+          date: event.event_date,
+          status: isPassed ? 'passed' : 'upcoming',
+        });
+      }
+    });
+
+    // Add RSVP events (mark as rsvp)
+    rsvpsQuery.data?.forEach((event) => {
+      if (event.event_date) {
+        // Check if already added as upcoming
+        const existing = calendarEvents.find((e) => e.id === event.id);
+        if (existing) {
+          existing.status = 'rsvp'; // Upgrade status to rsvp
+        } else {
+          calendarEvents.push({
+            id: event.id,
+            date: event.event_date,
+            status: 'rsvp',
+          });
+        }
+      }
+    });
+
+    // Add attended events
+    attendedQuery.data?.forEach((event) => {
+      if (event.event_date) {
+        const existing = calendarEvents.find((e) => e.id === event.id);
+        if (existing) {
+          existing.status = 'attended'; // Upgrade status to attended
+        } else {
+          calendarEvents.push({
+            id: event.id,
+            date: event.event_date,
+            status: 'attended',
+          });
+        }
+      }
+    });
+
+    overlay.showBottomSheet(CalendarSheet, {
+      events: calendarEvents,
+      onDateSelect: (_date: Date) => {
+        // Optional: future date filtering logic
+      },
+    });
+  }, [overlay, upcomingQuery.data, rsvpsQuery.data, attendedQuery.data]);
+
+  // Handle tab change with Shared Axis X direction detection
   const handleTabChange = useCallback((newTab: Tab) => {
-    const tabs: Tab[] = ['upcoming', 'my_rsvps', 'attended'];
-    const currentIndex = tabs.indexOf(activeTab);
-    const newIndex = tabs.indexOf(newTab);
+    if (newTab === activeTab) return;
 
-    // Forward (left): positive translateX (slide from right)
-    // Backward (right): negative translateX (slide from left)
-    setSlideDirection(newIndex > currentIndex ? 30 : -30);
+    const prevIndex = TAB_ORDER.indexOf(prevTabRef.current);
+    const newIndex = TAB_ORDER.indexOf(newTab);
+    const direction = newIndex > prevIndex ? 'forward' : 'backward';
+
+    setTabDirection(direction);
+    prevTabRef.current = newTab;
     setActiveTab(newTab);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   }, [activeTab]);
@@ -150,14 +261,13 @@ export default function EventsScreen() {
 
   const { data: events = [], isLoading, isError, refetch } = getCurrentTabData();
 
-  // Prepare search data: combine all events and extract RSVP/Attendance records
+  // Prepare search data
   const allEvents = [
     ...(upcomingQuery.data || []),
     ...(rsvpsQuery.data || []),
     ...(attendedQuery.data || []),
   ];
 
-  // Transform events to match Event interface for filtering
   const eventsForSearch: Event[] = allEvents.map((event) => ({
     id: event.id,
     title: event.name,
@@ -167,7 +277,6 @@ export default function EventsScreen() {
     location: event.location,
   }));
 
-  // Extract RSVP and Attendance records
   const userRsvps: RSVP[] = allEvents
     .filter((event) => event.my_rsvp)
     .map((event) => ({
@@ -184,7 +293,6 @@ export default function EventsScreen() {
       user_id: member?.id || '',
     }));
 
-  // Compute filtered results when searching (memoized for performance)
   const searchResults = useMemo(() => {
     if (!isSearching) return null;
     return filterEvents({
@@ -214,11 +322,7 @@ export default function EventsScreen() {
       {
         onSuccess: () => {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-          Alert.alert(
-            t('common.success'),
-            t('events.rsvpSuccess'),
-            [{ text: t('common.ok'), style: 'default' }]
-          );
+          Alert.alert(t('common.success'), t('events.rsvpSuccess'));
         },
         onError: () => {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
@@ -234,10 +338,7 @@ export default function EventsScreen() {
       t('events.cancelRSVPTitle'),
       t('events.cancelRSVPMessage'),
       [
-        {
-          text: t('common.cancel'),
-          style: 'cancel',
-        },
+        { text: t('common.cancel'), style: 'cancel' },
         {
           text: t('common.confirm'),
           style: 'destructive',
@@ -275,719 +376,197 @@ export default function EventsScreen() {
     }
   }, []);
 
-  // Rating & Review Mutation
-  const submitRatingMutation = useMutation({
-    mutationFn: ({ eventId, rating, review }: { eventId: string; rating: number; review: string }) =>
-      ratingService.createRating({
+  // Rating submission handler (called from ModalHost)
+  const handleSubmitRating = useCallback(async (eventId: string, rating: number, review: string) => {
+    if (!member) return;
+
+    try {
+      await ratingService.createRating({
         event_id: eventId,
-        member_id: member?.id || '',
+        member_id: member.id,
         rating,
         review: review || undefined,
-      }),
-    onSuccess: () => {
+      });
       queryClient.invalidateQueries({ queryKey: ['attended-events'] });
-      setRatingModalVisible(false);
-      setSelectedEventForRating(null);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      Alert.alert(t('common.success'), 'Thank you for your feedback!');
-    },
-    onError: (error: any) => {
-      console.error('Error submitting rating:', error);
-      Alert.alert(t('common.error'), error.response?.data?.detail || 'Failed to submit rating. Please try again.');
-    },
-  });
+      Alert.alert(t('common.success'), t('events.ratingSuccess'));
+    } catch (error: any) {
+      Alert.alert(t('common.error'), error.response?.data?.detail || t('events.ratingError'));
+      throw error;
+    }
+  }, [member, queryClient, t]);
 
-  const handleOpenRatingModal = useCallback((event: EventWithMemberStatus, rating?: number, review?: string) => {
+  // Open rating bottom sheet via unified overlay
+  const handleOpenRatingModal = useCallback((event: EventWithMemberStatus, existingRating?: number, existingReview?: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setSelectedEventForRating(event);
-    setExistingRating(rating);
-    setExistingReview(review);
-    setRatingModalVisible(true);
-  }, []);
+    overlay.showBottomSheet(RatingModal, {
+      eventId: event.id,
+      eventName: event.name,
+      existingRating,
+      existingReview,
+      onSubmit: async (rating: number, review: string) => {
+        await handleSubmitRating(event.id, rating, review);
+      },
+    });
+  }, [overlay, handleSubmitRating]);
 
-  // DUMMY: Check if event has been rated (for demo purposes)
-  // In production, this would check against actual API data
   const getEventRating = useCallback((eventId: string): { rated: boolean; rating?: number; review?: string } => {
-    // Simulate some events having ratings based on event ID hash
+    // Placeholder / mocked rating
     const hash = eventId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    const hasRating = hash % 3 === 0; // ~33% of events have ratings
+    const hasRating = hash % 3 === 0;
 
     if (hasRating) {
-      // Simulate different rating values
       const ratings = [7, 8, 9, 6, 10];
       const rating = ratings[hash % ratings.length];
-      return {
-        rated: true,
-        rating,
-        review: 'Great event! Really enjoyed it.',
-      };
+      return { rated: true, rating, review: 'Great event! Really enjoyed it.' };
     }
-
     return { rated: false };
   }, []);
 
-  const handleCloseRatingModal = useCallback(() => {
-    setRatingModalVisible(false);
-    setSelectedEventForRating(null);
-    setExistingRating(undefined);
-    setExistingReview(undefined);
-  }, []);
+  // Render event card with shared Today-style motion
+  const renderEvent = useCallback(
+    ({ item, index }: { item: EventWithMemberStatus; index: number }) => (
+      <Animated.View key={`event-${item.id}-${focusKey}`} entering={todayListItemMotion(index)}>
+        <EventCard
+          event={item}
+          activeTab={activeTab}
+          categories={categories}
+          onRSVP={handleRSVP}
+          onCancelRSVP={handleCancelRSVP}
+          onShare={handleShareEvent}
+          onOpenRating={handleOpenRatingModal}
+          getEventRating={getEventRating}
+          t={t}
+          router={router}
+          isRSVPPending={rsvpMutation.isPending}
+          isCancelPending={cancelRSVPMutation.isPending}
+        />
+      </Animated.View>
+    ),
+    [
+      activeTab,
+      categories,
+      handleRSVP,
+      handleCancelRSVP,
+      handleShareEvent,
+      handleOpenRatingModal,
+      getEventRating,
+      rsvpMutation.isPending,
+      cancelRSVPMutation.isPending,
+      router,
+      t,
+      focusKey,
+    ]
+  );
 
-  const handleSubmitRating = useCallback((rating: number, review: string) => {
-    if (!selectedEventForRating || !member) return;
-
-    submitRatingMutation.mutate({
-      eventId: selectedEventForRating.id,
-      rating,
-      review,
-    });
-  }, [selectedEventForRating, member, submitRatingMutation]);
-
-  const formatDate = (dateString?: string) => {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      weekday: 'short',
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    });
-  };
-
-  const formatTime = (dateString?: string) => {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    return date.toLocaleTimeString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true,
-    });
-  };
-
-  const getEventTypeGradient = (eventType: 'single' | 'series'): [string, string] => {
-    return eventType === 'series'
-      ? ['#8B5CF6', '#6366F1'] // Purple to indigo
-      : ['#3B82F6', '#2563EB']; // Blue gradient
-  };
-
-  const getCategoryColor = (categoryId?: string) => {
-    const category = categories.find((c) => c.id === categoryId);
-    return category?.color || colors.primary[500];
-  };
-
-  // Premium event card - MOVED HERE TO FIX HOOKS VIOLATION
-  // (Must be called before any early returns to maintain hook order)
-  const renderEvent = useCallback(({ item: event, index: _index }: { item: EventWithMemberStatus; index: number }) => {
-    const showRSVPButton = activeTab === 'upcoming' && event.requires_rsvp && event.can_rsvp;
-    // Kept for future UI enhancement: show different state when RSVP not required
-    const showNoRSVPButton = activeTab === 'upcoming' && !event.requires_rsvp;
-    void showNoRSVPButton; // Intentionally unused - reserved for future UI enhancement
-    const showCancelButton = activeTab === 'my_rsvps' && event.my_rsvp;
-    const showAttendedBadge = activeTab === 'attended' && event.my_attendance;
-    const [gradientStart, gradientEnd] = getEventTypeGradient((event.event_type || 'single') as 'single' | 'series');
-
-    return (
-      <MotiView
-        from={{ translateX: slideDirection }}
-        animate={{ translateX: 0 }}
-        transition={{ type: 'timing', duration: 300 }}
-        style={{ marginBottom: spacing.lg }}
-      >
-        <Pressable
-          onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            router.push(`/events/${event.id}` as any);
-          }}
-          className="active:opacity-95 active:scale-[0.99]"
-        >
-          <Card
-            className="overflow-hidden p-0"
-            style={{
-              borderRadius: borderRadius['2xl'],
-              ...shadows.lg,
-              backgroundColor: '#FFFFFF',
-            }}
-          >
-            {/* Premium Image Header - 2:1 Aspect Ratio - Full Width */}
-            <View className="w-full" style={{ aspectRatio: 2 }}>
-              {event.event_photo ? (
-                <>
-                  {/* Photo with clean overlay - no gradient */}
-                  <Image
-                    source={{ uri: event.event_photo }}
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      position: 'absolute',
-                      borderTopLeftRadius: borderRadius['2xl'],
-                      borderTopRightRadius: borderRadius['2xl'],
-                    }}
-                    contentFit="cover"
-                  />
-                  <View className="h-full w-full justify-between p-4">
-                    {/* Top Row: Date & Type Badge (only for series) */}
-                    <HStack className="justify-between items-start">
-                      <View
-                        className="px-4 py-2.5 rounded-xl"
-                        style={{
-                          backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                          ...shadows.sm,
-                        }}
-                      >
-                        <Text className="text-gray-900 font-bold text-sm">
-                          {formatDate(event.event_date)}
-                        </Text>
-                      </View>
-
-                      {/* Only show badge for series events */}
-                      {event.event_type === 'series' && (
-                        <View
-                          className="px-3 py-1.5 rounded-lg"
-                          style={{
-                            backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                            ...shadows.sm,
-                          }}
-                        >
-                          <Text className="text-gray-700 text-xs font-bold uppercase tracking-wider">
-                            {t('events.series')}
-                          </Text>
-                        </View>
-                      )}
-                    </HStack>
-
-                    {/* Bottom Row: Attended Badge */}
-                    {showAttendedBadge && (
-                      <HStack className="items-center">
-                        <View
-                          className="px-4 py-2 rounded-lg flex-row items-center"
-                          style={{ backgroundColor: colors.success[500] }}
-                        >
-                          <Icon as={Check} size="sm" className="text-white mr-2" />
-                          <Text className="text-white text-sm font-bold">
-                            {t('events.attended')}
-                          </Text>
-                        </View>
-                      </HStack>
-                    )}
-                  </View>
-                </>
-              ) : (
-                <>
-                  {/* No photo - use gradient background */}
-                  <LinearGradient
-                    colors={[gradientStart, gradientEnd]}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 0, y: 1 }}
-                    className="h-full w-full justify-between p-4"
-                    style={{
-                      borderTopLeftRadius: borderRadius['2xl'],
-                      borderTopRightRadius: borderRadius['2xl'],
-                    }}
-                  >
-                    {/* Top Row: Date & Type Badge (only for series) */}
-                    <HStack className="justify-between items-start">
-                      <View
-                        className="px-4 py-2.5 rounded-xl"
-                        style={{
-                          backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                          ...shadows.sm,
-                        }}
-                      >
-                        <Text className="text-gray-900 font-bold text-sm">
-                          {formatDate(event.event_date)}
-                        </Text>
-                      </View>
-
-                      {/* Only show badge for series events */}
-                      {event.event_type === 'series' && (
-                        <View
-                          className="px-3 py-1.5 rounded-lg"
-                          style={{
-                            backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                            ...shadows.sm,
-                          }}
-                        >
-                          <Text className="text-gray-700 text-xs font-bold uppercase tracking-wider">
-                            {t('events.series')}
-                          </Text>
-                        </View>
-                      )}
-                    </HStack>
-
-                    {/* Bottom Row: Attended Badge */}
-                    {showAttendedBadge && (
-                      <HStack className="items-center">
-                        <View
-                          className="px-4 py-2 rounded-lg flex-row items-center"
-                          style={{ backgroundColor: colors.success[500] }}
-                        >
-                          <Icon as={Check} size="sm" className="text-white mr-2" />
-                          <Text className="text-white text-sm font-bold">
-                            {t('events.attended')}
-                          </Text>
-                        </View>
-                      </HStack>
-                    )}
-                  </LinearGradient>
-                </>
-              )}
-            </View>
-
-            {/* Event Content */}
-            <View className="p-5">
-              <VStack space="md">
-                {/* Title Section */}
-                <View>
-                  <Heading size="xl" className="text-gray-900 font-bold leading-7 mb-1">
-                    {event.name}
-                  </Heading>
-                  {event.event_category_id && (
-                    <View className="flex-row items-center mt-1">
-                      <View
-                        className="w-2 h-2 rounded-full mr-2"
-                        style={{ backgroundColor: getCategoryColor(event.event_category_id) }}
-                      />
-                      <Text className="text-gray-500 text-xs font-medium uppercase tracking-wide">
-                        {categories.find((c) => c.id === event.event_category_id)?.name || ''}
-                      </Text>
-                    </View>
-                  )}
-                </View>
-
-                {/* Meta Information */}
-                <VStack space="sm">
-                  {event.event_date && (
-                    <HStack space="sm" className="items-center">
-                      <View
-                        className="w-9 h-9 rounded-lg items-center justify-center"
-                        style={{ backgroundColor: colors.primary[50] }}
-                      >
-                        <Icon as={Clock} size="sm" className="text-primary-600" />
-                      </View>
-                      <Text className="text-gray-700 text-sm font-medium flex-1">
-                        {formatTime(event.event_date)}
-                        {event.event_end_date && ` - ${formatTime(event.event_end_date)}`}
-                      </Text>
-                    </HStack>
-                  )}
-
-                  {event.location && (
-                    <HStack space="sm" className="items-center">
-                      <View
-                        className="w-9 h-9 rounded-lg items-center justify-center"
-                        style={{ backgroundColor: colors.primary[50] }}
-                      >
-                        <Icon as={MapPin} size="sm" className="text-primary-600" />
-                      </View>
-                      <Text className="text-gray-700 text-sm font-medium flex-1" numberOfLines={1}>
-                        {event.location}
-                      </Text>
-                    </HStack>
-                  )}
-
-                  {event.max_attendees && (
-                    <HStack space="sm" className="items-center">
-                      <View
-                        className="w-9 h-9 rounded-lg items-center justify-center"
-                        style={{ backgroundColor: colors.primary[50] }}
-                      >
-                        <Icon as={Users} size="sm" className="text-primary-600" />
-                      </View>
-                      <Text className="text-gray-700 text-sm font-medium flex-1">
-                        {event.attendee_count || 0} / {event.max_attendees} {t('events.attendees')}
-                      </Text>
-                    </HStack>
-                  )}
-                </VStack>
-
-                {/* Action Buttons - Conditional based on tab and event state */}
-                <HStack space="md" className="items-center">
-                  {showRSVPButton && (
-                    <View className="flex-1">
-                      <Button
-                        onPress={() => handleRSVP(event.id)}
-                        size="lg"
-                        variant="solid"
-                        style={{ backgroundColor: colors.primary[500] }}
-                        isDisabled={rsvpMutation.isPending || !event.can_rsvp}
-                      >
-                        <Icon as={Check} size="sm" className="text-white mr-2" />
-                        <ButtonText className="font-bold">{t('events.rsvp')}</ButtonText>
-                      </Button>
-                    </View>
-                  )}
-
-                  {showCancelButton && (
-                    <View className="flex-1">
-                      <Button
-                        onPress={() => handleCancelRSVP(event.id)}
-                        size="lg"
-                        variant="outline"
-                        isDisabled={cancelRSVPMutation.isPending}
-                        style={{ borderColor: colors.error[500] }}
-                      >
-                        <Icon as={X} size="sm" className="text-error-600 mr-2" />
-                        <ButtonText className="font-semibold text-error-600">
-                          {t('events.cancelRSVP')}
-                        </ButtonText>
-                      </Button>
-                    </View>
-                  )}
-
-                  {/* Share button or Rate & Review (attended events only) */}
-                  {activeTab === 'attended' ? (
-                    (() => {
-                      const ratingData = getEventRating(event.id);
-                      return ratingData.rated ? (
-                        // Already Rated - Show rating + edit button
-                        <View className="flex-1">
-                          <View className="flex-row items-center justify-between">
-                            <HStack className="items-center">
-                              <Icon as={Star} size="sm" className="text-warning-500 mr-1.5" />
-                              <Text className="text-gray-600 text-sm mr-2">
-                                {t('rating.yourRating')}:
-                              </Text>
-                              <View
-                                className="px-3 py-1 rounded-full"
-                                style={{ backgroundColor: getRatingColor(ratingData.rating!) }}
-                              >
-                                <Text className="text-white text-xs font-bold">
-                                  {ratingData.rating}/10
-                                </Text>
-                              </View>
-                            </HStack>
-                            <Button
-                              onPress={() => handleOpenRatingModal(event, ratingData.rating, ratingData.review)}
-                              size="sm"
-                              variant="outline"
-                              style={{ borderColor: colors.gray[300] }}
-                            >
-                              <Icon as={Edit3} size="xs" className="text-gray-600 mr-1.5" />
-                              <ButtonText className="font-semibold text-gray-700 text-xs">
-                                {t('rating.editButton')}
-                              </ButtonText>
-                            </Button>
-                          </View>
-                        </View>
-                      ) : (
-                        // Not Rated - Show Rate & Review button
-                        <View className="flex-1">
-                          <Button
-                            onPress={() => handleOpenRatingModal(event)}
-                            size="lg"
-                            variant="solid"
-                            style={{ backgroundColor: colors.secondary[500] }}
-                          >
-                            <Icon as={Star} size="sm" className="text-white mr-2" />
-                            <ButtonText className="font-bold">{t('rating.title')}</ButtonText>
-                          </Button>
-                        </View>
-                      );
-                    })()
-                  ) : (
-                    <Pressable
-                      onPress={() => handleShareEvent(event)}
-                      className="active:opacity-70"
-                    >
-                      <View
-                        className="rounded-xl items-center justify-center"
-                        style={{
-                          backgroundColor: colors.primary[50],
-                          width: 48,
-                          height: 48,
-                        }}
-                      >
-                        <Icon as={Share2} size="md" className="text-primary-600" />
-                      </View>
-                    </Pressable>
-                  )}
-                </HStack>
-              </VStack>
-            </View>
-          </Card>
-        </Pressable>
-      </MotiView>
-    );
-  }, [
-    activeTab,
-    slideDirection,
-    router,
-    handleRSVP,
-    handleCancelRSVP,
-    handleShareEvent,
-    handleOpenRatingModal,
-    getEventRating,
-    rsvpMutation.isPending,
-    cancelRSVPMutation.isPending,
-    categories,
-    t,
-  ]);
-
-  // Skeleton loading with premium design
-  if (isLoading && events.length === 0) {
-    return (
-      <SafeAreaView className="flex-1 bg-gray-50" edges={['top']}>
-        {/* Header Skeleton */}
-        <View className="px-6 py-6">
-          <Skeleton className="h-9 w-40 mb-6" isLoaded={false} />
-
-          {/* Segmented Control Skeleton */}
-          <View className="bg-gray-100 p-1 rounded-2xl mb-4">
-            <HStack space="xs">
-              <Skeleton className="h-10 flex-1 rounded-xl" isLoaded={false} />
-              <Skeleton className="h-10 flex-1 rounded-xl" isLoaded={false} />
-              <Skeleton className="h-10 flex-1 rounded-xl" isLoaded={false} />
-            </HStack>
+  // Loading skeleton
+  const LoadingSkeleton = () => (
+    <View style={styles.skeletonWrap}>
+      {[1, 2, 3].map((i) => (
+        <View key={i} style={styles.skeletonCard}>
+          <View style={styles.skeletonImage} />
+          <View style={styles.skeletonContent}>
+            <View style={[styles.skeletonLine, { width: '40%', marginBottom: 8 }]} />
+            <View style={[styles.skeletonLine, { width: '80%', marginBottom: 12 }]} />
+            <View style={[styles.skeletonLine, { width: '60%' }]} />
           </View>
-
-          {/* Filter Skeleton */}
-          <Skeleton className="h-11 w-32 rounded-xl" isLoaded={false} />
         </View>
+      ))}
+    </View>
+  );
 
-        {/* Event Cards Skeleton - Using premium EventCardSkeleton */}
-        <EventCardSkeletonList />
-      </SafeAreaView>
+  // Empty state
+  const EmptyState = () => {
+    const getEmptyContent = () => {
+      switch (activeTab) {
+        case 'upcoming':
+          return {
+            icon: CalendarDays,
+            title: t('events.noUpcomingEvents'),
+            desc: t('events.noUpcomingEventsDesc'),
+            action: selectedCategory ? t('events.clearFilters') : t('common.refresh'),
+            onAction: selectedCategory ? () => setSelectedCategory(null) : handleRefresh,
+          };
+        case 'my_rsvps':
+          return {
+            icon: Heart,
+            title: t('events.noRSVPs'),
+            desc: t('events.noRSVPsDesc'),
+            action: t('events.browseEvents'),
+            onAction: () => handleTabChange('upcoming'),
+          };
+        case 'attended':
+          return {
+            icon: Sparkles,
+            title: t('events.noAttended'),
+            desc: t('events.noAttendedDesc'),
+            action: t('events.exploreEvents'),
+            onAction: () => handleTabChange('upcoming'),
+          };
+      }
+    };
+
+    const content = getEmptyContent();
+    const IconComponent = content.icon;
+
+    return (
+      <View style={styles.emptyWrap}>
+        <View style={styles.emptyIcon}>
+          <IconComponent size={48} color={Colors.neutral[400]} />
+        </View>
+        <Text style={styles.emptyTitle}>{content.title}</Text>
+        <Text style={styles.emptyDesc}>{content.desc}</Text>
+        <Pressable onPress={content.onAction} style={styles.emptyBtn}>
+          <Text style={styles.emptyBtnText}>{content.action}</Text>
+          <ArrowRight size={18} color={Colors.white} />
+        </Pressable>
+      </View>
     );
-  }
+  };
 
-  // Premium error state
+  // Error state
   if (isError) {
     return (
-      <SafeAreaView className="flex-1 bg-gray-50" edges={['top']}>
-        <ErrorState
-          title={t('events.loadError')}
-          message={t('events.loadErrorDesc')}
-          onRetry={handleRefresh}
-          retrying={refreshing}
-        />
-      </SafeAreaView>
+      <View style={[styles.container, { paddingTop: insets.top }]}>
+        <View style={styles.errorWrap}>
+          <XCircle size={48} color={Colors.error} />
+          <Text style={styles.errorTitle}>{t('events.loadError')}</Text>
+          <Text style={styles.errorDesc}>{t('events.loadErrorDesc')}</Text>
+          <Pressable onPress={handleRefresh} style={styles.retryBtn}>
+            <Text style={styles.retryBtnText}>{t('common.retry')}</Text>
+          </Pressable>
+        </View>
+      </View>
     );
   }
 
-
-  // Premium empty state with helpful actions
-  const EmptyState = () => {
-    let title = '';
-    let description = '';
-    let icon = Calendar;
-    let primaryAction = null;
-    let secondaryAction = null;
-
-    if (activeTab === 'upcoming') {
-      title = t('events.noUpcomingEvents');
-      description = t('events.noUpcomingEventsDesc');
-      icon = Calendar;
-      primaryAction = (
-        <Button onPress={handleRefresh} size="lg" className="px-8 min-w-[180px]">
-          <ButtonText className="font-semibold">{t('common.refresh')}</ButtonText>
-        </Button>
-      );
-      // If category filter is active, offer to clear it
-      if (selectedCategory) {
-        secondaryAction = (
-          <Button
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              setSelectedCategory(null);
-            }}
-            size="md"
-            variant="outline"
-            className="min-w-[160px]"
-          >
-            <Icon as={X} size="sm" className="text-gray-600 mr-2" />
-            <ButtonText className="font-semibold">{t('events.clearFilters')}</ButtonText>
-          </Button>
-        );
-      }
-    } else if (activeTab === 'my_rsvps') {
-      title = t('events.noRSVPs');
-      description = t('events.noRSVPsDesc');
-      icon = Calendar;
-      primaryAction = (
-        <Button
-          onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            handleTabChange('upcoming');
-          }}
-          size="lg"
-          className="px-8 min-w-[180px]"
-        >
-          <ButtonText className="font-semibold">{t('events.browseEvents')}</ButtonText>
-        </Button>
-      );
-      secondaryAction = (
-        <Button onPress={handleRefresh} size="md" variant="outline" className="min-w-[160px]">
-          <ButtonText className="font-semibold">{t('common.refresh')}</ButtonText>
-        </Button>
-      );
-    } else {
-      title = t('events.noAttended');
-      description = t('events.noAttendedDesc');
-      icon = Sparkles;
-      primaryAction = (
-        <Button
-          onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            handleTabChange('upcoming');
-          }}
-          size="lg"
-          className="px-8 min-w-[180px]"
-        >
-          <ButtonText className="font-semibold">{t('events.exploreEvents')}</ButtonText>
-        </Button>
-      );
-      secondaryAction = (
-        <Button onPress={handleRefresh} size="md" variant="outline" className="min-w-[160px]">
-          <ButtonText className="font-semibold">{t('common.refresh')}</ButtonText>
-        </Button>
-      );
-    }
-
-    return (
-      <View className="flex-1 items-center justify-center px-8 py-16">
-        <MotiView
-          from={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ type: 'spring', delay: 200 }}
-        >
-          <View
-            className="w-24 h-24 rounded-full items-center justify-center mb-6"
-            style={{ backgroundColor: colors.gray[100] }}
-          >
-            <Icon as={icon} size="3xl" className="text-gray-400" />
-          </View>
-        </MotiView>
-
-        <Heading size="xl" className="text-gray-900 mb-3 text-center font-bold">
-          {title}
-        </Heading>
-        <Text className="text-gray-500 text-center mb-8 text-base leading-6 max-w-sm">
-          {description}
-        </Text>
-
-        {/* Action Buttons */}
-        <VStack space="sm" className="items-center w-full max-w-xs">
-          {primaryAction}
-          {secondaryAction}
-        </VStack>
-      </View>
-    );
-  };
-
   return (
-    <SafeAreaView className="flex-1 bg-gray-50" edges={['top']}>
-      {/* Premium Header */}
-      <View className="px-6 pt-6 pb-2">
-        <HStack className="justify-between items-center mb-6">
-          <Heading size="3xl" className="text-gray-900 font-bold">
-            {t('events.title')}
-          </Heading>
+    // Important: PLAIN View here; withPremiumMotionV10 handles screen transitions.
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" />
 
-          {/* Calendar Icon Button */}
-          <Pressable
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              calendarModalStore.open();
-            }}
-            className="active:opacity-70"
-          >
-            <View
-              className="w-11 h-11 rounded-xl items-center justify-center"
-              style={{ backgroundColor: colors.primary[50] }}
-            >
-              <Icon as={Calendar} size="lg" className="text-primary-600" />
-            </View>
-          </Pressable>
-        </HStack>
-      </View>
+      {/* Today-style extracted header */}
+      <EventsHeader
+        t={t}
+        topInset={insets.top}
+        upcomingCount={upcomingCount}
+        rsvpCount={rsvpCount}
+        attendedCount={attendedCount}
+        activeTab={activeTab}
+        onTabChange={handleTabChange}
+        onPressCalendar={handleOpenCalendar}
+        scrollY={scrollY}
+        focusKey={focusKey}
+      />
 
-      {/* Search Bar (Always Visible) */}
-      <SearchBar />
-
-      {/* Tabs & Filters - Hidden when searching */}
-      <MotiView
-        animate={{
-          opacity: isSearching ? 0 : 1,
-          height: isSearching ? 0 : undefined,
-        }}
-        transition={{ type: 'timing', duration: 250 }}
-        style={{ overflow: 'hidden' }}
-      >
-        <View className="px-6 pb-4">
-          {/* Segmented Control - iOS Style */}
-          <View
-            className="p-1 mb-4"
-            style={{
-              backgroundColor: colors.gray[100],
-              borderRadius: borderRadius['2xl'],
-            }}
-          >
-            <HStack space="xs">
-              {(['upcoming', 'my_rsvps', 'attended'] as Tab[]).map((tab) => {
-                const isActive = activeTab === tab;
-                return (
-                  <Pressable
-                    key={tab}
-                    onPress={() => handleTabChange(tab)}
-                    className="flex-1"
-                  >
-                    <View
-                      style={{
-                        paddingVertical: spacing.md,
-                        paddingHorizontal: spacing.sm,
-                        borderRadius: borderRadius['2xl'],
-                        alignItems: 'center',
-                        backgroundColor: isActive ? colors.white : 'transparent',
-                        ...(isActive ? shadows.sm : {}),
-                      }}
-                    >
-                      <Text
-                        className={`font-bold text-sm ${
-                          isActive ? 'text-primary-600' : 'text-gray-600'
-                        }`}
-                        numberOfLines={1}
-                      >
-                        {tab === 'upcoming' && t('events.upcoming')}
-                        {tab === 'my_rsvps' && t('events.myRSVPs')}
-                        {tab === 'attended' && t('events.attended')}
-                      </Text>
-                    </View>
-                  </Pressable>
-                );
-              })}
-            </HStack>
-          </View>
-
-          {/* Category Filter Button */}
-          {categories.length > 0 && (
-            <Pressable onPress={handleOpenCategoryFilter} className="active:opacity-70">
-              <HStack
-                space="sm"
-                className="items-center px-4 py-3 rounded-xl"
-                style={{ backgroundColor: colors.white, ...shadows.sm }}
-              >
-                <Icon as={Filter} size="sm" className="text-primary-600" />
-                <Text className="text-primary-600 font-bold text-sm flex-1">
-                  {selectedCategory
-                    ? categories.find((c) => c.id === selectedCategory)?.name
-                    : t('events.allCategories')}
-                </Text>
-                <Icon as={ChevronRight} size="sm" className="text-primary-400" />
-              </HStack>
-            </Pressable>
-          )}
-        </View>
-      </MotiView>
-
-      {/* Conditional Rendering: Search Results vs Tab-based Event List */}
+      {/* Content */}
       {isSearching ? (
-        // Search Results
-        <MotiView
-          from={{ opacity: 0, translateY: 20 }}
-          animate={{ opacity: 1, translateY: 0 }}
-          transition={{ type: 'timing', duration: 250 }}
-          style={{ flex: 1 }}
+        <Animated.ScrollView
+          style={styles.scroll}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
         >
+          <SearchBar />
           {searchResults && searchResults.events.length > 0 ? (
             <SearchResults
               groupedResults={searchResults.groupedByStatus}
@@ -996,60 +575,215 @@ export default function EventsScreen() {
           ) : (
             <SearchEmptyState searchTerm={searchTerm} />
           )}
-        </MotiView>
+        </Animated.ScrollView>
       ) : (
-        // Normal Tab-based Event List
-        <>
-          {events && events.length > 0 ? (
+        <View style={styles.flex1}>
+          {/* Static header - search bar and filter */}
+          <View style={styles.staticHeader}>
+            <SearchBar />
+            {categories.length > 0 && (
+              <Pressable onPress={handleOpenCategoryFilter} style={styles.filterBtn}>
+                <Filter size={18} color={Colors.gradient.end} />
+                <Text style={styles.filterText}>
+                  {selectedCategory
+                    ? categories.find((c) => c.id === selectedCategory)?.name
+                    : t('events.allCategories')}
+                </Text>
+                <ChevronRight size={18} color={Colors.neutral[400]} />
+              </Pressable>
+            )}
+          </View>
+
+          {/* Event cards with Shared Axis X transitions */}
+          <Animated.View
+            key={activeTab + '-tab'}
+            entering={
+              tabDirection === 'forward'
+                ? PMotionV10.sharedAxisXForward
+                : PMotionV10.sharedAxisXBackward
+            }
+            exiting={
+              tabDirection === 'forward'
+                ? PMotionV10.sharedAxisXExitForward
+                : PMotionV10.sharedAxisXExitBackward
+            }
+            style={styles.flex1}
+          >
             <FlashList
-              key={activeTab}
               data={events}
               renderItem={renderEvent}
+              estimatedItemSize={340}
               keyExtractor={(item: EventWithMemberStatus) => item.id}
-              estimatedItemSize={380}
-              contentContainerStyle={{
-                paddingHorizontal: spacing.lg,
-                paddingBottom: 120,
-                paddingTop: spacing.sm,
-              }}
+              onScroll={handleScrollEvent}
+              scrollEventThrottle={16}
               showsVerticalScrollIndicator={false}
+              contentContainerStyle={styles.flashListContentNoHeader}
               refreshControl={
                 <RefreshControl
                   refreshing={refreshing}
                   onRefresh={handleRefresh}
-                  tintColor={colors.primary[500]}
+                  tintColor={Colors.gradient.end}
                 />
+              }
+              ListEmptyComponent={
+                isLoading ? <LoadingSkeleton /> : <EmptyState />
               }
             />
-          ) : (
-            <ScrollView
-              contentContainerStyle={{ flex: 1 }}
-              refreshControl={
-                <RefreshControl
-                  refreshing={refreshing}
-                  onRefresh={handleRefresh}
-                  tintColor={colors.primary[500]}
-                />
-              }
-            >
-              <EmptyState />
-            </ScrollView>
-          )}
-        </>
+          </Animated.View>
+        </View>
       )}
 
-      {/* Rating & Review Modal */}
-      {selectedEventForRating && (
-        <RatingReviewModal
-          visible={ratingModalVisible}
-          onClose={handleCloseRatingModal}
-          onSubmit={handleSubmitRating}
-          eventName={selectedEventForRating.name}
-          isSubmitting={submitRatingMutation.isPending}
-          existingRating={existingRating}
-          existingReview={existingReview}
-        />
-      )}
-    </SafeAreaView>
+      {/* Rating Modal is rendered by unified overlay host */}
+    </View>
   );
 }
+
+// Memoize screen + Apply Premium Motion V10 Ultra HOC for production-grade transitions
+const MemoizedEventsScreen = memo(EventsScreen);
+MemoizedEventsScreen.displayName = 'EventsScreen';
+export default withPremiumMotionV10(MemoizedEventsScreen);
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: Colors.neutral[100],
+  },
+  flex1: {
+    flex: 1,
+  },
+  // Scroll
+  scroll: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: spacing.ml,
+    paddingTop: spacing.ml,
+    paddingBottom: spacing.xxl * 3,
+  },
+  // Static header for search bar and filter (no transition)
+  staticHeader: {
+    paddingHorizontal: spacing.ml,
+    paddingTop: spacing.ml,
+  },
+  // FlashList content when static header is used
+  flashListContentNoHeader: {
+    paddingHorizontal: spacing.ml,
+    paddingBottom: spacing.xxl * 3,
+  },
+  // Filter
+  filterBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.white,
+    borderRadius: radius.card,
+    padding: spacing.sm,
+    marginBottom: spacing.ml,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
+    gap: spacing.s,
+  },
+  filterText: {
+    flex: 1,
+    fontSize: 15,
+    fontWeight: '600',
+    color: Colors.neutral[800],
+  },
+  // Loading
+  skeletonWrap: {
+    gap: spacing.m,
+  },
+  skeletonCard: {
+    backgroundColor: Colors.white,
+    borderRadius: radius.card,
+    overflow: 'hidden',
+  },
+  skeletonImage: {
+    height: 160,
+    backgroundColor: Colors.neutral[200],
+  },
+  skeletonContent: {
+    padding: spacing.m,
+  },
+  skeletonLine: {
+    height: 14,
+    backgroundColor: Colors.neutral[200],
+    borderRadius: 7,
+  },
+  // Empty
+  emptyWrap: {
+    alignItems: 'center',
+    paddingVertical: spacing.xxl + spacing.ml,
+    paddingHorizontal: spacing.xxl,
+  },
+  emptyIcon: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: Colors.neutral[200],
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.l,
+  },
+  emptyTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: Colors.neutral[800],
+    marginBottom: spacing.s,
+    textAlign: 'center',
+  },
+  emptyDesc: {
+    fontSize: 15,
+    color: Colors.neutral[500],
+    textAlign: 'center',
+    marginBottom: spacing.l,
+    lineHeight: 22,
+  },
+  emptyBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.gradient.end,
+    paddingHorizontal: spacing.l,
+    paddingVertical: spacing.sm,
+    borderRadius: spacing.l,
+    gap: spacing.s,
+  },
+  emptyBtnText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: Colors.white,
+  },
+  // Error
+  errorWrap: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: spacing.xxl,
+  },
+  errorTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: Colors.neutral[800],
+    marginTop: spacing.m,
+    marginBottom: spacing.s,
+  },
+  errorDesc: {
+    fontSize: 15,
+    color: Colors.neutral[500],
+    textAlign: 'center',
+    marginBottom: spacing.l,
+  },
+  retryBtn: {
+    backgroundColor: Colors.gradient.end,
+    paddingHorizontal: spacing.l,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.xl,
+  },
+  retryBtnText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: Colors.white,
+  },
+});

@@ -7,7 +7,7 @@
 
 import React from 'react';
 import { View } from 'react-native';
-import { MotiView } from 'moti';
+import Animated, { FadeInUp } from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
 import { Text } from '@/components/ui/text';
 import { EventStatus, getStatusConfig } from '@/utils/eventStatus';
@@ -33,15 +33,7 @@ export function EventStatusBadge({ status, size = 'sm', delay = 0 }: EventStatus
   };
 
   return (
-    <MotiView
-      from={{ opacity: 0, translateY: -4 }}
-      animate={{ opacity: 1, translateY: 0 }}
-      transition={{
-        type: 'timing',
-        duration: 250,
-        delay,
-      }}
-    >
+    <Animated.View entering={FadeInUp.delay(delay).duration(250)}>
       <View
         className={`rounded-full ${sizeClasses[size]}`}
         style={{ backgroundColor: config.bgColor }}
@@ -53,6 +45,6 @@ export function EventStatusBadge({ status, size = 'sm', delay = 0 }: EventStatus
           {t(`events.status.${status}`)}
         </Text>
       </View>
-    </MotiView>
+    </Animated.View>
   );
 }

@@ -9,6 +9,8 @@
  */
 
 import { create } from 'zustand';
+import { useShallow } from 'zustand/shallow';
+import { useMemo } from 'react';
 
 // =============================================================================
 // TYPES
@@ -223,45 +225,70 @@ export const useMQTTStore = create<MQTTState>((set, get) => ({
 }));
 
 // =============================================================================
+// STABLE EMPTY REFERENCES (prevent infinite re-renders)
+// =============================================================================
+
+const EMPTY_TYPING_USERS: TypingUser[] = [];
+const EMPTY_ONLINE_MEMBERS: OnlineMember[] = [];
+
+// =============================================================================
 // SELECTORS
 // =============================================================================
 
 /**
  * Get typing users for a community (filters out stale entries)
+ * Uses useMemo to prevent creating new array references on every render
  */
-export const useTypingUsers = (communityId: string) => {
-  return useMQTTStore((state) => {
-    const users = state.typingUsers[communityId] || [];
+export const useTypingUsers = (communityId: string): TypingUser[] => {
+  // Get raw data from store (stable reference if unchanged)
+  const rawUsers = useMQTTStore(
+    (state) => state.typingUsers[communityId] ?? EMPTY_TYPING_USERS
+  );
+
+  // Filter stale entries with memoization
+  return useMemo(() => {
+    if (rawUsers.length === 0) return EMPTY_TYPING_USERS;
     const now = Date.now();
-    return users.filter((u) => now - u.timestamp < TYPING_TIMEOUT);
-  });
+    const filtered = rawUsers.filter((u) => now - u.timestamp < TYPING_TIMEOUT);
+    return filtered.length === 0 ? EMPTY_TYPING_USERS : filtered;
+  }, [rawUsers]);
 };
 
 /**
  * Get online members count for a community
+ * Returns a primitive number (no reference issues)
  */
-export const useOnlineMembersCount = (communityId: string) => {
-  return useMQTTStore((state) => {
-    const members = state.onlineMembers[communityId] || [];
+export const useOnlineMembersCount = (communityId: string): number => {
+  const rawMembers = useMQTTStore(
+    (state) => state.onlineMembers[communityId] ?? EMPTY_ONLINE_MEMBERS
+  );
+
+  return useMemo(() => {
+    if (rawMembers.length === 0) return 0;
     const now = Date.now();
-    return members.filter((m) => now - m.lastSeen < ONLINE_TIMEOUT).length;
-  });
+    return rawMembers.filter((m) => now - m.lastSeen < ONLINE_TIMEOUT).length;
+  }, [rawMembers]);
 };
 
 /**
  * Get unread count for a community
  */
-export const useUnreadCount = (communityId: string) => {
-  return useMQTTStore((state) => state.unreadCounts[communityId] || 0);
+export const useUnreadCount = (communityId: string): number => {
+  return useMQTTStore((state) => state.unreadCounts[communityId] ?? 0);
 };
 
 /**
  * Get total unread count across all communities
+ * Uses shallow comparison for the unreadCounts object
  */
-export const useTotalUnreadCount = () => {
-  return useMQTTStore((state) =>
-    Object.values(state.unreadCounts).reduce((sum, count) => sum + count, 0)
+export const useTotalUnreadCount = (): number => {
+  const unreadCounts = useMQTTStore(
+    useShallow((state) => state.unreadCounts)
   );
+
+  return useMemo(() => {
+    return Object.values(unreadCounts).reduce((sum, count) => sum + count, 0);
+  }, [unreadCounts]);
 };
 
 export default useMQTTStore;

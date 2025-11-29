@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { useShallow } from "zustand/shallow";
 import * as SecureStore from "expo-secure-store";
 
 interface Member {
@@ -140,3 +141,59 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
   },
 }));
+
+// =============================================================================
+// SHALLOW SELECTORS
+// Performance: Prevent re-renders when only unrelated state changes
+// =============================================================================
+
+/**
+ * Use when you only need member data (prevents re-render on token change)
+ * @example const { member, isAuthenticated } = useAuthMember();
+ */
+export const useAuthMember = () =>
+  useAuthStore(
+    useShallow((state) => ({
+      member: state.member,
+      isAuthenticated: state.isAuthenticated,
+    }))
+  );
+
+/**
+ * Use when you only need the token (prevents re-render on member change)
+ * @example const { token } = useAuthToken();
+ */
+export const useAuthToken = () =>
+  useAuthStore(
+    useShallow((state) => ({
+      token: state.token,
+      isAuthenticated: state.isAuthenticated,
+    }))
+  );
+
+/**
+ * Use when you only need auth actions (never re-renders)
+ * @example const { login, logout } = useAuthActions();
+ */
+export const useAuthActions = () =>
+  useAuthStore(
+    useShallow((state) => ({
+      login: state.login,
+      loginDemo: state.loginDemo,
+      logout: state.logout,
+      setToken: state.setToken,
+      setMember: state.setMember,
+      initialize: state.initialize,
+    }))
+  );
+
+/**
+ * Use when you only need loading state
+ * @example const { isLoading } = useAuthLoading();
+ */
+export const useAuthLoading = () =>
+  useAuthStore(
+    useShallow((state) => ({
+      isLoading: state.isLoading,
+    }))
+  );

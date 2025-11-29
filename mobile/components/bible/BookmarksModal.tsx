@@ -14,7 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { Bookmark as BookmarkIcon, Trash2, ChevronRight } from 'lucide-react-native';
 import GorhomBottomSheet, { BottomSheetBackdrop as GorhomBackdrop } from '@gorhom/bottom-sheet';
-import { MotiView } from 'moti';
+import Animated, { FadeInUp } from 'react-native-reanimated';
 
 import { Text } from '@/components/ui/text';
 import { Heading } from '@/components/ui/heading';
@@ -205,15 +205,9 @@ export function BookmarksModal({
             </View>
           ) : (
             bookmarks.map((bookmark, index) => (
-              <MotiView
+              <Animated.View
                 key={bookmark.id}
-                from={{ opacity: 0, translateY: 10 }}
-                animate={{ opacity: 1, translateY: 0 }}
-                transition={{
-                  type: 'timing',
-                  delay: index * 50,
-                  duration: 200,
-                }}
+                entering={FadeInUp.delay(index * 50).duration(200)}
               >
                 <Pressable
                   onPress={() => handleBookmarkTap(bookmark)}
@@ -288,7 +282,7 @@ export function BookmarksModal({
                     </Text>
                   </View>
                 </Pressable>
-              </MotiView>
+              </Animated.View>
             ))
           )}
         </VStack>

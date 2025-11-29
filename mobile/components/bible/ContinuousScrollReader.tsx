@@ -13,7 +13,7 @@
 import React, { useCallback, useRef, useState, useEffect } from 'react';
 import { View, Pressable, StyleSheet, ViewToken } from 'react-native';
 import { FlashList, ListRenderItem } from '@shopify/flash-list';
-import { MotiView } from 'moti';
+import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 
 import { Text } from '@/components/ui/text';
@@ -37,6 +37,7 @@ interface ContinuousScrollReaderProps {
   scrollToVerse?: number | null; // Verse to scroll to (triggers navigation)
   onChapterChange?: (book: number, chapter: number) => void;
   onScroll?: (event: { nativeEvent: { contentOffset: { y: number } } }) => void;
+  extraPaddingTop?: number; // Extra padding for focus mode when header is absolute
 }
 
 export function ContinuousScrollReader({
@@ -46,6 +47,7 @@ export function ContinuousScrollReader({
   scrollToVerse,
   onChapterChange,
   onScroll,
+  extraPaddingTop = 0,
 }: ContinuousScrollReaderProps) {
   const {
     preferences,
@@ -246,11 +248,7 @@ export function ContinuousScrollReader({
       const currentTheme = readingThemes[preferences.theme];
 
       return (
-        <MotiView
-          from={{ opacity: 0, translateY: -10 }}
-          animate={{ opacity: 1, translateY: 0 }}
-          transition={{ type: 'timing', duration: 300 }}
-        >
+        <Animated.View entering={FadeIn.duration(300)}>
           <View style={[styles.chapterHeader, { backgroundColor: currentTheme.background }]}>
             <Heading
               size="xl"
@@ -262,7 +260,7 @@ export function ContinuousScrollReader({
               {item.bookName} {item.chapter}
             </Heading>
           </View>
-        </MotiView>
+        </Animated.View>
       );
     },
     [preferences.theme]
@@ -294,20 +292,8 @@ export function ContinuousScrollReader({
         : 'transparent';
 
       return (
-        <MotiView
-          from={{
-            opacity: 0,
-            translateY: 10,
-          }}
-          animate={{
-            opacity: 1,
-            translateY: 0,
-          }}
-          transition={{
-            type: 'timing',
-            duration: 200,
-            delay: Math.min(item.verse * 20, 500),
-          }}
+        <Animated.View
+          entering={FadeIn.delay(Math.min(item.verse * 20, 500)).duration(200)}
         >
           <Pressable
             onPress={() => handleVerseTap(item)}
@@ -365,7 +351,7 @@ export function ContinuousScrollReader({
               </Text>
             </View>
           </Pressable>
-        </MotiView>
+        </Animated.View>
       );
     },
     [
@@ -483,7 +469,7 @@ export function ContinuousScrollReader({
       }}
       drawDistance={800}
       contentContainerStyle={{
-        paddingTop: spacing.md,
+        paddingTop: spacing.md + extraPaddingTop,
         paddingBottom: 160, // Space for verse selection bar
       }}
     />

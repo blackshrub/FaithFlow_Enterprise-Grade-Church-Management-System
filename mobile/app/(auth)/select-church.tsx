@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { MotiView } from "moti";
+import Animated, { FadeInUp, ZoomIn } from "react-native-reanimated";
 import { SafeAreaView } from "@/components/ui/safe-area-view";
 import { VStack } from "@/components/ui/vstack";
 import { Heading } from "@/components/ui/heading";
@@ -62,10 +62,8 @@ export default function SelectChurchScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background-0">
-      <MotiView
-        from={{ opacity: 0, translateY: 30 }}
-        animate={{ opacity: 1, translateY: 0 }}
-        transition={{ type: "timing", duration: 400 }}
+      <Animated.View
+        entering={FadeInUp.duration(400)}
         className="flex-1 px-6 py-8"
       >
         <VStack space="xl" className="flex-1">
@@ -91,12 +89,10 @@ export default function SelectChurchScreen() {
 
           {/* Church List */}
           <VStack space="md" className="flex-1">
-            {filteredChurches.map((church) => (
-              <MotiView
+            {filteredChurches.map((church, index) => (
+              <Animated.View
                 key={church.id}
-                from={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ type: "timing", duration: 300 }}
+                entering={ZoomIn.delay(index * 50).duration(300)}
               >
                 <Card
                   size="lg"
@@ -126,7 +122,7 @@ export default function SelectChurchScreen() {
                     </VStack>
                   </Pressable>
                 </Card>
-              </MotiView>
+              </Animated.View>
             ))}
 
             {filteredChurches.length === 0 && (
@@ -141,7 +137,7 @@ export default function SelectChurchScreen() {
             )}
           </VStack>
         </VStack>
-      </MotiView>
+      </Animated.View>
     </SafeAreaView>
   );
 }

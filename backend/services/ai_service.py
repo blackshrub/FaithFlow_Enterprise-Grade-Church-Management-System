@@ -9,6 +9,7 @@ import asyncio
 import base64
 import logging
 import httpx
+import uuid
 from typing import Dict, Any, Optional, List
 from datetime import datetime
 import anthropic
@@ -16,6 +17,7 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from utils.system_config import get_ai_settings
 from services.image_prompt_builder import ImagePromptBuilder, build_image_prompt
+from services.seaweedfs_service import get_seaweedfs_service, SeaweedFSError, StorageCategory
 
 logger = logging.getLogger(__name__)
 
@@ -754,10 +756,25 @@ Questions should be engaging, educational, and encourage deeper Bible study."""
                 )
 
                 if response.status_code == 200:
-                    # Convert to base64 for storage
-                    image_data = base64.b64encode(response.content).decode('utf-8')
-                    logger.info(f"Successfully generated image for {content_type}")
-                    return f"data:image/png;base64,{image_data}"
+                    # Upload to SeaweedFS instead of returning base64
+                    try:
+                        seaweedfs = get_seaweedfs_service()
+                        entity_id = str(uuid.uuid4())
+                        result = await seaweedfs.upload_by_category(
+                            content=response.content,
+                            file_name=f"ai_generated_{entity_id}.png",
+                            mime_type="image/png",
+                            church_id="global",  # AI-generated content is global
+                            category=StorageCategory.AI_GENERATED,
+                            entity_id=entity_id
+                        )
+                        logger.info(f"Successfully generated and uploaded image for {content_type} to SeaweedFS: {result['url']}")
+                        return result["url"]
+                    except SeaweedFSError as e:
+                        logger.error(f"Failed to upload AI image to SeaweedFS: {e}. Falling back to base64.")
+                        # Fallback to base64 if SeaweedFS fails
+                        image_data = base64.b64encode(response.content).decode('utf-8')
+                        return f"data:image/png;base64,{image_data}"
                 else:
                     logger.error(f"Stability AI error: {response.status_code} - {response.text}")
                     return ""
@@ -825,10 +842,25 @@ Questions should be engaging, educational, and encourage deeper Bible study."""
                 )
 
                 if response.status_code == 200:
-                    # Convert to base64 for storage
-                    image_data = base64.b64encode(response.content).decode('utf-8')
-                    logger.info(f"Successfully generated enhanced image for {content_type}")
-                    return f"data:image/png;base64,{image_data}"
+                    # Upload to SeaweedFS instead of returning base64
+                    try:
+                        seaweedfs = get_seaweedfs_service()
+                        entity_id = str(uuid.uuid4())
+                        result = await seaweedfs.upload_by_category(
+                            content=response.content,
+                            file_name=f"ai_enhanced_{entity_id}.png",
+                            mime_type="image/png",
+                            church_id="global",  # AI-generated content is global
+                            category=StorageCategory.AI_GENERATED,
+                            entity_id=entity_id
+                        )
+                        logger.info(f"Successfully generated and uploaded enhanced image for {content_type} to SeaweedFS: {result['url']}")
+                        return result["url"]
+                    except SeaweedFSError as e:
+                        logger.error(f"Failed to upload AI enhanced image to SeaweedFS: {e}. Falling back to base64.")
+                        # Fallback to base64 if SeaweedFS fails
+                        image_data = base64.b64encode(response.content).decode('utf-8')
+                        return f"data:image/png;base64,{image_data}"
                 else:
                     logger.error(f"Stability AI error: {response.status_code} - {response.text}")
                     # Fall back to legacy method if enhanced fails

@@ -9,14 +9,20 @@
  * - Interactive voting
  */
 
-import React, { useMemo, useCallback } from 'react';
+import React, { useMemo, useCallback, useEffect } from 'react';
 import {
   View,
   Pressable,
   ActivityIndicator,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import { MotiView } from 'moti';
+import Animated, {
+  FadeIn,
+  FadeInUp,
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+} from 'react-native-reanimated';
 import {
   BarChart3,
   Check,
@@ -98,6 +104,43 @@ function formatTimeRemaining(expiresAt: string): string {
 }
 
 // =============================================================================
+// ANIMATED PROGRESS BAR
+// =============================================================================
+
+interface AnimatedProgressBarProps {
+  percentage: number;
+  backgroundColor: string;
+}
+
+function AnimatedProgressBar({ percentage, backgroundColor }: AnimatedProgressBarProps) {
+  const widthProgress = useSharedValue(0);
+
+  useEffect(() => {
+    widthProgress.value = withTiming(percentage, { duration: 500 });
+  }, [percentage, widthProgress]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    width: `${widthProgress.value}%`,
+  }));
+
+  return (
+    <Animated.View
+      style={[
+        {
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          bottom: 0,
+          backgroundColor,
+          borderRadius: borderRadius.xl,
+        },
+        animatedStyle,
+      ]}
+    />
+  );
+}
+
+// =============================================================================
 // POLL OPTION ROW
 // =============================================================================
 
@@ -143,18 +186,9 @@ function PollOptionRow({
         }}
       >
         {/* Progress bar background */}
-        <MotiView
-          from={{ width: '0%' }}
-          animate={{ width: `${percentage}%` }}
-          transition={{ type: 'timing', duration: 500 }}
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            bottom: 0,
-            backgroundColor: isSelected ? colors.primary[100] : colors.gray[200],
-            borderRadius: borderRadius.xl,
-          }}
+        <AnimatedProgressBar
+          percentage={percentage}
+          backgroundColor={isSelected ? colors.primary[100] : colors.gray[200]}
         />
 
         {/* Content */}

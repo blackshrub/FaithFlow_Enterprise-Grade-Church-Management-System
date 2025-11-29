@@ -10,7 +10,7 @@ import React, { useRef, useCallback, useMemo } from 'react';
 import { View, Pressable } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Filter, Check } from 'lucide-react-native';
-import { MotiView } from 'moti';
+import Animated, { FadeIn } from 'react-native-reanimated';
 import BottomSheet, { BottomSheetBackdrop, BottomSheetBackdropProps } from '@gorhom/bottom-sheet';
 
 import { Text } from '@/components/ui/text';
@@ -83,13 +83,12 @@ export function CategoryFilterModal() {
           onPress={() => handleSelectCategory(null)}
           className="active:opacity-70 mb-3"
         >
-          <MotiView
-            animate={{
+          <View
+            className="p-4 rounded-2xl border-2"
+            style={{
               backgroundColor: selectedCategory === null ? colors.primary[50] : colors.gray[50],
               borderColor: selectedCategory === null ? colors.primary[500] : 'transparent',
             }}
-            transition={{ type: 'timing', duration: 200 }}
-            className="p-4 rounded-2xl border-2"
           >
             <HStack space="md" className="items-center">
               <View
@@ -118,21 +117,17 @@ export function CategoryFilterModal() {
               </VStack>
 
               {selectedCategory === null && (
-                <MotiView
-                  from={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ type: 'spring', damping: 15 }}
-                >
+                <Animated.View entering={FadeIn.duration(200)}>
                   <View
                     className="w-6 h-6 rounded-full items-center justify-center"
                     style={{ backgroundColor: colors.primary[500] }}
                   >
                     <Icon as={Check} size="xs" className="text-white" />
                   </View>
-                </MotiView>
+                </Animated.View>
               )}
             </HStack>
-          </MotiView>
+          </View>
         </Pressable>
 
         {/* Category List */}
@@ -147,14 +142,15 @@ export function CategoryFilterModal() {
                   onPress={() => handleSelectCategory(category.id)}
                   className="active:opacity-70"
                 >
-                  <MotiView
-                    animate={{
-                      backgroundColor: isSelected ? colors.primary[50] : colors.white,
-                      borderColor: isSelected ? colors.primary[500] : colors.gray[200],
-                    }}
-                    transition={{ type: 'timing', duration: 200 }}
+                  <View
                     className="p-4 rounded-2xl border-2"
-                    style={shadows.sm}
+                    style={[
+                      shadows.sm,
+                      {
+                        backgroundColor: isSelected ? colors.primary[50] : colors.white,
+                        borderColor: isSelected ? colors.primary[500] : colors.gray[200],
+                      },
+                    ]}
                   >
                       <HStack space="md" className="items-center">
                         <View
@@ -187,21 +183,17 @@ export function CategoryFilterModal() {
                         </VStack>
 
                         {isSelected && (
-                          <MotiView
-                            from={{ scale: 0 }}
-                            animate={{ scale: 1 }}
-                            transition={{ type: 'spring', damping: 15 }}
-                          >
+                          <Animated.View entering={FadeIn.duration(200)}>
                             <View
                               className="w-6 h-6 rounded-full items-center justify-center"
                               style={{ backgroundColor: colors.primary[500] }}
                             >
                               <Icon as={Check} size="xs" className="text-white" />
                             </View>
-                          </MotiView>
+                          </Animated.View>
                         )}
                       </HStack>
-                    </MotiView>
+                    </View>
                 </Pressable>
               );
             })}

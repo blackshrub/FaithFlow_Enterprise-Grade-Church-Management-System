@@ -7,8 +7,23 @@
 
 import React from 'react';
 import { View } from 'react-native';
-import { MotiView } from 'moti';
 import { colors, spacing, borderRadius, shadows } from '@/constants/theme';
+
+// Simplified skeleton using static opacity
+const SkeletonBox = ({ width, height, style }: { width: number | string; height: number; style?: object }) => (
+  <View
+    style={[
+      {
+        width,
+        height,
+        backgroundColor: colors.gray[200],
+        borderRadius: borderRadius.md,
+        opacity: 0.7,
+      },
+      style,
+    ]}
+  />
+);
 
 export function EventCardSkeleton() {
   return (
@@ -21,150 +36,25 @@ export function EventCardSkeleton() {
     >
       {/* Header Skeleton */}
       <View className="flex-row justify-between items-start mb-4">
-        {/* Date Badge Skeleton */}
-        <MotiView
-          from={{ opacity: 0.4 }}
-          animate={{ opacity: 1 }}
-          transition={{
-            type: 'timing',
-            duration: 1000,
-            loop: true,
-          }}
-          style={{
-            width: 80,
-            height: 24,
-            backgroundColor: colors.gray[200],
-            borderRadius: borderRadius.full,
-          }}
-        />
-
-        {/* Status Badge Skeleton */}
-        <MotiView
-          from={{ opacity: 0.4 }}
-          animate={{ opacity: 1 }}
-          transition={{
-            type: 'timing',
-            duration: 1000,
-            loop: true,
-            delay: 100,
-          }}
-          style={{
-            width: 60,
-            height: 24,
-            backgroundColor: colors.gray[200],
-            borderRadius: borderRadius.full,
-          }}
-        />
+        <SkeletonBox width={80} height={24} style={{ borderRadius: borderRadius.full }} />
+        <SkeletonBox width={60} height={24} style={{ borderRadius: borderRadius.full }} />
       </View>
 
       {/* Title Skeleton */}
-      <MotiView
-        from={{ opacity: 0.4 }}
-        animate={{ opacity: 1 }}
-        transition={{
-          type: 'timing',
-          duration: 1000,
-          loop: true,
-          delay: 200,
-        }}
-        style={{
-          width: '80%',
-          height: 24,
-          backgroundColor: colors.gray[200],
-          borderRadius: borderRadius.md,
-          marginBottom: spacing.sm,
-        }}
-      />
+      <SkeletonBox width="80%" height={24} style={{ marginBottom: spacing.sm }} />
 
       {/* Description Skeleton */}
-      <MotiView
-        from={{ opacity: 0.4 }}
-        animate={{ opacity: 1 }}
-        transition={{
-          type: 'timing',
-          duration: 1000,
-          loop: true,
-          delay: 300,
-        }}
-        style={{
-          width: '100%',
-          height: 16,
-          backgroundColor: colors.gray[200],
-          borderRadius: borderRadius.md,
-          marginBottom: spacing.xs,
-        }}
-      />
-      <MotiView
-        from={{ opacity: 0.4 }}
-        animate={{ opacity: 1 }}
-        transition={{
-          type: 'timing',
-          duration: 1000,
-          loop: true,
-          delay: 400,
-        }}
-        style={{
-          width: '60%',
-          height: 16,
-          backgroundColor: colors.gray[200],
-          borderRadius: borderRadius.md,
-          marginBottom: spacing.lg,
-        }}
-      />
+      <SkeletonBox width="100%" height={16} style={{ marginBottom: spacing.xs }} />
+      <SkeletonBox width="60%" height={16} style={{ marginBottom: spacing.lg }} />
 
       {/* Info Row Skeleton */}
       <View className="flex-row justify-between items-center mb-4">
-        <MotiView
-          from={{ opacity: 0.4 }}
-          animate={{ opacity: 1 }}
-          transition={{
-            type: 'timing',
-            duration: 1000,
-            loop: true,
-            delay: 500,
-          }}
-          style={{
-            width: 100,
-            height: 14,
-            backgroundColor: colors.gray[200],
-            borderRadius: borderRadius.md,
-          }}
-        />
-        <MotiView
-          from={{ opacity: 0.4 }}
-          animate={{ opacity: 1 }}
-          transition={{
-            type: 'timing',
-            duration: 1000,
-            loop: true,
-            delay: 600,
-          }}
-          style={{
-            width: 80,
-            height: 14,
-            backgroundColor: colors.gray[200],
-            borderRadius: borderRadius.md,
-          }}
-        />
+        <SkeletonBox width={100} height={14} />
+        <SkeletonBox width={80} height={14} />
       </View>
 
       {/* Button Skeleton */}
-      <MotiView
-        from={{ opacity: 0.4 }}
-        animate={{ opacity: 1 }}
-        transition={{
-          type: 'timing',
-          duration: 1000,
-          loop: true,
-          delay: 700,
-        }}
-        style={{
-          width: '100%',
-          height: 44,
-          backgroundColor: colors.gray[200],
-          borderRadius: borderRadius.xl,
-        }}
-      />
+      <SkeletonBox width="100%" height={44} style={{ borderRadius: borderRadius.xl }} />
     </View>
   );
 }

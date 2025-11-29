@@ -1,24 +1,57 @@
+"""
+File Service - SeaweedFS Storage
+
+Handles file uploads, storage, and retrieval using SeaweedFS distributed storage.
+Migrated from local disk storage to SeaweedFS for scalability and reliability.
+"""
+
 from fastapi import UploadFile, HTTPException, status
 from motor.motor_asyncio import AsyncIOMotorDatabase
-from pathlib import Path
 from typing import Optional, List, Dict, Any
 import uuid
-import os
-import aiofiles
 import logging
+from datetime import datetime
+
+from services.seaweedfs_service import (
+    get_seaweedfs_service,
+    SeaweedFSError,
+    StorageCategory
+)
 
 logger = logging.getLogger(__name__)
 
-UPLOAD_DIR = Path(os.environ.get('UPLOAD_DIR', '/app/uploads'))
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
 
 ALLOWED_MIME_TYPES = [
-    'image/jpeg', 'image/jpg', 'image/png', 'image/gif',
+    'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp',
     'application/pdf',
     'application/vnd.ms-excel',
     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     'text/csv'
 ]
+
+# Map reference_type to StorageCategory
+REFERENCE_TYPE_TO_CATEGORY = {
+    "journal": StorageCategory.GENERAL,
+    "asset": StorageCategory.GENERAL,
+    "budget": StorageCategory.GENERAL,
+    "member": StorageCategory.MEMBER_DOCUMENT,
+    "article": StorageCategory.ARTICLE_IMAGE,
+    "event": StorageCategory.EVENT_COVER,
+    "group": StorageCategory.GROUP_COVER,
+    "community": StorageCategory.COMMUNITY_COVER,
+    "devotion": StorageCategory.DEVOTION_COVER,
+}
+
+
+def _get_storage_category(reference_type: str, mime_type: str) -> StorageCategory:
+    """Get storage category based on reference type and mime type."""
+    # Check if we have a specific mapping
+    if reference_type in REFERENCE_TYPE_TO_CATEGORY:
+        return REFERENCE_TYPE_TO_CATEGORY[reference_type]
+
+    # Default to GENERAL
+    return StorageCategory.GENERAL
 
 
 async def store_file(
@@ -30,18 +63,18 @@ async def store_file(
     uploaded_by: str
 ) -> Dict[str, Any]:
     """
-    Store uploaded file and create database record.
-    
+    Store uploaded file to SeaweedFS and create database record.
+
     Args:
         db: Database instance
         file: Uploaded file
         church_id: Church ID
-        reference_type: Type of entity
+        reference_type: Type of entity (journal, asset, budget, etc.)
         reference_id: Entity ID
         uploaded_by: User ID
-    
+
     Returns:
-        File upload record
+        File upload record with SeaweedFS URL
     """
     # Validate file type
     content_type = file.content_type
@@ -53,11 +86,11 @@ async def store_file(
                 "message": f"File type {content_type} is not allowed"
             }
         )
-    
+
     # Read file content
     content = await file.read()
     file_size = len(content)
-    
+
     # Validate file size
     if file_size > MAX_FILE_SIZE:
         raise HTTPException(
@@ -67,73 +100,106 @@ async def store_file(
                 "message": f"File size exceeds maximum of {MAX_FILE_SIZE} bytes"
             }
         )
-    
-    # Generate unique filename
-    file_ext = Path(file.filename).suffix
-    stored_filename = f"{church_id}_{uuid.uuid4().hex}{file_ext}"
-    
-    # Create church directory if not exists
-    church_dir = UPLOAD_DIR / church_id
-    church_dir.mkdir(parents=True, exist_ok=True)
-    
-    # Save file
-    file_path = church_dir / stored_filename
-    async with aiofiles.open(file_path, 'wb') as f:
-        await f.write(content)
-    
-    # Create database record
-    from datetime import datetime
-    file_record = {
-        "id": str(uuid.uuid4()),
-        "church_id": church_id,
-        "original_filename": file.filename,
-        "stored_filename": stored_filename,
-        "mime_type": content_type,
-        "storage_path": str(file_path),
-        "file_size": file_size,
-        "reference_type": reference_type,
-        "reference_id": reference_id,
-        "uploaded_by": uploaded_by,
-        "uploaded_at": datetime.utcnow()
-    }
-    
-    await db.file_uploads.insert_one(file_record)
-    logger.info(f"File stored: {stored_filename} for church {church_id}")
-    
-    return file_record
+
+    # Generate file ID
+    file_id = str(uuid.uuid4())
+    entity_id = reference_id or file_id
+
+    # Determine storage category
+    category = _get_storage_category(reference_type, content_type)
+
+    try:
+        # Upload to SeaweedFS
+        seaweedfs = get_seaweedfs_service()
+        result = await seaweedfs.upload_by_category(
+            content=content,
+            file_name=file.filename or f"file_{file_id}",
+            mime_type=content_type,
+            church_id=church_id,
+            category=category,
+            entity_id=entity_id
+        )
+
+        # Create database record
+        file_record = {
+            "id": file_id,
+            "church_id": church_id,
+            "original_filename": file.filename,
+            "mime_type": content_type,
+            "file_size": file_size,
+            "reference_type": reference_type,
+            "reference_id": reference_id,
+            "uploaded_by": uploaded_by,
+            "uploaded_at": datetime.utcnow(),
+            # SeaweedFS specific fields
+            "storage_type": "seaweedfs",
+            "url": result["url"],
+            "thumbnail_url": result.get("thumbnail_url"),
+            "fid": result.get("fid"),
+            "path": result.get("path"),
+        }
+
+        await db.file_uploads.insert_one(file_record)
+        logger.info(f"File stored in SeaweedFS: {result['url']} for church {church_id}")
+
+        return file_record
+
+    except SeaweedFSError as e:
+        logger.error(f"SeaweedFS upload failed: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={
+                "error_code": "UPLOAD_FAILED",
+                "message": f"Failed to upload file: {str(e)}"
+            }
+        )
+
+
+async def get_file_url(
+    db: AsyncIOMotorDatabase,
+    file_id: str,
+    church_id: str
+) -> Optional[str]:
+    """
+    Get file URL with church_id validation.
+
+    Args:
+        db: Database instance
+        file_id: File ID
+        church_id: Church ID for validation
+
+    Returns:
+        File URL if exists and authorized
+    """
+    file_record = await db.file_uploads.find_one({
+        "id": file_id,
+        "church_id": church_id
+    })
+
+    if not file_record:
+        return None
+
+    return file_record.get("url")
 
 
 async def get_file_path(
     db: AsyncIOMotorDatabase,
     file_id: str,
     church_id: str
-) -> Optional[Path]:
+) -> Optional[str]:
     """
-    Get file path with church_id validation.
-    
+    Get file URL (for backward compatibility with old API).
+    Now returns URL instead of local path.
+
     Args:
         db: Database instance
         file_id: File ID
         church_id: Church ID for validation
-    
+
     Returns:
-        File path if exists and authorized
+        File URL if exists and authorized
     """
-    file_record = await db.file_uploads.find_one({
-        "id": file_id,
-        "church_id": church_id
-    })
-    
-    if not file_record:
-        return None
-    
-    file_path = Path(file_record["storage_path"])
-    
-    if not file_path.exists():
-        logger.error(f"File not found: {file_path}")
-        return None
-    
-    return file_path
+    return await get_file_url(db, file_id, church_id)
 
 
 async def delete_file(
@@ -142,13 +208,13 @@ async def delete_file(
     church_id: str
 ) -> bool:
     """
-    Delete file from disk and database.
-    
+    Delete file from SeaweedFS and database.
+
     Args:
         db: Database instance
         file_id: File ID
         church_id: Church ID for validation
-    
+
     Returns:
         True if deleted, False otherwise
     """
@@ -156,20 +222,24 @@ async def delete_file(
         "id": file_id,
         "church_id": church_id
     })
-    
+
     if not file_record:
         return False
-    
-    # Delete from disk
-    file_path = Path(file_record["storage_path"])
-    if file_path.exists():
-        file_path.unlink()
-        logger.info(f"File deleted from disk: {file_path}")
-    
+
+    # Delete from SeaweedFS if it has fid
+    fid = file_record.get("fid")
+    if fid:
+        try:
+            seaweedfs = get_seaweedfs_service()
+            await seaweedfs.delete_file(fid)
+            logger.info(f"File deleted from SeaweedFS: {fid}")
+        except SeaweedFSError as e:
+            logger.warning(f"Failed to delete from SeaweedFS (continuing anyway): {e}")
+
     # Delete from database
     await db.file_uploads.delete_one({"id": file_id})
     logger.info(f"File record deleted: {file_id}")
-    
+
     return True
 
 
@@ -181,20 +251,20 @@ async def get_files_by_reference(
 ) -> List[Dict[str, Any]]:
     """
     Get all files for a specific entity.
-    
+
     Args:
         db: Database instance
         church_id: Church ID
         reference_type: Type of entity
         reference_id: Entity ID
-    
+
     Returns:
-        List of file records
+        List of file records with URLs
     """
     cursor = db.file_uploads.find({
         "church_id": church_id,
         "reference_type": reference_type,
         "reference_id": reference_id
     }).sort("uploaded_at", -1)
-    
+
     return await cursor.to_list(length=None)

@@ -33,7 +33,16 @@ import BottomSheet, { BottomSheetBackdrop } from '@gorhom/bottom-sheet';
 import * as Haptics from 'expo-haptics';
 import { FlashList } from '@shopify/flash-list';
 import { Image } from 'expo-image';
-import { MotiView } from 'moti';
+import Animated, {
+  FadeInUp,
+  FadeOut,
+  useSharedValue,
+  useAnimatedStyle,
+  withRepeat,
+  withTiming,
+  withDelay,
+  interpolate,
+} from 'react-native-reanimated';
 
 import { Text } from '@/components/ui/text';
 import { VStack } from '@/components/ui/vstack';
@@ -319,13 +328,39 @@ MessageBubble.displayName = 'MessageBubble';
 // TYPING INDICATOR
 // =============================================================================
 
+// Animated dot for typing indicator
+function AnimatedDot({ delay }: { delay: number }) {
+  const progress = useSharedValue(0);
+
+  React.useEffect(() => {
+    progress.value = withDelay(
+      delay,
+      withRepeat(withTiming(1, { duration: 600 }), -1, true)
+    );
+  }, [delay, progress]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(progress.value, [0, 1], [0.4, 1]),
+    transform: [{ scale: interpolate(progress.value, [0, 1], [0.8, 1]) }],
+  }));
+
+  return (
+    <Animated.View
+      style={[
+        { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.gray[400] },
+        animatedStyle,
+      ]}
+    />
+  );
+}
+
 const TypingIndicator = ({ text }: { text: string | null }) => {
   if (!text) return null;
 
   return (
-    <MotiView
-      from={{ opacity: 0, translateY: 10 }}
-      animate={{ opacity: 1, translateY: 0 }}
+    <Animated.View
+      entering={FadeInUp.duration(200)}
+      exiting={FadeOut.duration(200)}
       className="px-4 py-2"
     >
       <HStack space="sm" className="items-center">
@@ -334,24 +369,14 @@ const TypingIndicator = ({ text }: { text: string | null }) => {
           style={{ backgroundColor: colors.gray[100] }}
         >
           <HStack space="xs">
-            {[0, 1, 2].map((i) => (
-              <MotiView
-                key={i}
-                from={{ opacity: 0.4, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ type: 'timing', duration: 600, delay: i * 200, loop: true }}
-              >
-                <View
-                  className="w-2 h-2 rounded-full"
-                  style={{ backgroundColor: colors.gray[400] }}
-                />
-              </MotiView>
-            ))}
+            <AnimatedDot delay={0} />
+            <AnimatedDot delay={200} />
+            <AnimatedDot delay={400} />
           </HStack>
         </View>
         <Text className="text-gray-500 text-sm">{text}</Text>
       </HStack>
-    </MotiView>
+    </Animated.View>
   );
 };
 

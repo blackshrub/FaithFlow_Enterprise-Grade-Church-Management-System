@@ -535,7 +535,6 @@ const styles = StyleSheet.create({
     marginBottom: ExploreSpacing.xl,
   },
   optionsContainer: {
-    gap: ExploreSpacing.md,
     marginBottom: ExploreSpacing.xl,
   },
   optionCard: {
@@ -544,6 +543,7 @@ const styles = StyleSheet.create({
     borderColor: ExploreColors.neutral[200],
     borderRadius: 16,
     padding: ExploreSpacing.lg,
+    marginBottom: ExploreSpacing.md,
   },
   optionCardSelected: {
     borderColor: ExploreColors.primary[500],
@@ -560,7 +560,6 @@ const styles = StyleSheet.create({
   optionContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: ExploreSpacing.md,
   },
   optionRadio: {
     width: 24,
@@ -570,6 +569,7 @@ const styles = StyleSheet.create({
     borderColor: ExploreColors.neutral[300],
     alignItems: 'center',
     justifyContent: 'center',
+    marginRight: ExploreSpacing.md,
   },
   optionRadioSelected: {
     borderColor: ExploreColors.primary[500],
@@ -616,8 +616,10 @@ const styles = StyleSheet.create({
   explanationHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: ExploreSpacing.xs,
     marginBottom: ExploreSpacing.sm,
+  },
+  explanationIcon: {
+    marginRight: ExploreSpacing.xs,
   },
   explanationTitle: {
     ...ExploreTypography.h4,
@@ -631,12 +633,15 @@ const styles = StyleSheet.create({
   scriptureRefCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: ExploreSpacing.xs,
     marginBottom: ExploreSpacing.lg,
+  },
+  scriptureRefIcon: {
+    marginRight: ExploreSpacing.xs,
   },
   scriptureRefLabel: {
     ...ExploreTypography.caption,
     color: ExploreColors.neutral[600],
+    marginRight: ExploreSpacing.xs,
   },
   scriptureRefText: {
     ...ExploreTypography.caption,
@@ -657,13 +662,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: ExploreSpacing.sm,
     backgroundColor: ExploreColors.secondary[500],
     paddingVertical: ExploreSpacing.md,
     borderRadius: 16,
   },
   actionButtonDisabled: {
     opacity: 0.4,
+  },
+  actionButtonIcon: {
+    marginRight: ExploreSpacing.sm,
   },
   actionButtonText: {
     ...ExploreTypography.body,

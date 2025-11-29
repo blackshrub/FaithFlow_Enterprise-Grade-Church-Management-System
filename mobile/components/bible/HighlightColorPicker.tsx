@@ -10,7 +10,7 @@
 import React from 'react';
 import { View, Pressable, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { MotiView } from 'moti';
+import Animated, { SlideInDown, SlideOutDown } from 'react-native-reanimated';
 import { Check, X } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 
@@ -71,11 +71,9 @@ export function HighlightColorPicker({
   };
 
   return (
-    <MotiView
-      from={{ translateY: 100, opacity: 0 }}
-      animate={{ translateY: 0, opacity: 1 }}
-      exit={{ translateY: 100, opacity: 0 }}
-      transition={{ type: 'timing', duration: 200 }}
+    <Animated.View
+      entering={SlideInDown.duration(200)}
+      exiting={SlideOutDown.duration(150)}
       style={[
         styles.container,
         {
@@ -125,7 +123,7 @@ export function HighlightColorPicker({
           })}
         </HStack>
       </View>
-    </MotiView>
+    </Animated.View>
   );
 }
 

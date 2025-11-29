@@ -40,6 +40,7 @@ interface ChapterReaderProps {
   onPreviousChapter?: () => void;
   onNextChapter?: () => void;
   onScroll?: (event: { nativeEvent: { contentOffset: { y: number } } }) => void;
+  extraPaddingTop?: number; // Extra padding for focus mode when header is absolute
 }
 
 export function ChapterReader({
@@ -52,6 +53,7 @@ export function ChapterReader({
   onPreviousChapter,
   onNextChapter,
   onScroll,
+  extraPaddingTop = 0,
 }: ChapterReaderProps) {
   const {
     preferences,
@@ -462,7 +464,7 @@ export function ChapterReader({
           )
         }
         contentContainerStyle={{
-          paddingTop: spacing.md,
+          paddingTop: spacing.md + extraPaddingTop,
           paddingBottom: 300, // Extra space for end verses to be fully visible (increased from 160)
         }}
       />

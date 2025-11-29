@@ -7,7 +7,7 @@
 
 import React from 'react';
 import { View, Pressable, StyleSheet } from 'react-native';
-import { MotiView } from 'moti';
+import Animated, { SlideInUp } from 'react-native-reanimated';
 import {
   Mic,
   MicOff,
@@ -59,10 +59,8 @@ export function CallControls({
   };
 
   return (
-    <MotiView
-      from={{ opacity: 0, translateY: 50 }}
-      animate={{ opacity: 1, translateY: 0 }}
-      transition={{ type: 'timing', duration: 300 }}
+    <Animated.View
+      entering={SlideInUp.duration(300)}
       style={styles.container}
     >
       <View style={styles.controlsRow}>
@@ -143,7 +141,7 @@ export function CallControls({
       >
         <PhoneOff size={28} color={colors.white} />
       </Pressable>
-    </MotiView>
+    </Animated.View>
   );
 }
 

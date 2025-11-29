@@ -27,7 +27,7 @@ import {
 import { ExploreCard } from '@/components/explore/ExploreCard';
 import { EmptyState } from '@/components/explore/EmptyState';
 import { BibleFigureListSkeleton } from '@/components/explore/LoadingSkeleton';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import Animated, { FadeInDown, SlideInRight } from 'react-native-reanimated';
 
 type ViewMode = 'grid' | 'list';
 type FilterTestament = 'all' | 'old' | 'new';
@@ -94,7 +94,7 @@ export default function BibleFiguresLibraryScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Header */}
+      {/* Header - Static, not animated */}
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} style={styles.backButton}>
           <ArrowLeft size={24} color={ExploreColors.neutral[900]} />
@@ -119,12 +119,14 @@ export default function BibleFiguresLibraryScreen() {
         </View>
       </View>
 
+      {/* Content - Animated */}
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Search Bar */}
+        <Animated.View entering={SlideInRight.duration(250)}>
+          {/* Search Bar */}
         <View style={styles.searchContainer}>
           <View style={styles.searchBar}>
             <Search size={20} color={ExploreColors.neutral[400]} />
@@ -227,6 +229,7 @@ export default function BibleFiguresLibraryScreen() {
             ))}
           </View>
         )}
+        </Animated.View>
       </ScrollView>
     </SafeAreaView>
   );

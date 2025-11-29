@@ -23,8 +23,6 @@ export const showToast = (
   description?: string,
   duration: number = 3000
 ) => {
-  console.log('🍞 showToast called:', { type, title, description });
-
   // Haptic feedback based on type
   switch (type) {
     case 'success':
@@ -49,8 +47,6 @@ export const showToast = (
     visibilityTime: duration,
     bottomOffset: 180, // Above verse selection bar + tab bar
   });
-
-  console.log('✅ Toast displayed');
 };
 
 /**

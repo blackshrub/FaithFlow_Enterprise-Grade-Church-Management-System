@@ -3,6 +3,7 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 from typing import Optional
 from datetime import datetime
 import uuid
+import logging
 
 from models.article import ArticleBase, ArticleUpdate
 from utils.dependencies import get_db, get_current_user
@@ -10,7 +11,12 @@ from utils.dependencies import get_session_church_id
 from utils.error_response import error_response
 from utils.validation import sanitize_regex_pattern
 from services import article_service, audit_service
-import logging
+from services.seaweedfs_service import (
+    get_seaweedfs_service,
+    SeaweedFSService,
+    SeaweedFSError,
+    StorageCategory
+)
 
 logger = logging.getLogger(__name__)
 
@@ -279,10 +285,19 @@ async def upload_featured_image(
     current_user: dict = Depends(get_current_user),
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
-    """Upload featured image for article."""
+    """
+    Upload featured image for article to SeaweedFS.
+
+    The image is stored in SeaweedFS at:
+    /faithflow/{church_id}/articles/images/{article_id}/
+
+    Returns:
+        - image_url: URL to the featured image
+        - thumbnail_url: URL to the thumbnail
+    """
     church_id = get_session_church_id(current_user)
     user_id = current_user.get("id")
-    
+
     # Validate article exists
     article = await db.articles.find_one({"id": article_id, "church_id": church_id})
     if not article:
@@ -290,52 +305,79 @@ async def upload_featured_image(
             status_code=status.HTTP_404_NOT_FOUND,
             detail={"error_code": "NOT_FOUND", "message": "Article not found"}
         )
-    
+
     # Validate file type
-    allowed_types = ["image/jpeg", "image/jpg", "image/png", "image/webp"]
+    allowed_types = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif"]
     if file.content_type not in allowed_types:
-        error_response(
-            error_code="INVALID_FILE_TYPE",
-            message=f"File type {file.content_type} not allowed. Use jpg, png, or webp"
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "error_code": "INVALID_FILE_TYPE",
+                "message": f"File type {file.content_type} not allowed. Use jpg, png, webp, or gif"
+            }
         )
-    
+
     # Read and validate size
     content = await file.read()
     if len(content) > 5 * 1024 * 1024:  # 5MB
-        error_response(
-            error_code="FILE_SIZE_EXCEEDED",
-            message="Image must be less than 5MB"
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "error_code": "FILE_SIZE_EXCEEDED",
+                "message": "Image must be less than 5MB"
+            }
         )
-    
-    # Save file
-    from pathlib import Path
-    import aiofiles
-    
-    upload_dir = Path(f"/app/uploads/{church_id}/articles/{article_id}")
-    upload_dir.mkdir(parents=True, exist_ok=True)
-    
-    file_ext = Path(file.filename).suffix
-    filename = f"featured{file_ext}"
-    file_path = upload_dir / filename
-    
-    async with aiofiles.open(file_path, 'wb') as f:
-        await f.write(content)
-    
-    image_url = f"/uploads/{church_id}/articles/{article_id}/{filename}"
-    
-    # Update article
-    await db.articles.update_one(
-        {"id": article_id},
-        {"$set": {"featured_image": image_url, "updated_at": datetime.utcnow()}}
-    )
-    
-    await audit_service.log_action(
-        db=db, church_id=church_id, user_id=user_id,
-        action_type="update", module="article",
-        description=f"Uploaded featured image for: {article['title']}"
-    )
-    
-    return {"image_url": image_url}
+
+    # Upload to SeaweedFS
+    try:
+        seaweedfs = get_seaweedfs_service()
+        result = await seaweedfs.upload_article_image(
+            content=content,
+            file_name=file.filename or "featured.jpg",
+            mime_type=file.content_type,
+            church_id=church_id,
+            article_id=article_id
+        )
+
+        # Update article with SeaweedFS URLs
+        await db.articles.update_one(
+            {"id": article_id},
+            {
+                "$set": {
+                    "featured_image": result["url"],
+                    "featured_image_thumbnail": result.get("thumbnail_url"),
+                    "featured_image_fid": result.get("fid"),
+                    "featured_image_path": result.get("path"),
+                    "updated_at": datetime.utcnow()
+                }
+            }
+        )
+
+        await audit_service.log_action(
+            db=db, church_id=church_id, user_id=user_id,
+            action_type="update", module="article",
+            description=f"Uploaded featured image for: {article['title']}"
+        )
+
+        logger.info(f"Article {article_id} featured image uploaded to SeaweedFS: {result['url']}")
+
+        return {
+            "image_url": result["url"],
+            "thumbnail_url": result.get("thumbnail_url"),
+            "file_size": result.get("file_size"),
+            "width": result.get("width"),
+            "height": result.get("height")
+        }
+
+    except SeaweedFSError as e:
+        logger.error(f"Failed to upload article image to SeaweedFS: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={
+                "error_code": "UPLOAD_FAILED",
+                "message": f"Failed to upload image: {str(e)}"
+            }
+        )
 
 
 @router.post("/{article_id}/generate-preview-link")

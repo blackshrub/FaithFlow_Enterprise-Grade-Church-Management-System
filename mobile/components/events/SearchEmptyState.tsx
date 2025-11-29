@@ -7,7 +7,7 @@
 
 import React from 'react';
 import { View } from 'react-native';
-import { MotiView } from 'moti';
+import Animated, { ZoomIn } from 'react-native-reanimated';
 import { SearchX } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 
@@ -26,15 +26,7 @@ export function SearchEmptyState({ searchTerm }: SearchEmptyStateProps) {
 
   return (
     <View className="flex-1 items-center justify-center px-8 bg-gray-50">
-      <MotiView
-        from={{ opacity: 0, scale: 0.8 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{
-          type: 'spring',
-          damping: 15,
-          stiffness: 150,
-        }}
-      >
+      <Animated.View entering={ZoomIn.springify().damping(15)}>
         <VStack space="lg" className="items-center max-w-sm">
           {/* Icon */}
           <View
@@ -72,7 +64,7 @@ export function SearchEmptyState({ searchTerm }: SearchEmptyStateProps) {
             </VStack>
           </VStack>
         </VStack>
-      </MotiView>
+      </Animated.View>
     </View>
   );
 }

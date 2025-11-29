@@ -8,7 +8,7 @@
 import React from 'react';
 import { View } from 'react-native';
 import { AlertCircle, RefreshCw } from 'lucide-react-native';
-import { MotiView } from 'moti';
+import Animated, { ZoomIn } from 'react-native-reanimated';
 
 import { Text } from '@/components/ui/text';
 import { Heading } from '@/components/ui/heading';
@@ -31,33 +31,18 @@ export function ErrorState({
   retrying = false,
 }: ErrorStateProps) {
   return (
-    <MotiView
-      from={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{
-        type: 'timing',
-        duration: 300,
-      }}
+    <Animated.View
+      entering={ZoomIn.duration(300)}
       className="flex-1 items-center justify-center px-8"
     >
       <VStack space="lg" className="items-center max-w-sm">
         {/* Error Icon */}
-        <MotiView
-          from={{ rotate: '0deg' }}
-          animate={{ rotate: '10deg' }}
-          transition={{
-            type: 'timing',
-            duration: 200,
-            loop: true,
-          }}
+        <View
+          className="w-20 h-20 rounded-full items-center justify-center"
+          style={{ backgroundColor: colors.error[50] }}
         >
-          <View
-            className="w-20 h-20 rounded-full items-center justify-center"
-            style={{ backgroundColor: colors.error[50] }}
-          >
-            <Icon as={AlertCircle} size="2xl" className="text-error-600" />
-          </View>
-        </MotiView>
+          <Icon as={AlertCircle} size="2xl" className="text-error-600" />
+        </View>
 
         {/* Error Message */}
         <VStack space="sm" className="items-center">
@@ -85,6 +70,6 @@ export function ErrorState({
           </Button>
         )}
       </VStack>
-    </MotiView>
+    </Animated.View>
   );
 }

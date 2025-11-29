@@ -11,7 +11,7 @@
 import React, { useState } from 'react';
 import { View, Pressable, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { MotiView } from 'moti';
+import Animated, { SlideInDown, SlideOutDown } from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
 import { Highlighter, Copy, Share as ShareIcon, X, Bookmark, FileText } from 'lucide-react-native';
 
@@ -67,11 +67,9 @@ export function VerseSelectionBar({
   const verseText = verseCount === 1 ? t('bible.verse') || 'verse' : t('bible.verses') || 'verses';
 
   return (
-    <MotiView
-      from={{ translateY: 100, opacity: 0 }}
-      animate={{ translateY: 0, opacity: 1 }}
-      exit={{ translateY: 100, opacity: 0 }}
-      transition={{ type: 'timing', duration: 250 }}
+    <Animated.View
+      entering={SlideInDown.duration(250)}
+      exiting={SlideOutDown.duration(200)}
       style={[
         styles.container,
         {
@@ -173,7 +171,7 @@ export function VerseSelectionBar({
           </Pressable>
         </HStack>
       </View>
-    </MotiView>
+    </Animated.View>
   );
 }
 

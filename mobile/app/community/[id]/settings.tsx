@@ -27,7 +27,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
-import { MotiView } from 'moti';
+import Animated, { LinearTransition } from 'react-native-reanimated';
 import {
   ArrowLeft,
   Settings,
@@ -290,37 +290,34 @@ function SelectRow({
         </HStack>
       </Pressable>
 
+      {/* Layout animation only to avoid opacity conflict with nested FadeIn */}
       {expanded && (
-        <MotiView
-          from={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: 'auto' }}
-          transition={{ type: 'timing', duration: 200 }}
-        >
+        <Animated.View layout={LinearTransition.springify()}>
           <View className="bg-gray-50 px-4 py-2">
-            {options.map((option) => (
-              <Pressable
-                key={option.value}
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  onValueChange(option.value);
-                  setExpanded(false);
-                }}
-                className="py-2.5 flex-row items-center justify-between"
+          {options.map((option) => (
+            <Pressable
+              key={option.value}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                onValueChange(option.value);
+                setExpanded(false);
+              }}
+              className="py-2.5 flex-row items-center justify-between"
+            >
+              <Text
+                className={`${
+                  option.value === value ? 'text-primary-600 font-medium' : 'text-gray-700'
+                }`}
               >
-                <Text
-                  className={`${
-                    option.value === value ? 'text-primary-600 font-medium' : 'text-gray-700'
-                  }`}
-                >
-                  {option.label}
-                </Text>
-                {option.value === value && (
-                  <Icon as={Check} size="sm" style={{ color: colors.primary[600] }} />
-                )}
-              </Pressable>
-            ))}
+                {option.label}
+              </Text>
+              {option.value === value && (
+                <Icon as={Check} size="sm" style={{ color: colors.primary[600] }} />
+              )}
+            </Pressable>
+          ))}
           </View>
-        </MotiView>
+        </Animated.View>
       )}
     </View>
   );

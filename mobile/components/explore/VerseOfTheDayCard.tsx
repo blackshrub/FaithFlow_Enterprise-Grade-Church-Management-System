@@ -7,7 +7,7 @@
  * - Premium shadows and typography
  */
 
-import React from 'react';
+import React, { memo } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ExploreColors, ExploreSpacing, ExploreBorderRadius, ExploreShadows } from '@/constants/explore/designSystem';
@@ -25,7 +25,7 @@ interface VerseOfTheDayCardProps {
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-export function VerseOfTheDayCard({
+export const VerseOfTheDayCard = memo(function VerseOfTheDayCard({
   verse,
   language,
   onPress,
@@ -120,7 +120,7 @@ export function VerseOfTheDayCard({
       <View style={styles.accentLine} />
     </AnimatedPressable>
   );
-}
+});
 
 const styles = StyleSheet.create({
   container: {

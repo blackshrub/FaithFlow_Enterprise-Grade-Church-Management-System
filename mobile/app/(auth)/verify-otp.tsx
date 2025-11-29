@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { MotiView } from "moti";
+import Animated, { FadeInUp } from "react-native-reanimated";
 import { SafeAreaView } from "@/components/ui/safe-area-view";
 import { VStack } from "@/components/ui/vstack";
 import { HStack } from "@/components/ui/hstack";
@@ -79,10 +79,8 @@ export default function VerifyOTPScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background-0">
-      <MotiView
-        from={{ opacity: 0, translateY: 30 }}
-        animate={{ opacity: 1, translateY: 0 }}
-        transition={{ type: "timing", duration: 400 }}
+      <Animated.View
+        entering={FadeInUp.duration(400)}
         className="flex-1 px-6 justify-center"
       >
         <VStack space="2xl" className="items-center">
@@ -157,7 +155,7 @@ export default function VerifyOTPScreen() {
             </Text>
           </Pressable>
         </VStack>
-      </MotiView>
+      </Animated.View>
     </SafeAreaView>
   );
 }

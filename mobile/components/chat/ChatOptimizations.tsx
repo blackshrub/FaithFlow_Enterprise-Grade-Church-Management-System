@@ -52,7 +52,6 @@ import {
   TapGestureHandler,
   State,
 } from 'react-native-gesture-handler';
-import { MotiView } from 'moti';
 import {
   Send,
   ArrowDown,
@@ -203,13 +202,13 @@ export const SendButton = React.memo(({ onPress, disabled, isSending }: SendButt
       style={[styles.sendButton, animatedStyle]}
     >
       {isSending ? (
-        <MotiView
-          from={{ rotate: '0deg' }}
-          animate={{ rotate: '360deg' }}
-          transition={{ type: 'timing', duration: 800, loop: true }}
+        <Animated.View
+          style={{
+            transform: [{ rotate: '360deg' }],
+          }}
         >
           <Icon as={Clock} size="md" className="text-white" />
-        </MotiView>
+        </Animated.View>
       ) : (
         <Icon as={Send} size="md" className="text-white" />
       )}
@@ -327,13 +326,9 @@ export const MessageStatusIndicator = React.memo(({
     switch (status) {
       case 'sending':
         return (
-          <MotiView
-            from={{ opacity: 0.4 }}
-            animate={{ opacity: 1 }}
-            transition={{ type: 'timing', duration: 400, loop: true }}
-          >
+          <Animated.View style={{ opacity: 0.7 }}>
             <Icon as={Clock} size="xs" style={{ color: '#8696a0' }} />
-          </MotiView>
+          </Animated.View>
         );
       case 'sent':
         // WhatsApp gray tick
@@ -418,13 +413,9 @@ export const ConnectionBanner = React.memo(({ status }: ConnectionBannerProps) =
         animatedStyle,
       ]}
     >
-      <MotiView
-        from={{ opacity: 0.5 }}
-        animate={{ opacity: 1 }}
-        transition={{ type: 'timing', duration: 600, loop: status === 'connecting' }}
-      >
+      <View style={{ opacity: status === 'connecting' ? 0.7 : 1 }}>
         <Icon as={config.icon} size="sm" className="text-white mr-2" />
-      </MotiView>
+      </View>
       <Text className="text-white text-sm flex-1">{config.text}</Text>
     </Animated.View>
   );
@@ -748,15 +739,9 @@ export const OptimisticMessageWrapper = React.memo(({
   return (
     <Animated.View
       entering={FadeIn.duration(100).springify()}
-      style={styles.optimisticWrapper}
+      style={[styles.optimisticWrapper, { opacity: 0.85 }]}
     >
-      <MotiView
-        from={{ opacity: 0.7 }}
-        animate={{ opacity: 1 }}
-        transition={{ type: 'timing', duration: 500, loop: true }}
-      >
-        {children}
-      </MotiView>
+      {children}
     </Animated.View>
   );
 });
@@ -787,17 +772,9 @@ export const TypingBubble = React.memo(({ names }: TypingBubbleProps) => {
     >
       <View style={styles.typingDotsContainer}>
         {[0, 1, 2].map((i) => (
-          <MotiView
+          <View
             key={i}
-            from={{ opacity: 0.3, translateY: 0 }}
-            animate={{ opacity: 1, translateY: -3 }}
-            transition={{
-              type: 'timing',
-              duration: 400,
-              delay: i * 150,
-              loop: true,
-            }}
-            style={styles.typingDot}
+            style={[styles.typingDot, { opacity: 0.7 }]}
           />
         ))}
       </View>

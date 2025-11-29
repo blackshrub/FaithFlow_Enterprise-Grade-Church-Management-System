@@ -11,7 +11,7 @@
  */
 
 import React, { useCallback, useMemo, useRef, useState } from 'react';
-import { View, Pressable, StyleSheet, FlatList } from 'react-native';
+import { View, Pressable, StyleSheet } from 'react-native';
 import BottomSheet, { BottomSheetBackdrop, BottomSheetFlatList } from '@gorhom/bottom-sheet';
 import * as Haptics from 'expo-haptics';
 import { Check, CheckCheck, Eye, Clock } from 'lucide-react-native';

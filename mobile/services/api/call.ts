@@ -5,7 +5,8 @@
  * Handles communication with backend call routes.
  */
 
-import { api } from '@/services/api';
+// Import directly from api.ts to avoid circular dependency with index.ts
+import { api } from '../api';
 import {
   CallResponse,
   CallHistoryResponse,

@@ -9,21 +9,21 @@
  * - Recent searches history
  */
 
-import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useMemo, useRef, useEffect, memo } from 'react';
 import {
   View,
   Pressable,
   TextInput,
-  FlatList,
   ActivityIndicator,
   Keyboard,
 } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Image } from 'expo-image';
 import * as Haptics from 'expo-haptics';
-import { MotiView } from 'moti';
+import Animated, { ZoomIn } from 'react-native-reanimated';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   ArrowLeft,
@@ -128,7 +128,7 @@ interface SearchResultItemProps {
   onPress: () => void;
 }
 
-function SearchResultItem({ message, query, onPress }: SearchResultItemProps) {
+const SearchResultItem = memo(function SearchResultItem({ message, query, onPress }: SearchResultItemProps) {
   const MessageIcon = getMessageIcon(message.message_type);
 
   return (
@@ -190,7 +190,7 @@ function SearchResultItem({ message, query, onPress }: SearchResultItemProps) {
       </HStack>
     </Pressable>
   );
-}
+});
 
 // =============================================================================
 // RECENT SEARCH ITEM
@@ -202,7 +202,7 @@ interface RecentSearchItemProps {
   onRemove: () => void;
 }
 
-function RecentSearchItem({ query, onPress, onRemove }: RecentSearchItemProps) {
+const RecentSearchItem = memo(function RecentSearchItem({ query, onPress, onRemove }: RecentSearchItemProps) {
   return (
     <Pressable
       onPress={onPress}
@@ -222,7 +222,7 @@ function RecentSearchItem({ query, onPress, onRemove }: RecentSearchItemProps) {
       </Pressable>
     </Pressable>
   );
-}
+});
 
 // =============================================================================
 // MAIN SCREEN
@@ -381,7 +381,7 @@ export default function CommunitySearchScreen() {
 
         {/* Search Results */}
         {showResults && !isLoading && (
-          <FlatList
+          <FlashList
             data={searchResults}
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => (
@@ -402,6 +402,7 @@ export default function CommunitySearchScreen() {
                 )}
               </HStack>
             }
+            estimatedItemSize={100}
           />
         )}
 
@@ -441,18 +442,14 @@ export default function CommunitySearchScreen() {
         {/* Empty State */}
         {showEmpty && (
           <VStack className="flex-1 items-center justify-center px-8" space="md">
-            <MotiView
-              from={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ type: 'spring' }}
-            >
+            <Animated.View entering={ZoomIn.springify()}>
               <View
                 className="w-20 h-20 rounded-full items-center justify-center mb-4"
                 style={{ backgroundColor: colors.gray[100] }}
               >
                 <Icon as={Search} size="2xl" className="text-gray-400" />
               </View>
-            </MotiView>
+            </Animated.View>
             <Text className="text-gray-600 text-center text-lg font-medium">
               No results found
             </Text>
@@ -465,18 +462,14 @@ export default function CommunitySearchScreen() {
         {/* Initial State */}
         {!shouldSearch && recentSearches.length === 0 && (
           <VStack className="flex-1 items-center justify-center px-8" space="md">
-            <MotiView
-              from={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ type: 'spring' }}
-            >
+            <Animated.View entering={ZoomIn.springify()}>
               <View
                 className="w-20 h-20 rounded-full items-center justify-center mb-4"
                 style={{ backgroundColor: colors.primary[50] }}
               >
                 <Icon as={Search} size="2xl" style={{ color: colors.primary[400] }} />
               </View>
-            </MotiView>
+            </Animated.View>
             <Text className="text-gray-600 text-center text-lg font-medium">
               Search Messages
             </Text>

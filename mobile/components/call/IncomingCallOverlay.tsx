@@ -18,7 +18,16 @@
 
 import React, { useEffect } from 'react';
 import { View, Pressable, StyleSheet, Dimensions, StatusBar } from 'react-native';
-import { MotiView } from 'moti';
+import Animated, {
+  FadeIn,
+  FadeOut,
+  SlideInUp,
+  SlideInDown,
+  withRepeat,
+  withTiming,
+  useAnimatedStyle,
+  useSharedValue,
+} from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Phone, PhoneOff, Video } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
@@ -38,6 +47,23 @@ export function IncomingCallOverlay() {
   const incomingCall = useIncomingCall();
   const { acceptCall, rejectCall } = useCallStore();
   const { startRingtone, stopRingtone } = useRingtone();
+
+  // Pulsing animation for accept button
+  const pulseScale = useSharedValue(1);
+
+  useEffect(() => {
+    if (incomingCall) {
+      pulseScale.value = withRepeat(
+        withTiming(1.1, { duration: 600 }),
+        -1,
+        true
+      );
+    }
+  }, [incomingCall, pulseScale]);
+
+  const pulseStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: pulseScale.value }],
+  }));
 
   // Play ringtone when incoming call arrives
   useEffect(() => {
@@ -64,8 +90,8 @@ export function IncomingCallOverlay() {
       await acceptCall(incomingCall.call_id);
       // Navigate to the call screen
       router.push(`/call/${incomingCall.call_id}`);
-    } catch (error) {
-      console.error('Failed to accept call:', error);
+    } catch {
+      // Accept failed silently
     }
   };
 
@@ -74,30 +100,32 @@ export function IncomingCallOverlay() {
     stopRingtone();
     try {
       await rejectCall(incomingCall.call_id, 'rejected');
-    } catch (error) {
-      console.error('Failed to reject call:', error);
+    } catch {
+      // Reject failed silently
     }
   };
 
   return (
-    <MotiView
-      from={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ type: 'timing', duration: 200 }}
-      style={styles.container}
-    >
+    <View style={styles.container}>
       <StatusBar barStyle="light-content" />
 
-      <LinearGradient
-        colors={['#1a1a2e', '#16213e', '#0f3460']}
-        style={styles.gradient}
+      {/* Background with fade animation */}
+      <Animated.View
+        entering={FadeIn.duration(200)}
+        exiting={FadeOut.duration(200)}
+        style={StyleSheet.absoluteFill}
       >
+        <LinearGradient
+          colors={['#1a1a2e', '#16213e', '#0f3460']}
+          style={styles.gradient}
+        />
+      </Animated.View>
+
+      {/* Content with slide animations */}
+      <View style={styles.gradient}>
         {/* Call Type Indicator */}
-        <MotiView
-          from={{ opacity: 0, translateY: -20 }}
-          animate={{ opacity: 1, translateY: 0 }}
-          transition={{ delay: 200 }}
+        <Animated.View
+          entering={SlideInDown.delay(200).springify()}
           style={styles.callTypeIndicator}
         >
           {isVideoCall ? (
@@ -108,7 +136,7 @@ export function IncomingCallOverlay() {
           <Text style={styles.callTypeText}>
             {isVideoCall ? 'Video Call' : 'Voice Call'}
           </Text>
-        </MotiView>
+        </Animated.View>
 
         {/* Caller Info */}
         <View style={styles.callerContainer}>
@@ -121,10 +149,8 @@ export function IncomingCallOverlay() {
         </View>
 
         {/* Action Buttons */}
-        <MotiView
-          from={{ opacity: 0, translateY: 50 }}
-          animate={{ opacity: 1, translateY: 0 }}
-          transition={{ type: 'spring', delay: 300 }}
+        <Animated.View
+          entering={SlideInUp.delay(300).springify()}
           style={styles.actionsContainer}
         >
           {/* Reject Button */}
@@ -143,27 +169,20 @@ export function IncomingCallOverlay() {
             onPress={handleAccept}
             style={styles.acceptButton}
           >
-            <MotiView
-              from={{ scale: 1 }}
-              animate={{ scale: 1.1 }}
-              transition={{
-                type: 'timing',
-                duration: 600,
-                loop: true,
-              }}
-              style={styles.acceptButtonInner}
+            <Animated.View
+              style={[styles.acceptButtonInner, pulseStyle]}
             >
               {isVideoCall ? (
                 <Video size={32} color={colors.white} />
               ) : (
                 <Phone size={32} color={colors.white} />
               )}
-            </MotiView>
+            </Animated.View>
             <Text style={styles.buttonLabel}>Accept</Text>
           </Pressable>
-        </MotiView>
-      </LinearGradient>
-    </MotiView>
+        </Animated.View>
+      </View>
+    </View>
   );
 }
 

@@ -47,12 +47,11 @@ import {
   BookOpen,
   Play,
   Lock,
-  User,
 } from 'lucide-react-native';
 import { Share } from 'react-native';
 import { DailyDevotionSkeleton } from '@/components/explore/LoadingSkeleton';
 import { MarkdownText } from '@/components/explore/MarkdownText';
-import Animated, { FadeIn, FadeInDown, FadeInRight } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeInDown, FadeInRight, SlideInRight } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -141,7 +140,6 @@ function DailyDevotionView({ devotion, contentLanguage, onBack }: DailyDevotionV
   const title = devotion.title[contentLanguage] || devotion.title.en;
   const content = devotion.content[contentLanguage] || devotion.content.en;
   const summary = devotion.summary?.[contentLanguage] || devotion.summary?.en;
-  const author = devotion.author?.[contentLanguage] || devotion.author?.en;
 
   const handleShare = async () => {
     try {
@@ -181,9 +179,9 @@ function DailyDevotionView({ devotion, contentLanguage, onBack }: DailyDevotionV
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Hero Image */}
+        {/* Hero Image - Slide in from right for page navigation feel */}
         {devotion.image_url && (
-          <Animated.View entering={FadeIn.duration(400)}>
+          <Animated.View entering={SlideInRight.duration(250)}>
             <ImageBackground
               source={{ uri: devotion.image_url }}
               style={styles.heroImage}
@@ -207,19 +205,11 @@ function DailyDevotionView({ devotion, contentLanguage, onBack }: DailyDevotionV
         )}
 
         <Animated.View
-          entering={FadeInDown.duration(500).delay(200)}
+          entering={SlideInRight.duration(250).delay(30)}
           style={styles.contentContainer}
         >
           {/* Title */}
           <Text style={styles.title}>{title}</Text>
-
-          {/* Author */}
-          {author && (
-            <View style={styles.authorRow}>
-              <User size={16} color={ExploreColors.neutral[500]} />
-              <Text style={styles.authorText}>{author}</Text>
-            </View>
-          )}
 
           {/* Main Verse */}
           {devotion.main_verse && (
@@ -1006,17 +996,6 @@ const styles = StyleSheet.create({
     color: ExploreColors.neutral[600],
     marginBottom: ExploreSpacing.md,
     fontStyle: 'italic',
-  },
-  authorRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: ExploreSpacing.lg,
-  },
-  authorText: {
-    ...ExploreTypography.body,
-    color: ExploreColors.neutral[600],
-    fontWeight: '500',
   },
   description: {
     ...ExploreTypography.body,

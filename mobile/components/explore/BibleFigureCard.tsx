@@ -7,7 +7,7 @@
  * - Premium shadows and typography
  */
 
-import React from 'react';
+import React, { memo } from 'react';
 import { View, Text, ImageBackground, StyleSheet, Pressable } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ExploreColors, ExploreSpacing, ExploreBorderRadius, ExploreShadows } from '@/constants/explore/designSystem';
@@ -29,7 +29,7 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 // Default placeholder for figures without images
 const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=800&q=80';
 
-export function BibleFigureCard({
+export const BibleFigureCard = memo(function BibleFigureCard({
   figure,
   language,
   onPress,
@@ -137,7 +137,7 @@ export function BibleFigureCard({
       </ImageBackground>
     </AnimatedPressable>
   );
-}
+});
 
 const styles = StyleSheet.create({
   // Full variant

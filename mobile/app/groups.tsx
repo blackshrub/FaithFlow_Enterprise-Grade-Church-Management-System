@@ -13,13 +13,19 @@
  * - Complete bilingual support (EN/ID)
  */
 
-import React, { useState, useCallback } from 'react';
-import { ScrollView, RefreshControl } from 'react-native';
+import React, { useState, useCallback, useEffect } from 'react';
+import { ScrollView, RefreshControl, View } from 'react-native';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import * as Haptics from 'expo-haptics';
-import { MotiView } from 'moti';
-import { View } from 'react-native';
+import Animated, {
+  FadeInUp,
+  ZoomIn,
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  withSpring,
+} from 'react-native-reanimated';
 import { VStack } from '@/components/ui/vstack';
 import { HStack } from '@/components/ui/hstack';
 import { Text } from '@/components/ui/text';
@@ -200,10 +206,8 @@ export default function GroupsScreen() {
 
   // Render empty state
   const renderEmpty = (message: string) => (
-    <MotiView
-      from={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ type: 'spring', damping: 20 }}
+    <Animated.View
+      entering={ZoomIn.springify().damping(20)}
       style={{
         flex: 1,
         justifyContent: 'center',
@@ -236,15 +240,13 @@ export default function GroupsScreen() {
         <Icon as={RefreshCw} size="sm" className="mr-2" />
         <ButtonText>{t('common.refresh')}</ButtonText>
       </Button>
-    </MotiView>
+    </Animated.View>
   );
 
   // Render error state
   const renderError = (error: any) => (
-    <MotiView
-      from={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ type: 'spring', damping: 20 }}
+    <Animated.View
+      entering={ZoomIn.springify().damping(20)}
       style={{
         flex: 1,
         justifyContent: 'center',
@@ -263,7 +265,7 @@ export default function GroupsScreen() {
         <Icon as={RefreshCw} size="sm" className="mr-2" />
         <ButtonText>{t('common.retry')}</ButtonText>
       </Button>
-    </MotiView>
+    </Animated.View>
   );
 
   // Render group card
@@ -275,11 +277,9 @@ export default function GroupsScreen() {
     const isNearCapacity = capacityPercentage >= 80;
 
     return (
-      <MotiView
+      <Animated.View
         key={group._id}
-        from={{ opacity: 0, translateY: 20 }}
-        animate={{ opacity: 1, translateY: 0 }}
-        transition={{ type: 'spring', damping: 15 }}
+        entering={FadeInUp.springify().damping(15)}
       >
         <Card
           style={{
@@ -388,12 +388,10 @@ export default function GroupsScreen() {
                     overflow: 'hidden',
                   }}
                 >
-                  <MotiView
-                    from={{ width: 0 }}
-                    animate={{ width: `${capacityPercentage}%` }}
-                    transition={{ type: 'timing', duration: 800 }}
+                  <View
                     style={{
                       height: '100%',
+                      width: `${capacityPercentage}%`,
                       backgroundColor: isNearCapacity
                         ? colors.warning[500]
                         : colors.primary[500],
@@ -482,7 +480,7 @@ export default function GroupsScreen() {
             </HStack>
           </VStack>
         </Card>
-      </MotiView>
+      </Animated.View>
     );
   };
 

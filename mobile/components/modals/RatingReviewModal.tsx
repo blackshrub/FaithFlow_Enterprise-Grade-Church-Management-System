@@ -10,7 +10,7 @@
 
 import React, { useState } from 'react';
 import { Modal, Pressable, View, TextInput, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
-import { MotiView } from 'moti';
+import Animated, { SlideInDown, SlideOutDown } from 'react-native-reanimated';
 import { X, Send, Star } from 'lucide-react-native';
 import { Text } from '@/components/ui/text';
 import { Heading } from '@/components/ui/heading';
@@ -87,11 +87,9 @@ export function RatingReviewModal({
         <View className="flex-1 bg-black/50 justify-end">
           <Pressable className="flex-1" onPress={onClose} />
 
-          <MotiView
-            from={{ translateY: 500 }}
-            animate={{ translateY: 0 }}
-            exit={{ translateY: 500 }}
-            transition={{ type: 'timing', duration: 300 }}
+          <Animated.View
+            entering={SlideInDown.duration(300)}
+            exiting={SlideOutDown.duration(300)}
             style={{
               backgroundColor: '#FFFFFF',
               borderTopLeftRadius: borderRadius['3xl'],
@@ -238,7 +236,7 @@ export function RatingReviewModal({
                 </VStack>
               </View>
             </ScrollView>
-          </MotiView>
+          </Animated.View>
         </View>
       </KeyboardAvoidingView>
     </Modal>

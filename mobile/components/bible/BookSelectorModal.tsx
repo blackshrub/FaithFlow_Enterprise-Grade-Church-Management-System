@@ -10,7 +10,7 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { View, Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { MotiView } from 'moti';
+import Animated, { FadeIn, FadeInUp, ZoomIn } from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
 import { ChevronLeft, ArrowDownAZ, ListOrdered, LayoutGrid, List } from 'lucide-react-native';
 import GorhomBottomSheet, { BottomSheetBackdrop as GorhomBackdrop } from '@gorhom/bottom-sheet';

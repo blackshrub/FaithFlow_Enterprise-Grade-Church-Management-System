@@ -5,14 +5,23 @@ from datetime import datetime
 from pathlib import Path
 import uuid
 import aiofiles
+import logging
 
 from models.group import GroupBase, GroupUpdate, Group
 from models.member import Member
 from utils.dependencies import get_db, get_current_user
 from utils.dependencies import get_session_church_id
 from services import audit_service
+from services.seaweedfs_service import (
+    get_seaweedfs_service,
+    SeaweedFSService,
+    SeaweedFSError,
+    StorageCategory
+)
 from utils.error_response import error_response
 from utils.validation import sanitize_regex_pattern
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/groups", tags=["Groups"])
 
@@ -304,7 +313,16 @@ async def upload_group_cover(
     current_user: dict = Depends(get_current_user),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
-    """Upload cover image for group (staff)."""
+    """
+    Upload cover image for group to SeaweedFS.
+
+    The image is stored in SeaweedFS at:
+    /faithflow/{church_id}/groups/covers/{group_id}/
+
+    Returns:
+        - cover_image: URL to the cover image
+        - cover_image_thumbnail: URL to the thumbnail
+    """
     church_id = get_session_church_id(current_user)
     user_id = current_user.get("id")
 
@@ -317,44 +335,74 @@ async def upload_group_cover(
 
     allowed_types = ["image/jpeg", "image/jpg", "image/png", "image/webp"]
     if file.content_type not in allowed_types:
-        error_response(
-            error_code="INVALID_FILE_TYPE",
-            message=f"File type {file.content_type} not allowed. Use jpg, png, or webp",
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "error_code": "INVALID_FILE_TYPE",
+                "message": f"File type {file.content_type} not allowed. Use jpg, png, or webp"
+            }
         )
 
     content = await file.read()
-    if len(content) > 3 * 1024 * 1024:
-        error_response(
-            error_code="FILE_SIZE_EXCEEDED",
-            message="Image must be less than 3MB",
+    if len(content) > 5 * 1024 * 1024:  # Increased to 5MB for SeaweedFS
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "error_code": "FILE_SIZE_EXCEEDED",
+                "message": "Image must be less than 5MB"
+            }
         )
 
-    # Convert to base64 instead of saving to file system
-    import base64
-    base64_data = base64.b64encode(content).decode('utf-8')
-    
-    # Determine MIME type
-    mime_types = {
-        'image/jpeg': 'image/jpeg',
-        'image/jpg': 'image/jpeg',
-        'image/png': 'image/png',
-        'image/webp': 'image/webp'
-    }
-    mime_type = mime_types.get(file.content_type, 'image/jpeg')
-    cover_image_base64 = f"data:{mime_type};base64,{base64_data}"
+    # Upload to SeaweedFS
+    try:
+        seaweedfs = get_seaweedfs_service()
+        result = await seaweedfs.upload_group_cover(
+            content=content,
+            file_name=file.filename or "cover.jpg",
+            mime_type=file.content_type,
+            church_id=church_id,
+            group_id=group_id
+        )
 
-    await db.groups.update_one(
-        {"id": group_id},
-        {"$set": {"cover_image": cover_image_base64, "updated_at": datetime.utcnow()}},
-    )
+        # Update group with SeaweedFS URLs
+        await db.groups.update_one(
+            {"id": group_id},
+            {
+                "$set": {
+                    "cover_image": result["url"],
+                    "cover_image_thumbnail": result.get("thumbnail_url"),
+                    "cover_image_fid": result.get("fid"),
+                    "cover_image_path": result.get("path"),
+                    "updated_at": datetime.utcnow()
+                }
+            },
+        )
 
-    await audit_service.log_action(
-        db=db,
-        church_id=church_id,
-        user_id=user_id,
-        action_type="update",
-        module="group",
-        description=f"Uploaded cover image for group: {group['name']}",
-    )
+        await audit_service.log_action(
+            db=db,
+            church_id=church_id,
+            user_id=user_id,
+            action_type="update",
+            module="group",
+            description=f"Uploaded cover image for group: {group['name']}",
+        )
 
-    return {"cover_image": cover_image_base64}
+        logger.info(f"Group {group_id} cover uploaded to SeaweedFS: {result['url']}")
+
+        return {
+            "cover_image": result["url"],
+            "cover_image_thumbnail": result.get("thumbnail_url"),
+            "file_size": result.get("file_size"),
+            "width": result.get("width"),
+            "height": result.get("height")
+        }
+
+    except SeaweedFSError as e:
+        logger.error(f"Failed to upload group cover to SeaweedFS: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={
+                "error_code": "UPLOAD_FAILED",
+                "message": f"Failed to upload image: {str(e)}"
+            }
+        )

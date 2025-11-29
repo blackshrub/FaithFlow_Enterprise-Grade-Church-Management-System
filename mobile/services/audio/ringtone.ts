@@ -148,25 +148,36 @@ export function useRingtone() {
   useEffect(() => {
     playerRef.current = player;
 
-    // Configure for looping
+    // Configure for looping - with safety checks for uninitialized player
     if (player) {
-      player.loop = true;
-      player.volume = 1.0;
+      try {
+        player.loop = true;
+        player.volume = 1.0;
+      } catch (error) {
+        // Player may not be fully initialized yet, ignore
+        console.log('[Ringtone Hook] Player not ready for configuration');
+      }
     }
 
     return () => {
-      // Cleanup on unmount
-      if (player) {
-        player.pause();
-      }
+      // Cleanup on unmount - with safety checks
       if (vibrationIntervalRef.current) {
         clearInterval(vibrationIntervalRef.current);
+        vibrationIntervalRef.current = null;
+      }
+      if (player) {
+        try {
+          player.pause();
+        } catch (error) {
+          // Player may already be disposed, ignore
+          console.log('[Ringtone Hook] Player cleanup skipped');
+        }
       }
     };
   }, [player]);
 
   const startRingtone = useCallback(async () => {
-    if (isPlayingRef.current || !playerRef.current) return;
+    if (isPlayingRef.current) return;
 
     isPlayingRef.current = true;
 
@@ -177,9 +188,15 @@ export function useRingtone() {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
       }, 1500);
 
-      // Play ringtone
-      playerRef.current.play();
-      console.log('[Ringtone Hook] Started');
+      // Play ringtone - with safety check
+      if (playerRef.current) {
+        try {
+          playerRef.current.play();
+          console.log('[Ringtone Hook] Started');
+        } catch (error) {
+          console.log('[Ringtone Hook] Audio player not available, vibration only');
+        }
+      }
     } catch (error) {
       console.error('[Ringtone Hook] Failed to start:', error);
       isPlayingRef.current = false;
@@ -191,21 +208,22 @@ export function useRingtone() {
 
     isPlayingRef.current = false;
 
-    try {
-      // Stop vibration
-      if (vibrationIntervalRef.current) {
-        clearInterval(vibrationIntervalRef.current);
-        vibrationIntervalRef.current = null;
-      }
+    // Stop vibration first (always works)
+    if (vibrationIntervalRef.current) {
+      clearInterval(vibrationIntervalRef.current);
+      vibrationIntervalRef.current = null;
+    }
 
-      // Stop ringtone
-      if (playerRef.current) {
+    // Stop ringtone - with safety checks
+    if (playerRef.current) {
+      try {
         playerRef.current.pause();
         playerRef.current.seekTo(0);
+        console.log('[Ringtone Hook] Stopped');
+      } catch (error) {
+        // Player may not be available or already stopped
+        console.log('[Ringtone Hook] Audio stop skipped');
       }
-      console.log('[Ringtone Hook] Stopped');
-    } catch (error) {
-      console.error('[Ringtone Hook] Failed to stop:', error);
     }
   }, []);
 

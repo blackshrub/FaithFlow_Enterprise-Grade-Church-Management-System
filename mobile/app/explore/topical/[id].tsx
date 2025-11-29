@@ -314,10 +314,12 @@ const styles = StyleSheet.create({
   },
   versesList: {
     paddingHorizontal: ExploreSpacing.screenMargin,
-    gap: ExploreSpacing.md,
   },
   verseCard: {
-    gap: ExploreSpacing.sm,
+    marginBottom: ExploreSpacing.md,
+  },
+  verseContent: {
+    marginBottom: ExploreSpacing.sm,
   },
   verseText: {
     ...ExploreTypography.body,
@@ -333,7 +335,6 @@ const styles = StyleSheet.create({
   },
   verseActions: {
     flexDirection: 'row',
-    gap: ExploreSpacing.lg,
     paddingTop: ExploreSpacing.sm,
     borderTopWidth: 1,
     borderTopColor: ExploreColors.neutral[100],
@@ -342,7 +343,10 @@ const styles = StyleSheet.create({
   actionButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    marginRight: ExploreSpacing.lg,
+  },
+  actionIcon: {
+    marginRight: 4,
   },
   actionText: {
     ...ExploreTypography.caption,
@@ -377,7 +381,6 @@ const styles = StyleSheet.create({
     marginBottom: ExploreSpacing.md,
   },
   relatedList: {
-    gap: ExploreSpacing.xs,
   },
   relatedItem: {
     flexDirection: 'row',
@@ -387,6 +390,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: ExploreSpacing.md,
     paddingVertical: ExploreSpacing.sm,
+    marginBottom: ExploreSpacing.xs,
   },
   relatedItemText: {
     ...ExploreTypography.body,

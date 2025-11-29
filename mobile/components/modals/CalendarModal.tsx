@@ -11,7 +11,7 @@ import React, { useRef, useCallback, useMemo, useState } from 'react';
 import { View, Pressable } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Calendar as CalendarIcon, X, ChevronLeft, ChevronRight } from 'lucide-react-native';
-import { MotiView } from 'moti';
+import Animated, { FadeIn, FadeInUp, SlideInRight } from 'react-native-reanimated';
 import BottomSheet, { BottomSheetBackdrop, BottomSheetBackdropProps } from '@gorhom/bottom-sheet';
 import { Calendar, toDateId } from '@marceloterreiro/flash-calendar';
 
@@ -484,17 +484,15 @@ export function CalendarModal() {
 
         {/* Clear Date Button */}
         {selectedDate && (
-          <MotiView
-            from={{ opacity: 0, translateY: -10 }}
-            animate={{ opacity: 1, translateY: 0 }}
-            transition={{ type: 'timing', duration: 250 }}
+          <Animated.View
+            entering={FadeInUp.duration(250)}
             className="mb-4"
           >
             <Button onPress={handleClearDate} variant="outline" size="md">
               <Icon as={X} size="sm" className="text-gray-600 mr-2" />
               <ButtonText className="font-semibold">{t('events.calendar.clearDate')}</ButtonText>
             </Button>
-          </MotiView>
+          </Animated.View>
         )}
 
         {/* Loading State */}
@@ -506,10 +504,8 @@ export function CalendarModal() {
 
         {/* Events for Selected Date */}
         {!isLoading && selectedDate && (
-          <MotiView
-            from={{ opacity: 0, translateY: 10 }}
-            animate={{ opacity: 1, translateY: 0 }}
-            transition={{ type: 'timing', duration: 250, delay: 100 }}
+          <Animated.View
+            entering={FadeInUp.delay(100).duration(250)}
           >
             <VStack space="sm">
               <Text className="text-gray-700 font-bold text-sm">
@@ -528,15 +524,9 @@ export function CalendarModal() {
                     const statusConfig = getStatusConfig(eventStatus);
 
                     return (
-                      <MotiView
+                      <Animated.View
                         key={event.id}
-                        from={{ opacity: 0, translateX: -10 }}
-                        animate={{ opacity: 1, translateX: 0 }}
-                        transition={{
-                          type: 'timing',
-                          duration: 200,
-                          delay: index * 50,
-                        }}
+                        entering={SlideInRight.delay(index * 50).duration(200)}
                       >
                         <View
                           className="p-3 rounded-xl border border-gray-200"
@@ -563,7 +553,7 @@ export function CalendarModal() {
                             <EventStatusBadge status={eventStatus} delay={0} />
                           </HStack>
                         </View>
-                      </MotiView>
+                      </Animated.View>
                     );
                   })}
 
@@ -585,7 +575,7 @@ export function CalendarModal() {
                 </View>
               )}
             </VStack>
-          </MotiView>
+          </Animated.View>
         )}
       </View>
     </BottomSheet>

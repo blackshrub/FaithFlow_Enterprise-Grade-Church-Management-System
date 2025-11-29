@@ -1,21 +1,18 @@
 /**
- * Give/Offering Screen - Senior-Friendly Redesign
+ * Give/Offering Screen - Complete Redesign
  *
- * Design Philosophy: "Simple, clear, and encouraging for all ages"
+ * Design Philosophy: "Generosity made beautiful"
  *
- * UX Principles:
- * - Large, readable text (minimum 16px body, 24px+ headings)
- * - Big touch targets (minimum 48px)
- * - Clear step progress indicator
- * - Plain language (no jargon)
- * - Visible back button at every step
- * - Full currency display (Rp 100.000 not 100K)
- * - Explain every option clearly
- * - One task per screen
- * - Encouraging, friendly messages
+ * Features:
+ * - 4 Fixed Offering Types (Tithe, Weekly, Mission, Other)
+ * - Full-bleed gradient header with giving stats
+ * - AnimatePresence for Other Purpose text input
+ * - Multi-tenant payment gateway integration
+ * - Bank transfer fallback when payment disabled
+ * - Premium animations and haptic feedback
  */
 
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useMemo, memo } from 'react';
 import {
   ScrollView,
   RefreshControl,
@@ -27,15 +24,21 @@ import {
   Platform,
   StatusBar,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
+import { withPremiumMotionV10 } from '@/hoc';
+import { spacing, radius } from '@/constants/spacing';
 import * as Haptics from 'expo-haptics';
 import * as Clipboard from 'expo-clipboard';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
-  FadeIn,
-  FadeInDown,
+  SlideInRight,
+  SlideInLeft,
+  SlideOutLeft,
+  SlideOutRight,
+  LinearTransition,
 } from 'react-native-reanimated';
+import { useTodayHeaderMotion, todayListItemMotion } from '@/components/motion/today-motion';
 import {
   View,
   Text,
@@ -51,8 +54,6 @@ import {
   Copy,
   ChevronRight,
   History,
-  Gift,
-  Building2,
   Globe,
   Wallet,
   QrCode,
@@ -60,134 +61,173 @@ import {
   CreditCard,
   Store,
   Check,
-  Sparkles,
+  TrendingUp,
+  Calendar,
+  PenLine,
+  HandHeart,
+  Coins,
+  Info,
+  AlertCircle,
 } from 'lucide-react-native';
 
 import {
-  useFunds,
   usePaymentConfig,
   useCreateGiving,
   useGivingHistory,
-  useGivingSummary as _useGivingSummary,
+  useGivingSummary,
 } from '@/hooks/useGiving';
-import type { Fund, PaymentMethodType } from '@/types/giving';
+import type { PaymentMethodType } from '@/types/giving';
+import { PremiumCard3 } from '@/components/ui/premium-card';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-// Senior-friendly color palette - high contrast, easy to read
+// Premium monochrome palette with accent
 const Colors = {
-  primary: {
-    50: '#EEF2FF',
-    100: '#E0E7FF',
-    500: '#6366F1',
-    600: '#4F46E5',
-    700: '#4338CA',
+  gradient: {
+    start: '#1a1a2e',
+    mid: '#16213e',
+    end: '#0f3460',
   },
-  success: {
-    50: '#ECFDF5',
-    500: '#10B981',
-    600: '#059669',
+  accent: {
+    gold: '#D4AF37',
+    goldLight: '#F4E5BC',
+    goldDark: '#B8962E',
   },
-  warning: {
-    50: '#FFFBEB',
-    500: '#F59E0B',
-    600: '#D97706',
+  neutral: {
+    50: '#FAFAFA',
+    100: '#F5F5F5',
+    200: '#E5E5E5',
+    300: '#D4D4D4',
+    400: '#A3A3A3',
+    500: '#737373',
+    600: '#525252',
+    700: '#404040',
+    800: '#262626',
+    900: '#171717',
   },
-  error: {
-    50: '#FEF2F2',
-    500: '#EF4444',
-    600: '#DC2626',
+  success: '#10B981',
+  warning: '#F59E0B',
+  error: '#EF4444',
+  white: '#FFFFFF',
+};
+
+// Offering Types - Fixed 4 categories
+type OfferingType = 'tithe' | 'weekly' | 'mission' | 'other';
+
+interface OfferingTypeConfig {
+  id: OfferingType;
+  icon: any;
+  gradient: [string, string];
+  labelKey: string;
+  subtitleKey: string;
+}
+
+const OFFERING_TYPES: OfferingTypeConfig[] = [
+  {
+    id: 'tithe',
+    icon: Coins,
+    gradient: ['#EC4899', '#BE185D'],
+    labelKey: 'give.tithe',
+    subtitleKey: 'give.titheSubtitle',
   },
-  gray: {
-    50: '#F9FAFB',
-    100: '#F3F4F6',
-    200: '#E5E7EB',
-    300: '#D1D5DB',
-    400: '#9CA3AF',
-    500: '#6B7280',
-    600: '#4B5563',
-    700: '#374151',
-    800: '#1F2937',
-    900: '#111827',
+  {
+    id: 'weekly',
+    icon: HandHeart,
+    gradient: ['#8B5CF6', '#6D28D9'],
+    labelKey: 'give.weeklyOffering',
+    subtitleKey: 'give.weeklySubtitle',
+  },
+  {
+    id: 'mission',
+    icon: Globe,
+    gradient: ['#0EA5E9', '#0369A1'],
+    labelKey: 'give.mission',
+    subtitleKey: 'give.missionSubtitle',
+  },
+  {
+    id: 'other',
+    icon: PenLine,
+    gradient: ['#F59E0B', '#B45309'],
+    labelKey: 'give.other',
+    subtitleKey: 'give.otherSubtitle',
+  },
+];
+
+// Quick amounts
+const QUICK_AMOUNTS = [
+  { amount: 50000, label: 'Rp 50.000' },
+  { amount: 100000, label: 'Rp 100.000' },
+  { amount: 250000, label: 'Rp 250.000' },
+  { amount: 500000, label: 'Rp 500.000' },
+  { amount: 1000000, label: 'Rp 1.000.000' },
+  { amount: 2500000, label: 'Rp 2.500.000' },
+];
+
+// Payment method info
+const PAYMENT_INFO: Record<string, { icon: any; name: string; description: string }> = {
+  va: {
+    icon: Banknote,
+    name: 'Bank Transfer',
+    description: 'ATM, Mobile Banking, or Internet Banking',
+  },
+  qris: {
+    icon: QrCode,
+    name: 'QRIS',
+    description: 'Scan with any banking or e-wallet app',
+  },
+  ewallet: {
+    icon: Wallet,
+    name: 'E-Wallet',
+    description: 'GoPay, OVO, DANA, or ShopeePay',
+  },
+  credit_card: {
+    icon: CreditCard,
+    name: 'Card Payment',
+    description: 'Visa, Mastercard, or JCB',
+  },
+  convenience_store: {
+    icon: Store,
+    name: 'Convenience Store',
+    description: 'Indomaret, Alfamart, or Alfamidi',
+  },
+  bank_transfer: {
+    icon: Banknote,
+    name: 'Manual Transfer',
+    description: 'Direct bank transfer',
   },
 };
 
 // Step definitions
 const STEPS = ['choose', 'amount', 'payment', 'review'] as const;
-type Step = typeof STEPS[number];
+type Step = (typeof STEPS)[number];
 
-// Quick give amounts with FULL display (no abbreviations!)
-const QUICK_AMOUNTS = [
-  { amount: 50000, label: 'Rp 50.000' },
-  { amount: 100000, label: 'Rp 100.000', popular: true },
-  { amount: 250000, label: 'Rp 250.000' },
-  { amount: 500000, label: 'Rp 500.000' },
-  { amount: 1000000, label: 'Rp 1.000.000' },
-];
+function GiveScreen() {
+  const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
+  const scrollRef = useRef<Animated.ScrollView>(null);
+  const otherPurposeInputRef = useRef<TextInput>(null);
 
-// Fund category icons and friendly labels
-const FUND_STYLES: Record<string, { icon: any; color: string; bgColor: string }> = {
-  tithe: { icon: Heart, color: '#EC4899', bgColor: '#FDF2F8' },
-  offering: { icon: Gift, color: '#8B5CF6', bgColor: '#F5F3FF' },
-  mission: { icon: Globe, color: '#0EA5E9', bgColor: '#F0F9FF' },
-  building: { icon: Building2, color: '#F59E0B', bgColor: '#FFFBEB' },
-  special: { icon: Sparkles, color: '#10B981', bgColor: '#ECFDF5' },
-  default: { icon: Heart, color: '#6366F1', bgColor: '#EEF2FF' },
-};
-
-// Payment method info with CLEAR explanations
-const PAYMENT_INFO: Record<string, { icon: any; name: string; description: string }> = {
-  va: {
-    icon: Banknote,
-    name: 'Bank Transfer',
-    description: 'Pay via ATM, Mobile Banking, or Internet Banking',
-  },
-  qris: {
-    icon: QrCode,
-    name: 'Scan QR Code (QRIS)',
-    description: 'Use any banking or e-wallet app to scan',
-  },
-  ewallet: {
-    icon: Wallet,
-    name: 'Digital Wallet',
-    description: 'Pay using GoPay, OVO, DANA, or ShopeePay',
-  },
-  credit_card: {
-    icon: CreditCard,
-    name: 'Credit/Debit Card',
-    description: 'Visa, Mastercard, or JCB',
-  },
-  convenience_store: {
-    icon: Store,
-    name: 'Pay at Store',
-    description: 'Pay at Indomaret, Alfamart, or Alfamidi',
-  },
-  bank_transfer: {
-    icon: Banknote,
-    name: 'Manual Bank Transfer',
-    description: 'Transfer directly to church bank account',
-  },
-};
-
-export default function GiveScreen() {
-  const { t: _t } = useTranslation();
-  const scrollRef = useRef<ScrollView>(null);
+  // Focus key for animations - kept static to avoid replaying on tab switch
+  const focusKey = 0;
 
   // State
   const [step, setStep] = useState<Step>('choose');
-  const [selectedFund, setSelectedFund] = useState<Fund | null>(null);
+  const [selectedType, setSelectedType] = useState<OfferingType | null>(null);
+  const [otherPurpose, setOtherPurpose] = useState('');
   const [amount, setAmount] = useState('');
+  const [notes, setNotes] = useState('');
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethodType | null>(null);
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [historyFilter, setHistoryFilter] = useState<'all' | 'success' | 'pending' | 'failed'>('all');
 
+
   // Queries
-  const { data: funds, isLoading: fundsLoading, refetch: refetchFunds } = useFunds();
-  const { data: paymentConfig } = usePaymentConfig();
+  const { data: paymentConfig, isLoading: configLoading } = usePaymentConfig();
   const { data: history, isLoading: historyLoading, refetch: refetchHistory } = useGivingHistory(
     historyFilter === 'all' ? undefined : historyFilter
   );
+  const { data: givingSummary } = useGivingSummary();
   const { mutate: createGiving, isPending: isSubmitting } = useCreateGiving();
 
   // Refresh
@@ -195,11 +235,11 @@ export default function GiveScreen() {
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    await Promise.all([refetchFunds(), refetchHistory()]);
+    await refetchHistory();
     setRefreshing(false);
-  }, [refetchFunds, refetchHistory]);
+  }, [refetchHistory]);
 
-  // Format currency - ALWAYS show full amount
+  // Format currency
   const formatCurrency = useCallback((value: number) => {
     return new Intl.NumberFormat('id-ID', {
       style: 'currency',
@@ -209,13 +249,12 @@ export default function GiveScreen() {
     }).format(value);
   }, []);
 
-  // Get fund style
-  const getFundStyle = useCallback((category: string) => {
-    return FUND_STYLES[category] || FUND_STYLES.default;
-  }, []);
-
-  // Get current step index
-  const getCurrentStepIndex = () => STEPS.indexOf(step);
+  // Get purpose string
+  const getPurposeString = useCallback(() => {
+    if (!selectedType) return '';
+    if (selectedType === 'other') return otherPurpose || t('give.other');
+    return t(`give.${selectedType}` as any);
+  }, [selectedType, otherPurpose, t]);
 
   // Navigate between steps
   const goToStep = useCallback((newStep: Step) => {
@@ -224,20 +263,50 @@ export default function GiveScreen() {
     scrollRef.current?.scrollTo({ y: 0, animated: true });
   }, []);
 
-  // Go back one step
+  // Go back - instant switch (V10 handles screen transitions)
   const goBack = useCallback(() => {
-    const currentIndex = getCurrentStepIndex();
+    const currentIndex = STEPS.indexOf(step);
     if (currentIndex > 0) {
       goToStep(STEPS[currentIndex - 1]);
     }
   }, [step, goToStep]);
 
-  // Handle fund selection
-  const handleFundSelect = useCallback((fund: Fund) => {
+  // Handle type selection
+  const handleTypeSelect = useCallback((type: OfferingType) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    setSelectedFund(fund);
+    setSelectedType(type);
+
+    // If selecting "other", scroll to show text field and focus input
+    if (type === 'other') {
+      // First scroll, then focus after scroll completes
+      setTimeout(() => {
+        scrollRef.current?.scrollToEnd({ animated: true });
+      }, 300);
+      // Focus input after scroll animation + keyboard appears
+      setTimeout(() => {
+        otherPurposeInputRef.current?.focus();
+        // Scroll again after keyboard is up to ensure visibility
+        setTimeout(() => {
+          scrollRef.current?.scrollToEnd({ animated: true });
+        }, 300);
+      }, 500);
+    }
+  }, []);
+
+  // Handle proceed to amount
+  const handleProceedToAmount = useCallback(() => {
+    if (!selectedType) {
+      Alert.alert(t('give.error'), t('give.selectTypeRequired'));
+      return;
+    }
+
+    if (selectedType === 'other' && !otherPurpose.trim()) {
+      Alert.alert(t('give.error'), t('give.otherPurposeRequired'));
+      return;
+    }
+
     goToStep('amount');
-  }, [goToStep]);
+  }, [selectedType, otherPurpose, t, goToStep]);
 
   // Handle amount selection
   const handleAmountSelect = useCallback((value: number) => {
@@ -245,28 +314,28 @@ export default function GiveScreen() {
     setAmount(value.toString());
   }, []);
 
-  // Handle custom amount input
+  // Handle custom amount
   const handleCustomAmount = useCallback((text: string) => {
     const cleaned = text.replace(/[^0-9]/g, '');
     setAmount(cleaned);
   }, []);
 
-  // Proceed to payment step
+  // Proceed to payment
   const handleProceedToPayment = useCallback(() => {
     const numAmount = parseFloat(amount);
     const minAmount = paymentConfig?.minimum_amount || 10000;
 
     if (!numAmount || numAmount < minAmount) {
       Alert.alert(
-        'Amount Too Small',
-        `The minimum giving amount is ${formatCurrency(minAmount)}. Please enter a larger amount.`
+        t('give.minimumAmountTitle'),
+        t('give.minimumAmountMessage', { amount: formatCurrency(minAmount) })
       );
       return;
     }
     goToStep('payment');
-  }, [amount, paymentConfig, formatCurrency, goToStep]);
+  }, [amount, paymentConfig, formatCurrency, goToStep, t]);
 
-  // Handle payment method selection
+  // Handle method selection
   const handleMethodSelect = useCallback((method: PaymentMethodType) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setSelectedMethod(method);
@@ -275,107 +344,203 @@ export default function GiveScreen() {
 
   // Submit giving
   const handleSubmit = useCallback(() => {
-    if (!selectedFund || !amount || !selectedMethod) return;
+    if (!selectedType || !amount || !selectedMethod) return;
 
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
 
     createGiving(
       {
-        fund_id: selectedFund._id || selectedFund.id || '',
+        fund_id: selectedType, // Using type as fund identifier
         amount: parseFloat(amount),
         payment_method: selectedMethod,
         is_anonymous: isAnonymous,
+        notes: notes ? `${getPurposeString()} - ${notes}` : getPurposeString(),
       },
       {
         onSuccess: (data) => {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
           // Reset form
-          setSelectedFund(null);
+          setSelectedType(null);
+          setOtherPurpose('');
           setAmount('');
+          setNotes('');
           setSelectedMethod(null);
           setIsAnonymous(false);
           setStep('choose');
 
           if (data.payment_url) {
             Alert.alert(
-              'Opening Payment',
-              'You will be redirected to complete your payment. Thank you for your generosity!',
-              [
-                {
-                  text: 'Continue',
-                  onPress: () => Linking.openURL(data.payment_url!),
-                },
-              ]
+              t('give.completePaymentTitle'),
+              t('give.completePaymentMessage'),
+              [{ text: t('common.continue'), onPress: () => Linking.openURL(data.payment_url!) }]
             );
           } else {
             Alert.alert(
-              'Thank You!',
-              'Your giving has been recorded. God bless you for your generosity!',
-              [{ text: 'OK', onPress: () => setShowHistory(true) }]
+              t('give.thankYouTitle'),
+              t('give.thankYouMessage'),
+              [{ text: t('give.viewHistory'), onPress: () => setShowHistory(true) }]
             );
           }
         },
         onError: () => {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-          Alert.alert(
-            'Something Went Wrong',
-            'We could not process your giving. Please try again or contact the church office for help.'
-          );
+          Alert.alert(t('give.error'), t('give.submitError'));
         },
       }
     );
-  }, [selectedFund, amount, selectedMethod, isAnonymous, createGiving]);
+  }, [selectedType, amount, selectedMethod, isAnonymous, notes, getPurposeString, createGiving, t]);
 
-  // Copy bank account
+  // Copy account number
   const handleCopyAccount = useCallback(async (accountNumber: string) => {
     await Clipboard.setStringAsync(accountNumber);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    Alert.alert('Copied!', 'Account number copied to clipboard');
-  }, []);
+    Alert.alert(t('common.copied'), t('give.accountCopied'));
+  }, [t]);
 
-  // Render step progress indicator
-  const renderStepProgress = () => {
-    const stepLabels = ['Choose', 'Amount', 'Payment', 'Review'];
-    const currentIndex = getCurrentStepIndex();
+  // Stats data
+  const stats = useMemo(() => ({
+    totalGiven: givingSummary?.total_given || 0,
+    totalTransactions: givingSummary?.total_transactions || 0,
+  }), [givingSummary]);
+
+  // Shared header enter animation from today-motion
+  const { headerEnterStyle } = useTodayHeaderMotion();
+
+  // Is payment enabled
+  const isPaymentEnabled = paymentConfig?.is_online_enabled ?? false;
+  const availableMethods = paymentConfig?.available_methods || [];
+
+  // Render header
+  const renderHeader = () => {
+    const showBackButton = step !== 'choose' || showHistory;
 
     return (
-      <View style={styles.progressContainer}>
+      <>
+        <StatusBar barStyle="light-content" />
+        <LinearGradient
+          colors={[Colors.gradient.start, Colors.gradient.mid, Colors.gradient.end]}
+          style={[
+            styles.headerGradient,
+            { paddingTop: insets.top + 16 }, // Match Events header (topInset + 16)
+            showBackButton && { paddingBottom: 12 },
+          ]}
+        >
+          <Animated.View style={headerEnterStyle}>
+            {/* Compact header row on main view */}
+            {!showBackButton ? (
+              <View style={styles.headerContent}>
+                {/* Title row with history button - stagger index 0 */}
+                <Animated.View key={`title-${focusKey}`} entering={todayListItemMotion(0)} style={styles.titleRow}>
+                  <View style={styles.titleWrap}>
+                    <Text style={styles.headerTitle}>{t('give.title')}</Text>
+                    <Text style={styles.headerSubtitle}>{t('give.subtitle')}</Text>
+                  </View>
+                  <Pressable
+                    onPress={() => setShowHistory(true)}
+                    style={styles.historyBtn}
+                  >
+                    <History size={20} color={Colors.white} />
+                  </Pressable>
+                </Animated.View>
+
+                {/* Stats cards - stagger index 1 */}
+                <Animated.View key={`stats-${focusKey}`} entering={todayListItemMotion(1)} style={styles.statsRow}>
+                  <View style={styles.statCard}>
+                    <View style={styles.statIconWrap}>
+                      <TrendingUp size={16} color={Colors.accent.gold} />
+                    </View>
+                    <View style={styles.statTextWrap}>
+                      <Text style={styles.statValue}>
+                        {formatCurrency(stats.totalGiven)}
+                      </Text>
+                      <Text style={styles.statLabel}>{t('give.totalGiven')}</Text>
+                    </View>
+                  </View>
+                  <View style={styles.statCard}>
+                    <View style={styles.statIconWrap}>
+                      <Calendar size={16} color={Colors.accent.gold} />
+                    </View>
+                    <View style={styles.statTextWrap}>
+                      <Text style={styles.statValue}>{stats.totalTransactions}</Text>
+                      <Text style={styles.statLabel}>{t('give.transactions')}</Text>
+                    </View>
+                  </View>
+                </Animated.View>
+              </View>
+            ) : (
+              /* Compact header with centered title for steps 2-4 */
+              <View style={styles.compactHeader}>
+                <Pressable onPress={showHistory ? () => setShowHistory(false) : goBack} style={styles.backBtn}>
+                  <ArrowLeft size={24} color={Colors.white} />
+                </Pressable>
+                <View style={styles.compactTitleWrap}>
+                  <Text style={styles.compactTitle}>
+                    {showHistory ? t('give.historyTitle') : t('give.title')}
+                  </Text>
+                  <Text style={styles.compactSubtitle}>
+                    {showHistory ? t('give.historySubtitle') : t('give.subtitle')}
+                  </Text>
+                </View>
+                <Pressable
+                  onPress={() => setShowHistory(!showHistory)}
+                  style={[styles.historyBtn, showHistory && styles.historyBtnActive]}
+                >
+                  <History size={20} color={showHistory ? Colors.gradient.start : Colors.white} />
+                </Pressable>
+              </View>
+            )}
+          </Animated.View>
+        </LinearGradient>
+      </>
+    );
+  };
+
+  // Render step indicator
+  const renderStepIndicator = () => {
+    const stepLabels = [
+      t('give.stepType'),
+      t('give.stepAmount'),
+      t('give.stepPayment'),
+      t('give.stepReview'),
+    ];
+    const currentIndex = STEPS.indexOf(step);
+
+    return (
+      <View style={styles.stepIndicator}>
         {STEPS.map((s, index) => (
           <React.Fragment key={s}>
-            <View style={styles.progressStep}>
+            <View style={styles.stepItem}>
               <View
                 style={[
-                  styles.progressDot,
-                  index <= currentIndex && styles.progressDotActive,
-                  index < currentIndex && styles.progressDotCompleted,
+                  styles.stepDot,
+                  index <= currentIndex && styles.stepDotActive,
+                  index < currentIndex && styles.stepDotComplete,
                 ]}
               >
                 {index < currentIndex ? (
-                  <Check size={14} color="#FFFFFF" />
+                  <Check size={12} color={Colors.white} strokeWidth={3} />
                 ) : (
                   <Text style={[
-                    styles.progressNumber,
-                    index <= currentIndex && styles.progressNumberActive,
+                    styles.stepNumber,
+                    index <= currentIndex && styles.stepNumberActive,
                   ]}>
                     {index + 1}
                   </Text>
                 )}
               </View>
               <Text style={[
-                styles.progressLabel,
-                index <= currentIndex && styles.progressLabelActive,
+                styles.stepLabel,
+                index <= currentIndex && styles.stepLabelActive,
               ]}>
                 {stepLabels[index]}
               </Text>
             </View>
             {index < STEPS.length - 1 && (
-              <View
-                style={[
-                  styles.progressLine,
-                  index < currentIndex && styles.progressLineActive,
-                ]}
-              />
+              <View style={[
+                styles.stepLine,
+                index < currentIndex && styles.stepLineActive,
+              ]} />
             )}
           </React.Fragment>
         ))}
@@ -383,1184 +548,1382 @@ export default function GiveScreen() {
     );
   };
 
-  // Render header with back button
-  const renderHeader = (title: string) => (
-    <View style={styles.header}>
-      {step !== 'choose' && !showHistory ? (
-        <Pressable onPress={goBack} style={styles.backButton}>
-          <ArrowLeft size={24} color={Colors.gray[700]} />
-          <Text style={styles.backText}>Back</Text>
-        </Pressable>
-      ) : (
-        <View style={styles.backButton} />
+  // Render Choose Step - 4 Fixed Offering Types
+  const renderChooseStep = () => (
+    <View style={styles.stepContent}>
+      {/* Intro text */}
+      <Animated.View key={`intro-${focusKey}`} entering={todayListItemMotion(0)}>
+        <View style={styles.introBox}>
+          <Info size={18} color={Colors.gradient.end} />
+          <Text style={styles.introText}>{t('give.introText')}</Text>
+        </View>
+      </Animated.View>
+
+      <Animated.View key={`section-title-${focusKey}`} entering={todayListItemMotion(1)}>
+        <Text style={styles.sectionTitle}>{t('give.selectType')}</Text>
+        <Text style={styles.sectionDesc}>{t('give.selectTypeDesc')}</Text>
+      </Animated.View>
+
+      {/* Offering type cards */}
+      <View style={styles.typeGrid}>
+        {OFFERING_TYPES.map((type, index) => {
+          const isSelected = selectedType === type.id;
+          const IconComponent = type.icon;
+
+          return (
+            <Animated.View key={`${type.id}-${focusKey}`} entering={todayListItemMotion(index + 2)} style={styles.typeCardContainer}>
+              <PremiumCard3
+                  selected={isSelected}
+                  onPress={() => handleTypeSelect(type.id)}
+                >
+                  <LinearGradient
+                    colors={type.gradient}
+                    style={styles.typeIconGradient}
+                  >
+                    <IconComponent size={22} color="#FFF" />
+                  </LinearGradient>
+
+                  <Text
+                    style={[styles.typeLabel, isSelected && styles.typeLabelSelected]}
+                  >
+                    {t(type.labelKey as any)}
+                  </Text>
+
+                  <Text
+                    numberOfLines={2}
+                    style={styles.typeSubtitle}
+                  >
+                    {t(type.subtitleKey as any)}
+                  </Text>
+                </PremiumCard3>
+            </Animated.View>
+          );
+        })}
+      </View>
+
+      {/* Other Purpose Input - layout animation only to avoid opacity conflict */}
+      {selectedType === 'other' && (
+        <Animated.View
+          layout={LinearTransition.springify()}
+          style={styles.otherPurposeMargin}
+        >
+          <View style={styles.otherPurposeContainer}>
+            <Text style={styles.otherPurposeLabel}>{t('give.otherPurposeLabel')}</Text>
+            <View style={styles.otherPurposeInputWrap}>
+              <PenLine size={18} color={Colors.neutral[400]} style={styles.otherPurposeIcon} />
+              <TextInput
+                ref={otherPurposeInputRef}
+                style={styles.otherPurposeInput}
+                value={otherPurpose}
+                onChangeText={setOtherPurpose}
+                placeholder={t('give.otherPlaceholder')}
+                placeholderTextColor={Colors.neutral[400]}
+                multiline
+                maxLength={100}
+              />
+            </View>
+            <Text style={styles.charCount}>{otherPurpose.length}/100</Text>
+          </View>
+        </Animated.View>
       )}
-      <Text style={styles.headerTitle}>{title}</Text>
-      <Pressable
-        onPress={() => setShowHistory(!showHistory)}
-        style={styles.historyToggle}
-      >
-        <History size={22} color={showHistory ? Colors.primary[600] : Colors.gray[500]} />
-      </Pressable>
+
+      {/* Continue button */}
+      <Animated.View key={`continue-${focusKey}`} entering={todayListItemMotion(6)}>
+        <Pressable
+          onPress={handleProceedToAmount}
+          disabled={!selectedType || (selectedType === 'other' && !otherPurpose.trim())}
+          style={[
+            styles.continueBtn,
+            (!selectedType || (selectedType === 'other' && !otherPurpose.trim())) && styles.continueBtnDisabled,
+          ]}
+        >
+          <LinearGradient
+            colors={
+              selectedType && (selectedType !== 'other' || otherPurpose.trim())
+                ? [Colors.gradient.start, Colors.gradient.end]
+                : [Colors.neutral[300], Colors.neutral[400]]
+            }
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.continueBtnGradient}
+          >
+            <Text style={styles.continueBtnText}>{t('give.continue')}</Text>
+            <ChevronRight size={20} color={Colors.white} />
+          </LinearGradient>
+        </Pressable>
+      </Animated.View>
     </View>
   );
 
-  // Render Step 1: Choose what to give to
-  const renderChooseStep = () => (
-    <Animated.View entering={FadeIn.duration(300)}>
-      <Text style={styles.stepTitle}>What would you like to give to?</Text>
-      <Text style={styles.stepDescription}>
-        Choose a fund below. Your giving helps support the church's mission.
-      </Text>
-
-      {fundsLoading ? (
-        <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>Loading...</Text>
-        </View>
-      ) : !funds || funds.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <Heart size={64} color={Colors.gray[300]} />
-          <Text style={styles.emptyTitle}>No Funds Available</Text>
-          <Text style={styles.emptyText}>
-            Please contact the church office for giving options.
-          </Text>
-        </View>
-      ) : (
-        <View style={styles.fundList}>
-          {funds.map((fund, index) => {
-            const style = getFundStyle(fund.category);
-            const Icon = style.icon;
-            const progress = fund.goal_amount
-              ? Math.min((fund.current_amount / fund.goal_amount) * 100, 100)
-              : null;
-
-            return (
-              <Animated.View
-                key={fund.id || fund._id || index}
-                entering={FadeInDown.delay(index * 100).duration(400)}
-              >
-                <Pressable
-                  onPress={() => handleFundSelect(fund)}
-                  style={({ pressed }) => [
-                    styles.fundCard,
-                    pressed && styles.fundCardPressed,
-                  ]}
-                >
-                  <View style={[styles.fundIcon, { backgroundColor: style.bgColor }]}>
-                    <Icon size={28} color={style.color} />
-                  </View>
-                  <View style={styles.fundContent}>
-                    <Text style={styles.fundName}>{fund.name}</Text>
-                    <Text style={styles.fundDescription} numberOfLines={2}>
-                      {fund.description}
-                    </Text>
-                    {progress !== null && (
-                      <View style={styles.fundProgressContainer}>
-                        <View style={styles.fundProgressBar}>
-                          <View
-                            style={[
-                              styles.fundProgressFill,
-                              { width: `${progress}%`, backgroundColor: style.color },
-                            ]}
-                          />
-                        </View>
-                        <Text style={styles.fundProgressText}>
-                          {formatCurrency(fund.current_amount)} of {formatCurrency(fund.goal_amount!)}
-                        </Text>
-                      </View>
-                    )}
-                  </View>
-                  <ChevronRight size={24} color={Colors.gray[400]} />
-                </Pressable>
-              </Animated.View>
-            );
-          })}
-        </View>
-      )}
-    </Animated.View>
-  );
-
-  // Render Step 2: Enter amount
+  // Render Amount Step
   const renderAmountStep = () => {
-    if (!selectedFund) return null;
-    const style = getFundStyle(selectedFund.category);
-    const Icon = style.icon;
+    if (!selectedType) return null;
+
+    const typeConfig = OFFERING_TYPES.find(t => t.id === selectedType);
+    if (!typeConfig) return null;
+
+    const Icon = typeConfig.icon;
 
     return (
-      <Animated.View entering={FadeIn.duration(300)}>
-        {/* Selected fund reminder */}
-        <View style={styles.selectedFundBanner}>
-          <View style={[styles.selectedFundIcon, { backgroundColor: style.bgColor }]}>
-            <Icon size={24} color={style.color} />
-          </View>
-          <View style={styles.selectedFundInfo}>
-            <Text style={styles.selectedFundLabel}>Giving to:</Text>
-            <Text style={styles.selectedFundName}>{selectedFund.name}</Text>
-          </View>
-        </View>
-
-        <Text style={styles.stepTitle}>How much would you like to give?</Text>
-        <Text style={styles.stepDescription}>
-          Choose a suggested amount or enter your own.
-        </Text>
-
-        {/* Quick amount buttons - LARGE and CLEAR */}
-        <View style={styles.quickAmountGrid}>
-          {QUICK_AMOUNTS.map((item) => (
-            <Pressable
-              key={item.amount}
-              onPress={() => handleAmountSelect(item.amount)}
-              style={[
-                styles.quickAmountButton,
-                amount === item.amount.toString() && styles.quickAmountSelected,
-              ]}
+      <View style={styles.stepContent}>
+        {/* Selected type pill */}
+        <Animated.View entering={todayListItemMotion(0)}>
+          <View style={styles.selectedPill}>
+            <LinearGradient
+              colors={typeConfig.gradient}
+              style={styles.selectedPillIcon}
             >
-              {item.popular && (
-                <View style={styles.popularBadge}>
-                  <Text style={styles.popularText}>Popular</Text>
-                </View>
-              )}
-              <Text
-                style={[
-                  styles.quickAmountText,
-                  amount === item.amount.toString() && styles.quickAmountTextSelected,
-                ]}
+              <Icon size={16} color={Colors.white} />
+            </LinearGradient>
+            <Text style={styles.selectedPillText}>
+              {selectedType === 'other' ? otherPurpose : t(typeConfig.labelKey as any)}
+            </Text>
+          </View>
+        </Animated.View>
+
+        <Animated.View entering={todayListItemMotion(1)}>
+          <Text style={styles.sectionTitle}>{t('give.enterAmount')}</Text>
+          <Text style={styles.sectionDesc}>{t('give.enterAmountDesc')}</Text>
+        </Animated.View>
+
+        {/* Amount input */}
+        <Animated.View entering={todayListItemMotion(2)}>
+          <View style={styles.amountInputWrap}>
+            <Text style={styles.currencyLabel}>Rp</Text>
+            <TextInput
+              style={styles.amountInput}
+              value={amount ? parseInt(amount).toLocaleString('id-ID') : ''}
+              onChangeText={handleCustomAmount}
+              placeholder="0"
+              placeholderTextColor={Colors.neutral[400]}
+              keyboardType="numeric"
+            />
+          </View>
+        </Animated.View>
+
+        {/* Quick amounts */}
+        <View style={styles.quickGrid}>
+          {QUICK_AMOUNTS.map((item, index) => (
+            <Animated.View key={item.amount} entering={todayListItemMotion(index + 3)} style={styles.quickAmountWrap}>
+              <PremiumCard3
+                selected={amount === item.amount.toString()}
+                onPress={() => handleAmountSelect(item.amount)}
+                innerStyle={{ paddingVertical: 14, paddingHorizontal: 8 }}
               >
-                {item.label}
-              </Text>
-            </Pressable>
+                <Text
+                  style={{
+                    fontSize: 14,
+                    fontWeight: '700',
+                    color:
+                      amount === item.amount.toString()
+                        ? Colors.gradient.end
+                        : Colors.neutral[700],
+                    textAlign: 'center',
+                  }}
+                >
+                  {item.label}
+                </Text>
+              </PremiumCard3>
+            </Animated.View>
           ))}
         </View>
 
-        {/* Custom amount input */}
-        <Text style={styles.inputLabel}>Or enter a different amount:</Text>
-        <View style={styles.amountInputContainer}>
-          <Text style={styles.currencyPrefix}>Rp</Text>
-          <TextInput
-            style={styles.amountInput}
-            value={amount ? parseInt(amount).toLocaleString('id-ID') : ''}
-            onChangeText={handleCustomAmount}
-            placeholder="0"
-            placeholderTextColor={Colors.gray[400]}
-            keyboardType="numeric"
-          />
-        </View>
-        <Text style={styles.minimumNote}>
-          Minimum amount: {formatCurrency(paymentConfig?.minimum_amount || 10000)}
-        </Text>
-
-        {/* Continue button */}
-        <Pressable
-          onPress={handleProceedToPayment}
-          disabled={!amount}
-          style={[
-            styles.primaryButton,
-            !amount && styles.primaryButtonDisabled,
-          ]}
-        >
-          <Text style={styles.primaryButtonText}>
-            Continue to Payment
+        <Animated.View entering={todayListItemMotion(9)}>
+          <Text style={styles.minNote}>
+            {t('give.minimum')}: {formatCurrency(paymentConfig?.minimum_amount || 10000)}
           </Text>
-          <ChevronRight size={22} color="#FFFFFF" />
-        </Pressable>
-      </Animated.View>
+        </Animated.View>
+
+        {/* Notes input */}
+        <Animated.View entering={todayListItemMotion(10)}>
+          <View style={styles.notesContainer}>
+            <PremiumCard3 selected={false}>
+              <Text style={styles.notesLabel}>{t('give.notes')}</Text>
+              <TextInput
+                style={styles.notesInputInCard}
+                value={notes}
+                onChangeText={setNotes}
+                placeholder={t('give.notesPlaceholder')}
+                placeholderTextColor={Colors.neutral[400]}
+                multiline
+                maxLength={200}
+              />
+            </PremiumCard3>
+          </View>
+        </Animated.View>
+
+        {/* Spacer for sticky button */}
+        <View style={styles.bottomSpacer} />
+      </View>
     );
   };
 
-  // Render Step 3: Choose payment method
-  const renderPaymentStep = () => {
-    if (!selectedFund || !amount) return null;
-
-    const methods = paymentConfig?.available_methods || [];
-    const isOnlineEnabled = paymentConfig?.is_online_enabled;
+  // Render sticky footer button for amount step
+  const renderAmountStepFooter = () => {
+    if (step !== 'amount' || showHistory) return null;
 
     return (
-      <Animated.View entering={FadeIn.duration(300)}>
-        {/* Amount reminder */}
-        <View style={styles.amountBanner}>
-          <Text style={styles.amountBannerLabel}>Amount to give:</Text>
-          <Text style={styles.amountBannerValue}>{formatCurrency(parseFloat(amount))}</Text>
-        </View>
+      <View style={[styles.stickyFooter, { paddingBottom: insets.bottom + 80 }]}>
+        <Pressable
+          onPress={handleProceedToPayment}
+          disabled={!amount}
+          style={[styles.continueBtn, !amount && styles.continueBtnDisabled]}
+        >
+          <LinearGradient
+            colors={amount ? [Colors.gradient.start, Colors.gradient.end] : [Colors.neutral[300], Colors.neutral[400]]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.continueBtnGradient}
+          >
+            <Text style={styles.continueBtnText}>{t('give.continue')}</Text>
+            <ChevronRight size={20} color={Colors.white} />
+          </LinearGradient>
+        </Pressable>
+      </View>
+    );
+  };
 
-        <Text style={styles.stepTitle}>How would you like to pay?</Text>
-        <Text style={styles.stepDescription}>
-          Choose the payment method that works best for you.
-        </Text>
+  // Render Payment Step
+  const renderPaymentStep = () => {
+    if (!selectedType || !amount) return null;
 
-        {isOnlineEnabled && methods.length > 0 ? (
-          <View style={styles.paymentMethodList}>
-            {methods.map((method, index) => {
+    return (
+      <View style={styles.stepContent}>
+        {/* Amount banner */}
+        <Animated.View entering={todayListItemMotion(0)}>
+          <View style={styles.amountBanner}>
+            <Text style={styles.amountBannerLabel}>{t('give.amount')}</Text>
+            <Text style={styles.amountBannerValue}>
+              {formatCurrency(parseFloat(amount))}
+            </Text>
+          </View>
+        </Animated.View>
+
+        <Animated.View entering={todayListItemMotion(1)}>
+          <Text style={styles.sectionTitle}>{t('give.paymentMethod')}</Text>
+          <Text style={styles.sectionDesc}>{t('give.paymentMethodDesc')}</Text>
+        </Animated.View>
+
+        {configLoading ? (
+          <View style={styles.loadingWrap}>
+            <Text style={styles.loadingText}>{t('common.loading')}</Text>
+          </View>
+        ) : isPaymentEnabled && availableMethods.length > 0 ? (
+          <View style={styles.methodsGap}>
+            {availableMethods.map((method, index) => {
               const info = PAYMENT_INFO[method] || PAYMENT_INFO.bank_transfer;
               const MethodIcon = info.icon;
 
               return (
-                <Animated.View
-                  key={method}
-                  entering={FadeInDown.delay(index * 80)}
-                >
-                  <Pressable
+                <Animated.View key={method} entering={todayListItemMotion(index + 2)}>
+                  <PremiumCard3
+                    selected={selectedMethod === method}
                     onPress={() => handleMethodSelect(method)}
-                    style={({ pressed }) => [
-                      styles.paymentMethodCard,
-                      pressed && styles.paymentMethodPressed,
-                    ]}
                   >
-                    <View style={styles.paymentMethodIcon}>
-                      <MethodIcon size={28} color={Colors.primary[600]} />
+                    <View style={styles.methodRow}>
+                      <View style={styles.methodIconWrap}>
+                        <MethodIcon size={24} color={Colors.gradient.end} />
+                      </View>
+                      <View style={styles.methodFlex}>
+                        <Text style={styles.methodName}>
+                          {info.name}
+                        </Text>
+                        <Text style={styles.methodDesc}>
+                          {info.description}
+                        </Text>
+                      </View>
                     </View>
-                    <View style={styles.paymentMethodContent}>
-                      <Text style={styles.paymentMethodName}>{info.name}</Text>
-                      <Text style={styles.paymentMethodDesc}>{info.description}</Text>
-                    </View>
-                    <ChevronRight size={24} color={Colors.gray[400]} />
-                  </Pressable>
+                  </PremiumCard3>
                 </Animated.View>
               );
             })}
           </View>
         ) : (
-          <View style={styles.offlineContainer}>
-            <Text style={styles.offlineTitle}>Online Payment Not Available</Text>
-            <Text style={styles.offlineMessage}>
-              Please transfer directly to our church bank account:
-            </Text>
-
-            {paymentConfig?.manual_bank_accounts?.map((account, index) => (
-              <View key={index} style={styles.bankAccountCard}>
-                <Text style={styles.bankName}>{account.bank_name}</Text>
-                <Text style={styles.bankAccountHolder}>{account.account_holder}</Text>
-                <View style={styles.bankAccountRow}>
-                  <Text style={styles.bankAccountNumber}>{account.account_number}</Text>
-                  <Pressable
-                    onPress={() => handleCopyAccount(account.account_number)}
-                    style={styles.copyButton}
-                  >
-                    <Copy size={18} color={Colors.primary[600]} />
-                    <Text style={styles.copyText}>Copy</Text>
-                  </Pressable>
-                </View>
+          <Animated.View entering={todayListItemMotion(2)}>
+            <View style={styles.offlineBox}>
+              <View style={styles.offlineHeader}>
+                <AlertCircle size={20} color={Colors.warning} />
+                <Text style={styles.offlineTitle}>{t('give.manualTransfer')}</Text>
               </View>
-            ))}
-          </View>
+              <Text style={styles.offlineDesc}>{t('give.manualTransferDesc')}</Text>
+
+              {paymentConfig?.manual_bank_accounts?.map((account, index) => (
+                <View key={index} style={styles.bankCard}>
+                  <Text style={styles.bankName}>{account.bank_name}</Text>
+                  <Text style={styles.bankHolder}>{account.account_holder}</Text>
+                  <View style={styles.bankRow}>
+                    <Text style={styles.bankNumber}>{account.account_number}</Text>
+                    <Pressable
+                      onPress={() => handleCopyAccount(account.account_number)}
+                      style={styles.copyBtn}
+                    >
+                      <Copy size={16} color={Colors.gradient.end} />
+                      <Text style={styles.copyText}>{t('common.copy')}</Text>
+                    </Pressable>
+                  </View>
+                </View>
+              ))}
+
+              {/* Skip to direct transfer confirmation */}
+              <Pressable
+                onPress={() => handleMethodSelect('bank_transfer')}
+                style={styles.confirmTransferBtn}
+              >
+                <Text style={styles.confirmTransferText}>{t('give.confirmTransfer')}</Text>
+              </Pressable>
+            </View>
+          </Animated.View>
         )}
-      </Animated.View>
+      </View>
     );
   };
 
-  // Render Step 4: Review and confirm
+  // Render Review Step
   const renderReviewStep = () => {
-    if (!selectedFund || !amount || !selectedMethod) return null;
+    if (!selectedType || !amount || !selectedMethod) return null;
 
-    const fundStyle = getFundStyle(selectedFund.category);
-    const FundIcon = fundStyle.icon;
+    const typeConfig = OFFERING_TYPES.find(t => t.id === selectedType);
+    if (!typeConfig) return null;
+
+    const TypeIcon = typeConfig.icon;
     const paymentInfo = PAYMENT_INFO[selectedMethod] || PAYMENT_INFO.bank_transfer;
     const PaymentIcon = paymentInfo.icon;
 
     return (
-      <Animated.View entering={FadeIn.duration(300)}>
-        <Text style={styles.stepTitle}>Review Your Giving</Text>
-        <Text style={styles.stepDescription}>
-          Please check the details below before completing your giving.
-        </Text>
+      <View style={styles.stepContent}>
+        <Animated.View entering={todayListItemMotion(0)}>
+          <Text style={styles.sectionTitle}>{t('give.reviewTitle')}</Text>
+          <Text style={styles.sectionDesc}>{t('give.reviewDesc')}</Text>
+        </Animated.View>
 
         {/* Summary card */}
-        <View style={styles.summaryCard}>
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Giving to</Text>
-            <View style={styles.summaryValueRow}>
-              <View style={[styles.summaryIcon, { backgroundColor: fundStyle.bgColor }]}>
-                <FundIcon size={18} color={fundStyle.color} />
+        <Animated.View entering={todayListItemMotion(1)} style={styles.animatedSectionMargin}>
+          <PremiumCard3 selected={false}>
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>{t('give.purpose')}</Text>
+              <View style={styles.summaryValue}>
+                <LinearGradient
+                  colors={typeConfig.gradient}
+                  style={styles.summaryIcon}
+                >
+                  <TypeIcon size={14} color={Colors.white} />
+                </LinearGradient>
+                <Text style={styles.summaryText} numberOfLines={1}>
+                  {selectedType === 'other' ? otherPurpose : t(typeConfig.labelKey as any)}
+                </Text>
               </View>
-              <Text style={styles.summaryValue}>{selectedFund.name}</Text>
             </View>
-          </View>
 
-          <View style={styles.summaryDivider} />
+            <View style={styles.summaryDivider} />
 
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Amount</Text>
-            <Text style={styles.summaryAmount}>{formatCurrency(parseFloat(amount))}</Text>
-          </View>
-
-          <View style={styles.summaryDivider} />
-
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Payment method</Text>
-            <View style={styles.summaryValueRow}>
-              <PaymentIcon size={18} color={Colors.primary[600]} />
-              <Text style={styles.summaryValue}>{paymentInfo.name}</Text>
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>{t('give.amount')}</Text>
+              <Text style={styles.summaryAmount}>
+                {formatCurrency(parseFloat(amount))}
+              </Text>
             </View>
-          </View>
-        </View>
+
+            <View style={styles.summaryDivider} />
+
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>{t('give.paymentMethod')}</Text>
+              <View style={styles.summaryValue}>
+                <PaymentIcon size={16} color={Colors.gradient.end} />
+                <Text style={styles.summaryText}>{paymentInfo.name}</Text>
+              </View>
+            </View>
+
+            {notes ? (
+              <>
+                <View style={styles.summaryDivider} />
+                <View style={styles.summaryRow}>
+                  <Text style={styles.summaryLabel}>{t('give.notes')}</Text>
+                  <Text style={[styles.summaryText, { flex: 1, textAlign: 'right' }]} numberOfLines={2}>
+                    {notes}
+                  </Text>
+                </View>
+              </>
+            ) : null}
+          </PremiumCard3>
+        </Animated.View>
 
         {/* Anonymous toggle */}
-        <Pressable
-          onPress={() => setIsAnonymous(!isAnonymous)}
-          style={styles.anonymousToggle}
-        >
-          <View style={[styles.checkbox, isAnonymous && styles.checkboxChecked]}>
-            {isAnonymous && <Check size={16} color="#FFFFFF" />}
-          </View>
-          <View style={styles.anonymousContent}>
-            <Text style={styles.anonymousTitle}>Give anonymously</Text>
-            <Text style={styles.anonymousDesc}>
-              Your name will not be shown in giving records
-            </Text>
-          </View>
-        </Pressable>
+        <Animated.View entering={todayListItemMotion(2)} style={styles.animatedSectionMargin}>
+          <PremiumCard3
+            selected={isAnonymous}
+            onPress={() => setIsAnonymous(!isAnonymous)}
+          >
+            <View style={styles.methodRow}>
+              <View style={[styles.checkbox, isAnonymous && styles.checkboxActive]}>
+                {isAnonymous && <Check size={14} color={Colors.white} strokeWidth={3} />}
+              </View>
+              <View style={styles.methodFlex}>
+                <Text style={styles.anonymousTitle}>{t('give.anonymous')}</Text>
+                <Text style={styles.anonymousDesc}>{t('give.anonymousDesc')}</Text>
+              </View>
+            </View>
+          </PremiumCard3>
+        </Animated.View>
 
         {/* Submit button */}
-        <Pressable
-          onPress={handleSubmit}
-          disabled={isSubmitting}
-          style={[styles.submitButton, isSubmitting && styles.submitButtonDisabled]}
-        >
-          <LinearGradient
-            colors={['#6366F1', '#8B5CF6']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={styles.submitButtonGradient}
+        <Animated.View entering={todayListItemMotion(3)}>
+          <Pressable
+            onPress={handleSubmit}
+            disabled={isSubmitting}
+            style={[styles.submitBtn, isSubmitting && styles.submitBtnDisabled]}
           >
-            <Heart size={24} color="#FFFFFF" fill="#FFFFFF" />
-            <Text style={styles.submitButtonText}>
-              {isSubmitting ? 'Processing...' : 'Complete Giving'}
-            </Text>
-          </LinearGradient>
-        </Pressable>
+            <LinearGradient
+              colors={[Colors.accent.goldDark, Colors.accent.gold]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.submitBtnGradient}
+            >
+              <Heart size={22} color={Colors.gradient.start} fill={Colors.gradient.start} />
+              <Text style={styles.submitBtnText}>
+                {isSubmitting ? t('give.processing') : t('give.completeGiving')}
+              </Text>
+            </LinearGradient>
+          </Pressable>
+        </Animated.View>
 
-        <Text style={styles.secureNote}>
-          🔒 Your payment is secure and encrypted
-        </Text>
-      </Animated.View>
+        <Animated.View entering={todayListItemMotion(4)}>
+          <Text style={styles.secureNote}>🔒 {t('give.securePayment')}</Text>
+        </Animated.View>
+      </View>
     );
   };
 
-  // Render giving history
+  // Render History
   const renderHistory = () => {
-    const filterOptions = [
-      { key: 'all', label: 'All' },
-      { key: 'success', label: 'Completed' },
-      { key: 'pending', label: 'Pending' },
-      { key: 'failed', label: 'Failed' },
+    const filters = [
+      { key: 'all', label: t('give.filterAll') },
+      { key: 'success', label: t('give.filterSuccess') },
+      { key: 'pending', label: t('give.filterPending') },
+      { key: 'failed', label: t('give.filterFailed') },
     ] as const;
 
     return (
-      <Animated.View entering={FadeIn.duration(300)}>
-        <Text style={styles.stepTitle}>Your Giving History</Text>
-
-        {/* Filter tabs */}
-        <View style={styles.filterRow}>
-          {filterOptions.map((option) => (
+      <View style={styles.stepContent}>
+        {/* Filters */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.filterScroll}
+        >
+          {filters.map((f) => (
             <Pressable
-              key={option.key}
-              onPress={() => setHistoryFilter(option.key)}
+              key={f.key}
+              onPress={() => setHistoryFilter(f.key)}
               style={[
-                styles.filterTab,
-                historyFilter === option.key && styles.filterTabActive,
+                styles.filterPill,
+                historyFilter === f.key && styles.filterPillActive,
               ]}
             >
-              <Text
-                style={[
-                  styles.filterTabText,
-                  historyFilter === option.key && styles.filterTabTextActive,
-                ]}
-              >
-                {option.label}
+              <Text style={[
+                styles.filterText,
+                historyFilter === f.key && styles.filterTextActive,
+              ]}>
+                {f.label}
               </Text>
             </Pressable>
           ))}
-        </View>
+        </ScrollView>
 
         {/* History list */}
         {historyLoading ? (
-          <View style={styles.loadingContainer}>
-            <Text style={styles.loadingText}>Loading...</Text>
+          <View style={styles.loadingWrap}>
+            <Text style={styles.loadingText}>{t('common.loading')}</Text>
           </View>
         ) : !history || history.length === 0 ? (
-          <View style={styles.emptyContainer}>
-            <History size={64} color={Colors.gray[300]} />
-            <Text style={styles.emptyTitle}>No Giving Records</Text>
-            <Text style={styles.emptyText}>
-              Your giving history will appear here after you make your first gift.
-            </Text>
+          <View style={styles.emptyWrap}>
+            <History size={48} color={Colors.neutral[300]} />
+            <Text style={styles.emptyTitle}>{t('give.noHistory')}</Text>
+            <Text style={styles.emptyText}>{t('give.noHistoryDesc')}</Text>
           </View>
         ) : (
-          <View style={styles.historyList}>
-            {history.map((transaction, index) => {
-              const isSuccess = transaction.payment_status === 'success';
-              const isPending = ['pending', 'processing'].includes(transaction.payment_status);
+          <View style={styles.reviewGap}>
+            {history.map((tx) => {
+              const isSuccess = tx.payment_status === 'success';
+              const isPending = ['pending', 'processing'].includes(tx.payment_status);
 
               return (
-                <Animated.View
-                  key={transaction._id}
-                  entering={FadeInDown.delay(index * 50)}
-                >
-                  <View style={styles.historyItem}>
-                    <View
-                      style={[
-                        styles.historyStatusIcon,
-                        isSuccess && styles.historyStatusSuccess,
-                        isPending && styles.historyStatusPending,
-                        !isSuccess && !isPending && styles.historyStatusFailed,
-                      ]}
-                    >
-                      {isSuccess ? (
-                        <CheckCircle size={20} color="#FFFFFF" />
-                      ) : isPending ? (
-                        <Clock size={20} color="#FFFFFF" />
-                      ) : (
-                        <XCircle size={20} color="#FFFFFF" />
-                      )}
-                    </View>
-                    <View style={styles.historyContent}>
-                      <Text style={styles.historyFundName}>{transaction.fund_name}</Text>
-                      <Text style={styles.historyDate}>
-                        {new Date(transaction.created_at).toLocaleDateString('id-ID', {
-                          day: 'numeric',
-                          month: 'long',
-                          year: 'numeric',
-                        })}
+                <View key={tx._id}>
+                  <PremiumCard3 selected={false}>
+                    <View style={styles.methodRow}>
+                      <View
+                        style={[
+                          styles.historyIconWrap,
+                          isSuccess
+                            ? styles.historyIconSuccess
+                            : isPending
+                            ? styles.historyIconPending
+                            : styles.historyIconError,
+                        ]}
+                      >
+                        {isSuccess ? (
+                          <CheckCircle size={18} color="#FFF" />
+                        ) : isPending ? (
+                          <Clock size={18} color="#FFF" />
+                        ) : (
+                          <XCircle size={18} color="#FFF" />
+                        )}
+                      </View>
+
+                      <View style={styles.methodFlex}>
+                        <Text style={styles.historyFund}>{tx.fund_name}</Text>
+                        <Text style={styles.historyDate}>
+                          {new Date(tx.created_at).toLocaleDateString('id-ID', {
+                            day: 'numeric',
+                            month: 'long',
+                            year: 'numeric',
+                          })}
+                        </Text>
+                      </View>
+
+                      <Text style={styles.historyAmount}>
+                        {formatCurrency(tx.amount)}
                       </Text>
                     </View>
-                    <Text style={styles.historyAmount}>
-                      {formatCurrency(transaction.amount)}
-                    </Text>
-                  </View>
-                </Animated.View>
+                  </PremiumCard3>
+                </View>
               );
             })}
           </View>
         )}
 
-        {/* Back to giving button */}
+        {/* New gift button */}
         <Pressable
           onPress={() => setShowHistory(false)}
-          style={styles.backToGivingButton}
+          style={styles.newGiftBtn}
         >
-          <Heart size={20} color={Colors.primary[600]} />
-          <Text style={styles.backToGivingText}>Make a New Gift</Text>
+          <Heart size={18} color={Colors.gradient.end} />
+          <Text style={styles.newGiftText}>{t('give.makeNewGift')}</Text>
         </Pressable>
-      </Animated.View>
+      </View>
     );
   };
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="dark-content" />
+    <Animated.View style={styles.container}>
+      {renderHeader()}
 
-      <SafeAreaView style={styles.safeArea} edges={['top']}>
-        {/* Header */}
-        {renderHeader(showHistory ? 'Giving History' : 'Give')}
+      {/* Step indicator (when not on choose step or history) */}
+      {!showHistory && step !== 'choose' && renderStepIndicator()}
 
-        {/* Step progress (only show when not in history view and past first step) */}
-        {!showHistory && step !== 'choose' && renderStepProgress()}
-
-        {/* Content */}
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          style={styles.contentContainer}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={styles.content}
+      >
+        <Animated.ScrollView
+          ref={scrollRef}
+          style={styles.scroll}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+          keyboardShouldPersistTaps="handled"
         >
-          <ScrollView
-            ref={scrollRef}
-            style={styles.scrollView}
-            contentContainerStyle={styles.scrollContent}
-            showsVerticalScrollIndicator={false}
-            refreshControl={
-              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-            }
-          >
-            {showHistory ? (
-              renderHistory()
-            ) : (
-              <>
-                {step === 'choose' && renderChooseStep()}
-                {step === 'amount' && renderAmountStep()}
-                {step === 'payment' && renderPaymentStep()}
-                {step === 'review' && renderReviewStep()}
-              </>
-            )}
+          {showHistory ? (
+            renderHistory()
+          ) : (
+            <>
+              {step === 'choose' && (
+                <Animated.View
+                  key="choose"
+                  entering={SlideInLeft.duration(260)}
+                  exiting={SlideOutLeft.duration(200)}
+                >
+                  {renderChooseStep()}
+                </Animated.View>
+              )}
+              {step === 'amount' && (
+                <Animated.View
+                  key="amount"
+                  entering={SlideInRight.duration(260)}
+                  exiting={SlideOutRight.duration(200)}
+                >
+                  {renderAmountStep()}
+                </Animated.View>
+              )}
+              {step === 'payment' && (
+                <Animated.View
+                  key="payment"
+                  entering={SlideInRight.duration(260)}
+                  exiting={SlideOutRight.duration(200)}
+                >
+                  {renderPaymentStep()}
+                </Animated.View>
+              )}
+              {step === 'review' && (
+                <Animated.View
+                  key="review"
+                  entering={SlideInRight.duration(260)}
+                  exiting={SlideOutRight.duration(200)}
+                >
+                  {renderReviewStep()}
+                </Animated.View>
+              )}
+            </>
+          )}
 
-            {/* Bottom padding for scroll */}
-            <View style={{ height: 120 }} />
-          </ScrollView>
-        </KeyboardAvoidingView>
-      </SafeAreaView>
-    </View>
+          <View style={styles.bottomSpacerLarge} />
+        </Animated.ScrollView>
+      </KeyboardAvoidingView>
+
+      {/* Sticky footer for amount step */}
+      {renderAmountStepFooter()}
+    </Animated.View>
   );
 }
+
+// Memoize screen + Apply Premium Motion V10 Ultra HOC for production-grade transitions
+const MemoizedGiveScreen = memo(GiveScreen);
+MemoizedGiveScreen.displayName = 'GiveScreen';
+export default withPremiumMotionV10(MemoizedGiveScreen);
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.gray[50],
-  },
-  safeArea: {
-    flex: 1,
+    backgroundColor: Colors.neutral[50],
   },
   // Header
-  header: {
+  headerGradient: {
+    paddingBottom: spacing.m, // Match Events header padding
+    overflow: 'hidden',
+  },
+  compactHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.gray[200],
+    paddingHorizontal: spacing.ml,
+    paddingVertical: spacing.sm,
   },
-  backButton: {
-    flexDirection: 'row',
+  compactTitleWrap: {
+    flex: 1,
     alignItems: 'center',
-    minWidth: 80,
+    paddingHorizontal: spacing.sm,
   },
-  backText: {
-    fontSize: 16,
-    color: Colors.gray[700],
-    marginLeft: 4,
-    fontWeight: '500',
-  },
-  headerTitle: {
+  compactTitle: {
     fontSize: 20,
     fontWeight: '700',
-    color: Colors.gray[900],
+    color: Colors.white,
+    textAlign: 'center',
   },
-  historyToggle: {
+  compactSubtitle: {
+    fontSize: 13,
+    color: 'rgba(255,255,255,0.7)',
+    textAlign: 'center',
+    marginTop: 2,
+  },
+  backBtn: {
     width: 44,
     height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255,255,255,0.1)',
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 22,
   },
-  // Progress indicator
-  progressContainer: {
+  historyBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  historyBtnActive: {
+    backgroundColor: Colors.white,
+  },
+  headerContent: {
+    paddingHorizontal: spacing.ml, // Match Events header (20px)
+  },
+  titleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: spacing.m, // Match Events header (16px)
+  },
+  titleWrap: {
+    flex: 1,
+  },
+  headerTitle: {
+    fontSize: 28, // Match Events header
+    fontWeight: '700',
+    color: Colors.white,
+    letterSpacing: -0.5,
+  },
+  headerSubtitle: {
+    fontSize: 15, // Match Events header
+    color: 'rgba(255,255,255,0.7)',
+    marginTop: 4,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    // No marginBottom - headerGradient paddingBottom handles spacing
+  },
+  statCard: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.s,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: radius.card,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+  },
+  statIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: 'rgba(212,175,55,0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  statTextWrap: {
+    flex: 1,
+  },
+  statValue: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: Colors.white,
+  },
+  statLabel: {
+    fontSize: 11,
+    color: 'rgba(255,255,255,0.6)',
+    marginTop: 1,
+  },
+  // Step indicator
+  stepIndicator: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    backgroundColor: '#FFFFFF',
+    paddingVertical: spacing.m,
+    paddingHorizontal: spacing.ml,
+    backgroundColor: Colors.white,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.gray[100],
+    borderBottomColor: Colors.neutral[200],
   },
-  progressStep: {
+  stepItem: {
     alignItems: 'center',
   },
-  progressDot: {
+  stepDot: {
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: Colors.gray[200],
+    backgroundColor: Colors.neutral[200],
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 4,
   },
-  progressDotActive: {
-    backgroundColor: Colors.primary[500],
+  stepDotActive: {
+    backgroundColor: Colors.gradient.end,
   },
-  progressDotCompleted: {
-    backgroundColor: Colors.success[500],
+  stepDotComplete: {
+    backgroundColor: Colors.success,
   },
-  progressNumber: {
+  stepNumber: {
     fontSize: 12,
     fontWeight: '700',
-    color: Colors.gray[500],
+    color: Colors.neutral[500],
   },
-  progressNumberActive: {
-    color: '#FFFFFF',
+  stepNumberActive: {
+    color: Colors.white,
   },
-  progressLabel: {
+  stepLabel: {
     fontSize: 11,
     fontWeight: '500',
-    color: Colors.gray[400],
+    color: Colors.neutral[400],
   },
-  progressLabelActive: {
-    color: Colors.gray[700],
+  stepLabelActive: {
+    color: Colors.neutral[700],
   },
-  progressLine: {
+  stepLine: {
     width: 40,
     height: 2,
-    backgroundColor: Colors.gray[200],
+    backgroundColor: Colors.neutral[200],
     marginHorizontal: 8,
     marginBottom: 18,
   },
-  progressLineActive: {
-    backgroundColor: Colors.success[500],
+  stepLineActive: {
+    backgroundColor: Colors.success,
   },
   // Content
-  contentContainer: {
+  content: {
     flex: 1,
   },
-  scrollView: {
+  scroll: {
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: 20,
-    paddingTop: 24,
+    paddingHorizontal: spacing.ml,
+    paddingTop: spacing.l,
   },
-  // Step styling
-  stepTitle: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: Colors.gray[900],
-    marginBottom: 8,
+  stepContent: {
+    paddingTop: spacing.m,
   },
-  stepDescription: {
-    fontSize: 16,
-    color: Colors.gray[600],
-    lineHeight: 24,
-    marginBottom: 24,
+  stickyFooter: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: Colors.neutral[50],
+    paddingHorizontal: spacing.ml,
+    paddingTop: spacing.m,
+    borderTopWidth: 1,
+    borderTopColor: Colors.neutral[200],
   },
-  // Fund cards
-  fundList: {
-    gap: 12,
-  },
-  fundCard: {
+  // Intro box
+  introBox: {
     flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 3,
+    alignItems: 'flex-start',
+    gap: spacing.sm,
+    backgroundColor: Colors.neutral[100],
+    borderRadius: radius.card,
+    padding: spacing.m,
+    marginBottom: spacing.l,
   },
-  fundCardPressed: {
-    opacity: 0.9,
-    transform: [{ scale: 0.98 }],
-  },
-  fundIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 14,
-  },
-  fundContent: {
+  introText: {
     flex: 1,
-  },
-  fundName: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: Colors.gray[900],
-    marginBottom: 4,
-  },
-  fundDescription: {
     fontSize: 14,
-    color: Colors.gray[500],
-    lineHeight: 20,
+    color: Colors.neutral[600],
+    lineHeight: 22,
   },
-  fundProgressContainer: {
-    marginTop: 10,
-  },
-  fundProgressBar: {
-    height: 6,
-    backgroundColor: Colors.gray[200],
-    borderRadius: 3,
-    overflow: 'hidden',
-    marginBottom: 6,
-  },
-  fundProgressFill: {
-    height: '100%',
-    borderRadius: 3,
-  },
-  fundProgressText: {
-    fontSize: 13,
-    color: Colors.gray[500],
-  },
-  // Selected fund banner
-  selectedFundBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  selectedFundIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  selectedFundInfo: {
-    flex: 1,
-  },
-  selectedFundLabel: {
-    fontSize: 13,
-    color: Colors.gray[500],
-  },
-  selectedFundName: {
-    fontSize: 17,
+  sectionTitle: {
+    fontSize: 24,
     fontWeight: '700',
-    color: Colors.gray[900],
+    color: Colors.neutral[900],
+    letterSpacing: -0.3,
   },
-  // Quick amounts
-  quickAmountGrid: {
+  sectionDesc: {
+    fontSize: 15,
+    color: Colors.neutral[500],
+    marginTop: 4,
+    marginBottom: 28,
+  },
+  // Type cards - Premium 2x2 grid layout
+  typeGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
-    marginBottom: 24,
+    marginHorizontal: -spacing.xs,
+    marginBottom: spacing.l, // Space before continue button
+    overflow: 'visible', // Allow shadows to render outside
   },
-  quickAmountButton: {
-    width: (SCREEN_WIDTH - 40 - 24) / 3,
-    paddingVertical: 16,
-    borderRadius: 12,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 2,
-    borderColor: Colors.gray[200],
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'relative',
+  // Other purpose input
+  otherPurposeContainer: {
+    backgroundColor: Colors.white,
+    borderRadius: radius.card,
+    padding: spacing.m,
+    borderWidth: 1,
+    borderColor: Colors.neutral[200],
   },
-  quickAmountSelected: {
-    backgroundColor: Colors.primary[500],
-    borderColor: Colors.primary[500],
-  },
-  quickAmountText: {
+  otherPurposeLabel: {
     fontSize: 14,
-    fontWeight: '700',
-    color: Colors.gray[700],
-  },
-  quickAmountTextSelected: {
-    color: '#FFFFFF',
-  },
-  popularBadge: {
-    position: 'absolute',
-    top: -10,
-    right: -8,
-    backgroundColor: Colors.warning[500],
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 8,
-  },
-  popularText: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: '#FFFFFF',
-  },
-  // Amount input
-  inputLabel: {
-    fontSize: 16,
     fontWeight: '600',
-    color: Colors.gray[700],
-    marginBottom: 10,
+    color: Colors.neutral[700],
+    marginBottom: spacing.s,
   },
-  amountInputContainer: {
+  otherPurposeInputWrap: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.s,
+    backgroundColor: Colors.neutral[50],
+    borderRadius: radius.m,
+    padding: spacing.sm,
+  },
+  otherPurposeIcon: {
+    marginTop: 2,
+  },
+  otherPurposeInput: {
+    flex: 1,
+    fontSize: 15,
+    color: Colors.neutral[900],
+    minHeight: 60,
+    textAlignVertical: 'top',
+  },
+  charCount: {
+    fontSize: 12,
+    color: Colors.neutral[400],
+    textAlign: 'right',
+    marginTop: 8,
+  },
+  // Amount step
+  selectedPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    paddingHorizontal: 16,
-    borderWidth: 2,
-    borderColor: Colors.gray[200],
-    marginBottom: 8,
+    alignSelf: 'flex-start',
+    backgroundColor: Colors.white,
+    borderRadius: spacing.ml,
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    paddingRight: spacing.m,
+    marginBottom: spacing.m,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 1,
   },
-  currencyPrefix: {
+  selectedPillIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 8,
+  },
+  selectedPillText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: Colors.neutral[700],
+  },
+  amountInputWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.white,
+    borderRadius: radius.card,
+    paddingHorizontal: spacing.ml,
+    marginBottom: spacing.l,
+    borderWidth: 2,
+    borderColor: Colors.neutral[200],
+  },
+  currencyLabel: {
     fontSize: 24,
     fontWeight: '600',
-    color: Colors.gray[400],
+    color: Colors.neutral[400],
     marginRight: 8,
   },
   amountInput: {
     flex: 1,
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: '700',
-    color: Colors.gray[900],
-    paddingVertical: 16,
+    color: Colors.neutral[900],
+    paddingVertical: spacing.ml,
   },
-  minimumNote: {
+  quickGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginHorizontal: -5,
+    marginBottom: spacing.m,
+    overflow: 'visible',
+  },
+  quickAmountWrap: {
+    width: (SCREEN_WIDTH - 40 - 30) / 3,
+    margin: 5,
+  },
+  minNote: {
+    fontSize: 13,
+    color: Colors.neutral[500],
+    marginBottom: spacing.m,
+  },
+  notesContainer: {
+    marginBottom: spacing.l,
+  },
+  notesLabel: {
     fontSize: 14,
-    color: Colors.gray[500],
-    marginBottom: 24,
+    fontWeight: '600',
+    color: Colors.neutral[700],
+    marginBottom: spacing.s,
   },
-  // Primary button
-  primaryButton: {
+  notesInputInCard: {
+    backgroundColor: Colors.neutral[50],
+    borderRadius: radius.m,
+    padding: spacing.sm,
+    fontSize: 15,
+    color: Colors.neutral[900],
+    minHeight: 70,
+    textAlignVertical: 'top',
+  },
+  continueBtn: {
+    borderRadius: radius.card,
+    overflow: 'hidden',
+  },
+  continueBtnDisabled: {
+    opacity: 0.6,
+  },
+  continueBtnGradient: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: Colors.primary[600],
-    borderRadius: 14,
     paddingVertical: 18,
-    gap: 8,
-    shadowColor: Colors.primary[600],
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
   },
-  primaryButtonDisabled: {
-    backgroundColor: Colors.gray[300],
-    shadowOpacity: 0,
+  continueBtnText: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: Colors.white,
   },
-  primaryButtonText: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#FFFFFF',
-  },
-  // Amount banner
+  // Payment step
   amountBanner: {
-    backgroundColor: Colors.primary[50],
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 24,
+    backgroundColor: Colors.gradient.start,
+    borderRadius: radius.card,
+    padding: spacing.ml,
     alignItems: 'center',
+    marginBottom: spacing.l,
   },
   amountBannerLabel: {
-    fontSize: 14,
-    color: Colors.primary[700],
-    marginBottom: 4,
+    fontSize: 13,
+    color: 'rgba(255,255,255,0.7)',
   },
   amountBannerValue: {
     fontSize: 28,
-    fontWeight: '800',
-    color: Colors.primary[700],
+    fontWeight: '700',
+    color: Colors.white,
+    marginTop: 4,
   },
-  // Payment methods
-  paymentMethodList: {
-    gap: 12,
+  offlineBox: {
+    backgroundColor: Colors.neutral[100],
+    borderRadius: radius.card,
+    padding: spacing.ml,
   },
-  paymentMethodCard: {
+  offlineHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
-    elevation: 2,
-  },
-  paymentMethodPressed: {
-    opacity: 0.9,
-    transform: [{ scale: 0.98 }],
-  },
-  paymentMethodIcon: {
-    width: 52,
-    height: 52,
-    borderRadius: 14,
-    backgroundColor: Colors.primary[50],
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 14,
-  },
-  paymentMethodContent: {
-    flex: 1,
-  },
-  paymentMethodName: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: Colors.gray[900],
-    marginBottom: 4,
-  },
-  paymentMethodDesc: {
-    fontSize: 14,
-    color: Colors.gray[500],
-    lineHeight: 20,
-  },
-  // Offline payment
-  offlineContainer: {
-    backgroundColor: Colors.warning[50],
-    borderRadius: 14,
-    padding: 20,
+    gap: spacing.s,
+    marginBottom: spacing.s,
   },
   offlineTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: Colors.gray[900],
-    marginBottom: 8,
+    fontSize: 17,
+    fontWeight: '600',
+    color: Colors.neutral[900],
   },
-  offlineMessage: {
-    fontSize: 15,
-    color: Colors.gray[600],
-    lineHeight: 22,
-    marginBottom: 16,
+  offlineDesc: {
+    fontSize: 14,
+    color: Colors.neutral[600],
+    marginBottom: spacing.m,
   },
-  bankAccountCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
+  bankCard: {
+    backgroundColor: Colors.white,
+    borderRadius: radius.m,
+    padding: spacing.m,
+    marginBottom: spacing.s,
   },
   bankName: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: Colors.gray[900],
-    marginBottom: 4,
+    fontSize: 15,
+    fontWeight: '600',
+    color: Colors.neutral[900],
   },
-  bankAccountHolder: {
-    fontSize: 14,
-    color: Colors.gray[500],
+  bankHolder: {
+    fontSize: 13,
+    color: Colors.neutral[500],
+    marginTop: 2,
     marginBottom: 8,
   },
-  bankAccountRow: {
+  bankRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  bankAccountNumber: {
-    fontSize: 18,
+  bankNumber: {
+    fontSize: 17,
     fontWeight: '700',
-    color: Colors.gray[800],
+    color: Colors.neutral[800],
     letterSpacing: 1,
   },
-  copyButton: {
+  copyBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    backgroundColor: Colors.primary[50],
-    borderRadius: 10,
+    gap: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.s,
+    backgroundColor: Colors.neutral[100],
+    borderRadius: radius.s,
   },
   copyText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
-    color: Colors.primary[600],
+    color: Colors.gradient.end,
   },
-  // Summary card
-  summaryCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 4,
+  confirmTransferBtn: {
+    backgroundColor: Colors.gradient.end,
+    borderRadius: radius.m,
+    paddingVertical: spacing.sm,
+    alignItems: 'center',
+    marginTop: spacing.s,
   },
+  confirmTransferText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: Colors.white,
+  },
+  // Review step
   summaryRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
   summaryLabel: {
-    fontSize: 15,
-    color: Colors.gray[500],
+    fontSize: 14,
+    color: Colors.neutral[500],
   },
-  summaryValueRow: {
+  summaryValue: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    maxWidth: '60%',
   },
   summaryIcon: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
+    width: 26,
+    height: 26,
+    borderRadius: 7,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  summaryValue: {
-    fontSize: 16,
+  summaryText: {
+    fontSize: 15,
     fontWeight: '600',
-    color: Colors.gray[800],
+    color: Colors.neutral[800],
   },
   summaryAmount: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: Colors.gray[900],
+    fontSize: 20,
+    fontWeight: '700',
+    color: Colors.neutral[900],
   },
   summaryDivider: {
     height: 1,
-    backgroundColor: Colors.gray[100],
+    backgroundColor: Colors.neutral[100],
     marginVertical: 16,
   },
-  // Anonymous toggle
-  anonymousToggle: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 20,
-    gap: 14,
-  },
   checkbox: {
-    width: 26,
-    height: 26,
-    borderRadius: 8,
+    width: 24,
+    height: 24,
+    borderRadius: 6,
     borderWidth: 2,
-    borderColor: Colors.gray[300],
+    borderColor: Colors.neutral[300],
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 2,
   },
-  checkboxChecked: {
-    backgroundColor: Colors.primary[500],
-    borderColor: Colors.primary[500],
-  },
-  anonymousContent: {
-    flex: 1,
+  checkboxActive: {
+    backgroundColor: Colors.gradient.end,
+    borderColor: Colors.gradient.end,
   },
   anonymousTitle: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
-    color: Colors.gray[800],
-    marginBottom: 4,
+    color: Colors.neutral[800],
   },
   anonymousDesc: {
-    fontSize: 14,
-    color: Colors.gray[500],
-    lineHeight: 20,
+    fontSize: 13,
+    color: Colors.neutral[500],
+    marginTop: 2,
   },
-  // Submit button
-  submitButton: {
+  submitBtn: {
+    marginTop: 24,
     borderRadius: 16,
     overflow: 'hidden',
-    marginBottom: 12,
-    shadowColor: Colors.primary[600],
+    shadowColor: Colors.accent.gold,
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.35,
+    shadowOpacity: 0.3,
     shadowRadius: 12,
     elevation: 6,
   },
-  submitButtonDisabled: {
+  submitBtnDisabled: {
     opacity: 0.6,
   },
-  submitButtonGradient: {
+  submitBtnGradient: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 20,
     gap: 12,
+    paddingVertical: 20,
   },
-  submitButtonText: {
-    fontSize: 20,
+  submitBtnText: {
+    fontSize: 18,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: Colors.gradient.start,
   },
   secureNote: {
-    fontSize: 14,
-    color: Colors.gray[500],
+    fontSize: 13,
+    color: Colors.neutral[500],
     textAlign: 'center',
-    marginTop: 8,
+    marginTop: 16,
   },
   // History
-  filterRow: {
-    flexDirection: 'row',
-    gap: 10,
+  filterScroll: {
     marginBottom: 20,
+    marginHorizontal: -20,
+    paddingHorizontal: 20,
   },
-  filterTab: {
+  filterPill: {
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 20,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Colors.white,
+    marginRight: 10,
     borderWidth: 1,
-    borderColor: Colors.gray[200],
+    borderColor: Colors.neutral[200],
   },
-  filterTabActive: {
-    backgroundColor: Colors.primary[500],
-    borderColor: Colors.primary[500],
+  filterPillActive: {
+    backgroundColor: Colors.gradient.end,
+    borderColor: Colors.gradient.end,
   },
-  filterTabText: {
+  filterText: {
     fontSize: 14,
     fontWeight: '600',
-    color: Colors.gray[600],
+    color: Colors.neutral[600],
   },
-  filterTabTextActive: {
-    color: '#FFFFFF',
+  filterTextActive: {
+    color: Colors.white,
   },
-  historyList: {
-    gap: 12,
-  },
-  historyItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 6,
-    elevation: 2,
-  },
-  historyStatusIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 14,
-  },
-  historyStatusSuccess: {
-    backgroundColor: Colors.success[500],
-  },
-  historyStatusPending: {
-    backgroundColor: Colors.warning[500],
-  },
-  historyStatusFailed: {
-    backgroundColor: Colors.error[500],
-  },
-  historyContent: {
-    flex: 1,
-  },
-  historyFundName: {
-    fontSize: 16,
+  historyFund: {
+    fontSize: 15,
     fontWeight: '600',
-    color: Colors.gray[900],
-    marginBottom: 4,
+    color: Colors.neutral[900],
   },
   historyDate: {
-    fontSize: 14,
-    color: Colors.gray[500],
+    fontSize: 13,
+    color: Colors.neutral[500],
+    marginTop: 2,
   },
   historyAmount: {
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: '700',
-    color: Colors.gray[900],
+    color: Colors.neutral[900],
   },
-  backToGivingButton: {
+  newGiftBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: Colors.primary[50],
+    gap: 10,
+    backgroundColor: Colors.neutral[100],
     borderRadius: 14,
     paddingVertical: 16,
     marginTop: 20,
-    gap: 10,
   },
-  backToGivingText: {
-    fontSize: 16,
+  newGiftText: {
+    fontSize: 15,
     fontWeight: '600',
-    color: Colors.primary[600],
+    color: Colors.gradient.end,
   },
   // Loading & Empty
-  loadingContainer: {
+  loadingWrap: {
     paddingVertical: 60,
     alignItems: 'center',
   },
   loadingText: {
-    fontSize: 16,
-    color: Colors.gray[500],
+    fontSize: 15,
+    color: Colors.neutral[500],
   },
-  emptyContainer: {
+  emptyWrap: {
     paddingVertical: 60,
     alignItems: 'center',
   },
   emptyTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: Colors.gray[700],
+    fontSize: 18,
+    fontWeight: '600',
+    color: Colors.neutral[700],
     marginTop: 16,
-    marginBottom: 8,
   },
   emptyText: {
+    fontSize: 14,
+    color: Colors.neutral[500],
+    marginTop: 4,
+  },
+  // New consolidated styles for performance
+  typeCardContainer: {
+    width: '50%',
+    padding: 6,
+  },
+  typeIconGradient: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  typeLabel: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: Colors.neutral[800],
+  },
+  typeLabelSelected: {
+    color: Colors.gradient.end,
+  },
+  typeSubtitle: {
+    marginTop: 4,
+    fontSize: 12,
+    color: Colors.neutral[500],
+  },
+  otherPurposeMargin: {
+    marginTop: 16,
+  },
+  bottomSpacer: {
+    height: 80,
+  },
+  bottomSpacerLarge: {
+    height: 120,
+  },
+  methodsGap: {
+    gap: 14,
+  },
+  methodRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+  },
+  methodIconWrap: {
+    width: 46,
+    height: 46,
+    borderRadius: 12,
+    backgroundColor: Colors.neutral[100],
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  methodRadio: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: Colors.neutral[300],
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  methodRadioSelected: {
+    borderColor: Colors.gradient.end,
+    backgroundColor: Colors.gradient.end,
+  },
+  methodFlex: {
+    flex: 1,
+  },
+  methodName: {
     fontSize: 16,
-    color: Colors.gray[500],
-    textAlign: 'center',
-    lineHeight: 24,
-    paddingHorizontal: 20,
+    fontWeight: '700',
+    color: Colors.neutral[900],
+  },
+  methodDesc: {
+    fontSize: 13,
+    color: Colors.neutral[500],
+    marginTop: 2,
+  },
+  animatedSectionMargin: {
+    marginBottom: 20,
+  },
+  bankInfoRow: {
+    flexDirection: 'row',
+    gap: 14,
+    alignItems: 'center',
+  },
+  reviewGap: {
+    gap: 12,
+  },
+  historyIconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  historyIconSuccess: {
+    backgroundColor: Colors.success,
+  },
+  historyIconPending: {
+    backgroundColor: Colors.warning,
+  },
+  historyIconError: {
+    backgroundColor: Colors.error,
   },
 });

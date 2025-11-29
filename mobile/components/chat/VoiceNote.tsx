@@ -25,7 +25,13 @@ import {
   AudioModule,
 } from 'expo-audio';
 import * as Haptics from 'expo-haptics';
-import { MotiView } from 'moti';
+import AnimatedRN, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  withRepeat,
+  interpolate,
+} from 'react-native-reanimated';
 import {
   Mic,
   Play,
@@ -150,14 +156,11 @@ function RecordingWaveform({ isRecording }: { isRecording: boolean }) {
   return (
     <View style={styles.waveformContainer}>
       {bars.map((height, i) => (
-        <MotiView
+        <View
           key={i}
-          from={{ scaleY: 0.3 }}
-          animate={{ scaleY: height }}
-          transition={{ type: 'timing', duration: 100 }}
           style={[
             styles.waveformBar,
-            { backgroundColor: '#EF4444' }, // Red for recording
+            { backgroundColor: '#EF4444', transform: [{ scaleY: height }] },
           ]}
         />
       ))}
@@ -304,16 +307,13 @@ export function VoiceNoteRecorder({
         >
           {/* Cancel hint */}
           <HStack space="sm" className="items-center">
-            <MotiView
-              from={{ opacity: 0.5 }}
-              animate={{ opacity: isCancelling ? 1 : 0.5 }}
-            >
+            <View style={{ opacity: isCancelling ? 1 : 0.5 }}>
               <Icon
                 as={ChevronLeft}
                 size="sm"
                 style={{ color: isCancelling ? '#EF4444' : '#8696a0' }}
               />
-            </MotiView>
+            </View>
             <Text
               style={{
                 color: isCancelling ? '#EF4444' : '#8696a0',
@@ -329,12 +329,7 @@ export function VoiceNoteRecorder({
 
           {/* Duration */}
           <HStack space="sm" className="items-center">
-            <MotiView
-              from={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ type: 'timing', duration: 500, loop: true }}
-              style={styles.recordingDot}
-            />
+            <View style={styles.recordingDot} />
             <Text style={styles.durationText}>{formatDuration(duration)}</Text>
           </HStack>
         </Animated.View>

@@ -1,16 +1,19 @@
 /**
  * Custom Tab Bar Icons with Selective Fill Control
  *
- * Each icon has granular control over which parts get filled when active:
- * - Home: Fill wall only, door remains outlined
- * - Bible: Fill book, keep center divider white
- * - Heart: Full fill
- * - Compass: Fill circle, needle stays white
- * - Calendar: Fill bottom part only
+ * New Navigation Design Icons:
+ * - Today: Sunrise icon (sun rising over horizon)
+ * - Events: Calendar icon (bottom filled when active)
+ * - Community: Message circle (chat bubble)
+ * - Give: Heart with hands (HeartHandshake)
+ * - Profile: User icon
+ *
+ * Legacy icons kept for backward compatibility:
+ * - Home, Bible, Heart, Compass
  */
 
 import React from 'react';
-import Svg, { Path, Rect, Circle, Line } from 'react-native-svg';
+import Svg, { Path, Rect, Circle, Line, G } from 'react-native-svg';
 
 interface IconProps {
   size?: number;
@@ -243,6 +246,187 @@ export const CommunityIcon: React.FC<IconProps> = ({ size = 24, color = '#000', 
     {/* Right person (body) - slightly behind */}
     <Path
       d="M16 15H19C20.6569 15 22 16.3431 22 18V21"
+      fill={isActive ? color : 'none'}
+      stroke={color}
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </Svg>
+);
+
+// =============================================================================
+// NEW NAVIGATION ICONS
+// =============================================================================
+
+/**
+ * Sunrise Icon - For "Today" tab
+ * Sun rising over horizon with rays
+ */
+export const SunriseIcon: React.FC<IconProps> = ({ size = 24, color = '#000', isActive = false }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    {/* Horizon line */}
+    <Path
+      d="M3 17H21"
+      stroke={color}
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    {/* Sun (half circle rising) */}
+    <Path
+      d="M12 17C15.3137 17 18 14.3137 18 11C18 7.68629 15.3137 5 12 5C8.68629 5 6 7.68629 6 11C6 14.3137 8.68629 17 12 17Z"
+      fill={isActive ? color : 'none'}
+      stroke={color}
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    {/* Sun rays */}
+    <Path
+      d="M12 2V4"
+      stroke={color}
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <Path
+      d="M4.22 9.22L5.64 10.64"
+      stroke={color}
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <Path
+      d="M19.78 9.22L18.36 10.64"
+      stroke={color}
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    {/* Ground/horizon fill when active */}
+    {isActive && (
+      <Rect x="3" y="17" width="18" height="4" fill={color} />
+    )}
+    {/* Bottom line */}
+    <Path
+      d="M3 21H21"
+      stroke={color}
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </Svg>
+);
+
+/**
+ * Message Circle Icon - For "Community" tab
+ * Chat bubble with dots
+ */
+export const MessageCircleIcon: React.FC<IconProps> = ({ size = 24, color = '#000', isActive = false }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    {/* Chat bubble */}
+    <Path
+      d="M21 11.5C21.0034 12.8199 20.6951 14.1219 20.1 15.3C19.3944 16.7118 18.3098 17.8992 16.9674 18.7293C15.6251 19.5594 14.0782 19.9994 12.5 20C11.1801 20.0035 9.87812 19.6951 8.7 19.1L3 21L4.9 15.3C4.30493 14.1219 3.99656 12.8199 4 11.5C4.00061 9.92179 4.44061 8.37488 5.27072 7.03258C6.10083 5.69028 7.28825 4.6056 8.7 3.90003C9.87812 3.30496 11.1801 2.99659 12.5 3.00003H13C15.0843 3.11502 17.053 3.99479 18.5291 5.47089C20.0052 6.94699 20.885 8.91568 21 11V11.5Z"
+      fill={isActive ? color : 'none'}
+      stroke={color}
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    {/* Typing dots when active */}
+    {isActive && (
+      <>
+        <Circle cx="8.5" cy="11.5" r="1" fill="white" />
+        <Circle cx="12.5" cy="11.5" r="1" fill="white" />
+        <Circle cx="16.5" cy="11.5" r="1" fill="white" />
+      </>
+    )}
+  </Svg>
+);
+
+/**
+ * Heart Handshake Icon - For "Give" tab
+ * Heart with hands symbolizing giving/generosity
+ */
+export const HeartHandshakeIcon: React.FC<IconProps> = ({ size = 24, color = '#000', isActive = false }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    {/* Heart shape */}
+    <Path
+      d="M19 14C20.49 12.54 22 10.79 22 8.5C22 7.04131 21.4205 5.64236 20.3891 4.61091C19.3576 3.57946 17.9587 3 16.5 3C14.74 3 13.5 3.5 12 5C10.5 3.5 9.26 3 7.5 3C6.04131 3 4.64236 3.57946 3.61091 4.61091C2.57946 5.64236 2 7.04131 2 8.5C2 10.8 3.5 12.55 5 14L12 21L19 14Z"
+      fill={isActive ? color : 'none'}
+      stroke={color}
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    {/* Hands/giving gesture */}
+    <Path
+      d="M12 5L9 8L12 11L15 8L12 5Z"
+      fill={isActive ? 'white' : 'none'}
+      stroke={isActive ? 'white' : color}
+      strokeWidth={1.5}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    {/* Cross in heart when active */}
+    {isActive && (
+      <>
+        <Line x1="12" y1="11" x2="12" y2="16" stroke="white" strokeWidth={1.5} strokeLinecap="round" />
+        <Line x1="9.5" y1="13" x2="14.5" y2="13" stroke="white" strokeWidth={1.5} strokeLinecap="round" />
+      </>
+    )}
+  </Svg>
+);
+
+/**
+ * Plus Icon - For GROW FAB button
+ */
+export const PlusIcon: React.FC<IconProps> = ({ size = 24, color = '#000' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path
+      d="M12 5V19"
+      stroke={color}
+      strokeWidth={2.5}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <Path
+      d="M5 12H19"
+      stroke={color}
+      strokeWidth={2.5}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </Svg>
+);
+
+/**
+ * Sprout/Grow Icon - For GROW FAB button (alternative)
+ * A seedling/plant growing upward
+ */
+export const GrowIcon: React.FC<IconProps> = ({ size = 24, color = '#000', isActive = false }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    {/* Stem */}
+    <Path
+      d="M12 22V12"
+      stroke={color}
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    {/* Left leaf */}
+    <Path
+      d="M12 12C12 12 8 10 5 7C5 7 5 12 12 12Z"
+      fill={isActive ? color : 'none'}
+      stroke={color}
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    {/* Right leaf */}
+    <Path
+      d="M12 8C12 8 16 6 19 3C19 3 19 8 12 8Z"
       fill={isActive ? color : 'none'}
       stroke={color}
       strokeWidth={2}

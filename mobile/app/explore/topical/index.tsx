@@ -31,7 +31,7 @@ import {
 import { ExploreCard } from '@/components/explore/ExploreCard';
 import { EmptyState } from '@/components/explore/EmptyState';
 import { TopicalCategoriesSkeleton } from '@/components/explore/LoadingSkeleton';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import Animated, { FadeInDown, SlideInRight } from 'react-native-reanimated';
 
 // Icon mapping for categories
 const getCategoryIcon = (iconName?: string) => {
@@ -81,7 +81,7 @@ export default function TopicalCategoriesScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Header */}
+      {/* Header - Static, not animated */}
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} style={styles.backButton}>
           <ArrowLeft size={24} color={ExploreColors.neutral[900]} />
@@ -92,41 +92,44 @@ export default function TopicalCategoriesScreen() {
         <View style={{ width: 40 }} />
       </View>
 
+      {/* Content - Animated */}
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Description */}
-        <Text style={styles.description}>
-          {contentLanguage === 'en'
-            ? 'Explore Bible verses organized by life topics and themes'
-            : 'Jelajahi ayat-ayat Alkitab yang diatur berdasarkan topik dan tema kehidupan'}
-        </Text>
+        <Animated.View entering={SlideInRight.duration(250)}>
+          {/* Description */}
+          <Text style={styles.description}>
+            {contentLanguage === 'en'
+              ? 'Explore Bible verses organized by life topics and themes'
+              : 'Jelajahi ayat-ayat Alkitab yang diatur berdasarkan topik dan tema kehidupan'}
+          </Text>
 
-        {/* Categories Grid */}
-        {!categories || categories.length === 0 ? (
-          <EmptyState
-            type="no_content"
-            message={
-              contentLanguage === 'en'
-                ? 'No categories available yet'
-                : 'Belum ada kategori tersedia'
-            }
-          />
-        ) : (
-          <View style={styles.categoriesGrid}>
-            {categories.map((category, index) => (
-              <CategoryCard
-                key={category.id}
-                category={category}
-                onPress={() => handleCategoryPress(category.id)}
-                contentLanguage={contentLanguage}
-                index={index}
-              />
-            ))}
-          </View>
-        )}
+          {/* Categories Grid */}
+          {!categories || categories.length === 0 ? (
+            <EmptyState
+              type="no_content"
+              message={
+                contentLanguage === 'en'
+                  ? 'No categories available yet'
+                  : 'Belum ada kategori tersedia'
+              }
+            />
+          ) : (
+            <View style={styles.categoriesGrid}>
+              {categories.map((category, index) => (
+                <CategoryCard
+                  key={category.id}
+                  category={category}
+                  onPress={() => handleCategoryPress(category.id)}
+                  contentLanguage={contentLanguage}
+                  index={index}
+                />
+              ))}
+            </View>
+          )}
+        </Animated.View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -244,10 +247,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     paddingHorizontal: ExploreSpacing.screenMargin,
-    gap: ExploreSpacing.md,
+    justifyContent: 'space-between',
   },
   categoryCardContainer: {
     width: '48%',
+    marginBottom: ExploreSpacing.md,
   },
   categoryCard: {
     padding: ExploreSpacing.lg,
@@ -263,12 +267,12 @@ const styles = StyleSheet.create({
     marginBottom: ExploreSpacing.md,
   },
   categoryContent: {
-    gap: ExploreSpacing.xs,
   },
   categoryName: {
     ...ExploreTypography.h4,
     color: ExploreColors.neutral[900],
     fontSize: 16,
+    marginBottom: ExploreSpacing.xs,
   },
   categoryDescription: {
     ...ExploreTypography.caption,
@@ -287,11 +291,13 @@ const styles = StyleSheet.create({
     right: ExploreSpacing.xs,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
     backgroundColor: ExploreColors.secondary[100],
     paddingHorizontal: ExploreSpacing.xs,
     paddingVertical: 4,
     borderRadius: 10,
+  },
+  popularIcon: {
+    marginRight: 4,
   },
   popularText: {
     ...ExploreTypography.caption,

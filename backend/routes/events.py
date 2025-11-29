@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from typing import List, Optional
 from datetime import datetime, timezone
@@ -8,6 +8,11 @@ from models.event import Event, EventCreate, EventUpdate
 from utils.dependencies import get_db, require_admin, get_current_user, get_session_church_id
 from services.qr_service import generate_confirmation_code, generate_rsvp_qr_data
 from services.whatsapp_service import send_whatsapp_message, format_rsvp_confirmation_message
+from services.seaweedfs_service import (
+    get_seaweedfs_service,
+    SeaweedFSError,
+    StorageCategory
+)
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/events", tags=["Events"])
@@ -729,3 +734,103 @@ async def get_event_attendance(
         "attendance_rate": f"{(len(all_attendance) / len(all_rsvps) * 100):.1f}%" if all_rsvps else "N/A",
         "attendance": all_attendance
     }
+
+
+# ============= FILE UPLOAD ENDPOINTS (SeaweedFS) =============
+
+@router.post("/{event_id}/upload-photo", status_code=status.HTTP_201_CREATED)
+async def upload_event_photo(
+    event_id: str,
+    file: UploadFile = File(...),
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current_user: dict = Depends(require_admin),
+):
+    """
+    Upload event photo to SeaweedFS.
+
+    The image is stored in SeaweedFS at:
+    /faithflow/{church_id}/events/covers/{event_id}/
+
+    Returns:
+        - event_photo: URL to the event photo
+        - event_photo_thumbnail: URL to the thumbnail
+    """
+    event = await db.events.find_one({"id": event_id})
+    if not event:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"error_code": "NOT_FOUND", "message": "Event not found"},
+        )
+
+    # Check access
+    church_id = event.get("church_id")
+    if current_user.get("role") != "super_admin" and current_user.get("session_church_id") != church_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={"error_code": "FORBIDDEN", "message": "Access denied"},
+        )
+
+    allowed_types = ["image/jpeg", "image/jpg", "image/png", "image/webp"]
+    if file.content_type not in allowed_types:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "error_code": "INVALID_FILE_TYPE",
+                "message": f"File type {file.content_type} not allowed. Use jpg, png, or webp"
+            }
+        )
+
+    content = await file.read()
+    if len(content) > 10 * 1024 * 1024:  # 10MB limit
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "error_code": "FILE_SIZE_EXCEEDED",
+                "message": "Image must be less than 10MB"
+            }
+        )
+
+    # Upload to SeaweedFS
+    try:
+        seaweedfs = get_seaweedfs_service()
+        result = await seaweedfs.upload_event_cover(
+            content=content,
+            file_name=file.filename or "event_photo.jpg",
+            mime_type=file.content_type,
+            church_id=church_id,
+            event_id=event_id
+        )
+
+        # Update event with SeaweedFS URLs
+        await db.events.update_one(
+            {"id": event_id},
+            {
+                "$set": {
+                    "event_photo": result["url"],
+                    "event_photo_thumbnail": result.get("thumbnail_url"),
+                    "event_photo_fid": result.get("fid"),
+                    "event_photo_path": result.get("path"),
+                    "updated_at": datetime.now(timezone.utc).isoformat()
+                }
+            },
+        )
+
+        logger.info(f"Event {event_id} photo uploaded to SeaweedFS: {result['url']}")
+
+        return {
+            "event_photo": result["url"],
+            "event_photo_thumbnail": result.get("thumbnail_url"),
+            "file_size": result.get("file_size"),
+            "width": result.get("width"),
+            "height": result.get("height")
+        }
+
+    except SeaweedFSError as e:
+        logger.error(f"Failed to upload event photo to SeaweedFS: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={
+                "error_code": "UPLOAD_FAILED",
+                "message": f"Failed to upload image: {str(e)}"
+            }
+        )

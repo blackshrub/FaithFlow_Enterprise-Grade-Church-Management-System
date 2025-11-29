@@ -1,10 +1,11 @@
 /**
- * OptimizedList - High-performance list component
+ * OptimizedList - High-performance list component using FlashList
  *
- * A wrapper around FlatList with all performance optimizations pre-configured.
- * Use this instead of FlatList for lists with 20+ items.
+ * A wrapper around @shopify/flash-list with all performance optimizations pre-configured.
+ * FlashList is 10x faster than FlatList for large lists.
  *
  * Features:
+ * - Uses FlashList for 10x better performance
  * - Pre-configured performance props
  * - Built-in loading states
  * - Pull-to-refresh support
@@ -13,45 +14,42 @@
  * - Item separator support
  */
 
-import React, { useCallback, useMemo, memo } from 'react';
+import React, { useCallback, useMemo, memo, forwardRef, Ref } from 'react';
 import {
-  FlatList,
-  FlatListProps,
   View,
   Text,
   StyleSheet,
   RefreshControl,
   ActivityIndicator,
-  Platform,
   ViewStyle,
 } from 'react-native';
-import {
-  FLATLIST_PERFORMANCE_PROPS,
-  LARGE_LIST_PROPS,
-  IMAGE_LIST_PROPS,
-  createGetItemLayout,
-} from '@/utils/performance';
+import { FlashList, ListRenderItem } from '@shopify/flash-list';
+import type { StyleProp, ViewStyle as ContentStyle } from 'react-native';
 
 // ============================================================================
 // TYPES
 // ============================================================================
 
-interface OptimizedListProps<T> extends Omit<FlatListProps<T>, 'keyExtractor'> {
+interface OptimizedListProps<T> {
+  /**
+   * Data array to render
+   */
+  data: readonly T[] | null | undefined;
+
+  /**
+   * Render function for each item (required)
+   */
+  renderItem: ListRenderItem<T>;
+
   /**
    * Unique key field in your data items (default: 'id')
    */
   keyField?: keyof T | string;
 
   /**
-   * Fixed item height for optimal scroll performance.
-   * If provided, enables getItemLayout optimization.
+   * Estimated item height for FlashList optimization (required for best performance)
    */
-  itemHeight?: number;
-
-  /**
-   * Height of separator between items
-   */
-  separatorHeight?: number;
+  estimatedItemSize?: number;
 
   /**
    * Loading state - shows spinner
@@ -79,17 +77,65 @@ interface OptimizedListProps<T> extends Omit<FlatListProps<T>, 'keyExtractor'> {
   EmptyComponent?: React.ComponentType;
 
   /**
-   * Performance mode:
-   * - 'default': Standard optimization (most cases)
-   * - 'large': For 100+ items
-   * - 'images': For image-heavy lists
-   */
-  performanceMode?: 'default' | 'large' | 'images';
-
-  /**
    * Style for the container
    */
   containerStyle?: ViewStyle;
+
+  /**
+   * Content container style
+   */
+  contentContainerStyle?: ContentStyle;
+
+  /**
+   * Draw distance for virtualization (default: 250)
+   * Lower values = less memory, higher values = smoother scrolling
+   */
+  drawDistance?: number;
+
+  /**
+   * Called when scroll reaches end
+   */
+  onEndReached?: () => void;
+
+  /**
+   * How far from end to trigger onEndReached
+   */
+  onEndReachedThreshold?: number;
+
+  /**
+   * Header component
+   */
+  ListHeaderComponent?: React.ComponentType | React.ReactElement | null;
+
+  /**
+   * Footer component
+   */
+  ListFooterComponent?: React.ComponentType | React.ReactElement | null;
+
+  /**
+   * Item separator component
+   */
+  ItemSeparatorComponent?: React.ComponentType | null;
+
+  /**
+   * Extra data to trigger re-renders
+   */
+  extraData?: any;
+
+  /**
+   * Number of columns for grid layout
+   */
+  numColumns?: number;
+
+  /**
+   * Horizontal scrolling
+   */
+  horizontal?: boolean;
+
+  /**
+   * Inverted list (for chat)
+   */
+  inverted?: boolean;
 }
 
 // ============================================================================
@@ -117,75 +163,48 @@ const LoadingComponent = memo(() => (
 LoadingComponent.displayName = 'LoadingComponent';
 
 // ============================================================================
-// ITEM SEPARATOR
-// ============================================================================
-
-const ItemSeparator = memo(({ height }: { height: number }) => (
-  <View style={{ height }} />
-));
-
-ItemSeparator.displayName = 'ItemSeparator';
-
-// ============================================================================
 // MAIN COMPONENT
 // ============================================================================
 
-function OptimizedListInner<T extends Record<string, any>>(
+function OptimizedListInner<T>(
   props: OptimizedListProps<T>,
-  ref: React.Ref<FlatList<T>>
+  ref: Ref<typeof FlashList<T>>
 ) {
   const {
     data,
+    renderItem,
     keyField = 'id',
-    itemHeight,
-    separatorHeight = 0,
+    estimatedItemSize = 100,
     isLoading = false,
     isRefreshing = false,
     onRefresh,
     emptyText = 'No items found',
     EmptyComponent,
-    performanceMode = 'default',
     containerStyle,
-    ...restProps
+    contentContainerStyle,
+    drawDistance = 250,
+    onEndReached,
+    onEndReachedThreshold = 0.5,
+    ListHeaderComponent,
+    ListFooterComponent,
+    ItemSeparatorComponent,
+    extraData,
+    numColumns,
+    horizontal,
+    inverted,
   } = props;
-
-  // Select performance props based on mode
-  const performanceProps = useMemo(() => {
-    switch (performanceMode) {
-      case 'large':
-        return LARGE_LIST_PROPS;
-      case 'images':
-        return IMAGE_LIST_PROPS;
-      default:
-        return FLATLIST_PERFORMANCE_PROPS;
-    }
-  }, [performanceMode]);
 
   // Create stable keyExtractor
   const keyExtractor = useCallback(
     (item: T, index: number) => {
-      const key = item[keyField as keyof T];
-      return key !== undefined ? String(key) : `item-${index}`;
+      if (typeof item === 'object' && item !== null) {
+        const key = (item as Record<string, unknown>)[keyField as string];
+        return key !== undefined ? String(key) : `item-${index}`;
+      }
+      return `item-${index}`;
     },
     [keyField]
   );
-
-  // Create getItemLayout if itemHeight is provided
-  const getItemLayout = useMemo(() => {
-    if (!itemHeight) return undefined;
-    const totalHeight = itemHeight + separatorHeight;
-    return (_data: T[] | null | undefined, index: number) => ({
-      length: totalHeight,
-      offset: totalHeight * index,
-      index,
-    });
-  }, [itemHeight, separatorHeight]);
-
-  // Create stable separator component
-  const ItemSeparatorComponent = useMemo(() => {
-    if (separatorHeight <= 0) return undefined;
-    return () => <ItemSeparator height={separatorHeight} />;
-  }, [separatorHeight]);
 
   // Create empty component
   const ListEmptyComponent = useMemo(() => {
@@ -216,44 +235,36 @@ function OptimizedListInner<T extends Record<string, any>>(
     );
   }
 
-  // Build props object to avoid overload issues
-  const flatListProps = {
-    ref,
-    data,
-    keyExtractor,
-    ...(getItemLayout ? { getItemLayout } : {}),
-    ItemSeparatorComponent,
-    ListEmptyComponent,
-    refreshControl,
-    showsVerticalScrollIndicator: false,
-    ...performanceProps,
-    ...restProps,
-  };
-
-  return <FlatList<T> {...(flatListProps as any)} />;
+  return (
+    <FlashList<T>
+      ref={ref}
+      data={data}
+      renderItem={renderItem}
+      keyExtractor={keyExtractor}
+      estimatedItemSize={estimatedItemSize}
+      ListEmptyComponent={ListEmptyComponent}
+      refreshControl={refreshControl}
+      showsVerticalScrollIndicator={false}
+      showsHorizontalScrollIndicator={false}
+      drawDistance={drawDistance}
+      contentContainerStyle={contentContainerStyle}
+      onEndReached={onEndReached}
+      onEndReachedThreshold={onEndReachedThreshold}
+      ListHeaderComponent={ListHeaderComponent}
+      ListFooterComponent={ListFooterComponent}
+      ItemSeparatorComponent={ItemSeparatorComponent}
+      extraData={extraData}
+      numColumns={numColumns}
+      horizontal={horizontal}
+      inverted={inverted}
+    />
+  );
 }
 
-// Forward ref with proper typing
-export const OptimizedList = React.forwardRef(OptimizedListInner) as <
-  T extends Record<string, any>
->(
-  props: OptimizedListProps<T> & { ref?: React.Ref<FlatList<T>> }
-) => React.ReactElement;
-
-// ============================================================================
-// VIRTUALIZED SECTION LIST (for grouped data)
-// ============================================================================
-
-interface OptimizedSectionListProps<T> {
-  sections: Array<{ title: string; data: T[] }>;
-  renderItem: (info: { item: T; index: number; section: { title: string; data: T[] } }) => React.ReactElement;
-  renderSectionHeader?: (info: { section: { title: string; data: T[] } }) => React.ReactElement;
-  keyField?: keyof T | string;
-  itemHeight?: number;
-  sectionHeaderHeight?: number;
-  isLoading?: boolean;
-  emptyText?: string;
-}
+// Forward ref with proper typing using a type assertion
+export const OptimizedList = forwardRef(OptimizedListInner) as <T>(
+  props: OptimizedListProps<T> & { ref?: Ref<typeof FlashList<T>> }
+) => React.ReactElement | null;
 
 // ============================================================================
 // STYLES

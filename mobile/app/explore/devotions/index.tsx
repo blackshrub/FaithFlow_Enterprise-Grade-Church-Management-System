@@ -45,7 +45,7 @@ import {
 } from 'lucide-react-native';
 import { EmptyState } from '@/components/explore/EmptyState';
 import { ExploreHomeSkeleton } from '@/components/explore/LoadingSkeleton';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import Animated, { FadeInDown, SlideInRight } from 'react-native-reanimated';
 
 export default function DevotionPlansLibraryScreen() {
   const router = useRouter();
@@ -96,7 +96,7 @@ export default function DevotionPlansLibraryScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Header */}
+      {/* Header - Static, not animated */}
       <View style={styles.header}>
         <Pressable
           onPress={() => router.back()}
@@ -112,59 +112,62 @@ export default function DevotionPlansLibraryScreen() {
         <View style={{ width: 40 }} />
       </View>
 
+      {/* Content - Animated */}
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Search Bar */}
-        <View style={styles.searchContainer}>
-          <View style={styles.searchBar}>
-            <Search size={20} color={ExploreColors.neutral[400]} />
-            <TextInput
-              style={styles.searchInput}
-              placeholder={t('explore.searchDevotionPlans')}
-              placeholderTextColor={ExploreColors.neutral[400]}
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-            />
-          </View>
-        </View>
-
-        {/* Description */}
-        <Text style={styles.description}>
-          {t('explore.devotionPlansDescription')}
-        </Text>
-
-        {/* Results Count */}
-        <Text style={styles.resultsCount}>
-          {filteredPlans.length}{' '}
-          {filteredPlans.length === 1 ? t('explore.plan') : t('explore.plans')}
-        </Text>
-
-        {/* Plans List */}
-        {filteredPlans.length === 0 ? (
-          <EmptyState
-            type="no_results"
-            message={t('explore.noDevotionPlansMatch')}
-          />
-        ) : (
-          <View style={styles.plansList}>
-            {filteredPlans.map((plan, index) => (
-              <PlanCard
-                key={plan.id}
-                plan={plan}
-                progress={progressData?.[plan.id]}
-                onPress={() => handlePlanPress(plan.id)}
-                contentLanguage={contentLanguage}
-                index={index}
+        <Animated.View entering={SlideInRight.duration(250)}>
+          {/* Search Bar */}
+          <View style={styles.searchContainer}>
+            <View style={styles.searchBar}>
+              <Search size={20} color={ExploreColors.neutral[400]} />
+              <TextInput
+                style={styles.searchInput}
+                placeholder={t('explore.searchDevotionPlans')}
+                placeholderTextColor={ExploreColors.neutral[400]}
+                value={searchQuery}
+                onChangeText={setSearchQuery}
               />
-            ))}
+            </View>
           </View>
-        )}
 
-        {/* Bottom spacing */}
-        <View style={{ height: 40 }} />
+          {/* Description */}
+          <Text style={styles.description}>
+            {t('explore.devotionPlansDescription')}
+          </Text>
+
+          {/* Results Count */}
+          <Text style={styles.resultsCount}>
+            {filteredPlans.length}{' '}
+            {filteredPlans.length === 1 ? t('explore.plan') : t('explore.plans')}
+          </Text>
+
+          {/* Plans List */}
+          {filteredPlans.length === 0 ? (
+            <EmptyState
+              type="no_results"
+              message={t('explore.noDevotionPlansMatch')}
+            />
+          ) : (
+            <View style={styles.plansList}>
+              {filteredPlans.map((plan, index) => (
+                <PlanCard
+                  key={plan.id}
+                  plan={plan}
+                  progress={progressData?.[plan.id]}
+                  onPress={() => handlePlanPress(plan.id)}
+                  contentLanguage={contentLanguage}
+                  index={index}
+                />
+              ))}
+            </View>
+          )}
+
+          {/* Bottom spacing */}
+          <View style={{ height: 40 }} />
+        </Animated.View>
       </ScrollView>
     </SafeAreaView>
   );

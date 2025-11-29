@@ -1,5 +1,6 @@
 /**
  * Event Detail Screen - World-Class UI/UX
+ * Premium Motion V10 Ultra Edition
  *
  * Premium features:
  * - Parallax hero header with gradient
@@ -10,6 +11,7 @@
  * - Series sessions list
  * - Smooth scroll animations
  * - Professional typography & spacing
+ * - V10 Ultra Motion System
  */
 
 import React, { useRef } from 'react';
@@ -22,6 +24,9 @@ import {
   Dimensions,
   Platform,
 } from 'react-native';
+import AnimatedReanimated, { Layout } from 'react-native-reanimated';
+import { withPremiumMotionV10 } from '@/hoc';
+import { PMotionV10 } from '@/components/motion/premium-motion';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -48,8 +53,8 @@ import { Text } from '@/components/ui/text';
 import { Heading } from '@/components/ui/heading';
 import { VStack } from '@/components/ui/vstack';
 import { HStack } from '@/components/ui/hstack';
-import { Card } from '@/components/ui/card';
 import { Icon } from '@/components/ui/icon';
+import { PremiumCard2 } from '@/components/ui/premium-card';
 import { Badge, BadgeText } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button, ButtonText } from '@/components/ui/button';
@@ -64,7 +69,7 @@ const HEADER_MAX_HEIGHT = SCREEN_WIDTH / 2; // 2:1 aspect ratio
 const HEADER_MIN_HEIGHT = 100;
 const HEADER_SCROLL_DISTANCE = HEADER_MAX_HEIGHT - HEADER_MIN_HEIGHT;
 
-export default function EventDetailScreen() {
+function EventDetailScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -239,6 +244,9 @@ export default function EventDetailScreen() {
   // Extract EventRSVP object if my_rsvp is not a boolean
   const rsvpData = typeof event.my_rsvp === 'object' ? event.my_rsvp : undefined;
 
+  // Section stagger counter for V10 Ultra animations
+  let sectionIndex = 0;
+
   return (
     <View className="flex-1 bg-gray-50">
       {/* Parallax Hero Header */}
@@ -336,24 +344,29 @@ export default function EventDetailScreen() {
         edges={['top']}
         style={{ position: 'absolute', top: 0, left: 0, zIndex: 20 }}
       >
-        <Pressable
-          onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            router.back();
-          }}
-          className="active:opacity-70"
-          style={{
-            margin: spacing.lg,
-            width: 40,
-            height: 40,
-            borderRadius: borderRadius.full,
-            backgroundColor: 'rgba(0, 0, 0, 0.3)',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
+        <AnimatedReanimated.View
+          entering={PMotionV10.sharedAxisYEnter}
+          exiting={PMotionV10.sharedAxisYExit}
         >
-          <Icon as={ArrowLeft} size="lg" className="text-white" />
-        </Pressable>
+          <Pressable
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              router.back();
+            }}
+            className="active:scale-95 active:opacity-90"
+            style={{
+              margin: spacing.lg,
+              width: 40,
+              height: 40,
+              borderRadius: borderRadius.full,
+              backgroundColor: 'rgba(0, 0, 0, 0.3)',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Icon as={ArrowLeft} size="lg" className="text-white" />
+          </Pressable>
+        </AnimatedReanimated.View>
       </SafeAreaView>
 
       {/* Floating Share Button */}
@@ -361,21 +374,26 @@ export default function EventDetailScreen() {
         edges={['top']}
         style={{ position: 'absolute', top: 0, right: 0, zIndex: 20 }}
       >
-        <Pressable
-          onPress={handleShare}
-          className="active:opacity-70"
-          style={{
-            margin: spacing.lg,
-            width: 40,
-            height: 40,
-            borderRadius: borderRadius.full,
-            backgroundColor: 'rgba(0, 0, 0, 0.3)',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
+        <AnimatedReanimated.View
+          entering={PMotionV10.sharedAxisYEnter}
+          exiting={PMotionV10.sharedAxisYExit}
         >
-          <Icon as={Share2} size="lg" className="text-white" />
-        </Pressable>
+          <Pressable
+            onPress={handleShare}
+            className="active:scale-95 active:opacity-90"
+            style={{
+              margin: spacing.lg,
+              width: 40,
+              height: 40,
+              borderRadius: borderRadius.full,
+              backgroundColor: 'rgba(0, 0, 0, 0.3)',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Icon as={Share2} size="lg" className="text-white" />
+          </Pressable>
+        </AnimatedReanimated.View>
       </SafeAreaView>
 
       {/* Scrollable Content */}
@@ -396,180 +414,182 @@ export default function EventDetailScreen() {
           style={{ ...shadows.lg, minHeight: SCREEN_HEIGHT - HEADER_MAX_HEIGHT }}
         >
           <VStack space="xl">
-            {/* Status Badges */}
+            {/* Status Badges - layout animation only, no nested entering to avoid opacity conflict */}
             {(hasRSVP || hasAttended) && (
-              <HStack space="sm">
-                {hasAttended && (
-                  <Badge variant="solid" style={{ backgroundColor: colors.success[500] }}>
-                    <Icon as={Check} size="xs" className="text-white mr-1" />
-                    <BadgeText className="text-white font-bold">
-                      {t('events.attended')}
-                    </BadgeText>
-                  </Badge>
-                )}
-                {hasRSVP && !hasAttended && (
-                  <Badge variant="solid" style={{ backgroundColor: colors.primary[500] }}>
-                    <Icon as={Check} size="xs" className="text-white mr-1" />
-                    <BadgeText className="text-white font-bold">
-                      {t('events.rsvpConfirmed')}
-                    </BadgeText>
-                  </Badge>
-                )}
-              </HStack>
+              <AnimatedReanimated.View layout={Layout.springify()}>
+                <HStack space="sm">
+                  {hasAttended && (
+                    <Badge variant="solid" style={{ backgroundColor: colors.success[500] }}>
+                      <Icon as={Check} size="xs" className="text-white mr-1" />
+                      <BadgeText className="text-white font-bold">
+                        {t('events.attended')}
+                      </BadgeText>
+                    </Badge>
+                  )}
+                  {hasRSVP && !hasAttended && (
+                    <Badge variant="solid" style={{ backgroundColor: colors.primary[500] }}>
+                      <Icon as={Check} size="xs" className="text-white mr-1" />
+                      <BadgeText className="text-white font-bold">
+                        {t('events.rsvpConfirmed')}
+                      </BadgeText>
+                    </Badge>
+                  )}
+                </HStack>
+              </AnimatedReanimated.View>
             )}
 
-            {/* About Section */}
+            {/* About Section - layout animation only */}
             {event.description && (
-              <Card style={{ ...shadows.sm, borderRadius: borderRadius.xl }}>
-                <View className="p-5">
-                  <HStack space="sm" className="items-center mb-3">
+              <AnimatedReanimated.View layout={Layout.springify()}>
+                <PremiumCard2>
+                <HStack space="sm" className="items-center mb-3">
+                  <View
+                    className="w-10 h-10 rounded-xl items-center justify-center"
+                    style={{ backgroundColor: colors.primary[50] }}
+                  >
+                    <Icon as={Info} size="md" className="text-primary-600" />
+                  </View>
+                  <Heading size="lg" className="text-gray-900 font-bold">
+                    {t('events.about')}
+                  </Heading>
+                </HStack>
+                <Text className="text-gray-700 text-base leading-6">
+                  {event.description}
+                </Text>
+                </PremiumCard2>
+              </AnimatedReanimated.View>
+            )}
+
+            {/* When & Where Section - layout animation only */}
+            <AnimatedReanimated.View layout={Layout.springify()}>
+              <PremiumCard2>
+              <VStack space="lg">
+                {event.event_date && (
+                  <HStack space="sm">
                     <View
                       className="w-10 h-10 rounded-xl items-center justify-center"
                       style={{ backgroundColor: colors.primary[50] }}
                     >
-                      <Icon as={Info} size="md" className="text-primary-600" />
+                      <Icon as={Clock} size="md" className="text-primary-600" />
                     </View>
-                    <Heading size="lg" className="text-gray-900 font-bold">
-                      {t('events.about')}
-                    </Heading>
+                    <VStack className="flex-1">
+                      <Text className="text-gray-500 text-xs font-medium uppercase mb-1">
+                        {t('events.when')}
+                      </Text>
+                      <Text className="text-gray-900 font-bold text-base">
+                        {formatDate(event.event_date)}
+                      </Text>
+                      <Text className="text-gray-600 text-sm">
+                        {formatTime(event.event_date)}
+                        {event.event_end_date && ` - ${formatTime(event.event_end_date)}`}
+                      </Text>
+                    </VStack>
                   </HStack>
-                  <Text className="text-gray-700 text-base leading-6">
-                    {event.description}
-                  </Text>
-                </View>
-              </Card>
-            )}
+                )}
 
-            {/* When & Where Section */}
-            <Card style={{ ...shadows.sm, borderRadius: borderRadius.xl }}>
-              <View className="p-5">
-                <VStack space="lg">
-                  {event.event_date && (
-                    <HStack space="sm">
-                      <View
-                        className="w-10 h-10 rounded-xl items-center justify-center"
-                        style={{ backgroundColor: colors.primary[50] }}
-                      >
-                        <Icon as={Clock} size="md" className="text-primary-600" />
-                      </View>
-                      <VStack className="flex-1">
-                        <Text className="text-gray-500 text-xs font-medium uppercase mb-1">
-                          {t('events.when')}
-                        </Text>
-                        <Text className="text-gray-900 font-bold text-base">
-                          {formatDate(event.event_date)}
-                        </Text>
-                        <Text className="text-gray-600 text-sm">
-                          {formatTime(event.event_date)}
-                          {event.event_end_date && ` - ${formatTime(event.event_end_date)}`}
-                        </Text>
-                      </VStack>
-                    </HStack>
-                  )}
-
-                  {event.location && (
-                    <HStack space="sm">
-                      <View
-                        className="w-10 h-10 rounded-xl items-center justify-center"
-                        style={{ backgroundColor: colors.primary[50] }}
-                      >
-                        <Icon as={MapPin} size="md" className="text-primary-600" />
-                      </View>
-                      <VStack className="flex-1">
-                        <Text className="text-gray-500 text-xs font-medium uppercase mb-1">
-                          {t('events.where')}
-                        </Text>
-                        <Text className="text-gray-900 font-bold text-base">
-                          {event.location}
-                        </Text>
-                      </VStack>
-                    </HStack>
-                  )}
-
-                  {event.requires_rsvp && (
-                    <HStack space="sm">
-                      <View
-                        className="w-10 h-10 rounded-xl items-center justify-center"
-                        style={{ backgroundColor: colors.primary[50] }}
-                      >
-                        <Icon as={Users} size="md" className="text-primary-600" />
-                      </View>
-                      <VStack className="flex-1">
-                        <Text className="text-gray-500 text-xs font-medium uppercase mb-1">
-                          {t('events.capacity')}
-                        </Text>
-                        <Text className="text-gray-900 font-bold text-base">
-                          {event.total_rsvps}
-                          {event.seat_capacity && ` / ${event.seat_capacity}`} {t('events.registered')}
-                        </Text>
-                        {event.available_seats !== undefined && event.available_seats > 0 && (
-                          <Text className="text-success-600 text-sm font-medium mt-1">
-                            {event.available_seats} {t('events.seatsLeft')}
-                          </Text>
-                        )}
-                      </VStack>
-                    </HStack>
-                  )}
-                </VStack>
-              </View>
-            </Card>
-
-            {/* Series Sessions */}
-            {event.event_type === 'series' && (event.sessions?.length ?? 0) > 0 && (
-              <Card style={{ ...shadows.sm, borderRadius: borderRadius.xl }}>
-                <View className="p-5">
-                  <HStack space="sm" className="items-center mb-4">
+                {event.location && (
+                  <HStack space="sm">
                     <View
                       className="w-10 h-10 rounded-xl items-center justify-center"
-                      style={{ backgroundColor: colors.secondary[50] }}
+                      style={{ backgroundColor: colors.primary[50] }}
                     >
-                      <Icon as={Tag} size="md" className="text-secondary-600" />
+                      <Icon as={MapPin} size="md" className="text-primary-600" />
                     </View>
-                    <Heading size="lg" className="text-gray-900 font-bold">
-                      {t('events.sessions')} ({event.sessions?.length ?? 0})
-                    </Heading>
+                    <VStack className="flex-1">
+                      <Text className="text-gray-500 text-xs font-medium uppercase mb-1">
+                        {t('events.where')}
+                      </Text>
+                      <Text className="text-gray-900 font-bold text-base">
+                        {event.location}
+                      </Text>
+                    </VStack>
                   </HStack>
+                )}
 
-                  <VStack space="sm">
-                    {event.sessions?.map((session, index) => (
-                      <View
-                        key={index}
-                        className="p-4 rounded-xl border border-gray-200"
-                      >
-                        <Text className="text-gray-900 font-bold text-base mb-1">
-                          {session.name}
+                {event.requires_rsvp && (
+                  <HStack space="sm">
+                    <View
+                      className="w-10 h-10 rounded-xl items-center justify-center"
+                      style={{ backgroundColor: colors.primary[50] }}
+                    >
+                      <Icon as={Users} size="md" className="text-primary-600" />
+                    </View>
+                    <VStack className="flex-1">
+                      <Text className="text-gray-500 text-xs font-medium uppercase mb-1">
+                        {t('events.capacity')}
+                      </Text>
+                      <Text className="text-gray-900 font-bold text-base">
+                        {event.total_rsvps}
+                        {event.seat_capacity && ` / ${event.seat_capacity}`} {t('events.registered')}
+                      </Text>
+                      {event.available_seats !== undefined && event.available_seats > 0 && (
+                        <Text className="text-success-600 text-sm font-medium mt-1">
+                          {event.available_seats} {t('events.seatsLeft')}
                         </Text>
-                        <Text className="text-gray-600 text-sm">
-                          {formatDate(session.date)}
-                          {session.end_date && ` - ${formatDate(session.end_date)}`}
-                        </Text>
-                      </View>
-                    ))}
-                  </VStack>
-                </View>
-              </Card>
+                      )}
+                    </VStack>
+                  </HStack>
+                )}
+              </VStack>
+              </PremiumCard2>
+            </AnimatedReanimated.View>
+
+            {/* Series Sessions - layout animation only */}
+            {event.event_type === 'series' && (event.sessions?.length ?? 0) > 0 && (
+              <AnimatedReanimated.View layout={Layout.springify()}>
+                <PremiumCard2>
+                <HStack space="sm" className="items-center mb-4">
+                  <View
+                    className="w-10 h-10 rounded-xl items-center justify-center"
+                    style={{ backgroundColor: colors.secondary[50] }}
+                  >
+                    <Icon as={Tag} size="md" className="text-secondary-600" />
+                  </View>
+                  <Heading size="lg" className="text-gray-900 font-bold">
+                    {t('events.sessions')} ({event.sessions?.length ?? 0})
+                  </Heading>
+                </HStack>
+
+                <VStack space="sm">
+                  {event.sessions?.map((session, index) => (
+                    <View
+                      key={index}
+                      className="p-4 rounded-xl border border-gray-200"
+                    >
+                      <Text className="text-gray-900 font-bold text-base mb-1">
+                        {session.name}
+                      </Text>
+                      <Text className="text-gray-600 text-sm">
+                        {formatDate(session.date)}
+                        {session.end_date && ` - ${formatDate(session.end_date)}`}
+                      </Text>
+                    </View>
+                  ))}
+                </VStack>
+                </PremiumCard2>
+              </AnimatedReanimated.View>
             )}
 
-            {/* QR Code - Only if RSVP'd */}
+            {/* QR Code - Only if RSVP'd - layout animation only */}
             {hasRSVP && rsvpData?.qr_data && (
-              <Card style={{ ...shadows.sm, borderRadius: borderRadius.xl }}>
-                <View className="p-5 items-center">
-                  <HStack space="sm" className="items-center mb-4">
-                    <Icon as={QrCode} size="md" className="text-primary-600" />
-                    <Heading size="lg" className="text-gray-900 font-bold">
-                      {t('events.yourTicket')}
-                    </Heading>
-                  </HStack>
+              <AnimatedReanimated.View layout={Layout.springify()}>
+                <PremiumCard2 innerStyle={{ alignItems: 'center' }}>
+                <HStack space="sm" className="items-center mb-4">
+                  <Icon as={QrCode} size="md" className="text-primary-600" />
+                  <Heading size="lg" className="text-gray-900 font-bold">
+                    {t('events.yourTicket')}
+                  </Heading>
+                </HStack>
 
-                  <View className="p-6 bg-white rounded-2xl" style={shadows.md}>
-                    <QRCodeSVG value={rsvpData.qr_data} size={200} />
-                  </View>
-
-                  <Text className="text-gray-500 text-sm mt-4 text-center">
-                    {t('events.confirmationCode')}: {rsvpData.confirmation_code}
-                  </Text>
+                <View className="p-6 bg-white rounded-2xl" style={shadows.md}>
+                  <QRCodeSVG value={rsvpData.qr_data} size={200} />
                 </View>
-              </Card>
+
+                <Text className="text-gray-500 text-sm mt-4 text-center">
+                  {t('events.confirmationCode')}: {rsvpData.confirmation_code}
+                </Text>
+                </PremiumCard2>
+              </AnimatedReanimated.View>
             )}
           </VStack>
         </View>
@@ -577,46 +597,58 @@ export default function EventDetailScreen() {
 
       {/* Sticky Bottom Button */}
       {(canRSVP || hasRSVP) && !hasAttended && (
-        <SafeAreaView
-          edges={['bottom']}
+        <AnimatedReanimated.View
+          entering={PMotionV10.sharedAxisYEnter}
+          exiting={PMotionV10.sharedAxisYExit}
           style={{
             position: 'absolute',
             bottom: 0,
             left: 0,
             right: 0,
-            backgroundColor: '#FFFFFF',
-            ...shadows.lg,
           }}
         >
-          <View className="px-6 py-4">
-            {canRSVP && (
-              <Button
-                onPress={handleRSVP}
-                disabled={rsvpMutation.isPending}
-                size="xl"
-                variant="solid"
-              >
-                <Icon as={Check} size="md" className="text-white mr-2" />
-                <ButtonText className="font-bold text-lg">{t('events.rsvpNow')}</ButtonText>
-                <Icon as={ChevronRight} size="md" className="text-white ml-1" />
-              </Button>
-            )}
+          <SafeAreaView
+            edges={['bottom']}
+            style={{
+              backgroundColor: '#FFFFFF',
+              ...shadows.lg,
+            }}
+          >
+            <View className="px-6 py-4">
+              {canRSVP && (
+                <Button
+                  onPress={handleRSVP}
+                  disabled={rsvpMutation.isPending}
+                  size="xl"
+                  variant="solid"
+                  className="active:scale-95 active:opacity-90"
+                >
+                  <Icon as={Check} size="md" className="text-white mr-2" />
+                  <ButtonText className="font-bold text-lg">{t('events.rsvpNow')}</ButtonText>
+                  <Icon as={ChevronRight} size="md" className="text-white ml-1" />
+                </Button>
+              )}
 
-            {hasRSVP && !hasAttended && (
-              <Button
-                onPress={handleCancelRSVP}
-                disabled={cancelRSVPMutation.isPending}
-                size="xl"
-                variant="outline"
-                action="negative"
-              >
-                <Icon as={X} size="md" className="text-error-600 mr-2" />
-                <ButtonText className="font-bold text-lg">{t('events.cancelRSVP')}</ButtonText>
-              </Button>
-            )}
-          </View>
-        </SafeAreaView>
+              {hasRSVP && !hasAttended && (
+                <Button
+                  onPress={handleCancelRSVP}
+                  disabled={cancelRSVPMutation.isPending}
+                  size="xl"
+                  variant="outline"
+                  action="negative"
+                  className="active:scale-95 active:opacity-90"
+                >
+                  <Icon as={X} size="md" className="text-error-600 mr-2" />
+                  <ButtonText className="font-bold text-lg">{t('events.cancelRSVP')}</ButtonText>
+                </Button>
+              )}
+            </View>
+          </SafeAreaView>
+        </AnimatedReanimated.View>
       )}
     </View>
   );
 }
+
+// Apply Premium Motion V10 Ultra HOC for production-grade transitions
+export default withPremiumMotionV10(EventDetailScreen);

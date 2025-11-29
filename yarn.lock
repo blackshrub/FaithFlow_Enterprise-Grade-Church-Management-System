@@ -2,3 +2,17 @@
 # yarn lockfile v1
 
 
+expo-audio@^1.0.15:
+  version "1.0.15"
+  resolved "https://registry.yarnpkg.com/expo-audio/-/expo-audio-1.0.15.tgz#ec35fb9b44ce4d078823d08e92daaac073df1d38"
+  integrity sha512-zXKJ070jhEaxQwOwi44fzEznPUrOkCCltqHDK6mK/AfGdj9/ZfiwrmTxcgcQq4wpq0UeXsG2iEYPiRMsnPgBmg==
+
+react-native-callkeep@^4.3.16:
+  version "4.3.16"
+  resolved "https://registry.yarnpkg.com/react-native-callkeep/-/react-native-callkeep-4.3.16.tgz#56291796984b896113ef00f8b67ae3fe177baf70"
+  integrity sha512-aIxn02T5zW4jNPyzRdFGTWv6xD3Vy/1AkBMB6iYvWZEHWnfmgNGF0hELqg03Vbc2BNUhfqpu17aIydos+5Hurg==
+
+typescript@^5.9.3:
+  version "5.9.3"
+  resolved "https://registry.yarnpkg.com/typescript/-/typescript-5.9.3.tgz#5b4f59e15310ab17a216f5d6cf53ee476ede670f"
+  integrity sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw==

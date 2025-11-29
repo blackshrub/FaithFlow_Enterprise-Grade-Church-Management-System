@@ -1,12 +1,21 @@
 """
-Enhanced file storage service with organized folder structure.
+DEPRECATED: Local file storage service.
 
-Features:
-- Church-based folder organization by module (members, groups, events, articles)
+This module is DEPRECATED. New code should use SeaweedFS via services.seaweedfs_service.
+
+This file is kept for:
+1. Backward compatibility with existing migration scripts
+2. Utility functions (optimize_image, generate_thumbnail) used by other code
+
+For file storage, use:
+    from services.seaweedfs_service import get_seaweedfs_service, StorageCategory
+
+Features (now in SeaweedFS):
+- Church-based folder organization by module
 - Automatic image optimization and thumbnail generation
 - File type validation and size limits
 - Multi-tenant security
-- CDN-ready URL generation
+- Distributed storage with replication
 """
 
 from fastapi import UploadFile, HTTPException, status

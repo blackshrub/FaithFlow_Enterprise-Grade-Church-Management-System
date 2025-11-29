@@ -13,7 +13,7 @@
 import React, { useState } from 'react';
 import { View, Pressable, ScrollView } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
-import { MotiView } from 'moti';
+import Animated, { FadeInUp, ZoomIn } from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
 import { useRouter } from 'expo-router';
 import { Calendar, MapPin } from 'lucide-react-native';
@@ -105,10 +105,8 @@ export function SearchResults({ groupedResults, counts }: SearchResultsProps) {
 
     return (
       <View className="flex-1 items-center px-8" style={{ paddingTop: 80 }}>
-        <MotiView
-          from={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ type: 'spring', delay: 200 }}
+        <Animated.View
+          entering={ZoomIn.delay(200).springify()}
           className="items-center"
         >
           <View
@@ -130,7 +128,7 @@ export function SearchResults({ groupedResults, counts }: SearchResultsProps) {
           <Text className="text-gray-500 text-sm text-center">
             {message}
           </Text>
-        </MotiView>
+        </Animated.View>
       </View>
     );
   };
@@ -139,14 +137,8 @@ export function SearchResults({ groupedResults, counts }: SearchResultsProps) {
     const eventDate = new Date(event.date);
 
     return (
-      <MotiView
-        from={{ opacity: 0, translateY: 10 }}
-        animate={{ opacity: 1, translateY: 0 }}
-        transition={{
-          type: 'timing',
-          duration: 250,
-          delay: index * 40,
-        }}
+      <Animated.View
+        entering={FadeInUp.delay(index * 40).duration(250)}
         className="px-4 pb-3"
       >
         <Pressable
@@ -194,7 +186,7 @@ export function SearchResults({ groupedResults, counts }: SearchResultsProps) {
             </VStack>
           </View>
         </Pressable>
-      </MotiView>
+      </Animated.View>
     );
   };
 

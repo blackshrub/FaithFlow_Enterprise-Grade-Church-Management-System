@@ -7,7 +7,7 @@
  * - Celebration elements
  */
 
-import React from 'react';
+import React, { memo } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ExploreColors, ExploreSpacing, ExploreBorderRadius, ExploreShadows } from '@/constants/explore/designSystem';
@@ -25,7 +25,7 @@ interface DailyQuizCardProps {
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-export function DailyQuizCard({
+export const DailyQuizCard = memo(function DailyQuizCard({
   quiz,
   language,
   onPress,
@@ -151,7 +151,7 @@ export function DailyQuizCard({
       </View>
     </AnimatedPressable>
   );
-}
+});
 
 const styles = StyleSheet.create({
   container: {

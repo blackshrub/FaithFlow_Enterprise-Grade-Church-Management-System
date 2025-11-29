@@ -328,7 +328,7 @@ export default function Layout() {
           <nav className="flex-1 overflow-y-auto p-4">
             <ul className="space-y-1">
               {menuItems
-                .filter(item => !item.superAdminOnly || isSuperAdmin)
+                .filter(item => !item.hidden && (!item.superAdminOnly || isSuperAdmin))
                 .map((item, index) => {
                 // Render section header
                 if (item.type === 'section') {

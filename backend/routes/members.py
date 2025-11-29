@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from typing import List, Optional
 from datetime import datetime
+import logging
 
 from models.member import Member, MemberCreate, MemberUpdate
 from models.quick_member import QuickAddMember
@@ -11,6 +12,14 @@ from utils.helpers import combine_full_name, normalize_phone_number
 from utils.validation import sanitize_regex_pattern
 from services.qr_service import generate_member_id_code, generate_member_qr_data
 from services.webhook_service import webhook_service
+from services.seaweedfs_service import (
+    get_seaweedfs_service,
+    SeaweedFSService,
+    SeaweedFSError,
+    StorageCategory
+)
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/members", tags=["Members"])
 
@@ -647,3 +656,321 @@ async def get_member_stats(
         "single_count": get_count("single_count"),
         "incomplete_data_count": get_count("incomplete_data_count")
     }
+
+
+# ============= FILE UPLOAD ENDPOINTS (SeaweedFS) =============
+
+@router.post("/{member_id}/upload-photo", status_code=status.HTTP_201_CREATED)
+async def upload_member_photo(
+    member_id: str,
+    file: UploadFile = File(...),
+    current_user: dict = Depends(get_current_user),
+    db: AsyncIOMotorDatabase = Depends(get_db),
+):
+    """
+    Upload profile photo for member to SeaweedFS.
+
+    The image is stored in SeaweedFS at:
+    /faithflow/{church_id}/members/photos/{member_id}/
+
+    Returns:
+        - photo_url: URL to the profile photo
+        - photo_thumbnail: URL to the thumbnail
+    """
+    member = await db.members.find_one({"id": member_id})
+    if not member:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"error_code": "NOT_FOUND", "message": "Member not found"},
+        )
+
+    # Check access
+    church_id = member.get("church_id")
+    if current_user.get("role") != "super_admin" and current_user.get("session_church_id") != church_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={"error_code": "FORBIDDEN", "message": "Access denied"},
+        )
+
+    allowed_types = ["image/jpeg", "image/jpg", "image/png", "image/webp"]
+    if file.content_type not in allowed_types:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "error_code": "INVALID_FILE_TYPE",
+                "message": f"File type {file.content_type} not allowed. Use jpg, png, or webp"
+            }
+        )
+
+    content = await file.read()
+    if len(content) > 5 * 1024 * 1024:  # 5MB limit
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "error_code": "FILE_SIZE_EXCEEDED",
+                "message": "Image must be less than 5MB"
+            }
+        )
+
+    # Upload to SeaweedFS
+    try:
+        seaweedfs = get_seaweedfs_service()
+        result = await seaweedfs.upload_member_photo(
+            content=content,
+            file_name=file.filename or "photo.jpg",
+            mime_type=file.content_type,
+            church_id=church_id,
+            member_id=member_id
+        )
+
+        # Update member with SeaweedFS URLs
+        await db.members.update_one(
+            {"id": member_id},
+            {
+                "$set": {
+                    "photo_url": result["url"],
+                    "photo_thumbnail": result.get("thumbnail_url"),
+                    "photo_fid": result.get("fid"),
+                    "photo_path": result.get("path"),
+                    "photo_base64": None,  # Clear legacy base64 data
+                    "updated_at": datetime.now().isoformat()
+                }
+            },
+        )
+
+        logger.info(f"Member {member_id} photo uploaded to SeaweedFS: {result['url']}")
+
+        return {
+            "photo_url": result["url"],
+            "photo_thumbnail": result.get("thumbnail_url"),
+            "file_size": result.get("file_size"),
+            "width": result.get("width"),
+            "height": result.get("height")
+        }
+
+    except SeaweedFSError as e:
+        logger.error(f"Failed to upload member photo to SeaweedFS: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={
+                "error_code": "UPLOAD_FAILED",
+                "message": f"Failed to upload image: {str(e)}"
+            }
+        )
+
+
+@router.post("/{member_id}/upload-document", status_code=status.HTTP_201_CREATED)
+async def upload_member_document(
+    member_id: str,
+    file: UploadFile = File(...),
+    document_type: str = Query(..., description="Type of document: baptism_certificate, id_card, marriage_certificate, other"),
+    current_user: dict = Depends(get_current_user),
+    db: AsyncIOMotorDatabase = Depends(get_db),
+):
+    """
+    Upload personal document for member to SeaweedFS.
+
+    The document is stored in SeaweedFS at:
+    /faithflow/{church_id}/members/documents/{member_id}/
+
+    Supported document types:
+    - baptism_certificate
+    - id_card
+    - marriage_certificate
+    - other
+
+    Returns:
+        - document_url: URL to the document
+        - document_type: Type of document uploaded
+    """
+    member = await db.members.find_one({"id": member_id})
+    if not member:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"error_code": "NOT_FOUND", "message": "Member not found"},
+        )
+
+    # Check access
+    church_id = member.get("church_id")
+    if current_user.get("role") != "super_admin" and current_user.get("session_church_id") != church_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={"error_code": "FORBIDDEN", "message": "Access denied"},
+        )
+
+    # Validate document type
+    allowed_document_types = ["baptism_certificate", "id_card", "marriage_certificate", "other"]
+    if document_type not in allowed_document_types:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "error_code": "INVALID_DOCUMENT_TYPE",
+                "message": f"Document type must be one of: {', '.join(allowed_document_types)}"
+            }
+        )
+
+    allowed_types = ["image/jpeg", "image/jpg", "image/png", "image/webp", "application/pdf"]
+    if file.content_type not in allowed_types:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "error_code": "INVALID_FILE_TYPE",
+                "message": f"File type {file.content_type} not allowed. Use jpg, png, webp, or pdf"
+            }
+        )
+
+    content = await file.read()
+    if len(content) > 10 * 1024 * 1024:  # 10MB limit for documents
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "error_code": "FILE_SIZE_EXCEEDED",
+                "message": "Document must be less than 10MB"
+            }
+        )
+
+    # Upload to SeaweedFS
+    try:
+        seaweedfs = get_seaweedfs_service()
+        result = await seaweedfs.upload_member_document(
+            content=content,
+            file_name=file.filename or f"{document_type}.pdf",
+            mime_type=file.content_type,
+            church_id=church_id,
+            member_id=member_id
+        )
+
+        # Get existing documents array or create new
+        documents = member.get("documents", [])
+
+        # Remove existing document of same type (replace)
+        documents = [d for d in documents if d.get("type") != document_type]
+
+        # Add new document
+        documents.append({
+            "type": document_type,
+            "url": result["url"],
+            "fid": result.get("fid"),
+            "path": result.get("path"),
+            "file_name": file.filename,
+            "file_size": result.get("file_size"),
+            "mime_type": file.content_type,
+            "uploaded_at": datetime.now().isoformat()
+        })
+
+        # Update member with documents array
+        await db.members.update_one(
+            {"id": member_id},
+            {
+                "$set": {
+                    "documents": documents,
+                    "updated_at": datetime.now().isoformat()
+                }
+            },
+        )
+
+        logger.info(f"Member {member_id} document ({document_type}) uploaded to SeaweedFS: {result['url']}")
+
+        return {
+            "document_url": result["url"],
+            "document_type": document_type,
+            "file_name": file.filename,
+            "file_size": result.get("file_size"),
+            "mime_type": file.content_type
+        }
+
+    except SeaweedFSError as e:
+        logger.error(f"Failed to upload member document to SeaweedFS: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={
+                "error_code": "UPLOAD_FAILED",
+                "message": f"Failed to upload document: {str(e)}"
+            }
+        )
+
+
+@router.get("/{member_id}/documents")
+async def list_member_documents(
+    member_id: str,
+    current_user: dict = Depends(get_current_user),
+    db: AsyncIOMotorDatabase = Depends(get_db),
+):
+    """List all documents for a member."""
+    member = await db.members.find_one({"id": member_id}, {"_id": 0, "documents": 1, "church_id": 1})
+    if not member:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"error_code": "NOT_FOUND", "message": "Member not found"},
+        )
+
+    # Check access
+    church_id = member.get("church_id")
+    if current_user.get("role") != "super_admin" and current_user.get("session_church_id") != church_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={"error_code": "FORBIDDEN", "message": "Access denied"},
+        )
+
+    return {
+        "documents": member.get("documents", [])
+    }
+
+
+@router.delete("/{member_id}/documents/{document_type}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_member_document(
+    member_id: str,
+    document_type: str,
+    current_user: dict = Depends(get_current_user),
+    db: AsyncIOMotorDatabase = Depends(get_db),
+):
+    """Delete a specific document from member's documents."""
+    member = await db.members.find_one({"id": member_id})
+    if not member:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"error_code": "NOT_FOUND", "message": "Member not found"},
+        )
+
+    # Check access
+    church_id = member.get("church_id")
+    if current_user.get("role") != "super_admin" and current_user.get("session_church_id") != church_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={"error_code": "FORBIDDEN", "message": "Access denied"},
+        )
+
+    documents = member.get("documents", [])
+
+    # Find document to delete
+    doc_to_delete = next((d for d in documents if d.get("type") == document_type), None)
+    if not doc_to_delete:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"error_code": "DOCUMENT_NOT_FOUND", "message": f"Document type '{document_type}' not found"},
+        )
+
+    # Delete from SeaweedFS if path exists
+    if doc_to_delete.get("path"):
+        try:
+            seaweedfs = get_seaweedfs_service()
+            await seaweedfs.delete_by_path(doc_to_delete["path"])
+            logger.info(f"Deleted member {member_id} document from SeaweedFS: {doc_to_delete['path']}")
+        except SeaweedFSError as e:
+            logger.warning(f"Failed to delete document from SeaweedFS (may already be deleted): {e}")
+
+    # Remove document from array
+    documents = [d for d in documents if d.get("type") != document_type]
+
+    # Update member
+    await db.members.update_one(
+        {"id": member_id},
+        {
+            "$set": {
+                "documents": documents,
+                "updated_at": datetime.now().isoformat()
+            }
+        },
+    )
+
+    return None

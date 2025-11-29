@@ -5,9 +5,15 @@
  * Shows avatar, name, and call status/duration.
  */
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
-import { MotiView } from 'moti';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withRepeat,
+  withTiming,
+  ZoomIn,
+} from 'react-native-reanimated';
 import { Image } from 'expo-image';
 
 import { Text } from '@/components/ui/text';
@@ -29,6 +35,22 @@ export function CallerInfo({
   duration,
   subtitle,
 }: CallerInfoProps) {
+  // Pulse animation for ringing state
+  const pulseScale = useSharedValue(1);
+  const pulseOpacity = useSharedValue(0.6);
+
+  useEffect(() => {
+    if (uiState === 'outgoing' || uiState === 'incoming') {
+      pulseScale.value = withRepeat(withTiming(1.4, { duration: 1500 }), -1, false);
+      pulseOpacity.value = withRepeat(withTiming(0, { duration: 1500 }), -1, false);
+    }
+  }, [uiState, pulseScale, pulseOpacity]);
+
+  const pulseStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: pulseScale.value }],
+    opacity: pulseOpacity.value,
+  }));
+
   const getStatusText = (): string => {
     switch (uiState) {
       case 'outgoing':
@@ -49,10 +71,8 @@ export function CallerInfo({
   };
 
   return (
-    <MotiView
-      from={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ type: 'spring', delay: 100 }}
+    <Animated.View
+      entering={ZoomIn.delay(100).springify()}
       style={styles.container}
     >
       {/* Avatar */}
@@ -73,16 +93,7 @@ export function CallerInfo({
 
         {/* Pulsing ring for ringing state */}
         {(uiState === 'outgoing' || uiState === 'incoming') && (
-          <MotiView
-            from={{ scale: 1, opacity: 0.6 }}
-            animate={{ scale: 1.4, opacity: 0 }}
-            transition={{
-              type: 'timing',
-              duration: 1500,
-              loop: true,
-            }}
-            style={styles.pulseRing}
-          />
+          <Animated.View style={[styles.pulseRing, pulseStyle]} />
         )}
       </View>
 
@@ -102,7 +113,7 @@ export function CallerInfo({
           {subtitle}
         </Text>
       )}
-    </MotiView>
+    </Animated.View>
   );
 }
 

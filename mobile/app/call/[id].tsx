@@ -23,13 +23,34 @@ import {
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import {
-  useParticipants,
-  useConnectionState,
-  useLocalParticipant,
-} from '@livekit/react-native';
-import { ConnectionState, Track, ConnectionQuality } from 'livekit-client';
-import { MotiView } from 'moti';
+import Constants from 'expo-constants';
+import Animated, { FadeIn, FadeOut, ZoomIn } from 'react-native-reanimated';
+
+// Check if we're in Expo Go (no native modules available)
+const isExpoGo = Constants.appOwnership === 'expo';
+
+// Conditionally import LiveKit - only works in dev builds
+let useParticipants: any;
+let useConnectionState: any;
+let useLocalParticipant: any;
+let ConnectionState: any;
+let Track: any;
+let ConnectionQuality: any;
+
+if (!isExpoGo) {
+  try {
+    const livekit = require('@livekit/react-native');
+    const livekitClient = require('livekit-client');
+    useParticipants = livekit.useParticipants;
+    useConnectionState = livekit.useConnectionState;
+    useLocalParticipant = livekit.useLocalParticipant;
+    ConnectionState = livekitClient.ConnectionState;
+    Track = livekitClient.Track;
+    ConnectionQuality = livekitClient.ConnectionQuality;
+  } catch (e) {
+    console.warn('LiveKit not available:', e);
+  }
+}
 import * as Haptics from 'expo-haptics';
 import * as ScreenOrientation from 'expo-screen-orientation';
 import { useKeepAwake } from 'expo-keep-awake';
@@ -46,12 +67,24 @@ import { Text } from '@/components/ui/text';
 import { HStack } from '@/components/ui/hstack';
 import { CallerInfo } from '@/components/call/CallerInfo';
 import { CallControls } from '@/components/call/CallControls';
-import {
-  LiveKitRoom,
-  ParticipantTile,
-  useLocalTracks,
-  useScreenShare,
-} from '@/components/call/LiveKitRoom';
+
+// Conditionally import LiveKitRoom - only works in dev builds
+let LiveKitRoom: any;
+let ParticipantTile: any;
+let useLocalTracks: any;
+let useScreenShare: any;
+
+if (!isExpoGo) {
+  try {
+    const lkRoom = require('@/components/call/LiveKitRoom');
+    LiveKitRoom = lkRoom.LiveKitRoom;
+    ParticipantTile = lkRoom.ParticipantTile;
+    useLocalTracks = lkRoom.useLocalTracks;
+    useScreenShare = lkRoom.useScreenShare;
+  } catch (e) {
+    console.warn('LiveKitRoom not available:', e);
+  }
+}
 import {
   useCallStore,
   useCurrentCall,
@@ -114,7 +147,7 @@ function CallScreenContent() {
 
   // Filter remote participants
   const remoteParticipants = useMemo(() => {
-    return participants.filter(p => p !== localParticipant);
+    return participants.filter((p: any) => p !== localParticipant);
   }, [participants, localParticipant]);
 
   // Handle back button
@@ -265,9 +298,8 @@ function CallScreenContent() {
 
           {/* Local participant (small overlay) */}
           {localParticipant && isCameraEnabled && (
-            <MotiView
-              from={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
+            <Animated.View
+              entering={ZoomIn.springify()}
               style={[styles.localVideoOverlay, { top: insets.top + 60 }]}
             >
               <ParticipantTile
@@ -276,7 +308,7 @@ function CallScreenContent() {
                 style={styles.localVideo}
                 showName={false}
               />
-            </MotiView>
+            </Animated.View>
           )}
         </View>
       );
@@ -288,7 +320,7 @@ function CallScreenContent() {
 
     return (
       <View style={styles.gridLayout}>
-        {participants.map((participant) => (
+        {participants.map((participant: any) => (
           <View
             key={participant.identity}
             style={[
@@ -379,16 +411,15 @@ function CallScreenContent() {
 
         {/* Call Ended Message */}
         {uiState === 'ended' && (
-          <MotiView
-            from={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
+          <Animated.View
+            entering={FadeIn.duration(300)}
             style={styles.endedOverlay}
           >
             <Text style={styles.endedText}>Call Ended</Text>
             <Text style={styles.endedDuration}>
               Duration: {callDuration.formatted}
             </Text>
-          </MotiView>
+          </Animated.View>
         )}
 
         {/* Call Controls */}
@@ -417,6 +448,48 @@ function CallScreenContent() {
 export default function CallScreen() {
   const { id: callId } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
+
+  // Show placeholder in Expo Go (LiveKit requires native modules)
+  if (isExpoGo) {
+    return (
+      <>
+        <Stack.Screen
+          options={{
+            headerShown: false,
+            animation: 'fade',
+          }}
+        />
+        <StatusBar barStyle="light-content" />
+        <View style={styles.loadingContainer}>
+          <LinearGradient
+            colors={['#1a1a2e', '#16213e', '#0f3460']}
+            style={styles.gradient}
+          >
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 40 }}>
+              <Text style={{ color: 'white', fontSize: 24, fontWeight: '700', marginBottom: 16, textAlign: 'center' }}>
+                Calling Not Available
+              </Text>
+              <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 16, textAlign: 'center', marginBottom: 32 }}>
+                Voice/video calls require a development build. They are not supported in Expo Go.
+              </Text>
+              <Pressable
+                onPress={() => router.back()}
+                style={{
+                  backgroundColor: colors.primary[500],
+                  paddingHorizontal: 32,
+                  paddingVertical: 16,
+                  borderRadius: 12,
+                }}
+              >
+                <Text style={{ color: 'white', fontSize: 16, fontWeight: '600' }}>Go Back</Text>
+              </Pressable>
+            </View>
+          </LinearGradient>
+        </View>
+      </>
+    );
+  }
 
   // Call state from store
   const uiState = useCallUIState();
@@ -441,7 +514,7 @@ export default function CallScreen() {
 
   // Handle disconnection
   const handleDisconnected = useCallback(() => {
-    console.log('[CallScreen] Disconnected from LiveKit');
+    // Disconnected from LiveKit - no-op, cleanup handled elsewhere
   }, []);
 
   // Don't render if no LiveKit config
