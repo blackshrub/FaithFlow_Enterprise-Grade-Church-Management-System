@@ -73,6 +73,27 @@ class WhatsAppIntegrationSettings(BaseModel):
     )
 
 
+class FaithAssistantSettings(BaseModel):
+    """Faith Assistant (Pendamping Iman) Settings"""
+
+    api_key: Optional[str] = Field(
+        None,
+        description="Anthropic Claude API key for Faith Assistant (uses ai_integration key as fallback)"
+    )
+    model: str = Field(
+        "claude-sonnet-4-20250514",
+        description="Claude model to use for Faith Assistant"
+    )
+    max_tokens: int = Field(
+        2048,
+        description="Maximum tokens per response"
+    )
+    enabled: bool = Field(
+        True,
+        description="Enable Faith Assistant feature"
+    )
+
+
 class PaymentIntegrationSettings(BaseModel):
     """Payment Gateway Integration Settings"""
 
@@ -103,7 +124,11 @@ class SystemSettings(BaseModel):
     # Integration settings
     ai_integration: AIIntegrationSettings = Field(
         default_factory=AIIntegrationSettings,
-        description="AI integration settings (Anthropic, Stability AI)"
+        description="AI integration settings for Explore content generation (Anthropic, Stability AI)"
+    )
+    faith_assistant: FaithAssistantSettings = Field(
+        default_factory=FaithAssistantSettings,
+        description="Faith Assistant (Pendamping Iman) chat settings"
     )
     whatsapp_integration: WhatsAppIntegrationSettings = Field(
         default_factory=WhatsAppIntegrationSettings,
@@ -168,6 +193,7 @@ class SystemSettingsUpdate(BaseModel):
     """Update model for system settings (all fields optional)"""
 
     ai_integration: Optional[AIIntegrationSettings] = None
+    faith_assistant: Optional[FaithAssistantSettings] = None
     whatsapp_integration: Optional[WhatsAppIntegrationSettings] = None
     payment_integration: Optional[PaymentIntegrationSettings] = None
     app_name: Optional[str] = None

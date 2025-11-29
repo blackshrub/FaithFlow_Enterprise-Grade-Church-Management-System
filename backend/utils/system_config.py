@@ -70,6 +70,7 @@ def _decrypt_settings(settings: dict) -> dict:
     sensitive_fields = [
         ("ai_integration", "anthropic_api_key"),
         ("ai_integration", "stability_api_key"),
+        ("faith_assistant", "api_key"),
         ("whatsapp_integration", "whatsapp_api_key"),
         ("payment_integration", "ipaymu_api_key"),
     ]
@@ -92,10 +93,16 @@ def _get_env_fallback_settings() -> Dict[str, Any]:
     return {
         "ai_integration": {
             "anthropic_api_key": os.getenv("ANTHROPIC_API_KEY"),
-            "anthropic_model": os.getenv("ANTHROPIC_MODEL", "claude-3-5-sonnet-20241022"),
+            "anthropic_model": os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-5-20250929"),
             "stability_api_key": os.getenv("STABILITY_API_KEY"),
             "ai_generation_enabled": os.getenv("AI_GENERATION_ENABLED", "true").lower() == "true",
             "monthly_budget_usd": float(os.getenv("AI_MONTHLY_BUDGET", "50.0")),
+        },
+        "faith_assistant": {
+            "api_key": os.getenv("FAITH_ASSISTANT_API_KEY", os.getenv("ANTHROPIC_API_KEY")),
+            "model": os.getenv("FAITH_ASSISTANT_MODEL", "claude-sonnet-4-20250514"),
+            "enabled": os.getenv("FAITH_ASSISTANT_ENABLED", "true").lower() == "true",
+            "max_tokens": int(os.getenv("FAITH_ASSISTANT_MAX_TOKENS", "2048")),
         },
         "whatsapp_integration": {
             "whatsapp_api_url": os.getenv("WHATSAPP_API_URL"),
@@ -113,9 +120,28 @@ def _get_env_fallback_settings() -> Dict[str, Any]:
 
 
 async def get_ai_settings(db: AsyncIOMotorDatabase) -> Dict[str, Any]:
-    """Get AI integration settings"""
+    """Get AI integration settings (for Explore content generation)"""
     settings = await get_system_settings(db)
     return settings.get("ai_integration", {})
+
+
+async def get_faith_assistant_settings(db: AsyncIOMotorDatabase) -> Dict[str, Any]:
+    """Get Faith Assistant (Pendamping Iman) settings"""
+    settings = await get_system_settings(db)
+    faith_settings = settings.get("faith_assistant", {})
+
+    # Fallback to ai_integration settings if faith_assistant not configured
+    if not faith_settings.get("api_key"):
+        ai_settings = settings.get("ai_integration", {})
+        if ai_settings.get("anthropic_api_key"):
+            return {
+                "api_key": ai_settings.get("anthropic_api_key"),
+                "model": faith_settings.get("model", "claude-sonnet-4-20250514"),
+                "enabled": faith_settings.get("enabled", True),
+                "max_tokens": faith_settings.get("max_tokens", 2048),
+            }
+
+    return faith_settings
 
 
 async def get_whatsapp_settings(db: AsyncIOMotorDatabase) -> Dict[str, Any]:

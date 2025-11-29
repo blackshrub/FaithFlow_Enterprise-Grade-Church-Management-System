@@ -16,7 +16,8 @@ from routes import (
     status_rules, status_conflicts, status_history, member_status_automation, public_members,
     counseling_admin, counseling_public, kiosk, user_management, files,
     giving, member_auth, notifications, rating_review, system_settings,
-    call  # Voice/Video calling
+    call,  # Voice/Video calling
+    companion  # Faith Assistant (Pendamping Iman)
 )
 
 # Import Explore routes
@@ -150,6 +151,7 @@ api_router.include_router(prayer_requests.router)  # Prayer requests (mobile com
 api_router.include_router(community_messages.mobile_router)  # Community messaging (mobile)
 api_router.include_router(community_subgroups.mobile_router)  # Community sub-groups (mobile)
 api_router.include_router(call.router)  # Voice/Video calling (LiveKit)
+api_router.include_router(companion.router)  # Faith Assistant (Pendamping Iman)
 
 # Public API (no auth required)
 app.include_router(public_members.router)

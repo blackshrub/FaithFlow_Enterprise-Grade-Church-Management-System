@@ -8,6 +8,7 @@ Includes AI integration, WhatsApp, payment gateways, and other system configurat
 from fastapi import APIRouter, Depends, HTTPException
 from datetime import datetime
 from typing import Optional
+from pydantic import BaseModel
 
 from utils.dependencies import get_current_user, get_db, require_super_admin
 from models.system_settings import SystemSettings, SystemSettingsUpdate
@@ -20,6 +21,7 @@ router = APIRouter()
 SENSITIVE_FIELDS = [
     "ai_integration.anthropic_api_key",
     "ai_integration.stability_api_key",
+    "faith_assistant.api_key",
     "whatsapp_integration.whatsapp_api_key",
     "payment_integration.ipaymu_api_key",
 ]
@@ -273,6 +275,79 @@ async def test_stability_connection(
         raise HTTPException(
             status_code=400,
             detail=f"Stability AI API connection failed: {str(e)}",
+        )
+
+
+class TestFaithAssistantRequest(BaseModel):
+    """Request body for testing Faith Assistant connection"""
+    api_key: Optional[str] = None
+    model: Optional[str] = None
+
+
+@router.post("/settings/test-faith-assistant")
+async def test_faith_assistant(
+    request: Optional[TestFaithAssistantRequest] = None,
+    current_user=Depends(require_super_admin),
+    db=Depends(get_db),
+):
+    """
+    Test Faith Assistant API connection (Anthropic Claude)
+
+    Verifies that the Faith Assistant API key works by making a test request.
+    If api_key/model provided in request body, uses those directly (for testing before save).
+    Otherwise falls back to saved settings.
+    """
+    from anthropic import Anthropic
+
+    api_key = None
+    model = "claude-sonnet-4-20250514"
+
+    # Priority 1: Use values from request body (for testing before save)
+    if request and request.api_key:
+        api_key = request.api_key
+        model = request.model or model
+    else:
+        # Priority 2: Get from saved settings
+        settings_doc = await db.system_settings.find_one({"id": "global_system_settings"})
+
+        if settings_doc:
+            settings_dict = decrypt_settings(settings_doc)
+
+            # Get Faith Assistant settings with fallback to ai_integration
+            faith_settings = settings_dict.get("faith_assistant", {})
+            api_key = faith_settings.get("api_key")
+            model = faith_settings.get("model", model)
+
+            # Fallback to ai_integration if faith_assistant key not set
+            if not api_key:
+                ai_settings = settings_dict.get("ai_integration", {})
+                api_key = ai_settings.get("anthropic_api_key")
+
+    if not api_key:
+        raise HTTPException(status_code=400, detail="Please provide an API key to test")
+
+    try:
+        # Test API call with faith assistant context
+        client = Anthropic(api_key=api_key)
+        response = client.messages.create(
+            model=model,
+            max_tokens=100,
+            messages=[
+                {"role": "user", "content": "Respond with a brief encouraging greeting as a spiritual companion."}
+            ],
+        )
+
+        return {
+            "status": "success",
+            "message": "Faith Assistant API connection successful",
+            "response": response.content[0].text,
+            "model": response.model,
+        }
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Faith Assistant API connection failed: {str(e)}",
         )
 
 

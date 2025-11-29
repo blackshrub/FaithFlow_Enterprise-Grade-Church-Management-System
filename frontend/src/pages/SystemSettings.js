@@ -88,6 +88,34 @@ function SystemSettings() {
     });
   };
 
+  const handleSaveFaithAssistant = (formData) => {
+    updateMutation.mutate({
+      faith_assistant: {
+        api_key: formData.api_key || undefined,
+        model: formData.model,
+        enabled: formData.enabled,
+        max_tokens: parseInt(formData.max_tokens, 10),
+      },
+    });
+  };
+
+  // Test Faith Assistant connection (uses form values directly, no save required)
+  const testFaithAssistantMutation = useMutation({
+    mutationFn: async ({ api_key, model }) => {
+      const { data } = await api.post('/system/settings/test-faith-assistant', {
+        api_key,
+        model,
+      });
+      return data;
+    },
+    onSuccess: (data) => {
+      toast.success(data.message);
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.detail || 'Faith Assistant connection test failed');
+    },
+  });
+
   const handleSaveWhatsApp = (formData) => {
     updateMutation.mutate({
       whatsapp_integration: {
@@ -128,16 +156,29 @@ function SystemSettings() {
       </div>
 
       <Card>
-        <Tabs defaultValue="ai">
+        <Tabs defaultValue="faith-assistant">
           <CardHeader className="pb-0">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="ai">AI Integration</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="faith-assistant">Faith Assistant</TabsTrigger>
+              <TabsTrigger value="ai">Explore AI</TabsTrigger>
               <TabsTrigger value="whatsapp">WhatsApp</TabsTrigger>
-              <TabsTrigger value="payment">Payment Gateway</TabsTrigger>
+              <TabsTrigger value="payment">Payment</TabsTrigger>
             </TabsList>
           </CardHeader>
 
           <CardContent className="pt-6">
+            <TabsContent value="faith-assistant" className="mt-0">
+              <FaithAssistantTab
+                settings={settings?.faith_assistant || {}}
+                onSave={handleSaveFaithAssistant}
+                onTest={(formData) => testFaithAssistantMutation.mutate(formData)}
+                showKeys={showKeys}
+                setShowKeys={setShowKeys}
+                isSaving={updateMutation.isPending}
+                isTesting={testFaithAssistantMutation.isPending}
+              />
+            </TabsContent>
+
             <TabsContent value="ai" className="mt-0">
               <AIIntegrationTab
                 settings={settings?.ai_integration || {}}
@@ -177,6 +218,139 @@ function SystemSettings() {
   );
 }
 
+function FaithAssistantTab({ settings, onSave, onTest, showKeys, setShowKeys, isSaving, isTesting }) {
+  const [formData, setFormData] = useState({
+    api_key: settings.api_key || '',
+    model: settings.model || 'claude-sonnet-4-20250514',
+    enabled: settings.enabled ?? true,
+    max_tokens: settings.max_tokens || 2048,
+  });
+
+  const handleChange = (field, value) => {
+    setFormData({ ...formData, [field]: value });
+  };
+
+  return (
+    <div className="space-y-6">
+      <Alert>
+        <AlertTitle>Faith Assistant (Pendamping Iman)</AlertTitle>
+        <AlertDescription>
+          Powers the mobile app's spiritual companion chat feature. Members can ask questions about faith,
+          get biblical guidance, request prayers, and have theological conversations.
+        </AlertDescription>
+      </Alert>
+
+      <div className="flex items-center space-x-3">
+        <Switch
+          id="faith-assistant-enabled"
+          checked={formData.enabled}
+          onCheckedChange={(checked) => handleChange('enabled', checked)}
+        />
+        <div>
+          <Label htmlFor="faith-assistant-enabled">Enable Faith Assistant</Label>
+          <p className="text-sm text-muted-foreground">Toggle to enable/disable the chat feature in mobile app</p>
+        </div>
+      </div>
+
+      <Separator />
+
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold">Anthropic Claude API</h3>
+
+        <div className="space-y-2">
+          <Label htmlFor="faith-assistant-key">API Key</Label>
+          <div className="relative">
+            <Input
+              id="faith-assistant-key"
+              value={formData.api_key}
+              onChange={(e) => handleChange('api_key', e.target.value)}
+              type={showKeys.faithAssistant ? 'text' : 'password'}
+              placeholder="sk-ant-api03-xxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+            />
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="absolute right-0 top-0 h-full px-3"
+              onClick={() => setShowKeys({ ...showKeys, faithAssistant: !showKeys.faithAssistant })}
+            >
+              {showKeys.faithAssistant ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </Button>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Get from <a href="https://console.anthropic.com/" target="_blank" rel="noreferrer" className="text-primary hover:underline">https://console.anthropic.com/</a>
+          </p>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="faith-assistant-model">Claude Model</Label>
+            <Select
+              value={formData.model}
+              onValueChange={(value) => handleChange('model', value)}
+            >
+              <SelectTrigger id="faith-assistant-model">
+                <SelectValue placeholder="Select model" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="claude-sonnet-4-20250514">Claude Sonnet 4 (Recommended - Best for chat)</SelectItem>
+                <SelectItem value="claude-sonnet-4-5-20250929">Claude Sonnet 4.5 (Newest, higher quality)</SelectItem>
+                <SelectItem value="claude-opus-4-20250514">Claude Opus 4 (Highest quality, expensive)</SelectItem>
+                <SelectItem value="claude-3-5-haiku-20241022">Claude 3.5 Haiku (Fast, cheapest)</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-sm text-muted-foreground">Sonnet 4 recommended for conversational quality/cost balance</p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="faith-assistant-tokens">Max Response Tokens</Label>
+            <Select
+              value={String(formData.max_tokens)}
+              onValueChange={(value) => handleChange('max_tokens', value)}
+            >
+              <SelectTrigger id="faith-assistant-tokens">
+                <SelectValue placeholder="Select max tokens" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="1024">1024 (Short responses)</SelectItem>
+                <SelectItem value="2048">2048 (Balanced - Recommended)</SelectItem>
+                <SelectItem value="4096">4096 (Detailed responses)</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-sm text-muted-foreground">Longer responses cost more</p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-4">
+          <Button
+            variant="outline"
+            onClick={() => onTest({ api_key: formData.api_key, model: formData.model })}
+            disabled={isTesting || !formData.api_key}
+          >
+            {isTesting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+            Test Connection
+          </Button>
+        </div>
+      </div>
+
+      <Separator />
+
+      <div className="bg-muted/50 rounded-lg p-4">
+        <h4 className="font-medium mb-2">Cost Estimate</h4>
+        <p className="text-sm text-muted-foreground">
+          Using Claude Sonnet 4, approximately <strong>$0.003 per message</strong> exchange.
+          For a church with 100 active users sending 10 messages/day = ~$0.90/day or ~$27/month.
+        </p>
+      </div>
+
+      <Button onClick={() => onSave(formData)} disabled={isSaving}>
+        {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+        Save Faith Assistant Settings
+      </Button>
+    </div>
+  );
+}
+
 function AIIntegrationTab({ settings, onSave, onTestAI, onTestStability, showKeys, setShowKeys, isSaving, isTesting }) {
   const [formData, setFormData] = useState({
     anthropic_api_key: settings.anthropic_api_key || '',
@@ -194,10 +368,10 @@ function AIIntegrationTab({ settings, onSave, onTestAI, onTestStability, showKey
   return (
     <div className="space-y-6">
       <Alert>
-        <AlertTitle>AI Integration for Explore Feature</AlertTitle>
+        <AlertTitle>Explore Content AI Generation</AlertTitle>
         <AlertDescription>
-          Configure Anthropic Claude for AI-generated devotions, verses, and quizzes (~$0.01 per devotion).
-          Configure Stability AI for AI-generated cover images (~$0.08 per image).
+          Configure AI for auto-generating devotions, verses, Bible figures, and quizzes.
+          Uses Anthropic Claude for text (~$0.01 per item) and Stability AI for cover images (~$0.08 per image).
         </AlertDescription>
       </Alert>
 

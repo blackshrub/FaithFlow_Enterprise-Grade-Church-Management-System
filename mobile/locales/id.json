@@ -36,12 +36,27 @@
   },
   "tabs": {
     "home": "Beranda",
+    "today": "Hari Ini",
     "bible": "Alkitab",
     "give": "Beri",
     "communities": "Komunitas",
+    "community": "Komunitas",
     "explore": "Jelajahi",
     "events": "Acara",
     "profile": "Profil"
+  },
+  "grow": {
+    "title": "Bertumbuh dalam Iman",
+    "subtitle": "Perdalam perjalanan rohani Anda",
+    "tip": "Ketuk di luar untuk menutup",
+    "bible": {
+      "title": "Alkitab",
+      "subtitle": "Baca Firman Tuhan setiap hari"
+    },
+    "explore": {
+      "title": "Jelajahi",
+      "subtitle": "Renungan & studi"
+    }
   },
   "home": {
     "title": "Beranda",
@@ -65,6 +80,70 @@
     "noPrayerRequests": "Tidak ada permintaan doa aktif",
     "announcements": "Pengumuman",
     "noAnnouncements": "Tidak ada pengumuman"
+  },
+  "give": {
+    "title": "Persembahan",
+    "subtitle": "Kemurahan hati Anda mengubah kehidupan",
+    "introText": "Kemurahan hati Anda mendukung pelayanan, misi, dan jemaat gereja.",
+    "selectType": "Pilih Jenis Persembahan",
+    "selectTypeDesc": "Pilih bagaimana Anda ingin memberi hari ini",
+    "tithe": "Persepuluhan",
+    "titheSubtitle": "Kembalikan sebagian dari berkat Tuhan",
+    "weeklyOffering": "Persembahan Mingguan",
+    "weeklySubtitle": "Dukung pelayanan dan ibadah mingguan",
+    "mission": "Persembahan Misi",
+    "missionSubtitle": "Dukung misi dan penjangkauan Injil",
+    "other": "Tujuan Lain",
+    "otherSubtitle": "Beri untuk kebutuhan atau pelayanan tertentu",
+    "otherPurposeLabel": "Tentukan Tujuan Anda",
+    "otherPlaceholder": "Tulis tujuan persembahan Anda...",
+    "otherPurposeRequired": "Silakan tentukan tujuan persembahan Anda",
+    "selectTypeRequired": "Silakan pilih jenis persembahan",
+    "continue": "Lanjutkan",
+    "enterAmount": "Masukkan Jumlah",
+    "enterAmountDesc": "Berapa yang ingin Anda berikan?",
+    "amount": "Jumlah",
+    "minimum": "Minimum",
+    "minimumAmountTitle": "Jumlah Minimum Diperlukan",
+    "minimumAmountMessage": "Jumlah persembahan minimum adalah {{amount}}",
+    "notes": "Catatan (Opsional)",
+    "notesPlaceholder": "Tambahkan catatan atau dedikasi pribadi...",
+    "paymentMethod": "Metode Pembayaran",
+    "paymentMethodDesc": "Pilih cara pembayaran Anda",
+    "purpose": "Tujuan",
+    "reviewTitle": "Tinjau Persembahan Anda",
+    "reviewDesc": "Silakan konfirmasi detail persembahan Anda",
+    "anonymous": "Beri Secara Anonim",
+    "anonymousDesc": "Nama Anda tidak akan ditampilkan secara publik",
+    "completeGiving": "Selesaikan Persembahan",
+    "processing": "Memproses...",
+    "securePayment": "Pembayaran Anda aman dan terenkripsi",
+    "completePaymentTitle": "Selesaikan Pembayaran Anda",
+    "completePaymentMessage": "Anda akan diarahkan untuk menyelesaikan pembayaran",
+    "thankYouTitle": "Terima Kasih!",
+    "thankYouMessage": "Kemurahan hati Anda membuat perbedaan. Tuhan memberkati!",
+    "viewHistory": "Lihat Riwayat",
+    "error": "Kesalahan",
+    "submitError": "Gagal memproses persembahan Anda. Silakan coba lagi.",
+    "manualTransfer": "Transfer Bank",
+    "manualTransferDesc": "Pembayaran online saat ini tidak tersedia. Silakan transfer manual ke salah satu rekening di bawah.",
+    "confirmTransfer": "Saya Sudah Transfer",
+    "accountCopied": "Nomor rekening disalin ke clipboard",
+    "historyTitle": "Riwayat Persembahan",
+    "historySubtitle": "Persembahan Anda sebelumnya",
+    "totalGiven": "Total Diberikan",
+    "transactions": "Transaksi",
+    "filterAll": "Semua",
+    "filterSuccess": "Berhasil",
+    "filterPending": "Tertunda",
+    "filterFailed": "Gagal",
+    "noHistory": "Belum Ada Riwayat",
+    "noHistoryDesc": "Catatan persembahan Anda akan muncul di sini",
+    "makeNewGift": "Buat Persembahan Baru",
+    "stepType": "Jenis",
+    "stepAmount": "Jumlah",
+    "stepPayment": "Bayar",
+    "stepReview": "Tinjau"
   },
   "giving": {
     "title": "Persembahan",
@@ -274,6 +353,7 @@
     "maybeDesc": "Saya mungkin menghadiri acara ini",
     "notGoingDesc": "Saya tidak bisa menghadiri acara ini",
     "rsvp": "RSVP",
+    "noRsvpNeeded": "Tanpa RSVP",
     "rsvpStatus": "Status RSVP",
     "rsvpNow": "RSVP Sekarang",
     "cancelRSVP": "Batalkan RSVP",
@@ -288,7 +368,7 @@
     "seatsLeft": "kursi tersisa",
     "single": "Acara Tunggal",
     "series": "Seri Acara",
-    "sessions": "sesi",
+    "sessions": "Sesi",
     "rsvpSuccess": "RSVP berhasil dikonfirmasi",
     "rsvpSuccessDesc": "Respons Anda telah dicatat",
     "rsvpError": "Gagal Memperbarui RSVP",
@@ -330,7 +410,10 @@
       "noEvents": "Tidak ada acara pada tanggal ini",
       "moreEvents": "+{{count}} acara lainnya",
       "eventIndicators": "Jenis Acara"
-    }
+    },
+    "rateEvent": "Nilai Acara",
+    "ratingSuccess": "Terima kasih atas umpan balik Anda!",
+    "ratingError": "Gagal mengirim penilaian. Silakan coba lagi."
   },
   "rating": {
     "title": "Beri Nilai & Ulasan",
@@ -637,6 +720,7 @@
   },
   "explore": {
     "title": "Jelajahi",
+    "subtitle": "Temukan inspirasi harian",
     "todaysDevotions": "Renungan Hari Ini",
     "verseOfTheDay": "Ayat Hari Ini",
     "bibleFigureOfTheDay": "Tokoh Alkitab Hari Ini",
@@ -656,8 +740,22 @@
     "days": "hari",
     "streak": {
       "current": "Rangkaian saat ini",
-      "tapForDetails": "Ketuk untuk detail"
+      "tapForDetails": "Ketuk untuk detail",
+      "label": "Rangkaian"
     },
+    "yourStreak": "Rangkaian Anda",
+    "currentStreak": "Rangkaian Saat Ini",
+    "longestStreak": "Rangkaian Terpanjang",
+    "thisWeek": "Minggu Ini",
+    "howStreaksWork": "Cara Kerja Rangkaian",
+    "streakRules": {
+      "rule1": "Selesaikan konten harian apa pun (renungan, ayat, kuis, atau tokoh)",
+      "rule2": "Rangkaian Anda akan direset jika melewatkan satu hari",
+      "rule3": "Hari baru dimulai pada tengah malam waktu lokal Anda",
+      "rule4": "Beberapa item dalam satu hari dihitung sebagai satu hari rangkaian"
+    },
+    "completedToday": "Selesai",
+    "studies": "Studi",
     "language": {
       "switchTo": "Beralih ke",
       "english": "Bahasa Inggris",
@@ -816,6 +914,37 @@
       "sent": "Terkirim",
       "delivered": "Diterima",
       "read": "Dibaca"
+    }
+  },
+  "companion": {
+    "title": "Pendamping Iman",
+    "subtitle": "Pendamping rohani Anda",
+    "label": "Pendamping Rohani Anda",
+    "sectionTitle": "Pendamping Anda",
+    "description": "Ajukan pertanyaan tentang iman, dapatkan bimbingan alkitabiah, atau berbagi apa yang ada di hati Anda.",
+    "shortDesc": "Tanya apa saja",
+    "cta": "Mulai Chat",
+    "inputPlaceholder": "Ketik pesan Anda...",
+    "thinking": "Sedang berpikir...",
+    "suggestionsTitle": "Coba tanyakan tentang:",
+    "newChat": "Chat Baru",
+    "greeting": {
+      "default": "Halo! Saya di sini untuk menemani perjalanan imanmu. Apa yang ada di hatimu hari ini?",
+      "morning": "Selamat pagi! Saat memulai harimu, adakah sesuatu yang ingin kamu renungkan atau doakan?",
+      "evening": "Selamat malam. Maukah kamu berbagi apa yang ada di hatimu, atau mengakhiri hari dengan doa?"
+    },
+    "starters": {
+      "explainVerse": "Jelaskan ayat",
+      "lifeGuidance": "Bimbingan hidup",
+      "prayerRequest": "Permintaan doa",
+      "deeperTheology": "Teologi mendalam",
+      "dealingWithDoubt": "Menghadapi keraguan",
+      "forgiveness": "Pengampunan"
+    },
+    "mock": {
+      "response1": "Itu pertanyaan yang bijak. Izinkan saya berbagi perspektif alkitabiah tentang ini...",
+      "response2": "Saya mengerti apa yang kamu alami. Alkitab mengingatkan kita bahwa Tuhan menyertai kita dalam setiap situasi.",
+      "response3": "Ini topik yang mendalam. Dari perspektif Reformed, kita bisa melihatnya seperti ini..."
     }
   },
   "validation": {

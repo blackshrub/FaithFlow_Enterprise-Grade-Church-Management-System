@@ -36,12 +36,27 @@
   },
   "tabs": {
     "home": "Home",
+    "today": "Today",
     "bible": "Bible",
     "give": "Give",
     "communities": "Community",
+    "community": "Community",
     "explore": "Explore",
     "events": "Events",
     "profile": "Profile"
+  },
+  "grow": {
+    "title": "Grow in Faith",
+    "subtitle": "Deepen your spiritual journey",
+    "tip": "Tap outside to close",
+    "bible": {
+      "title": "Bible",
+      "subtitle": "Read God's Word daily"
+    },
+    "explore": {
+      "title": "Explore",
+      "subtitle": "Devotions & studies"
+    }
   },
   "home": {
     "title": "Home",
@@ -65,6 +80,70 @@
     "noPrayerRequests": "No active prayer requests",
     "announcements": "Announcements",
     "noAnnouncements": "No announcements"
+  },
+  "give": {
+    "title": "Give",
+    "subtitle": "Your generosity transforms lives",
+    "introText": "Your generosity supports the ministry, mission, and people of the church.",
+    "selectType": "Choose Offering Type",
+    "selectTypeDesc": "Select how you'd like to give today",
+    "tithe": "Tithe",
+    "titheSubtitle": "Return a portion of God's provision",
+    "weeklyOffering": "Weekly Offering",
+    "weeklySubtitle": "Support weekly ministry and worship",
+    "mission": "Mission Offering",
+    "missionSubtitle": "Fuel gospel missions and outreach",
+    "other": "Other Purpose",
+    "otherSubtitle": "Give to a specific need or ministry",
+    "otherPurposeLabel": "Specify Your Purpose",
+    "otherPlaceholder": "Write your giving purpose...",
+    "otherPurposeRequired": "Please specify your giving purpose",
+    "selectTypeRequired": "Please select an offering type",
+    "continue": "Continue",
+    "enterAmount": "Enter Amount",
+    "enterAmountDesc": "How much would you like to give?",
+    "amount": "Amount",
+    "minimum": "Minimum",
+    "minimumAmountTitle": "Minimum Amount Required",
+    "minimumAmountMessage": "The minimum giving amount is {{amount}}",
+    "notes": "Notes (Optional)",
+    "notesPlaceholder": "Add a personal note or dedication...",
+    "paymentMethod": "Payment Method",
+    "paymentMethodDesc": "Choose how you'd like to pay",
+    "purpose": "Purpose",
+    "reviewTitle": "Review Your Giving",
+    "reviewDesc": "Please confirm your offering details",
+    "anonymous": "Give Anonymously",
+    "anonymousDesc": "Your name will not be displayed publicly",
+    "completeGiving": "Complete Giving",
+    "processing": "Processing...",
+    "securePayment": "Your payment is secure and encrypted",
+    "completePaymentTitle": "Complete Your Payment",
+    "completePaymentMessage": "You will be redirected to complete your payment",
+    "thankYouTitle": "Thank You!",
+    "thankYouMessage": "Your generosity makes a difference. God bless you!",
+    "viewHistory": "View History",
+    "error": "Error",
+    "submitError": "Failed to process your giving. Please try again.",
+    "manualTransfer": "Bank Transfer",
+    "manualTransferDesc": "Online payment is currently unavailable. Please transfer manually to one of the accounts below.",
+    "confirmTransfer": "I Have Transferred",
+    "accountCopied": "Account number copied to clipboard",
+    "historyTitle": "Giving History",
+    "historySubtitle": "Your past offerings",
+    "totalGiven": "Total Given",
+    "transactions": "Transactions",
+    "filterAll": "All",
+    "filterSuccess": "Success",
+    "filterPending": "Pending",
+    "filterFailed": "Failed",
+    "noHistory": "No Giving History",
+    "noHistoryDesc": "Your giving records will appear here",
+    "makeNewGift": "Make a New Gift",
+    "stepType": "Type",
+    "stepAmount": "Amount",
+    "stepPayment": "Pay",
+    "stepReview": "Review"
   },
   "giving": {
     "title": "Give",
@@ -274,6 +353,7 @@
     "maybeDesc": "I might attend this event",
     "notGoingDesc": "I can't attend this event",
     "rsvp": "RSVP",
+    "noRsvpNeeded": "No RSVP Needed",
     "rsvpStatus": "RSVP Status",
     "rsvpNow": "RSVP Now",
     "cancelRSVP": "Cancel RSVP",
@@ -288,7 +368,7 @@
     "seatsLeft": "seats left",
     "single": "Single Event",
     "series": "Event Series",
-    "sessions": "sessions",
+    "sessions": "Sessions",
     "rsvpSuccess": "RSVP confirmed successfully",
     "rsvpSuccessDesc": "Your response has been recorded",
     "rsvpError": "Failed to Update RSVP",
@@ -334,7 +414,10 @@
       "noEvents": "No events on this date",
       "moreEvents": "+{{count}} more events",
       "eventIndicators": "Event Types"
-    }
+    },
+    "rateEvent": "Rate Event",
+    "ratingSuccess": "Thank you for your feedback!",
+    "ratingError": "Failed to submit rating. Please try again."
   },
   "rating": {
     "title": "Rate & Review",
@@ -641,6 +724,7 @@
   },
   "explore": {
     "title": "Explore",
+    "subtitle": "Discover daily inspiration",
     "todaysDevotions": "Today's Devotion",
     "verseOfTheDay": "Verse of the Day",
     "bibleFigureOfTheDay": "Bible Figure of the Day",
@@ -660,8 +744,22 @@
     "days": "days",
     "streak": {
       "current": "Current streak",
-      "tapForDetails": "Tap for details"
+      "tapForDetails": "Tap for details",
+      "label": "Day Streak"
     },
+    "yourStreak": "Your Streak",
+    "currentStreak": "Current Streak",
+    "longestStreak": "Longest Streak",
+    "thisWeek": "This Week",
+    "howStreaksWork": "How Streaks Work",
+    "streakRules": {
+      "rule1": "Complete any daily content (devotion, verse, quiz, or figure)",
+      "rule2": "Your streak resets if you miss a day",
+      "rule3": "A new day starts at midnight your local time",
+      "rule4": "Multiple items in one day count as one streak day"
+    },
+    "completedToday": "Completed",
+    "studies": "Studies",
     "language": {
       "switchTo": "Switch to",
       "english": "English",
@@ -820,6 +918,37 @@
       "sent": "Sent",
       "delivered": "Delivered",
       "read": "Read"
+    }
+  },
+  "companion": {
+    "title": "Faith Assistant",
+    "subtitle": "Your spiritual companion",
+    "label": "Your Spiritual Companion",
+    "sectionTitle": "Your Companion",
+    "description": "Ask questions about faith, get biblical guidance, or simply talk through what's on your heart.",
+    "shortDesc": "Ask anything",
+    "cta": "Start Chat",
+    "inputPlaceholder": "Type your message...",
+    "thinking": "Thinking...",
+    "suggestionsTitle": "Try asking about:",
+    "newChat": "New Chat",
+    "greeting": {
+      "default": "Hello! I'm here to walk alongside you in your faith journey. What's on your heart today?",
+      "morning": "Good morning! As you start your day, is there anything you'd like to reflect on or pray about?",
+      "evening": "Good evening. Would you like to share what's been on your heart, or end the day with prayer?"
+    },
+    "starters": {
+      "explainVerse": "Explain a verse",
+      "lifeGuidance": "Life guidance",
+      "prayerRequest": "Prayer request",
+      "deeperTheology": "Deeper theology",
+      "dealingWithDoubt": "Dealing with doubt",
+      "forgiveness": "Forgiveness"
+    },
+    "mock": {
+      "response1": "That's a thoughtful question. Let me share some biblical perspective on this...",
+      "response2": "I understand what you're going through. Scripture reminds us that God is with us in every situation.",
+      "response3": "This is a deep topic. From a Reformed perspective, we can look at it this way..."
     }
   },
   "validation": {
