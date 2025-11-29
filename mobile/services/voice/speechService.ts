@@ -203,13 +203,15 @@ async function playAudioFile(
       }
 
       if (status.didJustFinish) {
+        console.log('[SpeechService] Playback finished (playAudioFile)');
         isPlaying = false;
         isPaused = false;
         playbackSubscription?.remove();
         playbackSubscription = null;
-        // Don't delete session cached files
-        currentResolve?.();
+        // Don't delete session cached files - just resolve
+        const resolveFunc = currentResolve;
         currentResolve = null;
+        resolveFunc?.();
       }
     });
 
@@ -237,6 +239,22 @@ export async function speakText(
     console.log('[SpeechService] Resuming paused audio');
     isPlaying = true;
     isPaused = false;
+
+    // Set up subscription for completion if not already set
+    if (!playbackSubscription) {
+      playbackSubscription = currentPlayer.addListener('playbackStatusUpdate', (status) => {
+        if (status.didJustFinish) {
+          console.log('[SpeechService] Playback finished (after resume)');
+          isPlaying = false;
+          isPaused = false;
+          playbackSubscription?.remove();
+          playbackSubscription = null;
+          currentResolve?.();
+          currentResolve = null;
+        }
+      });
+    }
+
     currentPlayer.play();
     options?.onPlaybackStart?.();
 
@@ -349,13 +367,15 @@ export async function speakText(
         }
 
         if (status.didJustFinish) {
+          console.log('[SpeechService] Playback finished naturally');
           isPlaying = false;
           isPaused = false;
           playbackSubscription?.remove();
           playbackSubscription = null;
+          // Save resolve before cleanup (cleanup sets currentResolve to null)
+          const resolveFunc = currentResolve;
           cleanup();
-          currentResolve?.();
-          currentResolve = null;
+          resolveFunc?.();
         }
       });
 
@@ -566,6 +586,22 @@ export async function speakTextCached(
     console.log('[SpeechService] Resuming cached paused audio');
     isPlaying = true;
     isPaused = false;
+
+    // Set up subscription for completion if not already set
+    if (!playbackSubscription) {
+      playbackSubscription = currentPlayer.addListener('playbackStatusUpdate', (status) => {
+        if (status.didJustFinish) {
+          console.log('[SpeechService] Playback finished (after resume)');
+          isPlaying = false;
+          isPaused = false;
+          playbackSubscription?.remove();
+          playbackSubscription = null;
+          currentResolve?.();
+          currentResolve = null;
+        }
+      });
+    }
+
     currentPlayer.play();
     options?.onPlaybackStart?.();
     return new Promise((resolve) => {
@@ -674,6 +710,7 @@ async function playCachedAudio(
       }
 
       if (status.didJustFinish) {
+        console.log('[SpeechService] Playback finished (playCachedAudio)');
         isPlaying = false;
         isPaused = false;
         playbackSubscription?.remove();
@@ -682,8 +719,10 @@ async function playCachedAudio(
         currentPlayer?.release();
         currentPlayer = null;
         currentTextHash = null;
-        currentResolve?.();
+        // Save resolve before clearing
+        const resolveFunc = currentResolve;
         currentResolve = null;
+        resolveFunc?.();
       }
     });
 
