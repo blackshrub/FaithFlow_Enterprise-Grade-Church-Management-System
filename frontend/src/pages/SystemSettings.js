@@ -116,6 +116,37 @@ function SystemSettings() {
     },
   });
 
+  // Test Voice (OpenAI) connection
+  const testVoiceMutation = useMutation({
+    mutationFn: async ({ api_key }) => {
+      const { data } = await api.post('/system/settings/test-voice-connection', {
+        api_key,
+      });
+      return data;
+    },
+    onSuccess: (data) => {
+      toast.success(data.message);
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.detail || 'Voice API connection test failed');
+    },
+  });
+
+  const handleSaveVoice = (formData) => {
+    updateMutation.mutate({
+      voice_integration: {
+        openai_api_key: formData.openai_api_key || undefined,
+        groq_api_key: formData.groq_api_key || undefined,
+        stt_provider: formData.stt_provider,
+        tts_voice: formData.tts_voice,
+        tts_model: formData.tts_model,
+        tts_speed: parseFloat(formData.tts_speed),
+        stt_model: formData.stt_model,
+        voice_enabled: formData.voice_enabled,
+      },
+    });
+  };
+
   const handleSaveWhatsApp = (formData) => {
     updateMutation.mutate({
       whatsapp_integration: {
@@ -158,8 +189,9 @@ function SystemSettings() {
       <Card>
         <Tabs defaultValue="faith-assistant">
           <CardHeader className="pb-0">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="faith-assistant">Faith Assistant</TabsTrigger>
+              <TabsTrigger value="voice">Voice (TTS/STT)</TabsTrigger>
               <TabsTrigger value="ai">Explore AI</TabsTrigger>
               <TabsTrigger value="whatsapp">WhatsApp</TabsTrigger>
               <TabsTrigger value="payment">Payment</TabsTrigger>
@@ -176,6 +208,18 @@ function SystemSettings() {
                 setShowKeys={setShowKeys}
                 isSaving={updateMutation.isPending}
                 isTesting={testFaithAssistantMutation.isPending}
+              />
+            </TabsContent>
+
+            <TabsContent value="voice" className="mt-0">
+              <VoiceIntegrationTab
+                settings={settings?.voice_integration || {}}
+                onSave={handleSaveVoice}
+                onTest={(formData) => testVoiceMutation.mutate(formData)}
+                showKeys={showKeys}
+                setShowKeys={setShowKeys}
+                isSaving={updateMutation.isPending}
+                isTesting={testVoiceMutation.isPending}
               />
             </TabsContent>
 
@@ -346,6 +390,223 @@ function FaithAssistantTab({ settings, onSave, onTest, showKeys, setShowKeys, is
       <Button onClick={() => onSave(formData)} disabled={isSaving}>
         {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
         Save Faith Assistant Settings
+      </Button>
+    </div>
+  );
+}
+
+function VoiceIntegrationTab({ settings, onSave, onTest, showKeys, setShowKeys, isSaving, isTesting }) {
+  const [formData, setFormData] = useState({
+    openai_api_key: settings.openai_api_key || '',
+    groq_api_key: settings.groq_api_key || '',
+    stt_provider: settings.stt_provider || 'groq',
+    tts_voice: settings.tts_voice || 'nova',
+    tts_model: settings.tts_model || 'tts-1',
+    tts_speed: settings.tts_speed || 1.0,
+    stt_model: settings.stt_model || 'whisper-1',
+    voice_enabled: settings.voice_enabled ?? true,
+  });
+
+  const handleChange = (field, value) => {
+    setFormData({ ...formData, [field]: value });
+  };
+
+  return (
+    <div className="space-y-6">
+      <Alert>
+        <AlertTitle>Voice Features (Text-to-Speech & Speech-to-Text)</AlertTitle>
+        <AlertDescription>
+          Configure OpenAI API for voice features in the mobile app. This powers:
+          listen-to-devotion buttons, voice input for Faith Assistant chat, and voice chat mode.
+        </AlertDescription>
+      </Alert>
+
+      <div className="flex items-center space-x-3">
+        <Switch
+          id="voice-enabled"
+          checked={formData.voice_enabled}
+          onCheckedChange={(checked) => handleChange('voice_enabled', checked)}
+        />
+        <div>
+          <Label htmlFor="voice-enabled">Enable Voice Features</Label>
+          <p className="text-sm text-muted-foreground">Toggle to enable/disable all voice features in mobile app</p>
+        </div>
+      </div>
+
+      <Separator />
+
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold">OpenAI API</h3>
+
+        <div className="space-y-2">
+          <Label htmlFor="openai-key">API Key</Label>
+          <div className="relative">
+            <Input
+              id="openai-key"
+              value={formData.openai_api_key}
+              onChange={(e) => handleChange('openai_api_key', e.target.value)}
+              type={showKeys.openai ? 'text' : 'password'}
+              placeholder="sk-proj-xxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+            />
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="absolute right-0 top-0 h-full px-3"
+              onClick={() => setShowKeys({ ...showKeys, openai: !showKeys.openai })}
+            >
+              {showKeys.openai ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </Button>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Get from <a href="https://platform.openai.com/api-keys" target="_blank" rel="noreferrer" className="text-primary hover:underline">https://platform.openai.com/api-keys</a>
+          </p>
+        </div>
+
+        <div className="flex items-center gap-4">
+          <Button
+            variant="outline"
+            onClick={() => onTest({ api_key: formData.openai_api_key })}
+            disabled={isTesting || !formData.openai_api_key}
+          >
+            {isTesting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+            Test Connection
+          </Button>
+        </div>
+      </div>
+
+      <Separator />
+
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold">Groq API (Fast Speech-to-Text)</h3>
+        <Alert className="bg-green-50 border-green-200">
+          <AlertDescription className="text-green-800">
+            <strong>Recommended:</strong> Groq Whisper is ~10x faster than OpenAI (0.3s vs 2-4s latency) with the same accuracy.
+            Free tier available at <a href="https://console.groq.com" target="_blank" rel="noreferrer" className="text-primary hover:underline">console.groq.com</a>
+          </AlertDescription>
+        </Alert>
+
+        <div className="space-y-2">
+          <Label htmlFor="groq-key">Groq API Key</Label>
+          <div className="relative">
+            <Input
+              id="groq-key"
+              value={formData.groq_api_key}
+              onChange={(e) => handleChange('groq_api_key', e.target.value)}
+              type={showKeys.groq ? 'text' : 'password'}
+              placeholder="gsk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+            />
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="absolute right-0 top-0 h-full px-3"
+              onClick={() => setShowKeys({ ...showKeys, groq: !showKeys.groq })}
+            >
+              {showKeys.groq ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </Button>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Get free key from <a href="https://console.groq.com/keys" target="_blank" rel="noreferrer" className="text-primary hover:underline">https://console.groq.com/keys</a>
+          </p>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="stt-provider">STT Provider</Label>
+          <Select
+            value={formData.stt_provider}
+            onValueChange={(value) => handleChange('stt_provider', value)}
+          >
+            <SelectTrigger id="stt-provider">
+              <SelectValue placeholder="Select STT provider" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="groq">Groq Whisper (Faster, ~0.3s latency)</SelectItem>
+              <SelectItem value="openai">OpenAI Whisper (Fallback, ~2-4s latency)</SelectItem>
+            </SelectContent>
+          </Select>
+          <p className="text-sm text-muted-foreground">
+            Groq recommended for better user experience. Falls back to OpenAI if Groq key not set.
+          </p>
+        </div>
+      </div>
+
+      <Separator />
+
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold">Text-to-Speech (TTS) Settings</h3>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="tts-voice">Default Voice</Label>
+            <Select
+              value={formData.tts_voice}
+              onValueChange={(value) => handleChange('tts_voice', value)}
+            >
+              <SelectTrigger id="tts-voice">
+                <SelectValue placeholder="Select voice" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="nova">Nova (Female, warm)</SelectItem>
+                <SelectItem value="alloy">Alloy (Neutral)</SelectItem>
+                <SelectItem value="echo">Echo (Male)</SelectItem>
+                <SelectItem value="fable">Fable (British accent)</SelectItem>
+                <SelectItem value="onyx">Onyx (Male, deep)</SelectItem>
+                <SelectItem value="shimmer">Shimmer (Female, expressive)</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-sm text-muted-foreground">Nova recommended for warm, conversational tone</p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="tts-model">TTS Model</Label>
+            <Select
+              value={formData.tts_model}
+              onValueChange={(value) => handleChange('tts_model', value)}
+            >
+              <SelectTrigger id="tts-model">
+                <SelectValue placeholder="Select model" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="tts-1">TTS-1 (Fast, $0.015/1K chars)</SelectItem>
+                <SelectItem value="tts-1-hd">TTS-1-HD (High quality, $0.030/1K chars)</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-sm text-muted-foreground">TTS-1 recommended for faster playback</p>
+          </div>
+        </div>
+
+        <div className="space-y-2 max-w-xs">
+          <Label htmlFor="tts-speed">Speech Speed: {formData.tts_speed}x</Label>
+          <input
+            id="tts-speed"
+            type="range"
+            min="0.5"
+            max="2.0"
+            step="0.1"
+            value={formData.tts_speed}
+            onChange={(e) => handleChange('tts_speed', parseFloat(e.target.value))}
+            className="w-full"
+          />
+          <p className="text-sm text-muted-foreground">0.5x (slow) to 2.0x (fast), 1.0x is normal</p>
+        </div>
+      </div>
+
+      <Separator />
+
+      <div className="bg-muted/50 rounded-lg p-4">
+        <h4 className="font-medium mb-2">Cost Estimate</h4>
+        <p className="text-sm text-muted-foreground">
+          <strong>TTS (OpenAI):</strong> ~$0.015 per 1,000 characters. A typical devotion (~1,500 chars) costs ~$0.02.<br/>
+          <strong>STT (Groq):</strong> Free tier with generous limits, or $0.111/hr for audio. <span className="text-green-600 font-medium">10x faster than OpenAI!</span><br/>
+          <strong>STT (OpenAI):</strong> ~$0.006 per minute (fallback option).<br/>
+          For 100 users: 1 devotion/day + 5 voice messages = ~$2.50/day or ~$75/month (STT free with Groq).
+        </p>
+      </div>
+
+      <Button onClick={() => onSave(formData)} disabled={isSaving}>
+        {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+        Save Voice Settings
       </Button>
     </div>
   );

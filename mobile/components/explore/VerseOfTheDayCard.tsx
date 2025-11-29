@@ -15,6 +15,7 @@ import { formatBibleReference } from '@/constants/explore/bibleBooks';
 import type { VerseOfTheDay } from '@/types/explore';
 import { Share2, BookOpen } from 'lucide-react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+import { AudioPlayButton } from './AudioPlayButton';
 
 interface VerseOfTheDayCardProps {
   verse: VerseOfTheDay;
@@ -46,6 +47,9 @@ export const VerseOfTheDayCard = memo(function VerseOfTheDayCard({
 
   // Format reference string with localized book name and translation
   const referenceText = formatBibleReference(reference, language);
+
+  // Build text for TTS
+  const ttsText = verseText ? `${verseText} ${referenceText}` : '';
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
@@ -100,19 +104,32 @@ export const VerseOfTheDayCard = memo(function VerseOfTheDayCard({
             <Text style={styles.referenceText}>{referenceText}</Text>
           </View>
 
-          {/* Share Button */}
-          {onShare && (
-            <Pressable
-              onPress={(e) => {
-                e.stopPropagation?.();
-                onShare();
-              }}
-              style={styles.shareButton}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            >
-              <Share2 size={18} color={ExploreColors.spiritual[500]} />
-            </Pressable>
-          )}
+          <View style={styles.actionButtons}>
+            {/* Audio Play Button */}
+            {ttsText && (
+              <AudioPlayButton
+                text={ttsText}
+                variant="icon"
+                size={36}
+                color={ExploreColors.spiritual[600]}
+                backgroundColor="rgba(255, 255, 255, 0.8)"
+              />
+            )}
+
+            {/* Share Button */}
+            {onShare && (
+              <Pressable
+                onPress={(e) => {
+                  e.stopPropagation?.();
+                  onShare();
+                }}
+                style={styles.shareButton}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <Share2 size={18} color={ExploreColors.spiritual[500]} />
+              </Pressable>
+            )}
+          </View>
         </View>
       </View>
 
@@ -165,6 +182,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   referenceBadge: {
     flexDirection: 'row',

@@ -24,6 +24,7 @@ import type { VerseOfTheDay } from '@/types/explore';
 import { ArrowLeft, Check, Share2, Copy } from 'lucide-react-native';
 import { VerseOfTheDaySkeleton } from '@/components/explore/LoadingSkeleton';
 import { MarkdownText } from '@/components/explore/MarkdownText';
+import { AudioPlayButton } from '@/components/explore/AudioPlayButton';
 import Animated, { FadeInDown, SlideInRight } from 'react-native-reanimated';
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
@@ -123,6 +124,14 @@ export default function VerseOfTheDayScreen() {
   const commentary = verse.commentary?.[contentLanguage] || verse.commentary?.en;
   const reflection = verse.reflection_prompt?.[contentLanguage] || verse.reflection_prompt?.en;
 
+  // Build TTS text: verse + reference + commentary + reflection
+  const ttsText = [
+    verseText,
+    formatBibleReference(verse.verse, contentLanguage),
+    commentary,
+    reflection,
+  ].filter(Boolean).join('. ');
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header - Static, not animated */}
@@ -188,7 +197,7 @@ export default function VerseOfTheDayScreen() {
         showsVerticalScrollIndicator={false}
       >
         <Animated.View entering={SlideInRight.duration(250)} style={styles.contentContainer}>
-          {/* Verse Card */}
+          {/* Verse Card with Audio Button */}
           <View
             style={styles.verseCard}
             accessible={true}
@@ -202,9 +211,26 @@ export default function VerseOfTheDayScreen() {
             <View style={styles.verseAccent} />
             <View style={styles.verseContent}>
               <Text style={styles.verseText}>"{verseText}"</Text>
-              <Text style={styles.verseReference}>
-                {formatBibleReference(verse.verse, contentLanguage)}
-              </Text>
+              <View style={styles.verseFooter}>
+                <Text style={styles.verseReference}>
+                  {formatBibleReference(verse.verse, contentLanguage)}
+                </Text>
+                {/* Audio Play Button (cached for 24h, preloads when page opens) */}
+                {ttsText && id && (
+                  <AudioPlayButton
+                    text={ttsText}
+                    variant="icon"
+                    size={48}
+                    color={ExploreColors.spiritual[600]}
+                    backgroundColor={ExploreColors.spiritual[100]}
+                    cacheConfig={{
+                      contentType: 'verse',
+                      contentId: id as string,
+                    }}
+                    autoPreload
+                  />
+                )}
+              </View>
             </View>
           </View>
 

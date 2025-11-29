@@ -172,6 +172,7 @@ function ProfileScreen() {
     {
       title: t('profile.preferences', 'PREFERENCES'),
       items: [
+        // Voice & Reading settings moved to Faith Assistant screen for contextual access
         { icon: Bell, label: t('profile.notifications', 'Notifications'), route: null },
         { icon: Globe, label: t('profile.language', 'Language'), route: null, subtitle: 'English' },
         { icon: Moon, label: t('profile.appearance', 'Appearance'), route: null, subtitle: 'Light' },

@@ -23,6 +23,7 @@ import { useExploreStore } from '@/stores/explore/exploreStore';
 import type { BibleFigure } from '@/types/explore';
 import { ArrowLeft, Check, Share2, Calendar, BookOpen } from 'lucide-react-native';
 import { BibleFigureSkeleton } from '@/components/explore/LoadingSkeleton';
+import { AudioPlayButton } from '@/components/explore/AudioPlayButton';
 import Animated, { FadeIn, FadeInDown, SlideInRight } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 
@@ -76,6 +77,18 @@ export default function BibleFigureScreen() {
   const summary = figure.summary[contentLanguage] || figure.summary.en;
   const biography = figure.biography?.[contentLanguage] || figure.biography?.en;
 
+  // Build TTS text: name + title + summary + biography + life lessons
+  const lifeLessonsText = figure.life_lessons
+    ?.map((lesson, i) => `${i + 1}. ${lesson[contentLanguage] || lesson.en}`)
+    .join('. ') || '';
+  const ttsText = [
+    name,
+    title,
+    summary,
+    biography,
+    lifeLessonsText ? `${contentLanguage === 'en' ? 'Life Lessons' : 'Pelajaran Hidup'}: ${lifeLessonsText}` : '',
+  ].filter(Boolean).join('. ');
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header - Static, not animated */}
@@ -118,28 +131,45 @@ export default function BibleFigureScreen() {
           {/* Hero Image with Name Overlay */}
           {figure.image_url && (
             <View style={styles.heroContainer}>
-            <Image
-              source={{ uri: figure.image_url }}
-              style={styles.heroImage}
-              resizeMode="cover"
-              accessibilityLabel={
-                contentLanguage === 'en'
-                  ? `Portrait image of ${name}`
-                  : `Gambar potret ${name}`
-              }
-              accessibilityIgnoresInvertColors={true}
-            />
-            <View style={styles.heroOverlay}>
-              <Text
-                style={styles.heroName}
-                accessibilityRole="header"
-              >
-                {name}
-              </Text>
-              {title && <Text style={styles.heroTitle}>{title}</Text>}
+              <Image
+                source={{ uri: figure.image_url }}
+                style={styles.heroImage}
+                resizeMode="cover"
+                accessibilityLabel={
+                  contentLanguage === 'en'
+                    ? `Portrait image of ${name}`
+                    : `Gambar potret ${name}`
+                }
+                accessibilityIgnoresInvertColors={true}
+              />
+              <View style={styles.heroOverlay}>
+                <Text
+                  style={styles.heroName}
+                  accessibilityRole="header"
+                >
+                  {name}
+                </Text>
+                {title && <Text style={styles.heroTitle}>{title}</Text>}
+              </View>
+              {/* Audio Play Button - Overlay at bottom right (cached for 7 days, preloads when page opens) */}
+              {ttsText && id && (
+                <View style={styles.audioButtonOverlay}>
+                  <AudioPlayButton
+                    text={ttsText}
+                    variant="icon"
+                    size={56}
+                    color={ExploreColors.primary[600]}
+                    backgroundColor="rgba(255, 255, 255, 0.95)"
+                    cacheConfig={{
+                      contentType: 'figure',
+                      contentId: id as string,
+                    }}
+                    autoPreload
+                  />
+                </View>
+              )}
             </View>
-          </View>
-        )}
+          )}
 
         <View style={styles.contentContainer}>
           {/* Summary */}
@@ -420,6 +450,17 @@ const styles = StyleSheet.create({
     // Note: React Native doesn't support linear gradient natively
     // Using solid dark overlay for now - can enhance with expo-linear-gradient
     backgroundColor: 'rgba(0, 0, 0, 0.6)',
+  },
+  audioButtonOverlay: {
+    position: 'absolute',
+    bottom: ExploreSpacing.lg,
+    right: ExploreSpacing.lg,
+    // Add shadow for visibility
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
   },
   heroName: {
     ...ExploreTypography.h1,

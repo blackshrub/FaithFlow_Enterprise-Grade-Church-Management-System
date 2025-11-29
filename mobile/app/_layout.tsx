@@ -1,3 +1,6 @@
+// Polyfills must be imported FIRST before any other imports
+import "react-native-url-polyfill/auto";
+
 import "../global.css";
 import { Stack } from "expo-router";
 import { GluestackUIProvider } from "@/components/ui/gluestack-ui-provider";
@@ -15,8 +18,11 @@ import { UnifiedOverlayHost } from '@/components/overlay/UnifiedOverlayHost';
 import { MQTTProvider } from '@/components/providers/MQTTProvider';
 import { queryClient } from '@/lib/queryClient';
 import { preloadBiblesOffline } from '@/hooks/useBibleOffline';
-import { IncomingCallOverlay } from '@/components/call';
-import { useCallSignalingInit } from '@/hooks/useCallSignaling';
+import { useVoiceSettingsStore } from '@/stores/voiceSettings';
+import { useReadingPreferencesStore } from '@/stores/readingPreferences';
+// DISABLED: Call feature temporarily disabled
+// import { IncomingCallOverlay } from '@/components/call';
+// import { useCallSignalingInit } from '@/hooks/useCallSignaling';
 import { enableScreens } from 'react-native-screens';
 // Note: We do NOT use CallKit because iOS requires VoIP PushKit for CallKit (we use standard FCM)
 // The in-app IncomingCallOverlay provides a WhatsApp-style UI instead
@@ -38,8 +44,8 @@ export default function RootLayout() {
   const { colorScheme } = useColorScheme();
   const [i18nInitialized, setI18nInitialized] = useState(false);
 
-  // Initialize call signaling when authenticated
-  useCallSignalingInit();
+  // DISABLED: Call feature temporarily disabled
+  // useCallSignalingInit();
 
   /**
    * Load Bible reading fonts
@@ -52,6 +58,10 @@ export default function RootLayout() {
     initializeI18n().then(() => {
       setI18nInitialized(true);
     });
+
+    // Load voice settings and reading preferences
+    useVoiceSettingsStore.getState().loadSettings();
+    useReadingPreferencesStore.getState().loadPreferences();
   }, []);
 
   // Preload additional Bible translations after fonts are ready
@@ -138,13 +148,14 @@ export default function RootLayout() {
                   animation: 'none', // Tabs use V7 PageTransition
                 }}
               />
-              <Stack.Screen
+              {/* DISABLED: Call feature temporarily disabled */}
+            {/* <Stack.Screen
                 name="call/[id]"
                 options={{
                   animation: 'fade', // Call screen needs fade overlay
                   gestureEnabled: false, // Prevent accidental swipe-back during call
                 }}
-              />
+              /> */}
               <Stack.Screen
                 name="prayer/new"
                 options={{
@@ -167,8 +178,8 @@ export default function RootLayout() {
             {/* Toast must be rendered at root level */}
             <Toast />
 
-            {/* Incoming call overlay - displays over all content */}
-            <IncomingCallOverlay />
+            {/* DISABLED: Call feature temporarily disabled */}
+            {/* <IncomingCallOverlay /> */}
           </MQTTProvider>
         </GluestackUIProvider>
       </QueryClientProvider>

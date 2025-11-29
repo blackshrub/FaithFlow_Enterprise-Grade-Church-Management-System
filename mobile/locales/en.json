@@ -927,6 +927,7 @@
     "sectionTitle": "Your Companion",
     "description": "Ask questions about faith, get biblical guidance, or simply talk through what's on your heart.",
     "shortDesc": "Ask anything",
+    "buttonDesc": "Chat with your spiritual companion",
     "cta": "Start Chat",
     "inputPlaceholder": "Type your message...",
     "thinking": "Thinking...",

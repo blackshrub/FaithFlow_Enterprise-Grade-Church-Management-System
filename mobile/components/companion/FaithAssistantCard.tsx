@@ -4,12 +4,13 @@
  * A beautiful, prominent card that introduces users to the AI spiritual companion.
  * Designed to feel warm, inviting, and spiritually focused.
  *
- * Two variants:
+ * Three variants:
  * - "featured": Large card with gradient background (for Today screen)
  * - "compact": Smaller card that fits in grid layouts (for Explore screen)
+ * - "button": Full-width button with flowing glow animation (for Grow panel)
  */
 
-import React, { memo } from 'react';
+import React, { memo, useEffect } from 'react';
 import {
   View,
   Text,
@@ -21,7 +22,16 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import * as Haptics from 'expo-haptics';
-import Animated, { FadeIn } from 'react-native-reanimated';
+import Animated, {
+  FadeIn,
+  useSharedValue,
+  useAnimatedStyle,
+  withRepeat,
+  withTiming,
+  withSequence,
+  Easing,
+  interpolate,
+} from 'react-native-reanimated';
 import {
   MessageCircle,
   Sparkles,
@@ -29,6 +39,7 @@ import {
   ChevronRight,
 } from 'lucide-react-native';
 import { useCompanionStore, getTimeBasedContext } from '@/stores/companionStore';
+import { ExploreBorderRadius, ExploreShadows } from '@/constants/explore/designSystem';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -57,14 +68,49 @@ const Colors = {
 };
 
 interface FaithAssistantCardProps {
-  variant?: 'featured' | 'compact';
+  variant?: 'featured' | 'compact' | 'button';
   onPress?: () => void;
+  /** Called before navigation (for closing panels, etc.) */
+  onBeforeNavigate?: () => void;
 }
 
-function FaithAssistantCardComponent({ variant = 'featured', onPress }: FaithAssistantCardProps) {
+function FaithAssistantCardComponent({ variant = 'featured', onPress, onBeforeNavigate }: FaithAssistantCardProps) {
   const router = useRouter();
   const { t } = useTranslation();
   const setEntryContext = useCompanionStore((s) => s.setEntryContext);
+
+  // Flowing glow animation for button variant
+  const glowProgress = useSharedValue(0);
+
+  useEffect(() => {
+    if (variant === 'button') {
+      // Start flowing animation
+      glowProgress.value = withRepeat(
+        withTiming(1, {
+          duration: 2500,
+          easing: Easing.inOut(Easing.ease),
+        }),
+        -1, // Infinite repeat
+        true // Reverse
+      );
+    }
+  }, [variant]);
+
+  const glowAnimatedStyle = useAnimatedStyle(() => {
+    const translateX = interpolate(glowProgress.value, [0, 1], [-100, 350]);
+    const opacity = interpolate(glowProgress.value, [0, 0.5, 1], [0.3, 0.8, 0.3]);
+    return {
+      transform: [{ translateX }],
+      opacity,
+    };
+  });
+
+  const pulseAnimatedStyle = useAnimatedStyle(() => {
+    const scale = interpolate(glowProgress.value, [0, 0.5, 1], [1, 1.02, 1]);
+    return {
+      transform: [{ scale }],
+    };
+  });
 
   const handlePress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -73,12 +119,67 @@ function FaithAssistantCardComponent({ variant = 'featured', onPress }: FaithAss
     const context = getTimeBasedContext();
     setEntryContext(context);
 
+    // Call onBeforeNavigate if provided (e.g., to close panel)
+    if (onBeforeNavigate) {
+      onBeforeNavigate();
+    }
+
     if (onPress) {
       onPress();
     } else {
       router.push('/companion');
     }
   };
+
+  // Button variant - full width with flowing glow animation
+  if (variant === 'button') {
+    return (
+      <Animated.View style={pulseAnimatedStyle}>
+        <Pressable
+          onPress={handlePress}
+          style={({ pressed }) => [
+            styles.buttonCard,
+            pressed && styles.cardPressed,
+          ]}
+        >
+          <LinearGradient
+            colors={Colors.gradient.primary}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.buttonGradient}
+          >
+            {/* Flowing glow effect */}
+            <Animated.View style={[styles.glowEffect, glowAnimatedStyle]} />
+
+            {/* Decorative elements */}
+            <View style={[styles.buttonDecor, styles.buttonDecor1]} />
+            <View style={[styles.buttonDecor, styles.buttonDecor2]} />
+
+            {/* Content */}
+            <View style={styles.buttonContent}>
+              <View style={styles.buttonIconWrap}>
+                <MessageCircle size={22} color={Colors.white} strokeWidth={2} />
+                <View style={styles.buttonSparkle}>
+                  <Sparkles size={10} color={Colors.accent.gold} fill={Colors.accent.gold} />
+                </View>
+              </View>
+              <View style={styles.buttonTextWrap}>
+                <Text style={styles.buttonTitle}>
+                  {t('companion.title', 'Faith Assistant')}
+                </Text>
+                <Text style={styles.buttonDesc}>
+                  {t('companion.buttonDesc', 'Chat with your spiritual companion')}
+                </Text>
+              </View>
+              <View style={styles.buttonArrow}>
+                <ChevronRight size={20} color={Colors.white} strokeWidth={2.5} />
+              </View>
+            </View>
+          </LinearGradient>
+        </Pressable>
+      </Animated.View>
+    );
+  }
 
   if (variant === 'compact') {
     return (
@@ -193,13 +294,9 @@ function FaithAssistantCardComponent({ variant = 'featured', onPress }: FaithAss
 const styles = StyleSheet.create({
   // Featured variant styles
   featuredCard: {
-    borderRadius: 20,
+    borderRadius: ExploreBorderRadius.card,
     overflow: 'hidden',
-    shadowColor: '#7C3AED',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.35,
-    shadowRadius: 16,
-    elevation: 8,
+    ...ExploreShadows.level2,
   },
   cardPressed: {
     transform: [{ scale: 0.98 }],
@@ -332,13 +429,9 @@ const styles = StyleSheet.create({
 
   // Compact variant styles
   compactCard: {
-    borderRadius: 16,
+    borderRadius: ExploreBorderRadius.card,
     overflow: 'hidden',
-    shadowColor: '#7C3AED',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
-    elevation: 6,
+    ...ExploreShadows.level2,
   },
   compactGradient: {
     paddingVertical: 14,
@@ -395,6 +488,91 @@ const styles = StyleSheet.create({
     height: 32,
     borderRadius: 16,
     backgroundColor: 'rgba(255,255,255,0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  // Button variant styles - full width with flowing glow
+  buttonCard: {
+    borderRadius: ExploreBorderRadius.card,
+    overflow: 'hidden',
+    ...ExploreShadows.level2,
+  },
+  buttonGradient: {
+    paddingVertical: 16,
+    paddingHorizontal: 18,
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  glowEffect: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: 100,
+    height: '100%',
+    backgroundColor: 'rgba(255,255,255,0.35)',
+    transform: [{ skewX: '-20deg' }],
+  },
+  buttonDecor: {
+    position: 'absolute',
+    borderRadius: 100,
+    backgroundColor: 'rgba(255,255,255,0.12)',
+  },
+  buttonDecor1: {
+    width: 100,
+    height: 100,
+    top: -50,
+    right: 20,
+  },
+  buttonDecor2: {
+    width: 60,
+    height: 60,
+    bottom: -30,
+    left: -10,
+  },
+  buttonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    zIndex: 1,
+  },
+  buttonIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.25)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  buttonSparkle: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    borderRadius: 8,
+    padding: 2,
+  },
+  buttonTextWrap: {
+    flex: 1,
+    gap: 2,
+  },
+  buttonTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: Colors.white,
+    letterSpacing: -0.2,
+  },
+  buttonDesc: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: 'rgba(255,255,255,0.85)',
+  },
+  buttonArrow: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255,255,255,0.25)',
     alignItems: 'center',
     justifyContent: 'center',
   },

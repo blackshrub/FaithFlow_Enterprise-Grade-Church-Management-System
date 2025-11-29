@@ -24,6 +24,7 @@ import { useTranslation } from 'react-i18next';
 
 import { Text } from '@/components/ui/text';
 import { GrowCard } from './GrowCard';
+import { FaithAssistantCard } from '@/components/companion';
 import { useGrowStore } from '@/stores/growStore';
 import { colors } from '@/constants/theme';
 
@@ -99,6 +100,11 @@ export function GrowPanel() {
           />
         </View>
 
+        {/* Faith Assistant Button - Full width with flowing glow */}
+        <View style={styles.faithAssistantContainer}>
+          <FaithAssistantCard variant="button" onBeforeNavigate={close} />
+        </View>
+
         {/* Tip - No separate entering animation to avoid opacity conflict */}
         <View style={styles.tipContainer}>
           <Text style={styles.tipText}>{t('grow.tip')}</Text>
@@ -151,6 +157,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 12,
     minHeight: 160,
+    marginBottom: 12,
+  },
+  faithAssistantContainer: {
     marginBottom: 16,
   },
   tipContainer: {

@@ -94,6 +94,49 @@ class FaithAssistantSettings(BaseModel):
     )
 
 
+class VoiceIntegrationSettings(BaseModel):
+    """Voice Features Integration Settings (TTS/STT)"""
+
+    # OpenAI API for TTS (required) and STT fallback
+    openai_api_key: Optional[str] = Field(
+        None,
+        description="OpenAI API key for Text-to-Speech (TTS) and STT fallback"
+    )
+
+    # Groq API for fast STT (~10x faster than OpenAI)
+    groq_api_key: Optional[str] = Field(
+        None,
+        description="Groq API key for fast Speech-to-Text (STT) - 10x faster than OpenAI"
+    )
+
+    # STT provider preference
+    stt_provider: str = Field(
+        "groq",
+        description="Preferred STT provider: 'groq' (faster) or 'openai' (fallback)"
+    )
+
+    tts_voice: str = Field(
+        "nova",
+        description="Default TTS voice (alloy, echo, fable, onyx, nova, shimmer)"
+    )
+    tts_model: str = Field(
+        "tts-1",
+        description="TTS model (tts-1 for speed, tts-1-hd for quality)"
+    )
+    tts_speed: float = Field(
+        1.0,
+        description="TTS speech speed (0.25 to 4.0)"
+    )
+    stt_model: str = Field(
+        "whisper-1",
+        description="OpenAI STT model for voice input (fallback)"
+    )
+    voice_enabled: bool = Field(
+        True,
+        description="Enable voice features in mobile app"
+    )
+
+
 class PaymentIntegrationSettings(BaseModel):
     """Payment Gateway Integration Settings"""
 
@@ -129,6 +172,10 @@ class SystemSettings(BaseModel):
     faith_assistant: FaithAssistantSettings = Field(
         default_factory=FaithAssistantSettings,
         description="Faith Assistant (Pendamping Iman) chat settings"
+    )
+    voice_integration: VoiceIntegrationSettings = Field(
+        default_factory=VoiceIntegrationSettings,
+        description="Voice features settings (TTS/STT using OpenAI)"
     )
     whatsapp_integration: WhatsAppIntegrationSettings = Field(
         default_factory=WhatsAppIntegrationSettings,
@@ -194,6 +241,7 @@ class SystemSettingsUpdate(BaseModel):
 
     ai_integration: Optional[AIIntegrationSettings] = None
     faith_assistant: Optional[FaithAssistantSettings] = None
+    voice_integration: Optional[VoiceIntegrationSettings] = None
     whatsapp_integration: Optional[WhatsAppIntegrationSettings] = None
     payment_integration: Optional[PaymentIntegrationSettings] = None
     app_name: Optional[str] = None

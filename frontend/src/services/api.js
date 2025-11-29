@@ -369,21 +369,6 @@ export const eventsAPI = {
   getAttendance: (eventId, params = {}) => api.get(`/events/${eventId}/attendance`, { params }),
 };
 
-// Devotions API
-export const devotionsAPI = {
-  list: (params) => api.get('/devotions/', { params }),
-  get: (id) => api.get(`/devotions/${id}`),
-  getByDate: (date) => api.get('/devotions/by-date', { params: { date } }),
-  create: (data) => api.post('/devotions/', data),
-  update: (id, data) => api.patch(`/devotions/${id}`, data),
-  delete: (id) => api.delete(`/devotions/${id}`),
-  duplicate: (id) => api.post(`/devotions/${id}/duplicate`),
-  generateAudio: (id) => api.post(`/devotions/${id}/generate-audio`, null, { timeout: 120000 }),
-  generateAudioPreview: (text) => api.post('/devotions/generate-audio-preview', null, { params: { text }, timeout: 120000 }),
-  restoreVersion: (id, versionIndex) => api.post(`/devotions/${id}/restore-version`, null, { params: { version_index: versionIndex } }),
-  bulkAction: (action, devotionIds) => api.post('/devotions/bulk-action', null, { params: { action, devotion_ids: devotionIds } }),
-};
-
 // Bible API
 export const bibleAPI = {
   getVersions: () => api.get('/bible/versions'),

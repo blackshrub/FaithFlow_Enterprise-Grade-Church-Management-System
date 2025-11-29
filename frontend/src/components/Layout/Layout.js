@@ -152,7 +152,6 @@ export default function Layout() {
     
     // Content & Communication Section
     { type: 'section', label: 'CONTENT & COMMUNICATION' },
-    { icon: BookOpen, label: 'Devotion', path: '/devotions' },
     {
       icon: FileText,
       label: t('articles.title') || 'Articles',

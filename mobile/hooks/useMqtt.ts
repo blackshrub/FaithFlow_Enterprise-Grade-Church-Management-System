@@ -44,12 +44,14 @@ export function useMQTT() {
       return;
     }
 
-    // Skip MQTT in development if explicitly disabled
-    // Set EXPO_PUBLIC_DISABLE_MQTT=true to disable
-    const mqttDisabled = process.env.EXPO_PUBLIC_DISABLE_MQTT === 'true';
-    if (mqttDisabled) {
-      console.log('[useMQTT] MQTT disabled via EXPO_PUBLIC_DISABLE_MQTT');
-      return;
+    // In development, MQTT is DISABLED by default (no broker running locally)
+    // Set EXPO_PUBLIC_ENABLE_MQTT=true to enable MQTT in development
+    if (__DEV__) {
+      const mqttEnabled = process.env.EXPO_PUBLIC_ENABLE_MQTT === 'true';
+      if (!mqttEnabled) {
+        // Silently skip MQTT in development - it's optional
+        return;
+      }
     }
 
     const connect = async () => {

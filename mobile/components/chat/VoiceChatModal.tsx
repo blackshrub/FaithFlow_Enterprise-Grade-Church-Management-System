@@ -1,0 +1,712 @@
+/**
+ * VoiceChatModal Component
+ *
+ * Full-screen real-time voice chat using OpenAI Realtime API.
+ *
+ * NOTE: This feature requires a development build (native modules).
+ * In Expo Go, it shows a placeholder explaining this.
+ *
+ * Features (in dev build):
+ * - WebRTC-based real-time voice conversation (~200ms latency)
+ * - Large animated orb showing current state
+ * - States: connecting, idle, listening, responding
+ * - Automatic turn detection (server VAD)
+ * - Live transcript display
+ * - Tap orb to interrupt AI response
+ */
+
+import React, { useState, useCallback, useRef, useEffect } from 'react';
+import {
+  View,
+  Text,
+  Pressable,
+  StyleSheet,
+  Modal,
+  Dimensions,
+} from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withRepeat,
+  withTiming,
+  withSequence,
+  withSpring,
+  cancelAnimation,
+  Easing,
+  interpolate,
+  FadeIn,
+  FadeOut,
+  SlideInDown,
+  SlideOutDown,
+} from 'react-native-reanimated';
+import * as Haptics from 'expo-haptics';
+import { X, Mic, Volume2, Wifi, WifiOff, AlertTriangle } from 'lucide-react-native';
+import { BlurView } from 'expo-blur';
+
+// Try to import native WebRTC module (only works in dev build)
+let RealtimeService: any = null;
+let isRealtimeAvailable = false;
+
+try {
+  // This will fail in Expo Go
+  RealtimeService = require('@/services/voice/realtimeService');
+  isRealtimeAvailable = true;
+} catch {
+  console.log('[VoiceChatModal] WebRTC not available (Expo Go). Voice chat requires a development build.');
+}
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const ORB_SIZE = Math.min(SCREEN_WIDTH * 0.5, 200);
+
+// Colors for different states
+const StateColors = {
+  connecting: '#F59E0B',
+  idle: '#6B7280',
+  listening: '#3B82F6',
+  responding: '#10B981',
+  error: '#EF4444',
+  unavailable: '#6B7280',
+};
+
+type VoiceChatState = 'connecting' | 'idle' | 'listening' | 'responding' | 'error' | 'unavailable';
+
+interface VoiceChatModalProps {
+  visible: boolean;
+  onClose: () => void;
+  /** Optional system instructions for the AI */
+  instructions?: string;
+  language?: 'en' | 'id';
+  /** Callback when conversation ends (for saving to history) */
+  onConversationEnd?: (messages: Array<{ role: 'user' | 'assistant'; content: string }>) => void;
+}
+
+/**
+ * Placeholder component shown when WebRTC is not available (Expo Go)
+ */
+function UnavailablePlaceholder({
+  visible,
+  onClose,
+  language,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  language: 'en' | 'id';
+}) {
+  if (!visible) return null;
+
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      statusBarTranslucent
+      onRequestClose={onClose}
+    >
+      <View style={styles.container}>
+        <BlurView intensity={90} tint="dark" style={StyleSheet.absoluteFill} />
+
+        {/* Close button */}
+        <Pressable
+          onPress={onClose}
+          style={styles.closeButton}
+          hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
+        >
+          <X size={28} color="#FFFFFF" />
+        </Pressable>
+
+        <View style={styles.content}>
+          {/* Warning icon */}
+          <View style={[styles.orb, { backgroundColor: StateColors.unavailable }]}>
+            <AlertTriangle size={ORB_SIZE * 0.35} color="#FFFFFF" />
+          </View>
+
+          <Text style={styles.statusText}>
+            {language === 'id' ? 'Tidak Tersedia di Expo Go' : 'Not Available in Expo Go'}
+          </Text>
+
+          <View style={styles.transcriptContainer}>
+            <Text style={styles.transcriptText}>
+              {language === 'id'
+                ? 'Voice Chat realtime membutuhkan development build dengan native modules (WebRTC).\n\nUntuk menggunakan fitur ini, build aplikasi dengan:\n\nnpx expo prebuild\nnpx expo run:ios'
+                : 'Realtime Voice Chat requires a development build with native modules (WebRTC).\n\nTo use this feature, build the app with:\n\nnpx expo prebuild\nnpx expo run:ios'}
+            </Text>
+          </View>
+
+          <View style={styles.instructions}>
+            <Text style={styles.instructionText}>
+              {language === 'id'
+                ? 'Fitur STT (tombol mic) tetap berfungsi menggunakan Groq/OpenAI Whisper API'
+                : 'STT feature (mic button) still works using Groq/OpenAI Whisper API'}
+            </Text>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+export function VoiceChatModal({
+  visible,
+  onClose,
+  instructions,
+  language = 'id',
+  onConversationEnd,
+}: VoiceChatModalProps) {
+  // If WebRTC is not available, show placeholder
+  if (!isRealtimeAvailable) {
+    return <UnavailablePlaceholder visible={visible} onClose={onClose} language={language} />;
+  }
+
+  const [state, setState] = useState<VoiceChatState>('connecting');
+  const [statusText, setStatusText] = useState('');
+  const [currentTranscript, setCurrentTranscript] = useState('');
+
+  const isMountedRef = useRef(true);
+  const conversationRef = useRef<Array<{ role: 'user' | 'assistant'; content: string }>>([]);
+
+  // Animations
+  const orbScale = useSharedValue(1);
+  const orbOpacity = useSharedValue(0.8);
+  const ring1Scale = useSharedValue(1);
+  const ring2Scale = useSharedValue(1);
+  const ring3Scale = useSharedValue(1);
+
+  // Connect to Realtime API when modal opens
+  useEffect(() => {
+    if (!visible) return;
+
+    isMountedRef.current = true;
+    connectToRealtime();
+
+    return () => {
+      isMountedRef.current = false;
+      RealtimeService?.disconnect?.();
+    };
+  }, [visible]);
+
+  const connectToRealtime = useCallback(async () => {
+    setState('connecting');
+    setStatusText(language === 'id' ? 'Menghubungkan...' : 'Connecting...');
+
+    try {
+      await RealtimeService.connect(
+        {
+          voice: 'verse',
+          instructions: instructions || getDefaultInstructions(language),
+        },
+        {
+          onConnected: () => {
+            if (!isMountedRef.current) return;
+            setState('idle');
+            setStatusText(language === 'id' ? 'Siap berbicara' : 'Ready to talk');
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          },
+          onDisconnected: () => {
+            if (!isMountedRef.current) return;
+            setState('error');
+            setStatusText(language === 'id' ? 'Terputus' : 'Disconnected');
+          },
+          onSpeechStarted: () => {
+            if (!isMountedRef.current) return;
+            setState('listening');
+            setStatusText(language === 'id' ? 'Mendengarkan...' : 'Listening...');
+            setCurrentTranscript('');
+          },
+          onSpeechStopped: () => {
+            if (!isMountedRef.current) return;
+            setStatusText(language === 'id' ? 'Memproses...' : 'Processing...');
+          },
+          onResponseStarted: () => {
+            if (!isMountedRef.current) return;
+            setState('responding');
+            setStatusText(language === 'id' ? 'Menjawab...' : 'Responding...');
+            setCurrentTranscript('');
+          },
+          onTranscriptDelta: (_delta: string, fullText: string) => {
+            if (!isMountedRef.current) return;
+            setCurrentTranscript(fullText);
+          },
+          onResponseDone: (transcript: string) => {
+            if (!isMountedRef.current) return;
+            if (transcript) {
+              conversationRef.current.push({
+                role: 'assistant',
+                content: transcript,
+              });
+            }
+            setState('idle');
+            setStatusText(language === 'id' ? 'Siap berbicara' : 'Ready to talk');
+          },
+          onError: (error: Error) => {
+            console.error('[VoiceChatModal] Realtime error:', error);
+            if (!isMountedRef.current) return;
+            setState('error');
+            setStatusText(error.message || (language === 'id' ? 'Terjadi kesalahan' : 'An error occurred'));
+          },
+          onRemoteAudioTrack: () => {
+            console.log('[VoiceChatModal] Received remote audio track');
+          },
+        }
+      );
+    } catch (error: any) {
+      console.error('[VoiceChatModal] Connection failed:', error);
+      if (isMountedRef.current) {
+        setState('error');
+        setStatusText(error.message || (language === 'id' ? 'Gagal terhubung' : 'Failed to connect'));
+      }
+    }
+  }, [language, instructions]);
+
+  // Animate orb based on state
+  useEffect(() => {
+    cancelAnimation(orbScale);
+    cancelAnimation(ring1Scale);
+    cancelAnimation(ring2Scale);
+    cancelAnimation(ring3Scale);
+
+    switch (state) {
+      case 'connecting':
+        orbScale.value = withRepeat(
+          withSequence(
+            withTiming(1.05, { duration: 500 }),
+            withTiming(0.95, { duration: 500 })
+          ),
+          -1,
+          true
+        );
+        orbOpacity.value = withTiming(0.7, { duration: 300 });
+        break;
+
+      case 'idle':
+        orbScale.value = withSpring(1, { damping: 15 });
+        orbOpacity.value = withTiming(0.6, { duration: 300 });
+        break;
+
+      case 'listening':
+        orbScale.value = withRepeat(
+          withSequence(
+            withTiming(1.08, { duration: 400, easing: Easing.inOut(Easing.ease) }),
+            withTiming(0.92, { duration: 400, easing: Easing.inOut(Easing.ease) })
+          ),
+          -1,
+          true
+        );
+        orbOpacity.value = withTiming(1, { duration: 200 });
+
+        ring1Scale.value = withRepeat(
+          withSequence(
+            withTiming(1, { duration: 0 }),
+            withTiming(1.8, { duration: 1200, easing: Easing.out(Easing.ease) })
+          ),
+          -1,
+          false
+        );
+        ring2Scale.value = withRepeat(
+          withSequence(
+            withTiming(1, { duration: 0 }),
+            withTiming(1.8, { duration: 1200, easing: Easing.out(Easing.ease) })
+          ),
+          -1,
+          false
+        );
+        ring3Scale.value = withRepeat(
+          withSequence(
+            withTiming(1, { duration: 0 }),
+            withTiming(1.8, { duration: 1200, easing: Easing.out(Easing.ease) })
+          ),
+          -1,
+          false
+        );
+        break;
+
+      case 'responding':
+        orbScale.value = withRepeat(
+          withSequence(
+            withTiming(1.12, { duration: 250, easing: Easing.out(Easing.ease) }),
+            withTiming(1, { duration: 250, easing: Easing.in(Easing.ease) })
+          ),
+          -1,
+          true
+        );
+        orbOpacity.value = withTiming(1, { duration: 200 });
+        break;
+
+      case 'error':
+        orbScale.value = withSpring(1, { damping: 15 });
+        orbOpacity.value = withTiming(0.5, { duration: 300 });
+        break;
+    }
+  }, [state]);
+
+  const handleOrbPress = useCallback(async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+    switch (state) {
+      case 'responding':
+        RealtimeService?.interruptResponse?.();
+        setState('idle');
+        setStatusText(language === 'id' ? 'Siap berbicara' : 'Ready to talk');
+        break;
+
+      case 'error':
+        connectToRealtime();
+        break;
+    }
+  }, [state, language, connectToRealtime]);
+
+  const handleClose = useCallback(async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+    await RealtimeService?.disconnect?.();
+
+    if (conversationRef.current.length > 0 && onConversationEnd) {
+      onConversationEnd(conversationRef.current);
+    }
+
+    conversationRef.current = [];
+    setState('connecting');
+    onClose();
+  }, [onClose, onConversationEnd]);
+
+  // Animated styles
+  const orbAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: orbScale.value }],
+    opacity: orbOpacity.value,
+  }));
+
+  const ring1Style = useAnimatedStyle(() => ({
+    transform: [{ scale: ring1Scale.value }],
+    opacity: interpolate(ring1Scale.value, [1, 1.8], [0.6, 0]),
+  }));
+
+  const ring2Style = useAnimatedStyle(() => ({
+    transform: [{ scale: ring2Scale.value }],
+    opacity: interpolate(ring2Scale.value, [1, 1.8], [0.4, 0]),
+  }));
+
+  const ring3Style = useAnimatedStyle(() => ({
+    transform: [{ scale: ring3Scale.value }],
+    opacity: interpolate(ring3Scale.value, [1, 1.8], [0.2, 0]),
+  }));
+
+  const currentColor = StateColors[state];
+
+  const getStateIcon = () => {
+    switch (state) {
+      case 'connecting':
+        return <Wifi size={ORB_SIZE * 0.3} color="#FFFFFF" />;
+      case 'error':
+        return <WifiOff size={ORB_SIZE * 0.3} color="#FFFFFF" />;
+      case 'responding':
+        return <Volume2 size={ORB_SIZE * 0.3} color="#FFFFFF" />;
+      default:
+        return <Mic size={ORB_SIZE * 0.3} color="#FFFFFF" />;
+    }
+  };
+
+  const getHeaderIcon = () => {
+    switch (state) {
+      case 'responding':
+        return <Volume2 size={24} color="#FFFFFF" />;
+      default:
+        return <Mic size={24} color="#FFFFFF" />;
+    }
+  };
+
+  if (!visible) return null;
+
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="none"
+      statusBarTranslucent
+      onRequestClose={handleClose}
+    >
+      <Animated.View
+        entering={FadeIn.duration(200)}
+        exiting={FadeOut.duration(200)}
+        style={styles.container}
+      >
+        <BlurView intensity={90} tint="dark" style={StyleSheet.absoluteFill} />
+
+        {/* Close button */}
+        <Pressable
+          onPress={handleClose}
+          style={styles.closeButton}
+          hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
+        >
+          <X size={28} color="#FFFFFF" />
+        </Pressable>
+
+        {/* Main content */}
+        <Animated.View
+          entering={SlideInDown.duration(300)}
+          exiting={SlideOutDown.duration(200)}
+          style={styles.content}
+        >
+          {/* State icon */}
+          <View style={styles.stateIcon}>
+            {getHeaderIcon()}
+          </View>
+
+          {/* Realtime badge */}
+          <View style={styles.realtimeBadge}>
+            <View style={[styles.realtimeDot, { backgroundColor: state === 'error' ? '#EF4444' : '#10B981' }]} />
+            <Text style={styles.realtimeText}>Realtime</Text>
+          </View>
+
+          {/* Orb container */}
+          <View style={styles.orbContainer}>
+            {/* Ripple rings (only visible when listening) */}
+            {state === 'listening' && (
+              <>
+                <Animated.View
+                  style={[
+                    styles.ring,
+                    { borderColor: currentColor },
+                    ring1Style,
+                  ]}
+                />
+                <Animated.View
+                  style={[
+                    styles.ring,
+                    { borderColor: currentColor },
+                    ring2Style,
+                  ]}
+                />
+                <Animated.View
+                  style={[
+                    styles.ring,
+                    { borderColor: currentColor },
+                    ring3Style,
+                  ]}
+                />
+              </>
+            )}
+
+            {/* Main orb */}
+            <Pressable onPress={handleOrbPress}>
+              <Animated.View
+                style={[
+                  styles.orb,
+                  { backgroundColor: currentColor },
+                  orbAnimatedStyle,
+                ]}
+              >
+                {/* Inner glow */}
+                <View style={[styles.orbInner, { backgroundColor: currentColor }]} />
+
+                {/* Icon inside orb */}
+                <View style={styles.orbIcon}>
+                  {getStateIcon()}
+                </View>
+              </Animated.View>
+            </Pressable>
+          </View>
+
+          {/* Status text */}
+          <Text style={styles.statusText}>{statusText}</Text>
+
+          {/* Live transcript */}
+          {currentTranscript && (
+            <View style={styles.transcriptContainer}>
+              <Text style={styles.transcriptLabel}>
+                {state === 'responding'
+                  ? language === 'id' ? 'AI:' : 'AI:'
+                  : language === 'id' ? 'Anda:' : 'You:'}
+              </Text>
+              <Text style={styles.transcriptText} numberOfLines={3}>
+                {currentTranscript}
+              </Text>
+            </View>
+          )}
+
+          {/* Instructions */}
+          <View style={styles.instructions}>
+            <Text style={styles.instructionText}>
+              {state === 'connecting'
+                ? language === 'id'
+                  ? 'Menyiapkan koneksi realtime...'
+                  : 'Setting up realtime connection...'
+                : state === 'error'
+                ? language === 'id'
+                  ? 'Ketuk untuk mencoba lagi'
+                  : 'Tap to retry'
+                : state === 'responding'
+                ? language === 'id'
+                  ? 'Ketuk untuk menginterupsi'
+                  : 'Tap to interrupt'
+                : language === 'id'
+                ? 'Bicara kapan saja - AI mendengarkan'
+                : 'Speak anytime - AI is listening'}
+            </Text>
+          </View>
+        </Animated.View>
+      </Animated.View>
+    </Modal>
+  );
+}
+
+/**
+ * Get default instructions for Faith Assistant
+ */
+function getDefaultInstructions(language: 'en' | 'id'): string {
+  const baseInstructions = `You are "Faith Assistant" (Pendamping Iman), a warm, supportive spiritual companion for FaithFlow church app users.
+
+Your role:
+- Provide compassionate spiritual guidance based on Biblical principles
+- Help users understand Scripture and apply it to daily life
+- Offer encouraging words and prayerful support
+- Be conversational and warm, like a trusted friend
+- Speak naturally as this is a real-time voice conversation
+
+Guidelines:
+- Keep responses concise for voice (2-3 sentences typically)
+- Be respectful of all Christian denominations
+- Offer to pray with users when appropriate
+- Reference relevant Bible verses when helpful
+- Acknowledge emotions with empathy before offering guidance
+- If asked about non-spiritual topics, gently redirect to faith matters
+
+Remember: You're having a real-time voice conversation. Keep responses natural, warm, and flowing.`;
+
+  if (language === 'id') {
+    return baseInstructions + `
+
+IMPORTANT: The user prefers Indonesian (Bahasa Indonesia). Please respond primarily in Indonesian unless they speak English to you.`;
+  }
+
+  return baseInstructions;
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 60,
+    right: 24,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10,
+  },
+  content: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 32,
+  },
+  stateIcon: {
+    marginBottom: 24,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  realtimeBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    marginBottom: 24,
+  },
+  realtimeDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 6,
+  },
+  realtimeText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: 'rgba(255, 255, 255, 0.8)',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  orbContainer: {
+    width: ORB_SIZE * 2,
+    height: ORB_SIZE * 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  ring: {
+    position: 'absolute',
+    width: ORB_SIZE,
+    height: ORB_SIZE,
+    borderRadius: ORB_SIZE / 2,
+    borderWidth: 2,
+  },
+  orb: {
+    width: ORB_SIZE,
+    height: ORB_SIZE,
+    borderRadius: ORB_SIZE / 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 10,
+  },
+  orbInner: {
+    position: 'absolute',
+    width: ORB_SIZE * 0.8,
+    height: ORB_SIZE * 0.8,
+    borderRadius: (ORB_SIZE * 0.8) / 2,
+    opacity: 0.3,
+  },
+  orbIcon: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  statusText: {
+    marginTop: 40,
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    textAlign: 'center',
+  },
+  transcriptContainer: {
+    marginTop: 24,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 12,
+    maxWidth: SCREEN_WIDTH * 0.85,
+  },
+  transcriptLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: 'rgba(255, 255, 255, 0.5)',
+    marginBottom: 4,
+  },
+  transcriptText: {
+    fontSize: 16,
+    color: 'rgba(255, 255, 255, 0.9)',
+    lineHeight: 22,
+  },
+  instructions: {
+    position: 'absolute',
+    bottom: 80,
+    left: 32,
+    right: 32,
+  },
+  instructionText: {
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.5)',
+    textAlign: 'center',
+  },
+});
+
+export default VoiceChatModal;

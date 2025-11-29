@@ -7,13 +7,14 @@
  * - Premium shadows and typography
  */
 
-import React, { memo } from 'react';
+import React, { memo, useCallback } from 'react';
 import { View, Text, ImageBackground, StyleSheet, Pressable } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ExploreColors, ExploreSpacing, ExploreBorderRadius, ExploreShadows } from '@/constants/explore/designSystem';
 import type { DailyDevotion } from '@/types/explore';
-import { Clock, BookOpen, CheckCircle } from 'lucide-react-native';
+import { Clock, BookOpen, CheckCircle, Volume2 } from 'lucide-react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+import { AudioPlayButton } from './AudioPlayButton';
 
 const CARD_HEIGHT = 220;
 
@@ -46,6 +47,12 @@ export const DailyDevotionCard = memo(function DailyDevotionCard({
         devotion.main_verse.verse_end ? `-${devotion.main_verse.verse_end}` : ''
       }`
     : null;
+
+  // Build text for TTS (title + verse text for preview)
+  const ttsText = [
+    title,
+    devotion.main_verse?.text?.[language] || devotion.main_verse?.text?.en,
+  ].filter(Boolean).join('. ');
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
@@ -110,6 +117,19 @@ export const DailyDevotionCard = memo(function DailyDevotionCard({
                 <Text style={styles.metaText}>{verseRef}</Text>
               </View>
             )}
+
+            {/* Audio Play Button */}
+            {ttsText && (
+              <View style={styles.audioButton}>
+                <AudioPlayButton
+                  text={ttsText}
+                  variant="icon"
+                  size={32}
+                  color="#FFFFFF"
+                  backgroundColor="rgba(255,255,255,0.2)"
+                />
+              </View>
+            )}
           </View>
         </View>
       </ImageBackground>
@@ -167,6 +187,7 @@ const styles = StyleSheet.create({
   },
   metaRow: {
     flexDirection: 'row',
+    alignItems: 'center',
     gap: ExploreSpacing.md,
     marginTop: 4,
   },
@@ -179,5 +200,8 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '500',
     color: 'rgba(255,255,255,0.8)',
+  },
+  audioButton: {
+    marginLeft: 'auto',
   },
 });

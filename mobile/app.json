@@ -21,7 +21,7 @@
         "NSCameraUsageDescription": "Allow FaithFlow to access your camera for video calls and profile photos",
         "NSPhotoLibraryUsageDescription": "Allow FaithFlow to access your photos for profile pictures",
         "NSMicrophoneUsageDescription": "Allow FaithFlow to access your microphone for voice and video calls",
-        "UIBackgroundModes": [
+                "UIBackgroundModes": [
           "audio",
           "voip",
           "fetch",
@@ -51,7 +51,9 @@
         "MANAGE_OWN_CALLS",
         "READ_PHONE_STATE",
         "BLUETOOTH",
-        "BLUETOOTH_CONNECT"
+        "BLUETOOTH_CONNECT",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS"
       ]
     },
     "web": {
@@ -86,8 +88,9 @@
         "origin": false
       },
       "eas": {
-        "projectId": "your-project-id-here"
+        "projectId": "78f7dcb7-b3c5-42d6-8a9c-062e4028a811"
       }
-    }
+    },
+    "owner": "tesargusmawan"
   }
 }

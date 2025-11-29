@@ -65,3 +65,15 @@ backend/models/tts_indonesian/checkpoint.pth
 # - .env.example files are templates (COMMITTED)
 # - .env files contain actual values (COMMITTED for deployment)
 # - .env.local files are for local overrides (IGNORED)
+
+# ===========================================
+# SENSITIVE FILES WITH API KEYS (NEVER PUSH)
+# ===========================================
+# These files contain hardcoded API keys for local development
+# Use the .example versions as templates
+
+# Backend .env with real keys
+backend/.env
+
+# Mobile secrets file with all dev API keys
+mobile/constants/secrets.ts

@@ -25,6 +25,8 @@ interface CompanionState {
   // Chat state
   messages: CompanionMessage[];
   isLoading: boolean;
+  isStreaming: boolean;
+  streamingMessageId: string | null;
   error: string | null;
 
   // Context for personalized greeting
@@ -38,7 +40,10 @@ interface CompanionState {
 
   // Actions
   setEntryContext: (context: CompanionContext, data?: CompanionState['contextData']) => void;
-  addMessage: (message: Omit<CompanionMessage, 'id' | 'timestamp'>) => void;
+  addMessage: (message: Omit<CompanionMessage, 'id' | 'timestamp'>) => string;
+  updateMessage: (id: string, content: string) => void;
+  startStreaming: (messageId: string) => void;
+  stopStreaming: () => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
   clearChat: () => void;
@@ -63,6 +68,8 @@ export const getTimeBasedContext = (): CompanionContext => {
 export const useCompanionStore = create<CompanionState>((set, get) => ({
   messages: [],
   isLoading: false,
+  isStreaming: false,
+  streamingMessageId: null,
   error: null,
   entryContext: 'default',
   contextData: undefined,
@@ -75,15 +82,40 @@ export const useCompanionStore = create<CompanionState>((set, get) => ({
   },
 
   addMessage: (message) => {
+    const id = generateId();
     const newMessage: CompanionMessage = {
       ...message,
-      id: generateId(),
+      id,
       timestamp: new Date(),
     };
     set((state) => ({
       messages: [...state.messages, newMessage],
       error: null,
     }));
+    return id;
+  },
+
+  updateMessage: (id, content) => {
+    set((state) => ({
+      messages: state.messages.map((msg) =>
+        msg.id === id ? { ...msg, content } : msg
+      ),
+    }));
+  },
+
+  startStreaming: (messageId) => {
+    set({
+      isStreaming: true,
+      streamingMessageId: messageId,
+      isLoading: false,
+    });
+  },
+
+  stopStreaming: () => {
+    set({
+      isStreaming: false,
+      streamingMessageId: null,
+    });
   },
 
   setLoading: (loading) => {
@@ -91,7 +123,7 @@ export const useCompanionStore = create<CompanionState>((set, get) => ({
   },
 
   setError: (error) => {
-    set({ error, isLoading: false });
+    set({ error, isLoading: false, isStreaming: false, streamingMessageId: null });
   },
 
   clearChat: () => {
@@ -99,6 +131,8 @@ export const useCompanionStore = create<CompanionState>((set, get) => ({
       messages: [],
       error: null,
       isLoading: false,
+      isStreaming: false,
+      streamingMessageId: null,
     });
   },
 
@@ -107,6 +141,8 @@ export const useCompanionStore = create<CompanionState>((set, get) => ({
       messages: [],
       error: null,
       isLoading: false,
+      isStreaming: false,
+      streamingMessageId: null,
       entryContext: 'default',
       contextData: undefined,
     });

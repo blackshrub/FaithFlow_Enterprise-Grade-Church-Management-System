@@ -22,6 +22,7 @@ SENSITIVE_FIELDS = [
     "ai_integration.anthropic_api_key",
     "ai_integration.stability_api_key",
     "faith_assistant.api_key",
+    "voice_integration.openai_api_key",
     "whatsapp_integration.whatsapp_api_key",
     "payment_integration.ipaymu_api_key",
 ]
@@ -381,3 +382,293 @@ async def get_ai_usage_stats(
         "budget_remaining": max(0, monthly_budget - current_spend),
         "budget_used_percentage": min(100, (current_spend / monthly_budget * 100) if monthly_budget > 0 else 0),
     }
+
+
+class TestVoiceRequest(BaseModel):
+    """Request body for testing OpenAI voice connection"""
+    api_key: Optional[str] = None
+
+
+@router.post("/settings/test-voice-connection")
+async def test_voice_connection(
+    request: Optional[TestVoiceRequest] = None,
+    current_user=Depends(require_super_admin),
+    db=Depends(get_db),
+):
+    """
+    Test OpenAI Voice API connection (TTS/STT)
+
+    Verifies that the OpenAI API key works for TTS by making a test request.
+    If api_key provided in request body, uses that directly (for testing before save).
+    Otherwise falls back to saved settings.
+    """
+    import httpx
+
+    api_key = None
+
+    # Priority 1: Use value from request body (for testing before save)
+    if request and request.api_key:
+        api_key = request.api_key
+    else:
+        # Priority 2: Get from saved settings
+        settings_doc = await db.system_settings.find_one({"id": "global_system_settings"})
+
+        if settings_doc:
+            settings_dict = decrypt_settings(settings_doc)
+            voice_settings = settings_dict.get("voice_integration", {})
+            api_key = voice_settings.get("openai_api_key")
+
+    if not api_key:
+        raise HTTPException(status_code=400, detail="Please provide an OpenAI API key to test")
+
+    try:
+        # Test API call - list models to verify key works
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                "https://api.openai.com/v1/models",
+                headers={
+                    "Authorization": f"Bearer {api_key}",
+                },
+                timeout=10.0,
+            )
+
+            if response.status_code == 200:
+                # Check if TTS model is available
+                models = response.json().get("data", [])
+                tts_available = any(m.get("id", "").startswith("tts") for m in models)
+                whisper_available = any("whisper" in m.get("id", "") for m in models)
+
+                return {
+                    "status": "success",
+                    "message": "OpenAI Voice API connection successful",
+                    "tts_available": tts_available,
+                    "stt_available": whisper_available,
+                }
+            else:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"OpenAI API connection failed: {response.text}",
+                )
+
+    except httpx.TimeoutException:
+        raise HTTPException(
+            status_code=400,
+            detail="OpenAI API connection timed out. Please try again.",
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=400,
+            detail=f"OpenAI Voice API connection failed: {str(e)}",
+        )
+
+
+@router.get("/settings/voice")
+async def get_voice_settings_public(
+    db=Depends(get_db),
+):
+    """
+    Get voice settings for mobile app (public endpoint)
+
+    Returns voice configuration without exposing the full API key.
+    Mobile app uses this to check if voice is enabled and get preferences.
+
+    Note: This is a public endpoint suitable for trusted church app environments.
+    Falls back to OPENAI_API_KEY environment variable for development.
+    """
+    import os
+
+    settings_doc = await db.system_settings.find_one({"id": "global_system_settings"})
+
+    # Default values
+    voice_settings = {}
+    api_key = None
+
+    if settings_doc:
+        settings_dict = decrypt_settings(settings_doc)
+        voice_settings = settings_dict.get("voice_integration", {})
+        api_key = voice_settings.get("openai_api_key")
+
+    # Fallback to environment variable for development
+    if not api_key:
+        api_key = os.environ.get("OPENAI_API_KEY")
+
+    # Check for Groq API key (for fast STT)
+    groq_api_key = voice_settings.get("groq_api_key")
+    if not groq_api_key:
+        groq_api_key = os.environ.get("GROQ_API_KEY")
+
+    # Determine STT provider
+    stt_provider = voice_settings.get("stt_provider", "groq")
+    # If Groq is preferred but no key, fallback to OpenAI
+    if stt_provider == "groq" and not groq_api_key:
+        stt_provider = "openai"
+
+    return {
+        "voice_enabled": voice_settings.get("voice_enabled", True) and bool(api_key),
+        "has_api_key": bool(api_key),
+        "has_groq_key": bool(groq_api_key),
+        "stt_provider": stt_provider,
+        "tts_voice": voice_settings.get("tts_voice", "nova"),
+        "tts_model": voice_settings.get("tts_model", "tts-1"),
+        "tts_speed": voice_settings.get("tts_speed", 1.0),
+        "stt_model": voice_settings.get("stt_model", "whisper-1"),
+    }
+
+
+@router.get("/settings/voice/api-key")
+async def get_voice_api_key(
+    db=Depends(get_db),
+):
+    """
+    Get API keys for voice features (public endpoint)
+
+    This is called by the mobile app when it needs to make TTS/STT requests.
+    Returns both OpenAI (for TTS) and Groq (for fast STT) API keys.
+
+    Note: This is a public endpoint suitable for trusted church app environments.
+    The API keys are protected by:
+    - Encrypted storage in the database
+    - HTTPS transmission only
+    - Church admin configuration control
+
+    Falls back to environment variables for development.
+    """
+    import os
+
+    settings_doc = await db.system_settings.find_one({"id": "global_system_settings"})
+
+    # Default values
+    voice_settings = {}
+    openai_key = None
+    groq_key = None
+
+    if settings_doc:
+        settings_dict = decrypt_settings(settings_doc)
+        voice_settings = settings_dict.get("voice_integration", {})
+        openai_key = voice_settings.get("openai_api_key")
+        groq_key = voice_settings.get("groq_api_key")
+
+    # Fallback to environment variables for development
+    if not openai_key:
+        openai_key = os.environ.get("OPENAI_API_KEY")
+    if not groq_key:
+        groq_key = os.environ.get("GROQ_API_KEY")
+
+    # Need at least OpenAI key for TTS
+    if not openai_key:
+        raise HTTPException(status_code=404, detail="OpenAI API key not configured")
+
+    # Check if explicitly disabled (only if we have DB settings)
+    if settings_doc and not voice_settings.get("voice_enabled", True):
+        raise HTTPException(status_code=403, detail="Voice features are disabled")
+
+    # Determine STT provider based on availability
+    stt_provider = voice_settings.get("stt_provider", "groq")
+    if stt_provider == "groq" and not groq_key:
+        stt_provider = "openai"
+
+    return {
+        "openai_api_key": openai_key,
+        "groq_api_key": groq_key,
+        "stt_provider": stt_provider,
+        "tts_voice": voice_settings.get("tts_voice", "nova"),
+        "tts_model": voice_settings.get("tts_model", "tts-1"),
+        "tts_speed": voice_settings.get("tts_speed", 1.0),
+        "stt_model": voice_settings.get("stt_model", "whisper-1"),
+    }
+
+
+class RealtimeSessionRequest(BaseModel):
+    """Request body for creating a realtime session"""
+    model: str = "gpt-4o-realtime-preview-2024-12-17"
+    voice: str = "verse"  # alloy, ash, ballad, coral, echo, sage, shimmer, verse
+
+
+@router.post("/settings/voice/realtime-session")
+async def create_realtime_session(
+    request: Optional[RealtimeSessionRequest] = None,
+    db=Depends(get_db),
+):
+    """
+    Create an ephemeral OpenAI Realtime API session (public endpoint)
+
+    This generates a short-lived token for WebRTC-based real-time voice
+    conversations. The mobile app uses this to establish a direct
+    connection to OpenAI's Realtime API without exposing the main API key.
+
+    The ephemeral token expires after 1 minute and can only be used once.
+
+    Falls back to OPENAI_API_KEY environment variable for development.
+    """
+    import os
+    import httpx
+
+    settings_doc = await db.system_settings.find_one({"id": "global_system_settings"})
+
+    # Default values
+    voice_settings = {}
+    api_key = None
+
+    if settings_doc:
+        settings_dict = decrypt_settings(settings_doc)
+        voice_settings = settings_dict.get("voice_integration", {})
+        api_key = voice_settings.get("openai_api_key")
+
+    # Fallback to environment variable for development
+    if not api_key:
+        api_key = os.environ.get("OPENAI_API_KEY")
+
+    if not api_key:
+        raise HTTPException(status_code=404, detail="OpenAI API key not configured")
+
+    # Check if explicitly disabled
+    if settings_doc and not voice_settings.get("voice_enabled", True):
+        raise HTTPException(status_code=403, detail="Voice features are disabled")
+
+    # Get model and voice from request or use defaults
+    model = request.model if request else "gpt-4o-realtime-preview-2024-12-17"
+    voice = request.voice if request else voice_settings.get("realtime_voice", "verse")
+
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                "https://api.openai.com/v1/realtime/sessions",
+                headers={
+                    "Authorization": f"Bearer {api_key}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "model": model,
+                    "voice": voice,
+                },
+                timeout=10.0,
+            )
+
+            if response.status_code == 200:
+                session_data = response.json()
+                return {
+                    "status": "success",
+                    "client_secret": session_data.get("client_secret", {}).get("value"),
+                    "expires_at": session_data.get("client_secret", {}).get("expires_at"),
+                    "model": session_data.get("model"),
+                    "voice": session_data.get("voice"),
+                }
+            else:
+                error_detail = response.json() if response.headers.get("content-type", "").startswith("application/json") else response.text
+                raise HTTPException(
+                    status_code=response.status_code,
+                    detail=f"Failed to create realtime session: {error_detail}",
+                )
+
+    except httpx.TimeoutException:
+        raise HTTPException(
+            status_code=504,
+            detail="OpenAI Realtime API request timed out",
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to create realtime session: {str(e)}",
+        )

@@ -53,7 +53,7 @@ import {
   BarChart3,
   FileText,
   Video,
-  Phone,
+  // Phone, // DISABLED: Call feature temporarily disabled
   Timer,
 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
@@ -126,8 +126,9 @@ import {
 import { useCommunitySubscription, useTypingIndicator } from '@/hooks/useMqtt';
 import { useAuthStore } from '@/stores/auth';
 import { useNavigationStore } from '@/stores/navigation';
-import { useCallStore } from '@/stores/call';
-import { CallType } from '@/types/call';
+// DISABLED: Call feature temporarily disabled
+// import { useCallStore } from '@/stores/call';
+// import { CallType } from '@/types/call';
 import { uploadMedia, UploadProgressCallback } from '@/services/mediaUpload';
 import { colors, spacing, borderRadius, shadows } from '@/constants/theme';
 import type { CommunityMessage } from '@/types/communities';
@@ -572,7 +573,8 @@ function CommunityChatScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { member } = useAuthStore();
-  const { initiateCall } = useCallStore();
+  // DISABLED: Call feature temporarily disabled
+  // const { initiateCall } = useCallStore();
 
   const [inputText, setInputText] = useState('');
   const [replyingTo, setReplyingTo] = useState<CommunityMessage | null>(null);
@@ -1017,39 +1019,40 @@ function CommunityChatScreen() {
     }
   }, [selectedMessage, forwardMessageMutation]);
 
-  // Handle voice call initiation
-  const handleVoiceCall = useCallback(async () => {
-    if (!community || !member) return;
-
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-
-    try {
-      // Initiate call: empty callee_ids means group/community call
-      await initiateCall([], CallType.VOICE, id);
-      // Navigate to call screen
-      router.push(`/call/${id}` as any);
-    } catch (error) {
-      console.error('[VoiceCall] Failed:', error);
-      Alert.alert(t('common.error', 'Error'), t('chat.couldNotStartVoiceCall', 'Could not start voice call. Please try again.'));
-    }
-  }, [community, member, id, initiateCall, router, t]);
-
-  // Handle video call initiation
-  const handleVideoCall = useCallback(async () => {
-    if (!community || !member) return;
-
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-
-    try {
-      // Initiate call: empty callee_ids means group/community call
-      await initiateCall([], CallType.VIDEO, id);
-      // Navigate to call screen
-      router.push(`/call/${id}` as any);
-    } catch (error) {
-      console.error('[VideoCall] Failed:', error);
-      Alert.alert(t('common.error', 'Error'), t('chat.couldNotStartVideoCall', 'Could not start video call. Please try again.'));
-    }
-  }, [community, member, id, initiateCall, router, t]);
+  // DISABLED: Call feature temporarily disabled
+  // // Handle voice call initiation
+  // const handleVoiceCall = useCallback(async () => {
+  //   if (!community || !member) return;
+  //
+  //   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+  //
+  //   try {
+  //     // Initiate call: empty callee_ids means group/community call
+  //     await initiateCall([], CallType.VOICE, id);
+  //     // Navigate to call screen
+  //     router.push(`/call/${id}` as any);
+  //   } catch (error) {
+  //     console.error('[VoiceCall] Failed:', error);
+  //     Alert.alert(t('common.error', 'Error'), t('chat.couldNotStartVoiceCall', 'Could not start voice call. Please try again.'));
+  //   }
+  // }, [community, member, id, initiateCall, router, t]);
+  //
+  // // Handle video call initiation
+  // const handleVideoCall = useCallback(async () => {
+  //   if (!community || !member) return;
+  //
+  //   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+  //
+  //   try {
+  //     // Initiate call: empty callee_ids means group/community call
+  //     await initiateCall([], CallType.VIDEO, id);
+  //     // Navigate to call screen
+  //     router.push(`/call/${id}` as any);
+  //   } catch (error) {
+  //     console.error('[VideoCall] Failed:', error);
+  //     Alert.alert(t('common.error', 'Error'), t('chat.couldNotStartVideoCall', 'Could not start video call. Please try again.'));
+  //   }
+  // }, [community, member, id, initiateCall, router, t]);
 
   // Handle location sharing
   const handleShareLocation = useCallback(async (location: LocationData) => {
@@ -1410,21 +1413,21 @@ function CommunityChatScreen() {
             )}
           </Pressable>
 
-          {/* Voice call button */}
-          <Pressable
+          {/* Voice call button - DISABLED: Call feature temporarily disabled */}
+          {/* <Pressable
             onPress={handleVoiceCall}
             className="active:opacity-70 p-2"
           >
             <Icon as={Phone} size="md" style={{ color: '#FFFFFF' }} />
-          </Pressable>
+          </Pressable> */}
 
-          {/* Video call button */}
-          <Pressable
+          {/* Video call button - DISABLED: Call feature temporarily disabled */}
+          {/* <Pressable
             onPress={handleVideoCall}
             className="active:opacity-70 p-2"
           >
             <Icon as={Video} size="md" style={{ color: '#FFFFFF' }} />
-          </Pressable>
+          </Pressable> */}
 
           {/* Search button */}
           <Pressable

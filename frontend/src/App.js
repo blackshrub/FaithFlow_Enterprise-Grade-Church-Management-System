@@ -17,7 +17,6 @@ import SeatLayouts from "./pages/SeatLayouts";
 import Events from "./pages/Events";
 import EventRatings from "./pages/EventRatings";
 import KioskMode from "./pages/KioskMode";
-import Devotions from "./pages/Devotions";
 import Layout from "./components/Layout/Layout";
 import ProtectedRoute from "./components/Layout/ProtectedRoute";
 import ErrorBoundary from "./components/ErrorBoundary";
@@ -152,9 +151,7 @@ function App() {
               <Route path="seat-layouts" element={<SeatLayouts />} />
               <Route path="events" element={<Events />} />
               <Route path="events/ratings" element={<EventRatings />} />
-              {/* Kiosk moved outside Layout for fullscreen */}
-              <Route path="devotions" element={<Devotions />} />
-              
+
               {/* Accounting Routes */}
               <Route path="accounting" element={<AccountingDashboard />} />
               <Route path="accounting/coa" element={<ChartOfAccounts />} />

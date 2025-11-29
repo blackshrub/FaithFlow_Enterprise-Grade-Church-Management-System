@@ -51,6 +51,7 @@ import {
 import { Share } from 'react-native';
 import { DailyDevotionSkeleton } from '@/components/explore/LoadingSkeleton';
 import { MarkdownText } from '@/components/explore/MarkdownText';
+import { AudioPlayButton } from '@/components/explore/AudioPlayButton';
 import Animated, { FadeIn, FadeInDown, FadeInRight, SlideInRight } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 
@@ -141,6 +142,20 @@ function DailyDevotionView({ devotion, contentLanguage, onBack }: DailyDevotionV
   const content = devotion.content[contentLanguage] || devotion.content.en;
   const summary = devotion.summary?.[contentLanguage] || devotion.summary?.en;
 
+  // Get verse text for TTS
+  const verseText = devotion.main_verse?.text
+    ? (typeof devotion.main_verse.text === 'string'
+        ? devotion.main_verse.text
+        : devotion.main_verse.text?.[contentLanguage] || devotion.main_verse.text?.en || '')
+    : '';
+
+  // Build TTS text: title + verse + beginning of content
+  const ttsText = [
+    title,
+    verseText,
+    content.substring(0, 500), // First 500 chars of content for preview
+  ].filter(Boolean).join('. ');
+
   const handleShare = async () => {
     try {
       await Share.share({
@@ -197,6 +212,24 @@ function DailyDevotionView({ devotion, contentLanguage, onBack }: DailyDevotionV
                     <Text style={styles.heroBadgeText}>
                       {devotion.reading_time_minutes} {contentLanguage === 'en' ? 'min read' : 'menit baca'}
                     </Text>
+                  </View>
+                )}
+
+                {/* Audio Play Button - Bottom Right (cached for 24h, preloads when page opens) */}
+                {ttsText && devotion.id && (
+                  <View style={styles.audioButtonOverlay}>
+                    <AudioPlayButton
+                      text={ttsText}
+                      variant="icon"
+                      size={56}
+                      color="#FFFFFF"
+                      backgroundColor="rgba(0, 0, 0, 0.6)"
+                      cacheConfig={{
+                        contentType: 'devotion',
+                        contentId: devotion.id,
+                      }}
+                      autoPreload
+                    />
                   </View>
                 )}
               </LinearGradient>
@@ -687,6 +720,15 @@ function DayContentView({
   const prayer = day.prayer?.[contentLanguage] || day.prayer?.en;
   const planTitle = plan.title[contentLanguage] || plan.title.en;
 
+  // Build TTS text: title + verse + content + prayer
+  const verseText = day.main_verse?.text || '';
+  const ttsText = [
+    title,
+    verseText,
+    content.substring(0, 500),
+    prayer,
+  ].filter(Boolean).join('. ');
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
@@ -743,14 +785,33 @@ function DayContentView({
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Day Image */}
+        {/* Day Image with Audio Button Overlay */}
         {day.image_url && (
           <Animated.View entering={FadeIn.duration(400)}>
-            <Image
-              source={{ uri: day.image_url }}
-              style={styles.dayImage}
-              resizeMode="cover"
-            />
+            <View style={styles.dayImageContainer}>
+              <Image
+                source={{ uri: day.image_url }}
+                style={styles.dayImage}
+                resizeMode="cover"
+              />
+              {/* Audio Play Button - Bottom Right (cached for 24h, preloads when page opens) */}
+              {ttsText && plan.id && (
+                <View style={styles.audioButtonOverlay}>
+                  <AudioPlayButton
+                    text={ttsText}
+                    variant="icon"
+                    size={56}
+                    color="#FFFFFF"
+                    backgroundColor="rgba(0, 0, 0, 0.6)"
+                    cacheConfig={{
+                      contentType: 'devotion',
+                      contentId: `${plan.id}_day${dayNumber}`,
+                    }}
+                    autoPreload
+                  />
+                </View>
+              )}
+            </View>
           </Animated.View>
         )}
 
@@ -903,6 +964,11 @@ const styles = StyleSheet.create({
   iconButton: {
     padding: ExploreSpacing.xs,
   },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: ExploreSpacing.sm,
+  },
   dayNav: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -964,6 +1030,11 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontWeight: '600',
     fontSize: 14,
+  },
+  audioButtonOverlay: {
+    position: 'absolute',
+    bottom: ExploreSpacing.md,
+    right: ExploreSpacing.md,
   },
   heroCompletedBadge: {
     position: 'absolute',
@@ -1168,6 +1239,10 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontWeight: '700',
     fontSize: 16,
+  },
+  dayImageContainer: {
+    position: 'relative',
+    width: '100%',
   },
   dayImage: {
     width: '100%',

@@ -10,3 +10,4 @@ export { api, default } from '../api';
 
 // Export sub-services
 export { callApi } from './call';
+export { sendCompanionMessage, sendCompanionMessagePublic, sendCompanionMessageStream } from './companion';
