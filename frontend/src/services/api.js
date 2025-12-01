@@ -14,24 +14,37 @@ import axios from 'axios';
  */
 const getAPIBaseURL = () => {
   // 1. Check runtime config (injected by Docker entrypoint)
-  if (window.__RUNTIME_CONFIG__?.API_URL) {
-    console.log('✅ Using runtime config API URL:', window.__RUNTIME_CONFIG__.API_URL);
-    return window.__RUNTIME_CONFIG__.API_URL;
+  // Use explicit check for non-empty string to avoid falsy issues
+  const runtimeURL = window.__RUNTIME_CONFIG__?.API_URL;
+  if (runtimeURL && runtimeURL.trim() !== '') {
+    console.log('✅ Using runtime config API URL:', runtimeURL);
+    return runtimeURL;
   }
 
-  // 2. Check environment variable
-  if (process.env.REACT_APP_API_URL) {
+  // 2. Check environment variable (baked in at build time)
+  if (process.env.REACT_APP_API_URL && process.env.REACT_APP_API_URL.trim() !== '') {
     console.log('✅ Using env var API URL:', process.env.REACT_APP_API_URL);
     return process.env.REACT_APP_API_URL;
   }
 
-  // 3. Fallback: Auto-detect from current URL (legacy path-based mode)
+  // 3. Fallback: Auto-detect subdomain mode (api.domain.com)
+  // This is the preferred deployment mode for FaithFlow
   const origin = window.location.origin;
   const secureOrigin = origin.replace('http://', 'https://');
-  const fallbackURL = `${secureOrigin}/api`;
 
-  console.log('⚠️ Using fallback API URL (path-based):', fallbackURL);
-  return fallbackURL;
+  // Try subdomain mode first: api.flow.gkbj.org
+  const hostname = window.location.hostname;
+  const subdomainURL = `https://api.${hostname}`;
+
+  // For localhost development, use path-based
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    const fallbackURL = `${secureOrigin}/api`;
+    console.log('⚠️ Using localhost fallback API URL:', fallbackURL);
+    return fallbackURL;
+  }
+
+  console.log('⚠️ Using auto-detected subdomain API URL:', subdomainURL);
+  return subdomainURL;
 };
 
 const API_BASE_URL = getAPIBaseURL();
