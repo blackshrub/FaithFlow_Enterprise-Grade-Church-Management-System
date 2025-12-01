@@ -7,10 +7,11 @@
 #              Zero-Downtime Update for Docker Deployments                     #
 #                                                                              #
 #  Usage:                                                                      #
-#    ./docker-update.sh                # Update all services                   #
-#    ./docker-update.sh --backend      # Update backend only                   #
-#    ./docker-update.sh --frontend     # Update frontend only                  #
-#    ./docker-update.sh --no-build     # Pull without rebuilding               #
+#    ./docker-update.sh                   # Update all services                #
+#    ./docker-update.sh --backend         # Update backend only                #
+#    ./docker-update.sh --frontend        # Update frontend only               #
+#    ./docker-update.sh --no-build        # Pull without rebuilding            #
+#    ./docker-update.sh --external-traefik # Using external Traefik instance   #
 #                                                                              #
 ################################################################################
 
@@ -33,6 +34,10 @@ readonly MIN_COMPOSE_VERSION="2.20"
 UPDATE_BACKEND=true
 UPDATE_FRONTEND=true
 NO_BUILD=false
+EXTERNAL_TRAEFIK=false
+
+# Compose command (set after parsing args)
+COMPOSE_CMD=""
 
 # =============================================================================
 # TERMINAL STYLING
@@ -263,7 +268,7 @@ check_prerequisites() {
     print_success "Docker Compose file found"
 
     # Check if services are running
-    if docker compose -f "$COMPOSE_FILE" ps | grep -q "running"; then
+    if $COMPOSE_CMD ps | grep -q "running"; then
         print_success "Services are currently running"
     else
         print_warn "Some services may not be running"
@@ -271,7 +276,7 @@ check_prerequisites() {
 
     # Check current health
     print_info "Checking current health..."
-    if docker compose -f "$COMPOSE_FILE" ps | grep -q "healthy"; then
+    if $COMPOSE_CMD ps | grep -q "healthy"; then
         print_success "Services are healthy"
     else
         print_warn "Some services may not be healthy"
@@ -306,7 +311,7 @@ build_images() {
 
     if [ "$UPDATE_BACKEND" = true ]; then
         print_info "Building backend image..."
-        if ! docker compose -f "$COMPOSE_FILE" build --no-cache backend >> "$LOG_FILE" 2>&1; then
+        if ! $COMPOSE_CMD build --no-cache backend >> "$LOG_FILE" 2>&1; then
             print_error "Backend build failed. Check log: $LOG_FILE"
             tail -20 "$LOG_FILE"
             exit 1
@@ -320,7 +325,7 @@ build_images() {
         echo ""
 
         # Run build in background with progress indicator
-        docker compose -f "$COMPOSE_FILE" build --no-cache frontend >> "$LOG_FILE" 2>&1 &
+        $COMPOSE_CMD build --no-cache frontend >> "$LOG_FILE" 2>&1 &
         local build_pid=$!
 
         local start_time=$(date +%s)
@@ -364,7 +369,7 @@ rolling_update() {
         print_info "Updating backend service..."
 
         # Scale up new instance
-        docker compose -f "$COMPOSE_FILE" up -d --no-deps backend >> "$LOG_FILE" 2>&1
+        $COMPOSE_CMD up -d --no-deps backend >> "$LOG_FILE" 2>&1
 
         # Wait for health check
         sleep 10
@@ -375,7 +380,7 @@ rolling_update() {
     if [ "$UPDATE_FRONTEND" = true ]; then
         print_info "Updating frontend service..."
 
-        docker compose -f "$COMPOSE_FILE" up -d --no-deps frontend >> "$LOG_FILE" 2>&1
+        $COMPOSE_CMD up -d --no-deps frontend >> "$LOG_FILE" 2>&1
 
         sleep 5
 
@@ -391,7 +396,7 @@ run_migrations() {
     print_info "Checking for database migrations..."
 
     # Run migrations if script exists
-    docker compose -f "$COMPOSE_FILE" exec -T backend python scripts/migrate.py >> "$LOG_FILE" 2>&1 || {
+    $COMPOSE_CMD exec -T backend python scripts/migrate.py >> "$LOG_FILE" 2>&1 || {
         print_info "No migrations to run"
     }
 
@@ -408,7 +413,7 @@ health_check() {
 
     # Check backend health
     print_info "Checking backend..."
-    if docker compose -f "$COMPOSE_FILE" exec -T backend curl -sf http://localhost:8000/health > /dev/null 2>&1; then
+    if $COMPOSE_CMD exec -T backend curl -sf http://localhost:8000/health > /dev/null 2>&1; then
         print_success "Backend: Healthy"
     else
         print_warn "Backend: May still be starting up"
@@ -416,7 +421,7 @@ health_check() {
 
     # Check frontend health
     print_info "Checking frontend..."
-    if docker compose -f "$COMPOSE_FILE" exec -T frontend wget -q --spider http://localhost:80/health 2>/dev/null; then
+    if $COMPOSE_CMD exec -T frontend wget -q --spider http://localhost:80/health 2>/dev/null; then
         print_success "Frontend: Healthy"
     else
         print_warn "Frontend: May still be starting up"
@@ -425,7 +430,7 @@ health_check() {
     # Show running services
     echo ""
     print_info "Current service status:"
-    docker compose -f "$COMPOSE_FILE" ps
+    $COMPOSE_CMD ps
 }
 
 cleanup() {
@@ -457,9 +462,16 @@ EOF
     echo -e "${CYAN}  Updated components:${NC}"
     [ "$UPDATE_BACKEND" = true ] && echo -e "    ${GREEN}✓${NC} Backend"
     [ "$UPDATE_FRONTEND" = true ] && echo -e "    ${GREEN}✓${NC} Frontend"
+    if [ "$EXTERNAL_TRAEFIK" = true ]; then
+        echo -e "    ${CYAN}ℹ${NC} Using external Traefik"
+    fi
     echo ""
 
-    echo -e "${BLUE}  View logs: ${WHITE}docker compose -f $COMPOSE_FILE logs -f${NC}"
+    if [ "$EXTERNAL_TRAEFIK" = true ]; then
+        echo -e "${BLUE}  View logs: ${WHITE}docker compose -f docker-compose.prod.yml -f docker-compose.external-traefik.yml logs -f${NC}"
+    else
+        echo -e "${BLUE}  View logs: ${WHITE}docker compose -f $COMPOSE_FILE logs -f${NC}"
+    fi
     echo ""
 
     echo -e "${GREEN}  🙏 Update successful!${NC}"
@@ -485,16 +497,21 @@ parse_args() {
                 NO_BUILD=true
                 shift
                 ;;
+            --external-traefik)
+                EXTERNAL_TRAEFIK=true
+                shift
+                ;;
             --help|-h)
                 echo "FaithFlow Docker Updater v$SCRIPT_VERSION"
                 echo ""
                 echo "Usage: ./docker-update.sh [options]"
                 echo ""
                 echo "Options:"
-                echo "  --backend      Update backend only"
-                echo "  --frontend     Update frontend only"
-                echo "  --no-build     Skip image build (just restart)"
-                echo "  --help, -h     Show this help message"
+                echo "  --backend           Update backend only"
+                echo "  --frontend          Update frontend only"
+                echo "  --no-build          Skip image build (just restart)"
+                echo "  --external-traefik  Use external Traefik configuration"
+                echo "  --help, -h          Show this help message"
                 echo ""
                 exit 0
                 ;;
@@ -504,6 +521,21 @@ parse_args() {
                 ;;
         esac
     done
+}
+
+# Set up compose command based on configuration
+setup_compose_cmd() {
+    if [ "$EXTERNAL_TRAEFIK" = true ]; then
+        if [ -f "$SCRIPT_DIR/docker-compose.external-traefik.yml" ]; then
+            COMPOSE_CMD="docker compose -f $COMPOSE_FILE -f docker-compose.external-traefik.yml"
+            print_info "Using external Traefik configuration"
+        else
+            print_warn "External Traefik config not found, using standard configuration"
+            COMPOSE_CMD="docker compose -f $COMPOSE_FILE"
+        fi
+    else
+        COMPOSE_CMD="docker compose -f $COMPOSE_FILE"
+    fi
 }
 
 # =============================================================================
@@ -520,6 +552,7 @@ main() {
     log "FaithFlow Docker Update started"
 
     show_welcome
+    setup_compose_cmd    # Set up compose command based on --external-traefik flag (needs to be before check_prerequisites)
     check_prerequisites
     pull_code
     build_images

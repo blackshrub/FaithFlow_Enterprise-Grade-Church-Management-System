@@ -1,0 +1,82 @@
+# =============================================================================
+# FaithFlow Docker Compose - External Traefik Configuration
+# =============================================================================
+#
+# This file is used when you have an EXISTING Traefik instance on your server
+# and want FaithFlow to share it instead of creating its own Traefik.
+#
+# Usage:
+#   ./docker-install.sh --external-traefik
+#
+# Or manually:
+#   docker compose -f docker-compose.prod.yml -f docker-compose.external-traefik.yml up -d
+#
+# Requirements:
+#   1. Your existing Traefik must have a Docker network accessible to other containers
+#   2. Set EXTERNAL_TRAEFIK_NETWORK in .env to your Traefik's network name
+#   3. Your Traefik must have Let's Encrypt configured (or similar SSL resolver)
+#
+# The external network name is typically one of:
+#   - traefik_default
+#   - traefik-network
+#   - proxy
+#   - web
+#
+# Find your Traefik network: docker network ls | grep traefik
+#
+# =============================================================================
+
+services:
+  # Disable the bundled Traefik - we'll use the external one
+  traefik:
+    deploy:
+      replicas: 0
+    entrypoint: ["echo", "Using external Traefik - this container is disabled"]
+
+  # All services below need to be accessible by external Traefik
+  # They keep their labels but join the external network
+
+  backend:
+    networks:
+      - faithflow-network
+      - traefik-external
+
+  frontend:
+    networks:
+      - faithflow-network
+      - traefik-external
+
+  livekit:
+    networks:
+      - faithflow-network
+      - traefik-external
+
+  emqx:
+    networks:
+      - faithflow-network
+      - traefik-external
+
+  seaweedfs-filer:
+    networks:
+      - faithflow-network
+      - traefik-external
+
+# =============================================================================
+# NETWORKS
+# =============================================================================
+networks:
+  # Internal network for FaithFlow services to communicate with each other
+  faithflow-network:
+    driver: bridge
+
+  # External network - connects to your existing Traefik
+  # The name must match your existing Traefik's network
+  traefik-external:
+    external: true
+    name: ${EXTERNAL_TRAEFIK_NETWORK:-traefik_default}
+
+# =============================================================================
+# VOLUMES - Remove Traefik-specific volumes
+# =============================================================================
+# The external Traefik handles its own certificates
+# We keep other volumes unchanged

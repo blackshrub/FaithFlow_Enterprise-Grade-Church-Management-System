@@ -49,6 +49,8 @@ readonly LOG_FILE="/var/log/faithflow-docker-install.log"
 
 # Default values
 DEV_MODE=false
+EXTERNAL_TRAEFIK=false
+EXTERNAL_TRAEFIK_NETWORK=""
 DOMAIN=""
 ACME_EMAIL=""
 SERVER_IP=""
@@ -148,8 +150,18 @@ check_required_ports() {
     print_info "Checking required ports..."
 
     # Docker deployment uses fewer host ports (Traefik handles routing)
-    local -a PORTS=("80" "443" "3478" "5349" "7881")
-    local -a NAMES=("HTTP" "HTTPS" "TURN" "TURN-TLS" "LiveKit-RTC")
+    # When using external Traefik, skip 80/443 port checks
+    local -a PORTS
+    local -a NAMES
+
+    if [ "$EXTERNAL_TRAEFIK" = true ]; then
+        PORTS=("3478" "5349" "7881")
+        NAMES=("TURN" "TURN-TLS" "LiveKit-RTC")
+        print_info "Using external Traefik - skipping port 80/443 checks"
+    else
+        PORTS=("80" "443" "3478" "5349" "7881")
+        NAMES=("HTTP" "HTTPS" "TURN" "TURN-TLS" "LiveKit-RTC")
+    fi
 
     for i in "${!PORTS[@]}"; do
         local port="${PORTS[$i]}"
@@ -511,6 +523,67 @@ install_docker() {
 }
 
 # =============================================================================
+# EXTERNAL TRAEFIK CONFIGURATION
+# =============================================================================
+
+configure_external_traefik() {
+    if [ "$EXTERNAL_TRAEFIK" != true ]; then
+        return
+    fi
+
+    print_header "External Traefik Configuration"
+
+    print_info "Detecting existing Traefik network..."
+
+    # List available Docker networks that might be Traefik
+    local networks=$(docker network ls --format '{{.Name}}' 2>/dev/null | grep -iE "(traefik|proxy|web)" || true)
+
+    if [ -z "$networks" ]; then
+        print_warn "No obvious Traefik network found"
+        echo ""
+        echo -e "${WHITE}  Available Docker networks:${NC}"
+        docker network ls --format '  {{.Name}}' 2>/dev/null | head -20
+        echo ""
+    else
+        print_success "Found possible Traefik networks:"
+        echo "$networks" | while read -r net; do
+            echo -e "${GREEN}    - $net${NC}"
+        done
+        echo ""
+    fi
+
+    # If network not provided via command line, prompt for it
+    if [ -z "$EXTERNAL_TRAEFIK_NETWORK" ]; then
+        echo -e "${CYAN}  Enter the name of your existing Traefik Docker network.${NC}"
+        echo -e "${CYAN}  This is the network your Traefik container uses to connect to services.${NC}"
+        echo ""
+        read -p "  Traefik network name [traefik_default]: " EXTERNAL_TRAEFIK_NETWORK
+        EXTERNAL_TRAEFIK_NETWORK=${EXTERNAL_TRAEFIK_NETWORK:-traefik_default}
+    fi
+
+    # Verify the network exists
+    if docker network inspect "$EXTERNAL_TRAEFIK_NETWORK" &>/dev/null; then
+        print_success "Network '$EXTERNAL_TRAEFIK_NETWORK' exists"
+    else
+        print_warn "Network '$EXTERNAL_TRAEFIK_NETWORK' not found"
+        echo ""
+        echo -e "${YELLOW}  The network will be created as external.${NC}"
+        echo -e "${YELLOW}  Make sure your Traefik is connected to this network.${NC}"
+        echo ""
+        read -p "  Continue anyway? [Y/n]: " continue_choice
+        continue_choice=${continue_choice:-Y}
+        if [[ ! "$continue_choice" =~ ^[Yy]$ ]]; then
+            print_error "Aborted. Please verify your Traefik network name."
+            exit 1
+        fi
+    fi
+
+    echo ""
+    print_success "External Traefik network: $EXTERNAL_TRAEFIK_NETWORK"
+    print_info "FaithFlow will connect to your existing Traefik instead of creating its own"
+}
+
+# =============================================================================
 # DOMAIN CONFIGURATION
 # =============================================================================
 
@@ -705,6 +778,17 @@ MONGO_URL=mongodb://mongodb:27017
 DB_NAME=faithflow
 EOF
 
+    # Add external Traefik configuration if using external Traefik
+    if [ "$EXTERNAL_TRAEFIK" = true ]; then
+        cat >> "$SCRIPT_DIR/.env" << EOF
+
+# External Traefik Configuration
+# FaithFlow will connect to your existing Traefik instead of creating its own
+EXTERNAL_TRAEFIK_NETWORK=$EXTERNAL_TRAEFIK_NETWORK
+EOF
+        print_success "External Traefik network configured: $EXTERNAL_TRAEFIK_NETWORK"
+    fi
+
     print_success "Environment file created: $SCRIPT_DIR/.env"
 
     # Update LiveKit configuration with server IP
@@ -798,14 +882,21 @@ build_and_start() {
 
     cd "$SCRIPT_DIR"
 
+    # Determine compose files based on configuration
+    local COMPOSE_CMD="docker compose -f docker-compose.prod.yml"
+    if [ "$EXTERNAL_TRAEFIK" = true ]; then
+        COMPOSE_CMD="docker compose -f docker-compose.prod.yml -f docker-compose.external-traefik.yml"
+        print_info "Using external Traefik configuration"
+    fi
+
     print_info "Pulling Docker images (this may take a few minutes)..."
-    docker compose -f docker-compose.prod.yml pull >> "$LOG_FILE" 2>&1 || true
+    $COMPOSE_CMD pull >> "$LOG_FILE" 2>&1 || true
 
     print_info "Building custom images..."
 
     # Build backend
     echo -e "${GRAY}    Building backend (FastAPI)...${NC}"
-    if ! docker compose -f docker-compose.prod.yml build backend >> "$LOG_FILE" 2>&1; then
+    if ! $COMPOSE_CMD build backend >> "$LOG_FILE" 2>&1; then
         print_error "Backend build failed. Check log: $LOG_FILE"
         echo -e "${YELLOW}  Last 20 lines of build log:${NC}"
         tail -20 "$LOG_FILE"
@@ -819,7 +910,7 @@ build_and_start() {
     echo ""
 
     # Run build in background and show progress
-    docker compose -f docker-compose.prod.yml build frontend >> "$LOG_FILE" 2>&1 &
+    $COMPOSE_CMD build frontend >> "$LOG_FILE" 2>&1 &
     local build_pid=$!
 
     local start_time=$(date +%s)
@@ -870,7 +961,7 @@ build_and_start() {
     print_success "All images built successfully"
 
     print_info "Starting all services..."
-    docker compose -f docker-compose.prod.yml up -d >> "$LOG_FILE" 2>&1
+    $COMPOSE_CMD up -d >> "$LOG_FILE" 2>&1
 
     print_success "Services started"
 
@@ -878,14 +969,20 @@ build_and_start() {
     print_info "Waiting for services to initialize (60 seconds)..."
     echo ""
 
-    local services=("mongodb" "backend" "frontend" "traefik")
+    # When using external Traefik, don't wait for Traefik service
+    local services
+    if [ "$EXTERNAL_TRAEFIK" = true ]; then
+        services=("mongodb" "backend" "frontend")
+    else
+        services=("mongodb" "backend" "frontend" "traefik")
+    fi
     local total=${#services[@]}
     local healthy=0
 
     for i in {1..60}; do
         healthy=0
         for service in "${services[@]}"; do
-            if docker compose -f docker-compose.prod.yml ps "$service" 2>/dev/null | grep -q "healthy\|running"; then
+            if $COMPOSE_CMD ps "$service" 2>/dev/null | grep -q "healthy\|running"; then
                 ((healthy++))
             fi
         done
@@ -923,13 +1020,19 @@ initialize_database() {
 
     cd "$SCRIPT_DIR"
 
+    # Determine compose files based on configuration
+    local COMPOSE_CMD="docker compose -f docker-compose.prod.yml"
+    if [ "$EXTERNAL_TRAEFIK" = true ]; then
+        COMPOSE_CMD="docker compose -f docker-compose.prod.yml -f docker-compose.external-traefik.yml"
+    fi
+
     print_info "Waiting for MongoDB to be ready..."
     sleep 5
 
     print_info "Creating database indexes and default admin account..."
 
     # Run init script in backend container
-    if docker compose -f docker-compose.prod.yml exec -T backend python scripts/init_db.py >> "$LOG_FILE" 2>&1; then
+    if $COMPOSE_CMD exec -T backend python scripts/init_db.py >> "$LOG_FILE" 2>&1; then
         print_success "Database initialized successfully"
     else
         print_warn "Database initialization script not found or had issues"
@@ -1004,7 +1107,9 @@ EOF
         echo -e "${CYAN}  │  ${WHITE}API:${NC}        https://api.$DOMAIN${CYAN}"
         echo -e "${CYAN}  │  ${WHITE}API Docs:${NC}   https://api.$DOMAIN/docs${CYAN}"
         echo -e "${CYAN}  │  ${WHITE}Files:${NC}      https://files.$DOMAIN${CYAN}"
-        echo -e "${CYAN}  │  ${WHITE}Traefik:${NC}    https://traefik.$DOMAIN (admin)${CYAN}"
+        if [ "$EXTERNAL_TRAEFIK" != true ]; then
+            echo -e "${CYAN}  │  ${WHITE}Traefik:${NC}    https://traefik.$DOMAIN (admin)${CYAN}"
+        fi
         echo -e "${CYAN}  │  ${WHITE}EMQX:${NC}       https://emqx.$DOMAIN (admin)${CYAN}"
     fi
 
@@ -1024,15 +1129,28 @@ EOF
     echo -e "${BLUE}  ┌─────────────────────────────────────────────────────────────────────┐${NC}"
     echo -e "${BLUE}  │  ${WHITE}Useful Commands${BLUE}                                                   │${NC}"
     echo -e "${BLUE}  ├─────────────────────────────────────────────────────────────────────┤${NC}"
-    echo -e "${BLUE}  │  ${CYAN}View logs:${NC}      docker compose -f docker-compose.prod.yml logs -f${BLUE}│${NC}"
-    echo -e "${BLUE}  │  ${CYAN}Check status:${NC}   docker compose -f docker-compose.prod.yml ps${BLUE}     │${NC}"
-    echo -e "${BLUE}  │  ${CYAN}Stop all:${NC}       docker compose -f docker-compose.prod.yml down${BLUE}   │${NC}"
-    echo -e "${BLUE}  │  ${CYAN}Restart:${NC}        docker compose -f docker-compose.prod.yml restart${BLUE}│${NC}"
-    echo -e "${BLUE}  │  ${CYAN}Update:${NC}         ./docker-update.sh${BLUE}                              │${NC}"
+    if [ "$EXTERNAL_TRAEFIK" = true ]; then
+        local COMPOSE_FILES="-f docker-compose.prod.yml -f docker-compose.external-traefik.yml"
+        echo -e "${BLUE}  │  ${CYAN}View logs:${NC}    docker compose $COMPOSE_FILES logs -f${BLUE}"
+        echo -e "${BLUE}  │  ${CYAN}Check status:${NC} docker compose $COMPOSE_FILES ps${BLUE}"
+        echo -e "${BLUE}  │  ${CYAN}Stop all:${NC}     docker compose $COMPOSE_FILES down${BLUE}"
+        echo -e "${BLUE}  │  ${CYAN}Restart:${NC}      docker compose $COMPOSE_FILES restart${BLUE}"
+        echo -e "${BLUE}  │  ${CYAN}Update:${NC}       ./docker-update.sh --external-traefik${BLUE}"
+    else
+        echo -e "${BLUE}  │  ${CYAN}View logs:${NC}      docker compose -f docker-compose.prod.yml logs -f${BLUE}│${NC}"
+        echo -e "${BLUE}  │  ${CYAN}Check status:${NC}   docker compose -f docker-compose.prod.yml ps${BLUE}     │${NC}"
+        echo -e "${BLUE}  │  ${CYAN}Stop all:${NC}       docker compose -f docker-compose.prod.yml down${BLUE}   │${NC}"
+        echo -e "${BLUE}  │  ${CYAN}Restart:${NC}        docker compose -f docker-compose.prod.yml restart${BLUE}│${NC}"
+        echo -e "${BLUE}  │  ${CYAN}Update:${NC}         ./docker-update.sh${BLUE}                              │${NC}"
+    fi
     echo -e "${BLUE}  └─────────────────────────────────────────────────────────────────────┘${NC}"
     echo ""
 
-    if [ "$DEV_MODE" = false ]; then
+    if [ "$EXTERNAL_TRAEFIK" = true ]; then
+        echo -e "${GREEN}  Using external Traefik:${NC} $EXTERNAL_TRAEFIK_NETWORK"
+        echo -e "${GRAY}  SSL certificates are managed by your existing Traefik instance.${NC}"
+        echo ""
+    elif [ "$DEV_MODE" = false ]; then
         echo -e "${YELLOW}  Note: SSL certificates are being generated. If you see certificate${NC}"
         echo -e "${YELLOW}  errors, wait 2-3 minutes for Let's Encrypt to complete.${NC}"
         echo ""
@@ -1054,14 +1172,35 @@ parse_args() {
                 DEV_MODE=true
                 shift
                 ;;
+            --external-traefik)
+                EXTERNAL_TRAEFIK=true
+                shift
+                # Check for optional network name
+                if [[ $# -gt 0 && ! "$1" =~ ^-- ]]; then
+                    EXTERNAL_TRAEFIK_NETWORK="$1"
+                    shift
+                fi
+                ;;
             --help|-h)
                 echo "FaithFlow Docker Installer v$SCRIPT_VERSION"
                 echo ""
                 echo "Usage: sudo ./docker-install.sh [options]"
                 echo ""
                 echo "Options:"
-                echo "  --dev, --development    Install in development mode (localhost, no SSL)"
-                echo "  --help, -h              Show this help message"
+                echo "  --dev, --development        Install in development mode (localhost, no SSL)"
+                echo "  --external-traefik [NET]    Use existing Traefik instance instead of creating new one"
+                echo "                              Optional: specify your Traefik network name"
+                echo "                              Example: --external-traefik traefik_default"
+                echo "  --help, -h                  Show this help message"
+                echo ""
+                echo "External Traefik Setup:"
+                echo "  If you already have Traefik running (e.g., for another project), you can"
+                echo "  share it with FaithFlow instead of running a separate Traefik instance."
+                echo ""
+                echo "  1. Find your Traefik network:  docker network ls | grep traefik"
+                echo "  2. Run installer with:         sudo ./docker-install.sh --external-traefik traefik_default"
+                echo ""
+                echo "  Common Traefik network names: traefik_default, traefik-network, proxy, web"
                 echo ""
                 echo "Requirements:"
                 echo "  - Linux server (Ubuntu 22.04+ or Debian 12+ recommended)"
@@ -1077,7 +1216,7 @@ parse_args() {
                 echo "    livekit.yourdomain.com -> Your server IP"
                 echo "    files.yourdomain.com   -> Your server IP"
                 echo "  Optional (admin dashboards):"
-                echo "    traefik.yourdomain.com -> Your server IP"
+                echo "    traefik.yourdomain.com -> Your server IP  (not needed with --external-traefik)"
                 echo "    emqx.yourdomain.com    -> Your server IP"
                 echo ""
                 exit 0
@@ -1112,6 +1251,7 @@ main() {
     show_welcome
     check_prerequisites
     install_docker
+    configure_external_traefik    # Only runs if --external-traefik is set
     configure_domain
     create_environment
     build_and_start
