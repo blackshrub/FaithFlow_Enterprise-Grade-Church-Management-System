@@ -77,15 +77,10 @@ api.interceptors.request.use(
     console.log('📡 API Request:', config.method?.toUpperCase(), fullURL);
     
     // Verify it's HTTPS
-    if (fullURL.startsWith('http://')) {
+    if (fullURL.startsWith('http://') && !fullURL.includes('localhost')) {
       console.error('🚨 CRITICAL: Still using HTTP after forcing HTTPS!', fullURL);
-      // Last resort: reconstruct the URL with HTTPS
-      const httpsURL = fullURL.replace('http://', 'https://');
-      const urlParts = httpsURL.split('/api');
-      if (urlParts.length > 1) {
-        config.baseURL = urlParts[0] + '/api';
-        config.url = urlParts[1] || '';
-      }
+      // Last resort: force HTTPS
+      config.baseURL = config.baseURL.replace('http://', 'https://');
     }
     
     const token = localStorage.getItem('access_token');

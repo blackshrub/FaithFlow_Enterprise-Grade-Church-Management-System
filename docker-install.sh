@@ -1405,11 +1405,11 @@ EOF
     if [ "$DEV_MODE" = true ]; then
         echo -e "${CYAN}  │  ${WHITE}Frontend:${NC}   http://localhost:3000${CYAN}                              │${NC}"
         echo -e "${CYAN}  │  ${WHITE}Backend:${NC}    http://localhost:8000${CYAN}                              │${NC}"
-        echo -e "${CYAN}  │  ${WHITE}API Docs:${NC}   http://localhost:8000/api/docs${CYAN}                     │${NC}"
+        echo -e "${CYAN}  │  ${WHITE}API Docs:${NC}   http://localhost:8000/docs${CYAN}                         │${NC}"
     else
         echo -e "${CYAN}  │  ${WHITE}Web App:${NC}    https://$DOMAIN${CYAN}"
         echo -e "${CYAN}  │  ${WHITE}API:${NC}        https://api.$DOMAIN${CYAN}"
-        echo -e "${CYAN}  │  ${WHITE}API Docs:${NC}   https://api.$DOMAIN/api/docs${CYAN}"
+        echo -e "${CYAN}  │  ${WHITE}API Docs:${NC}   https://api.$DOMAIN/docs${CYAN}"
         echo -e "${CYAN}  │  ${WHITE}Files:${NC}      https://files.$DOMAIN${CYAN}"
         if [ "$EXTERNAL_TRAEFIK" != true ]; then
             echo -e "${CYAN}  │  ${WHITE}Traefik:${NC}    https://traefik.$DOMAIN (admin)${CYAN}"

@@ -168,6 +168,8 @@ services:
       # Authentication
       - JWT_SECRET=${JWT_SECRET}
       - JWT_ALGORITHM=HS256
+      # API Prefix - empty for subdomain mode (api.domain.com)
+      - API_PREFIX=
       # CORS (allowed origins)
       - CORS_ORIGINS=https://${DOMAIN},https://app.${DOMAIN}
       # Python settings
@@ -237,7 +239,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        - REACT_APP_API_URL=https://api.${DOMAIN}/api
+        - REACT_APP_API_URL=https://api.${DOMAIN}
         - REACT_APP_NAME=FaithFlow
         - REACT_APP_VERSION=2.0.0
         - REACT_APP_LIVEKIT_URL=wss://livekit.${DOMAIN}
@@ -246,7 +248,7 @@ services:
     depends_on:
       - backend
     environment:
-      - REACT_APP_API_URL=https://api.${DOMAIN}/api
+      - REACT_APP_API_URL=https://api.${DOMAIN}
       - REACT_APP_NAME=FaithFlow
     labels:
       - "traefik.enable=true"
