@@ -1,28 +1,34 @@
+# syntax=docker/dockerfile:1.4
 # =============================================================================
 # FaithFlow Frontend Dockerfile
 # Multi-stage build: Node for build, Nginx for serving
-# Using Vite for fast builds (~15s)
 #
-# For even faster builds, use pre-built deps image:
-#   1. Build deps image: docker build -f Dockerfile.deps -t faithflow-frontend-deps .
-#   2. Use it: docker compose build --build-arg BASE_IMAGE=faithflow-frontend-deps frontend
+# PERFORMANCE: Uses BuildKit cache mounts for ~10x faster rebuilds
+# - First build: ~2-3 minutes (downloads all deps)
+# - Subsequent builds: ~15-30 seconds (deps cached)
+#
+# Build command (BuildKit required):
+#   DOCKER_BUILDKIT=1 docker compose -f docker-compose.prod.yml build frontend
 # =============================================================================
 
-# Allow using pre-built deps image for faster builds
-ARG BASE_IMAGE=node:20-alpine
-
 # Stage 1: Build
-FROM ${BASE_IMAGE} AS builder
+FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Copy package files (for cache invalidation check)
+# Copy package files first (better layer caching)
 COPY package.json yarn.lock ./
 
-# Install deps only if not using pre-built image (checks if node_modules exists)
-RUN if [ ! -d "node_modules" ]; then \
-      yarn install --frozen-lockfile --network-timeout 600000; \
-    fi
+# Install dependencies with BuildKit cache mount
+# This caches yarn's global cache AND node_modules between builds
+# --mount=type=cache persists across builds, dramatically speeding up yarn install
+RUN --mount=type=cache,target=/root/.yarn/berry/cache \
+    --mount=type=cache,target=/app/node_modules \
+    yarn install --frozen-lockfile --network-timeout 600000 && \
+    cp -r node_modules node_modules_cache
+
+# Restore cached node_modules (needed because cache mount doesn't persist in image)
+RUN rm -rf node_modules && mv node_modules_cache node_modules
 
 # Copy source code
 COPY . .
@@ -31,13 +37,15 @@ COPY . .
 ARG VITE_API_URL
 ARG VITE_APP_NAME=FaithFlow
 ARG VITE_APP_VERSION=2.0.0
+ARG VITE_LIVEKIT_URL
 
 # Set environment variables for build
 ENV VITE_API_URL=${VITE_API_URL} \
     VITE_APP_NAME=${VITE_APP_NAME} \
-    VITE_APP_VERSION=${VITE_APP_VERSION}
+    VITE_APP_VERSION=${VITE_APP_VERSION} \
+    VITE_LIVEKIT_URL=${VITE_LIVEKIT_URL}
 
-# Build production bundle with Vite
+# Build production bundle with Vite (cached deps make this fast)
 RUN yarn build
 
 # Stage 2: Production with Nginx

@@ -105,10 +105,10 @@ const CommunityEditorPage = lazy(() => import("./pages/Communities/CommunityEdit
 const CommunityMembersPage = lazy(() => import("./pages/Communities/CommunityMembersPage"));
 
 // Counseling pages
-const CounselingDashboard = lazy(() => import("./pages/Counseling/CounselingDashboard"));
-const CounselorsPage = lazy(() => import("./pages/Counseling/CounselorsPage"));
-const AvailabilityPage = lazy(() => import("./pages/Counseling/AvailabilityPage"));
-const AppointmentsListPage = lazy(() => import("./pages/Counseling/AppointmentsListPage"));
+const CounselingDashboard = lazy(() => import("./pages/Counseling/Dashboard"));
+const CounselorsPage = lazy(() => import("./pages/Counseling/Counselors"));
+const AvailabilityPage = lazy(() => import("./pages/Counseling/Availability"));
+const AppointmentsListPage = lazy(() => import("./pages/Counseling/Appointments"));
 const AppointmentDetailPage = lazy(() => import("./pages/Counseling/AppointmentDetail"));
 
 // Kiosk pages

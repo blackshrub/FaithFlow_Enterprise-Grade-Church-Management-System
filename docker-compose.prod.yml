@@ -240,17 +240,17 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        - REACT_APP_API_URL=https://api.${DOMAIN}
-        - REACT_APP_NAME=FaithFlow
-        - REACT_APP_VERSION=2.0.0
-        - REACT_APP_LIVEKIT_URL=wss://livekit.${DOMAIN}
+        - VITE_API_URL=https://api.${DOMAIN}
+        - VITE_APP_NAME=FaithFlow
+        - VITE_APP_VERSION=2.0.0
+        - VITE_LIVEKIT_URL=wss://livekit.${DOMAIN}
     container_name: faithflow-frontend
     restart: unless-stopped
     depends_on:
       - backend
     environment:
-      - REACT_APP_API_URL=https://api.${DOMAIN}
-      - REACT_APP_NAME=FaithFlow
+      - VITE_API_URL=https://api.${DOMAIN}
+      - VITE_APP_NAME=FaithFlow
     labels:
       - "traefik.enable=true"
       # Main domain routing: yourdomain.com -> frontend:80
