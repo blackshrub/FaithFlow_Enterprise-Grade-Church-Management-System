@@ -4,30 +4,72 @@
     "appVersionSource": "remote"
   },
   "build": {
+    "base": {
+      "node": "20.18.0",
+      "cache": {
+        "key": "faithflow-mobile-v1",
+        "paths": [
+          "node_modules",
+          ".expo",
+          "android/.gradle",
+          "ios/Pods"
+        ]
+      }
+    },
     "development": {
+      "extends": "base",
       "developmentClient": true,
       "distribution": "internal",
       "env": {
         "API_URL": "http://localhost:8000",
         "API_PREFIX": "/api"
+      },
+      "android": {
+        "buildType": "apk",
+        "gradleCommand": ":app:assembleDebug"
+      },
+      "ios": {
+        "simulator": true
       }
     },
     "preview": {
+      "extends": "base",
       "distribution": "internal",
       "env": {
         "API_URL": "https://api.yourdomain.com",
         "API_PREFIX": ""
+      },
+      "android": {
+        "buildType": "apk"
       }
     },
     "production": {
+      "extends": "base",
       "autoIncrement": true,
       "env": {
         "API_URL": "https://api.yourdomain.com",
         "API_PREFIX": ""
+      },
+      "android": {
+        "buildType": "app-bundle",
+        "enableProguardInReleaseBuilds": true,
+        "enableShrinkResourcesInReleaseBuilds": true
+      },
+      "ios": {
+        "resourceClass": "m-medium"
       }
     }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "android": {
+        "track": "internal",
+        "releaseStatus": "draft"
+      },
+      "ios": {
+        "appleId": "your-apple-id@example.com",
+        "ascAppId": "your-app-store-connect-app-id"
+      }
+    }
   }
 }

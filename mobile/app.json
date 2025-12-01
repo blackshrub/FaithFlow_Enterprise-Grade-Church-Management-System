@@ -12,7 +12,10 @@
       "backgroundColor": "#6366F1"
     },
     "assetBundlePatterns": [
-      "**/*"
+      "assets/images/*",
+      "assets/fonts/*",
+      "assets/*.png",
+      "assets/*.wav"
     ],
     "ios": {
       "supportsTablet": true,
@@ -28,7 +31,8 @@
           "remote-notification"
         ]
       },
-      "backgroundColor": "#FFFFFF"
+      "backgroundColor": "#FFFFFF",
+      "jsEngine": "hermes"
     },
     "android": {
       "adaptiveIcon": {
@@ -36,6 +40,7 @@
         "backgroundColor": "#6366F1"
       },
       "package": "com.faithflow.app",
+      "jsEngine": "hermes",
       "permissions": [
         "CAMERA",
         "RECORD_AUDIO",

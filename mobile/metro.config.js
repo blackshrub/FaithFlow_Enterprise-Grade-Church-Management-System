@@ -6,16 +6,47 @@ const path = require('path');
 const config = getDefaultConfig(__dirname);
 
 /**
- * Performance Optimization: Inline Requires
+ * Performance Optimization: Transformer Configuration
  *
- * This delays requiring modules until they are actually needed,
- * which can improve cold start time by 30-50% for large apps.
+ * - inlineRequires: Delays requiring modules until needed (30-50% cold start improvement)
+ * - minifierPath: Use Metro's minifier for production builds
  *
  * @see PERFORMANCE_ROADMAP.md
  */
 config.transformer = {
   ...config.transformer,
   inlineRequires: true,
+  minifierPath: 'metro-minify-terser',
+  minifierConfig: {
+    compress: {
+      drop_console: true,
+      drop_debugger: true,
+      pure_funcs: ['console.log', 'console.info', 'console.debug'],
+    },
+    mangle: {
+      toplevel: true,
+    },
+  },
+};
+
+/**
+ * Performance Optimization: Serializer Configuration
+ *
+ * - createModuleIdFactory: Deterministic module IDs for better caching
+ */
+config.serializer = {
+  ...config.serializer,
+  // Use file path hash for stable module IDs (better delta updates)
+  createModuleIdFactory: function () {
+    const fileToIdMap = new Map();
+    let nextId = 0;
+    return function (path) {
+      if (!fileToIdMap.has(path)) {
+        fileToIdMap.set(path, nextId++);
+      }
+      return fileToIdMap.get(path);
+    };
+  },
 };
 
 /**
