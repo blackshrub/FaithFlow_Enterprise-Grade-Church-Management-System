@@ -1191,7 +1191,7 @@ build_and_start() {
         healthy=0
         for service in "${services[@]}"; do
             if $COMPOSE_CMD ps "$service" 2>/dev/null | grep -q "healthy\|running"; then
-                ((healthy++))
+                healthy=$((healthy + 1))
             fi
         done
 
