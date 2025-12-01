@@ -203,7 +203,7 @@ export default function WebhooksTab() {
 
   // Get API base URL for external apps
   const getAPIBaseURL = () => {
-    return process.env.REACT_APP_BACKEND_URL || window.location.origin;
+    return import.meta.env?.VITE_BACKEND_URL || window.location.origin;
   };
 
   const copyToClipboard = (text) => {

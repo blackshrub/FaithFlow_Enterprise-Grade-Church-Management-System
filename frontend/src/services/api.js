@@ -22,9 +22,11 @@ const getAPIBaseURL = () => {
   }
 
   // 2. Check environment variable (baked in at build time)
-  if (process.env.REACT_APP_API_URL && process.env.REACT_APP_API_URL.trim() !== '') {
-    console.log('✅ Using env var API URL:', process.env.REACT_APP_API_URL);
-    return process.env.REACT_APP_API_URL;
+  // Support both Vite (import.meta.env.VITE_) and CRA (process.env.REACT_APP_) formats
+  const envURL = import.meta.env?.VITE_API_URL || import.meta.env?.REACT_APP_API_URL;
+  if (envURL && envURL.trim() !== '') {
+    console.log('✅ Using env var API URL:', envURL);
+    return envURL;
   }
 
   // 3. Fallback: Auto-detect subdomain mode (api.domain.com)
@@ -50,10 +52,10 @@ const getAPIBaseURL = () => {
 const API_BASE_URL = getAPIBaseURL();
 
 // Debug logging (only in development)
-if (process.env.NODE_ENV === 'development') {
+if (import.meta.env?.DEV) {
   console.log('🔍 API Configuration:');
   console.log('  Runtime Config:', window.__RUNTIME_CONFIG__?.API_URL || '(not set)');
-  console.log('  Env Var:', process.env.REACT_APP_API_URL || '(not set)');
+  console.log('  Env Var:', import.meta.env?.VITE_API_URL || '(not set)');
   console.log('  Final API_BASE_URL:', API_BASE_URL);
 }
 

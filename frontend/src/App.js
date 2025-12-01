@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Suspense, lazy } from "react";
 import "@/App.css";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { QueryClientProvider } from '@tanstack/react-query';
@@ -6,110 +6,125 @@ import { AuthProvider } from "./context/AuthContext";
 import { Toaster } from "./components/ui/sonner";
 import { queryClient } from './lib/react-query';
 import './i18n';
-import Login from "./pages/Login";
-import Dashboard from "./pages/Dashboard";
-import Members from "./pages/Members";
-import TrashBin from "./pages/TrashBin";
-import Settings from "./pages/Settings";
-import ConflictReview from "./pages/ConflictReview";
-import ImportExport from "./pages/ImportExport";
-import SeatLayouts from "./pages/SeatLayouts";
-import Events from "./pages/Events";
-import EventRatings from "./pages/EventRatings";
-import KioskMode from "./pages/KioskMode";
+
+// Core components - loaded immediately
 import Layout from "./components/Layout/Layout";
 import ProtectedRoute from "./components/Layout/ProtectedRoute";
 import ErrorBoundary from "./components/ErrorBoundary";
+import SmartLanding from "./components/SmartLanding";
+
+// Loading fallback component
+const PageLoader = () => (
+  <div className="flex items-center justify-center min-h-screen">
+    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+  </div>
+);
+
+// =============================================================================
+// LAZY LOADED PAGES - Only loaded when user navigates to them
+// =============================================================================
+
+// Auth
+const Login = lazy(() => import("./pages/Login"));
+
+// Core pages
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const Members = lazy(() => import("./pages/Members"));
+const TrashBin = lazy(() => import("./pages/TrashBin"));
+const Settings = lazy(() => import("./pages/Settings"));
+const ConflictReview = lazy(() => import("./pages/ConflictReview"));
+const ImportExport = lazy(() => import("./pages/ImportExport"));
+const SeatLayouts = lazy(() => import("./pages/SeatLayouts"));
+const Events = lazy(() => import("./pages/Events"));
+const EventRatings = lazy(() => import("./pages/EventRatings"));
+const KioskMode = lazy(() => import("./pages/KioskMode"));
 
 // Accounting pages
-import AccountingDashboard from "./pages/Accounting/AccountingDashboard";
-import ChartOfAccounts from "./pages/Accounting/ChartOfAccounts";
-import Journals from "./pages/Accounting/Journals";
-import JournalForm from "./pages/Accounting/JournalForm";
-import FiscalPeriods from "./pages/Accounting/FiscalPeriods";
-import BeginningBalance from "./pages/Accounting/BeginningBalance";
-import ResponsibilityCenters from "./pages/Accounting/ResponsibilityCenters";
-import QuickEntry from "./pages/Accounting/QuickEntry";
-import Reports from "./pages/Accounting/Reports";
-import Budgets from "./pages/Accounting/Budgets";
-import BudgetForm from "./pages/Accounting/BudgetForm";
-import BudgetVariance from "./pages/Accounting/BudgetVariance";
-import FixedAssets from "./pages/Accounting/FixedAssets";
-import FixedAssetForm from "./pages/Accounting/FixedAssetForm";
-import DepreciationSchedule from "./pages/Accounting/DepreciationSchedule";
-import BankReconciliation from "./pages/Accounting/BankReconciliation";
-import BankMatching from "./pages/Accounting/BankMatching";
-import YearEndClosing from "./pages/Accounting/YearEndClosing";
-import AuditLogs from "./pages/Accounting/AuditLogs";
-import GeneralLedger from "./pages/Accounting/GeneralLedger";
-import CashFlowStatement from "./pages/Accounting/CashFlowStatement";
-import ResponsibilityCenterReport from "./pages/Accounting/ResponsibilityCenterReport";
-import CustomReportBuilder from "./pages/Accounting/CustomReportBuilder";
+const AccountingDashboard = lazy(() => import("./pages/Accounting/AccountingDashboard"));
+const ChartOfAccounts = lazy(() => import("./pages/Accounting/ChartOfAccounts"));
+const Journals = lazy(() => import("./pages/Accounting/Journals"));
+const JournalForm = lazy(() => import("./pages/Accounting/JournalForm"));
+const FiscalPeriods = lazy(() => import("./pages/Accounting/FiscalPeriods"));
+const BeginningBalance = lazy(() => import("./pages/Accounting/BeginningBalance"));
+const ResponsibilityCenters = lazy(() => import("./pages/Accounting/ResponsibilityCenters"));
+const QuickEntry = lazy(() => import("./pages/Accounting/QuickEntry"));
+const Reports = lazy(() => import("./pages/Accounting/Reports"));
+const Budgets = lazy(() => import("./pages/Accounting/Budgets"));
+const BudgetForm = lazy(() => import("./pages/Accounting/BudgetForm"));
+const BudgetVariance = lazy(() => import("./pages/Accounting/BudgetVariance"));
+const FixedAssets = lazy(() => import("./pages/Accounting/FixedAssets"));
+const FixedAssetForm = lazy(() => import("./pages/Accounting/FixedAssetForm"));
+const DepreciationSchedule = lazy(() => import("./pages/Accounting/DepreciationSchedule"));
+const BankReconciliation = lazy(() => import("./pages/Accounting/BankReconciliation"));
+const BankMatching = lazy(() => import("./pages/Accounting/BankMatching"));
+const YearEndClosing = lazy(() => import("./pages/Accounting/YearEndClosing"));
+const AuditLogs = lazy(() => import("./pages/Accounting/AuditLogs"));
+const GeneralLedger = lazy(() => import("./pages/Accounting/GeneralLedger"));
+const CashFlowStatement = lazy(() => import("./pages/Accounting/CashFlowStatement"));
+const ResponsibilityCenterReport = lazy(() => import("./pages/Accounting/ResponsibilityCenterReport"));
+const CustomReportBuilder = lazy(() => import("./pages/Accounting/CustomReportBuilder"));
 
 // Articles pages
-import ArticlesList from "./pages/Articles/ArticlesList";
-import ArticleEditor from "./pages/Articles/ArticleEditor";
-import Categories from "./pages/Articles/Categories";
-import Tags from "./pages/Articles/Tags";
-import CommentsModeration from "./pages/Articles/CommentsModeration";
+const ArticlesList = lazy(() => import("./pages/Articles/ArticlesList"));
+const ArticleEditor = lazy(() => import("./pages/Articles/ArticleEditor"));
+const Categories = lazy(() => import("./pages/Articles/Categories"));
+const Tags = lazy(() => import("./pages/Articles/Tags"));
+const CommentsModeration = lazy(() => import("./pages/Articles/CommentsModeration"));
 
 // Prayer Requests pages
-import PrayerRequestsList from "./pages/PrayerRequests/PrayerRequestsList";
-import PrayerRequestForm from "./pages/PrayerRequests/PrayerRequestForm";
+const PrayerRequestsList = lazy(() => import("./pages/PrayerRequests/PrayerRequestsList"));
+const PrayerRequestForm = lazy(() => import("./pages/PrayerRequests/PrayerRequestForm"));
 
 // Explore pages
-import ExploreDashboard from "./pages/Explore/ExploreDashboard";
-import ExploreContentList from "./pages/Explore/ExploreContentList";
-import SchedulingCalendar from "./pages/Explore/SchedulingCalendar";
-import AnalyticsDashboard from "./pages/Explore/AnalyticsDashboard";
-import AIGenerationHub from "./pages/Explore/AIGenerationHub";
-import AIPromptConfig from "./pages/Explore/AIPromptConfig";
-import ChurchSettings from "./pages/Explore/ChurchSettings";
-import DevotionEditor from "./pages/Explore/DevotionEditor";
-import VerseEditor from "./pages/Explore/VerseEditor";
-import FigureEditor from "./pages/Explore/FigureEditor";
-import QuizEditor from "./pages/Explore/QuizEditor";
-import BibleStudyEditor from "./pages/Explore/BibleStudyEditor";
-import TopicalCategoryEditor from "./pages/Explore/TopicalCategoryEditor";
-import TopicalVerseEditor from "./pages/Explore/TopicalVerseEditor";
-import DevotionPlanEditor from "./pages/Explore/DevotionPlanEditor";
+const ExploreDashboard = lazy(() => import("./pages/Explore/ExploreDashboard"));
+const ExploreContentList = lazy(() => import("./pages/Explore/ExploreContentList"));
+const SchedulingCalendar = lazy(() => import("./pages/Explore/SchedulingCalendar"));
+const AnalyticsDashboard = lazy(() => import("./pages/Explore/AnalyticsDashboard"));
+const AIGenerationHub = lazy(() => import("./pages/Explore/AIGenerationHub"));
+const AIPromptConfig = lazy(() => import("./pages/Explore/AIPromptConfig"));
+const ChurchSettings = lazy(() => import("./pages/Explore/ChurchSettings"));
+const DevotionEditor = lazy(() => import("./pages/Explore/DevotionEditor"));
+const VerseEditor = lazy(() => import("./pages/Explore/VerseEditor"));
+const FigureEditor = lazy(() => import("./pages/Explore/FigureEditor"));
+const QuizEditor = lazy(() => import("./pages/Explore/QuizEditor"));
+const BibleStudyEditor = lazy(() => import("./pages/Explore/BibleStudyEditor"));
+const TopicalCategoryEditor = lazy(() => import("./pages/Explore/TopicalCategoryEditor"));
+const TopicalVerseEditor = lazy(() => import("./pages/Explore/TopicalVerseEditor"));
+const DevotionPlanEditor = lazy(() => import("./pages/Explore/DevotionPlanEditor"));
 
-// Groups pages (legacy - keeping for backward compatibility)
-import GroupsListPage from "./pages/Groups/GroupsListPage";
-import GroupEditorPage from "./pages/Groups/GroupEditorPage";
-import GroupMembersPage from "./pages/Groups/GroupMembersPage";
-import JoinRequestsPage from "./pages/Groups/JoinRequestsPage";
-import LeaveRequestsPage from "./pages/Groups/LeaveRequestsPage";
+// Groups pages
+const GroupsListPage = lazy(() => import("./pages/Groups/GroupsListPage"));
+const GroupEditorPage = lazy(() => import("./pages/Groups/GroupEditorPage"));
+const GroupMembersPage = lazy(() => import("./pages/Groups/GroupMembersPage"));
+const JoinRequestsPage = lazy(() => import("./pages/Groups/JoinRequestsPage"));
+const LeaveRequestsPage = lazy(() => import("./pages/Groups/LeaveRequestsPage"));
 
-// Communities pages (new - replacing Groups)
-import CommunitiesListPage from "./pages/Communities/CommunitiesListPage";
-import CommunityEditorPage from "./pages/Communities/CommunityEditorPage";
-import CommunityMembersPage from "./pages/Communities/CommunityMembersPage";
+// Communities pages
+const CommunitiesListPage = lazy(() => import("./pages/Communities/CommunitiesListPage"));
+const CommunityEditorPage = lazy(() => import("./pages/Communities/CommunityEditorPage"));
+const CommunityMembersPage = lazy(() => import("./pages/Communities/CommunityMembersPage"));
 
 // Counseling pages
-import {
-  CounselingDashboard,
-  CounselorsPage,
-  AvailabilityPage,
-  AppointmentsListPage,
-  AppointmentDetailPage
-} from "./pages/Counseling";
+const CounselingDashboard = lazy(() => import("./pages/Counseling/CounselingDashboard"));
+const CounselorsPage = lazy(() => import("./pages/Counseling/CounselorsPage"));
+const AvailabilityPage = lazy(() => import("./pages/Counseling/AvailabilityPage"));
+const AppointmentsListPage = lazy(() => import("./pages/Counseling/AppointmentsListPage"));
+const AppointmentDetailPage = lazy(() => import("./pages/Counseling/AppointmentDetail"));
 
 // Kiosk pages
-import ChurchSelector from "./components/Kiosk/ChurchSelector";
-import KioskHome from "./pages/Kiosk/KioskHome";
-import EventRegistrationKiosk from "./pages/Kiosk/EventRegistration";
-import PrayerRequestKiosk from "./pages/Kiosk/PrayerRequest";
-import CounselingKiosk from "./pages/Kiosk/CounselingAppointment";
-import JoinGroupKiosk from "./pages/Kiosk/JoinGroup";
-import ProfileUpdateKiosk from "./pages/Kiosk/ProfileUpdate";
-import EventCheckinKiosk from "./pages/Kiosk/EventCheckin";
-import SmartLanding from "./components/SmartLanding";
-import UserManagement from "./pages/System/UserManagement";
-import CrashLogs from "./pages/System/CrashLogs";
-import SystemSettings from "./pages/SystemSettings";
+const ChurchSelector = lazy(() => import("./components/Kiosk/ChurchSelector"));
+const KioskHome = lazy(() => import("./pages/Kiosk/KioskHome"));
+const EventRegistrationKiosk = lazy(() => import("./pages/Kiosk/EventRegistration"));
+const PrayerRequestKiosk = lazy(() => import("./pages/Kiosk/PrayerRequest"));
+const CounselingKiosk = lazy(() => import("./pages/Kiosk/CounselingAppointment"));
+const JoinGroupKiosk = lazy(() => import("./pages/Kiosk/JoinGroup"));
+const ProfileUpdateKiosk = lazy(() => import("./pages/Kiosk/ProfileUpdate"));
+const EventCheckinKiosk = lazy(() => import("./pages/Kiosk/EventCheckin"));
 
-import FaithFlowLogo from './components/Branding/FaithFlowLogo';
+// System pages
+const UserManagement = lazy(() => import("./pages/System/UserManagement"));
+const CrashLogs = lazy(() => import("./pages/System/CrashLogs"));
+const SystemSettings = lazy(() => import("./pages/SystemSettings"));
 
 function App() {
   return (
@@ -117,14 +132,15 @@ function App() {
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <BrowserRouter>
+          <Suspense fallback={<PageLoader />}>
           <Routes>
             {/* Smart Landing - Kiosk for public, Dashboard for logged-in users */}
             <Route path="/" element={<SmartLanding />} />
-            
+
             {/* Admin Login Route */}
             <Route path="/admin" element={<Login />} />
             <Route path="/login" element={<Navigate to="/admin" replace />} />
-            
+
             {/* Kiosk Routes - Public, Full-screen */}
             <Route path="/kiosk" element={<ChurchSelector />} />
             <Route path="/kiosk/home" element={<KioskHome />} />
@@ -134,7 +150,7 @@ function App() {
             <Route path="/kiosk/groups/join" element={<JoinGroupKiosk />} />
             <Route path="/kiosk/profile/update" element={<ProfileUpdateKiosk />} />
             <Route path="/kiosk/checkin" element={<EventCheckinKiosk />} />
-            
+
             {/* Protected Admin Routes */}
             <Route
               element={
@@ -178,7 +194,7 @@ function App() {
               <Route path="accounting/bank/matching" element={<BankMatching />} />
               <Route path="accounting/year-end-closing" element={<YearEndClosing />} />
               <Route path="accounting/audit-logs" element={<AuditLogs />} />
-              
+
               {/* Articles Routes */}
               <Route path="articles" element={<ArticlesList />} />
               <Route path="articles/new" element={<ArticleEditor />} />
@@ -186,12 +202,12 @@ function App() {
               <Route path="articles/categories" element={<Categories />} />
               <Route path="articles/tags" element={<Tags />} />
               <Route path="articles/comments" element={<CommentsModeration />} />
-              
+
               {/* Prayer Requests Routes */}
               <Route path="prayer-requests" element={<PrayerRequestsList />} />
               <Route path="prayer-requests/new" element={<PrayerRequestForm />} />
               <Route path="prayer-requests/:id" element={<PrayerRequestForm />} />
-              
+
               {/* Groups Routes (legacy - keeping for backward compatibility) */}
               <Route path="groups" element={<GroupsListPage />} />
               <Route path="groups/new" element={<GroupEditorPage />} />
@@ -205,7 +221,7 @@ function App() {
               <Route path="communities/new" element={<CommunityEditorPage />} />
               <Route path="communities/:id/edit" element={<CommunityEditorPage />} />
               <Route path="communities/:communityId/members" element={<CommunityMembersPage />} />
-              
+
               {/* Counseling Routes */}
               <Route path="counseling" element={<CounselingDashboard />} />
               <Route path="counseling/counselors" element={<CounselorsPage />} />
@@ -270,7 +286,7 @@ function App() {
               <Route path="users/management" element={<UserManagement />} />
               <Route path="system/crash-logs" element={<CrashLogs />} />
               <Route path="system-settings" element={<SystemSettings />} />
-              
+
               {/* Placeholder routes - will be implemented in next phases */}
               <Route path="donations" element={<PlaceholderPage title="Donations" />} />
               <Route path="prayers" element={<PlaceholderPage title="Prayer Requests" />} />
@@ -282,6 +298,7 @@ function App() {
             {/* Catch all - redirect to kiosk home */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
+          </Suspense>
         </BrowserRouter>
         <Toaster />
       </AuthProvider>

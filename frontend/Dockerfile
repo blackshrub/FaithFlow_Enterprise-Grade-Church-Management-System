@@ -1,32 +1,43 @@
 # =============================================================================
 # FaithFlow Frontend Dockerfile
 # Multi-stage build: Node for build, Nginx for serving
+# Using Vite for fast builds (~15s)
+#
+# For even faster builds, use pre-built deps image:
+#   1. Build deps image: docker build -f Dockerfile.deps -t faithflow-frontend-deps .
+#   2. Use it: docker compose build --build-arg BASE_IMAGE=faithflow-frontend-deps frontend
 # =============================================================================
 
+# Allow using pre-built deps image for faster builds
+ARG BASE_IMAGE=node:20-alpine
+
 # Stage 1: Build
-FROM node:20-alpine AS builder
+FROM ${BASE_IMAGE} AS builder
 
 WORKDIR /app
 
-# Install dependencies first (better caching)
+# Copy package files (for cache invalidation check)
 COPY package.json yarn.lock ./
-RUN yarn install --frozen-lockfile --network-timeout 600000
+
+# Install deps only if not using pre-built image (checks if node_modules exists)
+RUN if [ ! -d "node_modules" ]; then \
+      yarn install --frozen-lockfile --network-timeout 600000; \
+    fi
 
 # Copy source code
 COPY . .
 
 # Build arguments for environment variables
-ARG REACT_APP_API_URL
-ARG REACT_APP_NAME=FaithFlow
-ARG REACT_APP_VERSION=2.0.0
+ARG VITE_API_URL
+ARG VITE_APP_NAME=FaithFlow
+ARG VITE_APP_VERSION=2.0.0
 
 # Set environment variables for build
-ENV REACT_APP_API_URL=${REACT_APP_API_URL} \
-    REACT_APP_NAME=${REACT_APP_NAME} \
-    REACT_APP_VERSION=${REACT_APP_VERSION} \
-    NODE_OPTIONS="--max-old-space-size=4096"
+ENV VITE_API_URL=${VITE_API_URL} \
+    VITE_APP_NAME=${VITE_APP_NAME} \
+    VITE_APP_VERSION=${VITE_APP_VERSION}
 
-# Build production bundle
+# Build production bundle with Vite
 RUN yarn build
 
 # Stage 2: Production with Nginx

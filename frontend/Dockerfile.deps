@@ -1,0 +1,26 @@
+# =============================================================================
+# FaithFlow Frontend Dependencies Base Image
+# This image contains pre-installed node_modules for faster builds
+#
+# Build this image when dependencies change:
+#   docker build -f Dockerfile.deps -t faithflow-frontend-deps:latest .
+#
+# Then use it as base in docker-compose.prod.yml:
+#   build:
+#     context: ./frontend
+#     dockerfile: Dockerfile
+#     args:
+#       - BASE_IMAGE=faithflow-frontend-deps:latest
+# =============================================================================
+
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Copy only package files
+COPY package.json yarn.lock ./
+
+# Install all dependencies
+RUN yarn install --frozen-lockfile --network-timeout 600000
+
+# This image is used as a base - node_modules are ready
