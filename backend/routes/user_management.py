@@ -186,36 +186,40 @@ async def update_user(
 
 
 @router.delete("/management/{user_id}")
-async def deactivate_user(
+async def delete_user(
     user_id: str,
     db: AsyncIOMotorDatabase = Depends(get_db),
     session_church_id: str = Depends(get_session_church_id),
     current_user: dict = Depends(require_admin)
 ):
-    """Deactivate user (soft delete)."""
-    
+    """Delete user permanently (hard delete).
+
+    Note: Webapp users (admin/staff) are hard deleted.
+    Church members use soft delete via the members endpoint.
+    """
+
     user = await db.users.find_one({"id": user_id})
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    
+
     # Can't delete yourself
     if user_id == current_user.get('id'):
         raise HTTPException(
             status_code=400,
-            detail="You cannot deactivate your own account"
+            detail="You cannot delete your own account"
         )
-    
+
     # Super admin check
     if current_user.get('role') != 'super_admin':
         if user.get('church_id') != session_church_id:
             raise HTTPException(status_code=403, detail="Access denied")
-    
-    await db.users.update_one(
-        {"id": user_id},
-        {"$set": {"is_active": False, "updated_at": datetime.utcnow()}}
-    )
-    
+
+    # Hard delete for webapp users
+    await db.users.delete_one({"id": user_id})
+
+    logger.info(f"User deleted: {user.get('email')} (role: {user.get('role')}) by {current_user.get('email')}")
+
     return {
         "success": True,
-        "message": "User deactivated successfully"
+        "message": "User deleted successfully"
     }
