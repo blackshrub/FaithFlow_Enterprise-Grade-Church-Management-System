@@ -113,7 +113,11 @@ check_ssh_protection() {
                 echo -e "${GRAY}  You can detach with Ctrl+A, D and reattach with: screen -r faithflow${NC}"
                 echo ""
                 sleep 2
-                exec screen -S faithflow bash -c "RUNNING_IN_NOHUP=true $0 $*"
+                # Use absolute path and env command for reliable screen execution
+                local script_path
+                script_path="$(cd "$(dirname "$0")" && pwd)/$(basename "$0")"
+                export RUNNING_IN_NOHUP=true
+                exec screen -S faithflow "$script_path" "$@"
             fi
         elif command -v tmux >/dev/null 2>&1; then
             echo -e "${CYAN}  [1] Restart in tmux session (recommended)${NC}"
@@ -128,7 +132,11 @@ check_ssh_protection() {
                 echo -e "${GRAY}  You can detach with Ctrl+B, D and reattach with: tmux attach -t faithflow${NC}"
                 echo ""
                 sleep 2
-                exec tmux new-session -s faithflow "RUNNING_IN_NOHUP=true $0 $*"
+                # Use absolute path for reliable tmux execution
+                local script_path
+                script_path="$(cd "$(dirname "$0")" && pwd)/$(basename "$0")"
+                export RUNNING_IN_NOHUP=true
+                exec tmux new-session -s faithflow "$script_path" "$@"
             fi
         else
             # Neither screen nor tmux available, install screen
@@ -147,7 +155,11 @@ check_ssh_protection() {
                 echo -e "${GRAY}  You can detach with Ctrl+A, D and reattach with: screen -r faithflow${NC}"
                 echo ""
                 sleep 2
-                exec screen -S faithflow bash -c "RUNNING_IN_NOHUP=true $0 $*"
+                # Use absolute path and env command for reliable screen execution
+                local script_path
+                script_path="$(cd "$(dirname "$0")" && pwd)/$(basename "$0")"
+                export RUNNING_IN_NOHUP=true
+                exec screen -S faithflow "$script_path" "$@"
             else
                 echo -e "${YELLOW}  Could not install screen. Continuing without protection...${NC}"
                 echo -e "${YELLOW}  If the build fails, try: nohup ./docker-install.sh > install.log 2>&1 &${NC}"
