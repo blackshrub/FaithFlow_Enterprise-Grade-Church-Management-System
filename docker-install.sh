@@ -43,7 +43,7 @@ set -euo pipefail
 # CONFIGURATION
 # =============================================================================
 
-readonly SCRIPT_VERSION="2.0.0"
+readonly SCRIPT_VERSION="2.1.0"
 readonly SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 readonly LOG_FILE="/var/log/faithflow-docker-install.log"
 
@@ -54,10 +54,115 @@ EXTERNAL_TRAEFIK_NETWORK=""
 DOMAIN=""
 ACME_EMAIL=""
 SERVER_IP=""
+RUNNING_IN_NOHUP=false
 
 # Minimum requirements
 readonly MIN_RAM_MB=2048
 readonly MIN_DISK_GB=20
+
+# =============================================================================
+# SSH SESSION PROTECTION
+# =============================================================================
+# Frontend builds can take 10-20 minutes on small VPS. If running via SSH,
+# a connection drop will kill the build. We detect this and offer protection.
+
+is_protected_session() {
+    # Check if running in screen
+    [ -n "${STY:-}" ] && return 0
+    # Check if running in tmux
+    [ -n "${TMUX:-}" ] && return 0
+    # Check if running with nohup (parent is init/systemd)
+    [ "${RUNNING_IN_NOHUP:-false}" = true ] && return 0
+    # Check if running non-interactively (e.g., cron, systemd)
+    [ ! -t 0 ] && return 0
+    return 1
+}
+
+check_ssh_protection() {
+    # Skip check if already protected
+    if is_protected_session; then
+        return 0
+    fi
+
+    # Check if connected via SSH
+    if [ -n "${SSH_CONNECTION:-}" ] || [ -n "${SSH_CLIENT:-}" ]; then
+        echo ""
+        echo -e "${YELLOW}  ╔══════════════════════════════════════════════════════════════════════════╗${NC}"
+        echo -e "${YELLOW}  ║  ${WHITE}⚠  SSH SESSION DETECTED - BUILD MAY BE INTERRUPTED${YELLOW}                     ║${NC}"
+        echo -e "${YELLOW}  ╠══════════════════════════════════════════════════════════════════════════╣${NC}"
+        echo -e "${YELLOW}  ║${NC}  Frontend builds take 10-20 minutes on small VPS.                        ${YELLOW}║${NC}"
+        echo -e "${YELLOW}  ║${NC}  If your SSH connection drops, the build will fail.                      ${YELLOW}║${NC}"
+        echo -e "${YELLOW}  ║${NC}                                                                          ${YELLOW}║${NC}"
+        echo -e "${YELLOW}  ║${NC}  ${CYAN}Recommended: Run in a protected session:${NC}                               ${YELLOW}║${NC}"
+        echo -e "${YELLOW}  ║${NC}    ${WHITE}screen -S faithflow ./docker-install.sh${NC}                              ${YELLOW}║${NC}"
+        echo -e "${YELLOW}  ║${NC}    ${WHITE}tmux new -s faithflow './docker-install.sh'${NC}                          ${YELLOW}║${NC}"
+        echo -e "${YELLOW}  ╚══════════════════════════════════════════════════════════════════════════╝${NC}"
+        echo ""
+
+        # Check if screen or tmux is available
+        if command -v screen >/dev/null 2>&1; then
+            echo -e "${CYAN}  [1] Restart in screen session (recommended)${NC}"
+            echo -e "${CYAN}  [2] Continue anyway (risky if SSH drops)${NC}"
+            echo ""
+            read -p "  Choose option [1/2]: " session_choice
+            session_choice=${session_choice:-1}
+
+            if [ "$session_choice" = "1" ]; then
+                echo ""
+                echo -e "${GREEN}  Starting installation in screen session...${NC}"
+                echo -e "${GRAY}  You can detach with Ctrl+A, D and reattach with: screen -r faithflow${NC}"
+                echo ""
+                sleep 2
+                exec screen -S faithflow bash -c "RUNNING_IN_NOHUP=true $0 $*"
+            fi
+        elif command -v tmux >/dev/null 2>&1; then
+            echo -e "${CYAN}  [1] Restart in tmux session (recommended)${NC}"
+            echo -e "${CYAN}  [2] Continue anyway (risky if SSH drops)${NC}"
+            echo ""
+            read -p "  Choose option [1/2]: " session_choice
+            session_choice=${session_choice:-1}
+
+            if [ "$session_choice" = "1" ]; then
+                echo ""
+                echo -e "${GREEN}  Starting installation in tmux session...${NC}"
+                echo -e "${GRAY}  You can detach with Ctrl+B, D and reattach with: tmux attach -t faithflow${NC}"
+                echo ""
+                sleep 2
+                exec tmux new-session -s faithflow "RUNNING_IN_NOHUP=true $0 $*"
+            fi
+        else
+            # Neither screen nor tmux available, install screen
+            echo -e "${CYAN}  Installing screen for session protection...${NC}"
+            if command -v apt-get >/dev/null 2>&1; then
+                apt-get update -qq && apt-get install -y -qq screen
+            elif command -v yum >/dev/null 2>&1; then
+                yum install -y -q screen
+            elif command -v dnf >/dev/null 2>&1; then
+                dnf install -y -q screen
+            fi
+
+            if command -v screen >/dev/null 2>&1; then
+                echo ""
+                echo -e "${GREEN}  Screen installed. Starting in protected session...${NC}"
+                echo -e "${GRAY}  You can detach with Ctrl+A, D and reattach with: screen -r faithflow${NC}"
+                echo ""
+                sleep 2
+                exec screen -S faithflow bash -c "RUNNING_IN_NOHUP=true $0 $*"
+            else
+                echo -e "${YELLOW}  Could not install screen. Continuing without protection...${NC}"
+                echo -e "${YELLOW}  If the build fails, try: nohup ./docker-install.sh > install.log 2>&1 &${NC}"
+                echo ""
+                sleep 3
+            fi
+        fi
+
+        echo ""
+        echo -e "${YELLOW}  Continuing without session protection...${NC}"
+        echo -e "${YELLOW}  Keep this SSH session open until installation completes!${NC}"
+        echo ""
+        sleep 2
+    fi
+}
 
 # =============================================================================
 # TERMINAL STYLING
@@ -1355,6 +1460,7 @@ main() {
     log "=========================================="
 
     show_welcome
+    check_ssh_protection "$@"   # Offer to restart in screen/tmux if SSH session detected
     check_prerequisites
     install_docker
     configure_external_traefik    # Only runs if --external-traefik is set
