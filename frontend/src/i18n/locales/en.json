@@ -172,6 +172,7 @@
     "dashboard": "Dashboard",
     "members": "Members",
     "groups": "Groups",
+    "communities": "Communities",
     "events": "Events",
     "donations": "Donations",
     "prayers": "Prayer Requests",
@@ -180,6 +181,12 @@
     "churches": "Churches",
     "importExport": "Import/Export",
     "settings": "Settings"
+  },
+  "roles": {
+    "super_admin": "Super Admin",
+    "admin": "Admin",
+    "staff": "Staff",
+    "member": "Member"
   },
   "settings": {
     "title": "Settings",

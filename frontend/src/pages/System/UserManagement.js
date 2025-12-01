@@ -194,7 +194,7 @@ const UserManagement = () => {
                     <TableCell>{user.phone || '-'}</TableCell>
                     <TableCell>
                       <Badge variant={user.role === 'super_admin' ? 'default' : 'secondary'}>
-                        {user.role}
+                        {t(`roles.${user.role}`, user.role)}
                       </Badge>
                     </TableCell>
                     <TableCell>

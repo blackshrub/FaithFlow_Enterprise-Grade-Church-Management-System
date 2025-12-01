@@ -172,6 +172,7 @@
     "dashboard": "Dasbor",
     "members": "Jemaat",
     "groups": "Kelompok",
+    "communities": "Komunitas",
     "events": "Acara",
     "donations": "Donasi",
     "prayers": "Permintaan Doa",
@@ -180,6 +181,12 @@
     "churches": "Gereja",
     "importExport": "Impor/Ekspor",
     "settings": "Pengaturan"
+  },
+  "roles": {
+    "super_admin": "Super Admin",
+    "admin": "Admin",
+    "staff": "Staf",
+    "member": "Anggota"
   },
   "settings": {
     "title": "Pengaturan",
