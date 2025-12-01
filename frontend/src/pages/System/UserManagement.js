@@ -41,7 +41,7 @@ import {
   useUsers,
   useCreateUser,
   useUpdateUser,
-  useDeactivateUser
+  useDeleteUser
 } from '../../hooks/useUserManagement';
 
 const UserManagement = () => {
@@ -49,9 +49,9 @@ const UserManagement = () => {
   const { toast } = useToast();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isDeactivateDialogOpen, setIsDeactivateDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
-  const [deactivatingUser, setDeactivatingUser] = useState(null);
+  const [deletingUser, setDeletingUser] = useState(null);
   const [formData, setFormData] = useState({
     email: '',
     full_name: '',
@@ -64,14 +64,14 @@ const UserManagement = () => {
   const { data: users = [], isLoading } = useUsers();
   const createMutation = useCreateUser();
   const updateMutation = useUpdateUser();
-  const deactivateMutation = useDeactivateUser();
-  
+  const deleteMutation = useDeleteUser();
+
   // Count super admins
-  const superAdminCount = users.filter(u => u.role === 'super_admin' && u.is_active).length;
-  
-  // Check if user can be deactivated
-  const canDeactivateUser = (user) => {
-    // Can't deactivate last super admin
+  const superAdminCount = users.filter(u => u.role === 'super_admin').length;
+
+  // Check if user can be deleted
+  const canDeleteUser = (user) => {
+    // Can't delete last super admin
     if (user.role === 'super_admin' && superAdminCount <= 1) {
       return false;
     }
@@ -139,15 +139,15 @@ const UserManagement = () => {
     }
   };
 
-  const handleDeactivate = async () => {
+  const handleDelete = async () => {
     try {
-      await deactivateMutation.mutateAsync(deactivatingUser.id);
-      toast({ title: 'Success', description: 'User deactivated successfully' });
-      setIsDeactivateDialogOpen(false);
+      await deleteMutation.mutateAsync(deletingUser.id);
+      toast({ title: 'Success', description: 'User deleted successfully' });
+      setIsDeleteDialogOpen(false);
     } catch (error) {
       toast({
         title: 'Error',
-        description: error.response?.data?.detail || 'Failed to deactivate user',
+        description: error.response?.data?.detail || 'Failed to delete user',
         variant: 'destructive'
       });
     }
@@ -183,7 +183,6 @@ const UserManagement = () => {
                   <TableHead>Phone</TableHead>
                   <TableHead>Role</TableHead>
                   <TableHead>PIN</TableHead>
-                  <TableHead>Status</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -203,11 +202,6 @@ const UserManagement = () => {
                         {user.kiosk_pin || '------'}
                       </code>
                     </TableCell>
-                    <TableCell>
-                      <Badge variant={user.is_active ? 'default' : 'secondary'}>
-                        {user.is_active ? 'Active' : 'Inactive'}
-                      </Badge>
-                    </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
                         <Button
@@ -221,11 +215,11 @@ const UserManagement = () => {
                           variant="ghost"
                           size="sm"
                           onClick={() => {
-                            setDeactivatingUser(user);
-                            setIsDeactivateDialogOpen(true);
+                            setDeletingUser(user);
+                            setIsDeleteDialogOpen(true);
                           }}
-                          disabled={!canDeactivateUser(user)}
-                          title={!canDeactivateUser(user) ? 'Cannot deactivate the last super admin' : ''}
+                          disabled={!canDeleteUser(user)}
+                          title={!canDeleteUser(user) ? 'Cannot delete the last super admin' : 'Delete user'}
                         >
                           <UserX className="h-4 w-4 text-red-500" />
                         </Button>
@@ -434,26 +428,26 @@ const UserManagement = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Deactivate Confirmation */}
-      <Dialog open={isDeactivateDialogOpen} onOpenChange={setIsDeactivateDialogOpen}>
+      {/* Delete Confirmation */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Deactivate User?</DialogTitle>
+            <DialogTitle>Delete User?</DialogTitle>
             <DialogDescription>
-              This will deactivate {deactivatingUser?.full_name}. They will no longer be able to login.
-              You can reactivate them later if needed.
+              This will permanently delete {deletingUser?.full_name}. They will no longer be able to login.
+              This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDeactivateDialogOpen(false)}>
+            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
               Cancel
             </Button>
             <Button
               variant="destructive"
-              onClick={handleDeactivate}
-              disabled={deactivateMutation.isPending}
+              onClick={handleDelete}
+              disabled={deleteMutation.isPending}
             >
-              {deactivateMutation.isPending ? 'Deactivating...' : 'Deactivate'}
+              {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
             </Button>
           </DialogFooter>
         </DialogContent>

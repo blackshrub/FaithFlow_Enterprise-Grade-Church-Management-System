@@ -43,9 +43,9 @@ export const useUpdateUser = () => {
   });
 };
 
-export const useDeactivateUser = () => {
+export const useDeleteUser = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (id) => {
       const response = await api.delete(`/v1/users/management/${id}`);
