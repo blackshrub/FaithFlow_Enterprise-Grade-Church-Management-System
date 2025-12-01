@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
@@ -11,6 +11,7 @@ import { Alert, AlertDescription } from '../components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Loader2 } from 'lucide-react';
 import FaithFlowLogo from '../components/Branding/FaithFlowLogo';
+import { prefetchCriticalRoutes } from '../utils/prefetch';
 
 export default function Login() {
   const { t } = useTranslation();
@@ -25,8 +26,13 @@ export default function Login() {
   // Use React Query to fetch churches
   const { data: churches = [], isLoading: loadingChurches } = usePublicChurches();
 
+  // Prefetch critical routes while user is on login page
+  useEffect(() => {
+    prefetchCriticalRoutes();
+  }, []);
+
   // Set default church when data loads
-  React.useEffect(() => {
+  useEffect(() => {
     if (churches.length > 0 && !selectedChurch) {
       const defaultChurch = churches.find(c => c.name === 'GKBJ Taman Kencana');
       if (defaultChurch) {
