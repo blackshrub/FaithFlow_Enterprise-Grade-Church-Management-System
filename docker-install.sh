@@ -56,6 +56,14 @@ ACME_EMAIL=""
 SERVER_IP=""
 RUNNING_IN_NOHUP=false
 
+# Admin/Church configuration
+ADMIN_EMAIL=""
+ADMIN_PASSWORD=""
+ADMIN_NAME=""
+CHURCH_NAME=""
+CHURCH_CITY=""
+CHURCH_COUNTRY=""
+
 # Minimum requirements
 readonly MIN_RAM_MB=2048
 readonly MIN_DISK_GB=20
@@ -953,11 +961,90 @@ configure_domain() {
 }
 
 # =============================================================================
+# ADMIN & CHURCH CONFIGURATION
+# =============================================================================
+
+configure_admin_church() {
+    print_header "Step 4/8: Admin & Church Setup"
+
+    echo ""
+    echo -e "${CYAN}  ┌─────────────────────────────────────────────────────────────────────┐${NC}"
+    echo -e "${CYAN}  │  ${WHITE}Configure your church and admin account${CYAN}                          │${NC}"
+    echo -e "${CYAN}  │                                                                     │${NC}"
+    echo -e "${CYAN}  │  ${WHITE}This creates the first church and super admin user.${CYAN}               │${NC}"
+    echo -e "${CYAN}  │  ${WHITE}You can add more churches/admins later via the dashboard.${CYAN}         │${NC}"
+    echo -e "${CYAN}  └─────────────────────────────────────────────────────────────────────┘${NC}"
+    echo ""
+
+    # Church Name
+    read -p "  Church name: " CHURCH_NAME
+    if [ -z "$CHURCH_NAME" ]; then
+        CHURCH_NAME="My Church"
+        print_info "Using default: $CHURCH_NAME"
+    fi
+
+    # Church City
+    read -p "  Church city: " CHURCH_CITY
+    if [ -z "$CHURCH_CITY" ]; then
+        CHURCH_CITY="City"
+    fi
+
+    # Church Country
+    read -p "  Church country: " CHURCH_COUNTRY
+    if [ -z "$CHURCH_COUNTRY" ]; then
+        CHURCH_COUNTRY="Country"
+    fi
+
+    echo ""
+    echo -e "${CYAN}  Admin Account${NC}"
+    echo -e "${GRAY}  This will be the super admin with full access.${NC}"
+    echo ""
+
+    # Admin Name
+    read -p "  Admin full name: " ADMIN_NAME
+    if [ -z "$ADMIN_NAME" ]; then
+        ADMIN_NAME="Administrator"
+    fi
+
+    # Admin Email
+    while [ -z "$ADMIN_EMAIL" ]; do
+        read -p "  Admin email: " ADMIN_EMAIL
+        if [ -z "$ADMIN_EMAIL" ]; then
+            print_error "Email is required"
+        elif [[ ! "$ADMIN_EMAIL" =~ ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$ ]]; then
+            print_error "Invalid email format"
+            ADMIN_EMAIL=""
+        fi
+    done
+
+    # Admin Password
+    while [ -z "$ADMIN_PASSWORD" ]; do
+        read -s -p "  Admin password (min 8 chars): " ADMIN_PASSWORD
+        echo ""
+        if [ ${#ADMIN_PASSWORD} -lt 8 ]; then
+            print_error "Password must be at least 8 characters"
+            ADMIN_PASSWORD=""
+            continue
+        fi
+        read -s -p "  Confirm password: " password_confirm
+        echo ""
+        if [ "$ADMIN_PASSWORD" != "$password_confirm" ]; then
+            print_error "Passwords do not match"
+            ADMIN_PASSWORD=""
+        fi
+    done
+
+    echo ""
+    print_success "Church: $CHURCH_NAME ($CHURCH_CITY, $CHURCH_COUNTRY)"
+    print_success "Admin: $ADMIN_NAME <$ADMIN_EMAIL>"
+}
+
+# =============================================================================
 # ENVIRONMENT CONFIGURATION
 # =============================================================================
 
 create_environment() {
-    print_header "Step 4/7: Creating Configuration"
+    print_header "Step 5/8: Creating Configuration"
 
     print_info "Generating secure secrets..."
     local jwt_secret=$(generate_secret)
@@ -994,6 +1081,15 @@ TRAEFIK_DASHBOARD_AUTH=admin:\$\$apr1\$\$ruca84Hq\$\$mbjdMZBAG.KWn7vfN/SNK/
 # EMQX Dashboard
 EMQX_DASHBOARD_USER=admin
 EMQX_DASHBOARD_PASSWORD=faithflow123
+
+# Initial Admin & Church Setup
+# These are used only during first database initialization
+INIT_ADMIN_EMAIL=$ADMIN_EMAIL
+INIT_ADMIN_PASSWORD=$ADMIN_PASSWORD
+INIT_ADMIN_NAME=$ADMIN_NAME
+INIT_CHURCH_NAME=$CHURCH_NAME
+INIT_CHURCH_CITY=$CHURCH_CITY
+INIT_CHURCH_COUNTRY=$CHURCH_COUNTRY
 
 # Internal Configuration (don't change)
 COMPOSE_PROJECT_NAME=faithflow
@@ -1101,7 +1197,7 @@ EOF
 # =============================================================================
 
 build_and_start() {
-    print_header "Step 5/7: Building and Starting Services"
+    print_header "Step 6/8: Building and Starting Services"
 
     cd "$SCRIPT_DIR"
 
@@ -1224,7 +1320,7 @@ build_and_start() {
 # =============================================================================
 
 initialize_database() {
-    print_header "Step 6/7: Initializing Database"
+    print_header "Step 7/8: Initializing Database"
 
     cd "$SCRIPT_DIR"
 
@@ -1253,7 +1349,7 @@ initialize_database() {
 # =============================================================================
 
 configure_firewall() {
-    print_header "Step 7/7: Configuring Firewall"
+    print_header "Step 8/8: Configuring Firewall"
 
     if command_exists ufw; then
         print_info "Configuring UFW firewall..."
@@ -1309,11 +1405,11 @@ EOF
     if [ "$DEV_MODE" = true ]; then
         echo -e "${CYAN}  │  ${WHITE}Frontend:${NC}   http://localhost:3000${CYAN}                              │${NC}"
         echo -e "${CYAN}  │  ${WHITE}Backend:${NC}    http://localhost:8000${CYAN}                              │${NC}"
-        echo -e "${CYAN}  │  ${WHITE}API Docs:${NC}   http://localhost:8000/docs${CYAN}                         │${NC}"
+        echo -e "${CYAN}  │  ${WHITE}API Docs:${NC}   http://localhost:8000/api/docs${CYAN}                     │${NC}"
     else
         echo -e "${CYAN}  │  ${WHITE}Web App:${NC}    https://$DOMAIN${CYAN}"
         echo -e "${CYAN}  │  ${WHITE}API:${NC}        https://api.$DOMAIN${CYAN}"
-        echo -e "${CYAN}  │  ${WHITE}API Docs:${NC}   https://api.$DOMAIN/docs${CYAN}"
+        echo -e "${CYAN}  │  ${WHITE}API Docs:${NC}   https://api.$DOMAIN/api/docs${CYAN}"
         echo -e "${CYAN}  │  ${WHITE}Files:${NC}      https://files.$DOMAIN${CYAN}"
         if [ "$EXTERNAL_TRAEFIK" != true ]; then
             echo -e "${CYAN}  │  ${WHITE}Traefik:${NC}    https://traefik.$DOMAIN (admin)${CYAN}"
@@ -1325,12 +1421,11 @@ EOF
     echo ""
 
     echo -e "${YELLOW}  ┌─────────────────────────────────────────────────────────────────────┐${NC}"
-    echo -e "${YELLOW}  │  ${WHITE}Default Admin Login${YELLOW}                                              │${NC}"
+    echo -e "${YELLOW}  │  ${WHITE}Admin Login${YELLOW}                                                      │${NC}"
     echo -e "${YELLOW}  ├─────────────────────────────────────────────────────────────────────┤${NC}"
-    echo -e "${YELLOW}  │  ${CYAN}Email:${NC}    admin@gkbjtamankencana.org${YELLOW}                          │${NC}"
-    echo -e "${YELLOW}  │  ${CYAN}Password:${NC} admin123${YELLOW}                                            │${NC}"
-    echo -e "${YELLOW}  │                                                                     │${NC}"
-    echo -e "${YELLOW}  │  ${RED}⚠ IMPORTANT: Change this password after first login!${YELLOW}           │${NC}"
+    echo -e "${YELLOW}  │  ${CYAN}Church:${NC}   $CHURCH_NAME"
+    echo -e "${YELLOW}  │  ${CYAN}Email:${NC}    $ADMIN_EMAIL"
+    echo -e "${YELLOW}  │  ${CYAN}Password:${NC} (the one you configured)"
     echo -e "${YELLOW}  └─────────────────────────────────────────────────────────────────────┘${NC}"
     echo ""
 
@@ -1462,6 +1557,7 @@ main() {
     install_docker
     configure_external_traefik    # Only runs if --external-traefik is set
     configure_domain
+    configure_admin_church        # Configure initial admin and church
     create_environment
     build_and_start
     initialize_database

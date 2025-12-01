@@ -189,6 +189,13 @@ services:
       - WHATSAPP_API_URL=${WHATSAPP_API_URL:-}
       - WHATSAPP_USERNAME=${WHATSAPP_USERNAME:-}
       - WHATSAPP_PASSWORD=${WHATSAPP_PASSWORD:-}
+      # Initial admin & church setup (used only during first db initialization)
+      - INIT_ADMIN_EMAIL=${INIT_ADMIN_EMAIL:-admin@faithflow.local}
+      - INIT_ADMIN_PASSWORD=${INIT_ADMIN_PASSWORD:-admin123}
+      - INIT_ADMIN_NAME=${INIT_ADMIN_NAME:-Administrator}
+      - INIT_CHURCH_NAME=${INIT_CHURCH_NAME:-My Church}
+      - INIT_CHURCH_CITY=${INIT_CHURCH_CITY:-City}
+      - INIT_CHURCH_COUNTRY=${INIT_CHURCH_COUNTRY:-Country}
     volumes:
       - backend_uploads:/app/uploads
       - backend_logs:/app/logs
@@ -230,7 +237,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        - REACT_APP_API_URL=https://api.${DOMAIN}
+        - REACT_APP_API_URL=https://api.${DOMAIN}/api
         - REACT_APP_NAME=FaithFlow
         - REACT_APP_VERSION=2.0.0
         - REACT_APP_LIVEKIT_URL=wss://livekit.${DOMAIN}
@@ -239,7 +246,7 @@ services:
     depends_on:
       - backend
     environment:
-      - REACT_APP_API_URL=https://api.${DOMAIN}
+      - REACT_APP_API_URL=https://api.${DOMAIN}/api
       - REACT_APP_NAME=FaithFlow
     labels:
       - "traefik.enable=true"

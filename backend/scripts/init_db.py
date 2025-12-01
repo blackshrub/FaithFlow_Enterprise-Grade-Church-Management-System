@@ -1,4 +1,13 @@
-"""Initialize database with default church and super admin user"""
+"""Initialize database with default church and super admin user
+
+Environment variables (optional - will use defaults if not set):
+    INIT_ADMIN_EMAIL    - Admin email (default: admin@faithflow.local)
+    INIT_ADMIN_PASSWORD - Admin password (default: admin123)
+    INIT_ADMIN_NAME     - Admin full name (default: Administrator)
+    INIT_CHURCH_NAME    - Church name (default: My Church)
+    INIT_CHURCH_CITY    - Church city (default: City)
+    INIT_CHURCH_COUNTRY - Church country (default: Country)
+"""
 import asyncio
 import sys
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -20,64 +29,72 @@ from utils.security import hash_password
 
 async def init_database():
     """Initialize database with default data"""
-    
+
     # Connect to MongoDB
     mongo_url = os.environ['MONGO_URL']
     client = AsyncIOMotorClient(mongo_url)
     db = client[os.environ['DB_NAME']]
-    
+
     print("Initializing database...")
-    
-    # Create default church - GKBJ Taman Kencana
+
+    # Get configuration from environment variables (with defaults)
+    admin_email = os.environ.get('INIT_ADMIN_EMAIL', 'admin@faithflow.local')
+    admin_password = os.environ.get('INIT_ADMIN_PASSWORD', 'admin123')
+    admin_name = os.environ.get('INIT_ADMIN_NAME', 'Administrator')
+    church_name = os.environ.get('INIT_CHURCH_NAME', 'My Church')
+    church_city = os.environ.get('INIT_CHURCH_CITY', 'City')
+    church_country = os.environ.get('INIT_CHURCH_COUNTRY', 'Country')
+
+    # Create church
     church_id = str(uuid.uuid4())
-    default_church = {
+    church_doc = {
         "id": church_id,
-        "name": "GKBJ Taman Kencana",
-        "address": "Jl. Taman Kencana No. 123",
-        "city": "Jakarta",
-        "state": "DKI Jakarta",
-        "country": "Indonesia",
-        "phone": "+62812345678",
-        "email": "info@gkbjtamankencana.org",
-        "pastor_name": "Pdt. John Doe",
+        "name": church_name,
+        "address": "",
+        "city": church_city,
+        "state": "",
+        "country": church_country,
+        "phone": "",
+        "email": f"info@{church_name.lower().replace(' ', '')}.org",
+        "pastor_name": "",
         "is_active": True,
         "created_at": datetime.now(timezone.utc).isoformat(),
         "updated_at": datetime.now(timezone.utc).isoformat()
     }
-    
-    # Check if church already exists
-    existing_church = await db.churches.find_one({"name": "GKBJ Taman Kencana"})
+
+    # Check if any church already exists
+    existing_church = await db.churches.find_one({})
     if not existing_church:
-        await db.churches.insert_one(default_church)
-        print(f"✓ Created default church: {default_church['name']} (ID: {church_id})")
+        await db.churches.insert_one(church_doc)
+        print(f"✓ Created church: {church_name} (ID: {church_id})")
     else:
         church_id = existing_church['id']
-        print(f"✓ Default church already exists: {existing_church['name']} (ID: {church_id})")
-    
+        church_name = existing_church['name']
+        print(f"✓ Church already exists: {church_name} (ID: {church_id})")
+
     # Create super admin user
-    super_admin_email = "admin@gkbjtamankencana.org"
-    existing_admin = await db.users.find_one({"email": super_admin_email})
-    
+    existing_admin = await db.users.find_one({"role": "super_admin"})
+
     if not existing_admin:
         super_admin = {
             "id": str(uuid.uuid4()),
-            "email": super_admin_email,
-            "full_name": "Super Admin",
+            "email": admin_email,
+            "full_name": admin_name,
             "role": "super_admin",
             "church_id": church_id,
             "is_active": True,
-            "hashed_password": hash_password("admin123"),  # Default password
+            "hashed_password": hash_password(admin_password),
             "created_at": datetime.now(timezone.utc).isoformat(),
             "updated_at": datetime.now(timezone.utc).isoformat()
         }
-        
+
         await db.users.insert_one(super_admin)
         print(f"✓ Created super admin user:")
-        print(f"  Email: {super_admin_email}")
-        print(f"  Password: admin123")
+        print(f"  Email: {admin_email}")
+        print(f"  Password: {'*' * len(admin_password)}")
         print(f"  Role: super_admin")
     else:
-        print(f"✓ Super admin already exists: {super_admin_email}")
+        print(f"✓ Super admin already exists: {existing_admin['email']}")
     
     # Create indexes for better performance
     print("Creating database indexes...")
@@ -253,9 +270,8 @@ async def init_database():
     print("Database initialization complete!")
     print("="*50)
     print("\nYou can now login with:")
-    print(f"Email: {super_admin_email}")
-    print(f"Password: admin123")
-    print("\nPlease change the password after first login!")
+    print(f"Email: {admin_email}")
+    print(f"Password: (the one you configured)")
     print("="*50)
     
     client.close()
