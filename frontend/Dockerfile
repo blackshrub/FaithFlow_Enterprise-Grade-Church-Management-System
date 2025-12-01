@@ -4,7 +4,7 @@
 # =============================================================================
 
 # Stage 1: Build
-FROM node:20-alpine as builder
+FROM node:20-alpine AS builder
 
 WORKDIR /app
 
@@ -30,7 +30,7 @@ ENV REACT_APP_API_URL=${REACT_APP_API_URL} \
 RUN yarn build
 
 # Stage 2: Production with Nginx
-FROM nginx:alpine as production
+FROM nginx:alpine AS production
 
 LABEL maintainer="FaithFlow Team"
 LABEL description="FaithFlow Frontend - React SPA"
