@@ -5,26 +5,34 @@
  * 1. SUBDOMAIN MODE: api.yourdomain.com (API_PREFIX = '')
  * 2. PATH-BASED MODE: yourdomain.com/api (API_PREFIX = '/api')
  *
- * Configure via:
- * - API_BASE_URL: The base URL of your API server
+ * Configure via environment variables in app.config.js:
+ * - API_URL: The base URL of your API server
  * - API_PREFIX: '/api' for path-based, '' for subdomain-based
+ *
+ * For production builds:
+ *   API_URL=https://api.yourdomain.com eas build --platform android
  */
+
+import Constants from 'expo-constants';
 
 // =============================================================================
 // API CONFIGURATION
 // =============================================================================
 
+// Get config from expo-constants (set via app.config.js)
+const expoConfig = Constants.expoConfig?.extra;
+
 // Development vs Production base URL
-// For subdomain mode: use 'https://api.yourdomain.com'
-// For path-based mode: use 'https://yourdomain.com'
+// In development: use localhost
+// In production: use API_URL from environment variable (set during build)
 export const API_BASE_URL = __DEV__
   ? 'http://localhost:8000'
-  : 'https://api.flow.gkbj.org'; // Subdomain mode for production
+  : (expoConfig?.apiUrl || 'https://api.yourdomain.com');
 
-// API Prefix - set to '' for subdomain mode, '/api' for path-based mode
-// When using subdomain mode (api.domain.com), set API_PREFIX = ''
-// When using path-based mode (domain.com/api), set API_PREFIX = '/api'
-export const API_PREFIX = __DEV__ ? '/api' : ''; // Subdomain mode for production
+// API Prefix - empty for subdomain mode, '/api' for path-based mode
+export const API_PREFIX = __DEV__
+  ? '/api'
+  : (expoConfig?.apiPrefix ?? '');
 
 // Helper to build endpoint paths
 const endpoint = (path: string) => `${API_PREFIX}${path}`;
