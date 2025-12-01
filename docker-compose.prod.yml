@@ -189,10 +189,10 @@ services:
       - WHATSAPP_API_URL=${WHATSAPP_API_URL:-}
       - WHATSAPP_USERNAME=${WHATSAPP_USERNAME:-}
       - WHATSAPP_PASSWORD=${WHATSAPP_PASSWORD:-}
-      # Initial admin & church setup (used only during first db initialization)
-      - INIT_ADMIN_EMAIL=${INIT_ADMIN_EMAIL:-admin@faithflow.local}
-      - INIT_ADMIN_PASSWORD=${INIT_ADMIN_PASSWORD:-admin123}
-      - INIT_ADMIN_NAME=${INIT_ADMIN_NAME:-Administrator}
+      # Initial super admin & church setup (used only during first db initialization)
+      - INIT_SUPER_ADMIN_EMAIL=${INIT_SUPER_ADMIN_EMAIL:-admin@faithflow.local}
+      - INIT_SUPER_ADMIN_PASSWORD=${INIT_SUPER_ADMIN_PASSWORD:-admin123}
+      - INIT_SUPER_ADMIN_NAME=${INIT_SUPER_ADMIN_NAME:-Super Administrator}
       - INIT_CHURCH_NAME=${INIT_CHURCH_NAME:-My Church}
       - INIT_CHURCH_CITY=${INIT_CHURCH_CITY:-City}
       - INIT_CHURCH_COUNTRY=${INIT_CHURCH_COUNTRY:-Country}

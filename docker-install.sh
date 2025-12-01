@@ -56,10 +56,10 @@ ACME_EMAIL=""
 SERVER_IP=""
 RUNNING_IN_NOHUP=false
 
-# Admin/Church configuration
-ADMIN_EMAIL=""
-ADMIN_PASSWORD=""
-ADMIN_NAME=""
+# Super Admin/Church configuration
+SUPER_ADMIN_EMAIL=""
+SUPER_ADMIN_PASSWORD=""
+SUPER_ADMIN_NAME=""
 CHURCH_NAME=""
 CHURCH_CITY=""
 CHURCH_COUNTRY=""
@@ -996,47 +996,47 @@ configure_admin_church() {
     fi
 
     echo ""
-    echo -e "${CYAN}  Admin Account${NC}"
-    echo -e "${GRAY}  This will be the super admin with full access.${NC}"
+    echo -e "${CYAN}  Super Admin Account${NC}"
+    echo -e "${GRAY}  This will be the super admin with full access to all churches.${NC}"
     echo ""
 
-    # Admin Name
-    read -p "  Admin full name: " ADMIN_NAME
-    if [ -z "$ADMIN_NAME" ]; then
-        ADMIN_NAME="Administrator"
+    # Super Admin Name
+    read -p "  Super admin full name: " SUPER_ADMIN_NAME
+    if [ -z "$SUPER_ADMIN_NAME" ]; then
+        SUPER_ADMIN_NAME="Super Administrator"
     fi
 
-    # Admin Email
-    while [ -z "$ADMIN_EMAIL" ]; do
-        read -p "  Admin email: " ADMIN_EMAIL
-        if [ -z "$ADMIN_EMAIL" ]; then
+    # Super Admin Email
+    while [ -z "$SUPER_ADMIN_EMAIL" ]; do
+        read -p "  Super admin email: " SUPER_ADMIN_EMAIL
+        if [ -z "$SUPER_ADMIN_EMAIL" ]; then
             print_error "Email is required"
-        elif [[ ! "$ADMIN_EMAIL" =~ ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$ ]]; then
+        elif [[ ! "$SUPER_ADMIN_EMAIL" =~ ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$ ]]; then
             print_error "Invalid email format"
-            ADMIN_EMAIL=""
+            SUPER_ADMIN_EMAIL=""
         fi
     done
 
-    # Admin Password
-    while [ -z "$ADMIN_PASSWORD" ]; do
-        read -s -p "  Admin password (min 8 chars): " ADMIN_PASSWORD
+    # Super Admin Password
+    while [ -z "$SUPER_ADMIN_PASSWORD" ]; do
+        read -s -p "  Super admin password (min 8 chars): " SUPER_ADMIN_PASSWORD
         echo ""
-        if [ ${#ADMIN_PASSWORD} -lt 8 ]; then
+        if [ ${#SUPER_ADMIN_PASSWORD} -lt 8 ]; then
             print_error "Password must be at least 8 characters"
-            ADMIN_PASSWORD=""
+            SUPER_ADMIN_PASSWORD=""
             continue
         fi
         read -s -p "  Confirm password: " password_confirm
         echo ""
-        if [ "$ADMIN_PASSWORD" != "$password_confirm" ]; then
+        if [ "$SUPER_ADMIN_PASSWORD" != "$password_confirm" ]; then
             print_error "Passwords do not match"
-            ADMIN_PASSWORD=""
+            SUPER_ADMIN_PASSWORD=""
         fi
     done
 
     echo ""
     print_success "Church: $CHURCH_NAME ($CHURCH_CITY, $CHURCH_COUNTRY)"
-    print_success "Admin: $ADMIN_NAME <$ADMIN_EMAIL>"
+    print_success "Super Admin: $SUPER_ADMIN_NAME <$SUPER_ADMIN_EMAIL>"
 }
 
 # =============================================================================
@@ -1082,11 +1082,11 @@ TRAEFIK_DASHBOARD_AUTH=admin:\$\$apr1\$\$ruca84Hq\$\$mbjdMZBAG.KWn7vfN/SNK/
 EMQX_DASHBOARD_USER=admin
 EMQX_DASHBOARD_PASSWORD=faithflow123
 
-# Initial Admin & Church Setup
+# Initial Super Admin & Church Setup
 # These are used only during first database initialization
-INIT_ADMIN_EMAIL=$ADMIN_EMAIL
-INIT_ADMIN_PASSWORD=$ADMIN_PASSWORD
-INIT_ADMIN_NAME=$ADMIN_NAME
+INIT_SUPER_ADMIN_EMAIL=$SUPER_ADMIN_EMAIL
+INIT_SUPER_ADMIN_PASSWORD=$SUPER_ADMIN_PASSWORD
+INIT_SUPER_ADMIN_NAME=$SUPER_ADMIN_NAME
 INIT_CHURCH_NAME=$CHURCH_NAME
 INIT_CHURCH_CITY=$CHURCH_CITY
 INIT_CHURCH_COUNTRY=$CHURCH_COUNTRY
@@ -1421,10 +1421,10 @@ EOF
     echo ""
 
     echo -e "${YELLOW}  ┌─────────────────────────────────────────────────────────────────────┐${NC}"
-    echo -e "${YELLOW}  │  ${WHITE}Admin Login${YELLOW}                                                      │${NC}"
+    echo -e "${YELLOW}  │  ${WHITE}Super Admin Login${YELLOW}                                                │${NC}"
     echo -e "${YELLOW}  ├─────────────────────────────────────────────────────────────────────┤${NC}"
     echo -e "${YELLOW}  │  ${CYAN}Church:${NC}   $CHURCH_NAME"
-    echo -e "${YELLOW}  │  ${CYAN}Email:${NC}    $ADMIN_EMAIL"
+    echo -e "${YELLOW}  │  ${CYAN}Email:${NC}    $SUPER_ADMIN_EMAIL"
     echo -e "${YELLOW}  │  ${CYAN}Password:${NC} (the one you configured)"
     echo -e "${YELLOW}  └─────────────────────────────────────────────────────────────────────┘${NC}"
     echo ""

@@ -1,12 +1,12 @@
 """Initialize database with default church and super admin user
 
 Environment variables (optional - will use defaults if not set):
-    INIT_ADMIN_EMAIL    - Admin email (default: admin@faithflow.local)
-    INIT_ADMIN_PASSWORD - Admin password (default: admin123)
-    INIT_ADMIN_NAME     - Admin full name (default: Administrator)
-    INIT_CHURCH_NAME    - Church name (default: My Church)
-    INIT_CHURCH_CITY    - Church city (default: City)
-    INIT_CHURCH_COUNTRY - Church country (default: Country)
+    INIT_SUPER_ADMIN_EMAIL    - Super admin email (default: admin@faithflow.local)
+    INIT_SUPER_ADMIN_PASSWORD - Super admin password (default: admin123)
+    INIT_SUPER_ADMIN_NAME     - Super admin full name (default: Super Administrator)
+    INIT_CHURCH_NAME          - Church name (default: My Church)
+    INIT_CHURCH_CITY          - Church city (default: City)
+    INIT_CHURCH_COUNTRY       - Church country (default: Country)
 """
 import asyncio
 import sys
@@ -38,9 +38,9 @@ async def init_database():
     print("Initializing database...")
 
     # Get configuration from environment variables (with defaults)
-    admin_email = os.environ.get('INIT_ADMIN_EMAIL', 'admin@faithflow.local')
-    admin_password = os.environ.get('INIT_ADMIN_PASSWORD', 'admin123')
-    admin_name = os.environ.get('INIT_ADMIN_NAME', 'Administrator')
+    super_admin_email = os.environ.get('INIT_SUPER_ADMIN_EMAIL', 'admin@faithflow.local')
+    super_admin_password = os.environ.get('INIT_SUPER_ADMIN_PASSWORD', 'admin123')
+    super_admin_name = os.environ.get('INIT_SUPER_ADMIN_NAME', 'Super Administrator')
     church_name = os.environ.get('INIT_CHURCH_NAME', 'My Church')
     church_city = os.environ.get('INIT_CHURCH_CITY', 'City')
     church_country = os.environ.get('INIT_CHURCH_COUNTRY', 'Country')
@@ -78,20 +78,20 @@ async def init_database():
     if not existing_admin:
         super_admin = {
             "id": str(uuid.uuid4()),
-            "email": admin_email,
-            "full_name": admin_name,
+            "email": super_admin_email,
+            "full_name": super_admin_name,
             "role": "super_admin",
             "church_id": church_id,
             "is_active": True,
-            "hashed_password": hash_password(admin_password),
+            "hashed_password": hash_password(super_admin_password),
             "created_at": datetime.now(timezone.utc).isoformat(),
             "updated_at": datetime.now(timezone.utc).isoformat()
         }
 
         await db.users.insert_one(super_admin)
         print(f"✓ Created super admin user:")
-        print(f"  Email: {admin_email}")
-        print(f"  Password: {'*' * len(admin_password)}")
+        print(f"  Email: {super_admin_email}")
+        print(f"  Password: {'*' * len(super_admin_password)}")
         print(f"  Role: super_admin")
     else:
         print(f"✓ Super admin already exists: {existing_admin['email']}")
@@ -270,7 +270,7 @@ async def init_database():
     print("Database initialization complete!")
     print("="*50)
     print("\nYou can now login with:")
-    print(f"Email: {admin_email}")
+    print(f"Email: {super_admin_email}")
     print(f"Password: (the one you configured)")
     print("="*50)
     
