@@ -269,12 +269,93 @@ check_prerequisites() {
 # DOCKER INSTALLATION
 # =============================================================================
 
+# Minimum required versions
+readonly MIN_DOCKER_VERSION="24.0"
+readonly MIN_COMPOSE_VERSION="2.20"
+
+# Compare version numbers (returns 0 if version1 >= version2)
+version_gte() {
+    local version1="$1"
+    local version2="$2"
+
+    # Remove any non-numeric prefix (like 'v')
+    version1=$(echo "$version1" | sed 's/^[^0-9]*//')
+    version2=$(echo "$version2" | sed 's/^[^0-9]*//')
+
+    # Compare using sort -V
+    [ "$(printf '%s\n' "$version2" "$version1" | sort -V | head -n1)" = "$version2" ]
+}
+
+# Get Docker version number only
+get_docker_version() {
+    docker --version 2>/dev/null | grep -oP '\d+\.\d+' | head -1
+}
+
+# Get Docker Compose version number only
+get_compose_version() {
+    docker compose version --short 2>/dev/null | grep -oP '\d+\.\d+' | head -1
+}
+
+# Upgrade Docker to latest version
+upgrade_docker() {
+    print_info "Upgrading Docker to latest version..."
+    echo ""
+    echo -e "${GRAY}    This may take a few minutes...${NC}"
+    echo ""
+
+    # Stop Docker service gracefully
+    systemctl stop docker >> "$LOG_FILE" 2>&1 || true
+
+    # Remove old Docker packages (but keep data)
+    apt-get remove -y docker docker-engine docker.io containerd runc >> "$LOG_FILE" 2>&1 || true
+
+    # Install latest Docker using official script
+    curl -fsSL https://get.docker.com | bash >> "$LOG_FILE" 2>&1
+
+    if command_exists docker; then
+        systemctl enable docker >> "$LOG_FILE" 2>&1
+        systemctl start docker >> "$LOG_FILE" 2>&1
+        local new_version=$(get_docker_version)
+        print_success "Docker upgraded to version $new_version"
+    else
+        print_error "Docker upgrade failed"
+        echo ""
+        echo -e "${YELLOW}  How to fix:${NC}"
+        echo -e "${WHITE}    Try installing Docker manually:${NC}"
+        echo -e "${CYAN}    curl -fsSL https://get.docker.com | bash${NC}"
+        echo ""
+        exit 1
+    fi
+}
+
 install_docker() {
     print_header "Step 2/7: Installing Docker"
 
     # Check if Docker is already installed
     if command_exists docker; then
-        print_success "Docker already installed: $(docker --version | cut -d',' -f1)"
+        local current_version=$(get_docker_version)
+        local docker_info="Docker version $current_version"
+
+        # Check if version meets minimum requirement
+        if version_gte "$current_version" "$MIN_DOCKER_VERSION"; then
+            print_success "$docker_info (meets minimum $MIN_DOCKER_VERSION)"
+        else
+            print_warn "$docker_info is OUTDATED (minimum required: $MIN_DOCKER_VERSION)"
+            echo ""
+            echo -e "${YELLOW}  Your Docker version is too old and may cause issues.${NC}"
+            echo -e "${YELLOW}  FaithFlow requires Docker $MIN_DOCKER_VERSION or newer.${NC}"
+            echo ""
+
+            read -p "  Would you like to upgrade Docker now? [Y/n]: " upgrade_choice
+            upgrade_choice=${upgrade_choice:-Y}
+
+            if [[ "$upgrade_choice" =~ ^[Yy]$ ]]; then
+                upgrade_docker
+            else
+                print_warn "Continuing with outdated Docker. You may experience issues."
+                echo ""
+            fi
+        fi
     else
         print_info "Docker not found. Installing Docker..."
         echo ""
@@ -287,7 +368,8 @@ install_docker() {
         if command_exists docker; then
             systemctl enable docker >> "$LOG_FILE" 2>&1
             systemctl start docker >> "$LOG_FILE" 2>&1
-            print_success "Docker installed successfully"
+            local installed_version=$(get_docker_version)
+            print_success "Docker $installed_version installed successfully"
         else
             print_error "Docker installation failed"
             echo ""
@@ -304,16 +386,47 @@ install_docker() {
 
     # Check Docker Compose
     if docker compose version &>/dev/null; then
-        print_success "Docker Compose: $(docker compose version --short)"
+        local compose_version=$(get_compose_version)
+
+        if version_gte "$compose_version" "$MIN_COMPOSE_VERSION"; then
+            print_success "Docker Compose version $compose_version (meets minimum $MIN_COMPOSE_VERSION)"
+        else
+            print_warn "Docker Compose $compose_version is OUTDATED (minimum: $MIN_COMPOSE_VERSION)"
+            echo ""
+            print_info "Upgrading Docker Compose plugin..."
+
+            apt-get update >> "$LOG_FILE" 2>&1
+            apt-get install -y docker-compose-plugin >> "$LOG_FILE" 2>&1
+
+            local new_compose_version=$(get_compose_version)
+            if version_gte "$new_compose_version" "$MIN_COMPOSE_VERSION"; then
+                print_success "Docker Compose upgraded to $new_compose_version"
+            else
+                print_warn "Could not upgrade Docker Compose. Current: $new_compose_version"
+            fi
+        fi
     else
-        print_error "Docker Compose (v2) not found"
-        echo ""
-        echo -e "${YELLOW}  How to fix:${NC}"
-        echo -e "${WHITE}    Install Docker Compose plugin:${NC}"
-        echo -e "${CYAN}    apt install docker-compose-plugin${NC}"
-        echo ""
-        exit 1
+        print_info "Docker Compose not found. Installing..."
+        apt-get update >> "$LOG_FILE" 2>&1
+        apt-get install -y docker-compose-plugin >> "$LOG_FILE" 2>&1
+
+        if docker compose version &>/dev/null; then
+            print_success "Docker Compose $(get_compose_version) installed"
+        else
+            print_error "Docker Compose (v2) installation failed"
+            echo ""
+            echo -e "${YELLOW}  How to fix:${NC}"
+            echo -e "${WHITE}    Install Docker Compose plugin:${NC}"
+            echo -e "${CYAN}    apt install docker-compose-plugin${NC}"
+            echo ""
+            exit 1
+        fi
     fi
+
+    echo ""
+    echo -e "${GREEN}  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo -e "${GREEN}  Docker environment is ready!${NC}"
+    echo -e "${GREEN}  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 }
 
 # =============================================================================
