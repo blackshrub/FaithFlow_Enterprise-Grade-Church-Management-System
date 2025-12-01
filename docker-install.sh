@@ -342,6 +342,18 @@ check_prerequisites() {
         print_warn "Could not detect OS version"
     fi
 
+    # Install essential tools for DNS verification
+    print_info "Installing required tools..."
+    if command_exists apt-get; then
+        apt-get update -qq >> "$LOG_FILE" 2>&1 || true
+        apt-get install -y -qq dnsutils curl wget >> "$LOG_FILE" 2>&1 || true
+    elif command_exists yum; then
+        yum install -y -q bind-utils curl wget >> "$LOG_FILE" 2>&1 || true
+    elif command_exists dnf; then
+        dnf install -y -q bind-utils curl wget >> "$LOG_FILE" 2>&1 || true
+    fi
+    print_success "Required tools installed"
+
     # Check memory
     print_info "Checking system memory..."
     local mem_mb=$(get_memory_mb)
