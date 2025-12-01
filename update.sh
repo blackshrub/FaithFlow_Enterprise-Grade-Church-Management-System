@@ -667,7 +667,8 @@ update_frontend() {
 
     # Build production
     print_info "Building production frontend..."
-    print_detail "This may take 2-5 minutes depending on server resources..."
+    echo -e "${YELLOW}    ⚠ This may take 5-15 minutes. Please wait...${NC}"
+    echo ""
 
     local build_log="/tmp/faithflow-update-build-$$.log"
 

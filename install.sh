@@ -1353,7 +1353,8 @@ FRONTEND_ENV
 
     # Build production frontend
     print_info "Building production frontend..."
-    echo -e "${GRAY}    This typically takes 3-5 minutes...${NC}"
+    echo -e "${YELLOW}    ⚠ This may take 5-15 minutes on first build. Please wait...${NC}"
+    echo ""
 
     local build_log="/tmp/faithflow-frontend-build-$$.log"
 

@@ -306,14 +306,52 @@ build_images() {
 
     if [ "$UPDATE_BACKEND" = true ]; then
         print_info "Building backend image..."
-        docker compose -f "$COMPOSE_FILE" build --no-cache backend >> "$LOG_FILE" 2>&1
+        if ! docker compose -f "$COMPOSE_FILE" build --no-cache backend >> "$LOG_FILE" 2>&1; then
+            print_error "Backend build failed. Check log: $LOG_FILE"
+            tail -20 "$LOG_FILE"
+            exit 1
+        fi
         print_success "Backend image built"
     fi
 
     if [ "$UPDATE_FRONTEND" = true ]; then
-        print_info "Building frontend image (this may take a few minutes)..."
-        docker compose -f "$COMPOSE_FILE" build --no-cache frontend >> "$LOG_FILE" 2>&1
-        print_success "Frontend image built"
+        print_info "Building frontend image..."
+        echo -e "${YELLOW}    ⚠ This may take 5-15 minutes. Please wait...${NC}"
+        echo ""
+
+        # Run build in background with progress indicator
+        docker compose -f "$COMPOSE_FILE" build --no-cache frontend >> "$LOG_FILE" 2>&1 &
+        local build_pid=$!
+
+        local start_time=$(date +%s)
+        local spin_chars='|/-\\'
+        local i=0
+
+        while kill -0 "$build_pid" 2>/dev/null; do
+            local elapsed=$(($(date +%s) - start_time))
+            local mins=$((elapsed / 60))
+            local secs=$((elapsed % 60))
+            local spin="${spin_chars:i++%4:1}"
+            printf "\r    %s Building frontend... [%dm %02ds]   " "$spin" "$mins" "$secs"
+            sleep 0.5
+        done
+        printf "\r\033[K"
+
+        wait "$build_pid"
+        local build_status=$?
+
+        if [ $build_status -ne 0 ]; then
+            print_error "Frontend build failed"
+            echo ""
+            echo -e "${YELLOW}  Last 30 lines of build log:${NC}"
+            tail -30 "$LOG_FILE"
+            echo ""
+            echo -e "${CYAN}  Full log: cat $LOG_FILE${NC}"
+            exit 1
+        fi
+
+        local total_time=$(($(date +%s) - start_time))
+        print_success "Frontend image built (took $((total_time / 60))m $((total_time % 60))s)"
     fi
 }
 
