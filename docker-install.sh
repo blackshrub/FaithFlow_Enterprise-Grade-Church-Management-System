@@ -368,6 +368,52 @@ check_prerequisites() {
         exit 1
     fi
 
+    # Check and create swap space if needed (prevents OOM during frontend build)
+    # Frontend React build needs ~3-4GB memory, so we need swap on small VPS
+    print_info "Checking swap space..."
+    local swap_mb=$(free -m 2>/dev/null | awk '/^Swap:/{print $2}' || echo "0")
+    local total_available=$((mem_mb + swap_mb))
+
+    if [ "$total_available" -lt 4096 ]; then
+        print_warn "Total memory (RAM + Swap): ${total_available}MB - may cause build failures"
+        echo ""
+        echo -e "${YELLOW}  Frontend builds require ~4GB memory. Creating swap space...${NC}"
+
+        # Calculate swap size: aim for 4GB total (RAM + Swap)
+        local swap_needed=$((4096 - mem_mb))
+        if [ "$swap_needed" -lt 1024 ]; then
+            swap_needed=1024  # Minimum 1GB swap
+        fi
+
+        # Check if swap file already exists
+        if [ -f /swapfile ]; then
+            print_info "Existing swap file found, extending if needed..."
+            swapoff /swapfile 2>/dev/null || true
+            rm -f /swapfile
+        fi
+
+        # Create swap file
+        print_info "Creating ${swap_needed}MB swap file (this may take a minute)..."
+        if dd if=/dev/zero of=/swapfile bs=1M count=$swap_needed status=progress >> "$LOG_FILE" 2>&1; then
+            chmod 600 /swapfile
+            mkswap /swapfile >> "$LOG_FILE" 2>&1
+            swapon /swapfile >> "$LOG_FILE" 2>&1
+
+            # Add to fstab for persistence (if not already there)
+            if ! grep -q "/swapfile" /etc/fstab 2>/dev/null; then
+                echo "/swapfile none swap sw 0 0" >> /etc/fstab
+            fi
+
+            local new_swap_mb=$(free -m | awk '/^Swap:/{print $2}')
+            print_success "Swap space created: ${new_swap_mb}MB"
+            print_success "Total available memory: $((mem_mb + new_swap_mb))MB"
+        else
+            print_warn "Could not create swap file - build may fail on low-memory systems"
+        fi
+    else
+        print_success "Swap: ${swap_mb}MB (Total RAM+Swap: ${total_available}MB - sufficient)"
+    fi
+
     # Check disk
     print_info "Checking disk space..."
     local disk_gb=$(get_disk_gb)
