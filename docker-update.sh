@@ -20,7 +20,7 @@ set -euo pipefail
 # CONFIGURATION
 # =============================================================================
 
-readonly VERSION="1.1.0"
+readonly SCRIPT_VERSION="1.1.0"
 readonly SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 readonly LOG_FILE="/var/log/faithflow-docker-update.log"
 COMPOSE_FILE="docker-compose.prod.yml"
@@ -448,7 +448,7 @@ parse_args() {
                 shift
                 ;;
             --help|-h)
-                echo "FaithFlow Docker Updater v$VERSION"
+                echo "FaithFlow Docker Updater v$SCRIPT_VERSION"
                 echo ""
                 echo "Usage: ./docker-update.sh [options]"
                 echo ""

@@ -37,7 +37,7 @@ set -euo pipefail
 # CONFIGURATION
 # =============================================================================
 
-readonly VERSION="3.0.0"
+readonly SCRIPT_VERSION="3.0.0"
 readonly INSTALL_DIR="/opt/faithflow"
 readonly LOG_DIR="/var/log/faithflow"
 readonly LOG_FILE="$LOG_DIR/install-$(date +%Y%m%d-%H%M%S).log"
@@ -437,7 +437,7 @@ show_welcome() {
 EOF
     echo -e "${NC}"
 
-    echo -e "  ${GRAY}Installer Version: ${WHITE}$VERSION${NC}"
+    echo -e "  ${GRAY}Installer Version: ${WHITE}$SCRIPT_VERSION${NC}"
     echo -e "  ${GRAY}Installation Path: ${WHITE}$INSTALL_DIR${NC}"
     echo -e "  ${GRAY}Log File:          ${WHITE}$LOG_FILE${NC}"
     echo ""
@@ -1796,7 +1796,7 @@ main() {
     # Initialize log
     echo "========================================" >> "$LOG_FILE"
     echo "FaithFlow Full Stack Installation Log" >> "$LOG_FILE"
-    echo "Version: $VERSION" >> "$LOG_FILE"
+    echo "Version: $SCRIPT_VERSION" >> "$LOG_FILE"
     echo "Started: $(date)" >> "$LOG_FILE"
     echo "========================================" >> "$LOG_FILE"
 

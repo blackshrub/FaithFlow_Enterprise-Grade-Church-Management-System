@@ -33,7 +33,7 @@ set -euo pipefail
 # CONFIGURATION
 # =============================================================================
 
-readonly VERSION="2.0.0"
+readonly SCRIPT_VERSION="2.0.0"
 readonly INSTALL_DIR="/opt/faithflow"
 readonly LOG_DIR="/var/log/faithflow"
 readonly LOG_FILE="$LOG_DIR/update-$(date +%Y%m%d-%H%M%S).log"
@@ -840,7 +840,7 @@ show_welcome() {
 EOF
     echo -e "${NC}"
 
-    echo -e "  ${GRAY}Updater Version: ${WHITE}$VERSION${NC}"
+    echo -e "  ${GRAY}Updater Version: ${WHITE}$SCRIPT_VERSION${NC}"
     echo -e "  ${GRAY}Log File:        ${WHITE}$LOG_FILE${NC}"
     echo ""
 
@@ -955,7 +955,7 @@ parse_args() {
                 shift
                 ;;
             --help|-h)
-                echo "FaithFlow Updater v$VERSION"
+                echo "FaithFlow Updater v$SCRIPT_VERSION"
                 echo ""
                 echo "Usage: sudo ./update.sh [options] [source-directory]"
                 echo ""

@@ -43,7 +43,7 @@ set -euo pipefail
 # CONFIGURATION
 # =============================================================================
 
-readonly VERSION="2.0.0"
+readonly SCRIPT_VERSION="2.0.0"
 readonly SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 readonly LOG_FILE="/var/log/faithflow-docker-install.log"
 
@@ -169,7 +169,7 @@ show_welcome() {
 EOF
     echo -e "${NC}"
 
-    echo -e "  ${WHITE}Installer Version: ${CYAN}$VERSION${NC}"
+    echo -e "  ${WHITE}Installer Version: ${CYAN}$SCRIPT_VERSION${NC}"
     echo ""
 
     sleep 2
@@ -915,7 +915,7 @@ parse_args() {
                 shift
                 ;;
             --help|-h)
-                echo "FaithFlow Docker Installer v$VERSION"
+                echo "FaithFlow Docker Installer v$SCRIPT_VERSION"
                 echo ""
                 echo "Usage: sudo ./docker-install.sh [options]"
                 echo ""
@@ -966,7 +966,7 @@ main() {
 
     log "=========================================="
     log "FaithFlow Docker Installation started"
-    log "Version: $VERSION"
+    log "Version: $SCRIPT_VERSION"
     log "=========================================="
 
     show_welcome
