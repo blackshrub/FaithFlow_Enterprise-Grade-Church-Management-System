@@ -25,6 +25,9 @@ ENV/
 *~
 .emergent/
 
+# Claude Code local settings (machine-specific)
+.claude/settings.local.json
+
 # Logs
 *.log
 logs/
@@ -89,3 +92,4 @@ mobile/constants/secrets.ts
 
 # LiveKit config generated with server IP and domain
 docker/livekit/livekit.yaml
+docker/livekit/turnserver.conf
