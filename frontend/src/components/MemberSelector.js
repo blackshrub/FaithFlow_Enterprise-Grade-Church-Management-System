@@ -78,8 +78,7 @@ export default function MemberSelector({ value, onChange, selectedMember, placeh
         <div className="flex items-center justify-between p-2 border rounded-md bg-muted/40">
           <div className="flex items-center gap-2">
             <MemberAvatar
-              name={currentMember.full_name}
-              photo={currentMember.photo_base64}
+              member={currentMember}
               size="sm"
             />
             <div>
@@ -123,8 +122,7 @@ export default function MemberSelector({ value, onChange, selectedMember, placeh
               onClick={() => handleSelect(m)}
             >
               <MemberAvatar
-                name={m.full_name}
-                photo={m.photo_base64}
+                member={m}
                 size="sm"
               />
               <div className="flex-1 min-w-0">

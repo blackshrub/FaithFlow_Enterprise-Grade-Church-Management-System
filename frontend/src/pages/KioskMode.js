@@ -343,9 +343,9 @@ function KioskMode() {
                     className="w-full bg-white border-2 border-gray-200 rounded-lg p-4 hover:border-blue-500 hover:shadow-lg transition-all text-left"
                   >
                     <div className="flex items-center gap-4">
-                      {member.photo_base64 ? (
+                      {(member.photo_url || member.photo_base64) ? (
                         <img
-                          src={member.photo_base64}
+                          src={member.photo_url || member.photo_base64}
                           alt={member.full_name}
                           className="w-16 h-16 rounded-full object-cover"
                         />
@@ -430,8 +430,8 @@ function KioskMode() {
           sessionId={selectedEvent?.event_type === 'series' ? selectedSession : null}
           onSuccess={(member) => {
             setShowQuickAdd(false);
-            setSuccessData({ name: member.full_name, photo: member.photo_base64 });
-            addToRecentCheckIns(member.full_name, member.photo_base64);
+            setSuccessData({ name: member.full_name, photo: member.photo_url || member.photo_base64 });
+            addToRecentCheckIns(member.full_name, member.photo_url || member.photo_base64);
           }}
           onClose={() => setShowQuickAdd(false)}
         />

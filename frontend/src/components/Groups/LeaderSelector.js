@@ -72,8 +72,7 @@ export function LeaderSelector({ value, onChange, selectedLeader }) {
         <div className="flex items-center justify-between p-2 border rounded-md bg-muted/40">
           <div className="flex items-center gap-2">
             <MemberAvatar
-              name={currentLeader.full_name}
-              photo={currentLeader.photo_base64}
+              member={currentLeader}
               size="sm"
             />
             <div>
@@ -117,8 +116,7 @@ export function LeaderSelector({ value, onChange, selectedLeader }) {
               onClick={() => handleSelect(m)}
             >
               <MemberAvatar
-                name={m.full_name}
-                photo={m.photo_base64}
+                member={m}
                 size="sm"
               />
               <div className="flex-1 min-w-0">

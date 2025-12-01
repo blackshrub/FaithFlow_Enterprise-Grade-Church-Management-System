@@ -53,8 +53,7 @@ export function JoinRequestsTable({
               <TableCell>
                 <div className="flex items-center space-x-2">
                   <MemberAvatar
-                    name={r.member?.full_name}
-                    photoBase64={r.member?.photo_base64}
+                    member={r.member}
                   />
                   <div>
                     <div className="font-medium">{r.member?.full_name}</div>

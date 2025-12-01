@@ -11,7 +11,8 @@ import { FileText, Upload, X } from 'lucide-react';
 export default function MemberForm({ formData, setFormData, member = null }) {
   const { t } = useTranslation();
   const { data: memberStatuses = [], isLoading: statusesLoading } = useMemberStatuses();
-  const [photoPreview, setPhotoPreview] = useState(member?.photo_base64 || null);
+  // Prefer SeaweedFS URL over base64
+  const [photoPreview, setPhotoPreview] = useState(member?.photo_url || member?.photo_base64 || null);
   const [documentPreview, setDocumentPreview] = useState(member?.personal_document_base64 || null);
   const [documentName, setDocumentName] = useState(member?.personal_document || '');
 

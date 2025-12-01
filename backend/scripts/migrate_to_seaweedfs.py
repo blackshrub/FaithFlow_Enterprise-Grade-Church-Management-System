@@ -541,7 +541,8 @@ async def run_migration(dry_run: bool = True, only: str = None):
         logger.info("Checking SeaweedFS connection...")
         try:
             health = await seaweedfs.health_check()
-            if not health.get("healthy"):
+            # SeaweedFS returns IsLeader and Leader fields when healthy
+            if not health.get("IsLeader") and not health.get("Leader"):
                 logger.error("SeaweedFS is not healthy. Aborting migration.")
                 logger.error(f"Health check result: {health}")
                 return

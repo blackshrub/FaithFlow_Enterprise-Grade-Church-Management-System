@@ -106,3 +106,58 @@ def convert_datetime_list(docs: list, fields: list = None) -> list:
     """
     return [convert_datetime_fields(doc, fields) for doc in docs]
 
+
+def get_member_photo_url(member: dict) -> str | None:
+    """Get the member's photo URL, preferring SeaweedFS URL over legacy base64.
+
+    This helper handles the transition from base64 to SeaweedFS storage.
+    Returns photo_url if available, otherwise returns photo_base64.
+
+    Args:
+        member: Member document dictionary
+
+    Returns:
+        str | None: Photo URL or base64 string, or None if no photo
+    """
+    if not member:
+        return None
+
+    # Prefer SeaweedFS URL over legacy base64
+    if member.get('photo_url'):
+        return member['photo_url']
+    if member.get('photo_base64'):
+        return member['photo_base64']
+    return None
+
+
+def get_member_thumbnail_url(member: dict) -> str | None:
+    """Get the member's thumbnail URL.
+
+    Args:
+        member: Member document dictionary
+
+    Returns:
+        str | None: Thumbnail URL or None if not available
+    """
+    if not member:
+        return None
+    return member.get('photo_thumbnail_url')
+
+
+def enrich_member_photo(member: dict) -> dict:
+    """Add computed photo field to member document.
+
+    This helper adds a 'photo' field that contains the best available photo
+    (SeaweedFS URL preferred over base64).
+
+    Args:
+        member: Member document dictionary
+
+    Returns:
+        dict: Member with 'photo' field added
+    """
+    if member:
+        member['photo'] = get_member_photo_url(member)
+        member['thumbnail'] = get_member_thumbnail_url(member)
+    return member
+

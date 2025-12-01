@@ -346,6 +346,19 @@ export const importExportAPI = {
   
   // Cleanup temporary uploads
   cleanupTempUploads: (memberIds) => api.post('/import-export/cleanup-temp-uploads', memberIds),
+
+  // Cancel import and cleanup temp files
+  cancelImport: (photoSessionId, documentSessionId) => {
+    const formData = new FormData();
+    if (photoSessionId) formData.append('photo_session_id', photoSessionId);
+    if (documentSessionId) formData.append('document_session_id', documentSessionId);
+    return api.post('/import-export/cancel-import', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
+
+  // Cleanup expired temp sessions
+  cleanupExpiredSessions: () => api.post('/import-export/cleanup-expired-sessions'),
 };
 
 // Seat Layouts API

@@ -152,8 +152,7 @@ const PrayerRequestKiosk = () => {
             
             <div className="flex flex-col items-center gap-4 p-6 bg-blue-50 rounded-2xl">
               <MemberAvatar
-                name={member?.full_name}
-                photo={member?.photo_base64}
+                member={member}
                 size="xl"
               />
               <div>

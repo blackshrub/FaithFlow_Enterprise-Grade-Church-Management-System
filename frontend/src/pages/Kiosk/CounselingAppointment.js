@@ -181,7 +181,7 @@ const CounselingKiosk = () => {
           <div className="text-center space-y-6">
             <h2 className="text-3xl font-bold">{t('existing_profile.title')}</h2>
             <div className="flex flex-col items-center gap-4 p-6 bg-blue-50 rounded-2xl">
-              <MemberAvatar name={member?.full_name} photo={member?.photo_base64} size="xl" />
+              <MemberAvatar member={member} size="xl" />
               <div>
                 <p className="text-2xl font-bold">{member?.full_name}</p>
                 <p className="text-lg text-gray-600">Status: {member?.member_status || 'Member'}</p>

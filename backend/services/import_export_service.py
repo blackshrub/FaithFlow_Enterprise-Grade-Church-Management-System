@@ -242,42 +242,159 @@ class ImportExportService:
     
     @staticmethod
     def validate_date_format(date_str: str, date_format: str) -> Optional[date]:
-        """Validate and parse date string
-        
+        """Validate and parse date string with smart format detection.
+
+        Tries the user-selected format first, then attempts auto-detection
+        with multiple common formats and separators.
+
         Args:
             date_str: Date string to parse
-            date_format: Expected date format (DD-MM-YYYY, MM-DD-YYYY, YYYY-MM-DD)
-            
+            date_format: Preferred date format (DD-MM-YYYY, MM-DD-YYYY, YYYY-MM-DD)
+
         Returns:
             date object or None if invalid
         """
         if not date_str:
             return None
-        
-        try:
-            if date_format == 'DD-MM-YYYY':
-                return datetime.strptime(date_str, '%d-%m-%Y').date()
-            elif date_format == 'MM-DD-YYYY':
-                return datetime.strptime(date_str, '%m-%d-%Y').date()
-            elif date_format == 'YYYY-MM-DD':
-                return datetime.strptime(date_str, '%Y-%m-%d').date()
-            else:
-                # Try ISO format as fallback
-                return date.fromisoformat(date_str)
-        except Exception as e:
-            logger.warning(f"Date validation failed for '{date_str}' with format '{date_format}': {str(e)}")
+
+        # Clean and normalize the date string
+        date_str = str(date_str).strip()
+
+        # Skip empty or placeholder values
+        if not date_str or date_str.lower() in ('', 'null', 'none', 'n/a', '-'):
             return None
+
+        # Normalize separators (replace / and . with -)
+        normalized = date_str.replace('/', '-').replace('.', '-')
+
+        # Define format mappings with all separator variants
+        format_mappings = {
+            'DD-MM-YYYY': ['%d-%m-%Y', '%d/%m/%Y', '%d.%m.%Y'],
+            'MM-DD-YYYY': ['%m-%d-%Y', '%m/%d/%Y', '%m.%d.%Y'],
+            'YYYY-MM-DD': ['%Y-%m-%d', '%Y/%m/%d', '%Y.%m.%d'],
+        }
+
+        # Also try these additional common formats
+        additional_formats = [
+            '%Y-%m-%d',      # ISO format (most unambiguous)
+            '%d-%m-%Y',      # European format
+            '%m-%d-%Y',      # US format
+            '%Y%m%d',        # Compact ISO
+            '%d%m%Y',        # Compact European
+            '%d-%b-%Y',      # 15-Jan-2024
+            '%d %b %Y',      # 15 Jan 2024
+            '%d %B %Y',      # 15 January 2024
+            '%B %d, %Y',     # January 15, 2024
+            '%b %d, %Y',     # Jan 15, 2024
+        ]
+
+        parsed_date = None
+
+        # 1. Try the user-selected format first (with all separator variants)
+        if date_format in format_mappings:
+            for fmt in format_mappings[date_format]:
+                try:
+                    parsed_date = datetime.strptime(date_str, fmt).date()
+                    # Validate the date is reasonable (1900-2100)
+                    if 1900 <= parsed_date.year <= 2100:
+                        return parsed_date
+                except ValueError:
+                    continue
+
+        # 2. Try with normalized separators
+        for fmt in ['%Y-%m-%d', '%d-%m-%Y', '%m-%d-%Y']:
+            try:
+                parsed_date = datetime.strptime(normalized, fmt).date()
+                if 1900 <= parsed_date.year <= 2100:
+                    return parsed_date
+            except ValueError:
+                continue
+
+        # 3. Try YYYY-MM-DD first (unambiguous) with original string
+        try:
+            parsed_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+            if 1900 <= parsed_date.year <= 2100:
+                return parsed_date
+        except ValueError:
+            pass
+
+        # 4. Auto-detect: If first part is 4 digits, it's YYYY-MM-DD
+        parts = normalized.split('-')
+        if len(parts) == 3:
+            if len(parts[0]) == 4 and parts[0].isdigit():
+                # YYYY-MM-DD format
+                try:
+                    parsed_date = datetime.strptime(normalized, '%Y-%m-%d').date()
+                    if 1900 <= parsed_date.year <= 2100:
+                        return parsed_date
+                except ValueError:
+                    pass
+            elif len(parts[2]) == 4 and parts[2].isdigit():
+                # XX-XX-YYYY format - need to determine DD-MM or MM-DD
+                day_first = int(parts[0])
+                month_second = int(parts[1])
+
+                # If first part > 12, it must be DD-MM-YYYY
+                if day_first > 12:
+                    try:
+                        parsed_date = datetime.strptime(normalized, '%d-%m-%Y').date()
+                        if 1900 <= parsed_date.year <= 2100:
+                            return parsed_date
+                    except ValueError:
+                        pass
+                # If second part > 12, it must be MM-DD-YYYY
+                elif month_second > 12:
+                    try:
+                        parsed_date = datetime.strptime(normalized, '%m-%d-%Y').date()
+                        if 1900 <= parsed_date.year <= 2100:
+                            return parsed_date
+                    except ValueError:
+                        pass
+                else:
+                    # Ambiguous case (both <= 12), use user's preferred format
+                    preferred_fmt = '%d-%m-%Y' if date_format == 'DD-MM-YYYY' else '%m-%d-%Y'
+                    try:
+                        parsed_date = datetime.strptime(normalized, preferred_fmt).date()
+                        if 1900 <= parsed_date.year <= 2100:
+                            return parsed_date
+                    except ValueError:
+                        pass
+
+        # 5. Try all additional formats
+        for fmt in additional_formats:
+            try:
+                parsed_date = datetime.strptime(date_str, fmt).date()
+                if 1900 <= parsed_date.year <= 2100:
+                    return parsed_date
+            except ValueError:
+                continue
+
+        # 6. Try ISO format as last resort
+        try:
+            return date.fromisoformat(date_str)
+        except ValueError:
+            pass
+
+        logger.warning(f"Date validation failed for '{date_str}' with format '{date_format}': unable to parse")
+        return None
     
     @staticmethod
     async def validate_member_data(
-        data: List[Dict[str, Any]], 
+        data: List[Dict[str, Any]],
         church_id: str,
         date_format: str,
         db: AsyncIOMotorDatabase,
         custom_field_definitions: List[Dict[str, str]] = None
     ) -> tuple[List[Dict[str, Any]], List[str], List[Dict[str, Any]]]:
         """Validate member data before import
-        
+
+        This performs comprehensive validation including:
+        - Required field validation (full_name)
+        - Data format validation (dates, phone numbers, gender, etc.)
+        - Duplicate detection within CSV batch (phones, emails)
+        - Duplicate detection with existing database records (phones, emails)
+        - Custom field validation
+
         Args:
             data: List of member data dictionaries
             church_id: Church ID for multi-tenant scoping
@@ -285,17 +402,53 @@ class ImportExportService:
             db: Database instance
             custom_field_definitions: List of custom field definitions
                                      [{name, type, required}, ...]
-            
+
         Returns:
             tuple: (valid_data, errors, duplicate_conflicts)
         """
         from utils.helpers import combine_full_name, normalize_phone_number
         from utils.custom_fields import validate_custom_field
-        
+        import re
+
         valid_data = []
         errors = []
         duplicate_conflicts = []  # List of duplicate phone pairs
         seen_phones = {}  # Track phone numbers with row index
+        seen_emails = {}  # Track emails with row index
+
+        # Pre-fetch existing emails and phones from database for this church
+        # This allows us to detect duplicates BEFORE attempting insert
+        existing_emails = set()
+        existing_phones = set()
+
+        try:
+            # Get all existing non-null emails for this church
+            email_cursor = db.members.find(
+                {
+                    "church_id": church_id,
+                    "email": {"$ne": None, "$ne": ""}
+                },
+                {"email": 1}
+            )
+            async for doc in email_cursor:
+                if doc.get("email"):
+                    existing_emails.add(doc["email"].lower().strip())
+
+            # Get all existing non-null phones for this church
+            phone_cursor = db.members.find(
+                {
+                    "church_id": church_id,
+                    "phone_whatsapp": {"$ne": None, "$ne": ""}
+                },
+                {"phone_whatsapp": 1}
+            )
+            async for doc in phone_cursor:
+                if doc.get("phone_whatsapp"):
+                    existing_phones.add(doc["phone_whatsapp"])
+
+            logger.info(f"Pre-fetched {len(existing_emails)} existing emails and {len(existing_phones)} existing phones for validation")
+        except Exception as e:
+            logger.warning(f"Could not pre-fetch existing data for validation: {e}")
         
         for idx, row in enumerate(data, start=1):
             row_errors = []
@@ -317,7 +470,30 @@ class ImportExportService:
             # Only full_name is required
             if not row.get('full_name') or row['full_name'] in ['', None, 'NULL', 'null']:
                 row_errors.append(f"Row {idx}: Missing full_name (only required field)")
-            
+            else:
+                # Validate full_name
+                full_name = str(row['full_name']).strip()
+                row['full_name'] = full_name  # Normalize whitespace
+
+                # Check minimum length
+                if len(full_name) < 2:
+                    row_errors.append(f"Row {idx}: Full name '{full_name}' is too short (minimum 2 characters)")
+
+                # Check maximum length
+                if len(full_name) > 200:
+                    row_errors.append(f"Row {idx}: Full name is too long (maximum 200 characters)")
+
+                # Check for suspicious characters (allow letters, spaces, hyphens, apostrophes, dots, and common diacritics)
+                # Allow: letters (including Unicode), spaces, hyphens, apostrophes, dots, commas
+                name_pattern = r"^[\w\s\-'.,]+$"
+                if not re.match(name_pattern, full_name, re.UNICODE):
+                    # Check for specific problematic characters
+                    suspicious_chars = re.findall(r'[^\w\s\-\'.,]', full_name, re.UNICODE)
+                    if suspicious_chars:
+                        row_errors.append(
+                            f"Row {idx}: Full name contains invalid characters: {', '.join(set(suspicious_chars))}"
+                        )
+
             # All other fields are optional - validate only if provided
             
             # Validate gender (only if provided)
@@ -328,9 +504,15 @@ class ImportExportService:
                 row.pop('gender', None)
             
             # Validate address (only if provided)
-            if row.get('address') and row['address'] in ['', None, 'NULL', 'null']:
+            if row.get('address') and row['address'] not in ['', None, 'NULL', 'null']:
+                address = str(row['address']).strip()
+                if len(address) > 500:
+                    row_errors.append(f"Row {idx}: Address is too long (maximum 500 characters)")
+                else:
+                    row['address'] = address
+            else:
                 row.pop('address', None)
-            
+
             # Validate date_of_birth (only if provided)
             if row.get('date_of_birth') and row['date_of_birth'] in ['', None, 'NULL', 'null']:
                 row.pop('date_of_birth', None)
@@ -342,9 +524,8 @@ class ImportExportService:
                     row_errors.append(f"Row {idx}: Invalid phone number format '{row['phone_whatsapp']}'")
                 else:
                     row['phone_whatsapp'] = normalized_phone
-                    
-                    # Check for duplicate within the batch ONLY (not database)
-                    # Database check removed since we're doing simulation before import
+
+                    # Check for duplicate within the CSV batch
                     if normalized_phone in seen_phones:
                         duplicate_conflicts.append({
                             'phone': normalized_phone,
@@ -361,6 +542,23 @@ class ImportExportService:
                                 'source': 'import'
                             }
                         })
+                    # Check for duplicate with existing database records
+                    elif normalized_phone in existing_phones:
+                        duplicate_conflicts.append({
+                            'phone': normalized_phone,
+                            'existing_member': {
+                                'row_index': None,
+                                'full_name': '(existing member in database)',
+                                'source': 'database'
+                            },
+                            'new_record': {
+                                'row_index': idx,
+                                'full_name': row.get('full_name'),
+                                'gender': row.get('gender'),
+                                'address': row.get('address'),
+                                'source': 'import'
+                            }
+                        })
                     else:
                         seen_phones[normalized_phone] = idx
             else:
@@ -368,14 +566,73 @@ class ImportExportService:
                 row.pop('phone_whatsapp', None)
             
             # Validate date fields (only if provided)
+            today = date.today()
             date_fields = ['date_of_birth', 'baptism_date', 'membership_date']
             for field in date_fields:
                 if row.get(field) and row[field] not in ['', None, 'NULL', 'null']:
+                    original_value = row[field]
                     parsed_date = ImportExportService.validate_date_format(row[field], date_format)
                     if parsed_date:
+                        # Additional logical validation for dates
+                        if field == 'date_of_birth':
+                            # Birth date should not be in the future
+                            if parsed_date > today:
+                                row_errors.append(
+                                    f"Row {idx}: Invalid {field} '{original_value}' - "
+                                    f"birth date cannot be in the future"
+                                )
+                                continue
+                            # Birth date should be reasonable (not before 1900, not making person > 150 years old)
+                            age = (today - parsed_date).days // 365
+                            if age > 150:
+                                row_errors.append(
+                                    f"Row {idx}: Invalid {field} '{original_value}' - "
+                                    f"calculated age ({age} years) is unreasonable"
+                                )
+                                continue
+                            if parsed_date.year < 1900:
+                                row_errors.append(
+                                    f"Row {idx}: Invalid {field} '{original_value}' - "
+                                    f"year {parsed_date.year} is before 1900"
+                                )
+                                continue
+                        elif field == 'baptism_date':
+                            # Baptism date should not be in the future
+                            if parsed_date > today:
+                                row_errors.append(
+                                    f"Row {idx}: Invalid {field} '{original_value}' - "
+                                    f"baptism date cannot be in the future"
+                                )
+                                continue
+                            # Baptism should be after birth date if both provided
+                            if row.get('date_of_birth'):
+                                birth_str = row.get('date_of_birth')
+                                # Parse birth date if it's already converted to ISO format
+                                try:
+                                    birth_date = date.fromisoformat(birth_str) if isinstance(birth_str, str) and len(birth_str) == 10 else None
+                                    if birth_date and parsed_date < birth_date:
+                                        row_errors.append(
+                                            f"Row {idx}: Invalid {field} '{original_value}' - "
+                                            f"baptism date cannot be before birth date"
+                                        )
+                                        continue
+                                except:
+                                    pass
+                        elif field == 'membership_date':
+                            # Membership date should not be in the future
+                            if parsed_date > today:
+                                row_errors.append(
+                                    f"Row {idx}: Invalid {field} '{original_value}' - "
+                                    f"membership date cannot be in the future"
+                                )
+                                continue
+
                         row[field] = parsed_date.isoformat()
                     else:
-                        row_errors.append(f"Row {idx}: Invalid {field} format (expected {date_format})")
+                        row_errors.append(
+                            f"Row {idx}: Invalid {field} '{original_value}' - "
+                            f"could not parse. Try formats: YYYY-MM-DD, DD-MM-YYYY, or DD/MM/YYYY"
+                        )
                 else:
                     # Remove empty/null values
                     row.pop(field, None)
@@ -402,8 +659,38 @@ class ImportExportService:
             else:
                 row.pop('blood_type', None)
             
+            # Validate email (only if provided) - format and duplicate check
+            if row.get('email') and row['email'] not in ['', None, 'NULL', 'null']:
+                email = str(row['email']).lower().strip()
+
+                # Validate email format using regex
+                email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+                if not re.match(email_pattern, email):
+                    row_errors.append(
+                        f"Row {idx}: Invalid email format '{row['email']}' - "
+                        f"must be a valid email address (e.g., name@example.com)"
+                    )
+                else:
+                    row['email'] = email  # Normalize
+
+                    # Check for duplicate within CSV batch
+                    if email in seen_emails:
+                        row_errors.append(
+                            f"Row {idx}: Duplicate email '{email}' - "
+                            f"already used in row {seen_emails[email]}"
+                        )
+                    # Check for duplicate with existing database records
+                    elif email in existing_emails:
+                        row_errors.append(
+                            f"Row {idx}: Email '{email}' already exists in database"
+                        )
+                    else:
+                        seen_emails[email] = idx
+            else:
+                row.pop('email', None)
+
             # Clean up other optional fields that are empty/null
-            optional_fields = ['email', 'city', 'state', 'country', 'occupation', 'household_id', 'notes', 'photo_filename', 'personal_document']
+            optional_fields = ['city', 'state', 'country', 'occupation', 'household_id', 'notes', 'photo_filename', 'personal_document']
             for field in optional_fields:
                 if row.get(field) in ['', None, 'NULL', 'null']:
                     row.pop(field, None)

@@ -206,9 +206,8 @@ const CreateAppointmentModal = ({ open, onClose }) => {
                       onClick={() => handleSelectMember(member)}
                       className="w-full flex items-center gap-3 p-3 border rounded-lg hover:bg-gray-50 transition-colors"
                     >
-                      <MemberAvatar 
-                        name={member.full_name}
-                        photo={member.photo_base64}
+                      <MemberAvatar
+                        member={member}
                         size="md"
                       />
                       <div className="flex-1 text-left">
@@ -235,9 +234,8 @@ const CreateAppointmentModal = ({ open, onClose }) => {
               className="space-y-4"
             >
               <div className="flex items-center gap-2 p-3 bg-blue-50 rounded-lg">
-                <MemberAvatar 
-                  name={selectedMember?.full_name}
-                  photo={selectedMember?.photo_base64}
+                <MemberAvatar
+                  member={selectedMember}
                   size="sm"
                 />
                 <div>

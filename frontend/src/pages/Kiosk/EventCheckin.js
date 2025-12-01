@@ -373,7 +373,7 @@ const EventCheckinKiosk = () => {
                       disabled={checkinInProgress}
                       className="w-full bg-blue-50 rounded-xl p-4 flex items-center gap-4 hover:bg-blue-100 transition-all disabled:opacity-50"
                     >
-                      <MemberAvatar name={member.full_name} photo={member.photo_base64} size="md" />
+                      <MemberAvatar member={member} size="md" />
                       <div className="text-left flex-1">
                         <p className="text-xl font-bold">{member.full_name}</p>
                         <p className="text-lg text-gray-600">{member.phone_whatsapp}</p>

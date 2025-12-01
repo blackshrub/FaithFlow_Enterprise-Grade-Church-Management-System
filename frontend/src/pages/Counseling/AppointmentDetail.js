@@ -226,9 +226,8 @@ const AppointmentDetailPage = () => {
               <div>
                 <div className="text-sm text-gray-500">Name</div>
                 <div className="flex items-center gap-3 mt-1">
-                  <MemberAvatar 
-                    name={appointment.member_info?.full_name}
-                    photo={appointment.member_info?.photo_base64}
+                  <MemberAvatar
+                    member={appointment.member_info}
                     size="md"
                   />
                   <div className="font-medium text-lg">{appointment.member_info?.full_name}</div>

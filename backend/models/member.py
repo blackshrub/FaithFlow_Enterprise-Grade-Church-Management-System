@@ -32,10 +32,14 @@ class MemberBase(BaseModel):
     participate_in_automation: bool = Field(True, description="If false, automation engine skips this member")
     blood_type: Optional[Literal['A', 'B', 'AB', 'O']] = None
     photo_filename: Optional[str] = None  # Profile photo filename for matching
-    photo_base64: Optional[str] = None  # Profile photo in base64
+    photo_base64: Optional[str] = None  # DEPRECATED: Profile photo in base64 (use photo_url)
+    photo_url: Optional[str] = None  # SeaweedFS URL for profile photo
+    photo_thumbnail_url: Optional[str] = None  # SeaweedFS URL for thumbnail
+    photo_fid: Optional[str] = None  # SeaweedFS file ID
+    photo_path: Optional[str] = None  # SeaweedFS path
     personal_document: Optional[str] = None  # Personal document filename
-    personal_document_base64: Optional[str] = None  # Personal document in base64
-    documents: List[str] = Field(default_factory=list)  # List of document URLs or base64
+    personal_document_base64: Optional[str] = None  # DEPRECATED: Personal document in base64
+    documents: List[Dict[str, Any]] = Field(default_factory=list)  # List of document objects with URLs
     custom_fields: Dict[str, Any] = Field(default_factory=dict)  # Custom fields defined by church
     
     # Personal QR Code (Universal Member ID)
@@ -74,10 +78,14 @@ class MemberUpdate(BaseModel):
     participate_in_automation: Optional[bool] = None
     blood_type: Optional[Literal['A', 'B', 'AB', 'O']] = None
     photo_filename: Optional[str] = None
-    photo_base64: Optional[str] = None
+    photo_base64: Optional[str] = None  # DEPRECATED
+    photo_url: Optional[str] = None  # SeaweedFS URL
+    photo_thumbnail_url: Optional[str] = None
+    photo_fid: Optional[str] = None
+    photo_path: Optional[str] = None
     personal_document: Optional[str] = None
-    personal_document_base64: Optional[str] = None
-    documents: Optional[List[str]] = None
+    personal_document_base64: Optional[str] = None  # DEPRECATED
+    documents: Optional[List[Dict[str, Any]]] = None
     custom_fields: Optional[Dict[str, Any]] = None
 
 

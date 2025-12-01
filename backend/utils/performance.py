@@ -41,7 +41,13 @@ class IndexManager:
         "members": [
             IndexModel([("church_id", ASCENDING), ("is_active", ASCENDING)]),
             IndexModel([("church_id", ASCENDING), ("status", ASCENDING)]),
-            IndexModel([("church_id", ASCENDING), ("email", ASCENDING)], unique=True, sparse=True),
+            # Partial index: only enforce uniqueness for non-empty emails
+            # This allows multiple members with null/empty email
+            IndexModel(
+                [("church_id", ASCENDING), ("email", ASCENDING)],
+                unique=True,
+                partialFilterExpression={"email": {"$type": "string", "$gt": ""}}
+            ),
             IndexModel([("church_id", ASCENDING), ("phone", ASCENDING)]),
             IndexModel([("church_id", ASCENDING), ("created_at", DESCENDING)]),
             IndexModel([("church_id", ASCENDING), ("membership_status", ASCENDING)]),
@@ -208,11 +214,20 @@ class IndexManager:
         ],
     }
 
+    # List of deprecated indexes that should be dropped if they exist
+    # Format: {collection_name: [index_name, ...]}
+    DEPRECATED_INDEXES: Dict[str, List[str]] = {
+        "members": [
+            # Old sparse index replaced by partial index for email uniqueness
+            "church_id_1_email_1",
+        ],
+    }
+
     @classmethod
     async def ensure_indexes(cls, db: AsyncIOMotorDatabase) -> Dict[str, Any]:
         """
         Create all indexes for optimal performance.
-        Safe to call multiple times - MongoDB handles existing indexes.
+        Also removes deprecated indexes that conflict with new ones.
 
         Returns:
             Dict with creation results per collection
@@ -222,6 +237,20 @@ class IndexManager:
 
         logger.info("Starting MongoDB index initialization...")
 
+        # First, drop any deprecated indexes
+        for collection_name, deprecated in cls.DEPRECATED_INDEXES.items():
+            try:
+                collection = db[collection_name]
+                existing_indexes = await collection.index_information()
+
+                for index_name in deprecated:
+                    if index_name in existing_indexes:
+                        await collection.drop_index(index_name)
+                        logger.info(f"Dropped deprecated index {index_name} from {collection_name}")
+            except Exception as e:
+                logger.warning(f"Error dropping deprecated indexes from {collection_name}: {e}")
+
+        # Now create indexes
         for collection_name, indexes in cls.INDEXES.items():
             try:
                 collection = db[collection_name]

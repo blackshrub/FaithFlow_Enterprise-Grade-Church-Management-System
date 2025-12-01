@@ -36,7 +36,7 @@ REFERENCE_TYPE_TO_CATEGORY = {
     "asset": StorageCategory.GENERAL,
     "budget": StorageCategory.GENERAL,
     "member": StorageCategory.MEMBER_DOCUMENT,
-    "article": StorageCategory.ARTICLE_IMAGE,
+    "article": StorageCategory.ARTICLE_FEATURED,
     "event": StorageCategory.EVENT_COVER,
     "group": StorageCategory.GROUP_COVER,
     "community": StorageCategory.COMMUNITY_COVER,

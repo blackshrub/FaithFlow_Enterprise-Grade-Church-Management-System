@@ -62,8 +62,7 @@ export function GroupMembersPanel({
                 <TableCell>
                   <div className="flex items-center space-x-2">
                     <MemberAvatar
-                      name={m.member?.full_name}
-                      photo={m.member?.photo_base64}
+                      member={m.member}
                     />
                     <div>
                       <div className="font-medium">{m.member?.full_name}</div>

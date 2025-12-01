@@ -6,7 +6,9 @@ from datetime import datetime
 import json
 import io
 import os
+import shutil
 import logging
+import uuid
 
 from models.import_export import ImportTemplate, ImportTemplateCreate, ImportTemplateUpdate, ImportLog, ImportLogCreate
 from models.member import Member
@@ -18,6 +20,50 @@ from utils.helpers import normalize_phone_number
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/import-export", tags=["Import/Export"])
+
+
+async def cleanup_temp_session(db: AsyncIOMotorDatabase, session_id: str, session_type: str = 'photo'):
+    """Clean up temporary files and database session record
+
+    Handles both legacy temp file storage and new SeaweedFS storage.
+
+    Args:
+        db: Database connection
+        session_id: Session ID to clean up
+        session_type: 'photo' or 'document'
+    """
+    if not session_id:
+        return
+
+    collection_name = f'temp_{session_type}_sessions'
+    try:
+        # Find session record
+        session = await db[collection_name].find_one({'session_id': session_id})
+        if session:
+            # Check storage type
+            if session.get('storage_type') == 'seaweedfs':
+                # SeaweedFS storage - delete folder via filer
+                storage_path = session.get('storage_path')
+                if storage_path:
+                    try:
+                        from services.seaweedfs_service import get_seaweedfs_service
+                        seaweedfs = get_seaweedfs_service()
+                        await seaweedfs.delete_by_path(storage_path)
+                        logger.info(f"Cleaned up SeaweedFS path: {storage_path}")
+                    except Exception as e:
+                        logger.warning(f"Failed to delete SeaweedFS path {storage_path}: {e}")
+            else:
+                # Legacy temp file storage
+                temp_dir = session.get('temp_dir')
+                if temp_dir and os.path.exists(temp_dir):
+                    shutil.rmtree(temp_dir, ignore_errors=True)
+                    logger.info(f"Cleaned up temp directory: {temp_dir}")
+
+            # Delete session record
+            await db[collection_name].delete_one({'session_id': session_id})
+            logger.info(f"Deleted {session_type} session record: {session_id}")
+    except Exception as e:
+        logger.error(f"Error cleaning up {session_type} session {session_id}: {str(e)}")
 
 
 # ============= Import Template Routes =============
@@ -335,37 +381,47 @@ async def import_members(
         resolutions = json.loads(duplicate_resolutions)
         custom_field_defs = json.loads(custom_fields)
         
-        # Retrieve photo data from temp file storage if session_id provided
-        photo_mapping = {}
+        # Retrieve photo URLs from SeaweedFS session if session_id provided
+        photo_mapping = {}  # {normalized_filename: seaweedfs_url}
         if photo_session_id:
             temp_session = await db.temp_photo_sessions.find_one({'session_id': photo_session_id})
             if temp_session:
-                temp_dir = temp_session.get('temp_dir')
-                if temp_dir and os.path.exists(temp_dir):
-                    # Read all photo files from temp directory
-                    for photo_file in os.listdir(temp_dir):
-                        if photo_file.endswith('.b64'):
-                            filename_key = photo_file.replace('.b64', '')
-                            filepath = os.path.join(temp_dir, photo_file)
-                            with open(filepath, 'r') as f:
-                                photo_mapping[filename_key] = f.read()
-                    logger.info(f"Retrieved {len(photo_mapping)} photos from temp storage")
-        
-        # Retrieve document data from temp storage if session_id provided
-        document_mapping = {}
+                # New SeaweedFS storage: files dict contains {filename: url}
+                if temp_session.get('storage_type') == 'seaweedfs':
+                    photo_mapping = temp_session.get('files', {})
+                    logger.info(f"Retrieved {len(photo_mapping)} photo URLs from SeaweedFS session")
+                else:
+                    # Legacy temp file storage (backward compatibility)
+                    temp_dir = temp_session.get('temp_dir')
+                    if temp_dir and os.path.exists(temp_dir):
+                        for photo_file in os.listdir(temp_dir):
+                            if photo_file.endswith('.b64'):
+                                filename_key = photo_file.replace('.b64', '')
+                                filepath = os.path.join(temp_dir, photo_file)
+                                with open(filepath, 'r') as f:
+                                    photo_mapping[filename_key] = f.read()
+                        logger.info(f"Retrieved {len(photo_mapping)} photos from legacy temp storage")
+
+        # Retrieve document URLs from SeaweedFS session if session_id provided
+        document_mapping = {}  # {normalized_filename: seaweedfs_url}
         if document_session_id:
             temp_session = await db.temp_document_sessions.find_one({'session_id': document_session_id})
             if temp_session:
-                temp_dir = temp_session.get('temp_dir')
-                if temp_dir and os.path.exists(temp_dir):
-                    # Read all document files from temp directory
-                    for doc_file in os.listdir(temp_dir):
-                        if doc_file.endswith('.b64'):
-                            filename_key = doc_file.replace('.b64', '')
-                            filepath = os.path.join(temp_dir, doc_file)
-                            with open(filepath, 'r') as f:
-                                document_mapping[filename_key] = f.read()
-                    logger.info(f"Retrieved {len(document_mapping)} documents from temp storage")
+                # New SeaweedFS storage
+                if temp_session.get('storage_type') == 'seaweedfs':
+                    document_mapping = temp_session.get('files', {})
+                    logger.info(f"Retrieved {len(document_mapping)} document URLs from SeaweedFS session")
+                else:
+                    # Legacy temp file storage (backward compatibility)
+                    temp_dir = temp_session.get('temp_dir')
+                    if temp_dir and os.path.exists(temp_dir):
+                        for doc_file in os.listdir(temp_dir):
+                            if doc_file.endswith('.b64'):
+                                filename_key = doc_file.replace('.b64', '')
+                                filepath = os.path.join(temp_dir, doc_file)
+                                with open(filepath, 'r') as f:
+                                    document_mapping[filename_key] = f.read()
+                        logger.info(f"Retrieved {len(document_mapping)} documents from legacy temp storage")
         
         # Parse file
         if file_type == 'csv':
@@ -431,21 +487,42 @@ async def import_members(
                 else:
                     logger.info(f"Member already has status: {member_data.get('member_status')}")
                 
-                # Merge photo if matched
+                # Merge photo if matched - now uses SeaweedFS URLs
                 if photo_mapping and member_data.get('photo_filename'):
                     normalized_filename = file_upload_service.normalize_filename(member_data['photo_filename'])
                     if normalized_filename in photo_mapping:
-                        member_data['photo_base64'] = photo_mapping[normalized_filename]
+                        photo_value = photo_mapping[normalized_filename]
+                        # Check if it's a SeaweedFS URL or legacy base64
+                        if photo_value.startswith('http'):
+                            # SeaweedFS URL - store as photo_url
+                            member_data['photo_url'] = photo_value
+                            member_data['photo_base64'] = None  # Clear legacy field
+                        else:
+                            # Legacy base64 data
+                            member_data['photo_base64'] = photo_value
                         logger.info(f"Matched photo for member: {member_data.get('full_name')}")
-                
-                # Merge document if matched
+
+                # Merge document if matched - now uses SeaweedFS URLs
                 if document_mapping and member_data.get('personal_document'):
                     normalized_filename = file_upload_service.normalize_filename(member_data['personal_document'])
                     if normalized_filename in document_mapping:
-                        # Store the base64 document data
-                        member_data['personal_document_base64'] = document_mapping[normalized_filename]
-                        # Keep filename for reference
-                        member_data['personal_document'] = member_data['personal_document']
+                        doc_value = document_mapping[normalized_filename]
+                        # Check if it's a SeaweedFS URL or legacy base64
+                        if doc_value.startswith('http'):
+                            # SeaweedFS URL - store document info
+                            if 'documents' not in member_data:
+                                member_data['documents'] = []
+                            member_data['documents'].append({
+                                'id': str(uuid.uuid4()),
+                                'type': 'imported_document',
+                                'name': member_data['personal_document'],
+                                'url': doc_value,
+                                'uploaded_at': datetime.now().isoformat()
+                            })
+                            member_data['personal_document_base64'] = None  # Clear legacy field
+                        else:
+                            # Legacy base64 data
+                            member_data['personal_document_base64'] = doc_value
                         logger.info(f"Matched document for member: {member_data.get('full_name')}")
                 
                 # Auto-assign demographic
@@ -500,6 +577,12 @@ async def import_members(
         log_doc['updated_at'] = log_doc['updated_at'].isoformat()
         await db.import_logs.insert_one(log_doc)
         
+        # Clean up temp files on success
+        if photo_session_id:
+            await cleanup_temp_session(db, photo_session_id, 'photo')
+        if document_session_id:
+            await cleanup_temp_session(db, document_session_id, 'document')
+
         return {
             "success": True,
             "total_records": len(data),
@@ -508,9 +591,19 @@ async def import_members(
             "errors": import_errors
         }
     except HTTPException:
+        # Clean up temp files on failure
+        if photo_session_id:
+            await cleanup_temp_session(db, photo_session_id, 'photo')
+        if document_session_id:
+            await cleanup_temp_session(db, document_session_id, 'document')
         raise
     except Exception as e:
         logger.error(f"Error importing members: {str(e)}")
+        # Clean up temp files on failure
+        if photo_session_id:
+            await cleanup_temp_session(db, photo_session_id, 'photo')
+        if document_session_id:
+            await cleanup_temp_session(db, document_session_id, 'document')
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=str(e)
@@ -742,14 +835,14 @@ async def cleanup_temp_uploads(
     current_user: dict = Depends(require_admin)
 ):
     """Clean up temporary photo/document uploads if import fails or is cancelled
-    
+
     This endpoint removes photo_base64 and documents from members that were
     uploaded during the import wizard but the import was never completed.
     """
-    
+
     try:
         church_id = current_user.get('session_church_id')
-        
+
         # Clear photos and documents for specified members
         result = await db.members.update_many(
             {
@@ -764,16 +857,137 @@ async def cleanup_temp_uploads(
                 }
             }
         )
-        
+
         logger.info(f"Cleaned up temp uploads for {result.modified_count} members")
-        
+
         return {
             "success": True,
             "cleaned_count": result.modified_count
         }
-    
+
     except Exception as e:
         logger.error(f"Error cleaning up uploads: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+
+
+@router.post("/cancel-import")
+async def cancel_import(
+    photo_session_id: str = Form(default=''),
+    document_session_id: str = Form(default=''),
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current_user: dict = Depends(require_admin)
+):
+    """Cancel an import in progress and clean up all temporary files
+
+    Call this endpoint when user cancels the import wizard to ensure
+    all temporary files (photos, documents) are cleaned up.
+    """
+
+    try:
+        cleaned = {
+            'photo_session': False,
+            'document_session': False
+        }
+
+        if photo_session_id:
+            await cleanup_temp_session(db, photo_session_id, 'photo')
+            cleaned['photo_session'] = True
+
+        if document_session_id:
+            await cleanup_temp_session(db, document_session_id, 'document')
+            cleaned['document_session'] = True
+
+        logger.info(f"Import cancelled, cleaned up: {cleaned}")
+
+        return {
+            "success": True,
+            "message": "Import cancelled and temporary files cleaned up",
+            "cleaned": cleaned
+        }
+
+    except Exception as e:
+        logger.error(f"Error cancelling import: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+
+
+@router.post("/cleanup-expired-sessions")
+async def cleanup_expired_sessions(
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current_user: dict = Depends(require_admin)
+):
+    """Clean up all expired temp sessions (photos and documents)
+
+    Sessions expire after 2 hours. This endpoint removes:
+    - Expired session records from database
+    - Temporary files from disk
+    """
+
+    try:
+        now = datetime.now().isoformat()
+        cleaned_count = {
+            'photo_sessions': 0,
+            'document_sessions': 0,
+            'directories_removed': 0
+        }
+
+        # Clean up expired photo sessions
+        expired_photos = await db.temp_photo_sessions.find({
+            'expires_at': {'$lt': now}
+        }).to_list(1000)
+
+        for session in expired_photos:
+            temp_dir = session.get('temp_dir')
+            if temp_dir and os.path.exists(temp_dir):
+                shutil.rmtree(temp_dir, ignore_errors=True)
+                cleaned_count['directories_removed'] += 1
+            cleaned_count['photo_sessions'] += 1
+
+        await db.temp_photo_sessions.delete_many({'expires_at': {'$lt': now}})
+
+        # Clean up expired document sessions
+        expired_docs = await db.temp_document_sessions.find({
+            'expires_at': {'$lt': now}
+        }).to_list(1000)
+
+        for session in expired_docs:
+            temp_dir = session.get('temp_dir')
+            if temp_dir and os.path.exists(temp_dir):
+                shutil.rmtree(temp_dir, ignore_errors=True)
+                cleaned_count['directories_removed'] += 1
+            cleaned_count['document_sessions'] += 1
+
+        await db.temp_document_sessions.delete_many({'expires_at': {'$lt': now}})
+
+        # Also clean up any orphaned temp directories (directories without session records)
+        import glob
+        for pattern in ['/tmp/photo_upload_*', '/tmp/document_upload_*']:
+            for temp_dir in glob.glob(pattern):
+                session_id = os.path.basename(temp_dir).split('_')[-1]
+                # Check if session exists
+                photo_session = await db.temp_photo_sessions.find_one({'session_id': session_id})
+                doc_session = await db.temp_document_sessions.find_one({'session_id': session_id})
+
+                if not photo_session and not doc_session:
+                    # Orphaned directory, remove it
+                    shutil.rmtree(temp_dir, ignore_errors=True)
+                    cleaned_count['directories_removed'] += 1
+                    logger.info(f"Removed orphaned temp directory: {temp_dir}")
+
+        logger.info(f"Cleaned up expired sessions: {cleaned_count}")
+
+        return {
+            "success": True,
+            "cleaned": cleaned_count
+        }
+
+    except Exception as e:
+        logger.error(f"Error cleaning up expired sessions: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e)

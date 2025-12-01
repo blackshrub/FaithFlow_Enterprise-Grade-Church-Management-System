@@ -138,14 +138,18 @@ async def get_member_info(
     """Get member basic info."""
     member = await db.members.find_one(
         {"id": member_id, "church_id": church_id},
-        {"_id": 0, "id": 1, "full_name": 1, "photo_base64": 1}
+        {"_id": 0, "id": 1, "full_name": 1, "photo_base64": 1, "photo_url": 1, "photo_thumbnail_url": 1}
     )
     if not member:
         return {"id": member_id, "name": "Unknown", "avatar_fid": None}
+    # Prefer SeaweedFS URL over legacy base64
+    avatar = member.get("photo_url") or member.get("photo_base64")
     return {
         "id": member["id"],
         "name": member.get("full_name", "Unknown"),
-        "avatar_fid": member.get("photo_base64")
+        "avatar_fid": avatar,
+        "avatar_url": member.get("photo_url"),
+        "avatar_thumbnail": member.get("photo_thumbnail_url")
     }
 
 
@@ -636,7 +640,7 @@ async def mobile_list_subgroup_members(
     if member_ids:
         members_cursor = db.members.find(
             {"id": {"$in": member_ids}, "church_id": church_id},
-            {"_id": 0, "id": 1, "full_name": 1, "photo_base64": 1}
+            {"_id": 0, "id": 1, "full_name": 1, "photo_base64": 1, "photo_url": 1, "photo_thumbnail_url": 1}
         )
         async for m in members_cursor:
             members_map[m["id"]] = m
@@ -648,7 +652,9 @@ async def mobile_list_subgroup_members(
             "id": membership["id"],
             "member_id": membership["member_id"],
             "member_name": member_info.get("full_name", "Unknown"),
-            "member_avatar": member_info.get("photo_base64"),
+            "member_avatar": member_info.get("photo_url") or member_info.get("photo_base64"),
+            "member_avatar_url": member_info.get("photo_url"),
+            "member_avatar_thumbnail": member_info.get("photo_thumbnail_url"),
             "role": membership.get("role", "member"),
             "joined_at": membership.get("joined_at").isoformat() if membership.get("joined_at") else None
         })

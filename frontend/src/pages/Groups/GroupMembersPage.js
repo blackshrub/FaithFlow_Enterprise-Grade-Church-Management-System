@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { UserPlus } from 'lucide-react';
 import { useGroup, useGroupMembers, useAddGroupMember, useRemoveGroupMember } from '../../hooks/useGroups';
 import { GroupMembersPanel } from '../../components/Groups/GroupMembersPanel';
+import MemberAvatar from '../../components/MemberAvatar';
 import { useToast } from '../../hooks/use-toast';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
@@ -182,19 +183,7 @@ export default function GroupMembersPage() {
                       className="flex items-center justify-between py-2 px-3 rounded-md bg-white border hover:border-blue-300 transition-colors"
                     >
                       <div className="flex items-center gap-3">
-                        {member.photo_base64 ? (
-                          <img
-                            src={member.photo_base64}
-                            alt={member.full_name}
-                            className="w-10 h-10 rounded-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                            <span className="text-sm font-semibold text-blue-600">
-                              {member.full_name?.charAt(0)?.toUpperCase()}
-                            </span>
-                          </div>
-                        )}
+                        <MemberAvatar member={member} size="md" />
                         <div>
                           <div className="font-medium">{member.full_name}</div>
                           <div className="text-xs text-gray-500">

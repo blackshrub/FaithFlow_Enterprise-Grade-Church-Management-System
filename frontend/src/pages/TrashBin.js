@@ -124,9 +124,8 @@ export default function TrashBin() {
                   return (
                     <TableRow key={member.id}>
                       <TableCell>
-                        <MemberAvatar 
-                          name={member.full_name} 
-                          photo={member.photo_base64}
+                        <MemberAvatar
+                          member={member}
                           size="sm"
                         />
                       </TableCell>

@@ -72,6 +72,9 @@ logger = logging.getLogger(__name__)
 SEAWEEDFS_MASTER_URL = os.environ.get("SEAWEEDFS_MASTER_URL", "http://localhost:9333")
 SEAWEEDFS_VOLUME_URL = os.environ.get("SEAWEEDFS_VOLUME_URL", "http://localhost:8080")
 SEAWEEDFS_FILER_URL = os.environ.get("SEAWEEDFS_FILER_URL", "http://localhost:8888")
+# Public URL for file access (via reverse proxy, e.g., files.yourdomain.com)
+# If not set, falls back to internal filer URL
+SEAWEEDFS_PUBLIC_URL = os.environ.get("SEAWEEDFS_PUBLIC_URL", "")
 
 # Default timeout for HTTP requests (seconds)
 DEFAULT_TIMEOUT = 30.0
@@ -135,9 +138,13 @@ class StorageCategory(str, Enum):
 
     # Cover images
     GROUP_COVER = "group_cover"
+    GROUP_GALLERY = "group_gallery"
     COMMUNITY_COVER = "community_cover"
+    COMMUNITY_SUBGROUP_COVER = "community_subgroup_cover"
     EVENT_COVER = "event_cover"
-    ARTICLE_IMAGE = "article_image"
+    EVENT_GALLERY = "event_gallery"
+    ARTICLE_FEATURED = "article_featured"
+    ARTICLE_CONTENT = "article_content"
     DEVOTION_COVER = "devotion_cover"
 
     # Explore content
@@ -145,12 +152,22 @@ class StorageCategory(str, Enum):
     EXPLORE_FIGURE = "explore_figure"
     EXPLORE_VERSE = "explore_verse"
     EXPLORE_QUIZ = "explore_quiz"
+    EXPLORE_STUDY = "explore_study"
+
+    # Sermons
+    SERMON_AUDIO = "sermon_audio"
+    SERMON_VIDEO = "sermon_video"
+    SERMON_SLIDES = "sermon_slides"
+    SERMON_THUMBNAIL = "sermon_thumbnail"
 
     # AI-generated
     AI_GENERATED = "ai_generated"
 
     # Community messages
     MESSAGE_MEDIA = "message_media"
+
+    # Import/Export (temporary)
+    IMPORT_TEMP = "import_temp"
 
     # General
     GENERAL = "general"
@@ -210,15 +227,6 @@ STORAGE_CATEGORIES = {
         "thumbnail": True,
         "thumbnail_size": (400, 200),
         "allowed_types": ["image/jpeg", "image/png", "image/webp"],
-    },
-    StorageCategory.ARTICLE_IMAGE: {
-        "path": "articles/images",
-        "max_size": 5 * 1024 * 1024,  # 5MB
-        "optimize": True,
-        "max_dimensions": (1920, 1080),
-        "thumbnail": True,
-        "thumbnail_size": (400, 225),
-        "allowed_types": ["image/jpeg", "image/png", "image/webp", "image/gif"],
     },
     StorageCategory.DEVOTION_COVER: {
         "path": "devotions/covers",
@@ -288,6 +296,102 @@ STORAGE_CATEGORIES = {
         "optimize": False,
         "allowed_types": ALLOWED_MIME_TYPES["image"] + ALLOWED_MIME_TYPES["document"],
     },
+    # New categories for enterprise-grade structure
+    StorageCategory.GROUP_GALLERY: {
+        "path": "groups/gallery",
+        "max_size": 10 * 1024 * 1024,  # 10MB
+        "optimize": True,
+        "max_dimensions": (1920, 1080),
+        "thumbnail": True,
+        "thumbnail_size": (300, 300),
+        "allowed_types": ["image/jpeg", "image/png", "image/webp"],
+    },
+    StorageCategory.COMMUNITY_SUBGROUP_COVER: {
+        "path": "communities/subgroups/covers",
+        "max_size": 5 * 1024 * 1024,  # 5MB
+        "optimize": True,
+        "max_dimensions": (1200, 600),
+        "thumbnail": True,
+        "thumbnail_size": (400, 200),
+        "allowed_types": ["image/jpeg", "image/png", "image/webp"],
+    },
+    StorageCategory.EVENT_GALLERY: {
+        "path": "events/gallery",
+        "max_size": 10 * 1024 * 1024,  # 10MB
+        "optimize": True,
+        "max_dimensions": (1920, 1080),
+        "thumbnail": True,
+        "thumbnail_size": (300, 300),
+        "allowed_types": ["image/jpeg", "image/png", "image/webp"],
+    },
+    StorageCategory.ARTICLE_FEATURED: {
+        "path": "articles/featured",
+        "max_size": 5 * 1024 * 1024,  # 5MB
+        "optimize": True,
+        "max_dimensions": (1920, 1080),
+        "thumbnail": True,
+        "thumbnail_size": (400, 225),
+        "allowed_types": ["image/jpeg", "image/png", "image/webp", "image/gif"],
+    },
+    StorageCategory.ARTICLE_CONTENT: {
+        "path": "articles/content",
+        "max_size": 5 * 1024 * 1024,  # 5MB
+        "optimize": True,
+        "max_dimensions": (1920, 1080),
+        "thumbnail": False,
+        "allowed_types": ["image/jpeg", "image/png", "image/webp", "image/gif"],
+    },
+    StorageCategory.EXPLORE_STUDY: {
+        "path": "explore/bible-studies",
+        "max_size": 5 * 1024 * 1024,
+        "optimize": True,
+        "max_dimensions": (1200, 800),
+        "thumbnail": True,
+        "thumbnail_size": (400, 267),
+        "allowed_types": ["image/jpeg", "image/png", "image/webp"],
+    },
+    StorageCategory.SERMON_AUDIO: {
+        "path": "sermons/audio",
+        "max_size": 200 * 1024 * 1024,  # 200MB
+        "optimize": False,
+        "thumbnail": False,
+        "allowed_types": ALLOWED_MIME_TYPES["audio"],
+    },
+    StorageCategory.SERMON_VIDEO: {
+        "path": "sermons/video",
+        "max_size": 2 * 1024 * 1024 * 1024,  # 2GB
+        "optimize": False,
+        "thumbnail": True,
+        "thumbnail_size": (400, 225),
+        "allowed_types": ALLOWED_MIME_TYPES["video"],
+    },
+    StorageCategory.SERMON_SLIDES: {
+        "path": "sermons/slides",
+        "max_size": 50 * 1024 * 1024,  # 50MB
+        "optimize": False,
+        "thumbnail": False,
+        "allowed_types": [
+            "application/pdf",
+            "application/vnd.ms-powerpoint",
+            "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+        ],
+    },
+    StorageCategory.SERMON_THUMBNAIL: {
+        "path": "sermons/thumbnails",
+        "max_size": 2 * 1024 * 1024,  # 2MB
+        "optimize": True,
+        "max_dimensions": (800, 450),
+        "thumbnail": False,
+        "allowed_types": ["image/jpeg", "image/png", "image/webp"],
+    },
+    StorageCategory.IMPORT_TEMP: {
+        "path": "imports/temp",
+        "max_size": 100 * 1024 * 1024,  # 100MB
+        "optimize": False,
+        "thumbnail": False,
+        "allowed_types": ALLOWED_MIME_TYPES["image"] + ALLOWED_MIME_TYPES["document"],
+        "ttl": 7200,  # 2 hours TTL for temp files
+    },
 }
 
 
@@ -304,6 +408,7 @@ class SeaweedFSService:
         master_url: str = SEAWEEDFS_MASTER_URL,
         volume_url: str = SEAWEEDFS_VOLUME_URL,
         filer_url: str = SEAWEEDFS_FILER_URL,
+        public_url: str = SEAWEEDFS_PUBLIC_URL,
         timeout: float = DEFAULT_TIMEOUT
     ):
         """
@@ -313,11 +418,15 @@ class SeaweedFSService:
             master_url: SeaweedFS master server URL
             volume_url: SeaweedFS volume server URL
             filer_url: SeaweedFS filer server URL
+            public_url: Public URL for file access (via reverse proxy)
             timeout: Request timeout in seconds
         """
         self.master_url = master_url.rstrip("/")
         self.volume_url = volume_url.rstrip("/")
         self.filer_url = filer_url.rstrip("/")
+        # Public URL for generating file URLs accessible from outside
+        # Falls back to filer URL if not set
+        self.public_url = public_url.rstrip("/") if public_url else self.filer_url
         self.timeout = timeout
 
     async def health_check(self) -> Dict[str, Any]:
@@ -774,23 +883,27 @@ class SeaweedFSService:
             Upload result
         """
         try:
-            # Build filer URL
+            # Build filer URL for internal upload
             full_path = f"{path.rstrip('/')}/{file_name}"
-            url = f"{self.filer_url}{full_path}"
+            upload_url = f"{self.filer_url}{full_path}"
 
             async with httpx.AsyncClient(timeout=self.timeout) as client:
                 files = {
                     "file": (file_name, content, mime_type)
                 }
-                response = await client.post(url, files=files)
+                response = await client.post(upload_url, files=files)
                 response.raise_for_status()
                 data = response.json()
+
+            # Build public URL for file access
+            public_url = f"{self.public_url}{full_path}"
 
             logger.info(f"File uploaded via filer: {full_path}")
 
             return {
                 "path": full_path,
-                "url": url,
+                "url": public_url,  # Return public URL for client access
+                "internal_url": upload_url,  # Keep internal URL for debugging
                 "size": len(content),
                 "fid": data.get("fid")
             }
@@ -1175,7 +1288,7 @@ class SeaweedFSService:
             file_name=file_name,
             mime_type=mime_type,
             church_id=church_id,
-            category=StorageCategory.ARTICLE_IMAGE,
+            category=StorageCategory.ARTICLE_FEATURED,
             entity_id=article_id
         )
 
