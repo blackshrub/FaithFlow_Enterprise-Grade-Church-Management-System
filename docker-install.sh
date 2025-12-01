@@ -1130,55 +1130,40 @@ build_and_start() {
     # Build frontend with progress indicator (can take 5-15 minutes on small VPS)
     echo -e "${GRAY}    Building frontend (React)...${NC}"
     echo -e "${YELLOW}    ⚠ This may take 5-15 minutes on first build. Please wait...${NC}"
+    echo -e "${YELLOW}    Progress will be shown below. Do not interrupt!${NC}"
     echo ""
 
-    # Run build in background and show progress
-    $COMPOSE_CMD build frontend >> "$LOG_FILE" 2>&1 &
-    local build_pid=$!
-
     local start_time=$(date +%s)
-    local spin_chars='|/-\\'
-    local i=0
+    local build_status=0
 
-    # Wait for build with progress indicator (no timeout - let it complete)
-    while kill -0 "$build_pid" 2>/dev/null; do
-        local elapsed=$(($(date +%s) - start_time))
-        local mins=$((elapsed / 60))
-        local secs=$((elapsed % 60))
-        local spin="${spin_chars:i++%4:1}"
-        printf "\r    %s Building frontend... [%dm %02ds]   " "$spin" "$mins" "$secs"
-        sleep 0.5
-    done
-    printf "\r\033[K"
+    # Run build in foreground with visible progress
+    # Using --progress=plain shows all build steps clearly
+    # Tee output to both log file and screen for visibility
+    if ! $COMPOSE_CMD build --progress=plain frontend 2>&1 | tee -a "$LOG_FILE"; then
+        build_status=1
+    fi
 
-    # Check if build succeeded
-    wait "$build_pid"
-    local build_status=$?
+    local total_time=$(($(date +%s) - start_time))
 
     if [ $build_status -ne 0 ]; then
-        print_error "Frontend build failed after $(($(date +%s) - start_time)) seconds"
         echo ""
-        echo -e "${YELLOW}  Last 30 lines of build log:${NC}"
-        echo -e "${GRAY}  ─────────────────────────────────────────────────────────────────${NC}"
-        tail -30 "$LOG_FILE" | while IFS= read -r line; do
-            if echo "$line" | grep -qiE "(error|failed|cannot)"; then
-                echo -e "${RED}    $line${NC}"
-            else
-                echo -e "${GRAY}    $line${NC}"
-            fi
-        done
-        echo -e "${GRAY}  ─────────────────────────────────────────────────────────────────${NC}"
+        print_error "Frontend build failed after $((total_time / 60))m $((total_time % 60))s"
         echo ""
         echo -e "${YELLOW}  Common causes:${NC}"
-        echo -e "${WHITE}    - Insufficient memory (need 2GB+ free for build)${NC}"
+        echo -e "${WHITE}    - Insufficient memory (need 4GB RAM+Swap for build)${NC}"
         echo -e "${WHITE}    - Disk space full${NC}"
         echo -e "${WHITE}    - Network issues downloading npm packages${NC}"
         echo ""
         echo -e "${CYAN}  Full log: cat $LOG_FILE${NC}"
+        echo ""
+        echo -e "${YELLOW}  Tip: If build was killed by OOM, try adding more swap:${NC}"
+        echo -e "${WHITE}    sudo fallocate -l 4G /swapfile${NC}"
+        echo -e "${WHITE}    sudo chmod 600 /swapfile${NC}"
+        echo -e "${WHITE}    sudo mkswap /swapfile && sudo swapon /swapfile${NC}"
         exit 1
     fi
 
-    local total_time=$(($(date +%s) - start_time))
+    echo ""
     print_success "Frontend image built (took $((total_time / 60))m $((total_time % 60))s)"
 
     print_success "All images built successfully"
