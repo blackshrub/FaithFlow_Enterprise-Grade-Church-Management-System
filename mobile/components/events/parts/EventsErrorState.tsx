@@ -2,10 +2,11 @@
  * EventsErrorState - Error State for Events
  *
  * Memoized error state component with retry functionality.
+ * Styling: NativeWind-first with inline style for spacing constants
  */
 
 import React, { memo, useCallback } from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { View, Text, Pressable } from 'react-native';
 import { XCircle } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 
@@ -22,19 +23,12 @@ export interface EventsErrorStateProps {
 }
 
 // =============================================================================
-// COLORS
+// COLORS (for icon colors only)
 // =============================================================================
 
 const Colors = {
-  neutral: {
-    500: '#737373',
-    800: '#262626',
-  },
-  gradient: {
-    end: '#0f3460',
-  },
   error: '#ef4444',
-  white: '#ffffff',
+  gradientEnd: '#0f3460',
 };
 
 // =============================================================================
@@ -51,52 +45,38 @@ export const EventsErrorState = memo(function EventsErrorState({
   }, [onRetry]);
 
   return (
-    <View style={styles.container}>
+    <View
+      className="flex-1 items-center justify-center"
+      style={{ paddingHorizontal: spacing.xxl }}
+    >
       <MemoIcon icon={XCircle} size={48} color={Colors.error} />
-      <Text style={styles.title}>{t('events.loadError')}</Text>
-      <Text style={styles.desc}>{t('events.loadErrorDesc')}</Text>
-      <Pressable onPress={handleRetry} style={styles.button}>
-        <Text style={styles.buttonText}>{t('common.retry')}</Text>
+      <Text
+        className="text-xl font-bold text-neutral-800"
+        style={{ marginTop: spacing.m, marginBottom: spacing.s }}
+      >
+        {t('events.loadError')}
+      </Text>
+      <Text
+        className="text-[15px] text-neutral-500 text-center"
+        style={{ marginBottom: spacing.l }}
+      >
+        {t('events.loadErrorDesc')}
+      </Text>
+      <Pressable
+        onPress={handleRetry}
+        style={{
+          backgroundColor: Colors.gradientEnd,
+          paddingHorizontal: spacing.l,
+          paddingVertical: spacing.sm,
+          borderRadius: radius.xl,
+        }}
+      >
+        <Text className="text-[15px] font-semibold text-white">
+          {t('common.retry')}
+        </Text>
       </Pressable>
     </View>
   );
-});
-
-// =============================================================================
-// STYLES
-// =============================================================================
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: spacing.xxl,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: Colors.neutral[800],
-    marginTop: spacing.m,
-    marginBottom: spacing.s,
-  },
-  desc: {
-    fontSize: 15,
-    color: Colors.neutral[500],
-    textAlign: 'center',
-    marginBottom: spacing.l,
-  },
-  button: {
-    backgroundColor: Colors.gradient.end,
-    paddingHorizontal: spacing.l,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.xl,
-  },
-  buttonText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: Colors.white,
-  },
 });
 
 export default EventsErrorState;

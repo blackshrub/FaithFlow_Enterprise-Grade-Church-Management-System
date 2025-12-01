@@ -3,27 +3,21 @@
  *
  * Combines SearchBar and category filter button.
  * Used at the top of the events list (static, doesn't scroll).
+ * Styling: NativeWind-first with inline style for shadows/spacing constants
  */
 
 import React, { memo } from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { View, Text, Pressable } from 'react-native';
 import { Filter, ChevronRight } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 
 import { SearchBar } from './SearchBar';
 import { spacing, radius } from '@/constants/spacing';
 
-// Colors
+// Colors (for icon colors only)
 const Colors = {
-  gradient: {
-    end: '#0f3460',
-  },
-  neutral: {
-    100: '#f5f5f5',
-    400: '#a3a3a3',
-    800: '#262626',
-  },
-  white: '#ffffff',
+  gradientEnd: '#0f3460',
+  neutral400: '#a3a3a3',
 };
 
 interface EventCategory {
@@ -54,7 +48,7 @@ function SearchHeaderComponent({
     : null;
 
   return (
-    <View style={styles.container}>
+    <View style={{ paddingHorizontal: spacing.ml, paddingTop: spacing.ml }}>
       <SearchBar />
       {categories.length > 0 && (
         <Pressable
@@ -62,13 +56,24 @@ function SearchHeaderComponent({
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             onFilterPress();
           }}
-          style={styles.filterBtn}
+          className="flex-row items-center bg-white"
+          style={{
+            borderRadius: radius.card,
+            padding: spacing.sm,
+            marginBottom: spacing.ml,
+            gap: spacing.s,
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.04,
+            shadowRadius: 8,
+            elevation: 2,
+          }}
         >
-          <Filter size={18} color={Colors.gradient.end} />
-          <Text style={styles.filterText}>
+          <Filter size={18} color={Colors.gradientEnd} />
+          <Text className="flex-1 text-[15px] font-semibold text-neutral-800">
             {selectedCategoryName || allCategoriesLabel}
           </Text>
-          <ChevronRight size={18} color={Colors.neutral[400]} />
+          <ChevronRight size={18} color={Colors.neutral400} />
         </Pressable>
       )}
     </View>
@@ -76,32 +81,5 @@ function SearchHeaderComponent({
 }
 
 export const SearchHeader = memo(SearchHeaderComponent);
-
-const styles = StyleSheet.create({
-  container: {
-    paddingHorizontal: spacing.ml,
-    paddingTop: spacing.ml,
-  },
-  filterBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.white,
-    borderRadius: radius.card,
-    padding: spacing.sm,
-    marginBottom: spacing.ml,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    elevation: 2,
-    gap: spacing.s,
-  },
-  filterText: {
-    flex: 1,
-    fontSize: 15,
-    fontWeight: '600',
-    color: Colors.neutral[800],
-  },
-});
 
 export default SearchHeader;

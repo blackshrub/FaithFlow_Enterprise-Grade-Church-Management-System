@@ -5,12 +5,14 @@
  * - Connection state
  * - Typing indicators per community
  * - Online members per community
- * - Unread counts
+ * - Unread counts (persisted with MMKV for instant experience)
  */
 
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import { useShallow } from 'zustand/shallow';
 import { useMemo } from 'react';
+import { mmkvStorage } from '@/lib/storage';
 
 // =============================================================================
 // TYPES
@@ -81,148 +83,160 @@ const ONLINE_TIMEOUT = 120000;
 // STORE
 // =============================================================================
 
-export const useMQTTStore = create<MQTTState>((set, get) => ({
-  // Initial state
-  isConnected: false,
-  isConnecting: false,
-  connectionError: null,
-  typingUsers: {},
-  onlineMembers: {},
-  unreadCounts: {},
-
-  // Connection actions
-  setConnected: (connected) => set({ isConnected: connected, connectionError: null }),
-  setConnecting: (connecting) => set({ isConnecting: connecting }),
-  setConnectionError: (error) => set({ connectionError: error, isConnected: false }),
-
-  // Typing actions
-  addTypingUser: (communityId, memberId, memberName) => {
-    set((state) => {
-      const existing = state.typingUsers[communityId] || [];
-      // Remove if already exists (to update timestamp)
-      const filtered = existing.filter((u) => u.memberId !== memberId);
-      return {
-        typingUsers: {
-          ...state.typingUsers,
-          [communityId]: [
-            ...filtered,
-            { memberId, memberName, timestamp: Date.now() },
-          ],
-        },
-      };
-    });
-
-    // Auto-remove after timeout
-    setTimeout(() => {
-      get().removeTypingUser(communityId, memberId);
-    }, TYPING_TIMEOUT);
-  },
-
-  removeTypingUser: (communityId, memberId) => {
-    set((state) => {
-      const existing = state.typingUsers[communityId] || [];
-      return {
-        typingUsers: {
-          ...state.typingUsers,
-          [communityId]: existing.filter((u) => u.memberId !== memberId),
-        },
-      };
-    });
-  },
-
-  clearTypingUsers: (communityId) => {
-    set((state) => {
-      const { [communityId]: _, ...rest } = state.typingUsers;
-      return { typingUsers: rest };
-    });
-  },
-
-  // Online members actions
-  setMemberOnline: (communityId, memberId, memberName) => {
-    set((state) => {
-      const existing = state.onlineMembers[communityId] || [];
-      const filtered = existing.filter((m) => m.memberId !== memberId);
-      return {
-        onlineMembers: {
-          ...state.onlineMembers,
-          [communityId]: [
-            ...filtered,
-            { memberId, memberName, lastSeen: Date.now() },
-          ],
-        },
-      };
-    });
-
-    // Auto-remove after timeout (if no heartbeat)
-    setTimeout(() => {
-      const state = get();
-      const members = state.onlineMembers[communityId] || [];
-      const member = members.find((m) => m.memberId === memberId);
-      if (member && Date.now() - member.lastSeen >= ONLINE_TIMEOUT) {
-        get().setMemberOffline(communityId, memberId);
-      }
-    }, ONLINE_TIMEOUT + 1000);
-  },
-
-  setMemberOffline: (communityId, memberId) => {
-    set((state) => {
-      const existing = state.onlineMembers[communityId] || [];
-      return {
-        onlineMembers: {
-          ...state.onlineMembers,
-          [communityId]: existing.filter((m) => m.memberId !== memberId),
-        },
-      };
-    });
-  },
-
-  clearOnlineMembers: (communityId) => {
-    set((state) => {
-      const { [communityId]: _, ...rest } = state.onlineMembers;
-      return { onlineMembers: rest };
-    });
-  },
-
-  // Unread count actions
-  incrementUnread: (communityId) => {
-    set((state) => ({
-      unreadCounts: {
-        ...state.unreadCounts,
-        [communityId]: (state.unreadCounts[communityId] || 0) + 1,
-      },
-    }));
-  },
-
-  clearUnread: (communityId) => {
-    set((state) => ({
-      unreadCounts: {
-        ...state.unreadCounts,
-        [communityId]: 0,
-      },
-    }));
-  },
-
-  setUnreadCount: (communityId, count) => {
-    set((state) => ({
-      unreadCounts: {
-        ...state.unreadCounts,
-        [communityId]: count,
-      },
-    }));
-  },
-
-  // Reset all state
-  reset: () => {
-    set({
+export const useMQTTStore = create<MQTTState>()(
+  persist(
+    (set, get) => ({
+      // Initial state
       isConnected: false,
       isConnecting: false,
       connectionError: null,
       typingUsers: {},
       onlineMembers: {},
       unreadCounts: {},
-    });
-  },
-}));
+
+      // Connection actions
+      setConnected: (connected) => set({ isConnected: connected, connectionError: null }),
+      setConnecting: (connecting) => set({ isConnecting: connecting }),
+      setConnectionError: (error) => set({ connectionError: error, isConnected: false }),
+
+      // Typing actions
+      addTypingUser: (communityId, memberId, memberName) => {
+        set((state) => {
+          const existing = state.typingUsers[communityId] || [];
+          // Remove if already exists (to update timestamp)
+          const filtered = existing.filter((u) => u.memberId !== memberId);
+          return {
+            typingUsers: {
+              ...state.typingUsers,
+              [communityId]: [
+                ...filtered,
+                { memberId, memberName, timestamp: Date.now() },
+              ],
+            },
+          };
+        });
+
+        // Auto-remove after timeout
+        setTimeout(() => {
+          get().removeTypingUser(communityId, memberId);
+        }, TYPING_TIMEOUT);
+      },
+
+      removeTypingUser: (communityId, memberId) => {
+        set((state) => {
+          const existing = state.typingUsers[communityId] || [];
+          return {
+            typingUsers: {
+              ...state.typingUsers,
+              [communityId]: existing.filter((u) => u.memberId !== memberId),
+            },
+          };
+        });
+      },
+
+      clearTypingUsers: (communityId) => {
+        set((state) => {
+          const { [communityId]: _, ...rest } = state.typingUsers;
+          return { typingUsers: rest };
+        });
+      },
+
+      // Online members actions
+      setMemberOnline: (communityId, memberId, memberName) => {
+        set((state) => {
+          const existing = state.onlineMembers[communityId] || [];
+          const filtered = existing.filter((m) => m.memberId !== memberId);
+          return {
+            onlineMembers: {
+              ...state.onlineMembers,
+              [communityId]: [
+                ...filtered,
+                { memberId, memberName, lastSeen: Date.now() },
+              ],
+            },
+          };
+        });
+
+        // Auto-remove after timeout (if no heartbeat)
+        setTimeout(() => {
+          const state = get();
+          const members = state.onlineMembers[communityId] || [];
+          const member = members.find((m) => m.memberId === memberId);
+          if (member && Date.now() - member.lastSeen >= ONLINE_TIMEOUT) {
+            get().setMemberOffline(communityId, memberId);
+          }
+        }, ONLINE_TIMEOUT + 1000);
+      },
+
+      setMemberOffline: (communityId, memberId) => {
+        set((state) => {
+          const existing = state.onlineMembers[communityId] || [];
+          return {
+            onlineMembers: {
+              ...state.onlineMembers,
+              [communityId]: existing.filter((m) => m.memberId !== memberId),
+            },
+          };
+        });
+      },
+
+      clearOnlineMembers: (communityId) => {
+        set((state) => {
+          const { [communityId]: _, ...rest } = state.onlineMembers;
+          return { onlineMembers: rest };
+        });
+      },
+
+      // Unread count actions
+      incrementUnread: (communityId) => {
+        set((state) => ({
+          unreadCounts: {
+            ...state.unreadCounts,
+            [communityId]: (state.unreadCounts[communityId] || 0) + 1,
+          },
+        }));
+      },
+
+      clearUnread: (communityId) => {
+        set((state) => ({
+          unreadCounts: {
+            ...state.unreadCounts,
+            [communityId]: 0,
+          },
+        }));
+      },
+
+      setUnreadCount: (communityId, count) => {
+        set((state) => ({
+          unreadCounts: {
+            ...state.unreadCounts,
+            [communityId]: count,
+          },
+        }));
+      },
+
+      // Reset all state
+      reset: () => {
+        set({
+          isConnected: false,
+          isConnecting: false,
+          connectionError: null,
+          typingUsers: {},
+          onlineMembers: {},
+          unreadCounts: {},
+        });
+      },
+    }),
+    {
+      name: 'faithflow-mqtt',
+      storage: createJSONStorage(() => mmkvStorage),
+      // Only persist unread counts - connection state and typing are ephemeral
+      partialize: (state) => ({
+        unreadCounts: state.unreadCounts,
+      }),
+    }
+  )
+);
 
 // =============================================================================
 // STABLE EMPTY REFERENCES (prevent infinite re-renders)

@@ -4,23 +4,11 @@
  * Bottom sheet for calendar date picker with event markers.
  * Used via: overlay.showBottomSheet(CalendarSheet, payload)
  *
- * Features:
- * - Full-height bottom sheet with edge-to-edge design
- * - Event markers (colored dots) for upcoming, RSVP, attended, passed
- * - Legend showing what each color means
- * - Large close button (44px)
- * - Safe area handling
- * - Single month header (no duplicates)
+ * Styling: NativeWind-first with inline style for dynamic/calculated values
  */
 
 import React, { useState, useCallback, useMemo } from 'react';
-import {
-  View,
-  ScrollView,
-  StyleSheet,
-  Pressable,
-  Dimensions,
-} from 'react-native';
+import { View, ScrollView, Pressable, Dimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { X, ChevronLeft, ChevronRight } from 'lucide-react-native';
@@ -28,29 +16,26 @@ import * as Haptics from 'expo-haptics';
 
 import type { OverlayComponentProps } from '@/stores/overlayStore';
 import { Text } from '@/components/ui/text';
-import { spacing, radius } from '@/constants/spacing';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
-// Premium colors - consistent with app theme
+// Calculated cell size (needs inline style)
+const CELL_SIZE = (SCREEN_WIDTH - 40) / 7; // 40 = px-5 * 2
+
+// Premium colors - for icon colors only
 const Colors = {
   neutral: {
-    50: '#FAFAFA',
     100: '#F5F5F5',
-    200: '#E5E5E5',
     400: '#A3A3A3',
     500: '#737373',
     600: '#525252',
     700: '#404040',
-    800: '#262626',
     900: '#171717',
   },
   white: '#FFFFFF',
   primary: {
     50: '#EFF6FF',
-    100: '#DBEAFE',
     500: '#3B82F6',
-    600: '#2563EB',
     700: '#1D4ED8',
   },
 };
@@ -71,6 +56,7 @@ interface CalendarEvent {
   id: string;
   date: string; // ISO date string
   status: 'upcoming' | 'rsvp' | 'attended' | 'passed';
+  title?: string; // Optional event title for list display
 }
 
 // Extended payload type
@@ -91,36 +77,61 @@ interface CalendarDayProps {
 }
 
 function CalendarDay({ day, isSelected, isToday, isCurrentMonth, markers, onPress }: CalendarDayProps) {
+  // Determine text color based on state
+  const getTextColor = () => {
+    if (isSelected) return Colors.white;
+    if (isToday) return Colors.primary[700];
+    if (!isCurrentMonth) return Colors.neutral[400];
+    return Colors.neutral[900];
+  };
+
+  // Determine cell background/border based on state
+  const getCellStyle = () => {
+    if (isSelected) {
+      return { backgroundColor: Colors.primary[500] };
+    }
+    if (isToday) {
+      return {
+        backgroundColor: Colors.primary[50],
+        borderWidth: 2,
+        borderColor: Colors.primary[500],
+      };
+    }
+    return {};
+  };
+
   return (
     <Pressable
       onPress={onPress}
+      className="items-center justify-center"
       style={[
-        styles.dayCell,
-        isSelected && styles.dayCellSelected,
-        isToday && !isSelected && styles.dayCellToday,
+        {
+          width: CELL_SIZE,
+          height: CELL_SIZE,
+          borderRadius: CELL_SIZE / 2,
+        },
+        getCellStyle(),
       ]}
     >
+      {/* Date number - centered */}
       <Text
-        style={[
-          styles.dayText,
-          !isCurrentMonth && styles.dayTextOtherMonth,
-          isSelected && styles.dayTextSelected,
-          isToday && !isSelected && styles.dayTextToday,
-        ]}
+        className="text-base font-medium"
+        style={{
+          color: getTextColor(),
+          fontWeight: isSelected || isToday ? '700' : '500',
+        }}
       >
         {day}
       </Text>
 
-      {/* Event markers (dots) */}
+      {/* Event markers (dots) - absolute positioned at bottom */}
       {markers.length > 0 && (
-        <View style={styles.markerRow}>
+        <View className="absolute bottom-1.5 flex-row gap-0.5">
           {markers.slice(0, 3).map((status, index) => (
             <View
               key={`${status}-${index}`}
-              style={[
-                styles.marker,
-                { backgroundColor: STATUS_COLORS[status] },
-              ]}
+              className="w-[5px] h-[5px] rounded-full"
+              style={{ backgroundColor: STATUS_COLORS[status] }}
             />
           ))}
         </View>
@@ -260,20 +271,34 @@ export const CalendarSheet: React.FC<OverlayComponentProps<CalendarSheetPayload>
   const hasEvents = payload.events && payload.events.length > 0;
 
   return (
-    <View style={[styles.sheetCard, { paddingBottom: insets.bottom + 12 }]}>
+    <View
+      className="bg-white rounded-t-3xl"
+      style={{
+        maxHeight: SCREEN_HEIGHT * 0.85,
+        paddingBottom: insets.bottom + 12,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: -4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 24,
+        elevation: 12,
+      }}
+    >
       {/* Handle indicator */}
-      <View style={styles.handleContainer}>
-        <View style={styles.handle} />
+      <View className="items-center pt-3 pb-2">
+        <View className="w-10 h-1 rounded-full bg-black/20" />
       </View>
 
-      <View style={styles.sheetContent}>
+      <View className="px-5 pt-2">
         {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.headerText}>
-            <Text style={styles.headerTitle}>
+        <View className="flex-row items-start justify-between mb-4">
+          <View className="flex-1 mr-4">
+            <Text
+              className="text-[22px] font-bold text-neutral-900 mb-1"
+              style={{ letterSpacing: -0.3 }}
+            >
               {t('events.calendar.title', 'Select Date')}
             </Text>
-            <Text style={styles.headerSubtitle}>
+            <Text className="text-sm text-neutral-500">
               {t('events.calendar.selectDate', 'Choose a date to filter events')}
             </Text>
           </View>
@@ -284,30 +309,36 @@ export const CalendarSheet: React.FC<OverlayComponentProps<CalendarSheetPayload>
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               onClose();
             }}
-            style={styles.closeButton}
+            className="w-11 h-11 rounded-full bg-neutral-100 items-center justify-center active:opacity-70"
           >
             <X size={20} color={Colors.neutral[600]} />
           </Pressable>
         </View>
 
-        {/* Month Navigation - SINGLE header, no duplicates */}
-        <View style={styles.monthNavigation}>
-          <Pressable onPress={handlePrevMonth} style={styles.monthNavButton}>
+        {/* Month Navigation */}
+        <View className="flex-row items-center justify-between mb-4 px-2">
+          <Pressable
+            onPress={handlePrevMonth}
+            className="w-11 h-11 rounded-full bg-neutral-100 items-center justify-center active:scale-95"
+          >
             <ChevronLeft size={24} color={Colors.neutral[700]} />
           </Pressable>
 
-          <Text style={styles.monthLabel}>{monthLabel}</Text>
+          <Text className="text-lg font-bold text-neutral-900">{monthLabel}</Text>
 
-          <Pressable onPress={handleNextMonth} style={styles.monthNavButton}>
+          <Pressable
+            onPress={handleNextMonth}
+            className="w-11 h-11 rounded-full bg-neutral-100 items-center justify-center active:scale-95"
+          >
             <ChevronRight size={24} color={Colors.neutral[700]} />
           </Pressable>
         </View>
 
         {/* Weekday Headers */}
-        <View style={styles.weekdayRow}>
+        <View className="flex-row mb-3">
           {WEEKDAYS.map((day) => (
-            <View key={day} style={styles.weekdayCell}>
-              <Text style={styles.weekdayText}>{day}</Text>
+            <View key={day} className="items-center py-1" style={{ width: CELL_SIZE }}>
+              <Text className="text-[13px] font-semibold text-neutral-500">{day}</Text>
             </View>
           ))}
         </View>
@@ -315,10 +346,10 @@ export const CalendarSheet: React.FC<OverlayComponentProps<CalendarSheetPayload>
         {/* Calendar Grid */}
         <ScrollView
           showsVerticalScrollIndicator={false}
-          style={styles.calendarScroll}
-          contentContainerStyle={styles.calendarScrollContent}
+          style={{ maxHeight: CELL_SIZE * 6 + 16 }}
+          contentContainerStyle={{ paddingBottom: 8 }}
         >
-          <View style={styles.calendarGrid}>
+          <View className="flex-row flex-wrap">
             {calendarDays.map((item, index) => (
               <CalendarDay
                 key={`${item.dateKey}-${index}`}
@@ -333,28 +364,66 @@ export const CalendarSheet: React.FC<OverlayComponentProps<CalendarSheetPayload>
           </View>
         </ScrollView>
 
+        {/* Events for selected date */}
+        {selectedDate && payload.events && payload.events.length > 0 && (() => {
+          const selectedDateKey = selectedDate.toISOString().split('T')[0];
+          const eventsForDate = payload.events.filter(
+            (e) => e.date.split('T')[0] === selectedDateKey
+          );
+
+          if (eventsForDate.length > 0) {
+            return (
+              <View className="mt-4 pt-3 border-t border-neutral-200">
+                <Text className="text-sm font-bold text-neutral-900 mb-3">
+                  {t('events.calendar.eventsOnDate', 'Events on')} {selectedDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                </Text>
+                <View className="gap-2">
+                  {eventsForDate.map((event) => (
+                    <View
+                      key={event.id}
+                      className="flex-row items-center gap-3 p-3 bg-neutral-50 rounded-xl"
+                    >
+                      <View
+                        className="w-2 h-2 rounded-full"
+                        style={{ backgroundColor: STATUS_COLORS[event.status] }}
+                      />
+                      <View className="flex-1">
+                        <Text className="text-sm font-medium text-neutral-900" numberOfLines={1}>
+                          {event.title || t('events.untitled', 'Event')}
+                        </Text>
+                        <Text className="text-xs text-neutral-500 capitalize">{event.status}</Text>
+                      </View>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            );
+          }
+          return null;
+        })()}
+
         {/* Legend */}
         {hasEvents && (
-          <View style={styles.legendContainer}>
-            <Text style={styles.legendTitle}>
+          <View className="mt-4 pt-3 border-t border-neutral-200">
+            <Text className="text-xs font-semibold text-neutral-600 mb-3">
               {t('events.calendar.eventIndicators', 'Event Indicators')}
             </Text>
-            <View style={styles.legendRow}>
-              <View style={styles.legendItem}>
-                <View style={[styles.legendDot, { backgroundColor: STATUS_COLORS.upcoming }]} />
-                <Text style={styles.legendText}>{t('events.upcoming', 'Upcoming')}</Text>
+            <View className="flex-row flex-wrap gap-4">
+              <View className="flex-row items-center gap-1">
+                <View className="w-2 h-2 rounded-full" style={{ backgroundColor: STATUS_COLORS.upcoming }} />
+                <Text className="text-xs text-neutral-600">{t('events.upcoming', 'Upcoming')}</Text>
               </View>
-              <View style={styles.legendItem}>
-                <View style={[styles.legendDot, { backgroundColor: STATUS_COLORS.rsvp }]} />
-                <Text style={styles.legendText}>{t('events.myRSVPs', 'RSVPs')}</Text>
+              <View className="flex-row items-center gap-1">
+                <View className="w-2 h-2 rounded-full" style={{ backgroundColor: STATUS_COLORS.rsvp }} />
+                <Text className="text-xs text-neutral-600">{t('events.myRSVPs', 'RSVPs')}</Text>
               </View>
-              <View style={styles.legendItem}>
-                <View style={[styles.legendDot, { backgroundColor: STATUS_COLORS.attended }]} />
-                <Text style={styles.legendText}>{t('events.attended', 'Attended')}</Text>
+              <View className="flex-row items-center gap-1">
+                <View className="w-2 h-2 rounded-full" style={{ backgroundColor: STATUS_COLORS.attended }} />
+                <Text className="text-xs text-neutral-600">{t('events.attended', 'Attended')}</Text>
               </View>
-              <View style={styles.legendItem}>
-                <View style={[styles.legendDot, { backgroundColor: STATUS_COLORS.passed }]} />
-                <Text style={styles.legendText}>{t('events.passed', 'Passed')}</Text>
+              <View className="flex-row items-center gap-1">
+                <View className="w-2 h-2 rounded-full" style={{ backgroundColor: STATUS_COLORS.passed }} />
+                <Text className="text-xs text-neutral-600">{t('events.passed', 'Passed')}</Text>
               </View>
             </View>
           </View>
@@ -363,13 +432,16 @@ export const CalendarSheet: React.FC<OverlayComponentProps<CalendarSheetPayload>
         {/* Confirm Button */}
         <Pressable
           onPress={handleConfirm}
-          style={[
-            styles.confirmButton,
-            !selectedDate && styles.confirmButtonDisabled,
-          ]}
           disabled={!selectedDate}
+          className={`items-center py-4 rounded-xl mt-4 mb-2 active:opacity-90 ${
+            selectedDate ? 'bg-blue-500' : 'bg-neutral-200'
+          }`}
         >
-          <Text style={styles.confirmButtonText}>
+          <Text
+            className={`text-base font-bold ${
+              selectedDate ? 'text-white' : 'text-neutral-500'
+            }`}
+          >
             {t('common.done', 'Done')}
           </Text>
         </Pressable>
@@ -377,197 +449,5 @@ export const CalendarSheet: React.FC<OverlayComponentProps<CalendarSheetPayload>
     </View>
   );
 };
-
-const CELL_SIZE = (SCREEN_WIDTH - spacing.ml * 2) / 7;
-
-const styles = StyleSheet.create({
-  sheetCard: {
-    backgroundColor: Colors.white,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    maxHeight: SCREEN_HEIGHT * 0.85,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 24,
-    elevation: 12,
-  },
-  handleContainer: {
-    alignItems: 'center',
-    paddingTop: spacing.sm,
-    paddingBottom: spacing.xs,
-  },
-  handle: {
-    width: 40,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: 'rgba(0, 0, 0, 0.2)',
-  },
-  sheetContent: {
-    paddingHorizontal: spacing.ml,
-    paddingTop: spacing.s,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    marginBottom: spacing.m,
-  },
-  headerText: {
-    flex: 1,
-    marginRight: spacing.m,
-  },
-  headerTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: Colors.neutral[900],
-    marginBottom: 4,
-  },
-  headerSubtitle: {
-    fontSize: 14,
-    color: Colors.neutral[500],
-  },
-  closeButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: Colors.neutral[100],
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  monthNavigation: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: spacing.m,
-    paddingHorizontal: spacing.s,
-  },
-  monthNavButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: Colors.neutral[100],
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  monthLabel: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: Colors.neutral[900],
-  },
-  weekdayRow: {
-    flexDirection: 'row',
-    marginBottom: spacing.sm,
-  },
-  weekdayCell: {
-    width: CELL_SIZE,
-    alignItems: 'center',
-    paddingVertical: spacing.xs,
-  },
-  weekdayText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: Colors.neutral[500],
-  },
-  calendarScroll: {
-    maxHeight: CELL_SIZE * 6 + spacing.m,
-  },
-  calendarScrollContent: {
-    paddingBottom: spacing.s,
-  },
-  calendarGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-  },
-  dayCell: {
-    width: CELL_SIZE,
-    height: CELL_SIZE,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: CELL_SIZE / 2,
-  },
-  dayCellSelected: {
-    backgroundColor: Colors.primary[500],
-  },
-  dayCellToday: {
-    backgroundColor: Colors.primary[50],
-    borderWidth: 2,
-    borderColor: Colors.primary[500],
-  },
-  dayText: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: Colors.neutral[900],
-  },
-  dayTextOtherMonth: {
-    color: Colors.neutral[400],
-  },
-  dayTextSelected: {
-    color: Colors.white,
-    fontWeight: '700',
-  },
-  dayTextToday: {
-    color: Colors.primary[700],
-    fontWeight: '700',
-  },
-  markerRow: {
-    flexDirection: 'row',
-    position: 'absolute',
-    bottom: 4,
-    gap: 2,
-  },
-  marker: {
-    width: 5,
-    height: 5,
-    borderRadius: 2.5,
-  },
-  legendContainer: {
-    marginTop: spacing.m,
-    paddingTop: spacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: Colors.neutral[200],
-  },
-  legendTitle: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: Colors.neutral[600],
-    marginBottom: spacing.sm,
-  },
-  legendRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.m,
-  },
-  legendItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-  },
-  legendDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  legendText: {
-    fontSize: 12,
-    color: Colors.neutral[600],
-  },
-  confirmButton: {
-    backgroundColor: Colors.primary[500],
-    borderRadius: radius.m,
-    paddingVertical: spacing.m,
-    alignItems: 'center',
-    marginTop: spacing.m,
-    marginBottom: spacing.s,
-  },
-  confirmButtonDisabled: {
-    backgroundColor: Colors.neutral[200],
-  },
-  confirmButtonText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: Colors.white,
-  },
-});
 
 export default CalendarSheet;

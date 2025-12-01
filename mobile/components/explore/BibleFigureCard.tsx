@@ -5,15 +5,18 @@
  * - Full-bleed image with gradient overlay
  * - Fallback avatar for missing images
  * - Premium shadows and typography
+ *
+ * Styling: NativeWind-first with inline style for shadows/dynamic values
  */
 
 import React, { memo } from 'react';
-import { View, Text, ImageBackground, StyleSheet, Pressable } from 'react-native';
+import { View, ImageBackground, Pressable } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { ExploreColors, ExploreSpacing, ExploreBorderRadius, ExploreShadows } from '@/constants/explore/designSystem';
+import { ExploreColors, ExploreShadows } from '@/constants/explore/designSystem';
 import type { BibleFigureOfTheDay } from '@/types/explore';
 import { User, BookOpen, ChevronRight } from 'lucide-react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+import { Text } from '@/components/ui/text';
 
 const CARD_HEIGHT = 200;
 
@@ -61,28 +64,46 @@ export const BibleFigureCard = memo(function BibleFigureCard({
         onPress={onPress}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
-        style={[styles.compactContainer, animatedStyle]}
+        className="flex-row items-center gap-4 bg-white rounded-2xl p-4"
+        style={[{ ...ExploreShadows.level1 }, animatedStyle]}
         testID="bible-figure-card-compact"
       >
         {/* Avatar */}
-        <View style={styles.compactAvatar}>
+        <View className="w-14 h-14 rounded-[28px] overflow-hidden">
           {figure.image_url ? (
             <ImageBackground
               source={{ uri: figure.image_url }}
-              style={styles.compactAvatarImage}
+              className="w-full h-full"
               imageStyle={{ borderRadius: 28 }}
             />
           ) : (
-            <View style={styles.compactAvatarFallback}>
+            <View
+              className="w-full h-full justify-center items-center rounded-[28px]"
+              style={{ backgroundColor: ExploreColors.primary[50] }}
+            >
               <User size={24} color={ExploreColors.primary[500]} />
             </View>
           )}
         </View>
 
         {/* Content */}
-        <View style={styles.compactContent}>
-          <Text style={styles.compactName} numberOfLines={1}>{name}</Text>
-          {title && <Text style={styles.compactTitle} numberOfLines={1}>{title}</Text>}
+        <View className="flex-1 gap-0.5">
+          <Text
+            className="text-base font-semibold"
+            style={{ color: ExploreColors.neutral[900] }}
+            numberOfLines={1}
+          >
+            {name}
+          </Text>
+          {title && (
+            <Text
+              className="text-[13px] font-medium"
+              style={{ color: ExploreColors.neutral[500] }}
+              numberOfLines={1}
+            >
+              {title}
+            </Text>
+          )}
         </View>
 
         {/* Arrow */}
@@ -97,39 +118,60 @@ export const BibleFigureCard = memo(function BibleFigureCard({
       onPress={onPress}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
-      style={[styles.container, animatedStyle]}
+      className="rounded-2xl overflow-hidden"
+      style={[{ ...ExploreShadows.level2 }, animatedStyle]}
       testID="bible-figure-card"
     >
       <ImageBackground
         source={{ uri: imageUrl }}
-        style={styles.imageBackground}
-        imageStyle={styles.image}
+        className="w-full justify-end"
+        style={{ height: CARD_HEIGHT }}
+        imageStyle={{ borderRadius: 16 }}
         resizeMode="cover"
       >
         {/* Gradient Overlay */}
         <LinearGradient
           colors={['rgba(0,0,0,0.1)', 'rgba(0,0,0,0.4)', 'rgba(0,0,0,0.9)']}
           locations={[0, 0.5, 1]}
-          style={styles.gradient}
+          className="absolute inset-0 rounded-2xl"
         />
 
         {/* Content Overlay */}
-        <View style={styles.content}>
+        <View className="p-5 gap-2">
           {/* Name & Title */}
           <View>
-            <Text style={styles.name}>{name}</Text>
-            {title && <Text style={styles.title}>{title}</Text>}
+            <Text
+              className="text-2xl font-extrabold text-white"
+              style={{
+                textShadowColor: 'rgba(0,0,0,0.3)',
+                textShadowOffset: { width: 0, height: 1 },
+                textShadowRadius: 3,
+              }}
+            >
+              {name}
+            </Text>
+            {title && (
+              <Text
+                className="text-sm font-semibold mt-0.5"
+                style={{ color: ExploreColors.secondary[300] }}
+              >
+                {title}
+              </Text>
+            )}
           </View>
 
           {/* Summary */}
-          <Text style={styles.summary} numberOfLines={2}>
+          <Text
+            className="text-sm font-normal text-white/85 leading-5"
+            numberOfLines={2}
+          >
             {summary}
           </Text>
 
           {/* Read More Hint */}
-          <View style={styles.readMoreContainer}>
+          <View className="flex-row items-center gap-1.5 mt-1">
             <BookOpen size={14} color="rgba(255,255,255,0.8)" />
-            <Text style={styles.readMoreText}>
+            <Text className="text-xs font-medium text-white/70">
               {language === 'en' ? 'Tap to read full story' : 'Ketuk untuk baca cerita lengkap'}
             </Text>
           </View>
@@ -137,103 +179,4 @@ export const BibleFigureCard = memo(function BibleFigureCard({
       </ImageBackground>
     </AnimatedPressable>
   );
-});
-
-const styles = StyleSheet.create({
-  // Full variant
-  container: {
-    borderRadius: ExploreBorderRadius.card,
-    overflow: 'hidden',
-    ...ExploreShadows.level2,
-  },
-  imageBackground: {
-    width: '100%',
-    height: CARD_HEIGHT,
-    justifyContent: 'flex-end',
-  },
-  image: {
-    borderRadius: ExploreBorderRadius.card,
-  },
-  gradient: {
-    ...StyleSheet.absoluteFillObject,
-    borderRadius: ExploreBorderRadius.card,
-  },
-  content: {
-    padding: ExploreSpacing.lg,
-    gap: 8,
-  },
-  name: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: '#FFFFFF',
-    textShadowColor: 'rgba(0,0,0,0.3)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 3,
-  },
-  title: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: ExploreColors.secondary[300],
-    marginTop: 2,
-  },
-  summary: {
-    fontSize: 14,
-    fontWeight: '400',
-    color: 'rgba(255,255,255,0.85)',
-    lineHeight: 20,
-  },
-  readMoreContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginTop: 4,
-  },
-  readMoreText: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: 'rgba(255,255,255,0.7)',
-  },
-
-  // Compact variant
-  compactContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: ExploreSpacing.md,
-    backgroundColor: '#FFFFFF',
-    borderRadius: ExploreBorderRadius.card,
-    padding: ExploreSpacing.md,
-    ...ExploreShadows.level1,
-  },
-  compactAvatar: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    overflow: 'hidden',
-  },
-  compactAvatarImage: {
-    width: '100%',
-    height: '100%',
-  },
-  compactAvatarFallback: {
-    width: '100%',
-    height: '100%',
-    backgroundColor: ExploreColors.primary[50],
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: 28,
-  },
-  compactContent: {
-    flex: 1,
-    gap: 2,
-  },
-  compactName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: ExploreColors.neutral[900],
-  },
-  compactTitle: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: ExploreColors.neutral[500],
-  },
 });

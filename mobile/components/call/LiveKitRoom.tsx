@@ -11,7 +11,7 @@
  */
 
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
-import { View, StyleSheet, Dimensions, Platform } from 'react-native';
+import { View, Dimensions, Platform, StyleSheet } from 'react-native';
 import {
   Room,
   RoomOptions,
@@ -247,7 +247,7 @@ function RoomContent({ callType, callId, children }: RoomContentProps) {
   }, [room]);
 
   return (
-    <View style={styles.container}>
+    <View className="flex-1">
       {children}
     </View>
   );
@@ -276,8 +276,11 @@ export function VideoTrack({
 
   if (!track || track.kind !== Track.Kind.Video) {
     return (
-      <View style={[styles.noVideoContainer, style]}>
-        <Text style={styles.noVideoText}>
+      <View
+        className="flex-1 items-center justify-center"
+        style={[{ backgroundColor: colors.gray[800] }, style]}
+      >
+        <Text className="text-5xl font-bold text-white">
           {participant?.name?.charAt(0).toUpperCase() || '?'}
         </Text>
       </View>
@@ -287,7 +290,7 @@ export function VideoTrack({
   return (
     <LKVideoTrack
       trackRef={{ participant, publication: trackPublication, source: trackPublication.source } as any}
-      style={StyleSheet.flatten([styles.videoTrack, style])}
+      style={StyleSheet.flatten([{ flex: 1, backgroundColor: '#000' }, style])}
       mirror={mirror}
       objectFit={objectFit}
     />
@@ -319,7 +322,10 @@ export function ParticipantTile({
   const isVideoEnabled = videoTrack && !videoTrack.isMuted;
 
   return (
-    <View style={[styles.participantTile, style]}>
+    <View
+      className="flex-1 rounded-xl overflow-hidden relative"
+      style={[{ backgroundColor: colors.gray[900] }, style]}
+    >
       {isVideoEnabled ? (
         <VideoTrack
           trackPublication={videoTrack}
@@ -328,9 +334,20 @@ export function ParticipantTile({
           style={StyleSheet.absoluteFill}
         />
       ) : (
-        <View style={styles.noVideoContainer}>
-          <View style={styles.avatarPlaceholder}>
-            <Text style={styles.avatarText}>
+        <View
+          className="flex-1 items-center justify-center"
+          style={{ backgroundColor: colors.gray[800] }}
+        >
+          <View
+            className="items-center justify-center"
+            style={{
+              width: 80,
+              height: 80,
+              borderRadius: 40,
+              backgroundColor: colors.primary[500],
+            }}
+          >
+            <Text className="text-3xl font-bold text-white">
               {participant.name?.charAt(0).toUpperCase() || '?'}
             </Text>
           </View>
@@ -338,18 +355,29 @@ export function ParticipantTile({
       )}
 
       {/* Name and status overlay */}
-      <View style={styles.participantOverlay}>
+      <View
+        className="absolute bottom-0 left-0 right-0 flex-row items-center justify-between p-2"
+        style={{ backgroundColor: 'rgba(0, 0, 0, 0.4)' }}
+      >
         {showName && (
-          <View style={styles.nameContainer}>
-            <Text style={styles.participantName} numberOfLines={1}>
+          <View className="flex-1">
+            <Text className="text-sm font-medium text-white" numberOfLines={1}>
               {isLocal ? 'You' : participant.name || 'Unknown'}
             </Text>
           </View>
         )}
 
         {showMuteIndicator && isMuted && (
-          <View style={styles.muteIndicator}>
-            <Text style={styles.muteIcon}>🔇</Text>
+          <View
+            className="items-center justify-center"
+            style={{
+              width: 24,
+              height: 24,
+              borderRadius: 12,
+              backgroundColor: 'rgba(0, 0, 0, 0.6)',
+            }}
+          >
+            <Text className="text-xs">🔇</Text>
           </View>
         )}
       </View>
@@ -397,18 +425,16 @@ export function NetworkQualityIndicator({
   const gap = size === 'sm' ? 1 : 2;
 
   return (
-    <View style={[styles.networkIndicator, { gap }]}>
+    <View className="flex-row items-end" style={{ gap }}>
       {[0, 1, 2, 3].map((index) => (
         <View
           key={index}
-          style={[
-            styles.networkBar,
-            {
-              width: barWidth,
-              height: barHeight * ((index + 1) / 4),
-              backgroundColor: getColor(index),
-            },
-          ]}
+          className="rounded-[1px]"
+          style={{
+            width: barWidth,
+            height: barHeight * ((index + 1) / 4),
+            backgroundColor: getColor(index),
+          }}
         />
       ))}
     </View>
@@ -479,89 +505,5 @@ export function useScreenShare() {
     toggleScreenShare,
   };
 }
-
-// =============================================================================
-// STYLES
-// =============================================================================
-
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  videoTrack: {
-    flex: 1,
-    backgroundColor: '#000',
-  },
-  noVideoContainer: {
-    flex: 1,
-    backgroundColor: colors.gray[800],
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  noVideoText: {
-    fontSize: 48,
-    fontWeight: 'bold',
-    color: colors.white,
-  },
-  participantTile: {
-    flex: 1,
-    backgroundColor: colors.gray[900],
-    borderRadius: 12,
-    overflow: 'hidden',
-    position: 'relative',
-  },
-  avatarPlaceholder: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: colors.primary[500],
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarText: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: colors.white,
-  },
-  participantOverlay: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    padding: 8,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
-  },
-  nameContainer: {
-    flex: 1,
-  },
-  participantName: {
-    color: colors.white,
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  muteIndicator: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  muteIcon: {
-    fontSize: 12,
-  },
-  networkIndicator: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-  },
-  networkBar: {
-    borderRadius: 1,
-  },
-});
 
 export default LiveKitRoom;

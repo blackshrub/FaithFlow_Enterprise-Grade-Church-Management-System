@@ -589,4 +589,164 @@ When bottom sheet doesn't appear:
 
 ---
 
+# 🔷 11. Mobile App Styling Hierarchy (CRITICAL)
+
+**Context**: These rules establish clear boundaries for styling approaches in the React Native mobile app. Following this hierarchy prevents styling conflicts and ensures consistent UI patterns.
+
+## ✅ Use NativeWind as the Primary (almost-exclusive) Styling System
+
+NativeWind (Tailwind CSS for React Native) is the **default styling approach** for all components.
+
+### When to use NativeWind:
+- **All layout and spacing**: `flex-1`, `p-4`, `mb-2`, `gap-3`
+- **Colors and backgrounds**: `bg-white`, `dark:bg-gray-900`, `text-gray-600`
+- **Borders and shadows**: `rounded-xl`, `border`, `shadow-lg`
+- **Typography**: `text-lg`, `font-semibold`, `text-center`
+- **Responsive design**: Use NativeWind's responsive prefixes
+
+### ✅ Gluestack-UI Components (Limited Use)
+
+Use Gluestack-UI **ONLY** for these specific interactive components:
+- **Buttons**: `<Button>`, `<ButtonText>`, `<ButtonSpinner>`
+- **Modals/Sheets**: `<Modal>`, action sheets, dialogs
+- **Form elements**: `<Input>`, `<TextArea>`, `<Checkbox>`
+- **Toast/Alert**: Toast notifications and alerts
+- **Select/Dropdown**: `<Select>`, pickers
+
+```tsx
+// ✅ CORRECT - Gluestack for buttons
+import { Button, ButtonText } from '@/components/ui/button';
+<Button className="mt-4" size="lg">
+  <ButtonText>Submit</ButtonText>
+</Button>
+
+// ❌ WRONG - Custom button with Pressable when Gluestack exists
+<Pressable className="bg-blue-500 rounded-lg py-3">
+  <Text>Submit</Text>
+</Pressable>
+```
+
+### 🔥 CRITICAL: Gluestack Button Standardized Heights
+
+Gluestack Button has **standardized heights** via the `size` prop. ALWAYS use these instead of custom min-h values:
+
+| Size | Height | Use Case |
+|------|--------|----------|
+| `xs` | h-8 (32px) | Compact buttons, tags |
+| `sm` | h-9 (36px) | Secondary actions |
+| `md` | h-10 (40px) | Default buttons |
+| `lg` | h-14 (56px) | **Primary CTAs, Login buttons** |
+| `xl` | h-16 (64px) | Hero sections |
+
+```tsx
+// ✅ CORRECT - Use size="lg" for primary CTA buttons
+<Button size="lg" onPress={handleSubmit} className="w-full">
+  <ButtonText>Continue</ButtonText>
+</Button>
+
+// ❌ WRONG - Custom Pressable with min-h-[52px]
+<Pressable className="min-h-[52px] rounded-2xl bg-blue-500">
+  <Text>Continue</Text>
+</Pressable>
+```
+
+### Gradient Buttons with Gluestack
+
+For buttons that need gradient backgrounds, use Gluestack Button as base with LinearGradient overlay:
+
+```tsx
+import { LinearGradient } from 'expo-linear-gradient';
+import { StyleSheet } from 'react-native';
+
+// ✅ CORRECT - Gluestack Button with gradient overlay
+<View className="rounded-2xl overflow-hidden">
+  <Button
+    size="lg"
+    onPress={handlePress}
+    isDisabled={isLoading}
+    className="w-full bg-transparent relative overflow-hidden"
+  >
+    {/* Gradient background - absolute positioned */}
+    <LinearGradient
+      colors={['#4338CA', '#6366F1']}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 0 }}
+      style={StyleSheet.absoluteFill}
+    />
+    {/* Content with z-index */}
+    <View className="flex-row items-center gap-2 z-[1]">
+      <Icon />
+      <ButtonText className="text-white">Continue</ButtonText>
+    </View>
+  </Button>
+</View>
+
+// ❌ WRONG - Custom Pressable with LinearGradient (no standardized height)
+<Pressable className="rounded-2xl overflow-hidden">
+  <LinearGradient colors={['#4338CA', '#6366F1']} className="py-4 px-6">
+    <Text>Continue</Text>
+  </LinearGradient>
+</Pressable>
+```
+
+### ✅ React Native Core Components (Specific Use Cases)
+
+Use React Native components directly for:
+- **Animated headers**: ScrollView with Animated API
+- **Premium motion transitions**: Reanimated + withPremiumMotion HOC
+- **Shared Axis transitions**: Custom navigation animations
+- **Lists**: FlatList, SectionList (not virtualized lists from UI libraries)
+- **Cards/Containers**: Simple View with NativeWind classes
+- **Collapsible screens**: Custom implementations
+
+### Icon Colors
+
+Since lucide-react-native requires actual color values (not className), use inline hex colors:
+
+```tsx
+// ✅ CORRECT - Inline hex for icon colors
+const PRIMARY_COLOR = '#3B82F6';
+<ChevronLeft size={24} color="#111827" />
+<Shield size={20} color={PRIMARY_COLOR} />
+
+// ❌ WRONG - Trying to use className on lucide icons
+<ChevronLeft size={24} className="text-gray-900" />
+```
+
+### Style Props vs className
+
+- **Prefer `className`** for all NativeWind styling
+- **Use `style` prop only when necessary**:
+  - Dynamic values: `style={{ backgroundColor: dynamicColor }}`
+  - Icon colors (lucide-react-native requirement)
+  - Animated styles from Reanimated
+
+```tsx
+// ✅ CORRECT - NativeWind className + style for dynamic values
+<View
+  className="flex-1 rounded-xl p-4"
+  style={{ backgroundColor: PRIMARY_COLOR + '20' }}
+>
+
+// ❌ WRONG - Using style for static values
+<View style={{ flex: 1, borderRadius: 12, padding: 16, backgroundColor: '#FFF' }}>
+```
+
+## Summary Table
+
+| Use Case | Approach |
+|----------|----------|
+| Layout, spacing, colors | NativeWind className |
+| Buttons | Gluestack `<Button>` |
+| Modals/Sheets | Gluestack or gorhom/bottom-sheet |
+| Form inputs | Gluestack `<Input>` |
+| Toast/Alert | Gluestack Toast |
+| Select/Dropdown | Gluestack `<Select>` |
+| Cards, containers | React Native `<View>` + NativeWind |
+| Lists | React Native `<FlatList>` |
+| Animations | Reanimated + NativeWind |
+| Icon colors | Inline hex values |
+
+---
+
 ```

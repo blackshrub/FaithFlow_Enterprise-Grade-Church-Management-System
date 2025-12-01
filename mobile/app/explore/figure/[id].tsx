@@ -1,6 +1,11 @@
 /**
  * Bible Figure of the Day Detail Screen
  *
+ * Styling Strategy:
+ * - NativeWind (className) for all layout and styling
+ * - Inline style for ExploreColors and shadows
+ * - React Native Reanimated for animations
+ *
  * Design: Biographical narrative with timeline
  * - Hero image with name overlay
  * - Key events timeline
@@ -9,10 +14,10 @@
  */
 
 import React, { useEffect, useState } from 'react';
-import { ScrollView, View, Text, Image, StyleSheet, Pressable } from 'react-native';
+import { ScrollView, View, Text, Image, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ExploreColors, ExploreTypography, ExploreSpacing } from '@/constants/explore/designSystem';
+import { ExploreColors } from '@/constants/explore/designSystem';
 import {
   useContentById,
   useTrackContentStart,
@@ -24,7 +29,7 @@ import type { BibleFigure } from '@/types/explore';
 import { ArrowLeft, Check, Share2, Calendar, BookOpen } from 'lucide-react-native';
 import { BibleFigureSkeleton } from '@/components/explore/LoadingSkeleton';
 import { AudioPlayButton } from '@/components/explore/AudioPlayButton';
-import Animated, { FadeIn, FadeInDown, SlideInRight } from 'react-native-reanimated';
+import Animated, { SlideInRight } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 
 export default function BibleFigureScreen() {
@@ -59,13 +64,16 @@ export default function BibleFigureScreen() {
 
   if (isLoading || !figure) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
-        <View style={styles.header}>
-          <Pressable onPress={() => router.back()} style={styles.backButton}>
+      <SafeAreaView className="flex-1 bg-white" edges={['top']}>
+        <View
+          className="flex-row justify-between items-center px-3 py-2 border-b"
+          style={{ borderBottomColor: ExploreColors.neutral[100] }}
+        >
+          <Pressable onPress={() => router.back()} className="p-1">
             <ArrowLeft size={24} color={ExploreColors.neutral[900]} />
           </Pressable>
         </View>
-        <ScrollView contentContainerStyle={styles.loadingContainer}>
+        <ScrollView contentContainerClassName="p-5">
           <BibleFigureSkeleton />
         </ScrollView>
       </SafeAreaView>
@@ -90,12 +98,15 @@ export default function BibleFigureScreen() {
   ].filter(Boolean).join('. ');
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView className="flex-1 bg-white" edges={['top']}>
       {/* Header - Static, not animated */}
-      <View style={styles.header}>
+      <View
+        className="flex-row justify-between items-center px-3 py-2 border-b"
+        style={{ borderBottomColor: ExploreColors.neutral[100] }}
+      >
         <Pressable
           onPress={() => router.back()}
-          style={styles.backButton}
+          className="p-1"
           accessibilityRole="button"
           accessibilityLabel={contentLanguage === 'en' ? 'Go back' : 'Kembali'}
           accessibilityHint={
@@ -108,7 +119,7 @@ export default function BibleFigureScreen() {
         </Pressable>
 
         <Pressable
-          style={styles.iconButton}
+          className="p-1"
           accessibilityRole="button"
           accessibilityLabel={contentLanguage === 'en' ? 'Share this Bible figure' : 'Bagikan tokoh Alkitab ini'}
           accessibilityHint={
@@ -123,17 +134,17 @@ export default function BibleFigureScreen() {
 
       {/* Content - Animated */}
       <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        className="flex-1"
+        contentContainerClassName="pb-6"
         showsVerticalScrollIndicator={false}
       >
         <Animated.View entering={SlideInRight.duration(250)}>
           {/* Hero Image with Name Overlay */}
           {figure.image_url && (
-            <View style={styles.heroContainer}>
+            <View className="relative w-full h-[320px]">
               <Image
                 source={{ uri: figure.image_url }}
-                style={styles.heroImage}
+                className="w-full h-full"
                 resizeMode="cover"
                 accessibilityLabel={
                   contentLanguage === 'en'
@@ -142,18 +153,37 @@ export default function BibleFigureScreen() {
                 }
                 accessibilityIgnoresInvertColors={true}
               />
-              <View style={styles.heroOverlay}>
+              <View
+                className="absolute bottom-0 left-0 right-0 p-6 pt-8"
+                style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)' }}
+              >
                 <Text
-                  style={styles.heroName}
+                  className="text-[32px] leading-[40px] font-bold text-white mb-1"
                   accessibilityRole="header"
                 >
                   {name}
                 </Text>
-                {title && <Text style={styles.heroTitle}>{title}</Text>}
+                {title && (
+                  <Text
+                    className="text-lg font-semibold italic"
+                    style={{ color: ExploreColors.neutral[200] }}
+                  >
+                    {title}
+                  </Text>
+                )}
               </View>
-              {/* Audio Play Button - Overlay at bottom right (cached for 7 days, preloads when page opens) */}
+              {/* Audio Play Button - Overlay at bottom right */}
               {ttsText && id && (
-                <View style={styles.audioButtonOverlay}>
+                <View
+                  className="absolute bottom-4 right-4"
+                  style={{
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.25,
+                    shadowRadius: 4,
+                    elevation: 5,
+                  }}
+                >
                   <AudioPlayButton
                     text={ttsText}
                     variant="icon"
@@ -171,181 +201,255 @@ export default function BibleFigureScreen() {
             </View>
           )}
 
-        <View style={styles.contentContainer}>
-          {/* Summary */}
-          <Text style={styles.summary}>{summary}</Text>
+          <View className="px-5 pt-6">
+            {/* Summary */}
+            <Text
+              className="text-lg font-semibold leading-7 mb-6 italic"
+              style={{ color: ExploreColors.neutral[800] }}
+            >
+              {summary}
+            </Text>
 
-          {/* Key Events Timeline */}
-          {figure.key_events && figure.key_events.length > 0 && (
-            <View style={styles.section}>
-              <View style={styles.sectionHeader}>
-                <Calendar size={20} color={ExploreColors.primary[600]} />
-                <Text
-                  style={styles.sectionTitle}
-                  accessibilityRole="header"
+            {/* Key Events Timeline */}
+            {figure.key_events && figure.key_events.length > 0 && (
+              <View className="mb-6">
+                <View className="flex-row items-center gap-1 mb-3">
+                  <Calendar size={20} color={ExploreColors.primary[600]} />
+                  <Text
+                    className="text-xl font-bold"
+                    style={{ color: ExploreColors.neutral[900] }}
+                    accessibilityRole="header"
                   >
-                  {contentLanguage === 'en' ? 'Key Events' : 'Peristiwa Penting'}
-                </Text>
-              </View>
+                    {contentLanguage === 'en' ? 'Key Events' : 'Peristiwa Penting'}
+                  </Text>
+                </View>
 
-              {figure.key_events.map((event, index) => {
-                const eventTitle = typeof event.title === 'string'
-                  ? event.title
-                  : ((event.title as any)?.[contentLanguage] || (event.title as any)?.en || '');
-                const eventDescription = typeof event.description === 'string'
-                  ? event.description
-                  : ((event.description as any)?.[contentLanguage] || (event.description as any)?.en || '');
-                const isLast = index === (figure.key_events?.length ?? 0) - 1;
+                {figure.key_events.map((event, index) => {
+                  const eventTitle = typeof event.title === 'string'
+                    ? event.title
+                    : ((event.title as any)?.[contentLanguage] || (event.title as any)?.en || '');
+                  const eventDescription = typeof event.description === 'string'
+                    ? event.description
+                    : ((event.description as any)?.[contentLanguage] || (event.description as any)?.en || '');
+                  const isLast = index === (figure.key_events?.length ?? 0) - 1;
 
-                return (
-                  <View
-                    key={index}
-                    style={styles.timelineItem}
-                    accessible={true}
-                    accessibilityLabel={
-                      contentLanguage === 'en'
-                        ? `Key event ${index + 1}: ${eventTitle}${eventDescription ? `. ${eventDescription}` : ''}${event.scripture_reference ? `. From ${event.scripture_reference}` : ''}`
-                        : `Peristiwa penting ${index + 1}: ${eventTitle}${eventDescription ? `. ${eventDescription}` : ''}${event.scripture_reference ? `. Dari ${event.scripture_reference}` : ''}`
-                    }
-                    accessibilityRole="text"
-                  >
-                    {/* Timeline indicator */}
-                    <View style={styles.timelineIndicator}>
-                      <View style={styles.timelineDot} />
-                      {!isLast && <View style={styles.timelineLine} />}
-                    </View>
+                  return (
+                    <View
+                      key={index}
+                      className="flex-row mb-4"
+                      accessible={true}
+                      accessibilityLabel={
+                        contentLanguage === 'en'
+                          ? `Key event ${index + 1}: ${eventTitle}${eventDescription ? `. ${eventDescription}` : ''}${event.scripture_reference ? `. From ${event.scripture_reference}` : ''}`
+                          : `Peristiwa penting ${index + 1}: ${eventTitle}${eventDescription ? `. ${eventDescription}` : ''}${event.scripture_reference ? `. Dari ${event.scripture_reference}` : ''}`
+                      }
+                      accessibilityRole="text"
+                    >
+                      {/* Timeline indicator */}
+                      <View className="w-6 items-center mr-3">
+                        <View
+                          className="w-3 h-3 rounded-full border-[3px]"
+                          style={{
+                            backgroundColor: ExploreColors.primary[500],
+                            borderColor: ExploreColors.primary[100],
+                          }}
+                        />
+                        {!isLast && (
+                          <View
+                            className="flex-1 w-0.5 mt-1"
+                            style={{ backgroundColor: ExploreColors.primary[200] }}
+                          />
+                        )}
+                      </View>
 
-                    {/* Event content */}
-                    <View style={styles.timelineContent}>
-                      <Text style={styles.eventTitle}>{eventTitle}</Text>
-                      {eventDescription && (
-                        <Text style={styles.eventDescription}>{eventDescription}</Text>
-                      )}
-                      {event.scripture_reference && (
-                        <View style={styles.scriptureRefContainer}>
-                          <BookOpen size={14} color={ExploreColors.spiritual[600]} />
-                          <Text style={styles.scriptureRef}>
-                            {typeof event.scripture_reference === 'string'
-                              ? event.scripture_reference
-                              : `${event.scripture_reference.book} ${event.scripture_reference.chapter}:${event.scripture_reference.verse_start}${event.scripture_reference.verse_end ? `-${event.scripture_reference.verse_end}` : ''}`}
+                      {/* Event content */}
+                      <View className="flex-1 pb-1">
+                        <Text
+                          className="text-lg font-semibold mb-1"
+                          style={{ color: ExploreColors.neutral[900] }}
+                        >
+                          {eventTitle}
+                        </Text>
+                        {eventDescription && (
+                          <Text
+                            className="text-base leading-6 mb-1"
+                            style={{ color: ExploreColors.neutral[700] }}
+                          >
+                            {eventDescription}
                           </Text>
-                        </View>
-                      )}
+                        )}
+                        {event.scripture_reference && (
+                          <View className="flex-row items-center gap-1 mt-1">
+                            <BookOpen size={14} color={ExploreColors.spiritual[600]} />
+                            <Text
+                              className="text-sm font-semibold"
+                              style={{ color: ExploreColors.spiritual[600] }}
+                            >
+                              {typeof event.scripture_reference === 'string'
+                                ? event.scripture_reference
+                                : `${event.scripture_reference.book} ${event.scripture_reference.chapter}:${event.scripture_reference.verse_start}${event.scripture_reference.verse_end ? `-${event.scripture_reference.verse_end}` : ''}`}
+                            </Text>
+                          </View>
+                        )}
+                      </View>
                     </View>
-                  </View>
-                );
-              })}
-            </View>
-          )}
+                  );
+                })}
+              </View>
+            )}
 
-          {/* Biography */}
-          {biography && (
-            <View style={styles.section}>
-              <Text
-                style={styles.sectionTitle}
-                accessibilityRole="header"
-              >
-                {contentLanguage === 'en' ? 'Biography' : 'Biografi'}
-              </Text>
-              <Text style={styles.biographyText}>{biography}</Text>
-            </View>
-          )}
-
-          {/* Related Scriptures */}
-          {figure.related_scriptures && figure.related_scriptures.length > 0 && (
-            <View style={styles.section}>
-              <View style={styles.sectionHeader}>
-                <BookOpen size={20} color={ExploreColors.spiritual[600]} />
+            {/* Biography */}
+            {biography && (
+              <View className="mb-6">
                 <Text
-                  style={styles.sectionTitle}
+                  className="text-xl font-bold mb-3"
+                  style={{ color: ExploreColors.neutral[900] }}
                   accessibilityRole="header"
-                  >
-                  {contentLanguage === 'en' ? 'Related Scriptures' : 'Ayat Terkait'}
+                >
+                  {contentLanguage === 'en' ? 'Biography' : 'Biografi'}
+                </Text>
+                <Text
+                  className="text-base leading-7"
+                  style={{ color: ExploreColors.neutral[800] }}
+                >
+                  {biography}
                 </Text>
               </View>
+            )}
 
-              {figure.related_scriptures.map((scripture, index) => (
-                <View
-                  key={index}
-                  style={styles.scriptureCard}
-                  accessible={true}
-                  accessibilityLabel={
-                    contentLanguage === 'en'
-                      ? `Related scripture ${index + 1}: ${typeof scripture.text === 'string' ? scripture.text : scripture.text?.[contentLanguage] || scripture.text?.en || ''}. From ${scripture.book} chapter ${scripture.chapter}, verse ${scripture.verse_start}`
-                      : `Ayat terkait ${index + 1}: ${typeof scripture.text === 'string' ? scripture.text : scripture.text?.[contentLanguage] || scripture.text?.id || ''}. Dari ${scripture.book} pasal ${scripture.chapter}, ayat ${scripture.verse_start}`
-                  }
-                  accessibilityRole="text"
-                >
-                  <Text style={styles.scriptureText}>
-                    "{typeof scripture.text === 'string' ? scripture.text : scripture.text?.[contentLanguage] || scripture.text?.en || ''}"
-                  </Text>
-                  <Text style={styles.scriptureReference}>
-                    {scripture.book} {scripture.chapter}:{scripture.verse_start}
-                    {scripture.verse_end && scripture.verse_end !== scripture.verse_start
-                      ? `-${scripture.verse_end}`
-                      : ''}
+            {/* Related Scriptures */}
+            {figure.related_scriptures && figure.related_scriptures.length > 0 && (
+              <View className="mb-6">
+                <View className="flex-row items-center gap-1 mb-3">
+                  <BookOpen size={20} color={ExploreColors.spiritual[600]} />
+                  <Text
+                    className="text-xl font-bold"
+                    style={{ color: ExploreColors.neutral[900] }}
+                    accessibilityRole="header"
+                  >
+                    {contentLanguage === 'en' ? 'Related Scriptures' : 'Ayat Terkait'}
                   </Text>
                 </View>
-              ))}
-            </View>
-          )}
 
-          {/* Life Lessons */}
-          {figure.life_lessons && figure.life_lessons.length > 0 && (
-            <View style={styles.section}>
-              <Text
-                style={styles.sectionTitle}
-                accessibilityRole="header"
-              >
-                {contentLanguage === 'en' ? 'Life Lessons' : 'Pelajaran Hidup'}
-              </Text>
-              {figure.life_lessons.map((lesson, index: number) => {
-                const lessonText = lesson[contentLanguage] || lesson.en || '';
-                return (
+                {figure.related_scriptures.map((scripture, index) => (
                   <View
                     key={index}
-                    style={styles.lessonItem}
+                    className="rounded-xl p-4 mb-2 border-l-4"
+                    style={{
+                      backgroundColor: ExploreColors.spiritual[50],
+                      borderLeftColor: ExploreColors.spiritual[500],
+                    }}
                     accessible={true}
                     accessibilityLabel={
                       contentLanguage === 'en'
-                        ? `Lesson ${index + 1}: ${lessonText}`
-                        : `Pelajaran ${index + 1}: ${lessonText}`
+                        ? `Related scripture ${index + 1}: ${typeof scripture.text === 'string' ? scripture.text : scripture.text?.[contentLanguage] || scripture.text?.en || ''}. From ${scripture.book} chapter ${scripture.chapter}, verse ${scripture.verse_start}`
+                        : `Ayat terkait ${index + 1}: ${typeof scripture.text === 'string' ? scripture.text : scripture.text?.[contentLanguage] || scripture.text?.id || ''}. Dari ${scripture.book} pasal ${scripture.chapter}, ayat ${scripture.verse_start}`
                     }
                     accessibilityRole="text"
                   >
-                    <View style={styles.lessonNumber}>
-                      <Text style={styles.lessonNumberText}>{index + 1}</Text>
-                    </View>
-                    <Text style={styles.lessonText}>{lessonText}</Text>
+                    <Text
+                      className="text-base leading-6 mb-2 italic"
+                      style={{ color: ExploreColors.neutral[900] }}
+                    >
+                      "{typeof scripture.text === 'string' ? scripture.text : scripture.text?.[contentLanguage] || scripture.text?.en || ''}"
+                    </Text>
+                    <Text
+                      className="text-sm font-semibold"
+                      style={{ color: ExploreColors.spiritual[700] }}
+                    >
+                      {scripture.book} {scripture.chapter}:{scripture.verse_start}
+                      {scripture.verse_end && scripture.verse_end !== scripture.verse_start
+                        ? `-${scripture.verse_end}`
+                        : ''}
+                    </Text>
                   </View>
-                );
-              })}
-            </View>
-          )}
+                ))}
+              </View>
+            )}
 
-          {/* Tags */}
-          {figure.tags && figure.tags.length > 0 && (
-            <View style={styles.tagsContainer}>
-              {figure.tags.map((tag, index) => (
-                <View key={index} style={styles.tag}>
-                  <Text style={styles.tagText}>{tag}</Text>
-                </View>
-              ))}
-            </View>
-          )}
+            {/* Life Lessons */}
+            {figure.life_lessons && figure.life_lessons.length > 0 && (
+              <View className="mb-6">
+                <Text
+                  className="text-xl font-bold mb-3"
+                  style={{ color: ExploreColors.neutral[900] }}
+                  accessibilityRole="header"
+                >
+                  {contentLanguage === 'en' ? 'Life Lessons' : 'Pelajaran Hidup'}
+                </Text>
+                {figure.life_lessons.map((lesson, index: number) => {
+                  const lessonText = lesson[contentLanguage] || lesson.en || '';
+                  return (
+                    <View
+                      key={index}
+                      className="flex-row mb-3"
+                      accessible={true}
+                      accessibilityLabel={
+                        contentLanguage === 'en'
+                          ? `Lesson ${index + 1}: ${lessonText}`
+                          : `Pelajaran ${index + 1}: ${lessonText}`
+                      }
+                      accessibilityRole="text"
+                    >
+                      <View
+                        className="w-7 h-7 rounded-full items-center justify-center mr-3"
+                        style={{ backgroundColor: ExploreColors.secondary[100] }}
+                      >
+                        <Text
+                          className="text-sm font-bold"
+                          style={{ color: ExploreColors.secondary[700] }}
+                        >
+                          {index + 1}
+                        </Text>
+                      </View>
+                      <Text
+                        className="flex-1 text-base leading-6"
+                        style={{ color: ExploreColors.neutral[800] }}
+                      >
+                        {lessonText}
+                      </Text>
+                    </View>
+                  );
+                })}
+              </View>
+            )}
 
-          {/* Bottom spacing for button */}
-          <View style={{ height: 100 }} />
-        </View>
+            {/* Tags */}
+            {figure.tags && figure.tags.length > 0 && (
+              <View className="flex-row flex-wrap gap-2 mb-4">
+                {figure.tags.map((tag, index) => (
+                  <View
+                    key={index}
+                    className="px-3 py-1 rounded-2xl"
+                    style={{ backgroundColor: ExploreColors.primary[50] }}
+                  >
+                    <Text
+                      className="text-sm font-semibold"
+                      style={{ color: ExploreColors.primary[700] }}
+                    >
+                      {tag}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            )}
+
+            {/* Bottom spacing for button */}
+            <View className="h-[100px]" />
+          </View>
         </Animated.View>
       </ScrollView>
 
       {/* Complete Button */}
       {!isCompleted && (
-        <View style={styles.bottomContainer}>
+        <View
+          className="absolute bottom-0 left-0 right-0 p-5 bg-white border-t"
+          style={{ borderTopColor: ExploreColors.neutral[100] }}
+        >
           <Pressable
             onPress={handleComplete}
-            style={[styles.completeButton, trackComplete.isPending && styles.completeButtonDisabled]}
+            className={`flex-row items-center justify-center gap-2 py-3 rounded-2xl ${trackComplete.isPending ? 'opacity-60' : ''}`}
+            style={{ backgroundColor: ExploreColors.success[500] }}
             disabled={trackComplete.isPending}
             accessibilityRole="button"
             accessibilityLabel={
@@ -364,7 +468,7 @@ export default function BibleFigureScreen() {
             }}
           >
             <Check size={20} color="#FFFFFF" />
-            <Text style={styles.completeButtonText}>
+            <Text className="text-base font-semibold text-white">
               {trackComplete.isPending
                 ? contentLanguage === 'en'
                   ? 'Completing...'
@@ -380,7 +484,7 @@ export default function BibleFigureScreen() {
       {/* Completed Badge */}
       {isCompleted && (
         <View
-          style={styles.completedBadgeContainer}
+          className="absolute bottom-5 left-0 right-0 items-center"
           accessible={true}
           accessibilityRole="text"
           accessibilityLabel={
@@ -390,9 +494,15 @@ export default function BibleFigureScreen() {
           }
           accessibilityLiveRegion="polite"
         >
-          <View style={styles.completedBadge}>
+          <View
+            className="flex-row items-center gap-1 px-4 py-2 rounded-3xl"
+            style={{ backgroundColor: ExploreColors.success[50] }}
+          >
             <Check size={16} color={ExploreColors.success[600]} />
-            <Text style={styles.completedText}>
+            <Text
+              className="text-base font-semibold"
+              style={{ color: ExploreColors.success[700] }}
+            >
               {contentLanguage === 'en' ? 'Completed' : 'Selesai'}
             </Text>
           </View>
@@ -401,265 +511,3 @@ export default function BibleFigureScreen() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: ExploreSpacing.md,
-    paddingVertical: ExploreSpacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: ExploreColors.neutral[100],
-  },
-  backButton: {
-    padding: ExploreSpacing.xs,
-  },
-  iconButton: {
-    padding: ExploreSpacing.xs,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: ExploreSpacing.xl,
-  },
-  loadingContainer: {
-    padding: ExploreSpacing.screenMargin,
-  },
-  heroContainer: {
-    position: 'relative',
-    width: '100%',
-    height: 320,
-  },
-  heroImage: {
-    width: '100%',
-    height: '100%',
-  },
-  heroOverlay: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    padding: ExploreSpacing.xl,
-    paddingTop: ExploreSpacing['2xl'],
-    // Note: React Native doesn't support linear gradient natively
-    // Using solid dark overlay for now - can enhance with expo-linear-gradient
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
-  },
-  audioButtonOverlay: {
-    position: 'absolute',
-    bottom: ExploreSpacing.lg,
-    right: ExploreSpacing.lg,
-    // Add shadow for visibility
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  heroName: {
-    ...ExploreTypography.h1,
-    color: '#FFFFFF',
-    marginBottom: ExploreSpacing.xs,
-    fontSize: 32,
-    lineHeight: 40,
-  },
-  heroTitle: {
-    ...ExploreTypography.h4,
-    color: ExploreColors.neutral[200],
-    fontStyle: 'italic',
-  },
-  contentContainer: {
-    paddingHorizontal: ExploreSpacing.screenMargin,
-    paddingTop: ExploreSpacing.xl,
-  },
-  summary: {
-    ...ExploreTypography.h4,
-    color: ExploreColors.neutral[800],
-    lineHeight: 28,
-    marginBottom: ExploreSpacing.xl,
-    fontStyle: 'italic',
-  },
-  section: {
-    marginBottom: ExploreSpacing.xl,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: ExploreSpacing.xs,
-    marginBottom: ExploreSpacing.md,
-  },
-  sectionTitle: {
-    ...ExploreTypography.h3,
-    color: ExploreColors.neutral[900],
-  },
-  timelineItem: {
-    flexDirection: 'row',
-    marginBottom: ExploreSpacing.lg,
-  },
-  timelineIndicator: {
-    width: 24,
-    alignItems: 'center',
-    marginRight: ExploreSpacing.md,
-  },
-  timelineDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: ExploreColors.primary[500],
-    borderWidth: 3,
-    borderColor: ExploreColors.primary[100],
-  },
-  timelineLine: {
-    flex: 1,
-    width: 2,
-    backgroundColor: ExploreColors.primary[200],
-    marginTop: ExploreSpacing.xs,
-  },
-  timelineContent: {
-    flex: 1,
-    paddingBottom: ExploreSpacing.xs,
-  },
-  eventTitle: {
-    ...ExploreTypography.h4,
-    color: ExploreColors.neutral[900],
-    marginBottom: ExploreSpacing.xs,
-  },
-  eventDescription: {
-    ...ExploreTypography.body,
-    color: ExploreColors.neutral[700],
-    lineHeight: 24,
-    marginBottom: ExploreSpacing.xs,
-  },
-  scriptureRefContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: ExploreSpacing.xs,
-    marginTop: ExploreSpacing.xs,
-  },
-  scriptureRef: {
-    ...ExploreTypography.caption,
-    color: ExploreColors.spiritual[600],
-    fontWeight: '600',
-  },
-  biographyText: {
-    ...ExploreTypography.body,
-    color: ExploreColors.neutral[800],
-    lineHeight: 28,
-  },
-  scriptureCard: {
-    backgroundColor: ExploreColors.spiritual[50],
-    borderRadius: 12,
-    padding: ExploreSpacing.lg,
-    marginBottom: ExploreSpacing.sm,
-    borderLeftWidth: 4,
-    borderLeftColor: ExploreColors.spiritual[500],
-  },
-  scriptureText: {
-    ...ExploreTypography.body,
-    color: ExploreColors.neutral[900],
-    fontStyle: 'italic',
-    lineHeight: 24,
-    marginBottom: ExploreSpacing.sm,
-  },
-  scriptureReference: {
-    ...ExploreTypography.caption,
-    color: ExploreColors.spiritual[700],
-    fontWeight: '600',
-  },
-  lessonItem: {
-    flexDirection: 'row',
-    marginBottom: ExploreSpacing.md,
-  },
-  lessonNumber: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: ExploreColors.secondary[100],
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: ExploreSpacing.md,
-  },
-  lessonNumberText: {
-    ...ExploreTypography.body,
-    color: ExploreColors.secondary[700],
-    fontWeight: '700',
-    fontSize: 14,
-  },
-  lessonText: {
-    ...ExploreTypography.body,
-    color: ExploreColors.neutral[800],
-    lineHeight: 24,
-    flex: 1,
-  },
-  tagsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: ExploreSpacing.sm,
-    marginBottom: ExploreSpacing.lg,
-  },
-  tag: {
-    backgroundColor: ExploreColors.primary[50],
-    paddingHorizontal: ExploreSpacing.md,
-    paddingVertical: ExploreSpacing.xs,
-    borderRadius: 16,
-  },
-  tagText: {
-    ...ExploreTypography.caption,
-    color: ExploreColors.primary[700],
-    fontWeight: '600',
-  },
-  bottomContainer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    padding: ExploreSpacing.screenMargin,
-    backgroundColor: '#FFFFFF',
-    borderTopWidth: 1,
-    borderTopColor: ExploreColors.neutral[100],
-  },
-  completeButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: ExploreSpacing.sm,
-    backgroundColor: ExploreColors.success[500],
-    paddingVertical: ExploreSpacing.md,
-    borderRadius: 16,
-  },
-  completeButtonDisabled: {
-    opacity: 0.6,
-  },
-  completeButtonText: {
-    ...ExploreTypography.body,
-    color: '#FFFFFF',
-    fontWeight: '600',
-  },
-  completedBadgeContainer: {
-    position: 'absolute',
-    bottom: ExploreSpacing.screenMargin,
-    left: 0,
-    right: 0,
-    alignItems: 'center',
-  },
-  completedBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: ExploreSpacing.xs,
-    backgroundColor: ExploreColors.success[50],
-    paddingHorizontal: ExploreSpacing.lg,
-    paddingVertical: ExploreSpacing.sm,
-    borderRadius: 24,
-  },
-  completedText: {
-    ...ExploreTypography.body,
-    color: ExploreColors.success[700],
-    fontWeight: '600',
-  },
-});

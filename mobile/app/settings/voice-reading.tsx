@@ -2,9 +2,11 @@
  * Voice & Reading Settings Page
  *
  * Configure:
- * - OpenAI API key for TTS/STT
+ * - Google Cloud TTS API key
  * - Voice preferences (voice selection, speed)
  * - Reading preferences (font size, theme, line height)
+ *
+ * Styling: NativeWind-first with inline style for dynamic values
  */
 
 import React, { useState, useCallback, useEffect } from 'react';
@@ -14,7 +16,6 @@ import {
   ScrollView,
   Pressable,
   TextInput,
-  StyleSheet,
   Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -37,8 +38,9 @@ import {
 
 import {
   useVoiceSettingsStore,
-  type TTSVoice,
+  type GoogleTTSVoice,
 } from '@/stores/voiceSettings';
+import { GOOGLE_TTS_VOICES } from '@/constants/voice';
 import {
   useReadingPreferencesStore,
   type FontSize,
@@ -69,15 +71,12 @@ const Colors = {
   background: '#F2F2F7',
 };
 
-// Voice options
-const VOICE_OPTIONS: { value: TTSVoice; label: string; description: string }[] = [
-  { value: 'nova', label: 'Nova', description: 'Friendly, upbeat' },
-  { value: 'alloy', label: 'Alloy', description: 'Neutral, balanced' },
-  { value: 'echo', label: 'Echo', description: 'Warm, conversational' },
-  { value: 'fable', label: 'Fable', description: 'Expressive, storytelling' },
-  { value: 'onyx', label: 'Onyx', description: 'Deep, authoritative' },
-  { value: 'shimmer', label: 'Shimmer', description: 'Soft, gentle' },
-];
+// Voice options - Google TTS WaveNet voices
+const VOICE_OPTIONS: { value: GoogleTTSVoice; label: string; description: string }[] = Object.entries(GOOGLE_TTS_VOICES).map(([voice, info]) => ({
+  value: voice as GoogleTTSVoice,
+  label: info.label,
+  description: info.gender === 'female' ? 'Female' : 'Male',
+}));
 
 // Font size options
 const FONT_SIZE_OPTIONS: { value: FontSize; label: string; size: number }[] = [
@@ -108,10 +107,9 @@ export default function VoiceReadingSettings() {
   // Reading preferences
   const readingPrefs = useReadingPreferencesStore();
 
-  // Load settings on mount
+  // Load voice settings on mount (reading prefs auto-loaded by MMKV persist)
   useEffect(() => {
     voiceSettings.loadSettings();
-    readingPrefs.loadPreferences();
   }, []);
 
   // Initialize API key input
@@ -121,32 +119,27 @@ export default function VoiceReadingSettings() {
     }
   }, [voiceSettings.apiKey]);
 
-  const handleSaveApiKey = useCallback(async () => {
-    if (!apiKeyInput.trim()) {
-      Alert.alert('Error', 'Please enter an API key');
-      return;
-    }
-
+  const handleRefreshApiKey = useCallback(async () => {
     try {
-      await voiceSettings.setApiKey(apiKeyInput.trim());
+      await voiceSettings.refreshFromBackend();
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      Alert.alert('Success', 'API key saved securely');
+      Alert.alert('Success', 'Voice settings refreshed from server');
     } catch (error) {
-      Alert.alert('Error', 'Failed to save API key');
+      Alert.alert('Error', 'Failed to refresh settings');
     }
-  }, [apiKeyInput, voiceSettings]);
+  }, [voiceSettings]);
 
-  const handleClearApiKey = useCallback(async () => {
+  const handleClearCache = useCallback(async () => {
     Alert.alert(
-      'Clear API Key',
-      'Are you sure you want to remove the API key?',
+      'Clear Cache',
+      'Are you sure you want to clear the cached API key? It will be re-fetched from the server.',
       [
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Clear',
           style: 'destructive',
           onPress: async () => {
-            await voiceSettings.clearApiKey();
+            await voiceSettings.clearCache();
             setApiKeyInput('');
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
           },
@@ -169,7 +162,7 @@ export default function VoiceReadingSettings() {
       await speakText(
         'Hello! This is a test of the voice feature. Halo! Ini adalah tes fitur suara.',
         apiKey,
-        { voice: voiceSettings.preferences.voice }
+        { voice: voiceSettings.getEffectiveVoice() }
       );
     } catch (error) {
       Alert.alert('Error', 'Voice test failed. Please check your API key.');
@@ -178,9 +171,9 @@ export default function VoiceReadingSettings() {
     }
   }, [voiceSettings]);
 
-  const handleVoiceSelect = useCallback(async (voice: TTSVoice) => {
+  const handleVoiceSelect = useCallback(async (voice: GoogleTTSVoice) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    await voiceSettings.updatePreferences({ voice });
+    await voiceSettings.updateUserPreferences({ voice });
   }, [voiceSettings]);
 
   const handleFontSizeSelect = useCallback(async (size: FontSize) => {
@@ -194,112 +187,129 @@ export default function VoiceReadingSettings() {
   }, [readingPrefs]);
 
   return (
-    <View style={styles.container}>
+    <View className="flex-1" style={{ backgroundColor: Colors.background }}>
       {/* Header */}
-      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
-        <View style={styles.headerRow}>
+      <View className="px-4 pb-3" style={{ backgroundColor: Colors.background, paddingTop: insets.top + 8 }}>
+        <View className="flex-row items-center justify-between">
           <Pressable
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               router.back();
             }}
-            style={({ pressed }) => [styles.backBtn, pressed && styles.btnPressed]}
+            className="w-10 h-10 rounded-full items-center justify-center active:opacity-70"
           >
             <ChevronLeft size={24} color={Colors.neutral[900]} />
           </Pressable>
-          <Text style={styles.headerTitle}>Voice & Reading</Text>
-          <View style={{ width: 40 }} />
+          <Text className="text-lg font-semibold" style={{ color: Colors.neutral[900] }}>
+            Voice & Reading
+          </Text>
+          <View className="w-10" />
         </View>
       </View>
 
       <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 32 }]}
+        className="flex-1"
+        contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 32 }}
         showsVerticalScrollIndicator={false}
       >
         {/* Voice Settings Section */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
+        <View className="mb-8">
+          <View className="flex-row items-center mb-4 gap-2">
             <Volume2 size={20} color={Colors.primary} />
-            <Text style={styles.sectionTitle}>Voice Settings</Text>
+            <Text className="text-lg font-semibold" style={{ color: Colors.neutral[900] }}>
+              Voice Settings
+            </Text>
           </View>
 
           {/* API Key */}
-          <View style={styles.card}>
-            <View style={styles.cardHeader}>
+          <View className="bg-white rounded-xl p-4 mb-3">
+            <View className="flex-row items-center gap-2 mb-2">
               <Key size={18} color={Colors.neutral[600]} />
-              <Text style={styles.cardTitle}>OpenAI API Key</Text>
+              <Text className="text-base font-semibold" style={{ color: Colors.neutral[800] }}>
+                Google Cloud TTS API Key
+              </Text>
             </View>
-            <Text style={styles.cardDescription}>
-              Required for voice features. Get your key from platform.openai.com
+            <Text className="text-[13px] mb-3" style={{ color: Colors.neutral[500] }}>
+              Required for voice features. Get your key from console.cloud.google.com
             </Text>
 
-            <View style={styles.apiKeyRow}>
+            <View className="flex-row items-center rounded-lg px-3" style={{ backgroundColor: Colors.neutral[100] }}>
               <TextInput
-                style={styles.apiKeyInput}
+                className="flex-1 h-11 text-sm"
+                style={{ color: Colors.neutral[900] }}
                 value={apiKeyInput}
                 onChangeText={setApiKeyInput}
-                placeholder="sk-..."
+                placeholder="AIzaSy..."
                 placeholderTextColor={Colors.neutral[400]}
                 secureTextEntry={!showApiKey}
                 autoCapitalize="none"
                 autoCorrect={false}
               />
-              <Pressable
-                onPress={() => setShowApiKey(!showApiKey)}
-                style={styles.eyeBtn}
-              >
+              <Pressable onPress={() => setShowApiKey(!showApiKey)} className="p-2">
                 <Eye size={20} color={Colors.neutral[500]} />
               </Pressable>
             </View>
 
-            <View style={styles.apiKeyActions}>
+            <View className="flex-row gap-3 mt-3">
               <Pressable
-                onPress={handleSaveApiKey}
-                style={[styles.actionBtn, styles.saveBtn]}
+                onPress={handleRefreshApiKey}
+                className="flex-row items-center gap-1.5 py-2 px-4 rounded-lg"
+                style={{ backgroundColor: Colors.primary }}
               >
                 <Check size={16} color={Colors.white} />
-                <Text style={styles.saveBtnText}>Save</Text>
+                <Text className="font-semibold" style={{ color: Colors.white }}>Refresh</Text>
               </Pressable>
 
               {voiceSettings.apiKey && (
                 <Pressable
-                  onPress={handleClearApiKey}
-                  style={[styles.actionBtn, styles.clearBtn]}
+                  onPress={handleClearCache}
+                  className="flex-row items-center gap-1.5 py-2 px-4 rounded-lg"
+                  style={{ backgroundColor: Colors.neutral[100] }}
                 >
                   <Trash2 size={16} color={Colors.error} />
-                  <Text style={styles.clearBtnText}>Clear</Text>
+                  <Text className="font-semibold" style={{ color: Colors.error }}>Clear Cache</Text>
                 </Pressable>
               )}
             </View>
           </View>
 
           {/* Voice Selection */}
-          <View style={styles.card}>
-            <View style={styles.cardHeader}>
+          <View className="bg-white rounded-xl p-4">
+            <View className="flex-row items-center gap-2 mb-2">
               <Mic size={18} color={Colors.neutral[600]} />
-              <Text style={styles.cardTitle}>Voice</Text>
+              <Text className="text-base font-semibold" style={{ color: Colors.neutral[800] }}>
+                Voice
+              </Text>
             </View>
 
-            <View style={styles.voiceGrid}>
+            <View className="flex-row flex-wrap gap-2 mb-4">
               {VOICE_OPTIONS.map((voice) => (
                 <Pressable
                   key={voice.value}
                   onPress={() => handleVoiceSelect(voice.value)}
-                  style={[
-                    styles.voiceOption,
-                    voiceSettings.preferences.voice === voice.value && styles.voiceOptionSelected,
-                  ]}
+                  className="w-[48%] rounded-lg p-3 border-2"
+                  style={{
+                    backgroundColor: voiceSettings.getEffectiveVoice() === voice.value
+                      ? Colors.primary + '10'
+                      : Colors.neutral[100],
+                    borderColor: voiceSettings.getEffectiveVoice() === voice.value
+                      ? Colors.primary
+                      : 'transparent',
+                  }}
                 >
                   <Text
-                    style={[
-                      styles.voiceLabel,
-                      voiceSettings.preferences.voice === voice.value && styles.voiceLabelSelected,
-                    ]}
+                    className="text-sm font-semibold"
+                    style={{
+                      color: voiceSettings.getEffectiveVoice() === voice.value
+                        ? Colors.primary
+                        : Colors.neutral[800],
+                    }}
                   >
                     {voice.label}
                   </Text>
-                  <Text style={styles.voiceDesc}>{voice.description}</Text>
+                  <Text className="text-xs mt-0.5" style={{ color: Colors.neutral[500] }}>
+                    {voice.description}
+                  </Text>
                 </Pressable>
               ))}
             </View>
@@ -308,10 +318,14 @@ export default function VoiceReadingSettings() {
             <Pressable
               onPress={handleTestVoice}
               disabled={isTestingVoice}
-              style={[styles.testBtn, isTestingVoice && styles.testBtnDisabled]}
+              className="flex-row items-center justify-center gap-2 py-3 rounded-lg"
+              style={{
+                backgroundColor: Colors.primary,
+                opacity: isTestingVoice ? 0.6 : 1,
+              }}
             >
               <Play size={18} color={Colors.white} />
-              <Text style={styles.testBtnText}>
+              <Text className="font-semibold" style={{ color: Colors.white }}>
                 {isTestingVoice ? 'Playing...' : 'Test Voice'}
               </Text>
             </Pressable>
@@ -319,68 +333,90 @@ export default function VoiceReadingSettings() {
         </View>
 
         {/* Reading Preferences Section */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
+        <View className="mb-8">
+          <View className="flex-row items-center mb-4 gap-2">
             <Type size={20} color={Colors.primary} />
-            <Text style={styles.sectionTitle}>Reading Preferences</Text>
+            <Text className="text-lg font-semibold" style={{ color: Colors.neutral[900] }}>
+              Reading Preferences
+            </Text>
           </View>
 
           {/* Font Size */}
-          <View style={styles.card}>
-            <View style={styles.cardHeader}>
+          <View className="bg-white rounded-xl p-4 mb-3">
+            <View className="flex-row items-center gap-2 mb-2">
               <Type size={18} color={Colors.neutral[600]} />
-              <Text style={styles.cardTitle}>Font Size</Text>
+              <Text className="text-base font-semibold" style={{ color: Colors.neutral[800] }}>
+                Font Size
+              </Text>
             </View>
 
-            <View style={styles.fontSizeRow}>
+            <View className="flex-row gap-2">
               {FONT_SIZE_OPTIONS.map((option) => (
                 <Pressable
                   key={option.value}
                   onPress={() => handleFontSizeSelect(option.value)}
-                  style={[
-                    styles.fontSizeOption,
-                    readingPrefs.fontSize === option.value && styles.fontSizeOptionSelected,
-                  ]}
+                  className="flex-1 items-center rounded-lg p-3 border-2"
+                  style={{
+                    backgroundColor: readingPrefs.fontSize === option.value
+                      ? Colors.primary + '10'
+                      : Colors.neutral[100],
+                    borderColor: readingPrefs.fontSize === option.value
+                      ? Colors.primary
+                      : 'transparent',
+                  }}
                 >
                   <Text
-                    style={[
-                      styles.fontSizeLabel,
-                      { fontSize: option.size },
-                      readingPrefs.fontSize === option.value && styles.fontSizeLabelSelected,
-                    ]}
+                    className="font-semibold"
+                    style={{
+                      fontSize: option.size,
+                      color: readingPrefs.fontSize === option.value
+                        ? Colors.primary
+                        : Colors.neutral[800],
+                    }}
                   >
                     Aa
                   </Text>
-                  <Text style={styles.fontSizeDesc}>{option.label}</Text>
+                  <Text className="text-[11px] mt-1" style={{ color: Colors.neutral[500] }}>
+                    {option.label}
+                  </Text>
                 </Pressable>
               ))}
             </View>
           </View>
 
           {/* Theme */}
-          <View style={styles.card}>
-            <View style={styles.cardHeader}>
+          <View className="bg-white rounded-xl p-4 mb-3">
+            <View className="flex-row items-center gap-2 mb-2">
               <Sun size={18} color={Colors.neutral[600]} />
-              <Text style={styles.cardTitle}>Reading Theme</Text>
+              <Text className="text-base font-semibold" style={{ color: Colors.neutral[800] }}>
+                Reading Theme
+              </Text>
             </View>
 
-            <View style={styles.themeRow}>
+            <View className="flex-row gap-3">
               {THEME_OPTIONS.map((option) => (
                 <Pressable
                   key={option.value}
                   onPress={() => handleThemeSelect(option.value)}
-                  style={[
-                    styles.themeOption,
-                    { backgroundColor: option.colors.bg },
-                    readingPrefs.theme === option.value && styles.themeOptionSelected,
-                  ]}
+                  className="flex-1 items-center rounded-xl p-4 border-2 relative"
+                  style={{
+                    backgroundColor: option.colors.bg,
+                    borderColor: readingPrefs.theme === option.value
+                      ? Colors.primary
+                      : Colors.neutral[200],
+                  }}
                 >
-                  <Text style={[styles.themePreview, { color: option.colors.text }]}>
+                  <Text className="text-2xl font-semibold" style={{ color: option.colors.text }}>
                     Aa
                   </Text>
-                  <Text style={styles.themeLabel}>{option.label}</Text>
+                  <Text className="text-xs mt-2" style={{ color: Colors.neutral[600] }}>
+                    {option.label}
+                  </Text>
                   {readingPrefs.theme === option.value && (
-                    <View style={styles.themeCheck}>
+                    <View
+                      className="absolute top-2 right-2 w-5 h-5 rounded-full items-center justify-center"
+                      style={{ backgroundColor: Colors.primary }}
+                    >
                       <Check size={14} color={Colors.white} />
                     </View>
                   )}
@@ -391,35 +427,33 @@ export default function VoiceReadingSettings() {
 
           {/* Preview */}
           <View
-            style={[
-              styles.previewCard,
-              {
-                backgroundColor:
-                  readingPrefs.theme === 'light'
-                    ? '#FFFFFF'
-                    : readingPrefs.theme === 'sepia'
-                      ? '#F5F0E6'
-                      : '#1A1A1A',
-              },
-            ]}
+            className="rounded-xl p-4 border"
+            style={{
+              backgroundColor:
+                readingPrefs.theme === 'light'
+                  ? '#FFFFFF'
+                  : readingPrefs.theme === 'sepia'
+                    ? '#F5F0E6'
+                    : '#1A1A1A',
+              borderColor: Colors.neutral[200],
+            }}
           >
-            <Text style={styles.previewTitle}>Preview</Text>
+            <Text className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: Colors.neutral[400] }}>
+              Preview
+            </Text>
             <Text
-              style={[
-                styles.previewText,
-                {
-                  fontSize: FONT_SIZE_OPTIONS.find((f) => f.value === readingPrefs.fontSize)?.size || 16,
-                  color:
-                    readingPrefs.theme === 'light'
-                      ? '#1F2937'
-                      : readingPrefs.theme === 'sepia'
-                        ? '#3D3929'
-                        : '#E5E5E5',
-                  lineHeight:
-                    (FONT_SIZE_OPTIONS.find((f) => f.value === readingPrefs.fontSize)?.size || 16) *
-                    readingPrefs.lineHeight,
-                },
-              ]}
+              style={{
+                fontSize: FONT_SIZE_OPTIONS.find((f) => f.value === readingPrefs.fontSize)?.size || 16,
+                color:
+                  readingPrefs.theme === 'light'
+                    ? '#1F2937'
+                    : readingPrefs.theme === 'sepia'
+                      ? '#3D3929'
+                      : '#E5E5E5',
+                lineHeight:
+                  (FONT_SIZE_OPTIONS.find((f) => f.value === readingPrefs.fontSize)?.size || 16) *
+                  readingPrefs.lineHeight,
+              }}
             >
               For God so loved the world that he gave his one and only Son, that whoever believes in
               him shall not perish but have eternal life. - John 3:16
@@ -430,249 +464,3 @@ export default function VoiceReadingSettings() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.background,
-  },
-  header: {
-    backgroundColor: Colors.background,
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  btnPressed: {
-    opacity: 0.7,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: Colors.neutral[900],
-  },
-  scroll: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: 16,
-  },
-  section: {
-    marginBottom: 32,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-    gap: 8,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: Colors.neutral[900],
-  },
-  card: {
-    backgroundColor: Colors.white,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 8,
-  },
-  cardTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: Colors.neutral[800],
-  },
-  cardDescription: {
-    fontSize: 13,
-    color: Colors.neutral[500],
-    marginBottom: 12,
-  },
-  apiKeyRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.neutral[100],
-    borderRadius: 8,
-    paddingHorizontal: 12,
-  },
-  apiKeyInput: {
-    flex: 1,
-    height: 44,
-    fontSize: 14,
-    color: Colors.neutral[900],
-  },
-  eyeBtn: {
-    padding: 8,
-  },
-  apiKeyActions: {
-    flexDirection: 'row',
-    gap: 12,
-    marginTop: 12,
-  },
-  actionBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-  },
-  saveBtn: {
-    backgroundColor: Colors.primary,
-  },
-  saveBtnText: {
-    color: Colors.white,
-    fontWeight: '600',
-  },
-  clearBtn: {
-    backgroundColor: Colors.neutral[100],
-  },
-  clearBtnText: {
-    color: Colors.error,
-    fontWeight: '600',
-  },
-  voiceGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 16,
-  },
-  voiceOption: {
-    width: '48%',
-    backgroundColor: Colors.neutral[100],
-    borderRadius: 8,
-    padding: 12,
-    borderWidth: 2,
-    borderColor: 'transparent',
-  },
-  voiceOptionSelected: {
-    borderColor: Colors.primary,
-    backgroundColor: Colors.primary + '10',
-  },
-  voiceLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: Colors.neutral[800],
-  },
-  voiceLabelSelected: {
-    color: Colors.primary,
-  },
-  voiceDesc: {
-    fontSize: 12,
-    color: Colors.neutral[500],
-    marginTop: 2,
-  },
-  testBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: Colors.primary,
-    borderRadius: 8,
-    paddingVertical: 12,
-  },
-  testBtnDisabled: {
-    opacity: 0.6,
-  },
-  testBtnText: {
-    color: Colors.white,
-    fontWeight: '600',
-  },
-  fontSizeRow: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  fontSizeOption: {
-    flex: 1,
-    alignItems: 'center',
-    backgroundColor: Colors.neutral[100],
-    borderRadius: 8,
-    padding: 12,
-    borderWidth: 2,
-    borderColor: 'transparent',
-  },
-  fontSizeOptionSelected: {
-    borderColor: Colors.primary,
-    backgroundColor: Colors.primary + '10',
-  },
-  fontSizeLabel: {
-    fontWeight: '600',
-    color: Colors.neutral[800],
-  },
-  fontSizeLabelSelected: {
-    color: Colors.primary,
-  },
-  fontSizeDesc: {
-    fontSize: 11,
-    color: Colors.neutral[500],
-    marginTop: 4,
-  },
-  themeRow: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  themeOption: {
-    flex: 1,
-    alignItems: 'center',
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 2,
-    borderColor: Colors.neutral[200],
-    position: 'relative',
-  },
-  themeOptionSelected: {
-    borderColor: Colors.primary,
-  },
-  themePreview: {
-    fontSize: 24,
-    fontWeight: '600',
-  },
-  themeLabel: {
-    fontSize: 12,
-    color: Colors.neutral[600],
-    marginTop: 8,
-  },
-  themeCheck: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: Colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  previewCard: {
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: Colors.neutral[200],
-  },
-  previewTitle: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: Colors.neutral[400],
-    marginBottom: 8,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  previewText: {
-    fontFamily: 'System',
-  },
-});

@@ -17,7 +17,8 @@ from routes import (
     counseling_admin, counseling_public, kiosk, user_management, files,
     giving, member_auth, notifications, rating_review, system_settings,
     call,  # Voice/Video calling
-    companion  # Faith Assistant (Pendamping Iman)
+    companion,  # Faith Assistant (Pendamping Iman)
+    crash_logs  # Mobile crash logging
 )
 
 # Import Explore routes
@@ -158,6 +159,9 @@ app.include_router(public_members.router)
 # Include Explore routes
 app.include_router(explore_public_router)  # Public Explore endpoints
 api_router.include_router(explore_admin_router)  # Super Admin Explore endpoints
+
+# Include crash logging (mobile error reporting)
+app.include_router(crash_logs.router)  # Has public POST + admin GET endpoints
 api_router.include_router(explore_church_router)  # Church Admin Explore endpoints
 api_router.include_router(explore_ai_router)  # AI Content Generation endpoints
 

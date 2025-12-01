@@ -3,20 +3,45 @@
  *
  * Shows detailed streak information and rules
  * Helps users understand how to maintain their streak
+ *
+ * Styling: NativeWind-first with inline style for dynamic values
  */
 
 import React, { useRef, useCallback, useMemo } from 'react';
-import { View, Text, StyleSheet, Dimensions } from 'react-native';
+import { View, Text } from 'react-native';
 import BottomSheet, { BottomSheetBackdrop, BottomSheetBackdropProps, BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import { Flame, Calendar, Trophy, Target, CheckCircle, Info } from 'lucide-react-native';
 import { useStreakStore } from '@/stores/explore/streakStore';
 import { useUserProgress, useCurrentStreak } from '@/hooks/explore/useExploreMock';
 import { useExploreStore } from '@/stores/explore/exploreStore';
-import { ExploreColors, ExploreTypography, ExploreSpacing } from '@/constants/explore/designSystem';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Tab bar height constant (should match your tab bar)
 const TAB_BAR_HEIGHT = 80;
+
+// Colors for icon usage
+const Colors = {
+  secondary: {
+    50: '#FFF7ED',
+    600: '#EA580C',
+  },
+  primary: {
+    50: '#EFF6FF',
+    600: '#2563EB',
+    800: '#1E40AF',
+  },
+  success: {
+    50: '#F0FDF4',
+    500: '#22C55E',
+    600: '#16A34A',
+  },
+  neutral: {
+    300: '#D4D4D4',
+    600: '#525252',
+    700: '#404040',
+    900: '#171717',
+  },
+};
 
 export function StreakDetailsSheet() {
   const bottomSheetRef = useRef<BottomSheet>(null);
@@ -74,76 +99,94 @@ export function StreakDetailsSheet() {
       enableDynamicSizing={false}
       onClose={handleDismiss}
       backdropComponent={renderBackdrop}
-      backgroundStyle={styles.sheetBackground}
-      handleIndicatorStyle={styles.handleIndicator}
+      backgroundStyle={{ backgroundColor: '#FFFFFF', borderTopLeftRadius: 24, borderTopRightRadius: 24 }}
+      handleIndicatorStyle={{ backgroundColor: Colors.neutral[300], width: 40, height: 4 }}
     >
-      <BottomSheetScrollView style={styles.scrollView}>
+      <BottomSheetScrollView className="flex-1 px-5">
         {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.fireIcon}>
-            <Flame size={32} color={ExploreColors.secondary[600]} />
+        <View className="flex-row items-center gap-3 mb-6 pt-3">
+          <View
+            className="w-12 h-12 rounded-full items-center justify-center"
+            style={{ backgroundColor: Colors.secondary[50] }}
+          >
+            <Flame size={32} color={Colors.secondary[600]} />
           </View>
-          <Text style={styles.title}>
+          <Text className="text-2xl font-bold text-neutral-900">
             {contentLanguage === 'en' ? 'Your Streak' : 'Rangkaian Anda'}
           </Text>
         </View>
 
         {/* Stats Grid */}
-        <View style={styles.statsGrid}>
-          <View style={styles.statCard}>
-            <View style={[styles.statIcon, { backgroundColor: ExploreColors.secondary[50] }]}>
-              <Flame size={20} color={ExploreColors.secondary[600]} />
+        <View className="flex-row gap-3 mb-6">
+          <View className="flex-1 bg-neutral-50 rounded-2xl p-4 items-center gap-1">
+            <View
+              className="w-9 h-9 rounded-full items-center justify-center mb-1"
+              style={{ backgroundColor: Colors.secondary[50] }}
+            >
+              <Flame size={20} color={Colors.secondary[600]} />
             </View>
-            <Text style={styles.statValue}>{currentStreak}</Text>
-            <Text style={styles.statLabel}>
+            <Text className="text-2xl font-bold text-neutral-900">{currentStreak}</Text>
+            <Text className="text-[11px] text-neutral-600 text-center">
               {contentLanguage === 'en' ? 'Current Streak' : 'Rangkaian Saat Ini'}
             </Text>
           </View>
 
-          <View style={styles.statCard}>
-            <View style={[styles.statIcon, { backgroundColor: ExploreColors.primary[50] }]}>
-              <Trophy size={20} color={ExploreColors.primary[600]} />
+          <View className="flex-1 bg-neutral-50 rounded-2xl p-4 items-center gap-1">
+            <View
+              className="w-9 h-9 rounded-full items-center justify-center mb-1"
+              style={{ backgroundColor: Colors.primary[50] }}
+            >
+              <Trophy size={20} color={Colors.primary[600]} />
             </View>
-            <Text style={styles.statValue}>{longestStreak}</Text>
-            <Text style={styles.statLabel}>
+            <Text className="text-2xl font-bold text-neutral-900">{longestStreak}</Text>
+            <Text className="text-[11px] text-neutral-600 text-center">
               {contentLanguage === 'en' ? 'Longest Streak' : 'Rangkaian Terpanjang'}
             </Text>
           </View>
 
-          <View style={styles.statCard}>
-            <View style={[styles.statIcon, { backgroundColor: ExploreColors.success[50] }]}>
-              <Calendar size={20} color={ExploreColors.success[600]} />
+          <View className="flex-1 bg-neutral-50 rounded-2xl p-4 items-center gap-1">
+            <View
+              className="w-9 h-9 rounded-full items-center justify-center mb-1"
+              style={{ backgroundColor: Colors.success[50] }}
+            >
+              <Calendar size={20} color={Colors.success[600]} />
             </View>
-            <Text style={styles.statValue}>{totalDaysActive}</Text>
-            <Text style={styles.statLabel}>
+            <Text className="text-2xl font-bold text-neutral-900">{totalDaysActive}</Text>
+            <Text className="text-[11px] text-neutral-600 text-center">
               {contentLanguage === 'en' ? 'All Time' : 'Sepanjang Waktu'}
             </Text>
           </View>
         </View>
 
         {/* How to maintain streak */}
-        <View style={styles.rulesSection}>
-          <View style={styles.rulesSectionHeader}>
-            <Info size={18} color={ExploreColors.neutral[600]} />
-            <Text style={styles.rulesSectionTitle}>
+        <View className="bg-neutral-50 rounded-2xl p-4 mb-4">
+          <View className="flex-row items-center gap-2 mb-3">
+            <Info size={18} color={Colors.neutral[600]} />
+            <Text className="text-base font-semibold text-neutral-700">
               {contentLanguage === 'en' ? 'How to maintain your streak' : 'Cara mempertahankan rangkaian'}
             </Text>
           </View>
 
-          <View style={styles.rulesList}>
+          <View className="gap-3">
             {streakRules.map((rule, index) => (
-              <View key={index} style={styles.ruleItem}>
-                <CheckCircle size={16} color={ExploreColors.success[500]} />
-                <Text style={styles.ruleText}>{rule}</Text>
+              <View key={index} className="flex-row items-start gap-3">
+                <CheckCircle size={16} color={Colors.success[500]} />
+                <Text className="text-xs text-neutral-700 flex-1 leading-[18px]">{rule}</Text>
               </View>
             ))}
           </View>
         </View>
 
         {/* Motivation text */}
-        <View style={styles.motivationBox}>
-          <Target size={18} color={ExploreColors.primary[600]} />
-          <Text style={styles.motivationText}>
+        <View
+          className="flex-row items-center gap-3 rounded-xl p-4"
+          style={{ backgroundColor: Colors.primary[50] }}
+        >
+          <Target size={18} color={Colors.primary[600]} />
+          <Text
+            className="text-xs flex-1 italic leading-[18px]"
+            style={{ color: Colors.primary[800] }}
+          >
             {contentLanguage === 'en'
               ? `Keep going! You're building a powerful habit of daily spiritual growth.`
               : `Terus semangat! Anda sedang membangun kebiasaan pertumbuhan rohani harian yang kuat.`}
@@ -156,117 +199,3 @@ export function StreakDetailsSheet() {
     </BottomSheet>
   );
 }
-
-const styles = StyleSheet.create({
-  sheetBackground: {
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-  },
-  handleIndicator: {
-    backgroundColor: ExploreColors.neutral[300],
-    width: 40,
-    height: 4,
-  },
-  scrollView: {
-    flex: 1,
-    paddingHorizontal: ExploreSpacing.screenMargin,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: ExploreSpacing.sm,
-    marginBottom: ExploreSpacing.lg,
-    paddingTop: ExploreSpacing.sm,
-  },
-  fireIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: ExploreColors.secondary[50],
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  title: {
-    ...ExploreTypography.h2,
-    color: ExploreColors.neutral[900],
-  },
-  statsGrid: {
-    flexDirection: 'row',
-    gap: ExploreSpacing.sm,
-    marginBottom: ExploreSpacing.lg,
-  },
-  statCard: {
-    flex: 1,
-    backgroundColor: ExploreColors.neutral[50],
-    borderRadius: 16,
-    padding: ExploreSpacing.md,
-    alignItems: 'center',
-    gap: ExploreSpacing.xs,
-  },
-  statIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 4,
-  },
-  statValue: {
-    ...ExploreTypography.h2,
-    color: ExploreColors.neutral[900],
-    fontSize: 24,
-  },
-  statLabel: {
-    ...ExploreTypography.caption,
-    color: ExploreColors.neutral[600],
-    textAlign: 'center',
-    fontSize: 11,
-  },
-  rulesSection: {
-    backgroundColor: ExploreColors.neutral[50],
-    borderRadius: 16,
-    padding: ExploreSpacing.md,
-    marginBottom: ExploreSpacing.md,
-  },
-  rulesSectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: ExploreSpacing.xs,
-    marginBottom: ExploreSpacing.sm,
-  },
-  rulesSectionTitle: {
-    ...ExploreTypography.body,
-    color: ExploreColors.neutral[700],
-    fontWeight: '600',
-  },
-  rulesList: {
-    gap: ExploreSpacing.sm,
-  },
-  ruleItem: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: ExploreSpacing.sm,
-  },
-  ruleText: {
-    ...ExploreTypography.caption,
-    color: ExploreColors.neutral[700],
-    flex: 1,
-    lineHeight: 18,
-  },
-  motivationBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: ExploreSpacing.sm,
-    backgroundColor: ExploreColors.primary[50],
-    borderRadius: 12,
-    padding: ExploreSpacing.md,
-  },
-  motivationText: {
-    ...ExploreTypography.caption,
-    color: ExploreColors.primary[800],
-    flex: 1,
-    fontStyle: 'italic',
-    lineHeight: 18,
-  },
-});

@@ -473,7 +473,7 @@ async def get_voice_settings_public(
     Mobile app uses this to check if voice is enabled and get preferences.
 
     Note: This is a public endpoint suitable for trusted church app environments.
-    Falls back to OPENAI_API_KEY environment variable for development.
+    Falls back to GOOGLE_TTS_API_KEY environment variable for development.
     """
     import os
 
@@ -481,21 +481,26 @@ async def get_voice_settings_public(
 
     # Default values
     voice_settings = {}
-    api_key = None
+    google_tts_key = None
 
     if settings_doc:
         settings_dict = decrypt_settings(settings_doc)
         voice_settings = settings_dict.get("voice_integration", {})
-        api_key = voice_settings.get("openai_api_key")
+        google_tts_key = voice_settings.get("google_tts_api_key")
 
     # Fallback to environment variable for development
-    if not api_key:
-        api_key = os.environ.get("OPENAI_API_KEY")
+    if not google_tts_key:
+        google_tts_key = os.environ.get("GOOGLE_TTS_API_KEY")
 
     # Check for Groq API key (for fast STT)
     groq_api_key = voice_settings.get("groq_api_key")
     if not groq_api_key:
         groq_api_key = os.environ.get("GROQ_API_KEY")
+
+    # Check for OpenAI API key (for STT fallback)
+    openai_api_key = voice_settings.get("openai_api_key")
+    if not openai_api_key:
+        openai_api_key = os.environ.get("OPENAI_API_KEY")
 
     # Determine STT provider
     stt_provider = voice_settings.get("stt_provider", "groq")
@@ -504,13 +509,15 @@ async def get_voice_settings_public(
         stt_provider = "openai"
 
     return {
-        "voice_enabled": voice_settings.get("voice_enabled", True) and bool(api_key),
-        "has_api_key": bool(api_key),
+        "voice_enabled": voice_settings.get("voice_enabled", True) and bool(google_tts_key),
+        "has_api_key": bool(google_tts_key),
         "has_groq_key": bool(groq_api_key),
+        "has_openai_key": bool(openai_api_key),
         "stt_provider": stt_provider,
-        "tts_voice": voice_settings.get("tts_voice", "nova"),
-        "tts_model": voice_settings.get("tts_model", "tts-1"),
+        "tts_voice": voice_settings.get("tts_voice", "id-ID-Wavenet-D"),
+        "tts_voice_en": voice_settings.get("tts_voice_en", "en-US-Wavenet-F"),
         "tts_speed": voice_settings.get("tts_speed", 1.0),
+        "tts_pitch": voice_settings.get("tts_pitch", 0.0),
         "stt_model": voice_settings.get("stt_model", "whisper-1"),
     }
 
@@ -523,7 +530,10 @@ async def get_voice_api_key(
     Get API keys for voice features (public endpoint)
 
     This is called by the mobile app when it needs to make TTS/STT requests.
-    Returns both OpenAI (for TTS) and Groq (for fast STT) API keys.
+    Returns:
+    - Google TTS API key (for text-to-speech)
+    - Groq API key (for fast STT)
+    - OpenAI API key (for STT fallback)
 
     Note: This is a public endpoint suitable for trusted church app environments.
     The API keys are protected by:
@@ -539,24 +549,28 @@ async def get_voice_api_key(
 
     # Default values
     voice_settings = {}
+    google_tts_key = None
     openai_key = None
     groq_key = None
 
     if settings_doc:
         settings_dict = decrypt_settings(settings_doc)
         voice_settings = settings_dict.get("voice_integration", {})
+        google_tts_key = voice_settings.get("google_tts_api_key")
         openai_key = voice_settings.get("openai_api_key")
         groq_key = voice_settings.get("groq_api_key")
 
     # Fallback to environment variables for development
+    if not google_tts_key:
+        google_tts_key = os.environ.get("GOOGLE_TTS_API_KEY")
     if not openai_key:
         openai_key = os.environ.get("OPENAI_API_KEY")
     if not groq_key:
         groq_key = os.environ.get("GROQ_API_KEY")
 
-    # Need at least OpenAI key for TTS
-    if not openai_key:
-        raise HTTPException(status_code=404, detail="OpenAI API key not configured")
+    # Need Google TTS key for text-to-speech
+    if not google_tts_key:
+        raise HTTPException(status_code=404, detail="Google TTS API key not configured")
 
     # Check if explicitly disabled (only if we have DB settings)
     if settings_doc and not voice_settings.get("voice_enabled", True):
@@ -568,12 +582,14 @@ async def get_voice_api_key(
         stt_provider = "openai"
 
     return {
-        "openai_api_key": openai_key,
-        "groq_api_key": groq_key,
+        "api_key": google_tts_key,  # Main TTS API key (Google Cloud TTS)
+        "groq_api_key": groq_key,   # For fast STT
+        "openai_api_key": openai_key,  # For STT fallback
         "stt_provider": stt_provider,
-        "tts_voice": voice_settings.get("tts_voice", "nova"),
-        "tts_model": voice_settings.get("tts_model", "tts-1"),
+        "tts_voice": voice_settings.get("tts_voice", "id-ID-Wavenet-D"),
+        "tts_voice_en": voice_settings.get("tts_voice_en", "en-US-Wavenet-F"),
         "tts_speed": voice_settings.get("tts_speed", 1.0),
+        "tts_pitch": voice_settings.get("tts_pitch", 0.0),
         "stt_model": voice_settings.get("stt_model", "whisper-1"),
     }
 

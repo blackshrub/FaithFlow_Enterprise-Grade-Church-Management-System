@@ -3,17 +3,18 @@
  *
  * Bottom control bar for voice/video calls.
  * Includes mute, video toggle, speaker, end call buttons.
+ *
+ * Styling: NativeWind-first with inline style for dynamic/animated values
  */
 
 import React from 'react';
-import { View, Pressable, StyleSheet } from 'react-native';
+import { View, Pressable } from 'react-native';
 import Animated, { SlideInUp } from 'react-native-reanimated';
 import {
   Mic,
   MicOff,
   Video,
   VideoOff,
-  Phone,
   PhoneOff,
   Volume2,
   VolumeX,
@@ -61,23 +62,24 @@ export function CallControls({
   return (
     <Animated.View
       entering={SlideInUp.duration(300)}
-      style={styles.container}
+      className="absolute bottom-0 left-0 right-0 pb-10 pt-5 px-5 items-center"
+      style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)' }}
     >
-      <View style={styles.controlsRow}>
+      <View className="flex-row items-center justify-center gap-6 mb-6">
         {/* Mute Button */}
         <Pressable
           onPress={() => handlePress(onToggleMute)}
-          style={[
-            styles.controlButton,
-            isMuted && styles.controlButtonActive,
-          ]}
+          className="w-[60px] h-[60px] rounded-full items-center justify-center"
+          style={{
+            backgroundColor: isMuted ? colors.primary[500] : 'rgba(255, 255, 255, 0.2)',
+          }}
         >
           {isMuted ? (
             <MicOff size={24} color={colors.white} />
           ) : (
             <Mic size={24} color={colors.white} />
           )}
-          <Text style={styles.controlLabel}>
+          <Text className="text-white text-[10px] mt-1 text-center">
             {isMuted ? 'Unmute' : 'Mute'}
           </Text>
         </Pressable>
@@ -86,17 +88,17 @@ export function CallControls({
         {callType === CallType.VIDEO && (
           <Pressable
             onPress={() => handlePress(onToggleVideo)}
-            style={[
-              styles.controlButton,
-              !isVideoEnabled && styles.controlButtonActive,
-            ]}
+            className="w-[60px] h-[60px] rounded-full items-center justify-center"
+            style={{
+              backgroundColor: !isVideoEnabled ? colors.primary[500] : 'rgba(255, 255, 255, 0.2)',
+            }}
           >
             {isVideoEnabled ? (
               <Video size={24} color={colors.white} />
             ) : (
               <VideoOff size={24} color={colors.white} />
             )}
-            <Text style={styles.controlLabel}>
+            <Text className="text-white text-[10px] mt-1 text-center">
               {isVideoEnabled ? 'Stop Video' : 'Start Video'}
             </Text>
           </Pressable>
@@ -106,17 +108,17 @@ export function CallControls({
         {callType === CallType.VOICE && (
           <Pressable
             onPress={() => handlePress(onToggleSpeaker)}
-            style={[
-              styles.controlButton,
-              isSpeakerOn && styles.controlButtonActive,
-            ]}
+            className="w-[60px] h-[60px] rounded-full items-center justify-center"
+            style={{
+              backgroundColor: isSpeakerOn ? colors.primary[500] : 'rgba(255, 255, 255, 0.2)',
+            }}
           >
             {isSpeakerOn ? (
               <Volume2 size={24} color={colors.white} />
             ) : (
               <VolumeX size={24} color={colors.white} />
             )}
-            <Text style={styles.controlLabel}>
+            <Text className="text-white text-[10px] mt-1 text-center">
               {isSpeakerOn ? 'Speaker' : 'Earpiece'}
             </Text>
           </Pressable>
@@ -126,10 +128,11 @@ export function CallControls({
         {callType === CallType.VIDEO && isVideoEnabled && (
           <Pressable
             onPress={() => handlePress(onSwitchCamera)}
-            style={styles.controlButton}
+            className="w-[60px] h-[60px] rounded-full items-center justify-center"
+            style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)' }}
           >
             <SwitchCamera size={24} color={colors.white} />
-            <Text style={styles.controlLabel}>Flip</Text>
+            <Text className="text-white text-[10px] mt-1 text-center">Flip</Text>
           </Pressable>
         )}
       </View>
@@ -137,57 +140,11 @@ export function CallControls({
       {/* End Call Button */}
       <Pressable
         onPress={handleEndCall}
-        style={styles.endCallButton}
+        className="w-[70px] h-[70px] rounded-full items-center justify-center"
+        style={{ backgroundColor: colors.error[500], ...shadows.lg }}
       >
         <PhoneOff size={28} color={colors.white} />
       </Pressable>
     </Animated.View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    paddingBottom: 40,
-    paddingTop: 20,
-    paddingHorizontal: 20,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    alignItems: 'center',
-  },
-  controlsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 24,
-    marginBottom: 24,
-  },
-  controlButton: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  controlButtonActive: {
-    backgroundColor: colors.primary[500],
-  },
-  controlLabel: {
-    color: colors.white,
-    fontSize: 10,
-    marginTop: 4,
-    textAlign: 'center',
-  },
-  endCallButton: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    backgroundColor: colors.error[500],
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...shadows.lg,
-  },
-});

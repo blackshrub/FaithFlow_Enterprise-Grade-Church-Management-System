@@ -3,31 +3,56 @@
  *
  * Streak statistics and progress bottom sheet.
  * Used via: overlay.showBottomSheet(StreakDetailsModal, payload)
+ *
+ * Standardized styling:
+ * - Header title: 22px font-bold
+ * - Close button: 44x44 with 20px icon
+ * - NativeWind + minimal inline styles
  */
 
 import React from 'react';
 import {
   View,
+  Text,
   ScrollView,
-  StyleSheet,
   Pressable,
+  Dimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { X, Flame, Trophy, Target, Check } from 'lucide-react-native';
+import * as Haptics from 'expo-haptics';
 
 import type { OverlayProps } from '@/components/overlay/types';
 import type { StreakDetailsPayload } from '@/stores/overlayStore';
-import { Text } from '@/components/ui/text';
-import { Heading } from '@/components/ui/heading';
-import { Button, ButtonText } from '@/components/ui/button';
-import { Icon } from '@/components/ui/icon';
-import { VStack } from '@/components/ui/vstack';
-import { HStack } from '@/components/ui/hstack';
-import { colors, spacing, borderRadius } from '@/constants/theme';
-import { ExploreColors } from '@/constants/explore/designSystem';
-import { overlayTheme } from '@/theme/overlayTheme';
-import { interaction } from '@/constants/interaction';
+
+const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+
+// Consistent colors
+const Colors = {
+  neutral: {
+    50: '#FAFAFA',
+    100: '#F5F5F5',
+    200: '#E5E5E5',
+    300: '#D4D4D4',
+    400: '#A3A3A3',
+    500: '#737373',
+    600: '#525252',
+    700: '#404040',
+    800: '#262626',
+    900: '#171717',
+  },
+  white: '#FFFFFF',
+  primary: {
+    50: '#EFF6FF',
+    100: '#DBEAFE',
+    500: '#3B82F6',
+    600: '#2563EB',
+    700: '#1D4ED8',
+  },
+  streak: '#FF6B35',
+  streakLight: '#FFF3EE',
+};
 
 export const StreakDetailsModal: React.FC<OverlayProps<StreakDetailsPayload>> = ({
   payload,
@@ -39,259 +64,168 @@ export const StreakDetailsModal: React.FC<OverlayProps<StreakDetailsPayload>> = 
   if (!payload) return null;
 
   const streakRules = [
-    t('explore.streakRules.rule1'),
-    t('explore.streakRules.rule2'),
-    t('explore.streakRules.rule3'),
-    t('explore.streakRules.rule4'),
+    t('explore.streakRules.rule1', 'Complete a daily devotion to maintain your streak'),
+    t('explore.streakRules.rule2', 'Your streak resets if you miss a day'),
+    t('explore.streakRules.rule3', 'Longer streaks unlock special achievements'),
+    t('explore.streakRules.rule4', 'Stay consistent for spiritual growth'),
   ];
 
   return (
-    <View style={styles.sheetContainer}>
-      {/* Handle */}
-      <View style={styles.handleContainer}>
-        <View style={styles.handle} />
+    <View
+      className="bg-white rounded-t-3xl"
+      style={{
+        maxHeight: SCREEN_HEIGHT * 0.85,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: -4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 24,
+        elevation: 12,
+      }}
+    >
+      {/* Handle indicator */}
+      <View className="items-center pt-3 pb-1">
+        <View className="w-10 h-1 rounded-full bg-neutral-300" />
       </View>
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: insets.bottom + spacing.md }}
+        contentContainerStyle={{ paddingBottom: insets.bottom + 16 }}
       >
-        <View style={styles.sheetContent}>
+        <View className="px-5 pt-2">
           {/* Header */}
-          <HStack className="justify-between items-center mb-6">
-            <HStack space="md" className="items-center">
-              <View style={styles.fireIconContainer}>
-                <Flame size={28} color={ExploreColors.secondary[600]} />
+          <View className="flex-row items-center justify-between mb-6">
+            <View className="flex-row items-center gap-3">
+              <View
+                className="w-12 h-12 rounded-full items-center justify-center"
+                style={{ backgroundColor: Colors.streakLight }}
+              >
+                <Flame size={26} color={Colors.streak} />
               </View>
-              <Heading size="xl" className="text-gray-900 font-bold">
-                {t('explore.yourStreak')}
-              </Heading>
-            </HStack>
-
-            <Pressable
-              onPress={() => {
-                interaction.haptics.tap();
-                onClose();
-              }}
-              style={({ pressed }) => [
-                styles.closeButton,
-                pressed && styles.pressedMicro,
-              ]}
-            >
-              <Icon as={X} size="md" className="text-gray-600" />
-            </Pressable>
-          </HStack>
-
-          {/* Stats Grid */}
-          <View style={styles.statsGrid}>
-            <View style={styles.statCard}>
-              <View style={styles.statRow}>
-                <View style={[styles.statIconContainer, { backgroundColor: ExploreColors.secondary[50] }]}>
-                  <Flame size={24} color={ExploreColors.secondary[600]} fill={ExploreColors.secondary[600]} />
-                </View>
-                <Text style={[styles.statValue, { color: ExploreColors.secondary[600] }]}>{payload.streakCount}</Text>
-              </View>
-              <Text style={styles.statLabel}>{t('explore.currentStreak')}</Text>
+              <Text
+                className="text-[22px] font-bold text-neutral-900"
+                style={{ letterSpacing: -0.3 }}
+              >
+                {t('explore.yourStreak', 'Your Streak')}
+              </Text>
             </View>
 
-            <View style={styles.statCard}>
-              <View style={styles.statRow}>
-                <View style={[styles.statIconContainer, { backgroundColor: colors.primary[50] }]}>
-                  <Trophy size={24} color={colors.primary[600]} />
+            {/* Close button - 44px */}
+            <Pressable
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                onClose();
+              }}
+              className="w-11 h-11 rounded-full bg-neutral-100 items-center justify-center active:opacity-70"
+            >
+              <X size={20} color={Colors.neutral[600]} />
+            </Pressable>
+          </View>
+
+          {/* Stats Grid */}
+          <View className="flex-row gap-3 mb-5">
+            <View className="flex-1 items-center py-5 px-3 rounded-2xl bg-neutral-50">
+              <View className="flex-row items-center gap-3 mb-1">
+                <View
+                  className="w-11 h-11 rounded-full items-center justify-center"
+                  style={{ backgroundColor: Colors.streakLight }}
+                >
+                  <Flame size={22} color={Colors.streak} fill={Colors.streak} />
                 </View>
-                <Text style={[styles.statValue, { color: colors.primary[600] }]}>{payload.longestStreak}</Text>
+                <Text className="text-[40px] font-bold" style={{ color: Colors.streak, lineHeight: 44 }}>
+                  {payload.streakCount}
+                </Text>
               </View>
-              <Text style={styles.statLabel}>{t('explore.longestStreak')}</Text>
+              <Text className="text-[14px] font-medium text-neutral-600 mt-1">
+                {t('explore.currentStreak', 'Current Streak')}
+              </Text>
+            </View>
+
+            <View className="flex-1 items-center py-5 px-3 rounded-2xl bg-neutral-50">
+              <View className="flex-row items-center gap-3 mb-1">
+                <View
+                  className="w-11 h-11 rounded-full items-center justify-center"
+                  style={{ backgroundColor: Colors.primary[50] }}
+                >
+                  <Trophy size={22} color={Colors.primary[600]} />
+                </View>
+                <Text className="text-[40px] font-bold" style={{ color: Colors.primary[600], lineHeight: 44 }}>
+                  {payload.longestStreak}
+                </Text>
+              </View>
+              <Text className="text-[14px] font-medium text-neutral-600 mt-1">
+                {t('explore.longestStreak', 'Longest Streak')}
+              </Text>
             </View>
           </View>
 
           {/* Week Progress */}
-          <View style={styles.weekProgressContainer}>
-            <Text style={styles.sectionTitle}>{t('explore.thisWeek')}</Text>
-            <HStack className="justify-between">
+          <View className="p-4 rounded-2xl bg-neutral-50 mb-5">
+            <Text className="text-base font-semibold text-neutral-800 mb-4">
+              {t('explore.thisWeek', 'This Week')}
+            </Text>
+            <View className="flex-row justify-between">
               {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, index) => (
-                <View key={index} style={styles.dayContainer}>
-                  <View style={[
-                    styles.dayCircle,
-                    payload.currentWeekDays[index] && styles.dayCircleActive,
-                  ]}>
+                <View key={index} className="items-center">
+                  <View
+                    className="w-9 h-9 rounded-full items-center justify-center mb-1"
+                    style={{
+                      backgroundColor: payload.currentWeekDays[index]
+                        ? Colors.streak
+                        : Colors.neutral[200],
+                    }}
+                  >
                     {payload.currentWeekDays[index] && (
-                      <Check size={16} color={colors.white} strokeWidth={3} />
+                      <Check size={16} color={Colors.white} strokeWidth={3} />
                     )}
                   </View>
-                  <Text style={styles.dayLabel}>{day}</Text>
+                  <Text className="text-[13px] font-medium text-neutral-500">{day}</Text>
                 </View>
               ))}
-            </HStack>
+            </View>
           </View>
 
           {/* Rules */}
-          <View style={styles.rulesContainer}>
-            <Text style={styles.sectionTitle}>{t('explore.howStreaksWork')}</Text>
+          <View className="p-4 rounded-2xl bg-neutral-50 mb-5">
+            <Text className="text-base font-semibold text-neutral-800 mb-4">
+              {t('explore.howStreaksWork', 'How Streaks Work')}
+            </Text>
             {streakRules.map((rule, index) => (
-              <HStack key={index} space="sm" className="items-start mb-2">
-                <View style={styles.ruleBullet}>
-                  <Target size={14} color={colors.primary[600]} />
+              <View key={index} className="flex-row items-start gap-2 mb-2">
+                <View
+                  className="w-6 h-6 rounded-full items-center justify-center mt-0.5"
+                  style={{ backgroundColor: Colors.primary[50] }}
+                >
+                  <Target size={14} color={Colors.primary[600]} />
                 </View>
-                <Text style={styles.ruleText}>{rule}</Text>
-              </HStack>
+                <Text className="flex-1 text-[15px] text-neutral-600 leading-[22px]">{rule}</Text>
+              </View>
             ))}
           </View>
 
-          {/* Close Button */}
-          <Button
+          {/* Done Button */}
+          <Pressable
             onPress={() => {
-              interaction.haptics.tap();
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               onClose();
             }}
-            size="lg"
-            className="mt-4"
+            className="items-center justify-center py-4 rounded-2xl active:opacity-80"
+            style={{
+              backgroundColor: Colors.primary[600],
+              shadowColor: Colors.primary[600],
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.3,
+              shadowRadius: 8,
+              elevation: 4,
+            }}
           >
-            <ButtonText className="font-bold">{t('common.done')}</ButtonText>
-          </Button>
+            <Text className="text-base font-bold text-white">
+              {t('common.done', 'Done')}
+            </Text>
+          </Pressable>
         </View>
       </ScrollView>
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  sheetContainer: {
-    backgroundColor: colors.white,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 24,
-    elevation: 12,
-  },
-  handleContainer: {
-    alignItems: 'center',
-    paddingTop: spacing.sm,
-    paddingBottom: spacing.xs,
-  },
-  handle: {
-    width: 40,
-    height: 4,
-    backgroundColor: colors.gray[300],
-    borderRadius: 2,
-  },
-  sheetContent: {
-    paddingHorizontal: spacing.xl,
-    paddingTop: spacing.xs,
-  },
-  closeButton: {
-    width: overlayTheme.closeButton.size,
-    height: overlayTheme.closeButton.size,
-    borderRadius: overlayTheme.closeButton.borderRadius,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: overlayTheme.closeButton.backgroundColor,
-  },
-  pressedMicro: {
-    opacity: interaction.press.opacity,
-    transform: [{ scale: interaction.press.scale }],
-  },
-  fireIconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: ExploreColors.secondary[50],
-  },
-  statsGrid: {
-    flexDirection: 'row',
-    gap: spacing.md,
-    marginBottom: spacing.lg,
-  },
-  statCard: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: spacing.lg,
-    paddingHorizontal: spacing.md,
-    borderRadius: borderRadius['2xl'],
-    backgroundColor: colors.gray[50],
-  },
-  statRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    marginBottom: spacing.xs,
-  },
-  statIconContainer: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  statValue: {
-    fontSize: 40,
-    fontWeight: '700',
-    color: colors.gray[900],
-    lineHeight: 44, // Match icon container height for vertical alignment
-    includeFontPadding: false, // Android: remove extra font padding
-  },
-  statLabel: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: colors.gray[600],
-    marginTop: spacing.xs,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.gray[800],
-    marginBottom: spacing.md,
-  },
-  weekProgressContainer: {
-    padding: spacing.lg,
-    borderRadius: borderRadius['2xl'],
-    backgroundColor: colors.gray[50],
-    marginBottom: spacing.lg,
-  },
-  dayContainer: {
-    alignItems: 'center',
-  },
-  dayCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.gray[200],
-  },
-  dayCircleActive: {
-    backgroundColor: ExploreColors.secondary[500],
-  },
-  dayLabel: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: colors.gray[500],
-    marginTop: spacing.xs,
-  },
-  rulesContainer: {
-    padding: spacing.lg,
-    borderRadius: borderRadius['2xl'],
-    backgroundColor: colors.gray[50],
-  },
-  ruleBullet: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.primary[50],
-    marginTop: 2,
-  },
-  ruleText: {
-    fontSize: 15,
-    lineHeight: 22,
-    color: colors.gray[600],
-    flex: 1,
-  },
-});
 
 export default StreakDetailsModal;

@@ -14,10 +14,12 @@
  * 1. iOS only supports CallKit with VoIP PushKit (we use standard FCM)
  * 2. When app is foregrounded, in-app UI provides better UX
  * 3. Android notification already shows Accept/Decline buttons
+ *
+ * Styling: NativeWind-first with inline style for dynamic/animated values
  */
 
 import React, { useEffect } from 'react';
-import { View, Pressable, StyleSheet, Dimensions, StatusBar } from 'react-native';
+import { View, Pressable, StatusBar } from 'react-native';
 import Animated, {
   FadeIn,
   FadeOut,
@@ -39,8 +41,6 @@ import { colors, shadows } from '@/constants/theme';
 import { useCallStore, useIncomingCall } from '@/stores/call';
 import { CallType } from '@/types/call';
 import { useRingtone } from '@/services/audio/ringtone';
-
-const { width, height } = Dimensions.get('window');
 
 export function IncomingCallOverlay() {
   const router = useRouter();
@@ -106,40 +106,40 @@ export function IncomingCallOverlay() {
   };
 
   return (
-    <View style={styles.container}>
+    <View className="absolute inset-0 z-[9999]">
       <StatusBar barStyle="light-content" />
 
       {/* Background with fade animation */}
       <Animated.View
         entering={FadeIn.duration(200)}
         exiting={FadeOut.duration(200)}
-        style={StyleSheet.absoluteFill}
+        className="absolute inset-0"
       >
         <LinearGradient
           colors={['#1a1a2e', '#16213e', '#0f3460']}
-          style={styles.gradient}
+          className="flex-1 pt-[60px] pb-[60px]"
         />
       </Animated.View>
 
       {/* Content with slide animations */}
-      <View style={styles.gradient}>
+      <View className="flex-1 pt-[60px] pb-[60px]">
         {/* Call Type Indicator */}
         <Animated.View
           entering={SlideInDown.delay(200).springify()}
-          style={styles.callTypeIndicator}
+          className="flex-row items-center justify-center gap-2 mb-5"
         >
           {isVideoCall ? (
             <Video size={20} color={colors.white} />
           ) : (
             <Phone size={20} color={colors.white} />
           )}
-          <Text style={styles.callTypeText}>
+          <Text className="text-white text-base font-semibold">
             {isVideoCall ? 'Video Call' : 'Voice Call'}
           </Text>
         </Animated.View>
 
         {/* Caller Info */}
-        <View style={styles.callerContainer}>
+        <View className="flex-1 justify-center items-center">
           <CallerInfo
             name={incomingCall.caller.name}
             avatar={incomingCall.caller.avatar}
@@ -151,26 +151,30 @@ export function IncomingCallOverlay() {
         {/* Action Buttons */}
         <Animated.View
           entering={SlideInUp.delay(300).springify()}
-          style={styles.actionsContainer}
+          className="flex-row justify-center items-center gap-[60px] px-10"
         >
           {/* Reject Button */}
           <Pressable
             onPress={handleReject}
-            style={styles.rejectButton}
+            className="items-center"
           >
-            <View style={styles.rejectButtonInner}>
+            <View
+              className="w-[70px] h-[70px] rounded-full items-center justify-center"
+              style={{ backgroundColor: colors.error[500], ...shadows.lg }}
+            >
               <PhoneOff size={32} color={colors.white} />
             </View>
-            <Text style={styles.buttonLabel}>Decline</Text>
+            <Text className="text-white text-sm mt-3 font-medium">Decline</Text>
           </Pressable>
 
           {/* Accept Button */}
           <Pressable
             onPress={handleAccept}
-            style={styles.acceptButton}
+            className="items-center"
           >
             <Animated.View
-              style={[styles.acceptButtonInner, pulseStyle]}
+              className="w-[70px] h-[70px] rounded-full items-center justify-center"
+              style={[{ backgroundColor: colors.success[500], ...shadows.lg }, pulseStyle]}
             >
               {isVideoCall ? (
                 <Video size={32} color={colors.white} />
@@ -178,80 +182,10 @@ export function IncomingCallOverlay() {
                 <Phone size={32} color={colors.white} />
               )}
             </Animated.View>
-            <Text style={styles.buttonLabel}>Accept</Text>
+            <Text className="text-white text-sm mt-3 font-medium">Accept</Text>
           </Pressable>
         </Animated.View>
       </View>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    zIndex: 9999,
-  },
-  gradient: {
-    flex: 1,
-    paddingTop: 60,
-    paddingBottom: 60,
-  },
-  callTypeIndicator: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    marginBottom: 20,
-  },
-  callTypeText: {
-    color: colors.white,
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  callerContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  actionsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 60,
-    paddingHorizontal: 40,
-  },
-  rejectButton: {
-    alignItems: 'center',
-  },
-  rejectButtonInner: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    backgroundColor: colors.error[500],
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...shadows.lg,
-  },
-  acceptButton: {
-    alignItems: 'center',
-  },
-  acceptButtonInner: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    backgroundColor: colors.success[500],
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...shadows.lg,
-  },
-  buttonLabel: {
-    color: colors.white,
-    fontSize: 14,
-    marginTop: 12,
-    fontWeight: '500',
-  },
-});

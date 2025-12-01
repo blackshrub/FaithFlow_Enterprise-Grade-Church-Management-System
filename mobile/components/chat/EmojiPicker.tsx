@@ -8,14 +8,16 @@
  * - Recently used emojis
  * - Quick reactions bar
  * - Native keyboard integration option
+ *
+ * Styling: NativeWind-first with inline style for dynamic/shadow values
  */
 
-import React, { useCallback, useMemo, useRef, useState } from 'react';
-import { View, Pressable, StyleSheet, Platform, Keyboard, Dimensions } from 'react-native';
+import React, { useCallback, useMemo, useRef } from 'react';
+import { View, Pressable, Keyboard } from 'react-native';
 import EmojiKeyboard, { type EmojiType } from 'rn-emoji-keyboard';
 import BottomSheet, { BottomSheetBackdrop } from '@gorhom/bottom-sheet';
 import * as Haptics from 'expo-haptics';
-import { MoreHorizontal, SmilePlus, Search, X } from 'lucide-react-native';
+import { MoreHorizontal, SmilePlus, X } from 'lucide-react-native';
 
 import { Text } from '@/components/ui/text';
 import { HStack } from '@/components/ui/hstack';
@@ -47,8 +49,6 @@ export interface QuickReactionsProps {
 
 const QUICK_REACTIONS = ['❤️', '👍', '😂', '😮', '😢', '🙏'];
 
-const RECENTLY_USED_KEY = 'recently_used_emojis';
-
 // =============================================================================
 // QUICK REACTIONS BAR (for message reactions)
 // =============================================================================
@@ -62,24 +62,31 @@ export function QuickReactions({
   if (!visible) return null;
 
   return (
-    <View style={styles.quickReactionsContainer}>
+    <View
+      className="flex-row rounded-[28px] px-2 py-2"
+      style={{
+        backgroundColor: '#FFFFFF',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.15,
+        shadowRadius: 8,
+        elevation: 4,
+      }}
+    >
       {QUICK_REACTIONS.map((emoji) => (
         <Pressable
           key={emoji}
-          style={[
-            styles.quickReactionButton,
-            selectedEmoji === emoji && styles.quickReactionButtonSelected,
-          ]}
+          className={`p-2 mx-0.5 rounded-full ${selectedEmoji === emoji ? 'bg-primary-100' : ''}`}
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             onSelect(emoji);
           }}
         >
-          <Text style={styles.quickReactionEmoji}>{emoji}</Text>
+          <Text className="text-2xl">{emoji}</Text>
         </Pressable>
       ))}
       <Pressable
-        style={styles.quickReactionButton}
+        className="p-2 mx-0.5 rounded-full"
         onPress={() => {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
           onExpandPress();
@@ -199,22 +206,25 @@ export function EmojiPickerSheet({
     []
   );
 
+  // Don't render anything when not visible to prevent emoji keyboard from showing
+  if (!visible) return null;
+
   return (
     <BottomSheet
       ref={bottomSheetRef}
-      index={visible ? 0 : -1}
+      index={0}
       snapPoints={snapPoints}
       enablePanDownToClose
       onClose={onClose}
       backdropComponent={renderBackdrop}
-      backgroundStyle={styles.sheetBackground}
-      handleIndicatorStyle={styles.handleIndicator}
+      backgroundStyle={{ backgroundColor: '#FFFFFF', borderTopLeftRadius: 20, borderTopRightRadius: 20 }}
+      handleIndicatorStyle={{ backgroundColor: colors.gray[300], width: 40 }}
     >
-      <View style={styles.sheetContainer}>
+      <View className="flex-1 pt-1">
         {/* Header with GIF option */}
         <HStack className="justify-between items-center px-4 pb-2">
           <HStack space="md" className="items-center">
-            <View style={styles.tabActive}>
+            <View className="p-2 rounded-lg" style={{ backgroundColor: colors.primary[50] }}>
               <Icon as={SmilePlus} size="md" style={{ color: colors.primary[600] }} />
             </View>
             {showGifButton && (
@@ -223,9 +233,12 @@ export function EmojiPickerSheet({
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   onGifPress?.();
                 }}
-                style={styles.tabInactive}
+                className="p-2 rounded-lg"
+                style={{ backgroundColor: colors.gray[100] }}
               >
-                <Text style={styles.gifText}>GIF</Text>
+                <Text className="text-sm font-semibold" style={{ color: colors.gray[600] }}>
+                  GIF
+                </Text>
               </Pressable>
             )}
           </HStack>
@@ -239,12 +252,12 @@ export function EmojiPickerSheet({
           </Pressable>
         </HStack>
 
-        {/* Emoji Keyboard */}
-        <View style={styles.emojiContainer}>
+        {/* Emoji Keyboard - only renders when sheet is visible */}
+        <View className="flex-1 mt-2">
           <EmojiKeyboard
             onEmojiSelected={handleEmojiSelected}
             open={true}
-            onClose={() => {}}
+            onClose={onClose}
             enableRecentlyUsed
             enableSearchBar
             enableSearchAnimation
@@ -312,10 +325,7 @@ export function EmojiButton({ onPress, size = 'md' }: EmojiButtonProps) {
         Keyboard.dismiss();
         onPress();
       }}
-      style={({ pressed }) => [
-        styles.emojiButton,
-        pressed && styles.emojiButtonPressed,
-      ]}
+      className="p-2 rounded-full active:bg-gray-100"
     >
       <Icon as={SmilePlus} size={iconSize} style={{ color: colors.gray[500] }} />
     </Pressable>
@@ -343,7 +353,7 @@ export function ReactionsDisplay({
   const remaining = reactions.length - maxDisplay;
 
   return (
-    <HStack space="xs" style={styles.reactionsDisplayContainer}>
+    <HStack space="xs" className="mt-1 flex-wrap">
       {displayReactions.map((reaction, index) => (
         <Pressable
           key={`${reaction.emoji}-${index}`}
@@ -351,136 +361,27 @@ export function ReactionsDisplay({
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             onReactionPress(reaction.emoji);
           }}
-          style={[
-            styles.reactionChip,
-            reaction.reacted && styles.reactionChipActive,
-          ]}
+          className={`flex-row items-center rounded-xl px-2 py-1 ${
+            reaction.reacted ? 'border border-primary-300' : ''
+          }`}
+          style={{ backgroundColor: reaction.reacted ? colors.primary[100] : colors.gray[100] }}
         >
-          <Text style={styles.reactionChipEmoji}>{reaction.emoji}</Text>
+          <Text className="text-sm mr-1">{reaction.emoji}</Text>
           <Text
-            style={[
-              styles.reactionChipCount,
-              reaction.reacted && styles.reactionChipCountActive,
-            ]}
+            className={`text-xs ${reaction.reacted ? 'text-primary-700' : 'text-gray-600'}`}
           >
             {reaction.count}
           </Text>
         </Pressable>
       ))}
       {remaining > 0 && (
-        <View style={styles.reactionChip}>
-          <Text style={styles.reactionChipCount}>+{remaining}</Text>
+        <View className="flex-row items-center rounded-xl px-2 py-1" style={{ backgroundColor: colors.gray[100] }}>
+          <Text className="text-xs text-gray-600">+{remaining}</Text>
         </View>
       )}
     </HStack>
   );
 }
-
-// =============================================================================
-// STYLES
-// =============================================================================
-
-const styles = StyleSheet.create({
-  // Quick reactions
-  quickReactionsContainer: {
-    flexDirection: 'row',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 28,
-    paddingHorizontal: 8,
-    paddingVertical: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  quickReactionButton: {
-    padding: 8,
-    marginHorizontal: 2,
-    borderRadius: 20,
-  },
-  quickReactionButtonSelected: {
-    backgroundColor: colors.primary[100],
-  },
-  quickReactionEmoji: {
-    fontSize: 24,
-  },
-
-  // Sheet
-  sheetBackground: {
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-  },
-  handleIndicator: {
-    backgroundColor: colors.gray[300],
-    width: 40,
-  },
-  sheetContainer: {
-    flex: 1,
-    paddingTop: 4,
-  },
-  emojiContainer: {
-    flex: 1,
-    marginTop: 8,
-  },
-
-  // Tabs
-  tabActive: {
-    padding: 8,
-    borderRadius: borderRadius.lg,
-    backgroundColor: colors.primary[50],
-  },
-  tabInactive: {
-    padding: 8,
-    borderRadius: borderRadius.lg,
-    backgroundColor: colors.gray[100],
-  },
-  gifText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.gray[600],
-  },
-
-  // Emoji button
-  emojiButton: {
-    padding: 8,
-    borderRadius: 20,
-  },
-  emojiButtonPressed: {
-    backgroundColor: colors.gray[100],
-  },
-
-  // Reactions display
-  reactionsDisplayContainer: {
-    marginTop: 4,
-    flexWrap: 'wrap',
-  },
-  reactionChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.gray[100],
-    borderRadius: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-  },
-  reactionChipActive: {
-    backgroundColor: colors.primary[100],
-    borderWidth: 1,
-    borderColor: colors.primary[300],
-  },
-  reactionChipEmoji: {
-    fontSize: 14,
-    marginRight: 4,
-  },
-  reactionChipCount: {
-    fontSize: 12,
-    color: colors.gray[600],
-  },
-  reactionChipCountActive: {
-    color: colors.primary[700],
-  },
-});
 
 // Default export for convenience
 export default EmojiPickerSheet;

@@ -14,7 +14,6 @@ import React, { useCallback, useMemo, useRef, useState } from 'react';
 import {
   View,
   Pressable,
-  StyleSheet,
   Alert,
   ScrollView,
 } from 'react-native';
@@ -182,10 +181,8 @@ export function MemberCard({
   return (
     <Pressable
       onPress={onPress}
-      style={({ pressed }) => [
-        styles.memberCard,
-        pressed && styles.memberCardPressed,
-      ]}
+      className="py-3 px-4 bg-white"
+      style={({ pressed }) => pressed && { backgroundColor: colors.gray[50] }}
     >
       <HStack space="md" className="items-center">
         {/* Avatar with online indicator */}
@@ -200,23 +197,33 @@ export function MemberCard({
             )}
           </Avatar>
           {member.is_online && (
-            <View style={styles.onlineIndicator} />
+            <View
+              className="absolute bottom-0 right-0"
+              style={{
+                width: 12,
+                height: 12,
+                borderRadius: 6,
+                backgroundColor: '#22C55E',
+                borderWidth: 2,
+                borderColor: '#FFFFFF',
+              }}
+            />
           )}
         </View>
 
         {/* Member Info */}
         <VStack className="flex-1">
           <HStack space="sm" className="items-center">
-            <Text style={styles.memberName} numberOfLines={1}>
+            <Text className="text-base font-semibold flex-1" style={{ color: colors.gray[900] }} numberOfLines={1}>
               {member.name}
               {isCurrentUser && (
-                <Text style={styles.youLabel}> (You)</Text>
+                <Text className="text-sm font-normal" style={{ color: colors.gray[500] }}> (You)</Text>
               )}
             </Text>
             {member.role !== 'member' && <RoleBadge role={member.role} />}
           </HStack>
           <HStack space="sm" className="items-center mt-0.5">
-            <Text style={styles.memberMeta}>
+            <Text className="text-xs" style={{ color: colors.gray[500] }}>
               Joined {new Date(member.joined_at).toLocaleDateString('en-US', {
                 month: 'short',
                 year: 'numeric',
@@ -224,8 +231,8 @@ export function MemberCard({
             </Text>
             {member.message_count !== undefined && (
               <>
-                <Text style={styles.dotSeparator}>•</Text>
-                <Text style={styles.memberMeta}>
+                <Text className="text-xs" style={{ color: colors.gray[400] }}>•</Text>
+                <Text className="text-xs" style={{ color: colors.gray[500] }}>
                   {member.message_count} messages
                 </Text>
               </>
@@ -235,7 +242,7 @@ export function MemberCard({
 
         {/* Action button */}
         {showManageButton && !isCurrentUser && (
-          <View style={styles.moreButton}>
+          <View className="p-2">
             <Icon as={MoreVertical} size="md" style={{ color: colors.gray[400] }} />
           </View>
         )}
@@ -283,10 +290,10 @@ export function RolePickerSheet({
       enablePanDownToClose
       onClose={onClose}
       backdropComponent={renderBackdrop}
-      backgroundStyle={styles.sheetBackground}
-      handleIndicatorStyle={styles.handleIndicator}
+      backgroundStyle={{ backgroundColor: '#FFFFFF', borderTopLeftRadius: 20, borderTopRightRadius: 20 }}
+      handleIndicatorStyle={{ backgroundColor: colors.gray[300], width: 40 }}
     >
-      <View style={styles.rolePickerContainer}>
+      <View className="flex-1 px-5 pt-2">
         <HStack space="sm" className="items-center mb-4">
           <Icon as={Shield} size="lg" style={{ color: colors.primary[600] }} />
           <Heading size="lg" className="text-gray-900 font-bold">
@@ -307,22 +314,25 @@ export function RolePickerSheet({
                   onRoleSelect(role);
                   onClose();
                 }}
+                className="flex-row items-center p-4 mb-2"
                 style={[
-                  styles.roleOption,
-                  isSelected && styles.roleOptionSelected,
+                  { backgroundColor: colors.gray[50], borderRadius: borderRadius.xl },
+                  isSelected && {
+                    backgroundColor: colors.primary[50],
+                    borderWidth: 2,
+                    borderColor: colors.primary[500],
+                  },
                 ]}
               >
                 <View
-                  style={[
-                    styles.roleIconContainer,
-                    { backgroundColor: config.bgColor },
-                  ]}
+                  className="items-center justify-center"
+                  style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: config.bgColor }}
                 >
                   <Icon as={config.icon} size="md" style={{ color: config.color }} />
                 </View>
                 <VStack className="flex-1 ml-3">
-                  <Text style={styles.roleLabel}>{config.label}</Text>
-                  <Text style={styles.roleDescription}>
+                  <Text className="text-base font-semibold" style={{ color: colors.gray[900] }}>{config.label}</Text>
+                  <Text className="text-[13px] mt-0.5" style={{ color: colors.gray[500] }}>
                     {role === 'leader' && 'Full control over the community'}
                     {role === 'co_leader' && 'Can manage members and settings'}
                     {role === 'admin' && 'Can moderate messages and members'}
@@ -330,7 +340,10 @@ export function RolePickerSheet({
                   </Text>
                 </VStack>
                 {isSelected && (
-                  <View style={styles.selectedCheck}>
+                  <View
+                    className="items-center justify-center"
+                    style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: colors.primary[500] }}
+                  >
                     <Icon as={Check} size="sm" style={{ color: '#FFFFFF' }} />
                   </View>
                 )}
@@ -485,12 +498,15 @@ export function MemberManagementSheet({
         enablePanDownToClose
         onClose={onClose}
         backdropComponent={renderBackdrop}
-        backgroundStyle={styles.sheetBackground}
-        handleIndicatorStyle={styles.handleIndicator}
+        backgroundStyle={{ backgroundColor: '#FFFFFF', borderTopLeftRadius: 20, borderTopRightRadius: 20 }}
+        handleIndicatorStyle={{ backgroundColor: colors.gray[300], width: 40 }}
       >
-        <View style={styles.container}>
+        <View className="flex-1 px-5">
           {/* Member Header */}
-          <View style={styles.memberHeader}>
+          <View
+            className="items-center py-4"
+            style={{ borderBottomWidth: 1, borderBottomColor: colors.gray[100] }}
+          >
             <Avatar size="xl" style={{ backgroundColor: roleConfig.bgColor }}>
               {member.avatar_url ? (
                 <AvatarImage source={{ uri: member.avatar_url }} />
@@ -500,9 +516,9 @@ export function MemberManagementSheet({
                 </AvatarFallbackText>
               )}
             </Avatar>
-            <Text style={styles.memberHeaderName}>{member.name}</Text>
+            <Text className="text-xl font-bold mt-3 mb-2" style={{ color: colors.gray[900] }}>{member.name}</Text>
             <RoleBadge role={member.role} />
-            <Text style={styles.memberJoinDate}>
+            <Text className="text-[13px] mt-2" style={{ color: colors.gray[500] }}>
               Member since {new Date(member.joined_at).toLocaleDateString('en-US', {
                 month: 'long',
                 year: 'numeric',
@@ -511,21 +527,25 @@ export function MemberManagementSheet({
           </View>
 
           {/* Actions */}
-          <View style={styles.actionsContainer}>
+          <View className="pt-4">
             {/* Message */}
             {onMessage && (
               <Pressable
-                style={styles.actionRow}
+                className="flex-row items-center py-3.5"
+                style={{ borderBottomWidth: 1, borderBottomColor: colors.gray[100] }}
                 onPress={() => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   onMessage(member.member_id);
                   onClose();
                 }}
               >
-                <View style={styles.actionIcon}>
+                <View
+                  className="items-center justify-center mr-3"
+                  style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: colors.gray[100] }}
+                >
                   <Icon as={MessageCircle} size="md" style={{ color: colors.primary[600] }} />
                 </View>
-                <Text style={styles.actionText}>Send message</Text>
+                <Text className="flex-1 text-base" style={{ color: colors.gray[900] }}>Send message</Text>
                 <Icon as={ChevronRight} size="md" style={{ color: colors.gray[400] }} />
               </Pressable>
             )}
@@ -533,18 +553,22 @@ export function MemberManagementSheet({
             {/* Change Role */}
             {canChangeRole && (
               <Pressable
-                style={styles.actionRow}
+                className="flex-row items-center py-3.5"
+                style={{ borderBottomWidth: 1, borderBottomColor: colors.gray[100] }}
                 onPress={() => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   setShowRolePicker(true);
                 }}
               >
-                <View style={styles.actionIcon}>
+                <View
+                  className="items-center justify-center mr-3"
+                  style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: colors.gray[100] }}
+                >
                   <Icon as={Shield} size="md" style={{ color: colors.secondary[600] }} />
                 </View>
-                <Text style={styles.actionText}>Change role</Text>
+                <Text className="flex-1 text-base" style={{ color: colors.gray[900] }}>Change role</Text>
                 <HStack space="sm" className="items-center">
-                  <Text style={styles.currentRoleText}>{roleConfig.label}</Text>
+                  <Text className="text-sm" style={{ color: colors.gray[500] }}>{roleConfig.label}</Text>
                   <Icon as={ChevronRight} size="md" style={{ color: colors.gray[400] }} />
                 </HStack>
               </Pressable>
@@ -552,29 +576,43 @@ export function MemberManagementSheet({
 
             {/* Kick */}
             {canKick && (
-              <Pressable style={styles.actionRow} onPress={handleKick}>
-                <View style={[styles.actionIcon, styles.actionIconDanger]}>
+              <Pressable
+                className="flex-row items-center py-3.5"
+                style={{ borderBottomWidth: 1, borderBottomColor: colors.gray[100] }}
+                onPress={handleKick}
+              >
+                <View
+                  className="items-center justify-center mr-3"
+                  style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: '#FEE2E2' }}
+                >
                   <Icon as={UserX} size="md" style={{ color: '#EF4444' }} />
                 </View>
-                <Text style={styles.actionTextDanger}>Remove from community</Text>
+                <Text className="flex-1 text-base" style={{ color: '#EF4444' }}>Remove from community</Text>
               </Pressable>
             )}
 
             {/* Ban */}
             {canKick && onBan && (
-              <Pressable style={styles.actionRow} onPress={handleBan}>
-                <View style={[styles.actionIcon, styles.actionIconDanger]}>
+              <Pressable
+                className="flex-row items-center py-3.5"
+                style={{ borderBottomWidth: 1, borderBottomColor: colors.gray[100] }}
+                onPress={handleBan}
+              >
+                <View
+                  className="items-center justify-center mr-3"
+                  style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: '#FEE2E2' }}
+                >
                   <Icon as={Ban} size="md" style={{ color: '#EF4444' }} />
                 </View>
-                <Text style={styles.actionTextDanger}>Ban from community</Text>
+                <Text className="flex-1 text-base" style={{ color: '#EF4444' }}>Ban from community</Text>
               </Pressable>
             )}
 
             {/* No permissions notice */}
             {!canManage && !canChangeRole && (
-              <View style={styles.noPermissionNotice}>
+              <View className="flex-row items-center justify-center py-6 px-4">
                 <Icon as={ShieldOff} size="md" style={{ color: colors.gray[400] }} />
-                <Text style={styles.noPermissionText}>
+                <Text className="text-sm text-center ml-2" style={{ color: colors.gray[500] }}>
                   You don't have permission to manage this member
                 </Text>
               </View>
@@ -652,9 +690,9 @@ export function MemberList({
 
   if (filteredMembers.length === 0) {
     return (
-      <View style={styles.emptyContainer}>
+      <View className="flex-1 items-center justify-center py-10">
         <Icon as={Users} size="3xl" style={{ color: colors.gray[300] }} />
-        <Text style={styles.emptyText}>
+        <Text className="text-sm mt-2" style={{ color: colors.gray[500] }}>
           {searchQuery ? 'No members found' : 'No members yet'}
         </Text>
       </View>
@@ -662,7 +700,7 @@ export function MemberList({
   }
 
   return (
-    <ScrollView style={styles.memberList} showsVerticalScrollIndicator={false}>
+    <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
       {ROLE_HIERARCHY.map((role) => {
         const roleMembers = groupedMembers[role];
         if (roleMembers.length === 0) return null;
@@ -670,10 +708,13 @@ export function MemberList({
         const config = ROLE_CONFIG[role];
 
         return (
-          <View key={role} style={styles.roleGroup}>
+          <View key={role} className="mb-4">
             <HStack space="sm" className="items-center mb-2 px-4">
               <Icon as={config.icon} size="sm" style={{ color: config.color }} />
-              <Text style={[styles.roleGroupTitle, { color: config.color }]}>
+              <Text
+                className="text-[13px] font-semibold uppercase tracking-wide"
+                style={{ color: config.color }}
+              >
                 {config.label}s ({roleMembers.length})
               </Text>
             </HStack>
@@ -688,214 +729,5 @@ export function MemberList({
     </ScrollView>
   );
 }
-
-// =============================================================================
-// STYLES
-// =============================================================================
-
-const styles = StyleSheet.create({
-  // Sheet
-  sheetBackground: {
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-  },
-  handleIndicator: {
-    backgroundColor: colors.gray[300],
-    width: 40,
-  },
-  container: {
-    flex: 1,
-    paddingHorizontal: 20,
-  },
-
-  // Member Card
-  memberCard: {
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    backgroundColor: '#FFFFFF',
-  },
-  memberCardPressed: {
-    backgroundColor: colors.gray[50],
-  },
-  memberName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.gray[900],
-    flex: 1,
-  },
-  youLabel: {
-    fontSize: 14,
-    fontWeight: '400',
-    color: colors.gray[500],
-  },
-  memberMeta: {
-    fontSize: 12,
-    color: colors.gray[500],
-  },
-  dotSeparator: {
-    fontSize: 12,
-    color: colors.gray[400],
-  },
-  moreButton: {
-    padding: 8,
-  },
-  onlineIndicator: {
-    position: 'absolute',
-    bottom: 0,
-    right: 0,
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: '#22C55E',
-    borderWidth: 2,
-    borderColor: '#FFFFFF',
-  },
-
-  // Member Header
-  memberHeader: {
-    alignItems: 'center',
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.gray[100],
-  },
-  memberHeaderName: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: colors.gray[900],
-    marginTop: 12,
-    marginBottom: 8,
-  },
-  memberJoinDate: {
-    fontSize: 13,
-    color: colors.gray[500],
-    marginTop: 8,
-  },
-
-  // Actions
-  actionsContainer: {
-    paddingTop: 16,
-  },
-  actionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.gray[100],
-  },
-  actionIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.gray[100],
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  actionIconDanger: {
-    backgroundColor: '#FEE2E2',
-  },
-  actionText: {
-    flex: 1,
-    fontSize: 16,
-    color: colors.gray[900],
-  },
-  actionTextDanger: {
-    flex: 1,
-    fontSize: 16,
-    color: '#EF4444',
-  },
-  currentRoleText: {
-    fontSize: 14,
-    color: colors.gray[500],
-  },
-
-  // Role Picker
-  rolePickerContainer: {
-    flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 8,
-  },
-  roleOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    borderRadius: borderRadius.xl,
-    backgroundColor: colors.gray[50],
-    marginBottom: 8,
-  },
-  roleOptionSelected: {
-    backgroundColor: colors.primary[50],
-    borderWidth: 2,
-    borderColor: colors.primary[500],
-  },
-  roleIconContainer: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  roleLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.gray[900],
-  },
-  roleDescription: {
-    fontSize: 13,
-    color: colors.gray[500],
-    marginTop: 2,
-  },
-  selectedCheck: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: colors.primary[500],
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  // No Permission
-  noPermissionNotice: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 24,
-    paddingHorizontal: 16,
-  },
-  noPermissionText: {
-    fontSize: 14,
-    color: colors.gray[500],
-    marginLeft: 8,
-    textAlign: 'center',
-  },
-
-  // Member List
-  memberList: {
-    flex: 1,
-  },
-  roleGroup: {
-    marginBottom: 16,
-  },
-  roleGroupTitle: {
-    fontSize: 13,
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-
-  // Empty
-  emptyContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 40,
-  },
-  emptyText: {
-    fontSize: 14,
-    color: colors.gray[500],
-    marginTop: 8,
-  },
-});
 
 export default MemberManagementSheet;

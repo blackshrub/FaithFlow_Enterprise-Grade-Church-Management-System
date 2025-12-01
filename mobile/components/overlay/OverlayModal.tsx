@@ -12,13 +12,14 @@
  * - Footer slot for actions
  * - Keyboard avoiding behavior
  * - Android back button handling
+ *
+ * Styling: NativeWind-first with inline style for dynamic/theme values
  */
 
 import React, { useCallback, useEffect, useState, useRef } from 'react';
 import {
   View,
   Pressable,
-  StyleSheet,
   Dimensions,
   BackHandler,
   KeyboardAvoidingView,
@@ -29,7 +30,6 @@ import Animated, {
   useAnimatedStyle,
   withTiming,
   Easing,
-  runOnJS,
 } from 'react-native-reanimated';
 import { BlurView } from 'expo-blur';
 import { X } from 'lucide-react-native';
@@ -40,7 +40,7 @@ import { interaction } from '@/constants/interaction';
 import { Text } from '@/components/ui/text';
 import { Heading } from '@/components/ui/heading';
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 // ==========================================================================
 // TYPES
@@ -222,30 +222,49 @@ export function OverlayModal({
   const wrapperProps = keyboardAvoiding
     ? {
         behavior: Platform.OS === 'ios' ? 'padding' as const : 'height' as const,
-        style: styles.contentWrapper,
+        className: 'flex-1 justify-center items-center px-4',
       }
-    : { style: styles.contentWrapper };
+    : { className: 'flex-1 justify-center items-center px-4' };
 
   return (
-    <View style={styles.overlay} pointerEvents={visible ? 'auto' : 'none'}>
+    <View
+      className="absolute inset-0 justify-center items-center"
+      style={{ zIndex: 9999 }}
+      pointerEvents={visible ? 'auto' : 'none'}
+    >
       {/* Backdrop with blur */}
-      <Animated.View style={[StyleSheet.absoluteFill, backdropAnimatedStyle]}>
-        <Pressable style={styles.backdrop} onPress={handleBackdropPress}>
+      <Animated.View className="absolute inset-0" style={backdropAnimatedStyle}>
+        <Pressable className="absolute inset-0" onPress={handleBackdropPress}>
           <BlurView
             intensity={overlayTheme.scrim.blurIntensity}
-            style={styles.blur}
+            className="absolute inset-0"
             tint="dark"
           />
-          <View style={[styles.dim, { backgroundColor: overlayTheme.scrim.color }]} />
+          <View
+            className="absolute inset-0"
+            style={{ backgroundColor: overlayTheme.scrim.color }}
+          />
         </Pressable>
       </Animated.View>
 
       {/* Modal card */}
       <ContentWrapper {...wrapperProps}>
         <Animated.View
+          className="w-full rounded-3xl"
           style={[
-            styles.card,
-            { maxWidth },
+            {
+              maxWidth,
+              maxHeight: SCREEN_HEIGHT - 100,
+              backgroundColor: overlayTheme.modal.backgroundColor,
+              borderWidth: overlayTheme.modal.borderWidth,
+              borderColor: overlayTheme.modal.borderColor,
+              padding: overlayTheme.modal.padding,
+              shadowColor: overlayTheme.modal.shadow.color,
+              shadowOpacity: overlayTheme.modal.shadow.opacity,
+              shadowRadius: overlayTheme.modal.shadow.radius,
+              shadowOffset: overlayTheme.modal.shadow.offset,
+              elevation: 12,
+            },
             cardAnimatedStyle,
           ]}
         >
@@ -253,9 +272,15 @@ export function OverlayModal({
           {showCloseButton && (
             <Pressable
               onPress={handleClose}
-              style={({ pressed }) => [
-                styles.closeButton,
-                pressed && styles.closeButtonPressed,
+              className="absolute top-3 right-3 items-center justify-center"
+              style={[
+                {
+                  width: overlayTheme.closeButton.size,
+                  height: overlayTheme.closeButton.size,
+                  borderRadius: overlayTheme.closeButton.borderRadius,
+                  backgroundColor: overlayTheme.closeButton.backgroundColor,
+                  zIndex: 10,
+                },
               ]}
               hitSlop={12}
             >
@@ -268,124 +293,66 @@ export function OverlayModal({
 
           {/* Header */}
           {(title || subtitle || icon) && (
-            <View style={styles.header}>
-              {icon && <View style={styles.iconWrap}>{icon}</View>}
-              <View style={styles.headerText}>
+            <View
+              className="flex-row items-center"
+              style={{
+                marginBottom: overlayTheme.spacing.sectionGap,
+                paddingRight: overlayTheme.closeButton.size + 8,
+              }}
+            >
+              {icon && (
+                <View
+                  className="w-11 h-11 rounded-full items-center justify-center mr-3"
+                  style={{ backgroundColor: 'rgba(59, 130, 246, 0.1)' }}
+                >
+                  {icon}
+                </View>
+              )}
+              <View className="flex-1">
                 {title && (
-                  <Heading size="xl" style={styles.title}>
+                  <Heading
+                    size="xl"
+                    style={{ color: overlayTheme.typography.title.color, fontWeight: '700' }}
+                  >
                     {title}
                   </Heading>
                 )}
                 {subtitle && (
-                  <Text style={styles.subtitle}>{subtitle}</Text>
+                  <Text
+                    className="mt-0.5"
+                    style={{
+                      color: overlayTheme.typography.subtitle.color,
+                      fontSize: overlayTheme.typography.subtitle.fontSize,
+                    }}
+                  >
+                    {subtitle}
+                  </Text>
                 )}
               </View>
             </View>
           )}
 
           {/* Body */}
-          <View style={styles.body}>{children}</View>
+          <View style={{ marginTop: overlayTheme.spacing.headerGap }}>
+            {children}
+          </View>
 
           {/* Footer */}
-          {footer && <View style={styles.footer}>{footer}</View>}
+          {footer && (
+            <View
+              className="flex-row justify-end"
+              style={{
+                marginTop: overlayTheme.spacing.sectionGap,
+                gap: overlayTheme.spacing.actionGap,
+              }}
+            >
+              {footer}
+            </View>
+          )}
         </Animated.View>
       </ContentWrapper>
     </View>
   );
 }
-
-// ==========================================================================
-// STYLES
-// ==========================================================================
-
-const styles = StyleSheet.create({
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-    zIndex: 9999,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  backdrop: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  blur: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  dim: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  contentWrapper: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-  },
-  card: {
-    width: '100%',
-    maxHeight: SCREEN_HEIGHT - 100,
-    backgroundColor: overlayTheme.modal.backgroundColor,
-    borderRadius: overlayTheme.modal.borderRadius,
-    borderWidth: overlayTheme.modal.borderWidth,
-    borderColor: overlayTheme.modal.borderColor,
-    padding: overlayTheme.modal.padding,
-    shadowColor: overlayTheme.modal.shadow.color,
-    shadowOpacity: overlayTheme.modal.shadow.opacity,
-    shadowRadius: overlayTheme.modal.shadow.radius,
-    shadowOffset: overlayTheme.modal.shadow.offset,
-    elevation: 12,
-  },
-  closeButton: {
-    position: 'absolute',
-    top: 12,
-    right: 12,
-    width: overlayTheme.closeButton.size,
-    height: overlayTheme.closeButton.size,
-    borderRadius: overlayTheme.closeButton.borderRadius,
-    backgroundColor: overlayTheme.closeButton.backgroundColor,
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 10,
-  },
-  closeButtonPressed: {
-    opacity: interaction.press.opacity,
-    transform: [{ scale: interaction.press.scale }],
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: overlayTheme.spacing.sectionGap,
-    paddingRight: overlayTheme.closeButton.size + 8,
-  },
-  iconWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(59, 130, 246, 0.1)', // blue-500 with opacity
-    marginRight: 12,
-  },
-  headerText: {
-    flex: 1,
-  },
-  title: {
-    color: overlayTheme.typography.title.color,
-    fontWeight: '700',
-  },
-  subtitle: {
-    color: overlayTheme.typography.subtitle.color,
-    fontSize: overlayTheme.typography.subtitle.fontSize,
-    marginTop: 2,
-  },
-  body: {
-    marginTop: overlayTheme.spacing.headerGap,
-  },
-  footer: {
-    marginTop: overlayTheme.spacing.sectionGap,
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: overlayTheme.spacing.actionGap,
-  },
-});
 
 export default OverlayModal;

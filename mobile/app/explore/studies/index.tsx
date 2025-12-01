@@ -1,6 +1,11 @@
 /**
  * Bible Studies Browser Screen
  *
+ * Styling Strategy:
+ * - NativeWind (className) for all layout and styling
+ * - Inline style for ExploreColors and shadows
+ * - React Native Reanimated for animations
+ *
  * Design: Browsable library of in-depth studies
  * - Categories filter (topics, books, difficulty)
  * - Study cards with progress indicators
@@ -9,11 +14,11 @@
  */
 
 import React, { useState } from 'react';
-import { ScrollView, View, Text, StyleSheet, Pressable, TextInput, Image, ImageBackground } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { ScrollView, View, Text, Pressable, TextInput, ImageBackground } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { ExploreColors, ExploreTypography, ExploreSpacing } from '@/constants/explore/designSystem';
+import { ExploreColors } from '@/constants/explore/designSystem';
 import { useBibleStudies, useStudyProgress } from '@/hooks/explore/useExploreMock';
 import { useExploreStore } from '@/stores/explore/exploreStore';
 import type { BibleStudy } from '@/types/explore';
@@ -23,24 +28,24 @@ import {
   Filter,
   BookOpen,
   Clock,
-  TrendingUp,
   CheckCircle2,
-  Star,
-  Users,
   Play,
+  X,
 } from 'lucide-react-native';
 import { EmptyState } from '@/components/explore/EmptyState';
 import { BibleStudyListSkeleton } from '@/components/explore/LoadingSkeleton';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as Haptics from 'expo-haptics';
 
 type SortOption = 'newest' | 'popular' | 'alphabetical';
 type FilterCategory = 'all' | 'old_testament' | 'new_testament' | 'topical';
 
 export default function BibleStudiesBrowserScreen() {
   const router = useRouter();
-  const { t } = useTranslation(); // UI language follows global setting
-  const contentLanguage = useExploreStore((state) => state.contentLanguage); // Content language is independent
+  const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
+  const contentLanguage = useExploreStore((state) => state.contentLanguage);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<SortOption>('newest');
@@ -53,7 +58,6 @@ export default function BibleStudiesBrowserScreen() {
 
   // Filter and sort studies
   const filteredStudies = studies?.filter((study) => {
-    // Search filter
     const title = study.title[contentLanguage] || study.title.en;
     const description = study.description?.[contentLanguage] || study.description?.en;
     const searchLower = searchQuery.toLowerCase();
@@ -62,7 +66,6 @@ export default function BibleStudiesBrowserScreen() {
       title.toLowerCase().includes(searchLower) ||
       description?.toLowerCase().includes(searchLower);
 
-    // Category filter
     const matchesCategory =
       filterCategory === 'all' || study.category === filterCategory;
 
@@ -88,94 +91,156 @@ export default function BibleStudiesBrowserScreen() {
   };
 
   const getStudyProgress = (studyId: string) => {
-    // progressData is an object keyed by study ID, not an array
-    // Cast to Record to allow dynamic key access
     const progress = (progressData as Record<string, { current_lesson: number; total_lessons: number } | undefined>)?.[studyId];
     if (!progress) return 0;
     return Math.round((progress.current_lesson / progress.total_lessons) * 100);
   };
 
+  const handleGoBack = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    router.replace('/(tabs)/explore');
+  };
+
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
-        <View style={styles.header}>
-          <Pressable onPress={() => router.replace('/(tabs)/explore')} style={styles.backButton}>
+      <View className="flex-1 bg-white" style={{ paddingTop: insets.top }}>
+        {/* Header */}
+        <View
+          className="flex-row items-center px-4 py-3 border-b"
+          style={{ borderBottomColor: ExploreColors.neutral[100] }}
+        >
+          <Pressable
+            onPress={handleGoBack}
+            className="w-10 h-10 rounded-full items-center justify-center active:bg-neutral-100"
+          >
             <ArrowLeft size={24} color={ExploreColors.neutral[900]} />
           </Pressable>
-          <Text style={styles.headerTitle}>
-            {t('explore.bibleStudies')}
+          <Text
+            className="flex-1 text-lg font-bold text-center mr-10"
+            style={{ color: ExploreColors.neutral[900] }}
+          >
+            {t('explore.bibleStudies', 'Bible Studies')}
           </Text>
-          <View style={{ width: 40 }} />
         </View>
-        <ScrollView contentContainerStyle={styles.loadingContainer}>
+        <ScrollView contentContainerClassName="p-5">
           <BibleStudyListSkeleton />
         </ScrollView>
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <View className="flex-1 bg-white" style={{ paddingTop: insets.top }}>
       {/* Header */}
-      <View style={styles.header}>
-        <Pressable onPress={() => router.replace('/(tabs)/explore')} style={styles.backButton}>
+      <Animated.View
+        entering={FadeIn.duration(300)}
+        className="flex-row items-center justify-between px-4 py-3 border-b"
+        style={{ borderBottomColor: ExploreColors.neutral[100] }}
+      >
+        <Pressable
+          onPress={handleGoBack}
+          className="w-10 h-10 rounded-full items-center justify-center active:bg-neutral-100"
+        >
           <ArrowLeft size={24} color={ExploreColors.neutral[900]} />
         </Pressable>
-        <Text style={styles.headerTitle}>
-          {t('explore.bibleStudies')}
+        <Text
+          className="text-lg font-bold"
+          style={{ color: ExploreColors.neutral[900] }}
+        >
+          {t('explore.bibleStudies', 'Bible Studies')}
         </Text>
-        <Pressable onPress={() => setShowFilters(!showFilters)} style={styles.filterButton}>
-          <Filter size={20} color={ExploreColors.primary[600]} />
+        <Pressable
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            setShowFilters(!showFilters);
+          }}
+          className="w-10 h-10 rounded-full items-center justify-center active:bg-neutral-100"
+          style={{
+            backgroundColor: showFilters ? `${ExploreColors.primary[500]}15` : 'transparent',
+          }}
+        >
+          <Filter size={20} color={showFilters ? ExploreColors.primary[600] : ExploreColors.neutral[600]} />
         </Pressable>
-      </View>
+      </Animated.View>
 
       <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        className="flex-1"
+        contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
         showsVerticalScrollIndicator={false}
       >
         {/* Search Bar */}
-        <View style={styles.searchContainer}>
-          <View style={styles.searchBar}>
+        <View className="px-5 pt-4 pb-3">
+          <View
+            className="flex-row items-center gap-3 rounded-2xl px-4 py-3"
+            style={{ backgroundColor: ExploreColors.neutral[100] }}
+          >
             <Search size={20} color={ExploreColors.neutral[400]} />
             <TextInput
-              style={styles.searchInput}
-              placeholder={t('explore.searchStudies')}
+              className="flex-1 text-base"
+              style={{ color: ExploreColors.neutral[900] }}
+              placeholder={t('explore.searchStudies', 'Search studies...')}
               placeholderTextColor={ExploreColors.neutral[400]}
               value={searchQuery}
               onChangeText={setSearchQuery}
             />
+            {searchQuery.length > 0 && (
+              <Pressable onPress={() => setSearchQuery('')}>
+                <X size={18} color={ExploreColors.neutral[400]} />
+              </Pressable>
+            )}
           </View>
         </View>
 
-        {/* Filters */}
+        {/* Filters Panel */}
         {showFilters && (
-          <Animated.View entering={FadeInDown.duration(300)} style={styles.filtersSection}>
+          <Animated.View
+            entering={FadeInDown.duration(300)}
+            className="mx-5 mb-4 rounded-2xl p-4"
+            style={{
+              backgroundColor: ExploreColors.neutral[50],
+              borderWidth: 1,
+              borderColor: ExploreColors.neutral[200],
+            }}
+          >
             {/* Category Filter */}
-            <View style={styles.filterGroup}>
-              <Text style={styles.filterLabel}>
-                {t('explore.category')}
+            <View className="mb-4">
+              <Text
+                className="text-xs font-bold uppercase tracking-wide mb-2"
+                style={{ color: ExploreColors.neutral[500] }}
+              >
+                {t('explore.category', 'Category')}
               </Text>
-              <View style={styles.filterOptions}>
+              <View className="flex-row flex-wrap gap-2">
                 {[
-                  { value: 'all', label: t('explore.all') },
-                  { value: 'old_testament', label: t('explore.oldTestament') },
-                  { value: 'new_testament', label: t('explore.newTestament') },
-                  { value: 'topical', label: t('explore.topicalCategory') },
+                  { value: 'all', label: t('explore.all', 'All') },
+                  { value: 'old_testament', label: t('explore.oldTestament', 'Old Testament') },
+                  { value: 'new_testament', label: t('explore.newTestament', 'New Testament') },
+                  { value: 'topical', label: t('explore.topicalCategory', 'Topical') },
                 ].map((option) => (
                   <Pressable
                     key={option.value}
-                    onPress={() => setFilterCategory(option.value as FilterCategory)}
-                    style={[
-                      styles.filterOption,
-                      filterCategory === option.value && styles.filterOptionActive,
-                    ]}
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      setFilterCategory(option.value as FilterCategory);
+                    }}
+                    className="px-4 py-2 rounded-full active:scale-95"
+                    style={{
+                      backgroundColor: filterCategory === option.value
+                        ? ExploreColors.primary[500]
+                        : '#FFFFFF',
+                      borderWidth: 1,
+                      borderColor: filterCategory === option.value
+                        ? ExploreColors.primary[500]
+                        : ExploreColors.neutral[200],
+                    }}
                   >
                     <Text
-                      style={[
-                        styles.filterOptionText,
-                        filterCategory === option.value && styles.filterOptionTextActive,
-                      ]}
+                      className="text-[13px] font-semibold"
+                      style={{
+                        color: filterCategory === option.value
+                          ? '#FFFFFF'
+                          : ExploreColors.neutral[700],
+                      }}
                     >
                       {option.label}
                     </Text>
@@ -185,29 +250,43 @@ export default function BibleStudiesBrowserScreen() {
             </View>
 
             {/* Sort Options */}
-            <View style={styles.filterGroup}>
-              <Text style={styles.filterLabel}>
-                {t('explore.sortBy')}
+            <View>
+              <Text
+                className="text-xs font-bold uppercase tracking-wide mb-2"
+                style={{ color: ExploreColors.neutral[500] }}
+              >
+                {t('explore.sortBy', 'Sort By')}
               </Text>
-              <View style={styles.filterOptions}>
+              <View className="flex-row flex-wrap gap-2">
                 {[
-                  { value: 'newest', label: t('explore.newest') },
-                  { value: 'popular', label: t('explore.popular') },
+                  { value: 'newest', label: t('explore.newest', 'Newest') },
+                  { value: 'popular', label: t('explore.popular', 'Popular') },
                   { value: 'alphabetical', label: 'A-Z' },
                 ].map((option) => (
                   <Pressable
                     key={option.value}
-                    onPress={() => setSortBy(option.value as SortOption)}
-                    style={[
-                      styles.filterOption,
-                      sortBy === option.value && styles.filterOptionActive,
-                    ]}
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      setSortBy(option.value as SortOption);
+                    }}
+                    className="px-4 py-2 rounded-full active:scale-95"
+                    style={{
+                      backgroundColor: sortBy === option.value
+                        ? ExploreColors.primary[500]
+                        : '#FFFFFF',
+                      borderWidth: 1,
+                      borderColor: sortBy === option.value
+                        ? ExploreColors.primary[500]
+                        : ExploreColors.neutral[200],
+                    }}
                   >
                     <Text
-                      style={[
-                        styles.filterOptionText,
-                        sortBy === option.value && styles.filterOptionTextActive,
-                      ]}
+                      className="text-[13px] font-semibold"
+                      style={{
+                        color: sortBy === option.value
+                          ? '#FFFFFF'
+                          : ExploreColors.neutral[700],
+                      }}
                     >
                       {option.label}
                     </Text>
@@ -219,7 +298,10 @@ export default function BibleStudiesBrowserScreen() {
         )}
 
         {/* Results Count */}
-        <Text style={styles.resultsCount}>
+        <Text
+          className="text-sm px-5 mt-3 mb-2"
+          style={{ color: ExploreColors.neutral[600] }}
+        >
           {sortedStudies.length}{' '}
           {sortedStudies.length === 1 ? t('explore.studyFound') : t('explore.studiesFound')}
         </Text>
@@ -231,7 +313,7 @@ export default function BibleStudiesBrowserScreen() {
             message={t('explore.noStudiesMatch')}
           />
         ) : (
-          <View style={styles.studiesList}>
+          <View className="px-5 gap-4">
             {sortedStudies.map((study, index) => (
               <StudyCard
                 key={study.id}
@@ -245,7 +327,7 @@ export default function BibleStudiesBrowserScreen() {
           </View>
         )}
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -258,61 +340,80 @@ interface StudyCardProps {
 }
 
 function StudyCard({ study, progress, onPress, contentLanguage, index }: StudyCardProps) {
-  const { t } = useTranslation(); // UI language follows global setting
-  const title = study.title[contentLanguage] || study.title.en; // Content uses contentLanguage
+  const { t } = useTranslation();
+  const title = study.title[contentLanguage] || study.title.en;
   const subtitle = study.subtitle?.[contentLanguage] || study.subtitle?.en;
   const isCompleted = progress === 100;
   const lessonCount = study.lesson_count || study.lessons?.length || 0;
 
   return (
     <Animated.View entering={FadeInDown.duration(400).delay(index * 80)}>
-      <Pressable
-        onPress={onPress}
-        style={({ pressed }) => [
-          styles.courseCard,
-          pressed && styles.courseCardPressed,
-        ]}
+      {/* Shadow container - needs solid background to cast proper shadow */}
+      <View
+        style={{
+          backgroundColor: '#FFFFFF',
+          borderRadius: 16,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 6 },
+          shadowOpacity: 0.15,
+          shadowRadius: 16,
+          elevation: 6,
+        }}
       >
-        {/* Cover Image */}
-        <View style={styles.coverImageContainer}>
+        <Pressable
+          onPress={onPress}
+          className="overflow-hidden active:scale-[0.98] active:opacity-95"
+          style={{ borderRadius: 16 }}
+        >
+          {/* Cover Image */}
+          <View className="h-[160px]">
           {study.cover_image_url ? (
             <ImageBackground
               source={{ uri: study.cover_image_url }}
-              style={styles.coverImage}
-              imageStyle={styles.coverImageStyle}
+              className="w-full h-full"
             >
+              {/* Gradient overlay - absolute to cover entire image */}
               <LinearGradient
-                colors={['transparent', 'rgba(0,0,0,0.7)']}
-                style={styles.coverGradient}
-              >
-                {/* Lessons & Duration on Image */}
-                <View style={styles.coverStats}>
-                  <View style={styles.coverStatItem}>
+                colors={['rgba(0,0,0,0.3)', 'rgba(0,0,0,0.15)', 'rgba(0,0,0,0.75)']}
+                locations={[0, 0.4, 1]}
+                style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+              />
+
+              {/* Content - sits on top of gradient */}
+              <View className="flex-1 justify-end p-3">
+                <View className="flex-row gap-3">
+                  <View className="flex-row items-center gap-1">
                     <BookOpen size={14} color="#fff" />
-                    <Text style={styles.coverStatText}>
+                    <Text className="text-white text-xs font-semibold">
                       {lessonCount} {t('explore.lessons')}
                     </Text>
                   </View>
-                  <View style={styles.coverStatItem}>
+                  <View className="flex-row items-center gap-1">
                     <Clock size={14} color="#fff" />
-                    <Text style={styles.coverStatText}>
+                    <Text className="text-white text-xs font-semibold">
                       {study.estimated_duration_minutes} {t('explore.min')}
                     </Text>
                   </View>
                 </View>
-              </LinearGradient>
+              </View>
             </ImageBackground>
           ) : (
-            <View style={styles.coverPlaceholder}>
+            <View
+              className="flex-1 items-center justify-center"
+              style={{ backgroundColor: ExploreColors.primary[100] }}
+            >
               <BookOpen size={40} color={ExploreColors.primary[300]} />
             </View>
           )}
 
-          {/* Progress/Completed Overlay */}
+          {/* Completed Overlay */}
           {isCompleted && (
-            <View style={styles.completedOverlay}>
+            <View
+              className="absolute inset-0 items-center justify-center gap-2"
+              style={{ backgroundColor: 'rgba(16, 185, 129, 0.85)' }}
+            >
               <CheckCircle2 size={32} color="#fff" />
-              <Text style={styles.completedOverlayText}>
+              <Text className="text-white text-sm font-bold">
                 {t('explore.completed')}
               </Text>
             </View>
@@ -320,35 +421,73 @@ function StudyCard({ study, progress, onPress, contentLanguage, index }: StudyCa
         </View>
 
         {/* Content Section */}
-        <View style={styles.courseContent}>
-          {/* Title & Subtitle - Content uses contentLanguage */}
-          <Text style={styles.courseTitle} numberOfLines={2}>{title}</Text>
+        <View className="p-3 gap-1.5">
+          <Text
+            className="text-[17px] font-bold leading-[22px]"
+            style={{ color: ExploreColors.neutral[900] }}
+            numberOfLines={2}
+          >
+            {title}
+          </Text>
           {subtitle && (
-            <Text style={styles.courseSubtitle} numberOfLines={1}>{subtitle}</Text>
+            <Text
+              className="text-[13px] font-medium"
+              style={{ color: ExploreColors.neutral[600] }}
+              numberOfLines={1}
+            >
+              {subtitle}
+            </Text>
           )}
 
           {/* Progress Bar (if started but not completed) */}
           {progress > 0 && !isCompleted && (
-            <View style={styles.progressSection}>
-              <View style={styles.progressBarBackground}>
-                <View style={[styles.progressBarFill, { width: `${progress}%` }]} />
+            <View className="mt-2 gap-1">
+              <View
+                className="h-1.5 rounded overflow-hidden"
+                style={{ backgroundColor: ExploreColors.neutral[200] }}
+              >
+                <View
+                  className="h-full rounded"
+                  style={{
+                    width: `${progress}%`,
+                    backgroundColor: ExploreColors.primary[500],
+                  }}
+                />
               </View>
-              <Text style={styles.progressText}>{progress}% {t('explore.complete')}</Text>
+              <Text
+                className="text-[11px] font-medium"
+                style={{ color: ExploreColors.neutral[600] }}
+              >
+                {progress}% {t('explore.complete')}
+              </Text>
             </View>
           )}
 
           {/* Start/Continue Button */}
-          <View style={styles.actionRow}>
-            <View style={[
-              styles.actionButton,
-              progress > 0 && !isCompleted && styles.actionButtonContinue,
-              isCompleted && styles.actionButtonCompleted,
-            ]}>
-              <Play size={16} color={isCompleted ? ExploreColors.success[600] : '#fff'} fill={isCompleted ? ExploreColors.success[600] : '#fff'} />
-              <Text style={[
-                styles.actionButtonText,
-                isCompleted && styles.actionButtonTextCompleted,
-              ]}>
+          <View className="mt-2.5">
+            <View
+              className="flex-row items-center justify-center gap-1.5 py-2.5 rounded-[10px]"
+              style={{
+                backgroundColor: isCompleted
+                  ? ExploreColors.success[50]
+                  : progress > 0
+                  ? ExploreColors.secondary[500]
+                  : ExploreColors.primary[500],
+                borderWidth: isCompleted ? 1 : 0,
+                borderColor: ExploreColors.success[200],
+              }}
+            >
+              <Play
+                size={16}
+                color={isCompleted ? ExploreColors.success[600] : '#fff'}
+                fill={isCompleted ? ExploreColors.success[600] : '#fff'}
+              />
+              <Text
+                className="text-sm font-semibold"
+                style={{
+                  color: isCompleted ? ExploreColors.success[700] : '#FFFFFF',
+                }}
+              >
                 {isCompleted
                   ? t('explore.review')
                   : progress > 0
@@ -359,290 +498,7 @@ function StudyCard({ study, progress, onPress, contentLanguage, index }: StudyCa
           </View>
         </View>
       </Pressable>
+      </View>
     </Animated.View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: ExploreColors.neutral[50],
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: ExploreSpacing.md,
-    paddingVertical: ExploreSpacing.sm,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: ExploreColors.neutral[100],
-  },
-  backButton: {
-    padding: ExploreSpacing.xs,
-  },
-  headerTitle: {
-    ...ExploreTypography.h3,
-    color: ExploreColors.neutral[900],
-  },
-  filterButton: {
-    padding: ExploreSpacing.xs,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: 100,
-  },
-  loadingContainer: {
-    padding: ExploreSpacing.screenMargin,
-  },
-  searchContainer: {
-    paddingHorizontal: ExploreSpacing.screenMargin,
-    paddingTop: ExploreSpacing.md,
-    paddingBottom: ExploreSpacing.sm,
-    backgroundColor: '#FFFFFF',
-  },
-  searchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: ExploreSpacing.sm,
-    backgroundColor: ExploreColors.neutral[100],
-    borderRadius: 12,
-    paddingHorizontal: ExploreSpacing.md,
-    paddingVertical: ExploreSpacing.sm,
-  },
-  searchInput: {
-    ...ExploreTypography.body,
-    color: ExploreColors.neutral[900],
-    flex: 1,
-  },
-  filtersSection: {
-    paddingHorizontal: ExploreSpacing.screenMargin,
-    paddingVertical: ExploreSpacing.md,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    marginHorizontal: ExploreSpacing.screenMargin,
-    marginBottom: ExploreSpacing.md,
-  },
-  filterGroup: {
-    marginBottom: ExploreSpacing.md,
-  },
-  filterLabel: {
-    ...ExploreTypography.caption,
-    color: ExploreColors.neutral[700],
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    marginBottom: ExploreSpacing.xs,
-  },
-  filterOptions: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: ExploreSpacing.xs,
-  },
-  filterOption: {
-    paddingHorizontal: ExploreSpacing.md,
-    paddingVertical: ExploreSpacing.xs,
-    borderRadius: 16,
-    backgroundColor: ExploreColors.neutral[100],
-    borderWidth: 1,
-    borderColor: ExploreColors.neutral[200],
-  },
-  filterOptionActive: {
-    backgroundColor: ExploreColors.primary[500],
-    borderColor: ExploreColors.primary[500],
-  },
-  filterOptionText: {
-    ...ExploreTypography.caption,
-    color: ExploreColors.neutral[700],
-    fontWeight: '600',
-  },
-  filterOptionTextActive: {
-    color: '#FFFFFF',
-  },
-  resultsCount: {
-    ...ExploreTypography.caption,
-    color: ExploreColors.neutral[600],
-    paddingHorizontal: ExploreSpacing.screenMargin,
-    marginTop: ExploreSpacing.md,
-    marginBottom: ExploreSpacing.sm,
-  },
-  studiesList: {
-    paddingHorizontal: ExploreSpacing.screenMargin,
-    gap: ExploreSpacing.lg,
-  },
-
-  // E-Learning Course Card Styles
-  courseCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  courseCardPressed: {
-    opacity: 0.95,
-    transform: [{ scale: 0.98 }],
-  },
-  coverImageContainer: {
-    height: 160,
-    position: 'relative',
-  },
-  coverImage: {
-    width: '100%',
-    height: '100%',
-  },
-  coverImageStyle: {
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-  },
-  coverGradient: {
-    flex: 1,
-    justifyContent: 'space-between',
-    padding: ExploreSpacing.md,
-  },
-  coverPlaceholder: {
-    flex: 1,
-    backgroundColor: ExploreColors.primary[100],
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  difficultyBadge: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 6,
-  },
-  difficultyText: {
-    fontSize: 11,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  coverStats: {
-    flexDirection: 'row',
-    gap: ExploreSpacing.md,
-  },
-  coverStatItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  coverStatText: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  completedOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(16, 185, 129, 0.85)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-  },
-  completedOverlayText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  courseContent: {
-    padding: ExploreSpacing.md,
-    gap: 6,
-  },
-  courseTitle: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: ExploreColors.neutral[900],
-    lineHeight: 22,
-  },
-  courseSubtitle: {
-    fontSize: 13,
-    color: ExploreColors.neutral[600],
-    fontWeight: '500',
-  },
-  courseAuthor: {
-    fontSize: 12,
-    color: ExploreColors.neutral[500],
-    marginTop: 2,
-  },
-  courseMetaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: ExploreSpacing.md,
-    marginTop: 6,
-  },
-  ratingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  ratingText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: ExploreColors.neutral[900],
-  },
-  ratingCount: {
-    fontSize: 12,
-    color: ExploreColors.neutral[500],
-  },
-  studentsContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  studentsText: {
-    fontSize: 12,
-    color: ExploreColors.neutral[500],
-  },
-  progressSection: {
-    marginTop: 8,
-    gap: 4,
-  },
-  progressBarBackground: {
-    height: 6,
-    backgroundColor: ExploreColors.neutral[200],
-    borderRadius: 3,
-    overflow: 'hidden',
-  },
-  progressBarFill: {
-    height: '100%',
-    backgroundColor: ExploreColors.primary[500],
-    borderRadius: 3,
-  },
-  progressText: {
-    fontSize: 11,
-    color: ExploreColors.neutral[600],
-    fontWeight: '500',
-  },
-  actionRow: {
-    marginTop: 10,
-  },
-  actionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    backgroundColor: ExploreColors.primary[500],
-    paddingVertical: 10,
-    borderRadius: 10,
-  },
-  actionButtonContinue: {
-    backgroundColor: ExploreColors.secondary[500],
-  },
-  actionButtonCompleted: {
-    backgroundColor: ExploreColors.success[50],
-    borderWidth: 1,
-    borderColor: ExploreColors.success[200],
-  },
-  actionButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#FFFFFF',
-  },
-  actionButtonTextCompleted: {
-    color: ExploreColors.success[700],
-  },
-});

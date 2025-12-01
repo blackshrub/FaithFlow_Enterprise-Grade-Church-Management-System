@@ -10,10 +10,12 @@
  * - Standard padding
  * - Backdrop configuration
  * - Gesture tuning from interaction config
+ *
+ * Styling: Inline styles required for gorhom/bottom-sheet styling props
  */
 
 import React, { useCallback, useMemo, forwardRef, useImperativeHandle, useRef } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { View, ViewStyle } from 'react-native';
 import BottomSheet, {
   BottomSheetBackdrop,
   BottomSheetBackdropProps,
@@ -123,6 +125,26 @@ export const OverlayBottomSheet = forwardRef<
   // Content wrapper component
   const ContentWrapper = scrollable ? BottomSheetScrollView : BottomSheetView;
 
+  // Inline styles for gorhom/bottom-sheet styling props
+  const backgroundStyle: ViewStyle = {
+    backgroundColor: overlayTheme.sheet.backgroundColor,
+    borderTopLeftRadius: overlayTheme.sheet.borderRadiusTop,
+    borderTopRightRadius: overlayTheme.sheet.borderRadiusTop,
+  };
+
+  const handleIndicatorStyle: ViewStyle = {
+    backgroundColor: overlayTheme.sheet.handleColor,
+    width: overlayTheme.sheet.handleWidth,
+    height: overlayTheme.sheet.handleHeight,
+    borderRadius: overlayTheme.sheet.handleHeight / 2,
+  };
+
+  const contentStyle: ViewStyle = {
+    paddingHorizontal: overlayTheme.sheet.paddingHorizontal,
+    paddingTop: overlayTheme.sheet.paddingTop,
+    paddingBottom: overlayTheme.sheet.paddingBottom,
+  };
+
   return (
     <BottomSheet
       ref={bottomSheetRef}
@@ -133,8 +155,8 @@ export const OverlayBottomSheet = forwardRef<
       onClose={handleDismiss}
       backdropComponent={renderBackdrop}
       handleComponent={handleComponent}
-      backgroundStyle={styles.background}
-      handleIndicatorStyle={styles.handleIndicator}
+      backgroundStyle={backgroundStyle}
+      handleIndicatorStyle={handleIndicatorStyle}
       // Gesture tuning from interaction config
       activeOffsetY={interaction.gestures.activeOffset as [number, number]}
       failOffsetY={interaction.gestures.failOffset as [number, number]}
@@ -143,34 +165,11 @@ export const OverlayBottomSheet = forwardRef<
       enableHandlePanningGesture={true}
       animateOnMount={true}
     >
-      <ContentWrapper style={styles.content}>
+      <ContentWrapper style={contentStyle}>
         {children}
       </ContentWrapper>
     </BottomSheet>
   );
-});
-
-// ==========================================================================
-// STYLES
-// ==========================================================================
-
-const styles = StyleSheet.create({
-  background: {
-    backgroundColor: overlayTheme.sheet.backgroundColor,
-    borderTopLeftRadius: overlayTheme.sheet.borderRadiusTop,
-    borderTopRightRadius: overlayTheme.sheet.borderRadiusTop,
-  },
-  handleIndicator: {
-    backgroundColor: overlayTheme.sheet.handleColor,
-    width: overlayTheme.sheet.handleWidth,
-    height: overlayTheme.sheet.handleHeight,
-    borderRadius: overlayTheme.sheet.handleHeight / 2,
-  },
-  content: {
-    paddingHorizontal: overlayTheme.sheet.paddingHorizontal,
-    paddingTop: overlayTheme.sheet.paddingTop,
-    paddingBottom: overlayTheme.sheet.paddingBottom,
-  },
 });
 
 export default OverlayBottomSheet;

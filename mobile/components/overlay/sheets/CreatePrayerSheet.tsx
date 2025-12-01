@@ -3,26 +3,28 @@
  *
  * A clean bottom sheet form for submitting prayer requests.
  * Uses the unified overlay system.
+ *
+ * Styling: NativeWind-first with Gluestack Button
  */
 
-import React, { useState, useCallback, useRef, useMemo } from 'react';
+import React, { useState, useCallback, useRef, useMemo, useEffect } from 'react';
 import {
   View,
   Text,
   Pressable,
-  StyleSheet,
   ScrollView,
   TextInput,
-  KeyboardAvoidingView,
-  Platform,
   Dimensions,
   PanResponder,
+  Keyboard,
+  Platform,
 } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
   runOnJS,
+  Easing,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
@@ -43,39 +45,28 @@ import {
   Lock,
 } from 'lucide-react-native';
 
+import { Button, ButtonText, ButtonSpinner } from '@/components/ui/button';
 import { useCreatePrayerRequest } from '@/hooks/usePrayer';
 import { showSuccessToast, showErrorToast } from '@/components/ui/Toast';
 import type { OverlayComponentProps } from '@/stores/overlayStore';
 import type { LucideIcon } from 'lucide-react-native';
-import type { PrayerCategory, CreatePrayerRequest } from '@/types/prayer';
+import type { PrayerCategory } from '@/types/prayer';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
-// Calculate heights for the sheet
-const MAX_SHEET_HEIGHT = SCREEN_HEIGHT * 0.85;
-const CONTENT_HEIGHT = SCREEN_HEIGHT * 0.6; // Fixed height for content area
-
-// Premium color palette
+// Premium color palette - for icon colors only
 const Colors = {
   gradient: {
     start: '#1e3a5f',
-    mid: '#2d4a6f',
     end: '#3d5a7f',
   },
   accent: {
     primary: '#E8B86D',
   },
   neutral: {
-    50: '#FAFAFA',
-    100: '#F5F5F5',
-    200: '#E5E5E5',
-    300: '#D4D4D4',
     400: '#A3A3A3',
     500: '#737373',
     600: '#525252',
-    700: '#404040',
-    800: '#262626',
-    900: '#171717',
   },
   white: '#FFFFFF',
 };
@@ -119,6 +110,37 @@ export function CreatePrayerSheet({ onClose }: OverlayComponentProps) {
   const createPrayerMutation = useCreatePrayerRequest();
   const isPending = createPrayerMutation.isPending;
 
+  // Keyboard height for bottom margin
+  const keyboardHeight = useSharedValue(0);
+
+  useEffect(() => {
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+
+    const showSub = Keyboard.addListener(showEvent, (e) => {
+      keyboardHeight.value = withTiming(e.endCoordinates.height, {
+        duration: Platform.OS === 'ios' ? 250 : 200,
+        easing: Easing.out(Easing.cubic),
+      });
+    });
+
+    const hideSub = Keyboard.addListener(hideEvent, () => {
+      keyboardHeight.value = withTiming(0, {
+        duration: 200,
+        easing: Easing.out(Easing.cubic),
+      });
+    });
+
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, [keyboardHeight]);
+
+  const keyboardMarginStyle = useAnimatedStyle(() => ({
+    marginBottom: keyboardHeight.value,
+  }));
+
   // Swipe-to-dismiss gesture (only on handle area)
   const translateY = useSharedValue(0);
 
@@ -136,11 +158,9 @@ export function CreatePrayerSheet({ onClose }: OverlayComponentProps) {
     },
     onPanResponderRelease: (_, gesture) => {
       if (gesture.dy > 80) {
-        // Close if dragged down more than 80px
         translateY.value = withTiming(400, { duration: 200 });
         runOnJS(handleClose)();
       } else {
-        // Snap back
         translateY.value = withTiming(0, { duration: 200 });
       }
     },
@@ -192,11 +212,14 @@ export function CreatePrayerSheet({ onClose }: OverlayComponentProps) {
 
   const isFormValid = title.trim().length > 0 && description.trim().length > 0 && category !== null;
 
-  // Render category card
-  const renderCategoryCard = (key: string, data: CategoryData) => {
+  // Render category card - with index to handle margin
+  const renderCategoryCard = (key: string, data: CategoryData, index: number) => {
     const IconComponent = data.icon;
     const isSelected = category === key;
     const label = t(data.label, key.charAt(0).toUpperCase() + key.slice(1));
+
+    // Only add right margin if NOT the last column (index % 3 !== 2)
+    const isLastColumn = (index % GRID_COLUMNS) === (GRID_COLUMNS - 1);
 
     return (
       <Pressable
@@ -205,16 +228,31 @@ export function CreatePrayerSheet({ onClose }: OverlayComponentProps) {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
           setCategory(key as PrayerCategory);
         }}
-        style={[styles.categoryCard, isSelected && styles.categoryCardSelected]}
+        className={`items-center p-2.5 rounded-xl border ${
+          isSelected
+            ? 'border-2 border-[#1e3a5f] bg-white'
+            : 'border-neutral-200 bg-neutral-50'
+        }`}
+        style={{
+          width: CARD_WIDTH,
+          marginRight: isLastColumn ? 0 : GRID_GAP,
+          marginBottom: GRID_GAP,
+        }}
       >
-        <View style={[styles.categoryIconWrap, isSelected && styles.categoryIconWrapSelected]}>
+        <View
+          className={`w-9 h-9 rounded-[10px] items-center justify-center mb-1.5 ${
+            isSelected ? 'bg-[#1e3a5f]/10' : 'bg-neutral-100'
+          }`}
+        >
           <IconComponent
             size={18}
             color={isSelected ? Colors.gradient.start : Colors.neutral[600]}
           />
         </View>
         <Text
-          style={[styles.categoryLabel, isSelected && styles.categoryLabelSelected]}
+          className={`text-[11px] font-semibold text-center ${
+            isSelected ? 'text-[#1e3a5f]' : 'text-neutral-600'
+          }`}
           numberOfLines={1}
         >
           {label}
@@ -224,347 +262,154 @@ export function CreatePrayerSheet({ onClose }: OverlayComponentProps) {
   };
 
   return (
-    <Animated.View style={[styles.container, { paddingBottom: insets.bottom + 16 }, animatedStyle]}>
+    <Animated.View
+      className="bg-white rounded-t-3xl"
+      style={[animatedStyle, keyboardMarginStyle]}
+    >
       {/* Handle - swipe here to dismiss */}
-      <View style={styles.handleContainer} {...panResponder.panHandlers}>
-        <View style={styles.handle} />
+      <View className="items-center pt-4 pb-3" {...panResponder.panHandlers}>
+        <View className="w-10 h-1 rounded-full bg-neutral-300" />
       </View>
 
       {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>{t('prayer.create.title', 'New Prayer Request')}</Text>
-        <Pressable onPress={onClose} style={styles.closeBtn}>
+      <View className="flex-row items-center justify-between px-5 pb-4 border-b border-neutral-100">
+        <Text className="text-[20px] font-bold text-neutral-900" style={{ letterSpacing: -0.3 }}>
+          {t('prayer.create.title', 'New Prayer Request')}
+        </Text>
+        <Pressable
+          onPress={onClose}
+          className="w-11 h-11 rounded-full bg-neutral-100 items-center justify-center active:opacity-70"
+        >
           <X size={20} color={Colors.neutral[600]} />
         </Pressable>
       </View>
 
-      {/* Content - ScrollView works independently */}
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={styles.keyboardView}
+      {/* Content - ScrollView with fixed max height */}
+      <ScrollView
+        style={{ maxHeight: SCREEN_HEIGHT * 0.55 }}
+        contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 20, paddingBottom: 16 }}
+        showsVerticalScrollIndicator={true}
+        bounces={true}
+        keyboardShouldPersistTaps="handled"
       >
-        <ScrollView
-          style={styles.scroll}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={true}
-          bounces={true}
-          keyboardShouldPersistTaps="handled"
-        >
-          {/* Title Input */}
-          <View style={styles.inputSection}>
-            <Text style={styles.inputLabel}>{t('prayer.create.titleLabel', 'Prayer Title')}</Text>
-            <TextInput
-              style={styles.titleInput}
-              value={title}
-              onChangeText={setTitle}
-              placeholder={t('prayer.create.titlePlaceholder', 'What would you like prayer for?')}
-              placeholderTextColor={Colors.neutral[400]}
-              maxLength={100}
-            />
-            <Text style={styles.charCount}>{title.length}/100</Text>
-          </View>
+        {/* Title Input */}
+        <View className="mb-5">
+          <Text className="text-[13px] font-semibold text-neutral-600 mb-2 uppercase tracking-wide">
+            {t('prayer.create.titleLabel', 'Prayer Title')}
+          </Text>
+          <TextInput
+            className="bg-neutral-50 rounded-xl p-3.5 text-base text-neutral-900 border border-neutral-200"
+            value={title}
+            onChangeText={setTitle}
+            placeholder={t('prayer.create.titlePlaceholder', 'What would you like prayer for?')}
+            placeholderTextColor={Colors.neutral[400]}
+            maxLength={100}
+          />
+          <Text className="text-[11px] text-neutral-400 text-right mt-1">
+            {title.length}/100
+          </Text>
+        </View>
 
-          {/* Description Input */}
-          <View style={styles.inputSection}>
-            <Text style={styles.inputLabel}>{t('prayer.create.descriptionLabel', 'Details')}</Text>
-            <TextInput
-              style={styles.descriptionInput}
-              value={description}
-              onChangeText={setDescription}
-              placeholder={t('prayer.create.descriptionPlaceholder', 'Share more about your prayer request...')}
-              placeholderTextColor={Colors.neutral[400]}
-              multiline
-              numberOfLines={4}
-              textAlignVertical="top"
-              maxLength={500}
-            />
-            <Text style={styles.charCount}>{description.length}/500</Text>
-          </View>
+        {/* Description Input */}
+        <View className="mb-5">
+          <Text className="text-[13px] font-semibold text-neutral-600 mb-2 uppercase tracking-wide">
+            {t('prayer.create.descriptionLabel', 'Details')}
+          </Text>
+          <TextInput
+            className="bg-neutral-50 rounded-xl p-3.5 text-base text-neutral-900 border border-neutral-200"
+            style={{ minHeight: 100 }}
+            value={description}
+            onChangeText={setDescription}
+            placeholder={t('prayer.create.descriptionPlaceholder', 'Share more about your prayer request...')}
+            placeholderTextColor={Colors.neutral[400]}
+            multiline
+            numberOfLines={4}
+            textAlignVertical="top"
+            maxLength={500}
+          />
+          <Text className="text-[11px] text-neutral-400 text-right mt-1">
+            {description.length}/500
+          </Text>
+        </View>
 
-          {/* Category Selection */}
-          <View style={styles.inputSection}>
-            <Text style={styles.inputLabel}>{t('prayer.create.categoryLabel', 'Category')}</Text>
-            <View style={styles.categoryGrid}>
-              {Object.entries(CATEGORIES).map(([key, data]) => renderCategoryCard(key, data))}
-            </View>
+        {/* Category Selection */}
+        <View className="mb-5">
+          <Text className="text-[13px] font-semibold text-neutral-600 mb-2 uppercase tracking-wide">
+            {t('prayer.create.categoryLabel', 'Category')}
+          </Text>
+          <View className="flex-row flex-wrap">
+            {Object.entries(CATEGORIES).map(([key, data], index) => renderCategoryCard(key, data, index))}
           </View>
+        </View>
 
-          {/* Anonymous Toggle */}
-          <View style={styles.inputSection}>
-            <Pressable
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                setIsAnonymous(!isAnonymous);
-              }}
-              style={styles.anonymousToggle}
-            >
-              <View style={styles.anonymousLeft}>
-                {isAnonymous ? (
-                  <Lock size={20} color={Colors.gradient.start} />
-                ) : (
-                  <Globe size={20} color={Colors.neutral[500]} />
-                )}
-                <View style={styles.anonymousTextWrap}>
-                  <Text style={styles.anonymousTitle}>
-                    {isAnonymous
-                      ? t('prayer.create.anonymous', 'Post Anonymously')
-                      : t('prayer.create.public', 'Post with Name')}
-                  </Text>
-                  <Text style={styles.anonymousDesc}>
-                    {isAnonymous
-                      ? t('prayer.create.anonymousDesc', 'Your name will be hidden')
-                      : t('prayer.create.publicDesc', 'Others will see your name')}
-                  </Text>
-                </View>
-              </View>
-              <View style={[styles.toggleSwitch, isAnonymous && styles.toggleSwitchActive]}>
-                <View style={[styles.toggleThumb, isAnonymous && styles.toggleThumbActive]} />
-              </View>
-            </Pressable>
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-
-      {/* Submit Button */}
-      <View style={styles.footer}>
-        <Pressable
-          onPress={handleSubmit}
-          disabled={!isFormValid || isPending}
-          style={[styles.submitBtn, (!isFormValid || isPending) && styles.submitBtnDisabled]}
-        >
-          <LinearGradient
-            colors={
-              isFormValid && !isPending
-                ? [Colors.gradient.start, Colors.gradient.end]
-                : [Colors.neutral[300], Colors.neutral[400]]
-            }
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={styles.submitGradient}
+        {/* Anonymous Toggle */}
+        <View className="mb-5">
+          <Pressable
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              setIsAnonymous(!isAnonymous);
+            }}
+            className="flex-row items-center justify-between bg-neutral-50 rounded-xl p-3.5 border border-neutral-200"
           >
+            <View className="flex-row items-center flex-1">
+              {isAnonymous ? (
+                <Lock size={20} color={Colors.gradient.start} />
+              ) : (
+                <Globe size={20} color={Colors.neutral[500]} />
+              )}
+              <View className="ml-3 flex-1">
+                <Text className="text-sm font-semibold text-neutral-800">
+                  {isAnonymous
+                    ? t('prayer.create.anonymous', 'Post Anonymously')
+                    : t('prayer.create.public', 'Post with Name')}
+                </Text>
+                <Text className="text-xs text-neutral-500 mt-0.5">
+                  {isAnonymous
+                    ? t('prayer.create.anonymousDesc', 'Your name will be hidden')
+                    : t('prayer.create.publicDesc', 'Others will see your name')}
+                </Text>
+              </View>
+            </View>
+            <View
+              className={`w-[46px] h-[26px] rounded-[13px] p-0.5 justify-center ${
+                isAnonymous ? 'bg-[#1e3a5f]' : 'bg-neutral-200'
+              }`}
+            >
+              <View
+                className={`w-[22px] h-[22px] rounded-[11px] bg-white shadow-sm ${
+                  isAnonymous ? 'self-end' : 'self-start'
+                }`}
+              />
+            </View>
+          </Pressable>
+        </View>
+      </ScrollView>
+
+      {/* Submit Button - Using Gluestack Button */}
+      <View
+        className="px-5 pt-3 border-t border-neutral-100"
+        style={{ paddingBottom: Math.max(insets.bottom, 16) + 8 }}
+      >
+        <Button
+          size="lg"
+          onPress={handleSubmit}
+          isDisabled={!isFormValid || isPending}
+          className="rounded-xl"
+        >
+          {isPending ? (
+            <ButtonSpinner color={Colors.white} />
+          ) : (
             <Send size={18} color={Colors.white} />
-            <Text style={styles.submitText}>
-              {isPending
-                ? t('prayer.create.submitting', 'Submitting...')
-                : t('prayer.create.submit', 'Submit Prayer Request')}
-            </Text>
-          </LinearGradient>
-        </Pressable>
+          )}
+          <ButtonText className="ml-2 font-bold">
+            {isPending
+              ? t('prayer.create.submitting', 'Submitting...')
+              : t('prayer.create.submit', 'Submit Prayer Request')}
+          </ButtonText>
+        </Button>
       </View>
     </Animated.View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    backgroundColor: Colors.white,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    maxHeight: MAX_SHEET_HEIGHT,
-  },
-  handleContainer: {
-    alignItems: 'center',
-    paddingTop: 16,
-    paddingBottom: 12,
-    // Larger touch target for swipe gesture
-    minHeight: 32,
-  },
-  handle: {
-    width: 40,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: Colors.neutral[300],
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.neutral[100],
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: Colors.neutral[900],
-  },
-  closeBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: Colors.neutral[100],
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  keyboardView: {
-    height: CONTENT_HEIGHT, // Fixed height instead of flex
-  },
-  scroll: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 16,
-  },
-  inputSection: {
-    marginBottom: 20,
-  },
-  inputLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: Colors.neutral[600],
-    marginBottom: 8,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  titleInput: {
-    backgroundColor: Colors.neutral[50],
-    borderRadius: 12,
-    padding: 14,
-    fontSize: 16,
-    color: Colors.neutral[900],
-    borderWidth: 1,
-    borderColor: Colors.neutral[200],
-  },
-  descriptionInput: {
-    backgroundColor: Colors.neutral[50],
-    borderRadius: 12,
-    padding: 14,
-    fontSize: 16,
-    color: Colors.neutral[900],
-    borderWidth: 1,
-    borderColor: Colors.neutral[200],
-    minHeight: 100,
-  },
-  charCount: {
-    fontSize: 11,
-    color: Colors.neutral[400],
-    textAlign: 'right',
-    marginTop: 4,
-  },
-  categoryGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginHorizontal: -(GRID_GAP / 2),
-  },
-  categoryCard: {
-    width: CARD_WIDTH,
-    backgroundColor: Colors.neutral[50],
-    borderRadius: 12,
-    padding: 10,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: Colors.neutral[200],
-    marginHorizontal: GRID_GAP / 2,
-    marginBottom: GRID_GAP,
-  },
-  categoryCardSelected: {
-    borderColor: Colors.gradient.start,
-    borderWidth: 2,
-    backgroundColor: Colors.white,
-  },
-  categoryIconWrap: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    backgroundColor: Colors.neutral[100],
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 6,
-  },
-  categoryIconWrapSelected: {
-    backgroundColor: `${Colors.gradient.start}15`,
-  },
-  categoryLabel: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: Colors.neutral[600],
-    textAlign: 'center',
-  },
-  categoryLabelSelected: {
-    color: Colors.gradient.start,
-  },
-  anonymousToggle: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: Colors.neutral[50],
-    borderRadius: 12,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: Colors.neutral[200],
-  },
-  anonymousLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  anonymousTextWrap: {
-    marginLeft: 12,
-    flex: 1,
-  },
-  anonymousTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: Colors.neutral[800],
-  },
-  anonymousDesc: {
-    fontSize: 12,
-    color: Colors.neutral[500],
-    marginTop: 2,
-  },
-  toggleSwitch: {
-    width: 46,
-    height: 26,
-    borderRadius: 13,
-    backgroundColor: Colors.neutral[200],
-    padding: 2,
-    justifyContent: 'center',
-  },
-  toggleSwitchActive: {
-    backgroundColor: Colors.gradient.start,
-  },
-  toggleThumb: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: Colors.white,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  toggleThumbActive: {
-    alignSelf: 'flex-end',
-  },
-  footer: {
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: Colors.neutral[100],
-  },
-  submitBtn: {
-    borderRadius: 14,
-    overflow: 'hidden',
-  },
-  submitBtnDisabled: {
-    opacity: 0.7,
-  },
-  submitGradient: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 14,
-    gap: 8,
-  },
-  submitText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: Colors.white,
-  },
-});
 
 export default CreatePrayerSheet;

@@ -13,14 +13,14 @@
  * - Automatic turn detection (server VAD)
  * - Live transcript display
  * - Tap orb to interrupt AI response
+ *
+ * Styling: NativeWind-first with inline style for shadows/dynamic values
  */
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import {
   View,
-  Text,
   Pressable,
-  StyleSheet,
   Modal,
   Dimensions,
 } from 'react-native';
@@ -42,6 +42,7 @@ import Animated, {
 import * as Haptics from 'expo-haptics';
 import { X, Mic, Volume2, Wifi, WifiOff, AlertTriangle } from 'lucide-react-native';
 import { BlurView } from 'expo-blur';
+import { Text } from '@/components/ui/text';
 
 // Try to import native WebRTC module (only works in dev build)
 let RealtimeService: any = null;
@@ -102,38 +103,46 @@ function UnavailablePlaceholder({
       statusBarTranslucent
       onRequestClose={onClose}
     >
-      <View style={styles.container}>
-        <BlurView intensity={90} tint="dark" style={StyleSheet.absoluteFill} />
+      <View className="flex-1 bg-black/90">
+        <BlurView intensity={90} tint="dark" className="absolute inset-0" />
 
         {/* Close button */}
         <Pressable
           onPress={onClose}
-          style={styles.closeButton}
+          className="absolute top-[60px] right-6 w-12 h-12 rounded-3xl bg-white/10 items-center justify-center z-10"
           hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
         >
           <X size={28} color="#FFFFFF" />
         </Pressable>
 
-        <View style={styles.content}>
+        <View className="flex-1 items-center justify-center px-8">
           {/* Warning icon */}
-          <View style={[styles.orb, { backgroundColor: StateColors.unavailable }]}>
+          <View
+            className="items-center justify-center"
+            style={{
+              width: ORB_SIZE,
+              height: ORB_SIZE,
+              borderRadius: ORB_SIZE / 2,
+              backgroundColor: StateColors.unavailable,
+            }}
+          >
             <AlertTriangle size={ORB_SIZE * 0.35} color="#FFFFFF" />
           </View>
 
-          <Text style={styles.statusText}>
+          <Text className="mt-10 text-xl font-semibold text-white text-center">
             {language === 'id' ? 'Tidak Tersedia di Expo Go' : 'Not Available in Expo Go'}
           </Text>
 
-          <View style={styles.transcriptContainer}>
-            <Text style={styles.transcriptText}>
+          <View className="mt-6 px-5 py-3 bg-white/5 rounded-xl max-w-[85%]">
+            <Text className="text-base text-white/90 leading-[22px]">
               {language === 'id'
                 ? 'Voice Chat realtime membutuhkan development build dengan native modules (WebRTC).\n\nUntuk menggunakan fitur ini, build aplikasi dengan:\n\nnpx expo prebuild\nnpx expo run:ios'
                 : 'Realtime Voice Chat requires a development build with native modules (WebRTC).\n\nTo use this feature, build the app with:\n\nnpx expo prebuild\nnpx expo run:ios'}
             </Text>
           </View>
 
-          <View style={styles.instructions}>
-            <Text style={styles.instructionText}>
+          <View className="absolute bottom-20 left-8 right-8">
+            <Text className="text-sm text-white/50 text-center">
               {language === 'id'
                 ? 'Fitur STT (tombol mic) tetap berfungsi menggunakan Groq/OpenAI Whisper API'
                 : 'STT feature (mic button) still works using Groq/OpenAI Whisper API'}
@@ -426,14 +435,14 @@ export function VoiceChatModal({
       <Animated.View
         entering={FadeIn.duration(200)}
         exiting={FadeOut.duration(200)}
-        style={styles.container}
+        className="flex-1 bg-black/90"
       >
-        <BlurView intensity={90} tint="dark" style={StyleSheet.absoluteFill} />
+        <BlurView intensity={90} tint="dark" className="absolute inset-0" />
 
         {/* Close button */}
         <Pressable
           onPress={handleClose}
-          style={styles.closeButton}
+          className="absolute top-[60px] right-6 w-12 h-12 rounded-3xl bg-white/10 items-center justify-center z-10"
           hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
         >
           <X size={28} color="#FFFFFF" />
@@ -443,42 +452,65 @@ export function VoiceChatModal({
         <Animated.View
           entering={SlideInDown.duration(300)}
           exiting={SlideOutDown.duration(200)}
-          style={styles.content}
+          className="flex-1 items-center justify-center px-8"
         >
           {/* State icon */}
-          <View style={styles.stateIcon}>
+          <View className="mb-6 w-14 h-14 rounded-[28px] bg-white/10 items-center justify-center">
             {getHeaderIcon()}
           </View>
 
           {/* Realtime badge */}
-          <View style={styles.realtimeBadge}>
-            <View style={[styles.realtimeDot, { backgroundColor: state === 'error' ? '#EF4444' : '#10B981' }]} />
-            <Text style={styles.realtimeText}>Realtime</Text>
+          <View className="flex-row items-center bg-white/10 px-3 py-1.5 rounded-2xl mb-6">
+            <View
+              className="w-2 h-2 rounded-full mr-1.5"
+              style={{ backgroundColor: state === 'error' ? '#EF4444' : '#10B981' }}
+            />
+            <Text className="text-xs font-semibold text-white/80 uppercase tracking-wider">
+              Realtime
+            </Text>
           </View>
 
           {/* Orb container */}
-          <View style={styles.orbContainer}>
+          <View
+            className="items-center justify-center"
+            style={{ width: ORB_SIZE * 2, height: ORB_SIZE * 2 }}
+          >
             {/* Ripple rings (only visible when listening) */}
             {state === 'listening' && (
               <>
                 <Animated.View
+                  className="absolute border-2"
                   style={[
-                    styles.ring,
-                    { borderColor: currentColor },
+                    {
+                      width: ORB_SIZE,
+                      height: ORB_SIZE,
+                      borderRadius: ORB_SIZE / 2,
+                      borderColor: currentColor,
+                    },
                     ring1Style,
                   ]}
                 />
                 <Animated.View
+                  className="absolute border-2"
                   style={[
-                    styles.ring,
-                    { borderColor: currentColor },
+                    {
+                      width: ORB_SIZE,
+                      height: ORB_SIZE,
+                      borderRadius: ORB_SIZE / 2,
+                      borderColor: currentColor,
+                    },
                     ring2Style,
                   ]}
                 />
                 <Animated.View
+                  className="absolute border-2"
                   style={[
-                    styles.ring,
-                    { borderColor: currentColor },
+                    {
+                      width: ORB_SIZE,
+                      height: ORB_SIZE,
+                      borderRadius: ORB_SIZE / 2,
+                      borderColor: currentColor,
+                    },
                     ring3Style,
                   ]}
                 />
@@ -488,17 +520,35 @@ export function VoiceChatModal({
             {/* Main orb */}
             <Pressable onPress={handleOrbPress}>
               <Animated.View
+                className="items-center justify-center"
                 style={[
-                  styles.orb,
-                  { backgroundColor: currentColor },
+                  {
+                    width: ORB_SIZE,
+                    height: ORB_SIZE,
+                    borderRadius: ORB_SIZE / 2,
+                    backgroundColor: currentColor,
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: 8 },
+                    shadowOpacity: 0.3,
+                    shadowRadius: 16,
+                    elevation: 10,
+                  },
                   orbAnimatedStyle,
                 ]}
               >
                 {/* Inner glow */}
-                <View style={[styles.orbInner, { backgroundColor: currentColor }]} />
+                <View
+                  className="absolute opacity-30"
+                  style={{
+                    width: ORB_SIZE * 0.8,
+                    height: ORB_SIZE * 0.8,
+                    borderRadius: (ORB_SIZE * 0.8) / 2,
+                    backgroundColor: currentColor,
+                  }}
+                />
 
                 {/* Icon inside orb */}
-                <View style={styles.orbIcon}>
+                <View className="items-center justify-center">
                   {getStateIcon()}
                 </View>
               </Animated.View>
@@ -506,25 +556,30 @@ export function VoiceChatModal({
           </View>
 
           {/* Status text */}
-          <Text style={styles.statusText}>{statusText}</Text>
+          <Text className="mt-10 text-xl font-semibold text-white text-center">
+            {statusText}
+          </Text>
 
           {/* Live transcript */}
           {currentTranscript && (
-            <View style={styles.transcriptContainer}>
-              <Text style={styles.transcriptLabel}>
+            <View
+              className="mt-6 px-5 py-3 bg-white/5 rounded-xl"
+              style={{ maxWidth: SCREEN_WIDTH * 0.85 }}
+            >
+              <Text className="text-xs font-semibold text-white/50 mb-1">
                 {state === 'responding'
                   ? language === 'id' ? 'AI:' : 'AI:'
                   : language === 'id' ? 'Anda:' : 'You:'}
               </Text>
-              <Text style={styles.transcriptText} numberOfLines={3}>
+              <Text className="text-base text-white/90 leading-[22px]" numberOfLines={3}>
                 {currentTranscript}
               </Text>
             </View>
           )}
 
           {/* Instructions */}
-          <View style={styles.instructions}>
-            <Text style={styles.instructionText}>
+          <View className="absolute bottom-20 left-8 right-8">
+            <Text className="text-sm text-white/50 text-center">
               {state === 'connecting'
                 ? language === 'id'
                   ? 'Menyiapkan koneksi realtime...'
@@ -579,134 +634,5 @@ IMPORTANT: The user prefers Indonesian (Bahasa Indonesia). Please respond primar
 
   return baseInstructions;
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.9)',
-  },
-  closeButton: {
-    position: 'absolute',
-    top: 60,
-    right: 24,
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 10,
-  },
-  content: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 32,
-  },
-  stateIcon: {
-    marginBottom: 24,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  realtimeBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    marginBottom: 24,
-  },
-  realtimeDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginRight: 6,
-  },
-  realtimeText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: 'rgba(255, 255, 255, 0.8)',
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-  },
-  orbContainer: {
-    width: ORB_SIZE * 2,
-    height: ORB_SIZE * 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  ring: {
-    position: 'absolute',
-    width: ORB_SIZE,
-    height: ORB_SIZE,
-    borderRadius: ORB_SIZE / 2,
-    borderWidth: 2,
-  },
-  orb: {
-    width: ORB_SIZE,
-    height: ORB_SIZE,
-    borderRadius: ORB_SIZE / 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 16,
-    elevation: 10,
-  },
-  orbInner: {
-    position: 'absolute',
-    width: ORB_SIZE * 0.8,
-    height: ORB_SIZE * 0.8,
-    borderRadius: (ORB_SIZE * 0.8) / 2,
-    opacity: 0.3,
-  },
-  orbIcon: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  statusText: {
-    marginTop: 40,
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#FFFFFF',
-    textAlign: 'center',
-  },
-  transcriptContainer: {
-    marginTop: 24,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderRadius: 12,
-    maxWidth: SCREEN_WIDTH * 0.85,
-  },
-  transcriptLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: 'rgba(255, 255, 255, 0.5)',
-    marginBottom: 4,
-  },
-  transcriptText: {
-    fontSize: 16,
-    color: 'rgba(255, 255, 255, 0.9)',
-    lineHeight: 22,
-  },
-  instructions: {
-    position: 'absolute',
-    bottom: 80,
-    left: 32,
-    right: 32,
-  },
-  instructionText: {
-    fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.5)',
-    textAlign: 'center',
-  },
-});
 
 export default VoiceChatModal;

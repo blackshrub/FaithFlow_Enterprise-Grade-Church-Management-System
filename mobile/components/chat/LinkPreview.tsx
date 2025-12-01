@@ -7,25 +7,17 @@
  * - Shows title, description, and image
  * - Caches previews for performance
  * - Graceful fallback for failed fetches
+ *
+ * Styling: NativeWind-first with inline style for dynamic values
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
-import {
-  View,
-  Pressable,
-  Linking,
-  StyleSheet,
-  ActivityIndicator,
-} from 'react-native';
+import { View, Text, Pressable, Linking, ActivityIndicator } from 'react-native';
 import { Image } from 'expo-image';
 import * as Haptics from 'expo-haptics';
 import { ExternalLink } from 'lucide-react-native';
 
-import { Text } from '@/components/ui/text';
-import { HStack } from '@/components/ui/hstack';
-import { VStack } from '@/components/ui/vstack';
-import { Icon } from '@/components/ui/icon';
-import { colors, borderRadius } from '@/constants/theme';
+import { colors } from '@/constants/theme';
 
 // =============================================================================
 // TYPES
@@ -155,13 +147,13 @@ export function LinkPreview({
   // Loading state
   if (loading) {
     return (
-      <View style={[styles.container, { backgroundColor }]}>
-        <HStack space="sm" className="items-center p-3">
+      <View className="rounded-lg overflow-hidden mt-2 mb-1" style={{ backgroundColor }}>
+        <View className="flex-row items-center p-3 gap-2">
           <ActivityIndicator size="small" color={colors.gray[400]} />
-          <Text style={styles.loadingText} numberOfLines={1}>
+          <Text className="text-xs text-gray-400 italic" numberOfLines={1}>
             Loading preview...
           </Text>
-        </HStack>
+        </View>
       </View>
     );
   }
@@ -170,13 +162,13 @@ export function LinkPreview({
   if (error || !metadata) {
     return (
       <Pressable onPress={handlePress}>
-        <View style={[styles.container, { backgroundColor }]}>
-          <HStack space="sm" className="items-center p-3">
-            <Icon as={ExternalLink} size="sm" style={{ color: colors.gray[500] }} />
-            <Text style={styles.domainText} numberOfLines={1}>
+        <View className="rounded-lg overflow-hidden mt-2 mb-1" style={{ backgroundColor }}>
+          <View className="flex-row items-center p-3 gap-2">
+            <ExternalLink size={16} color={colors.gray[500]} />
+            <Text className="text-xs text-gray-500" numberOfLines={1}>
               {domain}
             </Text>
-          </HStack>
+          </View>
         </View>
       </Pressable>
     );
@@ -186,25 +178,25 @@ export function LinkPreview({
   if (compact) {
     return (
       <Pressable onPress={handlePress}>
-        <View style={[styles.container, { backgroundColor }]}>
-          <HStack space="sm" className="items-center p-2">
+        <View className="rounded-lg overflow-hidden mt-2 mb-1" style={{ backgroundColor }}>
+          <View className="flex-row items-center p-2 gap-2">
             {metadata.favicon && (
               <Image
                 source={{ uri: metadata.favicon }}
-                style={styles.favicon}
+                className="w-4 h-4 rounded-sm"
                 contentFit="contain"
               />
             )}
-            <VStack className="flex-1">
-              <Text style={styles.titleCompact} numberOfLines={1}>
+            <View className="flex-1">
+              <Text className="text-[13px] font-medium text-gray-900" numberOfLines={1}>
                 {metadata.title || domain}
               </Text>
-              <Text style={styles.domainText} numberOfLines={1}>
+              <Text className="text-xs text-gray-500" numberOfLines={1}>
                 {domain}
               </Text>
-            </VStack>
-            <Icon as={ExternalLink} size="sm" style={{ color: colors.gray[400] }} />
-          </HStack>
+            </View>
+            <ExternalLink size={16} color={colors.gray[400]} />
+          </View>
         </View>
       </Pressable>
     );
@@ -213,102 +205,61 @@ export function LinkPreview({
   // Full view
   return (
     <Pressable onPress={handlePress}>
-      <View style={[styles.container, { backgroundColor }]}>
+      <View className="rounded-lg overflow-hidden mt-2 mb-1" style={{ backgroundColor }}>
         {/* Image */}
         {metadata.image && (
           <Image
             source={{ uri: metadata.image }}
-            style={styles.image}
+            className="w-full h-[150px]"
             contentFit="cover"
           />
         )}
 
         {/* Content */}
-        <VStack space="xs" className="p-3">
+        <View className="p-3 gap-1">
           {/* Site name with favicon */}
-          <HStack space="xs" className="items-center">
+          <View className="flex-row items-center gap-1">
             {metadata.favicon && (
               <Image
                 source={{ uri: metadata.favicon }}
-                style={styles.favicon}
+                className="w-4 h-4 rounded-sm"
                 contentFit="contain"
               />
             )}
-            <Text style={styles.siteName} numberOfLines={1}>
+            <Text
+              className="text-xs text-gray-500 uppercase"
+              style={{ letterSpacing: 0.5 }}
+              numberOfLines={1}
+            >
               {metadata.siteName || domain}
             </Text>
-          </HStack>
+          </View>
 
           {/* Title */}
           {metadata.title && (
-            <Text style={styles.title} numberOfLines={2}>
+            <Text
+              className="text-sm font-semibold text-gray-900"
+              style={{ lineHeight: 18 }}
+              numberOfLines={2}
+            >
               {metadata.title}
             </Text>
           )}
 
           {/* Description */}
           {metadata.description && (
-            <Text style={styles.description} numberOfLines={3}>
+            <Text
+              className="text-[13px] text-gray-600"
+              style={{ lineHeight: 18 }}
+              numberOfLines={3}
+            >
               {metadata.description}
             </Text>
           )}
-        </VStack>
+        </View>
       </View>
     </Pressable>
   );
 }
-
-// =============================================================================
-// STYLES
-// =============================================================================
-
-const styles = StyleSheet.create({
-  container: {
-    borderRadius: borderRadius.lg,
-    overflow: 'hidden',
-    marginTop: 8,
-    marginBottom: 4,
-  },
-  image: {
-    width: '100%',
-    height: 150,
-  },
-  favicon: {
-    width: 16,
-    height: 16,
-    borderRadius: 2,
-  },
-  siteName: {
-    fontSize: 12,
-    color: colors.gray[500],
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  title: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.gray[900],
-    lineHeight: 18,
-  },
-  titleCompact: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: colors.gray[900],
-  },
-  description: {
-    fontSize: 13,
-    color: colors.gray[600],
-    lineHeight: 18,
-  },
-  domainText: {
-    fontSize: 12,
-    color: colors.gray[500],
-  },
-  loadingText: {
-    fontSize: 12,
-    color: colors.gray[400],
-    fontStyle: 'italic',
-  },
-});
 
 export default LinkPreview;

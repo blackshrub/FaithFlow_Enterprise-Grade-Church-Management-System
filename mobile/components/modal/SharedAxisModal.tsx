@@ -10,22 +10,17 @@
  * - Duration: 260ms enter, 220ms exit
  * - Backdrop: BlurView with 50% dim
  *
+ * Styling: NativeWind-first with StyleSheet for absoluteFill utilities only
+ *
  * FIXED: Uses single Animated.View with both entering/exiting instead of
  * conditional render (which broke exit animations because swapping components
  * doesn't trigger entering/exiting properly).
  */
 
 import React, { useEffect, useCallback, useState, useRef } from 'react';
-import {
-  StyleSheet,
-  Pressable,
-  Dimensions,
-  BackHandler,
-} from 'react-native';
+import { StyleSheet, Pressable, Dimensions, BackHandler } from 'react-native';
 import type { ViewStyle } from 'react-native';
 import Animated, {
-  FadeIn,
-  FadeOut,
   runOnJS,
   useAnimatedStyle,
   useSharedValue,
@@ -167,7 +162,8 @@ export function SharedAxisModal({
 
   return (
     <Animated.View
-      style={styles.overlay}
+      className="absolute inset-0 justify-center items-center"
+      style={{ zIndex: 1000 }}
       pointerEvents={visible ? 'auto' : 'none'}
     >
       {/* Backdrop with blur - uses animated opacity */}
@@ -175,19 +171,17 @@ export function SharedAxisModal({
         style={[StyleSheet.absoluteFill, backdropAnimatedStyle]}
       >
         <Pressable
-          style={styles.backdrop}
+          style={StyleSheet.absoluteFill}
           onPress={closeOnBackdropPress ? onClose : undefined}
         >
           <BlurView
             intensity={SHARED_AXIS_Y_CONFIG.backdrop.blurIntensity}
-            style={styles.blur}
+            style={StyleSheet.absoluteFill}
             tint="dark"
           />
           <Animated.View
-            style={[
-              styles.dim,
-              { opacity: SHARED_AXIS_Y_CONFIG.backdrop.dimOpacity },
-            ]}
+            className="absolute inset-0 bg-black"
+            style={{ opacity: SHARED_AXIS_Y_CONFIG.backdrop.dimOpacity }}
           />
         </Pressable>
       </Animated.View>
@@ -202,7 +196,7 @@ export function SharedAxisModal({
             }
           })}
           exiting={PMotion.sharedAxisYExit}
-          style={[styles.content, style]}
+          style={[{ maxWidth: SCREEN_WIDTH - 32, maxHeight: SCREEN_HEIGHT - 100 }, style]}
           pointerEvents="box-none"
         >
           {children}
@@ -211,33 +205,6 @@ export function SharedAxisModal({
     </Animated.View>
   );
 }
-
-// ============================================================================
-// STYLES
-// ============================================================================
-
-const styles = StyleSheet.create({
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-    zIndex: 1000,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  backdrop: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  blur: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  dim: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#000000',
-  },
-  content: {
-    maxWidth: SCREEN_WIDTH - 32,
-    maxHeight: SCREEN_HEIGHT - 100,
-  },
-});
 
 // ============================================================================
 // EXPORTS

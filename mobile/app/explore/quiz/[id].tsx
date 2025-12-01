@@ -1,6 +1,11 @@
 /**
  * Daily Quiz Challenge Screen
  *
+ * Styling Strategy:
+ * - NativeWind (className) for all layout and styling
+ * - Inline style for ExploreColors
+ * - React Native Reanimated for animations
+ *
  * Design: Gamified learning experience
  * - Progress bar at top
  * - Question with options
@@ -10,10 +15,10 @@
  */
 
 import React, { useEffect, useState } from 'react';
-import { ScrollView, View, Text, StyleSheet, Pressable } from 'react-native';
+import { ScrollView, View, Text, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ExploreColors, ExploreTypography, ExploreSpacing } from '@/constants/explore/designSystem';
+import { ExploreColors } from '@/constants/explore/designSystem';
 import {
   useContentById,
   useTrackContentStart,
@@ -23,13 +28,7 @@ import { useExploreStore } from '@/stores/explore/exploreStore';
 import type { DailyQuiz, QuizQuestion } from '@/types/explore';
 import { ArrowLeft, Check, X, Lightbulb, ArrowRight } from 'lucide-react-native';
 import { DailyQuizSkeleton } from '@/components/explore/LoadingSkeleton';
-import Animated, {
-  FadeInDown,
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-  withTiming,
-} from 'react-native-reanimated';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 
 interface QuizProgress {
@@ -146,13 +145,13 @@ export default function DailyQuizScreen() {
 
   if (isLoading || !quiz || !currentQuestion) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
-        <View style={styles.header}>
-          <Pressable onPress={() => router.back()} style={styles.backButton}>
+      <SafeAreaView className="flex-1 bg-white" edges={['top']}>
+        <View className="flex-row justify-between items-center px-3 py-2">
+          <Pressable onPress={() => router.back()} className="p-1">
             <ArrowLeft size={24} color={ExploreColors.neutral[900]} />
           </Pressable>
         </View>
-        <ScrollView contentContainerStyle={styles.loadingContainer}>
+        <ScrollView contentContainerClassName="p-5">
           <DailyQuizSkeleton />
         </ScrollView>
       </SafeAreaView>
@@ -161,7 +160,6 @@ export default function DailyQuizScreen() {
 
   const questionText = currentQuestion.question[contentLanguage] || currentQuestion.question.en;
   // Options can be either array of {en, id} objects OR {en: string[], id: string[]}
-  // Handle both formats for flexibility
   const rawOptions = currentQuestion.options;
   const options = Array.isArray(rawOptions) && rawOptions.length > 0
     ? (typeof rawOptions[0] === 'object' && 'en' in rawOptions[0]
@@ -170,7 +168,6 @@ export default function DailyQuizScreen() {
     : (rawOptions as any)?.[contentLanguage] || (rawOptions as any)?.en || [];
   const explanation =
     currentQuestion.explanation?.[contentLanguage] || currentQuestion.explanation?.en;
-  // Handle both correct_answer and correct_answer_index
   const correctAnswerIndex = (currentQuestion as any).correct_answer_index ?? currentQuestion.correct_answer;
 
   const currentAnswer = progress.answers.find(
@@ -179,12 +176,12 @@ export default function DailyQuizScreen() {
   const isCorrect = currentAnswer?.isCorrect;
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView className="flex-1 bg-white" edges={['top']}>
       {/* Header */}
-      <View style={styles.header}>
+      <View className="flex-row justify-between items-center px-3 py-2">
         <Pressable
           onPress={() => router.back()}
-          style={styles.backButton}
+          className="p-1"
           accessibilityRole="button"
           accessibilityLabel={contentLanguage === 'en' ? 'Go back' : 'Kembali'}
           accessibilityHint={
@@ -197,7 +194,8 @@ export default function DailyQuizScreen() {
         </Pressable>
 
         <View
-          style={styles.questionCounter}
+          className="px-3 py-1 rounded-2xl"
+          style={{ backgroundColor: ExploreColors.secondary[50] }}
           accessible={true}
           accessibilityRole="text"
           accessibilityLabel={
@@ -206,17 +204,20 @@ export default function DailyQuizScreen() {
               : `Pertanyaan ${progress.currentQuestionIndex + 1} dari ${totalQuestions}`
           }
         >
-          <Text style={styles.questionCounterText}>
+          <Text
+            className="text-base font-bold"
+            style={{ color: ExploreColors.secondary[700] }}
+          >
             {progress.currentQuestionIndex + 1} / {totalQuestions}
           </Text>
         </View>
 
-        <View style={{ width: 40 }} />
+        <View className="w-10" />
       </View>
 
       {/* Progress Bar */}
       <View
-        style={styles.progressBarContainer}
+        className="px-5 pb-3"
         accessible={true}
         accessibilityRole="progressbar"
         accessibilityLabel={
@@ -230,42 +231,50 @@ export default function DailyQuizScreen() {
           now: Math.round(progressPercentage),
         }}
       >
-        <View style={styles.progressBarBackground}>
+        <View
+          className="h-2 rounded overflow-hidden"
+          style={{ backgroundColor: ExploreColors.neutral[100] }}
+        >
           <Animated.View
-            style={[
-              styles.progressBarFill,
-              {
-                width: `${progressPercentage}%`,
-              },
-            ]}
+            className="h-full rounded"
+            style={{
+              width: `${progressPercentage}%`,
+              backgroundColor: ExploreColors.secondary[500],
+            }}
           />
         </View>
       </View>
 
       {/* Content */}
       <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        className="flex-1"
+        contentContainerClassName="pb-6"
         showsVerticalScrollIndicator={false}
       >
-        <Animated.View entering={FadeInDown.duration(400)} style={styles.contentContainer}>
+        <Animated.View entering={FadeInDown.duration(400)} className="px-5 pt-4">
           {/* Difficulty Badge */}
-          <View style={styles.difficultyContainer}>
+          <View className="mb-3">
             <View
-              style={[
-                styles.difficultyBadge,
-                quiz.difficulty === 'easy' && styles.difficultyEasy,
-                quiz.difficulty === 'medium' && styles.difficultyMedium,
-                quiz.difficulty === 'hard' && styles.difficultyHard,
-              ]}
+              className="self-start px-3 py-1 rounded-xl"
+              style={{
+                backgroundColor:
+                  quiz.difficulty === 'easy'
+                    ? ExploreColors.success[50]
+                    : quiz.difficulty === 'medium'
+                    ? ExploreColors.warning[50]
+                    : ExploreColors.error[50],
+              }}
             >
               <Text
-                style={[
-                  styles.difficultyText,
-                  quiz.difficulty === 'easy' && styles.difficultyTextEasy,
-                  quiz.difficulty === 'medium' && styles.difficultyTextMedium,
-                  quiz.difficulty === 'hard' && styles.difficultyTextHard,
-                ]}
+                className="text-sm font-bold uppercase"
+                style={{
+                  color:
+                    quiz.difficulty === 'easy'
+                      ? ExploreColors.success[700]
+                      : quiz.difficulty === 'medium'
+                      ? ExploreColors.warning[700]
+                      : ExploreColors.error[700],
+                }}
               >
                 {quiz.difficulty === 'easy'
                   ? contentLanguage === 'en'
@@ -284,14 +293,15 @@ export default function DailyQuizScreen() {
 
           {/* Question */}
           <Text
-            style={styles.questionText}
+            className="text-2xl font-bold leading-9 mb-6"
+            style={{ color: ExploreColors.neutral[900] }}
             accessibilityRole="header"
           >
             {questionText}
           </Text>
 
           {/* Options */}
-          <View style={styles.optionsContainer}>
+          <View className="mb-6">
             {options.map((option: string, index: number) => {
               const isSelected = selectedOption === index;
               const isCorrectOption = index === correctAnswerIndex;
@@ -303,12 +313,23 @@ export default function DailyQuizScreen() {
                   key={index}
                   onPress={() => handleOptionSelect(index)}
                   disabled={isAnswerChecked}
-                  style={[
-                    styles.optionCard,
-                    isSelected && !isAnswerChecked && styles.optionCardSelected,
-                    showCorrect && styles.optionCardCorrect,
-                    showIncorrect && styles.optionCardIncorrect,
-                  ]}
+                  className="rounded-2xl p-4 mb-3 border-2"
+                  style={{
+                    backgroundColor: showCorrect
+                      ? ExploreColors.success[50]
+                      : showIncorrect
+                      ? ExploreColors.error[50]
+                      : isSelected && !isAnswerChecked
+                      ? ExploreColors.primary[50]
+                      : '#FFFFFF',
+                    borderColor: showCorrect
+                      ? ExploreColors.success[500]
+                      : showIncorrect
+                      ? ExploreColors.error[500]
+                      : isSelected && !isAnswerChecked
+                      ? ExploreColors.primary[500]
+                      : ExploreColors.neutral[200],
+                  }}
                   accessibilityRole="radio"
                   accessibilityLabel={
                     contentLanguage === 'en'
@@ -336,28 +357,47 @@ export default function DailyQuizScreen() {
                     checked: showCorrect,
                   }}
                 >
-                  <View style={styles.optionContent}>
+                  <View className="flex-row items-center">
                     <View
-                      style={[
-                        styles.optionRadio,
-                        isSelected && !isAnswerChecked && styles.optionRadioSelected,
-                        showCorrect && styles.optionRadioCorrect,
-                        showIncorrect && styles.optionRadioIncorrect,
-                      ]}
+                      className="w-6 h-6 rounded-full border-2 items-center justify-center mr-3"
+                      style={{
+                        backgroundColor: showCorrect
+                          ? ExploreColors.success[500]
+                          : showIncorrect
+                          ? ExploreColors.error[500]
+                          : isSelected && !isAnswerChecked
+                          ? ExploreColors.primary[500]
+                          : 'transparent',
+                        borderColor: showCorrect
+                          ? ExploreColors.success[500]
+                          : showIncorrect
+                          ? ExploreColors.error[500]
+                          : isSelected && !isAnswerChecked
+                          ? ExploreColors.primary[500]
+                          : ExploreColors.neutral[300],
+                      }}
                     >
                       {showCorrect && <Check size={16} color="#FFFFFF" />}
                       {showIncorrect && <X size={16} color="#FFFFFF" />}
                       {!showCorrect && !showIncorrect && isSelected && (
-                        <View style={styles.optionRadioDot} />
+                        <View className="w-2.5 h-2.5 rounded-full bg-white" />
                       )}
                     </View>
                     <Text
-                      style={[
-                        styles.optionText,
-                        isSelected && !isAnswerChecked && styles.optionTextSelected,
-                        showCorrect && styles.optionTextCorrect,
-                        showIncorrect && styles.optionTextIncorrect,
-                      ]}
+                      className={`flex-1 text-base leading-6 ${
+                        showCorrect || showIncorrect || (isSelected && !isAnswerChecked)
+                          ? 'font-semibold'
+                          : ''
+                      }`}
+                      style={{
+                        color: showCorrect
+                          ? ExploreColors.success[900]
+                          : showIncorrect
+                          ? ExploreColors.error[900]
+                          : isSelected && !isAnswerChecked
+                          ? ExploreColors.primary[900]
+                          : ExploreColors.neutral[800],
+                      }}
                     >
                       {option}
                     </Text>
@@ -369,24 +409,42 @@ export default function DailyQuizScreen() {
 
           {/* Explanation */}
           {showExplanation && explanation && (
-            <Animated.View entering={FadeInDown.duration(400)} style={styles.explanationCard}>
-              <View style={styles.explanationHeader}>
+            <Animated.View
+              entering={FadeInDown.duration(400)}
+              className="rounded-2xl p-4 mb-3"
+              style={{ backgroundColor: ExploreColors.secondary[50] }}
+            >
+              <View className="flex-row items-center mb-2">
                 <Lightbulb size={20} color={ExploreColors.secondary[600]} />
-                <Text style={styles.explanationTitle}>
+                <Text
+                  className="text-lg font-semibold ml-1"
+                  style={{ color: ExploreColors.secondary[800] }}
+                >
                   {contentLanguage === 'en' ? 'Explanation' : 'Penjelasan'}
                 </Text>
               </View>
-              <Text style={styles.explanationText}>{explanation}</Text>
+              <Text
+                className="text-base leading-6"
+                style={{ color: ExploreColors.neutral[800] }}
+              >
+                {explanation}
+              </Text>
             </Animated.View>
           )}
 
           {/* Scripture Reference */}
           {showExplanation && currentQuestion.scripture_reference && (
-            <View style={styles.scriptureRefCard}>
-              <Text style={styles.scriptureRefLabel}>
+            <View className="flex-row items-center mb-4">
+              <Text
+                className="text-sm mr-1"
+                style={{ color: ExploreColors.neutral[600] }}
+              >
                 {contentLanguage === 'en' ? 'Based on:' : 'Berdasarkan:'}
               </Text>
-              <Text style={styles.scriptureRefText}>
+              <Text
+                className="text-sm font-semibold"
+                style={{ color: ExploreColors.spiritual[700] }}
+              >
                 {typeof currentQuestion.scripture_reference === 'string'
                   ? currentQuestion.scripture_reference
                   : `${currentQuestion.scripture_reference.book} ${currentQuestion.scripture_reference.chapter}:${currentQuestion.scripture_reference.verse_start}${currentQuestion.scripture_reference.verse_end ? `-${currentQuestion.scripture_reference.verse_end}` : ''}`}
@@ -395,16 +453,20 @@ export default function DailyQuizScreen() {
           )}
 
           {/* Bottom spacing */}
-          <View style={{ height: 100 }} />
+          <View className="h-[100px]" />
         </Animated.View>
       </ScrollView>
 
       {/* Action Button - Only shows after answer is checked */}
       {isAnswerChecked && (
-        <View style={styles.bottomContainer}>
+        <View
+          className="absolute bottom-0 left-0 right-0 p-5 bg-white border-t"
+          style={{ borderTopColor: ExploreColors.neutral[100] }}
+        >
           <Pressable
             onPress={handleNextQuestion}
-            style={styles.actionButton}
+            className="flex-row items-center justify-center py-3 rounded-2xl"
+            style={{ backgroundColor: ExploreColors.secondary[500] }}
             accessibilityRole="button"
             accessibilityLabel={
               progress.currentQuestionIndex < totalQuestions - 1
@@ -425,7 +487,7 @@ export default function DailyQuizScreen() {
                 : 'Ketuk dua kali untuk melihat nilai akhir Anda'
             }
           >
-            <Text style={styles.actionButtonText}>
+            <Text className="text-base font-semibold text-white mr-2">
               {progress.currentQuestionIndex < totalQuestions - 1
                 ? contentLanguage === 'en'
                   ? 'Next Question'
@@ -441,240 +503,3 @@ export default function DailyQuizScreen() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: ExploreSpacing.md,
-    paddingVertical: ExploreSpacing.sm,
-  },
-  backButton: {
-    padding: ExploreSpacing.xs,
-  },
-  questionCounter: {
-    backgroundColor: ExploreColors.secondary[50],
-    paddingHorizontal: ExploreSpacing.md,
-    paddingVertical: ExploreSpacing.xs,
-    borderRadius: 16,
-  },
-  questionCounterText: {
-    ...ExploreTypography.body,
-    color: ExploreColors.secondary[700],
-    fontWeight: '700',
-  },
-  progressBarContainer: {
-    paddingHorizontal: ExploreSpacing.screenMargin,
-    paddingBottom: ExploreSpacing.md,
-  },
-  progressBarBackground: {
-    height: 8,
-    backgroundColor: ExploreColors.neutral[100],
-    borderRadius: 4,
-    overflow: 'hidden',
-  },
-  progressBarFill: {
-    height: '100%',
-    backgroundColor: ExploreColors.secondary[500],
-    borderRadius: 4,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: ExploreSpacing.xl,
-  },
-  loadingContainer: {
-    padding: ExploreSpacing.screenMargin,
-  },
-  contentContainer: {
-    paddingHorizontal: ExploreSpacing.screenMargin,
-    paddingTop: ExploreSpacing.lg,
-  },
-  difficultyContainer: {
-    marginBottom: ExploreSpacing.md,
-  },
-  difficultyBadge: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: ExploreSpacing.md,
-    paddingVertical: ExploreSpacing.xs,
-    borderRadius: 12,
-  },
-  difficultyEasy: {
-    backgroundColor: ExploreColors.success[50],
-  },
-  difficultyMedium: {
-    backgroundColor: ExploreColors.warning[50],
-  },
-  difficultyHard: {
-    backgroundColor: ExploreColors.error[50],
-  },
-  difficultyText: {
-    ...ExploreTypography.caption,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-  },
-  difficultyTextEasy: {
-    color: ExploreColors.success[700],
-  },
-  difficultyTextMedium: {
-    color: ExploreColors.warning[700],
-  },
-  difficultyTextHard: {
-    color: ExploreColors.error[700],
-  },
-  questionText: {
-    ...ExploreTypography.h2,
-    color: ExploreColors.neutral[900],
-    lineHeight: 36,
-    marginBottom: ExploreSpacing.xl,
-  },
-  optionsContainer: {
-    marginBottom: ExploreSpacing.xl,
-  },
-  optionCard: {
-    backgroundColor: '#FFFFFF',
-    borderWidth: 2,
-    borderColor: ExploreColors.neutral[200],
-    borderRadius: 16,
-    padding: ExploreSpacing.lg,
-    marginBottom: ExploreSpacing.md,
-  },
-  optionCardSelected: {
-    borderColor: ExploreColors.primary[500],
-    backgroundColor: ExploreColors.primary[50],
-  },
-  optionCardCorrect: {
-    borderColor: ExploreColors.success[500],
-    backgroundColor: ExploreColors.success[50],
-  },
-  optionCardIncorrect: {
-    borderColor: ExploreColors.error[500],
-    backgroundColor: ExploreColors.error[50],
-  },
-  optionContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  optionRadio: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: ExploreColors.neutral[300],
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: ExploreSpacing.md,
-  },
-  optionRadioSelected: {
-    borderColor: ExploreColors.primary[500],
-    backgroundColor: ExploreColors.primary[500],
-  },
-  optionRadioCorrect: {
-    borderColor: ExploreColors.success[500],
-    backgroundColor: ExploreColors.success[500],
-  },
-  optionRadioIncorrect: {
-    borderColor: ExploreColors.error[500],
-    backgroundColor: ExploreColors.error[500],
-  },
-  optionRadioDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: '#FFFFFF',
-  },
-  optionText: {
-    ...ExploreTypography.body,
-    color: ExploreColors.neutral[800],
-    flex: 1,
-    lineHeight: 24,
-  },
-  optionTextSelected: {
-    color: ExploreColors.primary[900],
-    fontWeight: '600',
-  },
-  optionTextCorrect: {
-    color: ExploreColors.success[900],
-    fontWeight: '600',
-  },
-  optionTextIncorrect: {
-    color: ExploreColors.error[900],
-    fontWeight: '600',
-  },
-  explanationCard: {
-    backgroundColor: ExploreColors.secondary[50],
-    borderRadius: 16,
-    padding: ExploreSpacing.lg,
-    marginBottom: ExploreSpacing.md,
-  },
-  explanationHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: ExploreSpacing.sm,
-  },
-  explanationIcon: {
-    marginRight: ExploreSpacing.xs,
-  },
-  explanationTitle: {
-    ...ExploreTypography.h4,
-    color: ExploreColors.secondary[800],
-  },
-  explanationText: {
-    ...ExploreTypography.body,
-    color: ExploreColors.neutral[800],
-    lineHeight: 24,
-  },
-  scriptureRefCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: ExploreSpacing.lg,
-  },
-  scriptureRefIcon: {
-    marginRight: ExploreSpacing.xs,
-  },
-  scriptureRefLabel: {
-    ...ExploreTypography.caption,
-    color: ExploreColors.neutral[600],
-    marginRight: ExploreSpacing.xs,
-  },
-  scriptureRefText: {
-    ...ExploreTypography.caption,
-    color: ExploreColors.spiritual[700],
-    fontWeight: '600',
-  },
-  bottomContainer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    padding: ExploreSpacing.screenMargin,
-    backgroundColor: '#FFFFFF',
-    borderTopWidth: 1,
-    borderTopColor: ExploreColors.neutral[100],
-  },
-  actionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: ExploreColors.secondary[500],
-    paddingVertical: ExploreSpacing.md,
-    borderRadius: 16,
-  },
-  actionButtonDisabled: {
-    opacity: 0.4,
-  },
-  actionButtonIcon: {
-    marginRight: ExploreSpacing.sm,
-  },
-  actionButtonText: {
-    ...ExploreTypography.body,
-    color: '#FFFFFF',
-    fontWeight: '600',
-  },
-});

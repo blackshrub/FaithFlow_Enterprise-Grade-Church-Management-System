@@ -8,7 +8,7 @@
  */
 
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, Modal, Pressable, Dimensions } from 'react-native';
+import { View, Text, Modal, Pressable, Dimensions } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -123,8 +123,12 @@ function ConfettiParticle({ index, color }: { index: number; color: string }) {
   return (
     <Animated.View
       style={[
-        styles.confettiParticle,
         {
+          position: 'absolute',
+          top: 0,
+          width: 10,
+          height: 10,
+          borderRadius: 5,
           backgroundColor: color,
         },
         animatedStyle,
@@ -192,7 +196,11 @@ export function CelebrationModal() {
       animationType="none"
       onRequestClose={closeCelebration}
     >
-      <BlurView intensity={80} style={styles.backdrop}>
+      <BlurView
+        intensity={80}
+        className="flex-1 items-center justify-center"
+        style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
+      >
         {/* Confetti */}
         {Array.from({ length: 20 }).map((_, index) => (
           <ConfettiParticle
@@ -203,26 +211,83 @@ export function CelebrationModal() {
         ))}
 
         {/* Content */}
-        <Animated.View style={[styles.container, containerStyle]}>
+        <Animated.View
+          className="items-center bg-white"
+          style={[
+            {
+              width: width * 0.85,
+              borderRadius: 28,
+              paddingTop: 32,
+              paddingBottom: 28,
+              paddingHorizontal: ExploreSpacing['2xl'],
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 10 },
+              shadowOpacity: 0.3,
+              shadowRadius: 20,
+              elevation: 10,
+            },
+            containerStyle,
+          ]}
+        >
           {/* Icon */}
-          <Animated.View style={[styles.iconContainer, iconStyle]}>
+          <Animated.View
+            style={[
+              {
+                marginBottom: ExploreSpacing.xl,
+                padding: ExploreSpacing.lg,
+                borderRadius: 50,
+                backgroundColor: ExploreColors.neutral[50],
+              },
+              iconStyle,
+            ]}
+          >
             {config.icon}
           </Animated.View>
 
           {/* Title */}
-          <Text style={styles.title}>{config.title}</Text>
+          <Text
+            className="text-center"
+            style={{
+              ...ExploreTypography.h2,
+              color: ExploreColors.neutral[900],
+              marginBottom: ExploreSpacing.md,
+            }}
+          >
+            {config.title}
+          </Text>
 
           {/* Message */}
-          <Text style={styles.message}>{config.message}</Text>
+          <Text
+            className="text-center"
+            style={{
+              ...ExploreTypography.body,
+              color: ExploreColors.neutral[600],
+              marginBottom: ExploreSpacing.xl,
+              lineHeight: 24,
+              paddingHorizontal: ExploreSpacing.sm,
+            }}
+          >
+            {config.message}
+          </Text>
 
           {/* Sparkles decoration */}
-          <View style={styles.sparklesContainer}>
+          <View style={{ marginBottom: ExploreSpacing.lg }}>
             <Sparkles size={24} color={config.color} />
           </View>
 
           {/* Close button */}
-          <Pressable style={styles.button} onPress={closeCelebration}>
-            <Text style={styles.buttonText}>Continue</Text>
+          <Pressable
+            className="items-center"
+            style={{
+              backgroundColor: ExploreColors.primary[500],
+              paddingHorizontal: ExploreSpacing['2xl'],
+              paddingVertical: ExploreSpacing.md + 2,
+              borderRadius: 16,
+              minWidth: 180,
+            }}
+            onPress={closeCelebration}
+          >
+            <Text style={{ ...ExploreTypography.body, color: '#FFFFFF', fontWeight: '600' }}>Continue</Text>
           </Pressable>
         </Animated.View>
       </BlurView>
@@ -230,68 +295,3 @@ export function CelebrationModal() {
   );
 }
 
-const styles = StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
-  container: {
-    width: width * 0.85,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 28,
-    paddingTop: 32,
-    paddingBottom: 28,
-    paddingHorizontal: ExploreSpacing['2xl'],
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.3,
-    shadowRadius: 20,
-    elevation: 10,
-  },
-  iconContainer: {
-    marginBottom: ExploreSpacing.xl,
-    padding: ExploreSpacing.lg,
-    borderRadius: 50,
-    backgroundColor: ExploreColors.neutral[50],
-  },
-  title: {
-    ...ExploreTypography.h2,
-    color: ExploreColors.neutral[900],
-    textAlign: 'center',
-    marginBottom: ExploreSpacing.md,
-  },
-  message: {
-    ...ExploreTypography.body,
-    color: ExploreColors.neutral[600],
-    textAlign: 'center',
-    marginBottom: ExploreSpacing.xl,
-    lineHeight: 24,
-    paddingHorizontal: ExploreSpacing.sm,
-  },
-  sparklesContainer: {
-    marginBottom: ExploreSpacing.lg,
-  },
-  button: {
-    backgroundColor: ExploreColors.primary[500],
-    paddingHorizontal: ExploreSpacing['2xl'],
-    paddingVertical: ExploreSpacing.md + 2,
-    borderRadius: 16,
-    minWidth: 180,
-    alignItems: 'center',
-  },
-  buttonText: {
-    ...ExploreTypography.body,
-    color: '#FFFFFF',
-    fontWeight: '600',
-  },
-  confettiParticle: {
-    position: 'absolute',
-    top: 0,
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-  },
-});

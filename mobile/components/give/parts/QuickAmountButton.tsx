@@ -2,10 +2,11 @@
  * QuickAmountButton - Memoized Quick Amount Selection Button
  *
  * Used in the amount step for quick amount selection.
+ * Styling: NativeWind-first with inline style for dynamic values
  */
 
 import React, { memo, useCallback } from 'react';
-import { Text, StyleSheet } from 'react-native';
+import { Text } from 'react-native';
 import * as Haptics from 'expo-haptics';
 
 import { PremiumCard3 } from '@/components/ui/premium-card';
@@ -22,16 +23,12 @@ export interface QuickAmountButtonProps {
 }
 
 // =============================================================================
-// COLORS
+// COLORS (for dynamic text color)
 // =============================================================================
 
 const Colors = {
-  neutral: {
-    700: '#404040',
-  },
-  gradient: {
-    end: '#0f3460',
-  },
+  neutral700: '#404040',
+  gradientEnd: '#0f3460',
 };
 
 // =============================================================================
@@ -53,33 +50,16 @@ export const QuickAmountButton = memo(function QuickAmountButton({
     <PremiumCard3
       selected={isSelected}
       onPress={handlePress}
-      innerStyle={styles.innerStyle}
+      innerStyle={{ paddingVertical: 14, paddingHorizontal: 8 }}
     >
-      <Text style={[styles.text, isSelected && styles.textSelected]}>
+      <Text
+        className="text-sm font-bold text-center"
+        style={{ color: isSelected ? Colors.gradientEnd : Colors.neutral700 }}
+      >
         {label}
       </Text>
     </PremiumCard3>
   );
-});
-
-// =============================================================================
-// STYLES
-// =============================================================================
-
-const styles = StyleSheet.create({
-  innerStyle: {
-    paddingVertical: 14,
-    paddingHorizontal: 8,
-  },
-  text: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: Colors.neutral[700],
-    textAlign: 'center',
-  },
-  textSelected: {
-    color: Colors.gradient.end,
-  },
 });
 
 export default QuickAmountButton;

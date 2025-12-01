@@ -17,13 +17,12 @@
 import React, { useCallback, useMemo, memo, forwardRef, Ref } from 'react';
 import {
   View,
-  Text,
-  StyleSheet,
   RefreshControl,
   ActivityIndicator,
   ViewStyle,
 } from 'react-native';
 import { FlashList, ListRenderItem } from '@shopify/flash-list';
+import { Text } from '@/components/ui/text';
 import type { StyleProp, ViewStyle as ContentStyle } from 'react-native';
 
 // ============================================================================
@@ -143,8 +142,8 @@ interface OptimizedListProps<T> {
 // ============================================================================
 
 const DefaultEmptyComponent = memo(({ text }: { text: string }) => (
-  <View style={styles.emptyContainer}>
-    <Text style={styles.emptyText}>{text}</Text>
+  <View className="flex-1 justify-center items-center py-[60px] px-5">
+    <Text className="text-base text-neutral-500 text-center">{text}</Text>
   </View>
 ));
 
@@ -155,7 +154,7 @@ DefaultEmptyComponent.displayName = 'DefaultEmptyComponent';
 // ============================================================================
 
 const LoadingComponent = memo(() => (
-  <View style={styles.loadingContainer}>
+  <View className="flex-1 justify-center items-center py-[60px]">
     <ActivityIndicator size="large" color="#4A90D9" />
   </View>
 ));
@@ -229,7 +228,7 @@ function OptimizedListInner<T>(
   // Don't render list if loading initial data
   if (isLoading && (!data || data.length === 0)) {
     return (
-      <View style={[styles.container, containerStyle]}>
+      <View className="flex-1" style={containerStyle}>
         <LoadingComponent />
       </View>
     );
@@ -265,33 +264,5 @@ function OptimizedListInner<T>(
 export const OptimizedList = forwardRef(OptimizedListInner) as <T>(
   props: OptimizedListProps<T> & { ref?: Ref<typeof FlashList<T>> }
 ) => React.ReactElement | null;
-
-// ============================================================================
-// STYLES
-// ============================================================================
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 60,
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 60,
-    paddingHorizontal: 20,
-  },
-  emptyText: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
-  },
-});
 
 export default OptimizedList;

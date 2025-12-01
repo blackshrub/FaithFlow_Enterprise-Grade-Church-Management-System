@@ -8,17 +8,11 @@
  * - Optional haptic feedback on focus
  *
  * Drop-in replacement for Input with premium feel.
+ * Styling: NativeWind-first with inline style for animated/dynamic values
  */
 
 import React, { useState, useCallback, useRef } from 'react';
-import {
-  View,
-  TextInput,
-  StyleSheet,
-  TextInputProps,
-  NativeSyntheticEvent,
-  TextInputFocusEventData,
-} from 'react-native';
+import { View, TextInput, TextInputProps } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -225,8 +219,8 @@ export function FocusableInput({
 
   return (
     <Animated.View
+      className={`flex-row items-center overflow-hidden ${isDisabled ? 'opacity-50' : ''}`}
       style={[
-        styles.container,
         variantStyles,
         {
           height: sizeStyles.height,
@@ -235,10 +229,11 @@ export function FocusableInput({
           shadowRadius: interaction.focus.shadow.ios.shadowRadius,
         },
         animatedContainerStyle,
-        isDisabled && styles.disabled,
       ]}
     >
-      {leftElement && <View style={styles.leftElement}>{leftElement}</View>}
+      {leftElement && (
+        <View className="pl-3 justify-center items-center">{leftElement}</View>
+      )}
 
       <TextInput
         ref={inputRef}
@@ -246,8 +241,8 @@ export function FocusableInput({
         onFocus={handleFocus}
         onBlur={handleBlur}
         placeholderTextColor={colors.text.placeholder}
+        className="flex-1 h-full p-0"
         style={[
-          styles.input,
           {
             fontSize: sizeStyles.fontSize,
             paddingHorizontal: leftElement ? 8 : sizeStyles.paddingHorizontal,
@@ -258,45 +253,12 @@ export function FocusableInput({
         {...textInputProps}
       />
 
-      {rightElement && <View style={styles.rightElement}>{rightElement}</View>}
+      {rightElement && (
+        <View className="pr-3 justify-center items-center">{rightElement}</View>
+      )}
     </Animated.View>
   );
 }
-
-// ==========================================================================
-// STYLES
-// ==========================================================================
-
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    overflow: 'hidden',
-    // Shadow for iOS
-    shadowOffset: { width: 0, height: 0 },
-    shadowRadius: 8,
-    // Elevation for Android
-    elevation: 0,
-  },
-  disabled: {
-    opacity: 0.5,
-  },
-  input: {
-    flex: 1,
-    height: '100%',
-    padding: 0,
-  },
-  leftElement: {
-    paddingLeft: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  rightElement: {
-    paddingRight: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-});
 
 // ==========================================================================
 // PRESETS

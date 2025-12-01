@@ -8,13 +8,14 @@
  * - Infinite scroll
  * - Preview on long press
  * - Quick send on tap
+ *
+ * Styling: NativeWind-first with inline style for dynamic values
  */
 
 import React, { useCallback, useMemo, useRef, useState, useEffect } from 'react';
 import {
   View,
   Pressable,
-  StyleSheet,
   TextInput,
   ActivityIndicator,
   Dimensions,
@@ -36,11 +37,7 @@ import {
 } from 'lucide-react-native';
 import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
 
-import { Text } from '@/components/ui/text';
-import { Heading } from '@/components/ui/heading';
-import { HStack } from '@/components/ui/hstack';
-import { VStack } from '@/components/ui/vstack';
-import { Icon } from '@/components/ui/icon';
+import { Text } from 'react-native';
 import { colors, borderRadius } from '@/constants/theme';
 
 // =============================================================================
@@ -195,11 +192,12 @@ function GifGridItem({ gif, onPress, onLongPress, size }: GifGridItemProps) {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         onLongPress();
       }}
-      style={[styles.gifItem, { width: size, height: Math.min(itemHeight, size * 1.5) }]}
+      className="m-1 rounded-lg overflow-hidden bg-gray-100"
+      style={{ width: size, height: Math.min(itemHeight, size * 1.5) }}
     >
       <Image
         source={{ uri: gif.preview_url }}
-        style={styles.gifImage}
+        className="w-full h-full"
         contentFit="cover"
         transition={100}
       />
@@ -215,21 +213,28 @@ function GifPreviewModal({ gif, visible, onClose, onSend }: GifPreviewProps) {
   if (!visible || !gif) return null;
 
   return (
-    <Pressable style={styles.previewOverlay} onPress={onClose}>
-      <Pressable style={styles.previewContainer} onPress={(e) => e.stopPropagation()}>
+    <Pressable
+      className="absolute inset-0 bg-black/80 justify-center items-center z-[1000]"
+      onPress={onClose}
+    >
+      <Pressable
+        className="bg-black rounded-xl overflow-hidden"
+        style={{ maxWidth: SCREEN_WIDTH * 0.9 }}
+        onPress={(e) => e.stopPropagation()}
+      >
         <Image
           source={{ uri: gif.url }}
-          style={styles.previewImage}
+          style={{ width: SCREEN_WIDTH * 0.85, height: SCREEN_WIDTH * 0.85 }}
           contentFit="contain"
         />
         <Pressable
-          style={styles.sendButton}
+          className="bg-[#128C7E] py-3.5 items-center"
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
             onSend();
           }}
         >
-          <Text style={styles.sendButtonText}>Send GIF</Text>
+          <Text className="text-base font-semibold text-white">Send GIF</Text>
         </Pressable>
       </Pressable>
     </Pressable>
@@ -347,76 +352,75 @@ export function GifPickerSheet({
     setSearchQuery('');
   }, []);
 
+  // Don't render when not visible
+  if (!visible) return null;
+
   return (
     <>
       <BottomSheet
         ref={bottomSheetRef}
-        index={visible ? 0 : -1}
+        index={0}
         snapPoints={snapPoints}
         enablePanDownToClose
         onClose={onClose}
         backdropComponent={renderBackdrop}
-        backgroundStyle={styles.sheetBackground}
-        handleIndicatorStyle={styles.handleIndicator}
+        backgroundStyle={{ backgroundColor: '#FFFFFF', borderTopLeftRadius: 20, borderTopRightRadius: 20 }}
+        handleIndicatorStyle={{ backgroundColor: colors.gray[300], width: 40 }}
       >
-        <View style={styles.container}>
+        <View className="flex-1">
           {/* Header */}
-          <HStack className="justify-between items-center px-4 pb-2">
-            <Heading size="lg" className="text-gray-900 font-bold">
-              GIFs
-            </Heading>
+          <View className="flex-row justify-between items-center px-4 pb-2">
+            <Text className="text-xl font-bold text-gray-900">GIFs</Text>
             <Pressable
               onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 onClose();
               }}
             >
-              <Icon as={X} size="md" style={{ color: colors.gray[500] }} />
+              <X size={24} color={colors.gray[500]} />
             </Pressable>
-          </HStack>
+          </View>
 
           {/* Search */}
-          <View style={styles.searchContainer}>
-            <Icon as={Search} size="sm" style={{ color: colors.gray[400] }} />
+          <View className="flex-row items-center mx-4 my-3 px-3 py-2.5 bg-gray-100 rounded-lg">
+            <Search size={18} color={colors.gray[400]} />
             <TextInput
               value={searchQuery}
               onChangeText={setSearchQuery}
               placeholder="Search GIFs..."
               placeholderTextColor={colors.gray[400]}
-              style={styles.searchInput}
+              className="flex-1 text-base text-gray-900 ml-2 py-0"
               returnKeyType="search"
             />
             {searchQuery.length > 0 && (
               <Pressable onPress={() => setSearchQuery('')}>
-                <Icon as={X} size="sm" style={{ color: colors.gray[400] }} />
+                <X size={18} color={colors.gray[400]} />
               </Pressable>
             )}
           </View>
 
           {/* Categories */}
           {!searchQuery && (
-            <View style={styles.categoriesContainer}>
+            <View className="flex-row flex-wrap px-4 pb-3 gap-2">
               {CATEGORIES.map((cat) => {
                 const isActive = selectedCategory === cat.id;
+                const IconComponent = cat.icon;
                 return (
                   <Pressable
                     key={cat.id}
                     onPress={() => handleCategoryChange(cat.id)}
-                    style={[
-                      styles.categoryChip,
-                      isActive && styles.categoryChipActive,
-                    ]}
+                    className={`flex-row items-center px-3 py-1.5 rounded-full ${
+                      isActive ? 'bg-blue-500' : 'bg-gray-100'
+                    }`}
                   >
-                    <Icon
-                      as={cat.icon}
-                      size="xs"
-                      style={{ color: isActive ? '#FFFFFF' : colors.gray[600] }}
+                    <IconComponent
+                      size={14}
+                      color={isActive ? '#FFFFFF' : colors.gray[600]}
                     />
                     <Text
-                      style={[
-                        styles.categoryLabel,
-                        isActive && styles.categoryLabelActive,
-                      ]}
+                      className={`text-xs ml-1 font-medium ${
+                        isActive ? 'text-white' : 'text-gray-600'
+                      }`}
                     >
                       {cat.label}
                     </Text>
@@ -428,25 +432,20 @@ export function GifPickerSheet({
 
           {/* GIF Grid */}
           {isLoading ? (
-            <View style={styles.loadingContainer}>
+            <View className="flex-1 items-center justify-center py-10">
               <ActivityIndicator size="large" color={colors.primary[500]} />
-              <Text style={styles.loadingText}>Loading GIFs...</Text>
+              <Text className="text-sm text-gray-500 mt-3">Loading GIFs...</Text>
             </View>
           ) : isError ? (
-            <View style={styles.errorContainer}>
-              <Text style={styles.errorText}>Failed to load GIFs</Text>
-              <Pressable
-                style={styles.retryButton}
-                onPress={() => {
-                  // Trigger refetch
-                }}
-              >
-                <Text style={styles.retryText}>Retry</Text>
+            <View className="flex-1 items-center justify-center py-10">
+              <Text className="text-sm text-gray-500">Failed to load GIFs</Text>
+              <Pressable className="mt-3 px-4 py-2 bg-blue-500 rounded-lg">
+                <Text className="text-sm text-white font-medium">Retry</Text>
               </Pressable>
             </View>
           ) : gifs.length === 0 ? (
-            <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>No GIFs found</Text>
+            <View className="flex-1 items-center justify-center py-10">
+              <Text className="text-sm text-gray-500">No GIFs found</Text>
             </View>
           ) : (
             <FlashList
@@ -458,10 +457,10 @@ export function GifPickerSheet({
               onEndReached={handleEndReached}
               onEndReachedThreshold={0.5}
               showsVerticalScrollIndicator={false}
-              contentContainerStyle={styles.gridContent}
+              contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 80 }}
               ListFooterComponent={
                 isFetchingNextPage ? (
-                  <View style={styles.footerLoader}>
+                  <View className="py-5 items-center">
                     <ActivityIndicator size="small" color={colors.primary[500]} />
                   </View>
                 ) : null
@@ -470,8 +469,8 @@ export function GifPickerSheet({
           )}
 
           {/* Powered by Tenor */}
-          <View style={styles.attribution}>
-            <Text style={styles.attributionText}>Powered by Tenor</Text>
+          <View className="absolute bottom-0 left-0 right-0 py-2 bg-white border-t border-gray-100 items-center">
+            <Text className="text-[11px] text-gray-400">Powered by Tenor</Text>
           </View>
         </View>
       </BottomSheet>
@@ -500,7 +499,8 @@ interface GifButtonProps {
 }
 
 export function GifButton({ onPress, size = 'md' }: GifButtonProps) {
-  const fontSize = size === 'sm' ? 12 : size === 'lg' ? 16 : 14;
+  const fontSize = size === 'sm' ? 11 : size === 'lg' ? 15 : 13;
+  const padding = size === 'sm' ? 'px-1.5 py-0.5' : size === 'lg' ? 'px-3 py-1.5' : 'px-2 py-1';
 
   return (
     <Pressable
@@ -508,12 +508,10 @@ export function GifButton({ onPress, size = 'md' }: GifButtonProps) {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         onPress();
       }}
-      style={({ pressed }) => [
-        styles.gifButton,
-        pressed && styles.gifButtonPressed,
-      ]}
+      className={`${padding} rounded-md active:opacity-70`}
+      style={{ backgroundColor: '#E8E8E8' }}
     >
-      <Text style={[styles.gifButtonText, { fontSize }]}>GIF</Text>
+      <Text className="font-bold" style={{ fontSize, color: '#54656F' }}>GIF</Text>
     </Pressable>
   );
 }
@@ -536,240 +534,20 @@ export function GifMessage({ gif, onPress }: GifMessageProps) {
   return (
     <Pressable
       onPress={onPress}
-      style={[styles.gifMessage, { width: displayWidth, height: displayHeight }]}
+      className="rounded-xl overflow-hidden bg-gray-200"
+      style={{ width: displayWidth, height: displayHeight }}
     >
       <Image
         source={{ uri: gif.url }}
-        style={styles.gifMessageImage}
+        className="w-full h-full"
         contentFit="cover"
         transition={200}
       />
-      <View style={styles.gifBadge}>
-        <Text style={styles.gifBadgeText}>GIF</Text>
+      <View className="absolute bottom-2 left-2 bg-black/60 px-1.5 py-0.5 rounded">
+        <Text className="text-[10px] font-bold text-white">GIF</Text>
       </View>
     </Pressable>
   );
 }
-
-// =============================================================================
-// STYLES
-// =============================================================================
-
-const styles = StyleSheet.create({
-  // Sheet
-  sheetBackground: {
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-  },
-  handleIndicator: {
-    backgroundColor: colors.gray[300],
-    width: 40,
-  },
-  container: {
-    flex: 1,
-  },
-
-  // Search
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginHorizontal: 16,
-    marginVertical: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    backgroundColor: colors.gray[100],
-    borderRadius: borderRadius.lg,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 16,
-    color: colors.gray[900],
-    marginLeft: 8,
-    paddingVertical: 0,
-  },
-
-  // Categories
-  categoriesContainer: {
-    flexDirection: 'row',
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  categoryChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    backgroundColor: colors.gray[100],
-  },
-  categoryChipActive: {
-    backgroundColor: colors.primary[500],
-  },
-  categoryLabel: {
-    fontSize: 12,
-    color: colors.gray[600],
-    marginLeft: 4,
-    fontWeight: '500',
-  },
-  categoryLabelActive: {
-    color: '#FFFFFF',
-  },
-
-  // Grid
-  gridContent: {
-    paddingHorizontal: 16,
-    paddingBottom: 80,
-  },
-  gifItem: {
-    margin: 4,
-    borderRadius: borderRadius.md,
-    overflow: 'hidden',
-    backgroundColor: colors.gray[100],
-  },
-  gifImage: {
-    width: '100%',
-    height: '100%',
-  },
-
-  // Loading / Error / Empty
-  loadingContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 40,
-  },
-  loadingText: {
-    fontSize: 14,
-    color: colors.gray[500],
-    marginTop: 12,
-  },
-  errorContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 40,
-  },
-  errorText: {
-    fontSize: 14,
-    color: colors.gray[500],
-  },
-  retryButton: {
-    marginTop: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    backgroundColor: colors.primary[500],
-    borderRadius: borderRadius.lg,
-  },
-  retryText: {
-    fontSize: 14,
-    color: '#FFFFFF',
-    fontWeight: '500',
-  },
-  emptyContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 40,
-  },
-  emptyText: {
-    fontSize: 14,
-    color: colors.gray[500],
-  },
-  footerLoader: {
-    paddingVertical: 20,
-    alignItems: 'center',
-  },
-
-  // Preview
-  previewOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.8)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 1000,
-  },
-  previewContainer: {
-    backgroundColor: '#000000',
-    borderRadius: borderRadius.xl,
-    overflow: 'hidden',
-    maxWidth: SCREEN_WIDTH * 0.9,
-  },
-  previewImage: {
-    width: SCREEN_WIDTH * 0.85,
-    height: SCREEN_WIDTH * 0.85,
-  },
-  sendButton: {
-    backgroundColor: '#128C7E',
-    paddingVertical: 14,
-    alignItems: 'center',
-  },
-  sendButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#FFFFFF',
-  },
-
-  // Button
-  gifButton: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: borderRadius.md,
-    backgroundColor: colors.gray[100],
-    borderWidth: 1,
-    borderColor: colors.gray[300],
-  },
-  gifButtonPressed: {
-    backgroundColor: colors.gray[200],
-  },
-  gifButtonText: {
-    fontWeight: '700',
-    color: colors.gray[600],
-  },
-
-  // Message
-  gifMessage: {
-    borderRadius: borderRadius.lg,
-    overflow: 'hidden',
-    backgroundColor: colors.gray[200],
-  },
-  gifMessageImage: {
-    width: '100%',
-    height: '100%',
-  },
-  gifBadge: {
-    position: 'absolute',
-    bottom: 8,
-    left: 8,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  gifBadgeText: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: '#FFFFFF',
-  },
-
-  // Attribution
-  attribution: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    paddingVertical: 8,
-    backgroundColor: '#FFFFFF',
-    borderTopWidth: 1,
-    borderTopColor: colors.gray[100],
-    alignItems: 'center',
-  },
-  attributionText: {
-    fontSize: 11,
-    color: colors.gray[400],
-  },
-});
 
 export default GifPickerSheet;

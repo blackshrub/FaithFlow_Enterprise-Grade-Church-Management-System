@@ -17,10 +17,12 @@
  * - Center FAB for GROW feature
  * - Glassmorphism style (iOS)
  * - Auto-hide in Bible focus mode (scroll down hides, scroll up shows)
+ *
+ * Styling: NativeWind-first with inline style for dynamic/animated values
  */
 
 import React, { useEffect, useRef } from 'react';
-import { View, Pressable, StyleSheet, Animated } from 'react-native';
+import { View, Pressable, Animated, StyleSheet } from 'react-native';
 import { useRouter, useSegments } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
@@ -75,8 +77,6 @@ const RIGHT_TABS: Tab[] = [
     route: '/(tabs)/give',
   },
 ];
-
-const ALL_TABS = [...LEFT_TABS, ...RIGHT_TABS];
 
 export function AnimatedTabBar() {
   const router = useRouter();
@@ -139,10 +139,16 @@ export function AnimatedTabBar() {
       <Pressable
         key={tab.name}
         onPressIn={() => handleTabPress(tab)}
-        style={[styles.tabButton, { minWidth: touchTargets.comfortable }]}
+        className="items-center justify-center py-2 px-3 relative"
+        style={{ minWidth: touchTargets.comfortable }}
       >
         {/* Active indicator at top */}
-        {isActive && <View style={styles.activeIndicator} />}
+        {isActive && (
+          <View
+            className="absolute -top-2 left-1/4 right-1/4 h-[3px] rounded-[1.5px]"
+            style={{ backgroundColor: colors.primary[500] }}
+          />
+        )}
 
         {/* Icon */}
         <IconComponent
@@ -154,10 +160,8 @@ export function AnimatedTabBar() {
         {/* Label */}
         <Text
           size="xs"
-          style={[
-            styles.tabLabel,
-            isActive ? styles.tabLabelActive : styles.tabLabelInactive,
-          ]}
+          className="mt-0.5 text-[10px] font-medium"
+          style={{ color: isActive ? colors.primary[500] : colors.gray[500] }}
         >
           {t(tab.label as any)}
         </Text>
@@ -166,19 +170,22 @@ export function AnimatedTabBar() {
   };
 
   const TabBarContent = () => (
-    <View style={[styles.tabsContainer, { paddingBottom: insets.bottom > 0 ? insets.bottom - 8 : 4 }]}>
+    <View
+      className="flex-row items-end justify-between pt-4"
+      style={{ paddingBottom: insets.bottom > 0 ? insets.bottom - 8 : 4 }}
+    >
       {/* Left tabs */}
-      <View style={styles.tabGroup}>
+      <View className="flex-row flex-1 justify-evenly">
         {LEFT_TABS.map(renderTab)}
       </View>
 
       {/* Center FAB */}
-      <View style={styles.fabContainer}>
+      <View className="items-center justify-center w-[70px] mx-1">
         <GrowFab size={56} />
       </View>
 
       {/* Right tabs */}
-      <View style={styles.tabGroup}>
+      <View className="flex-row flex-1 justify-evenly">
         {RIGHT_TABS.map(renderTab)}
       </View>
     </View>
@@ -186,80 +193,23 @@ export function AnimatedTabBar() {
 
   return (
     <Animated.View
-      style={[
-        styles.container,
-        {
-          transform: [{ translateY: tabBarTranslateY }],
-        },
-      ]}
+      className="absolute bottom-0 left-0 right-0 z-[200]"
+      style={{ transform: [{ translateY: tabBarTranslateY }] }}
     >
-      <View style={styles.tabBarWrapper}>
+      <View
+        className="bg-white"
+        style={{
+          borderTopWidth: StyleSheet.hairlineWidth,
+          borderTopColor: colors.gray[200],
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: -2 },
+          shadowOpacity: 0.08,
+          shadowRadius: 8,
+          elevation: 8,
+        }}
+      >
         <TabBarContent />
       </View>
     </Animated.View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    zIndex: 50,
-  },
-  tabBarWrapper: {
-    backgroundColor: colors.white,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.gray[200],
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  tabsContainer: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    justifyContent: 'space-between',
-    paddingTop: 8,
-  },
-  tabGroup: {
-    flexDirection: 'row',
-    flex: 1,
-    justifyContent: 'space-evenly',
-  },
-  tabButton: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    position: 'relative',
-  },
-  activeIndicator: {
-    position: 'absolute',
-    top: -8,
-    left: '25%',
-    right: '25%',
-    height: 3,
-    backgroundColor: colors.primary[500],
-    borderRadius: 1.5,
-  },
-  tabLabel: {
-    marginTop: 2,
-    fontSize: 10,
-    fontWeight: '500',
-  },
-  tabLabelActive: {
-    color: colors.primary[500],
-  },
-  tabLabelInactive: {
-    color: colors.gray[500],
-  },
-  fabContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: 70,
-    marginHorizontal: 4,
-  },
-});

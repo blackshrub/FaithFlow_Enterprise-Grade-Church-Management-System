@@ -11,13 +11,15 @@
  * - Swipe-to-reply gesture
  * - Double-tap quick reaction
  * - Date headers and unread dividers
+ *
+ * Styling: NativeWind-first with inline style for dynamic values
  */
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
+  Text,
   Pressable,
-  StyleSheet,
   Dimensions,
   NativeScrollEvent,
   NativeSyntheticEvent,
@@ -63,11 +65,10 @@ import {
   AlertCircle,
   Reply,
   Heart,
+  Plus,
 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 
-import { Text } from '@/components/ui/text';
-import { Icon } from '@/components/ui/icon';
 import { colors, borderRadius, shadows, spacing } from '@/constants/theme';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -199,18 +200,15 @@ export const SendButton = React.memo(({ onPress, disabled, isSending }: SendButt
       onPressOut={handlePressOut}
       onPress={handlePress}
       disabled={disabled || isSending}
-      style={[styles.sendButton, animatedStyle]}
+      className="w-11 h-11 rounded-[22px] items-center justify-center mb-1"
+      style={[{ backgroundColor: '#128C7E' }, animatedStyle]}
     >
       {isSending ? (
-        <Animated.View
-          style={{
-            transform: [{ rotate: '360deg' }],
-          }}
-        >
-          <Icon as={Clock} size="md" className="text-white" />
+        <Animated.View style={{ transform: [{ rotate: '360deg' }] }}>
+          <Clock size={20} color="#fff" />
         </Animated.View>
       ) : (
-        <Icon as={Send} size="md" className="text-white" />
+        <Send size={20} color="#fff" />
       )}
     </AnimatedPressable>
   );
@@ -271,14 +269,27 @@ export const ScrollToBottomFAB = React.memo(({
   if (!visible && newMessageCount === 0) return null;
 
   return (
-    <Animated.View style={[styles.scrollFabContainer, fabStyle]}>
+    <Animated.View
+      className="absolute right-4 bottom-4 z-[100]"
+      style={fabStyle}
+    >
       <Pressable
         onPress={handlePress}
-        style={styles.scrollFab}
+        className="w-12 h-12 rounded-3xl bg-white items-center justify-center"
+        style={{
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.15,
+          shadowRadius: 4,
+          elevation: 4,
+        }}
       >
-        <Icon as={ArrowDown} size="sm" className="text-gray-600" />
+        <ArrowDown size={16} color="#4b5563" />
         {newMessageCount > 0 && (
-          <Animated.View style={[styles.badgeContainer, badgeStyle]}>
+          <Animated.View
+            className="absolute -top-1.5 -right-1.5 bg-[#25D366] rounded-xl min-w-[24px] h-6 items-center justify-center px-1.5"
+            style={badgeStyle}
+          >
             <Text className="text-white text-xs font-bold">
               {newMessageCount > 99 ? '99+' : newMessageCount}
             </Text>
@@ -327,27 +338,27 @@ export const MessageStatusIndicator = React.memo(({
       case 'sending':
         return (
           <Animated.View style={{ opacity: 0.7 }}>
-            <Icon as={Clock} size="xs" style={{ color: '#8696a0' }} />
+            <Clock size={12} color="#8696a0" />
           </Animated.View>
         );
       case 'sent':
         // WhatsApp gray tick
-        return <Icon as={Check} size="xs" style={{ color: '#8696a0' }} />;
+        return <Check size={12} color="#8696a0" />;
       case 'delivered':
         // WhatsApp gray double tick
-        return <Icon as={CheckCheck} size="xs" style={{ color: '#8696a0' }} />;
+        return <CheckCheck size={12} color="#8696a0" />;
       case 'read':
         // WhatsApp blue double tick
-        return <Icon as={CheckCheck} size="xs" style={{ color: '#53bdeb' }} />;
+        return <CheckCheck size={12} color="#53bdeb" />;
       case 'failed':
-        return <Icon as={AlertCircle} size="xs" style={{ color: '#ef4444' }} />;
+        return <AlertCircle size={12} color="#ef4444" />;
       default:
         return null;
     }
   };
 
   return (
-    <Animated.View style={[styles.statusContainer, animatedStyle]}>
+    <Animated.View className="ml-1" style={animatedStyle}>
       {getStatusIcon()}
     </Animated.View>
   );
@@ -407,14 +418,11 @@ export const ConnectionBanner = React.memo(({ status }: ConnectionBannerProps) =
 
   return (
     <Animated.View
-      style={[
-        styles.connectionBanner,
-        { backgroundColor: config.bgColor },
-        animatedStyle,
-      ]}
+      className="flex-row items-center px-4 py-2"
+      style={[{ backgroundColor: config.bgColor }, animatedStyle]}
     >
-      <View style={{ opacity: status === 'connecting' ? 0.7 : 1 }}>
-        <Icon as={config.icon} size="sm" className="text-white mr-2" />
+      <View style={{ opacity: status === 'connecting' ? 0.7 : 1, marginRight: 8 }}>
+        {status === 'connecting' ? <Wifi size={16} color="#fff" /> : <WifiOff size={16} color="#fff" />}
       </View>
       <Text className="text-white text-sm flex-1">{config.text}</Text>
     </Animated.View>
@@ -493,16 +501,22 @@ export const SwipeToReplyWrapper = React.memo(({
 
   return (
     <GestureDetector gesture={panGesture}>
-      <View style={styles.swipeContainer}>
+      <View className="flex-row items-center">
         {/* Reply icon on the left */}
-        <Animated.View style={[styles.replyIconContainer, replyIconStyle]}>
-          <View style={styles.replyIconCircle}>
-            <Icon as={Reply} size="sm" className="text-white" />
+        <Animated.View
+          className="absolute -left-10 justify-center"
+          style={replyIconStyle}
+        >
+          <View
+            className="w-8 h-8 rounded-2xl items-center justify-center"
+            style={{ backgroundColor: colors.primary[500] }}
+          >
+            <Reply size={16} color="#fff" />
           </View>
         </Animated.View>
 
         {/* Message content */}
-        <Animated.View style={[{ flex: 1 }, messageStyle]}>
+        <Animated.View className="flex-1" style={messageStyle}>
           {children}
         </Animated.View>
       </View>
@@ -559,8 +573,12 @@ export const DoubleTapReaction = React.memo(({
     <GestureDetector gesture={doubleTapGesture}>
       <View>
         {children}
-        <Animated.View style={[styles.heartContainer, heartStyle]} pointerEvents="none">
-          <Icon as={Heart} size="xl" style={{ color: '#ef4444' }} fill="#ef4444" />
+        <Animated.View
+          className="absolute top-1/2 left-1/2 -ml-6 -mt-6"
+          style={heartStyle}
+          pointerEvents="none"
+        >
+          <Heart size={48} color="#ef4444" fill="#ef4444" />
         </Animated.View>
       </View>
     </GestureDetector>
@@ -600,10 +618,10 @@ export const DateHeader = React.memo(({ date }: DateHeaderProps) => {
   return (
     <Animated.View
       entering={FadeIn.duration(200)}
-      style={styles.dateHeaderContainer}
+      className="items-center my-3"
     >
-      <View style={styles.dateHeaderBadge}>
-        <Text style={styles.dateHeaderText}>{formatDate(date)}</Text>
+      <View className="bg-[rgba(225,225,225,0.9)] px-3 py-1.5 rounded-lg">
+        <Text className="text-xs text-gray-600 font-medium">{formatDate(date)}</Text>
       </View>
     </Animated.View>
   );
@@ -623,15 +641,15 @@ export const UnreadDivider = React.memo(({ count }: UnreadDividerProps) => {
   return (
     <Animated.View
       entering={SlideInRight.duration(200)}
-      style={styles.unreadDividerContainer}
+      className="flex-row items-center my-3 px-4"
     >
-      <View style={styles.unreadDividerLine} />
-      <View style={styles.unreadDividerBadge}>
-        <Text style={styles.unreadDividerText}>
+      <View className="flex-1 h-px bg-[#25D366]" />
+      <View className="bg-[#25D366] px-3 py-1 rounded mx-2">
+        <Text className="text-[11px] text-white font-semibold tracking-wide">
           {count} UNREAD {count === 1 ? 'MESSAGE' : 'MESSAGES'}
         </Text>
       </View>
-      <View style={styles.unreadDividerLine} />
+      <View className="flex-1 h-px bg-[#25D366]" />
     </Animated.View>
   );
 });
@@ -679,9 +697,10 @@ export const AttachmentButton = React.memo(({ onPress }: AttachmentButtonProps) 
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
       onPress={handlePress}
-      style={[styles.attachmentButton, animatedStyle]}
+      className="p-2"
+      style={animatedStyle}
     >
-      <Icon as={require('lucide-react-native').Plus} size="md" className="text-gray-500" />
+      <Plus size={22} color="#54656F" />
     </AnimatedPressable>
   );
 });
@@ -713,7 +732,10 @@ export const AnimatedInputContainer = React.memo(({
   }));
 
   return (
-    <Animated.View style={[styles.inputContainer, animatedStyle]}>
+    <Animated.View
+      className="flex-1 rounded-3xl px-4 py-2 bg-gray-100 min-h-[44px] max-h-[120px]"
+      style={animatedStyle}
+    >
       {children}
     </Animated.View>
   );
@@ -739,7 +761,7 @@ export const OptimisticMessageWrapper = React.memo(({
   return (
     <Animated.View
       entering={FadeIn.duration(100).springify()}
-      style={[styles.optimisticWrapper, { opacity: 0.85 }]}
+      className="opacity-85"
     >
       {children}
     </Animated.View>
@@ -768,17 +790,18 @@ export const TypingBubble = React.memo(({ names }: TypingBubbleProps) => {
     <Animated.View
       entering={FadeIn.duration(150).springify()}
       exiting={FadeOut.duration(100)}
-      style={styles.typingBubble}
+      className="flex-row items-center px-4 py-2"
     >
-      <View style={styles.typingDotsContainer}>
+      <View className="flex-row bg-gray-100 px-3 py-2.5 rounded-[18px] mr-2">
         {[0, 1, 2].map((i) => (
           <View
             key={i}
-            style={[styles.typingDot, { opacity: 0.7 }]}
+            className="w-2 h-2 rounded-full bg-gray-400 mx-0.5"
+            style={{ opacity: 0.7 }}
           />
         ))}
       </View>
-      <Text style={styles.typingText}>{getText()}</Text>
+      <Text className="text-xs text-gray-500 italic">{getText()}</Text>
     </Animated.View>
   );
 });
@@ -911,166 +934,3 @@ export function useMessageGrouping(messages: any[]) {
     return grouped;
   }, [messages]);
 }
-
-// =============================================================================
-// STYLES
-// =============================================================================
-
-const styles = StyleSheet.create({
-  sendButton: {
-    // WhatsApp teal green
-    backgroundColor: '#128C7E',
-    borderRadius: 22,
-    width: 44,
-    height: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 4,
-  },
-  scrollFabContainer: {
-    position: 'absolute',
-    right: 16,
-    bottom: 16,
-    zIndex: 100,
-  },
-  scrollFab: {
-    backgroundColor: 'white',
-    borderRadius: 24,
-    width: 48,
-    height: 48,
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...shadows.md,
-  },
-  badgeContainer: {
-    position: 'absolute',
-    top: -6,
-    right: -6,
-    backgroundColor: '#25D366', // WhatsApp green
-    borderRadius: 12,
-    minWidth: 24,
-    height: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 6,
-  },
-  statusContainer: {
-    marginLeft: 4,
-  },
-  connectionBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.md,
-    paddingVertical: 8,
-  },
-  inputContainer: {
-    flex: 1,
-    borderRadius: borderRadius['3xl'],
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    backgroundColor: colors.gray[100],
-    minHeight: 44,
-    maxHeight: 120,
-  },
-  optimisticWrapper: {
-    opacity: 0.9,
-  },
-  attachmentButton: {
-    padding: 8,
-    marginBottom: 4,
-  },
-  // Swipe to reply
-  swipeContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  replyIconContainer: {
-    position: 'absolute',
-    left: -40,
-    justifyContent: 'center',
-  },
-  replyIconCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: colors.primary[500],
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  // Heart reaction
-  heartContainer: {
-    position: 'absolute',
-    top: '50%',
-    left: '50%',
-    marginLeft: -24,
-    marginTop: -24,
-  },
-  // Date header
-  dateHeaderContainer: {
-    alignItems: 'center',
-    marginVertical: 12,
-  },
-  dateHeaderBadge: {
-    backgroundColor: 'rgba(225, 225, 225, 0.9)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-  },
-  dateHeaderText: {
-    fontSize: 12,
-    color: colors.gray[600],
-    fontWeight: '500',
-  },
-  // Unread divider
-  unreadDividerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 12,
-    paddingHorizontal: 16,
-  },
-  unreadDividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#25D366',
-  },
-  unreadDividerBadge: {
-    backgroundColor: '#25D366',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 4,
-    marginHorizontal: 8,
-  },
-  unreadDividerText: {
-    fontSize: 11,
-    color: 'white',
-    fontWeight: '600',
-    letterSpacing: 0.5,
-  },
-  // Typing bubble
-  typingBubble: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-  },
-  typingDotsContainer: {
-    flexDirection: 'row',
-    backgroundColor: colors.gray[100],
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 18,
-    marginRight: 8,
-  },
-  typingDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: colors.gray[400],
-    marginHorizontal: 2,
-  },
-  typingText: {
-    fontSize: 12,
-    color: colors.gray[500],
-    fontStyle: 'italic',
-  },
-});

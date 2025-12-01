@@ -7,16 +7,16 @@
  * - Staggered card animations
  * - Tap outside to close
  * - Smooth spring animations
+ *
+ * Styling: NativeWind-first with inline style for shadows/dynamic values
  */
 
 import React from 'react';
-import { Pressable, StyleSheet, View, Dimensions, Platform } from 'react-native';
+import { Pressable, View, Dimensions, Platform } from 'react-native';
 import Animated, {
   FadeIn,
   FadeOut,
   SlideOutDown,
-  withTiming,
-  Easing,
 } from 'react-native-reanimated';
 import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -30,9 +30,8 @@ import { colors } from '@/constants/theme';
 
 const { width, height } = Dimensions.get('window');
 
-// Tab bar height + FAB overhang for proper positioning
-// FAB is 56px with marginTop -20, so extends 36px above tab bar content
-const TAB_BAR_HEIGHT = Platform.OS === 'ios' ? 90 : 70;
+// Tab bar visual height (content area only, safe area handled separately)
+const TAB_BAR_HEIGHT = Platform.OS === 'ios' ? 56 : 56;
 
 export function GrowPanel() {
   const { t } = useTranslation();
@@ -43,22 +42,32 @@ export function GrowPanel() {
 
   return (
     <>
-      {/* Backdrop */}
+      {/* Backdrop - excludes tab bar at bottom */}
       <Animated.View
         entering={FadeIn.duration(200)}
         exiting={FadeOut.duration(200)}
-        style={StyleSheet.absoluteFill}
+        style={{
+          position: 'absolute',
+          left: 0,
+          right: 0,
+          top: 0,
+          bottom: TAB_BAR_HEIGHT,
+          zIndex: 100,
+        }}
         pointerEvents="auto"
       >
-        <Pressable style={styles.backdrop} onPress={close}>
+        <Pressable
+          style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+          onPress={close}
+        >
           {Platform.OS === 'ios' ? (
             <BlurView
               intensity={40}
               tint="dark"
-              style={StyleSheet.absoluteFill}
+              style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
             />
           ) : (
-            <View style={[StyleSheet.absoluteFill, styles.androidBackdrop]} />
+            <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)' }} />
           )}
         </Pressable>
       </Animated.View>
@@ -70,22 +79,38 @@ export function GrowPanel() {
           transform: [{ translateY: 100 }],
         })}
         exiting={SlideOutDown.duration(180)}
-        style={[
-          styles.panel,
-          {
-            bottom: TAB_BAR_HEIGHT + insets.bottom + 16,
-          },
-        ]}
+        className="absolute left-4 right-4 z-[101] rounded-3xl p-5"
+        style={{
+          bottom: TAB_BAR_HEIGHT + insets.bottom + 16,
+          backgroundColor: Platform.OS === 'ios'
+            ? 'rgba(255, 255, 255, 0.95)'
+            : colors.white,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: -8 },
+          shadowOpacity: 0.15,
+          shadowRadius: 24,
+          elevation: 16,
+        }}
         pointerEvents="box-none"
       >
         {/* Panel Header - No separate entering animation to avoid opacity conflict */}
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>{t('grow.title')}</Text>
-          <Text style={styles.headerSubtitle}>{t('grow.subtitle')}</Text>
+        <View className="mb-4 items-center">
+          <Text
+            className="text-[22px] font-bold mb-1"
+            style={{ color: colors.gray[900] }}
+          >
+            {t('grow.title')}
+          </Text>
+          <Text
+            className="text-sm text-center"
+            style={{ color: colors.gray[500] }}
+          >
+            {t('grow.subtitle')}
+          </Text>
         </View>
 
         {/* Cards Container */}
-        <View style={styles.cardsContainer}>
+        <View className="flex-row gap-4 min-h-[140px] mb-4">
           <GrowCard
             type="bible"
             title={t('grow.bible.title')}
@@ -101,75 +126,20 @@ export function GrowPanel() {
         </View>
 
         {/* Faith Assistant Button - Full width with flowing glow */}
-        <View style={styles.faithAssistantContainer}>
+        <View className="mb-3">
           <FaithAssistantCard variant="button" onBeforeNavigate={close} />
         </View>
 
         {/* Tip - No separate entering animation to avoid opacity conflict */}
-        <View style={styles.tipContainer}>
-          <Text style={styles.tipText}>{t('grow.tip')}</Text>
+        <View className="items-center px-2">
+          <Text
+            className="text-xs text-center italic"
+            style={{ color: colors.gray[400] }}
+          >
+            {t('grow.tip')}
+          </Text>
         </View>
       </Animated.View>
     </>
   );
 }
-
-const styles = StyleSheet.create({
-  backdrop: {
-    ...StyleSheet.absoluteFillObject,
-    zIndex: 100,
-  },
-  androidBackdrop: {
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
-  },
-  panel: {
-    position: 'absolute',
-    left: 16,
-    right: 16,
-    zIndex: 101,
-    backgroundColor: Platform.OS === 'ios'
-      ? 'rgba(255, 255, 255, 0.95)'
-      : colors.white,
-    borderRadius: 24,
-    padding: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -8 },
-    shadowOpacity: 0.15,
-    shadowRadius: 24,
-    elevation: 16,
-  },
-  header: {
-    marginBottom: 16,
-    alignItems: 'center',
-  },
-  headerTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: colors.gray[900],
-    marginBottom: 4,
-  },
-  headerSubtitle: {
-    fontSize: 14,
-    color: colors.gray[500],
-    textAlign: 'center',
-  },
-  cardsContainer: {
-    flexDirection: 'row',
-    gap: 12,
-    minHeight: 160,
-    marginBottom: 12,
-  },
-  faithAssistantContainer: {
-    marginBottom: 16,
-  },
-  tipContainer: {
-    alignItems: 'center',
-    paddingHorizontal: 16,
-  },
-  tipText: {
-    fontSize: 12,
-    color: colors.gray[400],
-    textAlign: 'center',
-    fontStyle: 'italic',
-  },
-});

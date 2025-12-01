@@ -20,16 +20,17 @@
  * Usage:
  * - Wrap individual screens: export default withPremiumMotionV10(MyScreen)
  * - Override animation: withPremiumMotionV10(MyScreen, { animation: 'sharedAxisX' })
+ *
+ * Styling: NativeWind-first
  */
 
-import React, { useEffect, useRef, useCallback, useMemo } from 'react';
-import { StyleSheet, View, LayoutChangeEvent } from 'react-native';
+import React, { useEffect, useRef, useCallback } from 'react';
+import { View, LayoutChangeEvent } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
   cancelAnimation,
-  runOnJS,
 } from 'react-native-reanimated';
 import { usePathname } from 'expo-router';
 import { V10_EASING, V10_DURATION, V10_CONFIG, GLOBAL_MOTION_DELAY, setGlobalMotionDelay } from '@/components/motion/premium-motion';
@@ -321,7 +322,7 @@ export function withPremiumMotionV10<P extends object>(
     // Skip animation mode
     if (shouldSkip || animation === 'none') {
       return (
-        <View style={styles.container} onLayout={handleLayout}>
+        <View className="flex-1" onLayout={handleLayout}>
           <ScreenComponent {...props} />
         </View>
       );
@@ -329,7 +330,7 @@ export function withPremiumMotionV10<P extends object>(
 
     return (
       <Animated.View
-        style={[styles.container, animatedStyle]}
+        style={animatedStyle}
         onLayout={handleLayout}
       >
         <ScreenComponent {...props} />
@@ -441,16 +442,6 @@ export const setLowPerformanceMode = (enabled: boolean): void => {
  * Get current performance mode
  */
 export const isLowPerformanceMode = (): boolean => lowPerformanceMode;
-
-// ============================================================================
-// STYLES
-// ============================================================================
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-});
 
 // ============================================================================
 // EXPORTS

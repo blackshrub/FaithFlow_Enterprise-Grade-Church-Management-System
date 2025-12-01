@@ -3,10 +3,12 @@
  *
  * Displays caller/callee information during calls.
  * Shows avatar, name, and call status/duration.
+ *
+ * Styling: NativeWind-first with inline style for dynamic/animated values
  */
 
 import React, { useEffect } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -73,19 +75,27 @@ export function CallerInfo({
   return (
     <Animated.View
       entering={ZoomIn.delay(100).springify()}
-      style={styles.container}
+      className="items-center px-5"
     >
       {/* Avatar */}
-      <View style={styles.avatarContainer}>
+      <View className="relative mb-5">
         {avatar ? (
           <Image
             source={{ uri: avatar }}
-            style={styles.avatar}
+            className="w-[120px] h-[120px] rounded-full"
+            style={{ borderWidth: 3, borderColor: 'rgba(255, 255, 255, 0.3)' }}
             contentFit="cover"
           />
         ) : (
-          <View style={styles.avatarPlaceholder}>
-            <Text style={styles.avatarInitial}>
+          <View
+            className="w-[120px] h-[120px] rounded-full items-center justify-center"
+            style={{
+              backgroundColor: colors.primary[500],
+              borderWidth: 3,
+              borderColor: 'rgba(255, 255, 255, 0.3)',
+            }}
+          >
+            <Text className="text-5xl font-bold text-white">
               {name.charAt(0).toUpperCase()}
             </Text>
           </View>
@@ -93,85 +103,35 @@ export function CallerInfo({
 
         {/* Pulsing ring for ringing state */}
         {(uiState === 'outgoing' || uiState === 'incoming') && (
-          <Animated.View style={[styles.pulseRing, pulseStyle]} />
+          <Animated.View
+            className="absolute w-[120px] h-[120px] rounded-full"
+            style={[
+              {
+                borderWidth: 3,
+                borderColor: colors.primary[400],
+              },
+              pulseStyle,
+            ]}
+          />
         )}
       </View>
 
       {/* Name */}
-      <Text style={styles.name} numberOfLines={1}>
+      <Text className="text-[28px] font-bold text-white text-center mb-2" numberOfLines={1}>
         {name}
       </Text>
 
       {/* Status / Duration */}
-      <Text style={styles.status}>
+      <Text className="text-lg text-white/80 text-center">
         {getStatusText()}
       </Text>
 
       {/* Optional subtitle (e.g., community name) */}
       {subtitle && (
-        <Text style={styles.subtitle}>
+        <Text className="text-sm text-white/60 text-center mt-2">
           {subtitle}
         </Text>
       )}
     </Animated.View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    alignItems: 'center',
-    paddingHorizontal: 20,
-  },
-  avatarContainer: {
-    position: 'relative',
-    marginBottom: 20,
-  },
-  avatar: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    borderWidth: 3,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
-  },
-  avatarPlaceholder: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: colors.primary[500],
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 3,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
-  },
-  avatarInitial: {
-    fontSize: 48,
-    fontWeight: 'bold',
-    color: colors.white,
-  },
-  pulseRing: {
-    position: 'absolute',
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    borderWidth: 3,
-    borderColor: colors.primary[400],
-  },
-  name: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: colors.white,
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  status: {
-    fontSize: 18,
-    color: 'rgba(255, 255, 255, 0.8)',
-    textAlign: 'center',
-  },
-  subtitle: {
-    fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.6)',
-    textAlign: 'center',
-    marginTop: 8,
-  },
-});

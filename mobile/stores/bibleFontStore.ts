@@ -2,7 +2,7 @@
  * Bible Font Store
  *
  * Manages font selection for Bible reading components ONLY.
- * This store persists to AsyncStorage and does not affect other app fonts.
+ * Uses MMKV for fast, synchronous storage operations.
  *
  * IMPORTANT: This store ONLY handles Latin Bible fonts.
  * Chinese Bibles use system fonts automatically (no storage needed).
@@ -17,7 +17,7 @@
 
 import { create } from 'zustand';
 import { persist, createJSONStorage, subscribeWithSelector } from 'zustand/middleware';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { mmkvStorage } from '@/lib/storage';
 import { DEFAULT_LATIN_FONT, isValidLatinFont, type LatinBibleFontKey } from '@/utils/fonts';
 
 interface BibleFontState {
@@ -30,20 +30,19 @@ interface BibleFontState {
 
   /**
    * Whether fonts have been loaded from storage
-   * Used to prevent flashing during initial load
+   * With MMKV sync storage, this is always true after initial load
    */
   isHydrated: boolean;
 
   /**
    * Set the Latin Bible reading font
-   * Automatically persists to AsyncStorage
+   * Automatically persists to MMKV (synchronously)
    * Note: This has NO effect on Chinese Bibles
    */
   setLatinFont: (font: LatinBibleFontKey) => void;
 
   /**
-   * Load font preference from AsyncStorage
-   * Called automatically by persist middleware
+   * Internal: Set hydration status
    */
   _setHydrated: (hydrated: boolean) => void;
 }
@@ -52,7 +51,7 @@ interface BibleFontState {
  * Bible Font Store
  *
  * Key features:
- * - Persists to AsyncStorage under 'bible-font-storage'
+ * - Persists to MMKV under 'bible-font-storage' (fast, sync)
  * - Uses subscribeWithSelector to prevent unnecessary rerenders
  * - Validates font keys before saving
  * - Falls back to 'Lora' for invalid keys
@@ -60,7 +59,7 @@ interface BibleFontState {
 export const useBibleFontStore = create<BibleFontState>()(
   subscribeWithSelector(
     persist(
-      (set, get) => ({
+      (set) => ({
         // Default state
         latinFont: DEFAULT_LATIN_FONT,
         isHydrated: false,
@@ -84,8 +83,8 @@ export const useBibleFontStore = create<BibleFontState>()(
       }),
       {
         name: 'bible-font-storage',
-        storage: createJSONStorage(() => AsyncStorage),
-        version: 2, // Increment version for migration
+        storage: createJSONStorage(() => mmkvStorage),
+        version: 2, // Keep version for migration compatibility
 
         // Partial persistence - only save latinFont
         partialize: (state) => ({

@@ -13,7 +13,6 @@
 import React, { useEffect, useCallback, useState, useMemo } from 'react';
 import {
   View,
-  StyleSheet,
   BackHandler,
   StatusBar,
   Dimensions,
@@ -258,7 +257,7 @@ function CallScreenContent() {
 
     if (totalParticipants === 0) {
       return (
-        <View style={styles.noParticipants}>
+        <View className="flex-1 justify-center items-center">
           <CallerInfo
             name={otherParticipant.name}
             avatar={otherParticipant.avatar}
@@ -272,7 +271,7 @@ function CallScreenContent() {
     if (totalParticipants === 1 && localParticipant) {
       // Just local participant (waiting for others)
       return (
-        <View style={styles.singleParticipant}>
+        <View className="flex-1 justify-center items-center">
           <CallerInfo
             name={otherParticipant.name}
             avatar={otherParticipant.avatar}
@@ -286,12 +285,12 @@ function CallScreenContent() {
     if (totalParticipants === 2 && layoutMode === 'speaker') {
       // 1:1 call - speaker view
       return (
-        <View style={styles.speakerLayout}>
+        <View className="flex-1 relative">
           {/* Remote participant (full screen) */}
           {remoteParticipants[0] && (
             <ParticipantTile
               participant={remoteParticipants[0]}
-              style={styles.fullScreenParticipant}
+              style={{ flex: 1, borderRadius: 0 }}
               showName={true}
             />
           )}
@@ -300,12 +299,19 @@ function CallScreenContent() {
           {localParticipant && isCameraEnabled && (
             <Animated.View
               entering={ZoomIn.springify()}
-              style={[styles.localVideoOverlay, { top: insets.top + 60 }]}
+              className="absolute right-5 z-10"
+              style={{ top: insets.top + 60 }}
             >
               <ParticipantTile
                 participant={localParticipant}
                 isLocal={true}
-                style={styles.localVideo}
+                style={{
+                  width: 100,
+                  height: 140,
+                  borderRadius: 12,
+                  borderWidth: 2,
+                  borderColor: 'rgba(255, 255, 255, 0.3)',
+                }}
                 showName={false}
               />
             </Animated.View>
@@ -319,17 +325,15 @@ function CallScreenContent() {
     const rows = Math.ceil(totalParticipants / columns);
 
     return (
-      <View style={styles.gridLayout}>
+      <View className="flex-1 flex-row flex-wrap justify-center content-center p-0.5">
         {participants.map((participant: any) => (
           <View
             key={participant.identity}
-            style={[
-              styles.gridTile,
-              {
-                width: SCREEN_WIDTH / columns - 4,
-                height: (SCREEN_HEIGHT - 200) / rows - 4,
-              },
-            ]}
+            className="m-0.5 rounded-xl overflow-hidden"
+            style={{
+              width: SCREEN_WIDTH / columns - 4,
+              height: (SCREEN_HEIGHT - 200) / rows - 4,
+            }}
           >
             <ParticipantTile
               participant={participant}
@@ -348,43 +352,54 @@ function CallScreenContent() {
   }
 
   return (
-    <View style={styles.container}>
+    <View className="flex-1 bg-black">
       <LinearGradient
         colors={
           isVideoCall
             ? ['#1a1a1a', '#2d2d2d', '#1a1a1a']
             : ['#1a1a2e', '#16213e', '#0f3460']
         }
-        style={styles.gradient}
+        className="flex-1"
       >
         {/* Top bar */}
-        <View style={[styles.topBar, { paddingTop: insets.top + 10 }]}>
-          <HStack space="md" style={styles.topBarContent}>
+        <View
+          className="absolute top-0 left-0 right-0 z-10 px-5 pb-2.5"
+          style={{ paddingTop: insets.top + 10 }}
+        >
+          <HStack space="md" className="items-center">
             {/* Network quality */}
-            <View style={styles.networkContainer}>
+            <View className="p-1">
               {renderNetworkQuality()}
             </View>
 
             {/* Call duration */}
             {uiState === 'active' && (
-              <Text style={styles.duration}>{callDuration.formatted}</Text>
+              <Text className="text-base font-semibold text-white">{callDuration.formatted}</Text>
             )}
 
             {/* Connection status */}
             {connectionState === ConnectionState.Reconnecting && (
-              <Text style={styles.reconnecting}>Reconnecting...</Text>
+              <Text className="text-sm" style={{ color: colors.warning[400] }}>Reconnecting...</Text>
             )}
 
             {/* Layout toggle (video calls only) */}
             {isVideoCall && remoteParticipants.length > 0 && (
-              <Pressable onPress={handleLayoutChange} style={styles.layoutButton}>
+              <Pressable
+                onPress={handleLayoutChange}
+                className="p-2 rounded-full"
+                style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)' }}
+              >
                 <Grid size={20} color={colors.white} />
               </Pressable>
             )}
 
             {/* Screen share toggle (video calls, Android only) */}
             {isVideoCall && Platform.OS === 'android' && (
-              <Pressable onPress={toggleScreenShare} style={styles.layoutButton}>
+              <Pressable
+                onPress={toggleScreenShare}
+                className="p-2 rounded-full"
+                style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)' }}
+              >
                 {isScreenSharing ? (
                   <ScreenShareOff size={20} color={colors.error[500]} />
                 ) : (
@@ -399,7 +414,7 @@ function CallScreenContent() {
         {isVideoCall && uiState === 'active' ? (
           renderVideoGrid()
         ) : (
-          <View style={styles.voiceCallContainer}>
+          <View className="flex-1 justify-center items-center pb-[100px]">
             <CallerInfo
               name={otherParticipant.name}
               avatar={otherParticipant.avatar}
@@ -413,10 +428,11 @@ function CallScreenContent() {
         {uiState === 'ended' && (
           <Animated.View
             entering={FadeIn.duration(300)}
-            style={styles.endedOverlay}
+            className="absolute inset-0 items-center justify-center z-[100]"
+            style={{ backgroundColor: 'rgba(0, 0, 0, 0.7)' }}
           >
-            <Text style={styles.endedText}>Call Ended</Text>
-            <Text style={styles.endedDuration}>
+            <Text className="text-white text-[28px] font-bold mb-2">Call Ended</Text>
+            <Text className="text-lg" style={{ color: 'rgba(255, 255, 255, 0.7)' }}>
               Duration: {callDuration.formatted}
             </Text>
           </Animated.View>
@@ -461,28 +477,24 @@ export default function CallScreen() {
           }}
         />
         <StatusBar barStyle="light-content" />
-        <View style={styles.loadingContainer}>
+        <View className="flex-1 bg-black">
           <LinearGradient
             colors={['#1a1a2e', '#16213e', '#0f3460']}
-            style={styles.gradient}
+            className="flex-1"
           >
-            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 40 }}>
-              <Text style={{ color: 'white', fontSize: 24, fontWeight: '700', marginBottom: 16, textAlign: 'center' }}>
+            <View className="flex-1 justify-center items-center px-10">
+              <Text className="text-white text-2xl font-bold mb-4 text-center">
                 Calling Not Available
               </Text>
-              <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 16, textAlign: 'center', marginBottom: 32 }}>
+              <Text className="text-base text-center mb-8" style={{ color: 'rgba(255,255,255,0.7)' }}>
                 Voice/video calls require a development build. They are not supported in Expo Go.
               </Text>
               <Pressable
                 onPress={() => router.back()}
-                style={{
-                  backgroundColor: colors.primary[500],
-                  paddingHorizontal: 32,
-                  paddingVertical: 16,
-                  borderRadius: 12,
-                }}
+                className="rounded-xl px-8 py-4"
+                style={{ backgroundColor: colors.primary[500] }}
               >
-                <Text style={{ color: 'white', fontSize: 16, fontWeight: '600' }}>Go Back</Text>
+                <Text className="text-white text-base font-semibold">Go Back</Text>
               </Pressable>
             </View>
           </LinearGradient>
@@ -529,13 +541,13 @@ export default function CallScreen() {
           }}
         />
         <StatusBar barStyle="light-content" />
-        <View style={styles.loadingContainer}>
+        <View className="flex-1 bg-black">
           <LinearGradient
             colors={['#1a1a2e', '#16213e', '#0f3460']}
-            style={styles.gradient}
+            className="flex-1"
           >
-            <View style={styles.loadingContent}>
-              <Text style={styles.loadingText}>Connecting...</Text>
+            <View className="flex-1 items-center justify-center">
+              <Text className="text-white text-lg">Connecting...</Text>
             </View>
           </LinearGradient>
         </View>
@@ -568,124 +580,3 @@ export default function CallScreen() {
   );
 }
 
-// =============================================================================
-// STYLES
-// =============================================================================
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#000',
-  },
-  gradient: {
-    flex: 1,
-  },
-  loadingContainer: {
-    flex: 1,
-    backgroundColor: '#000',
-  },
-  loadingContent: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  loadingText: {
-    color: colors.white,
-    fontSize: 18,
-  },
-  topBar: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 10,
-    paddingHorizontal: 20,
-    paddingBottom: 10,
-  },
-  topBarContent: {
-    alignItems: 'center',
-  },
-  networkContainer: {
-    padding: 4,
-  },
-  duration: {
-    color: colors.white,
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  reconnecting: {
-    color: colors.warning[400],
-    fontSize: 14,
-  },
-  layoutButton: {
-    padding: 8,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-  },
-  voiceCallContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingBottom: 100,
-  },
-  noParticipants: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  singleParticipant: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  speakerLayout: {
-    flex: 1,
-    position: 'relative',
-  },
-  fullScreenParticipant: {
-    flex: 1,
-    borderRadius: 0,
-  },
-  localVideoOverlay: {
-    position: 'absolute',
-    right: 20,
-    zIndex: 10,
-  },
-  localVideo: {
-    width: 100,
-    height: 140,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
-  },
-  gridLayout: {
-    flex: 1,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    padding: 2,
-    alignContent: 'center',
-    justifyContent: 'center',
-  },
-  gridTile: {
-    margin: 2,
-    borderRadius: 12,
-    overflow: 'hidden',
-  },
-  endedOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 100,
-  },
-  endedText: {
-    color: colors.white,
-    fontSize: 28,
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  endedDuration: {
-    color: 'rgba(255, 255, 255, 0.7)',
-    fontSize: 18,
-  },
-});

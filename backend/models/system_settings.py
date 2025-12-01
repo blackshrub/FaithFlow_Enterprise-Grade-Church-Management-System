@@ -97,10 +97,16 @@ class FaithAssistantSettings(BaseModel):
 class VoiceIntegrationSettings(BaseModel):
     """Voice Features Integration Settings (TTS/STT)"""
 
-    # OpenAI API for TTS (required) and STT fallback
+    # Google Cloud TTS API key (for text-to-speech)
+    google_tts_api_key: Optional[str] = Field(
+        None,
+        description="Google Cloud TTS API key for Text-to-Speech"
+    )
+
+    # OpenAI API for STT fallback (when Groq not available)
     openai_api_key: Optional[str] = Field(
         None,
-        description="OpenAI API key for Text-to-Speech (TTS) and STT fallback"
+        description="OpenAI API key for Speech-to-Text fallback"
     )
 
     # Groq API for fast STT (~10x faster than OpenAI)
@@ -115,17 +121,25 @@ class VoiceIntegrationSettings(BaseModel):
         description="Preferred STT provider: 'groq' (faster) or 'openai' (fallback)"
     )
 
+    # Google TTS voice for Indonesian content (Chirp3-HD recommended)
     tts_voice: str = Field(
-        "nova",
-        description="Default TTS voice (alloy, echo, fable, onyx, nova, shimmer)"
+        "id-ID-Chirp3-HD-Sulafat",
+        description="Default Google TTS voice for Indonesian (Chirp3-HD: Sulafat, Aoede, Puck, Kore)"
     )
-    tts_model: str = Field(
-        "tts-1",
-        description="TTS model (tts-1 for speed, tts-1-hd for quality)"
+
+    # Google TTS voice for English content
+    tts_voice_en: str = Field(
+        "en-US-Chirp-HD-F",
+        description="Default Google TTS voice for English (Chirp-HD: F, D, O or Chirp3-HD: Despina, Aoede, Puck)"
     )
+
     tts_speed: float = Field(
         1.0,
         description="TTS speech speed (0.25 to 4.0)"
+    )
+    tts_pitch: float = Field(
+        0.0,
+        description="TTS pitch adjustment (-20.0 to 20.0 semitones)"
     )
     stt_model: str = Field(
         "whisper-1",

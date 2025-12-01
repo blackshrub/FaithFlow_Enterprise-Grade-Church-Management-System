@@ -8,10 +8,11 @@
  * - Tab navigation
  *
  * All animations use the shared animation hooks for consistency.
+ * Styling: NativeWind-first with inline style for spacing constants
  */
 
 import React, { memo, useCallback, useMemo } from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { View, Text, Pressable } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
@@ -79,20 +80,30 @@ interface StatItemProps {
 
 const StatItem = memo(function StatItem({ icon, value, label }: StatItemProps) {
   return (
-    <View style={styles.statItem}>
-      <View style={styles.statIconWrap}>
+    <View className="flex-1 flex-row items-center" style={{ gap: spacing.s }}>
+      <View
+        className="w-9 h-9 rounded-[10px] items-center justify-center"
+        style={{ backgroundColor: 'rgba(212,175,55,0.2)' }}
+      >
         <MemoIcon icon={icon} size={18} color={Colors.accent.primary} />
       </View>
       <View>
-        <Text style={styles.statValue}>{value}</Text>
-        <Text style={styles.statLabel}>{label}</Text>
+        <Text className="text-lg font-bold text-white">{value}</Text>
+        <Text className="text-[11px] font-medium" style={{ color: 'rgba(255,255,255,0.6)' }}>
+          {label}
+        </Text>
       </View>
     </View>
   );
 });
 
 const StatDivider = memo(function StatDivider() {
-  return <View style={styles.statDivider} />;
+  return (
+    <View
+      className="w-px h-7"
+      style={{ backgroundColor: 'rgba(255,255,255,0.15)', marginHorizontal: spacing.s }}
+    />
+  );
 });
 
 // =============================================================================
@@ -143,22 +154,49 @@ export const EventsHeader = memo(function EventsHeader({
     <View>
       <LinearGradient
         colors={[Colors.gradient.start, Colors.gradient.mid, Colors.gradient.end]}
-        style={[styles.headerGradient, { paddingTop: topInset + 16 }]}
+        className="overflow-hidden"
+        style={{ paddingTop: topInset + 16 }}
       >
-        <Animated.View style={[styles.headerContent, headerPaddingStyle, headerEnterStyle]}>
+        <Animated.View
+          style={[{ paddingHorizontal: spacing.ml }, headerPaddingStyle, headerEnterStyle]}
+        >
           {/* Header Top - Title and Calendar */}
-          <Animated.View style={[styles.headerTop, headerTopStyle]}>
+          <Animated.View
+            className="flex-row justify-between items-start"
+            style={headerTopStyle}
+          >
             <View>
-              <Text style={styles.headerTitle}>{t('events.title')}</Text>
-              <Text style={styles.headerSubtitle}>{t('events.subtitle')}</Text>
+              <Text className="text-[28px] font-bold text-white" style={{ letterSpacing: -0.5 }}>
+                {t('events.title')}
+              </Text>
+              <Text className="text-[15px] mt-1" style={{ color: 'rgba(255,255,255,0.7)' }}>
+                {t('events.subtitle')}
+              </Text>
             </View>
-            <Pressable onPress={handleCalendarPress} style={styles.calendarBtn}>
+            <Pressable
+              onPress={handleCalendarPress}
+              className="w-11 h-11 rounded-full items-center justify-center"
+              style={{ backgroundColor: 'rgba(255,255,255,0.15)' }}
+            >
               <MemoIcon icon={Calendar} size={22} color={Colors.white} />
             </Pressable>
           </Animated.View>
 
           {/* Stats Row - Collapsible */}
-          <Animated.View style={[styles.statsRow, statsRowStyle]}>
+          <Animated.View
+            className="flex-row items-center border"
+            style={[
+              {
+                backgroundColor: 'rgba(255,255,255,0.08)',
+                borderRadius: radius.card,
+                paddingVertical: spacing.sm,
+                paddingHorizontal: spacing.m,
+                marginBottom: spacing.m,
+                borderColor: 'rgba(255,255,255,0.08)',
+              },
+              statsRowStyle,
+            ]}
+          >
             <StatItem icon={CalendarDays} value={upcomingCount} label={t('events.upcoming')} />
             <StatDivider />
             <StatItem icon={Heart} value={rsvpCount} label={t('events.myRSVPs')} />
@@ -167,16 +205,24 @@ export const EventsHeader = memo(function EventsHeader({
           </Animated.View>
 
           {/* Tabs */}
-          <View style={styles.tabsRow}>
+          <View className="flex-row" style={{ gap: spacing.s }}>
             {tabs.map((tab) => {
               const isActive = activeTab === tab.key;
               return (
                 <Pressable
                   key={tab.key}
                   onPress={() => handleTabPress(tab.key)}
-                  style={[styles.tab, isActive && styles.tabActive]}
+                  className={`flex-1 items-center ${isActive ? 'bg-white' : ''}`}
+                  style={{
+                    paddingVertical: spacing.sm,
+                    borderRadius: radius.m,
+                    backgroundColor: isActive ? Colors.white : 'rgba(255,255,255,0.1)',
+                  }}
                 >
-                  <Text style={[styles.tabText, isActive && styles.tabTextActive]}>
+                  <Text
+                    className="text-[13px] font-semibold"
+                    style={{ color: isActive ? Colors.gradient.start : 'rgba(255,255,255,0.8)' }}
+                  >
                     {tab.label}
                   </Text>
                 </Pressable>
@@ -187,106 +233,6 @@ export const EventsHeader = memo(function EventsHeader({
       </LinearGradient>
     </View>
   );
-});
-
-// =============================================================================
-// STYLES
-// =============================================================================
-
-const styles = StyleSheet.create({
-  headerGradient: {
-    overflow: 'hidden',
-  },
-  headerContent: {
-    paddingHorizontal: spacing.ml,
-  },
-  headerTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-  },
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: Colors.white,
-    letterSpacing: -0.5,
-  },
-  headerSubtitle: {
-    fontSize: 15,
-    color: 'rgba(255,255,255,0.7)',
-    marginTop: 4,
-  },
-  calendarBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  statsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    borderRadius: radius.card,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.m,
-    marginBottom: spacing.m,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
-  },
-  statItem: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.s,
-  },
-  statIconWrap: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    backgroundColor: 'rgba(212,175,55,0.2)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  statValue: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: Colors.white,
-  },
-  statLabel: {
-    fontSize: 11,
-    color: 'rgba(255,255,255,0.6)',
-    fontWeight: '500',
-  },
-  statDivider: {
-    width: 1,
-    height: 28,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    marginHorizontal: spacing.s,
-  },
-  tabsRow: {
-    flexDirection: 'row',
-    gap: spacing.s,
-  },
-  tab: {
-    flex: 1,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.m,
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.1)',
-  },
-  tabActive: {
-    backgroundColor: Colors.white,
-  },
-  tabText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: 'rgba(255,255,255,0.8)',
-  },
-  tabTextActive: {
-    color: Colors.gradient.start,
-  },
 });
 
 export default EventsHeader;

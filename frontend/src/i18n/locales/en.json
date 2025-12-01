@@ -2317,5 +2317,41 @@
         "approveError": "Failed to Approve"
       }
     }
+  },
+  "crashLogs": {
+    "title": "Crash Logs",
+    "description": "Monitor and manage mobile app crash reports",
+    "totalCrashes": "Total Crashes",
+    "newCrashes": "New",
+    "investigating": "Investigating",
+    "resolved": "Resolved",
+    "uniqueUsers": "Unique Users",
+    "byPlatform": "Crashes by Platform",
+    "recentCrashes": "Recent Crashes",
+    "showing": "Showing {{from}}-{{to}} of {{total}} crashes",
+    "noCrashes": "No crash logs found",
+    "searchPlaceholder": "Search by error message...",
+    "allStatuses": "All Statuses",
+    "allPlatforms": "All Platforms",
+    "error": "Error",
+    "platform": "Platform",
+    "appVersion": "App Version",
+    "osVersion": "OS Version",
+    "device": "Device",
+    "screen": "Screen",
+    "network": "Network",
+    "time": "Time",
+    "stackTrace": "Stack Trace",
+    "crashDetails": "Crash Details",
+    "updateStatus": "Update Status",
+    "resolutionNotes": "Resolution Notes",
+    "notesPlaceholder": "Add notes about the resolution...",
+    "confirmDelete": "Are you sure you want to delete this crash log?",
+    "status": {
+      "new": "New",
+      "investigating": "Investigating",
+      "resolved": "Resolved",
+      "ignored": "Ignored"
+    }
   }
 }

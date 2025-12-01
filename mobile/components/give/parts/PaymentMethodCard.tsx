@@ -2,13 +2,16 @@
  * PaymentMethodCard - Memoized Payment Method Selection Card
  *
  * Used in the payment step for method selection.
+ *
+ * Styling: NativeWind-first with inline style for dynamic colors
  */
 
 import React, { memo, useCallback } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import type { LucideIcon } from 'lucide-react-native';
 
+import { Text } from '@/components/ui/text';
 import { MemoIcon } from '@/components/ui/MemoIcon';
 import { PremiumCard3 } from '@/components/ui/premium-card';
 import type { PaymentMethodType } from '@/stores/ui/giveUI';
@@ -60,50 +63,30 @@ export const PaymentMethodCard = memo(function PaymentMethodCard({
 
   return (
     <PremiumCard3 selected={isSelected} onPress={handlePress}>
-      <View style={styles.content}>
-        <View style={styles.iconWrap}>
+      <View className="flex-row items-center gap-3.5">
+        <View
+          className="w-[46px] h-[46px] rounded-xl items-center justify-center"
+          style={{ backgroundColor: Colors.neutral[100] }}
+        >
           <MemoIcon icon={icon} size={24} color={Colors.gradient.end} />
         </View>
-        <View style={styles.textWrap}>
-          <Text style={styles.name}>{name}</Text>
-          <Text style={styles.description}>{description}</Text>
+        <View className="flex-1">
+          <Text
+            className="text-base font-bold"
+            style={{ color: Colors.neutral[900] }}
+          >
+            {name}
+          </Text>
+          <Text
+            className="text-[13px] mt-0.5"
+            style={{ color: Colors.neutral[500] }}
+          >
+            {description}
+          </Text>
         </View>
       </View>
     </PremiumCard3>
   );
-});
-
-// =============================================================================
-// STYLES
-// =============================================================================
-
-const styles = StyleSheet.create({
-  content: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-  },
-  iconWrap: {
-    width: 46,
-    height: 46,
-    borderRadius: 12,
-    backgroundColor: Colors.neutral[100],
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  textWrap: {
-    flex: 1,
-  },
-  name: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: Colors.neutral[900],
-  },
-  description: {
-    fontSize: 13,
-    color: Colors.neutral[500],
-    marginTop: 2,
-  },
 });
 
 export default PaymentMethodCard;

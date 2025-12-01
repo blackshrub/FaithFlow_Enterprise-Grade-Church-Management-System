@@ -1,102 +1,421 @@
 /**
- * Community Tab - My Communities List
+ * Community Tab - WhatsApp-Style Community List
  *
- * Features:
- * - View joined communities
- * - Quick access to chat
- * - Unread message indicators
- * - Discover new communities
- * - Pull-to-refresh
+ * World-class, production-ready design with attention to:
+ * - Typography: Proper font sizes, weights, line heights
+ * - Spacing: Consistent 8pt grid system
+ * - Touch targets: Minimum 44pt for accessibility
+ * - Visual hierarchy: Clear information architecture
+ * - Micro-interactions: Haptic feedback, animations
+ *
+ * Styling: NativeWind-first with inline style for dynamic/shadow values
  */
 
-import React, { useState, useCallback, useMemo, useRef, memo } from 'react';
+import React, { useState, useCallback, useMemo, memo } from 'react';
 import {
   View,
+  Text,
   Pressable,
   RefreshControl,
   TextInput,
   StatusBar,
+  Platform,
   StyleSheet,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useRouter } from 'expo-router';
-import Animated, { FadeIn, ZoomIn } from 'react-native-reanimated';
+import Animated, {
+  FadeIn,
+  FadeInDown,
+  FadeOut,
+  SlideInRight,
+} from 'react-native-reanimated';
 import { withPremiumMotionV10 } from '@/hoc';
-import { PMotionV10 } from '@/components/motion/premium-motion';
-import {
-  useTodayHeaderMotion,
-  todayListItemMotion,
-} from '@/components/motion/today-motion';
 import {
   Search,
-  Users,
-  Plus,
-  MessageCircle,
-  ChevronRight,
-  Bell,
-  BellOff,
-  Compass,
   X,
-  Lock,
-  Globe,
+  Compass,
+  CheckCheck,
+  ArrowLeft,
+  MessageCircle,
 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { FlashList } from '@shopify/flash-list';
+import { Image } from 'expo-image';
 
-import { Text } from '@/components/ui/text';
-import { Heading } from '@/components/ui/heading';
-import { VStack } from '@/components/ui/vstack';
-import { HStack } from '@/components/ui/hstack';
-import { PremiumCard3 } from '@/components/ui/premium-card';
 import { Icon } from '@/components/ui/icon';
-import { Badge, BadgeText } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Button, ButtonText } from '@/components/ui/button';
-import { Avatar, AvatarFallbackText, AvatarImage } from '@/components/ui/avatar';
-import { Divider } from '@/components/ui/divider';
 
 import { useMyCommunities, usePrefetchCommunity } from '@/hooks/useCommunities';
 import { useAuthStore } from '@/stores/auth';
-import { colors, spacing } from '@/constants/theme';
 import type { CommunityWithStatus } from '@/types/communities';
+
+// =============================================================================
+// DESIGN TOKENS - World-Class UI/UX Standards
+// =============================================================================
+
+// Brand Colors (WhatsApp-inspired but distinctive)
+const COLORS = {
+  // Primary brand
+  primary: '#075E54',
+  primaryLight: '#128C7E',
+  accent: '#25D366',
+  accentBlue: '#34B7F1',
+
+  // Neutrals - iOS/Android optimized
+  white: '#FFFFFF',
+  background: '#FFFFFF',
+  surface: '#F7F7F7',
+  border: '#E8E8E8',
+  divider: '#EBEBEB',
+
+  // Text hierarchy
+  textPrimary: '#1A1A1A',
+  textSecondary: '#65676B',
+  textTertiary: '#8A8D91',
+  textOnPrimary: '#FFFFFF',
+
+  // States
+  pressed: '#F2F3F5',
+  ripple: 'rgba(0, 0, 0, 0.08)',
+};
+
+// =============================================================================
+// COMMUNITY LIST ITEM
+// =============================================================================
+
+interface CommunityItemProps {
+  community: CommunityWithStatus;
+  onPress: () => void;
+  onPressIn: () => void;
+}
+
+const CommunityItem = memo(({ community, onPress, onPressIn }: CommunityItemProps) => {
+  const { t } = useTranslation();
+  const hasUnread = (community.unread_count ?? 0) > 0;
+
+  // Format timestamp like WhatsApp - smart time display
+  const formatTime = (dateString?: string) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    const now = new Date();
+    const diff = now.getTime() - date.getTime();
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+
+    if (days === 0) {
+      return date.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+      });
+    } else if (days === 1) {
+      return t('common.yesterday', 'Yesterday');
+    } else if (days < 7) {
+      return date.toLocaleDateString('en-US', { weekday: 'short' });
+    } else {
+      return date.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+      });
+    }
+  };
+
+  // Get last message preview with thread name and type indicators
+  const getLastMessagePreview = () => {
+    if (!community.last_message) return '';
+    const { sender_name, text_preview, message_type, thread_name } = community.last_message;
+
+    let preview = text_preview;
+    if (message_type === 'image') preview = '📷 Photo';
+    else if (message_type === 'video') preview = '🎬 Video';
+    else if (message_type === 'audio') preview = '🎵 Voice message';
+    else if (message_type === 'document') preview = '📄 Document';
+    else if (message_type === 'poll') preview = '📊 Poll';
+    else if (message_type === 'location') preview = '📍 Location';
+
+    // Include thread name if available
+    if (thread_name) {
+      return `${thread_name}: ${sender_name}: ${preview}`;
+    }
+    return `${sender_name}: ${preview}`;
+  };
+
+  return (
+    <Pressable
+      onPress={onPress}
+      onPressIn={onPressIn}
+      android_ripple={{ color: COLORS.ripple, borderless: false }}
+      className="flex-row items-start pr-4 bg-white relative"
+      style={[
+        { minHeight: 84, paddingVertical: 14, paddingLeft: 20 },
+        ({ pressed }: { pressed: boolean }) => Platform.OS === 'ios' && pressed ? { backgroundColor: COLORS.pressed } : undefined,
+      ]}
+    >
+      {/* Avatar - 64pt for better visual weight */}
+      <View className="mr-3">
+        {community.cover_image ? (
+          <Image
+            source={{ uri: community.cover_image }}
+            className="w-16 h-16 rounded-full"
+            contentFit="cover"
+            cachePolicy="memory-disk"
+            transition={150}
+          />
+        ) : (
+          <View className="w-16 h-16 rounded-full items-center justify-center" style={{ backgroundColor: COLORS.primaryLight }}>
+            <Text className="text-2xl font-semibold tracking-wide" style={{ color: COLORS.textOnPrimary }}>
+              {community.name.substring(0, 2).toUpperCase()}
+            </Text>
+          </View>
+        )}
+      </View>
+
+      {/* Content */}
+      <View className="flex-1">
+        {/* Top row: Name + Time */}
+        <View className="flex-row justify-between items-center mb-1">
+          <Text
+            className={`flex-1 text-[17px] mr-3 ${hasUnread ? 'font-semibold' : 'font-medium'}`}
+            style={{ color: COLORS.textPrimary }}
+            numberOfLines={1}
+          >
+            {community.name}
+          </Text>
+          <Text
+            className={`text-[13px] ${hasUnread ? 'font-semibold' : ''}`}
+            style={{ color: hasUnread ? COLORS.primaryLight : COLORS.textSecondary }}
+          >
+            {formatTime(community.last_message?.created_at)}
+          </Text>
+        </View>
+
+        {/* Bottom row: Last message + Unread badge */}
+        <View className="flex-row justify-between items-start">
+          {/* Message status + Preview */}
+          <View className="flex-1 flex-row items-start mr-2">
+            {(community.my_role === 'leader' || community.my_role === 'admin') && community.last_message && (
+              <Icon as={CheckCheck} size="md" style={{ color: COLORS.accentBlue, marginRight: 4, marginTop: 1 }} />
+            )}
+            <Text
+              className={`flex-1 text-[15px] leading-[20px] ${hasUnread ? 'font-medium' : ''}`}
+              style={{ color: hasUnread ? COLORS.textPrimary : COLORS.textSecondary }}
+              numberOfLines={2}
+            >
+              {getLastMessagePreview() || t('communities.noMessages', 'No messages yet')}
+            </Text>
+          </View>
+
+          {/* Unread badge */}
+          {hasUnread && (
+            <View className="rounded-full min-w-[22px] h-[22px] items-center justify-center px-1.5" style={{ backgroundColor: COLORS.primaryLight }}>
+              <Text className="text-[13px] font-bold" style={{ color: COLORS.textOnPrimary }}>
+                {(community.unread_count ?? 0) > 99 ? '99+' : community.unread_count}
+              </Text>
+            </View>
+          )}
+        </View>
+      </View>
+
+      {/* Divider - starts after avatar (left: 20 padding + 64 avatar = 84) */}
+      <View
+        className="absolute bottom-0 right-0 z-10"
+        style={{ left: 84, height: 1, backgroundColor: COLORS.divider }}
+      />
+    </Pressable>
+  );
+});
+
+CommunityItem.displayName = 'CommunityItem';
+
+// =============================================================================
+// EMPTY STATE
+// =============================================================================
+
+const EmptyState = memo(() => {
+  const { t } = useTranslation();
+  const router = useRouter();
+
+  return (
+    <View className="flex-1 items-center justify-center px-8">
+      <Animated.View entering={FadeIn.delay(100).duration(400)}>
+        <View className="w-[100px] h-[100px] rounded-full items-center justify-center mb-6" style={{ backgroundColor: '#E8F5E9' }}>
+          <Icon as={MessageCircle} size="3xl" color={COLORS.primary} />
+        </View>
+      </Animated.View>
+
+      <Animated.View entering={FadeIn.delay(200).duration(400)}>
+        <Text className="text-xl font-semibold text-center mb-2" style={{ color: COLORS.textPrimary }}>
+          {t('communities.noCommunities', 'No Communities Yet')}
+        </Text>
+      </Animated.View>
+
+      <Animated.View entering={FadeIn.delay(300).duration(400)}>
+        <Text className="text-[15px] text-center leading-[22px] mb-6" style={{ color: COLORS.textSecondary }}>
+          {t('communities.noCommunitiesDesc', 'Join a community to connect with others and grow together in faith.')}
+        </Text>
+      </Animated.View>
+
+      <Animated.View entering={FadeIn.delay(400).duration(400)}>
+        <Pressable
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            router.push('/community/discover' as any);
+          }}
+          className="px-6 py-3.5 rounded-3xl min-h-[48px] items-center justify-center active:opacity-90"
+          style={{ backgroundColor: COLORS.primary }}
+        >
+          <Text className="text-base font-semibold" style={{ color: COLORS.textOnPrimary }}>
+            {t('communities.discoverCommunities', 'Discover Communities')}
+          </Text>
+        </Pressable>
+      </Animated.View>
+    </View>
+  );
+});
+
+EmptyState.displayName = 'EmptyState';
+
+// =============================================================================
+// SEARCH BAR
+// =============================================================================
+
+interface SearchBarProps {
+  value: string;
+  onChangeText: (text: string) => void;
+  onClose: () => void;
+}
+
+const SearchBar = memo(({ value, onChangeText, onClose }: SearchBarProps) => {
+  const { t } = useTranslation();
+
+  return (
+    <Animated.View
+      entering={SlideInRight.duration(200)}
+      exiting={FadeOut.duration(150)}
+      className="flex-row items-center h-14 px-2"
+      style={{ backgroundColor: COLORS.primary }}
+    >
+      {/* Back button - 44pt touch target */}
+      <Pressable
+        onPress={onClose}
+        className="w-11 h-11 items-center justify-center"
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+      >
+        <Icon as={ArrowLeft} size="lg" color={COLORS.textOnPrimary} />
+      </Pressable>
+
+      {/* Search input */}
+      <TextInput
+        value={value}
+        onChangeText={onChangeText}
+        placeholder={t('communities.search', 'Search...')}
+        placeholderTextColor="rgba(255,255,255,0.6)"
+        className="flex-1 text-[17px] py-2 px-2"
+        style={{ color: COLORS.textOnPrimary }}
+        autoFocus
+        returnKeyType="search"
+        autoCapitalize="none"
+        autoCorrect={false}
+        selectionColor="rgba(255,255,255,0.8)"
+      />
+
+      {/* Clear button */}
+      {value.length > 0 && (
+        <Pressable
+          onPress={() => onChangeText('')}
+          className="w-11 h-11 items-center justify-center"
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Icon as={X} size="md" color={COLORS.textOnPrimary} />
+        </Pressable>
+      )}
+    </Animated.View>
+  );
+});
+
+SearchBar.displayName = 'SearchBar';
+
+// =============================================================================
+// LOADING SKELETON
+// =============================================================================
+
+const LoadingSkeleton = memo(() => {
+  const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
+
+  return (
+    <View className="flex-1 bg-white">
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.white} />
+      {/* Header skeleton */}
+      <View style={{ paddingTop: insets.top, backgroundColor: COLORS.white }}>
+        <View className="flex-row items-center justify-between pr-4 py-2" style={{ paddingLeft: 20 }}>
+          <Text className="text-[34px] font-bold" style={{ color: COLORS.textPrimary, letterSpacing: -0.5 }}>
+            {t('tabs.communities', 'Community')}
+          </Text>
+          <View className="w-10 h-10 rounded-full" style={{ backgroundColor: COLORS.surface }} />
+        </View>
+        <View className="pr-4 pb-2" style={{ paddingLeft: 20 }}>
+          <View className="rounded-xl" style={{ backgroundColor: COLORS.surface, height: 36 }} />
+        </View>
+      </View>
+      <View className="flex-1">
+        {[1, 2, 3, 4, 5, 6].map((i) => (
+          <Animated.View
+            key={i}
+            entering={FadeIn.delay(i * 80).duration(300)}
+            className="flex-row pr-4 items-start"
+            style={{ minHeight: 84, paddingVertical: 14, paddingLeft: 20 }}
+          >
+            <View className="w-16 h-16 rounded-full mr-3" style={{ backgroundColor: COLORS.surface }} />
+            <View className="flex-1">
+              <View className="h-[18px] w-[55%] rounded mb-2" style={{ backgroundColor: COLORS.surface }} />
+              <View className="h-[14px] w-[85%] rounded mb-1" style={{ backgroundColor: COLORS.surface }} />
+              <View className="h-[14px] w-[60%] rounded" style={{ backgroundColor: COLORS.surface }} />
+            </View>
+          </Animated.View>
+        ))}
+      </View>
+    </View>
+  );
+});
+
+LoadingSkeleton.displayName = 'LoadingSkeleton';
+
+// =============================================================================
+// MAIN SCREEN
+// =============================================================================
 
 function CommunityScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const { member } = useAuthStore();
+  const insets = useSafeAreaInsets();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [refreshing, setRefreshing] = useState(false);
 
-  // Focus key for animations - kept static to avoid replaying on tab switch
-  const focusKey = 0;
-
-  // Fetch my communities
+  // Fetch communities
   const {
     data: communities = [],
     isLoading,
     refetch,
   } = useMyCommunities();
 
-  // Prefetch hook for instant navigation
+  // Prefetch for instant navigation
   const prefetchCommunity = usePrefetchCommunity();
 
-  // Shared header enter animation from today-motion
-  const { headerEnterStyle } = useTodayHeaderMotion();
-
-  // Filter communities by search
+  // Filter communities
   const filteredCommunities = useMemo(() => {
     if (!searchQuery.trim()) return communities;
-
     const query = searchQuery.toLowerCase();
-    return communities.filter((c) => {
-      const matchesName = c.name.toLowerCase().includes(query);
-      const matchesDesc = c.description?.toLowerCase().includes(query);
-      return matchesName || matchesDesc;
-    });
+    return communities.filter(
+      (c) =>
+        c.name.toLowerCase().includes(query) ||
+        c.description?.toLowerCase().includes(query)
+    );
   }, [communities, searchQuery]);
 
+  // Handlers
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -104,10 +423,11 @@ function CommunityScreen() {
     setRefreshing(false);
   }, [refetch]);
 
-  const handleOpenChat = useCallback(
+  const handleOpenCommunity = useCallback(
     (community: CommunityWithStatus) => {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      router.push(`/community/${community.id}/chat` as any);
+      // Navigate to community threads list (WhatsApp Communities style)
+      router.push(`/community/${community.id}` as any);
     },
     [router]
   );
@@ -119,346 +439,105 @@ function CommunityScreen() {
     [prefetchCommunity, member?.church_id]
   );
 
-  const getCategoryColor = (category: string) => {
-    const categoryColors: Record<string, string> = {
-      cell_group: colors.primary[500],
-      ministry_team: colors.secondary[500],
-      activity: colors.success[500],
-      support_group: colors.warning[500],
-    };
-    return categoryColors[category] || colors.gray[500];
-  };
-
-  const getCategoryLabel = (category: string) => {
-    const labels: Record<string, string> = {
-      cell_group: t('communities.category.cellGroup', 'Cell Group'),
-      ministry_team: t('communities.category.ministryTeam', 'Ministry Team'),
-      activity: t('communities.category.activity', 'Activity'),
-      support_group: t('communities.category.supportGroup', 'Support Group'),
-    };
-    return labels[category] || category;
-  };
-
-  const getRoleLabel = (role?: string) => {
-    if (!role) return null;
-    const roleLabels: Record<string, { label: string; color: string }> = {
-      leader: { label: t('communities.role.leader', 'Leader'), color: colors.primary[500] },
-      co_leader: { label: t('communities.role.coLeader', 'Co-Leader'), color: colors.secondary[500] },
-      admin: { label: t('communities.role.admin', 'Admin'), color: colors.warning[500] },
-    };
-    return roleLabels[role] || null;
-  };
-
-  // Render community card
-  const renderCommunity = useCallback(
-    ({ item: community, index }: { item: CommunityWithStatus; index: number }) => {
-      const roleInfo = getRoleLabel(community.my_role);
-      const hasUnread = (community as any).unread_count > 0;
-
-      return (
-        <Animated.View
-          key={`community-${community.id}-${focusKey}`}
-          entering={todayListItemMotion(index)}
-          style={styles.fullWidth}
-        >
-          <Pressable
-            onPress={() => handleOpenChat(community)}
-            onPressIn={() => handlePrefetch(community)}
-            className="active:opacity-90"
-          >
-            <PremiumCard3
-              style={styles.communityCard}
-            >
-              <View className="p-4">
-                <HStack space="md" className="items-center">
-                  {/* Avatar with unread indicator */}
-                  <View className="relative">
-                    <Avatar size="lg" className="bg-primary-100">
-                      {community.cover_image ? (
-                        <AvatarImage source={{ uri: community.cover_image }} />
-                      ) : (
-                        <AvatarFallbackText className="text-primary-600">
-                          {community.name.substring(0, 2).toUpperCase()}
-                        </AvatarFallbackText>
-                      )}
-                    </Avatar>
-
-                    {/* Unread indicator */}
-                    {hasUnread && (
-                      <View
-                        className="absolute -top-1 -right-1 w-5 h-5 rounded-full items-center justify-center"
-                        style={styles.unreadBadge}
-                      >
-                        <Text className="text-white text-xs font-bold">
-                          {(community as any).unread_count > 99
-                            ? '99+'
-                            : (community as any).unread_count}
-                        </Text>
-                      </View>
-                    )}
-                  </View>
-
-                  {/* Content */}
-                  <VStack className="flex-1" space="xs">
-                    <HStack className="justify-between items-start">
-                      <VStack className="flex-1 mr-2">
-                        <HStack space="sm" className="items-center">
-                          <Text className="text-gray-900 font-bold text-base" numberOfLines={1}>
-                            {community.name}
-                          </Text>
-
-                          {/* Role badge */}
-                          {roleInfo && (
-                            <Badge
-                              size="sm"
-                              style={{ backgroundColor: `${roleInfo.color}20` }}
-                            >
-                              <BadgeText style={{ color: roleInfo.color }} className="text-xs">
-                                {roleInfo.label}
-                              </BadgeText>
-                            </Badge>
-                          )}
-                        </HStack>
-
-                        <HStack space="md" className="items-center mt-0.5">
-                          {/* Category */}
-                          <HStack space="xs" className="items-center">
-                            <View
-                              className="w-2 h-2 rounded-full"
-                              style={{ backgroundColor: getCategoryColor(community.category) }}
-                            />
-                            <Text className="text-xs text-gray-500">
-                              {getCategoryLabel(community.category)}
-                            </Text>
-                          </HStack>
-
-                          {/* Member count */}
-                          <HStack space="xs" className="items-center">
-                            <Icon as={Users} size="xs" className="text-gray-400" />
-                            <Text className="text-xs text-gray-500">
-                              {community.member_count}
-                            </Text>
-                          </HStack>
-
-                          {/* Privacy */}
-                          {community.is_private ? (
-                            <Icon as={Lock} size="xs" className="text-gray-400" />
-                          ) : (
-                            <Icon as={Globe} size="xs" className="text-gray-400" />
-                          )}
-                        </HStack>
-                      </VStack>
-
-                      {/* Chat icon */}
-                      <View
-                        className="w-10 h-10 rounded-full items-center justify-center"
-                        style={styles.chatButton}
-                      >
-                        <Icon as={MessageCircle} size="md" className="text-primary-600" />
-                      </View>
-                    </HStack>
-
-                    {/* Last message preview */}
-                    {(community as any).last_message && (
-                      <Text className="text-gray-500 text-sm" numberOfLines={1}>
-                        {(community as any).last_message.sender_name}
-                        {': '}
-                        {(community as any).last_message.text}
-                      </Text>
-                    )}
-                  </VStack>
-                </HStack>
-              </View>
-            </PremiumCard3>
-          </Pressable>
-        </Animated.View>
-      );
-    },
-    [handleOpenChat, handlePrefetch, t, focusKey]
+  // Render item
+  const renderItem = useCallback(
+    ({ item, index }: { item: CommunityWithStatus; index: number }) => (
+      <Animated.View entering={FadeInDown.delay(Math.min(index * 40, 200)).duration(300)}>
+        <CommunityItem
+          community={item}
+          onPress={() => handleOpenCommunity(item)}
+          onPressIn={() => handlePrefetch(item)}
+        />
+      </Animated.View>
+    ),
+    [handleOpenCommunity, handlePrefetch]
   );
 
   // Loading skeleton
-  const CommunityListSkeleton = () => (
-    <VStack space="md" className="px-5 pt-4">
-      {[1, 2, 3, 4, 5].map((i) => (
-        <PremiumCard3 key={i}>
-          <View className="p-4">
-            <HStack space="md">
-              <Skeleton className="w-14 h-14 rounded-full" isLoaded={false} />
-              <VStack className="flex-1" space="sm">
-                <Skeleton className="h-5 w-3/4" isLoaded={false} />
-                <Skeleton className="h-3 w-1/2" isLoaded={false} />
-                <Skeleton className="h-4 w-full" isLoaded={false} />
-              </VStack>
-            </HStack>
-          </View>
-        </PremiumCard3>
-      ))}
-    </VStack>
-  );
-
-  // Empty state
-  const EmptyState = () => (
-    <View className="flex-1 items-center justify-center px-8 py-16">
-      <Animated.View
-        entering={ZoomIn.delay(200).springify()}
-      >
-        <View
-          className="w-24 h-24 rounded-full items-center justify-center mb-6"
-          style={styles.emptyStateCircle}
-        >
-          <Icon as={Users} size="3xl" className="text-primary-400" />
-        </View>
-      </Animated.View>
-
-      <Heading size="xl" className="text-gray-900 mb-3 text-center font-bold">
-        {searchQuery ? t('communities.noResults', 'No Results') : t('communities.noCommunities', 'No Communities')}
-      </Heading>
-      <Text className="text-gray-500 text-center text-base leading-6 max-w-sm">
-        {searchQuery
-          ? t('communities.noResultsDesc', `No communities found matching "${searchQuery}"`)
-          : t('communities.noCommunitiesDesc', 'Join a community to connect with others, share messages, and grow together.')}
-      </Text>
-
-      {!searchQuery && (
-        <Button
-          onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-            router.push('/community/discover' as any);
-          }}
-          size="lg"
-          className="mt-6"
-        >
-          <Icon as={Compass} size="md" className="text-white mr-2" />
-          <ButtonText>{t('communities.discoverCommunities', 'Discover Communities')}</ButtonText>
-        </Button>
-      )}
-    </View>
-  );
+  if (isLoading) {
+    return <LoadingSkeleton />;
+  }
 
   return (
-    <Animated.View style={styles.flex1}>
-      <StatusBar barStyle="dark-content" />
-      <SafeAreaView className="flex-1 bg-white" edges={['top']}>
-        {/* Header - stagger index 0 */}
-        <Animated.View key={`header-${focusKey}`} entering={todayListItemMotion(0)} style={headerEnterStyle} className="px-5 pt-4 pb-3 border-b border-gray-100">
-            <HStack className="items-center justify-between mb-4">
-              <Heading size="2xl" className="text-gray-900 font-bold">
-                {t('tabs.communities', 'Community')}
-            </Heading>
+    <View className="flex-1 bg-white">
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.white} />
 
-            {/* Discover button */}
-            <Pressable
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                router.push('/community/discover' as any);
-              }}
-              className="active:opacity-70"
-            >
-              <View
-                className="w-10 h-10 rounded-full items-center justify-center"
-                style={styles.discoverButton}
-              >
-                <Icon as={Compass} size="md" className="text-primary-600" />
-              </View>
-            </Pressable>
-          </HStack>
+      {/* Header - WhatsApp iOS style with white background */}
+      <View style={{ paddingTop: insets.top, backgroundColor: COLORS.white }}>
+        {/* Title row */}
+        <View className="flex-row items-center justify-between pr-4 py-2" style={{ paddingLeft: 20 }}>
+          <Text className="text-[34px] font-bold" style={{ color: COLORS.textPrimary, letterSpacing: -0.5 }}>
+            {t('tabs.communities', 'Community')}
+          </Text>
+          <Pressable
+            onPress={() => router.push('/community/discover')}
+            className="w-10 h-10 items-center justify-center rounded-full"
+            style={{ backgroundColor: COLORS.surface }}
+          >
+            <Icon as={Compass} size="md" color={COLORS.primary} />
+          </Pressable>
+        </View>
 
-          {/* Search bar */}
-          {communities.length > 0 && (
-            <HStack
-              space="sm"
-              className="items-center px-4 py-3 rounded-xl"
-              style={styles.searchBar}
-            >
-              <Icon as={Search} size="md" className="text-gray-400" />
-              <TextInput
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-                placeholder={t('communities.searchPlaceholder', 'Search communities...')}
-                placeholderTextColor={colors.gray[400]}
-                className="flex-1 text-base text-gray-900"
-              />
-              {searchQuery.length > 0 && (
-                <Pressable onPress={() => setSearchQuery('')}>
-                  <Icon as={X} size="md" className="text-gray-400" />
-                </Pressable>
-              )}
-            </HStack>
-          )}
-        </Animated.View>
+        {/* Search bar - always visible */}
+        <View className="pr-4 pb-2" style={{ paddingLeft: 20 }}>
+          <View
+            className="flex-row items-center rounded-xl px-3"
+            style={{ backgroundColor: COLORS.surface, height: 36 }}
+          >
+            <Icon as={Search} size="md" color={COLORS.textTertiary} />
+            <TextInput
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              placeholder={t('communities.searchPlaceholder', 'Search')}
+              placeholderTextColor={COLORS.textTertiary}
+              className="flex-1 ml-2 text-[17px]"
+              style={{ color: COLORS.textPrimary, paddingVertical: 0 }}
+            />
+            {searchQuery.length > 0 && (
+              <Pressable onPress={() => setSearchQuery('')}>
+                <Icon as={X} size="md" color={COLORS.textTertiary} />
+              </Pressable>
+            )}
+          </View>
+        </View>
+      </View>
 
       {/* Content */}
-      {isLoading ? (
-        <CommunityListSkeleton />
-      ) : filteredCommunities.length > 0 ? (
-        <Animated.View entering={PMotionV10.screenFadeIn} style={styles.flex1}>
-          <FlashList
-            data={filteredCommunities}
-            renderItem={renderCommunity}
-            keyExtractor={(item: CommunityWithStatus) => item.id}
-            estimatedItemSize={120}
-            contentContainerStyle={{ paddingTop: spacing.md, paddingBottom: 120 }}
-            showsVerticalScrollIndicator={false}
-            refreshControl={
-              <RefreshControl
-                refreshing={refreshing}
-                onRefresh={handleRefresh}
-                tintColor={colors.primary[500]}
-              />
-            }
-            ListHeaderComponent={
-              communities.length > 0 ? (
-                <View className="px-5 mb-2">
-                  <Text className="text-sm text-gray-500">
-                    {t('communities.memberOf', '{{count}} communities', { count: communities.length })}
-                  </Text>
-                </View>
-              ) : null
-            }
-          />
-        </Animated.View>
-      ) : (
+      {filteredCommunities.length === 0 && !searchQuery ? (
         <EmptyState />
+      ) : (
+        <FlashList
+          data={filteredCommunities}
+          renderItem={renderItem}
+          keyExtractor={(item: CommunityWithStatus) => item.id}
+          estimatedItemSize={80}
+          contentContainerStyle={{ paddingBottom: 100 }}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              tintColor={COLORS.primary}
+              colors={[COLORS.primary]}
+            />
+          }
+          ListEmptyComponent={
+            searchQuery ? (
+              <View className="flex-1 items-center justify-center py-16 px-6">
+                <Text className="text-[15px] text-center" style={{ color: COLORS.textSecondary }}>
+                  {t('communities.noResults', 'No communities found for "{{query}}"', { query: searchQuery })}
+                </Text>
+              </View>
+            ) : null
+          }
+        />
       )}
-      </SafeAreaView>
-    </Animated.View>
+
+    </View>
   );
 }
 
-// Memoize screen + Apply Premium Motion V10 Ultra HOC for production-grade transitions
+// Memoize and apply Premium Motion HOC
 const MemoizedCommunityScreen = memo(CommunityScreen);
 MemoizedCommunityScreen.displayName = 'CommunityScreen';
 export default withPremiumMotionV10(MemoizedCommunityScreen);
-
-// =============================================================================
-// STYLES
-// =============================================================================
-
-const styles = StyleSheet.create({
-  flex1: {
-    flex: 1,
-  },
-  fullWidth: {
-    width: '100%',
-  },
-  communityCard: {
-    marginHorizontal: spacing.lg,
-    marginBottom: spacing.md,
-  },
-  unreadBadge: {
-    backgroundColor: colors.error[500],
-  },
-  chatButton: {
-    backgroundColor: colors.primary[50],
-  },
-  emptyStateCircle: {
-    backgroundColor: colors.primary[50],
-  },
-  discoverButton: {
-    backgroundColor: colors.primary[50],
-  },
-  searchBar: {
-    backgroundColor: colors.gray[100],
-  },
-});

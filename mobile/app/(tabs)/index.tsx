@@ -3,13 +3,10 @@
  *
  * Design Philosophy: "Elegant simplicity, spiritual clarity"
  *
- * Features:
- * - Full-bleed gradient header with time-based greeting
- * - Sophisticated monochrome color palette
- * - Premium card designs with subtle shadows
- * - Daily verse highlight card
- * - Contextual quick actions
- * - Refined, minimal aesthetic
+ * Styling Strategy:
+ * - NativeWind (className) for all layout and styling
+ * - React Native + PremiumMotion for animations
+ * - Inline style only for: dynamic values, custom gradient colors, shadows
  */
 
 import React, { useMemo, useCallback, memo } from 'react';
@@ -19,14 +16,13 @@ import {
   View,
   Text,
   Pressable,
-  StyleSheet,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { useSharedValue } from 'react-native-reanimated';
-import { PMotion, PMotionV10, shouldSkipEnteringAnimation } from '@/components/motion/premium-motion';
+import { PMotion, shouldSkipEnteringAnimation } from '@/components/motion/premium-motion';
 import {
   useTodayHeaderMotion,
   useTodayCollapsibleHeader,
@@ -59,7 +55,7 @@ import { useUpcomingEvents } from '@/hooks/useEvents';
 import { PremiumCard2 } from '@/components/ui/premium-card';
 import { FaithAssistantCard } from '@/components/companion';
 
-// Premium monochrome palette
+// Premium monochrome palette - custom colors not in tailwind
 const Colors = {
   // Dark gradient for header
   gradient: {
@@ -73,21 +69,6 @@ const Colors = {
     light: '#E8D5A8',
     dark: '#9A7B3D',
   },
-  // Neutral palette
-  neutral: {
-    50: '#FAFAFA',
-    100: '#F5F5F5',
-    200: '#E5E5E5',
-    300: '#D4D4D4',
-    400: '#A3A3A3',
-    500: '#737373',
-    600: '#525252',
-    700: '#404040',
-    800: '#262626',
-    900: '#171717',
-  },
-  white: '#FFFFFF',
-  black: '#000000',
 };
 
 // Quick action definitions with i18n keys
@@ -229,56 +210,74 @@ function TodayScreen() {
     return (
       <LinearGradient
         colors={[Colors.gradient.start, Colors.gradient.mid, Colors.gradient.end]}
-        style={[styles.headerGradient, { paddingTop: insets.top + 8 }]}
+        className="overflow-hidden"
+        style={{ paddingTop: insets.top + 8 }}
       >
         {/* Animated content wrapper - using shared headerEnterStyle */}
-        <Animated.View style={[styles.headerContent, headerPaddingAnimatedStyle, headerEnterStyle]}>
-            {/* Top row: Date + Profile - Premium Motion v2 stagger */}
-            <Animated.View
-              entering={skipAnimations ? undefined : PMotion.sectionStagger(0)}
-              style={styles.headerTop}
+        <Animated.View className="px-5" style={[headerPaddingAnimatedStyle, headerEnterStyle]}>
+          {/* Top row: Date + Profile - Premium Motion v2 stagger */}
+          <Animated.View
+            entering={skipAnimations ? undefined : PMotion.sectionStagger(0)}
+            className="flex-row justify-between items-center mb-4"
+          >
+            <View className="flex-row items-center gap-2">
+              <GreetingIcon size={16} color={Colors.accent.primary} />
+              <Text className="text-sm text-neutral-400 font-medium">{currentDate}</Text>
+            </View>
+            <ProfileButton size={44} />
+          </Animated.View>
+
+          {/* Greeting - staggered entry */}
+          <Animated.View
+            entering={skipAnimations ? undefined : PMotion.sectionStagger(1)}
+            className="mb-6"
+            style={greetingAnimatedStyle}
+          >
+            <Text className="text-base text-neutral-400 font-medium mb-1">{greeting.text}</Text>
+            <Text
+              className="text-[34px] font-bold text-white"
+              style={{ letterSpacing: -0.5 }}
             >
-              <View style={styles.dateWrap}>
-                <GreetingIcon size={16} color={Colors.accent.primary} />
-                <Text style={styles.dateText}>{currentDate}</Text>
-              </View>
-              <ProfileButton size={44} />
-            </Animated.View>
+              {firstName}
+            </Text>
+          </Animated.View>
 
-            {/* Greeting - staggered entry */}
-            <Animated.View
-              entering={skipAnimations ? undefined : PMotion.sectionStagger(1)}
-              style={[styles.greetingWrap, greetingAnimatedStyle]}
+          {/* Stats row - Collapsible with staggered entry */}
+          <Animated.View
+            entering={skipAnimations ? undefined : PMotion.sectionStagger(2)}
+            className="flex-row items-center rounded-2xl py-4 px-6"
+            style={[
+              {
+                backgroundColor: 'rgba(255,255,255,0.06)',
+                borderWidth: 1,
+                borderColor: 'rgba(255,255,255,0.08)',
+              },
+              statsRowAnimatedStyle,
+            ]}
+          >
+            <Pressable
+              onPress={() => router.push('/prayer')}
+              className="flex-1 flex-row items-center gap-2"
             >
-              <Text style={styles.greetingText}>{greeting.text}</Text>
-              <Text style={styles.nameText}>{firstName}</Text>
-            </Animated.View>
+              <Heart size={18} color={Colors.accent.primary} />
+              <Text className="text-[22px] font-bold text-white">{activePrayers}</Text>
+              <Text className="text-[13px] text-neutral-400 font-medium">{t('today.stats.prayers', 'Prayers')}</Text>
+            </Pressable>
 
-            {/* Stats row - Collapsible with staggered entry */}
-            <Animated.View
-              entering={skipAnimations ? undefined : PMotion.sectionStagger(2)}
-              style={[styles.statsRow, statsRowAnimatedStyle]}
+            <View
+              className="h-8 mx-4"
+              style={{ width: 1, backgroundColor: 'rgba(255,255,255,0.1)' }}
+            />
+
+            <Pressable
+              onPress={() => router.push('/(tabs)/events')}
+              className="flex-1 flex-row items-center gap-2"
             >
-              <Pressable
-                onPress={() => router.push('/prayer')}
-                style={styles.statItem}
-              >
-                <Heart size={18} color={Colors.accent.primary} />
-                <Text style={styles.statValue}>{activePrayers}</Text>
-                <Text style={styles.statLabel}>{t('today.stats.prayers', 'Prayers')}</Text>
-              </Pressable>
-
-              <View style={styles.statDivider} />
-
-              <Pressable
-                onPress={() => router.push('/(tabs)/events')}
-                style={styles.statItem}
-              >
-                <Calendar size={18} color={Colors.accent.primary} />
-                <Text style={styles.statValue}>{upcomingCount}</Text>
-                <Text style={styles.statLabel}>{t('today.stats.events', 'Events')}</Text>
-              </Pressable>
-            </Animated.View>
+              <Calendar size={18} color={Colors.accent.primary} />
+              <Text className="text-[22px] font-bold text-white">{upcomingCount}</Text>
+              <Text className="text-[13px] text-neutral-400 font-medium">{t('today.stats.events', 'Events')}</Text>
+            </Pressable>
+          </Animated.View>
         </Animated.View>
       </LinearGradient>
     );
@@ -288,31 +287,77 @@ function TodayScreen() {
   const renderVerseCard = () => (
     <Animated.View
       entering={skipAnimations ? undefined : PMotion.softScaleEnter}
-      style={styles.verseSection}
+      className="mb-6"
     >
-      <View style={styles.verseLabelRow}>
+      <View className="flex-row items-center gap-2 mb-3">
         <Quote size={16} color={Colors.accent.dark} />
-        <Text style={styles.verseLabel}>{t('today.verseOfTheDay', 'Verse of the Day')}</Text>
+        <Text
+          className="text-[13px] font-semibold text-typography-500 uppercase"
+          style={{ letterSpacing: 1 }}
+        >
+          {t('today.verseOfTheDay', 'Verse of the Day')}
+        </Text>
       </View>
 
-      <View style={styles.verseCard}>
-        <LinearGradient
-          colors={['#1a1a1a', '#252525']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.verseGradient}
-        >
-          <View style={styles.verseAccent} />
+      {/* Shadow wrapper - separate from overflow:hidden to prevent shadow clipping */}
+      <View
+        style={{
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 8 },
+          shadowOpacity: 0.12,
+          shadowRadius: 16,
+          elevation: 5,
+          borderRadius: 20,
+        }}
+      >
+        <View className="rounded-[20px] overflow-hidden">
+          <LinearGradient
+            colors={['#1a1a1a', '#252525']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={{ padding: 24, position: 'relative' }}
+          >
+            {/* Gold accent bar - all inline styles for absolute positioning */}
+            <View
+              style={{
+                position: 'absolute',
+                left: 0,
+                top: 24,
+                bottom: 24,
+                width: 3,
+                backgroundColor: Colors.accent.primary,
+                borderRadius: 2,
+              }}
+            />
 
-          <Text style={styles.verseText}>{DAILY_VERSE.text}</Text>
+            <Text
+              className="text-lg font-medium text-white italic mb-4 pl-4"
+              style={{ lineHeight: 28 }}
+            >
+              {DAILY_VERSE.text}
+            </Text>
 
-          <View style={styles.verseFooter}>
-            <Text style={styles.verseRef}>{DAILY_VERSE.reference}</Text>
-            <View style={styles.verseTheme}>
-              <Text style={styles.verseThemeText}>{DAILY_VERSE.theme}</Text>
+            <View className="flex-row justify-between items-center pl-4">
+              <Text
+                className="text-sm font-semibold"
+                style={{ color: Colors.accent.light }}
+              >
+                {DAILY_VERSE.reference}
+              </Text>
+              <View
+                className="px-2.5 py-1 rounded-xl"
+                style={{ backgroundColor: 'rgba(201,169,98,0.2)' }}
+              >
+                <Text
+                  className="text-xs font-semibold"
+                  style={{ color: Colors.accent.primary }}
+                >
+                  {DAILY_VERSE.theme}
+                </Text>
+              </View>
             </View>
-          </View>
-        </LinearGradient>
+          </LinearGradient>
+        </View>
       </View>
     </Animated.View>
   );
@@ -321,11 +366,16 @@ function TodayScreen() {
   const renderQuickActions = () => (
     <Animated.View
       entering={skipAnimations ? undefined : PMotion.sectionStagger(4)}
-      style={styles.actionsSection}
+      className="mb-6"
     >
-      <Text style={styles.sectionTitle}>{t('today.quickAccess', 'Quick Access')}</Text>
+      <Text
+        className="text-xl font-bold text-typography-900 mb-4"
+        style={{ letterSpacing: -0.3 }}
+      >
+        {t('today.quickAccess', 'Quick Access')}
+      </Text>
 
-      <View style={styles.actionsGrid}>
+      <View className="gap-3">
         {QUICK_ACTIONS.map((action, index) => {
           const ActionIcon = action.icon;
           return (
@@ -337,14 +387,18 @@ function TodayScreen() {
                 onPress={() => router.push(action.route as any)}
                 innerStyle={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}
               >
-                <View style={styles.actionIconWrap}>
-                  <ActionIcon size={24} color={Colors.neutral[800]} />
+                <View className="w-12 h-12 rounded-[14px] bg-background-100 items-center justify-center">
+                  <ActionIcon size={24} color="#262626" />
                 </View>
-                <View style={styles.actionInfo}>
-                  <Text style={styles.actionLabel}>{t(action.labelKey, action.defaultLabel)}</Text>
-                  <Text style={styles.actionDesc}>{t(action.descKey, action.defaultDesc)}</Text>
+                <View className="flex-1">
+                  <Text className="text-base font-semibold text-typography-900">
+                    {t(action.labelKey, action.defaultLabel)}
+                  </Text>
+                  <Text className="text-[13px] text-typography-500 mt-0.5">
+                    {t(action.descKey, action.defaultDesc)}
+                  </Text>
                 </View>
-                <ChevronRight size={18} color={Colors.neutral[400]} />
+                <ChevronRight size={18} color="#A3A3A3" />
               </PremiumCard2>
             </Animated.View>
           );
@@ -360,27 +414,40 @@ function TodayScreen() {
     return (
       <Animated.View
         entering={skipAnimations ? undefined : PMotion.sectionStagger(5)}
-        style={styles.givingSection}
+        className="mb-6"
       >
         <Pressable
           onPress={() => router.push('/(tabs)/give')}
-          style={({ pressed }) => [
-            styles.givingCard,
-            pressed && styles.givingCardPressed,
-          ]}
+          className="flex-row items-center justify-between rounded-2xl p-5 active:opacity-90"
+          style={{
+            backgroundColor: Colors.accent.dark,
+            shadowColor: Colors.accent.dark,
+            shadowOffset: { width: 0, height: 6 },
+            shadowOpacity: 0.3,
+            shadowRadius: 12,
+            elevation: 4,
+          }}
         >
-          <View style={styles.givingLeft}>
-            <View style={styles.givingIconWrap}>
-              <Heart size={20} color={Colors.white} fill={Colors.white} />
+          <View className="flex-row items-center gap-3.5">
+            <View
+              className="w-11 h-11 rounded-xl items-center justify-center"
+              style={{ backgroundColor: 'rgba(255,255,255,0.2)' }}
+            >
+              <Heart size={20} color="#FFFFFF" fill="#FFFFFF" />
             </View>
             <View>
-              <Text style={styles.givingTitle}>{t('today.giving.title', 'Continue Your Generosity')}</Text>
-              <Text style={styles.givingSubtitle}>
+              <Text className="text-base font-semibold text-white">
+                {t('today.giving.title', 'Continue Your Generosity')}
+              </Text>
+              <Text
+                className="text-[13px] mt-0.5"
+                style={{ color: 'rgba(255,255,255,0.7)' }}
+              >
                 {t('today.giving.subtitle', 'Your giving makes a difference')}
               </Text>
             </View>
           </View>
-          <ArrowRight size={20} color={Colors.white} />
+          <ArrowRight size={20} color="#FFFFFF" />
         </Pressable>
       </Animated.View>
     );
@@ -396,12 +463,22 @@ function TodayScreen() {
     return (
       <Animated.View
         entering={skipAnimations ? undefined : PMotion.sectionStagger(6)}
-        style={styles.upcomingSection}
+        className="mb-6"
       >
-        <View style={styles.upcomingHeader}>
-          <Text style={styles.sectionTitle}>{t('today.comingUp', 'Coming Up')}</Text>
+        <View className="flex-row justify-between items-center mb-4">
+          <Text
+            className="text-xl font-bold text-typography-900"
+            style={{ letterSpacing: -0.3 }}
+          >
+            {t('today.comingUp', 'Coming Up')}
+          </Text>
           <Pressable onPress={() => router.push('/(tabs)/events')}>
-            <Text style={styles.seeAllText}>{t('common.seeAll', 'See All')}</Text>
+            <Text
+              className="text-sm font-semibold"
+              style={{ color: Colors.accent.dark }}
+            >
+              {t('common.seeAll', 'See All')}
+            </Text>
           </Pressable>
         </View>
 
@@ -409,19 +486,22 @@ function TodayScreen() {
           onPress={() => router.push(`/events/${nextEvent.id}` as any)}
           innerStyle={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}
         >
-          <View style={styles.upcomingDate}>
-            <Text style={styles.upcomingDay}>
+          <View className="w-14 h-[60px] rounded-xl bg-background-100 items-center justify-center">
+            <Text className="text-2xl font-bold text-typography-900">
               {eventDate.getDate()}
             </Text>
-            <Text style={styles.upcomingMonth}>
+            <Text
+              className="text-[11px] font-semibold text-typography-500"
+              style={{ letterSpacing: 0.5 }}
+            >
               {eventDate.toLocaleDateString('en-US', { month: 'short' }).toUpperCase()}
             </Text>
           </View>
-          <View style={styles.upcomingInfo}>
-            <Text style={styles.upcomingTitle} numberOfLines={1}>
+          <View className="flex-1">
+            <Text className="text-base font-semibold text-typography-900" numberOfLines={1}>
               {nextEvent.name}
             </Text>
-            <Text style={styles.upcomingTime}>
+            <Text className="text-sm text-typography-500 mt-1">
               {eventDate.toLocaleTimeString('en-US', {
                 hour: 'numeric',
                 minute: '2-digit',
@@ -429,21 +509,21 @@ function TodayScreen() {
               })}
             </Text>
           </View>
-          <ChevronRight size={20} color={Colors.neutral[400]} />
+          <ChevronRight size={20} color="#A3A3A3" />
         </PremiumCard2>
       </Animated.View>
     );
   };
 
   return (
-    <View style={styles.container}>
+    <View className="flex-1 bg-background-100">
       {/* StatusBar outside animated header to prevent iOS flicker */}
       <StatusBar barStyle="light-content" />
       {renderHeader()}
 
       <Animated.ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
+        className="flex-1"
+        contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 24 }}
         showsVerticalScrollIndicator={false}
         onScroll={handleScrollEvent}
         scrollEventThrottle={16}
@@ -456,7 +536,7 @@ function TodayScreen() {
         {/* Faith Assistant - Premium entry point */}
         <Animated.View
           entering={skipAnimations ? undefined : PMotion.sectionStagger(2)}
-          style={styles.faithAssistantSection}
+          className="mb-6"
         >
           <FaithAssistantCard variant="featured" />
         </Animated.View>
@@ -466,7 +546,7 @@ function TodayScreen() {
         {renderUpcomingHighlight()}
 
         {/* Bottom spacing for tab bar */}
-        <View style={{ height: 120 }} />
+        <View className="h-[120px]" />
       </Animated.ScrollView>
     </View>
   );
@@ -476,291 +556,3 @@ function TodayScreen() {
 const MemoizedTodayScreen = memo(TodayScreen);
 MemoizedTodayScreen.displayName = 'TodayScreen';
 export default withPremiumMotionV10(MemoizedTodayScreen);
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.neutral[100],
-  },
-  // Header
-  headerGradient: {
-    // paddingTop is dynamic based on insets
-    overflow: 'hidden', // Prevents layout flash from gradient rendering before content
-  },
-  headerContent: {
-    paddingHorizontal: 20,
-    // paddingBottom is animated (28 → 12 when collapsed)
-  },
-  headerTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  dateWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  dateText: {
-    fontSize: 14,
-    color: Colors.neutral[400],
-    fontWeight: '500',
-  },
-  greetingWrap: {
-    marginBottom: 24,
-  },
-  greetingText: {
-    fontSize: 16,
-    color: Colors.neutral[400],
-    fontWeight: '500',
-    marginBottom: 4,
-  },
-  nameText: {
-    fontSize: 34,
-    fontWeight: '700',
-    color: Colors.white,
-    letterSpacing: -0.5,
-  },
-  // Stats
-  statsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    borderRadius: 16,
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
-  },
-  statItem: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  statDivider: {
-    width: 1,
-    height: 32,
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    marginHorizontal: 16,
-  },
-  statValue: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: Colors.white,
-  },
-  statLabel: {
-    fontSize: 13,
-    color: Colors.neutral[400],
-    fontWeight: '500',
-  },
-  // Scroll
-  scroll: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingHorizontal: 20,
-    paddingTop: 24,
-  },
-  // Verse section
-  verseSection: {
-    marginBottom: 24,
-  },
-  verseLabelRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 12,
-  },
-  verseLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: Colors.neutral[500],
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-  },
-  verseCard: {
-    borderRadius: 20,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.12,
-    shadowRadius: 16,
-    elevation: 5,
-  },
-  verseGradient: {
-    padding: 24,
-    position: 'relative',
-  },
-  verseAccent: {
-    position: 'absolute',
-    left: 0,
-    top: 24,
-    bottom: 24,
-    width: 3,
-    backgroundColor: Colors.accent.primary,
-    borderRadius: 2,
-  },
-  verseText: {
-    fontSize: 18,
-    fontWeight: '500',
-    color: Colors.white,
-    lineHeight: 28,
-    fontStyle: 'italic',
-    marginBottom: 16,
-    paddingLeft: 16,
-  },
-  verseFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingLeft: 16,
-  },
-  verseRef: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: Colors.accent.light,
-  },
-  verseTheme: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    backgroundColor: 'rgba(201,169,98,0.2)',
-    borderRadius: 12,
-  },
-  verseThemeText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: Colors.accent.primary,
-  },
-  // Faith Assistant section
-  faithAssistantSection: {
-    marginBottom: 24,
-  },
-  // Actions section
-  actionsSection: {
-    marginBottom: 24,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: Colors.neutral[900],
-    marginBottom: 16,
-    letterSpacing: -0.3,
-  },
-  actionsGrid: {
-    gap: 12,
-  },
-  actionIconWrap: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
-    backgroundColor: Colors.neutral[100],
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  actionInfo: {
-    flex: 1,
-  },
-  actionLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: Colors.neutral[900],
-  },
-  actionDesc: {
-    fontSize: 13,
-    color: Colors.neutral[500],
-    marginTop: 2,
-  },
-  // Giving section
-  givingSection: {
-    marginBottom: 24,
-  },
-  givingCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: Colors.accent.dark,
-    borderRadius: 16,
-    padding: 20,
-    shadowColor: Colors.accent.dark,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 4,
-  },
-  givingCardPressed: {
-    opacity: 0.9,
-    transform: [{ scale: 0.98 }],
-  },
-  givingLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-  },
-  givingIconWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  givingTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: Colors.white,
-  },
-  givingSubtitle: {
-    fontSize: 13,
-    color: 'rgba(255,255,255,0.7)',
-    marginTop: 2,
-  },
-  // Upcoming section
-  upcomingSection: {
-    marginBottom: 24,
-  },
-  upcomingHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  seeAllText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: Colors.accent.dark,
-  },
-  upcomingDate: {
-    width: 56,
-    height: 60,
-    borderRadius: 12,
-    backgroundColor: Colors.neutral[100],
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  upcomingDay: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: Colors.neutral[900],
-  },
-  upcomingMonth: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: Colors.neutral[500],
-    letterSpacing: 0.5,
-  },
-  upcomingInfo: {
-    flex: 1,
-  },
-  upcomingTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: Colors.neutral[900],
-  },
-  upcomingTime: {
-    fontSize: 14,
-    color: Colors.neutral[500],
-    marginTop: 4,
-  },
-});

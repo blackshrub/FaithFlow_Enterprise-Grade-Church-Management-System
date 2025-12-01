@@ -5,17 +5,20 @@
  * - Large, beautiful verse text as the star
  * - Subtle gradient background
  * - Premium shadows and typography
+ *
+ * Styling: NativeWind-first with inline style for shadows/dynamic values
  */
 
 import React, { memo } from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { View, Pressable } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { ExploreColors, ExploreSpacing, ExploreBorderRadius, ExploreShadows } from '@/constants/explore/designSystem';
+import { ExploreColors, ExploreShadows } from '@/constants/explore/designSystem';
 import { formatBibleReference } from '@/constants/explore/bibleBooks';
 import type { VerseOfTheDay } from '@/types/explore';
 import { Share2, BookOpen } from 'lucide-react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { AudioPlayButton } from './AudioPlayButton';
+import { Text } from '@/components/ui/text';
 
 interface VerseOfTheDayCardProps {
   verse: VerseOfTheDay;
@@ -68,7 +71,8 @@ export const VerseOfTheDayCard = memo(function VerseOfTheDayCard({
       onPress={onPress}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
-      style={[styles.container, animatedStyle]}
+      className="rounded-2xl overflow-hidden bg-white"
+      style={[{ ...ExploreShadows.level1 }, animatedStyle]}
       testID="verse-of-the-day-card"
     >
       {/* Gradient Background */}
@@ -76,35 +80,54 @@ export const VerseOfTheDayCard = memo(function VerseOfTheDayCard({
         colors={['#EFF6FF', '#DBEAFE', '#BFDBFE']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
-        style={styles.gradient}
+        className="absolute inset-0"
+        style={{ opacity: 0.9 }}
       />
 
       {/* Decorative Quote Mark */}
-      <View style={styles.quoteMarkContainer}>
-        <Text style={styles.quoteMark}>"</Text>
+      <View className="absolute top-2 left-4 opacity-[0.15]">
+        <Text
+          className="text-[80px] font-bold leading-[80px]"
+          style={{ color: ExploreColors.spiritual[600] }}
+        >
+          "
+        </Text>
       </View>
 
       {/* Content */}
-      <View style={styles.content}>
+      <View className="p-5 pt-8">
         {/* Scripture Text - The Star */}
         {verseText ? (
-          <Text style={styles.verseText} numberOfLines={5}>
+          <Text
+            className="text-[19px] font-medium leading-[30px] italic mb-5"
+            style={{ color: ExploreColors.neutral[800] }}
+            numberOfLines={5}
+          >
             {verseText}
           </Text>
         ) : (
-          <Text style={styles.verseText} numberOfLines={5}>
-            <Text style={styles.placeholderText}>Tap to read today's verse</Text>
+          <Text
+            className="text-[19px] font-medium leading-[30px] mb-5"
+            style={{ color: ExploreColors.neutral[500] }}
+            numberOfLines={5}
+          >
+            Tap to read today's verse
           </Text>
         )}
 
         {/* Reference Badge */}
-        <View style={styles.referenceContainer}>
-          <View style={styles.referenceBadge}>
+        <View className="flex-row justify-between items-center">
+          <View className="flex-row items-center gap-1.5 bg-white/80 px-3 py-1.5 rounded-[20px]">
             <BookOpen size={14} color={ExploreColors.spiritual[600]} />
-            <Text style={styles.referenceText}>{referenceText}</Text>
+            <Text
+              className="text-sm font-semibold"
+              style={{ color: ExploreColors.spiritual[700] }}
+            >
+              {referenceText}
+            </Text>
           </View>
 
-          <View style={styles.actionButtons}>
+          <View className="flex-row items-center gap-2">
             {/* Audio Play Button */}
             {ttsText && (
               <AudioPlayButton
@@ -123,7 +146,7 @@ export const VerseOfTheDayCard = memo(function VerseOfTheDayCard({
                   e.stopPropagation?.();
                   onShare();
                 }}
-                style={styles.shareButton}
+                className="p-2 bg-white/80 rounded-[20px]"
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               >
                 <Share2 size={18} color={ExploreColors.spiritual[500]} />
@@ -134,85 +157,10 @@ export const VerseOfTheDayCard = memo(function VerseOfTheDayCard({
       </View>
 
       {/* Accent Line */}
-      <View style={styles.accentLine} />
+      <View
+        className="absolute left-0 top-0 bottom-0 w-1"
+        style={{ backgroundColor: ExploreColors.spiritual[500] }}
+      />
     </AnimatedPressable>
   );
-});
-
-const styles = StyleSheet.create({
-  container: {
-    borderRadius: ExploreBorderRadius.card,
-    overflow: 'hidden',
-    backgroundColor: '#FFFFFF',
-    ...ExploreShadows.level1,
-  },
-  gradient: {
-    ...StyleSheet.absoluteFillObject,
-    opacity: 0.9,
-  },
-  quoteMarkContainer: {
-    position: 'absolute',
-    top: 8,
-    left: 16,
-    opacity: 0.15,
-  },
-  quoteMark: {
-    fontSize: 80,
-    fontWeight: '700',
-    color: ExploreColors.spiritual[600],
-    lineHeight: 80,
-  },
-  content: {
-    padding: ExploreSpacing.lg + 4,
-    paddingTop: ExploreSpacing.xl,
-  },
-  verseText: {
-    fontSize: 19,
-    fontWeight: '500',
-    lineHeight: 30,
-    color: ExploreColors.neutral[800],
-    fontStyle: 'italic',
-    marginBottom: ExploreSpacing.lg,
-  },
-  placeholderText: {
-    fontStyle: 'normal',
-    color: ExploreColors.neutral[500],
-  },
-  referenceContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  actionButtons: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  referenceBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: 'rgba(255, 255, 255, 0.8)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-  },
-  referenceText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: ExploreColors.spiritual[700],
-  },
-  shareButton: {
-    padding: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.8)',
-    borderRadius: 20,
-  },
-  accentLine: {
-    position: 'absolute',
-    left: 0,
-    top: 0,
-    bottom: 0,
-    width: 4,
-    backgroundColor: ExploreColors.spiritual[500],
-  },
 });

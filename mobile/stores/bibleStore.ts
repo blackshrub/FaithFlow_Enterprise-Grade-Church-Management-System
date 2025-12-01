@@ -11,7 +11,7 @@
 
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { mmkvStorage } from '@/lib/storage';
 
 export interface Bookmark {
   id: string;
@@ -353,7 +353,7 @@ export const useBibleStore = create<BibleState>()(
     }),
     {
       name: 'bible-storage',
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: createJSONStorage(() => mmkvStorage),
       version: 1,
       migrate: (persistedState: any, version: number) => {
         // Migrate old string-based fontSize to number

@@ -13,10 +13,12 @@
  * - Memoized VerseRow component
  * - useCallback for all event handlers
  * - Optimized FlashList configuration
+ *
+ * Styling: NativeWind-first with inline style for dynamic values
  */
 
 import React, { useCallback, useRef, useEffect, memo } from 'react';
-import { View, Pressable, StyleSheet } from 'react-native';
+import { View, Pressable } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import * as Haptics from 'expo-haptics';
 import { ChevronLeft, ChevronRight } from 'lucide-react-native';
@@ -198,31 +200,29 @@ export function ChapterReader({
       return (
         <Pressable onPress={() => handleVerseTap(item.verse)}>
           <View
-            style={[
-              styles.verseContainer,
-              {
-                backgroundColor, // Flash highlight > Regular highlight > Transparent
-                paddingVertical: getVerseSpacing(),
-                paddingHorizontal: spacing.md,
-                marginBottom: getVerseSpacing() * 0.5,
-                // Add left border for selected verses (YouVersion-style)
-                ...(isSelected && {
-                  borderLeftWidth: 3,
-                  borderLeftColor: colors.primary[500],
-                }),
-              },
-            ]}
+            className="flex-row rounded-lg"
+            style={{
+              backgroundColor, // Flash highlight > Regular highlight > Transparent
+              paddingVertical: getVerseSpacing(),
+              paddingHorizontal: spacing.md,
+              marginBottom: getVerseSpacing() * 0.5,
+              // Add left border for selected verses (YouVersion-style)
+              ...(isSelected && {
+                borderLeftWidth: 3,
+                borderLeftColor: colors.primary[500],
+              }),
+            }}
           >
             {/* Verse number - conditionally shown */}
             {preferences.showVerseNumbers && (
               <Text
-                style={[
-                  styles.verseNumber,
-                  {
-                    fontSize: getFontSize() * 0.7,
-                    color: currentTheme.verseNumber,
-                  },
-                ]}
+                className="font-bold min-w-[24px]"
+                style={{
+                  fontSize: getFontSize() * 0.7,
+                  color: currentTheme.verseNumber,
+                  marginRight: spacing.sm,
+                  marginTop: 2,
+                }}
               >
                 {item.verse}
               </Text>
@@ -230,22 +230,20 @@ export function ChapterReader({
 
             {/* Verse text with dotted underline when selected */}
             <Text
-              style={[
-                styles.verseText,
-                {
-                  fontFamily: appliedFont, // Latin: custom font, Chinese: system font
-                  fontSize: getFontSize(),
-                  lineHeight: getFontSize() * getLineHeight(),
-                  color: currentTheme.text,
-                  textDecorationLine: isSelected ? 'underline' : 'none',
-                  textDecorationStyle: isSelected ? 'dotted' : 'solid',
-                  textDecorationColor: isSelected ? colors.primary[500] : 'transparent',
-                  // Apply text alignment
-                  textAlign: preferences.textAlign,
-                  // Apply word spacing
-                  letterSpacing: getWordSpacing(),
-                },
-              ]}
+              className="flex-1"
+              style={{
+                fontFamily: appliedFont, // Latin: custom font, Chinese: system font
+                fontSize: getFontSize(),
+                lineHeight: getFontSize() * getLineHeight(),
+                color: currentTheme.text,
+                textDecorationLine: isSelected ? 'underline' : 'none',
+                textDecorationStyle: isSelected ? 'dotted' : 'solid',
+                textDecorationColor: isSelected ? colors.primary[500] : 'transparent',
+                // Apply text alignment
+                textAlign: preferences.textAlign,
+                // Apply word spacing
+                letterSpacing: getWordSpacing(),
+              }}
             >
               {item.text}
             </Text>
@@ -471,24 +469,6 @@ export function ChapterReader({
     </>
   );
 }
-
-const styles = StyleSheet.create({
-  verseContainer: {
-    flexDirection: 'row',
-    borderRadius: 8,
-    // marginBottom is dynamic based on font size
-  },
-  verseNumber: {
-    fontWeight: '700',
-    marginRight: spacing.sm,
-    marginTop: 2,
-    minWidth: 24,
-  },
-  verseText: {
-    flex: 1,
-    // fontFamily is dynamic based on user preference
-  },
-});
 
 /**
  * Memoized ChapterReader export

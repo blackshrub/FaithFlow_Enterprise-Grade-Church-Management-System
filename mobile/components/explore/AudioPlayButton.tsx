@@ -10,10 +10,12 @@
  * - Auto language detection
  * - Compact and full-width variants
  * - Auto-stop on unmount (when leaving page)
+ *
+ * Styling: NativeWind-first with inline style for dynamic values
  */
 
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { Pressable, Text, StyleSheet, ActivityIndicator, View } from 'react-native';
+import { Pressable, Text, ActivityIndicator, View } from 'react-native';
 import { Play, Pause, Volume2 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import {
@@ -79,13 +81,20 @@ export function AudioPlayButton({
 }: AudioPlayButtonProps) {
   const [state, setState] = useState<PlayState>('idle');
   const [isPreloaded, setIsPreloaded] = useState(false);
-  const { getEffectiveApiKey, preferences, isEnabled } = useVoiceSettingsStore();
+  const {
+    getEffectiveApiKey,
+    getEffectiveVoice,
+    getEffectiveSpeed,
+    isEnabled,
+  } = useVoiceSettingsStore();
 
   // Track if component is mounted and if we're the active player
   const isMountedRef = useRef(true);
   const isActivePlayerRef = useRef(false);
 
   const apiKey = getEffectiveApiKey();
+  const effectiveVoice = getEffectiveVoice();
+  const effectiveSpeed = getEffectiveSpeed();
   const isAvailable = isEnabled && !!apiKey && !!text;
 
   // Cleanup on unmount - ALWAYS stop audio when leaving the page
@@ -109,9 +118,8 @@ export function AudioPlayButton({
     preloadAudio(text, apiKey, {
       contentType: cacheConfig.contentType,
       contentId: cacheConfig.contentId,
-      voice: preferences.voice,
-      model: preferences.useHDModel ? 'tts-1-hd' : 'tts-1',
-      speed: preferences.speed,
+      voice: effectiveVoice,
+      speakingRate: effectiveSpeed,
     })
       .then((success) => {
         if (success && isMountedRef.current) {
@@ -121,7 +129,7 @@ export function AudioPlayButton({
       .catch(() => {
         // Silently ignore preload errors
       });
-  }, [autoPreload, cacheConfig, apiKey, text, isPreloaded, preferences]);
+  }, [autoPreload, cacheConfig, apiKey, text, isPreloaded, effectiveVoice, effectiveSpeed]);
 
   const handlePress = useCallback(async () => {
     if (!isAvailable || disabled) return;
@@ -165,9 +173,8 @@ export function AudioPlayButton({
       if (!isMountedRef.current || !isActivePlayerRef.current) return;
 
       const ttsOptions = {
-        voice: preferences.voice,
-        model: preferences.useHDModel ? 'tts-1-hd' : 'tts-1',
-        speed: preferences.speed,
+        voice: effectiveVoice,
+        speakingRate: effectiveSpeed,
         // Transition to 'playing' only when audio actually starts
         onPlaybackStart: () => {
           if (isMountedRef.current && isActivePlayerRef.current) {
@@ -201,7 +208,7 @@ export function AudioPlayButton({
       }
       isActivePlayerRef.current = false;
     }
-  }, [state, text, apiKey, preferences, isAvailable, disabled, onStart, onEnd, cacheConfig]);
+  }, [state, text, apiKey, effectiveVoice, effectiveSpeed, isAvailable, disabled, onStart, onEnd, cacheConfig]);
 
   if (!isAvailable) {
     return null;
@@ -225,17 +232,15 @@ export function AudioPlayButton({
       <Pressable
         onPress={handlePress}
         disabled={disabled}
-        style={[
-          styles.iconButton,
-          {
-            width: size,
-            height: size,
-            borderRadius: size / 2,
-            backgroundColor,
-          },
-          state === 'paused' && styles.pausedButton,
-          disabled && styles.disabled,
-        ]}
+        className={`items-center justify-center ${
+          state === 'paused' ? 'opacity-85' : ''
+        } ${disabled ? 'opacity-50' : ''}`}
+        style={{
+          width: size,
+          height: size,
+          borderRadius: size / 2,
+          backgroundColor,
+        }}
       >
         {renderIcon(size * 0.45)}
       </Pressable>
@@ -253,12 +258,10 @@ export function AudioPlayButton({
       <Pressable
         onPress={handlePress}
         disabled={disabled}
-        style={[
-          styles.compactButton,
-          { backgroundColor },
-          state === 'paused' && styles.pausedButton,
-          disabled && styles.disabled,
-        ]}
+        className={`flex-row items-center gap-1.5 py-1.5 px-3 rounded-2xl ${
+          state === 'paused' ? 'opacity-85' : ''
+        } ${disabled ? 'opacity-50' : ''}`}
+        style={{ backgroundColor }}
       >
         {state === 'loading' ? (
           <ActivityIndicator size="small" color={color} />
@@ -267,7 +270,9 @@ export function AudioPlayButton({
         ) : (
           <Volume2 size={16} color={color} />
         )}
-        <Text style={[styles.compactLabel, { color }]}>{labelText}</Text>
+        <Text className="text-[13px] font-semibold" style={{ color }}>
+          {labelText}
+        </Text>
       </Pressable>
     );
   }
@@ -283,14 +288,12 @@ export function AudioPlayButton({
     <Pressable
       onPress={handlePress}
       disabled={disabled}
-      style={[
-        styles.fullButton,
-        { backgroundColor },
-        state === 'paused' && styles.pausedButton,
-        disabled && styles.disabled,
-      ]}
+      className={`rounded-xl py-3.5 px-4 ${
+        state === 'paused' ? 'opacity-85' : ''
+      } ${disabled ? 'opacity-50' : ''}`}
+      style={{ backgroundColor }}
     >
-      <View style={styles.fullContent}>
+      <View className="flex-row items-center justify-center gap-2">
         {state === 'loading' ? (
           <ActivityIndicator size="small" color={color} />
         ) : state === 'playing' ? (
@@ -298,51 +301,12 @@ export function AudioPlayButton({
         ) : (
           <Volume2 size={20} color={color} />
         )}
-        <Text style={[styles.fullLabel, { color }]}>{fullLabelText}</Text>
+        <Text className="text-[15px] font-semibold" style={{ color }}>
+          {fullLabelText}
+        </Text>
       </View>
     </Pressable>
   );
 }
-
-const styles = StyleSheet.create({
-  iconButton: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  compactButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 16,
-  },
-  compactLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  fullButton: {
-    borderRadius: 12,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-  },
-  fullContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-  },
-  fullLabel: {
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  disabled: {
-    opacity: 0.5,
-  },
-  pausedButton: {
-    // Subtle indicator that audio is paused (can be resumed instantly)
-    opacity: 0.85,
-  },
-});
 
 export default AudioPlayButton;

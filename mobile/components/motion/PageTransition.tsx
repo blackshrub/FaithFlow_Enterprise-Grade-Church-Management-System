@@ -10,6 +10,8 @@
  * - Hardware-accelerated native driver
  * - 60fps optimized for low-end Android
  *
+ * Styling: NativeWind-first with inline animated styles
+ *
  * Usage:
  * <PageTransition direction="x" duration={280}>
  *   <YourScreen />
@@ -17,7 +19,7 @@
  */
 
 import React, { useEffect, useRef, useCallback } from 'react';
-import { StyleSheet, ViewStyle } from 'react-native';
+import type { ViewStyle } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -125,7 +127,10 @@ export function PageTransition({
   }, []);
 
   return (
-    <Animated.View style={[styles.container, animatedStyle, style]}>
+    <Animated.View
+      className="flex-1"
+      style={[{ backfaceVisibility: 'hidden' }, animatedStyle, style]}
+    >
       {children}
     </Animated.View>
   );
@@ -144,7 +149,10 @@ export function PageTransitionInstant({
   style,
 }: Pick<PageTransitionProps, 'children' | 'style'>) {
   return (
-    <Animated.View style={[styles.container, style]}>
+    <Animated.View
+      className="flex-1"
+      style={[{ backfaceVisibility: 'hidden' }, style]}
+    >
       {children}
     </Animated.View>
   );
@@ -185,23 +193,14 @@ export function PageTransitionControlled({
   }, []);
 
   return (
-    <Animated.View style={[styles.container, animatedStyle, style]}>
+    <Animated.View
+      className="flex-1"
+      style={[{ backfaceVisibility: 'hidden' }, animatedStyle, style]}
+    >
       {children}
     </Animated.View>
   );
 }
-
-// ============================================================================
-// STYLES
-// ============================================================================
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    // Ensure native driver compositing
-    backfaceVisibility: 'hidden',
-  },
-});
 
 // ============================================================================
 // EXPORTS

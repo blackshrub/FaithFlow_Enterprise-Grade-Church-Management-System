@@ -7,10 +7,12 @@
  * - Shows who is typing
  * - Auto-dismiss after inactivity
  * - MQTT pub/sub integration
+ *
+ * Styling: NativeWind-first with inline style for dynamic/animated values
  */
 
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, Text } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -27,9 +29,7 @@ import Animated, {
   FadeOut,
 } from 'react-native-reanimated';
 
-import { Text } from '@/components/ui/text';
-import { HStack } from '@/components/ui/hstack';
-import { colors, spacing, borderRadius } from '@/constants/theme';
+import { colors } from '@/constants/theme';
 
 // =============================================================================
 // TYPES
@@ -137,29 +137,20 @@ export function TypingDots({ color = colors.gray[500], size = 'md' }: TypingDots
   }));
 
   return (
-    <HStack space="xs" style={styles.dotsContainer}>
+    <View className="flex-row items-center justify-center h-5">
       <Animated.View
-        style={[
-          styles.dot,
-          { width: dotSize, height: dotSize, backgroundColor: color },
-          animatedStyle1,
-        ]}
+        className="rounded-full"
+        style={[{ width: dotSize, height: dotSize, backgroundColor: color }, animatedStyle1]}
       />
       <Animated.View
-        style={[
-          styles.dot,
-          { width: dotSize, height: dotSize, backgroundColor: color, marginLeft: dotSpacing },
-          animatedStyle2,
-        ]}
+        className="rounded-full"
+        style={[{ width: dotSize, height: dotSize, backgroundColor: color, marginLeft: dotSpacing }, animatedStyle2]}
       />
       <Animated.View
-        style={[
-          styles.dot,
-          { width: dotSize, height: dotSize, backgroundColor: color, marginLeft: dotSpacing },
-          animatedStyle3,
-        ]}
+        className="rounded-full"
+        style={[{ width: dotSize, height: dotSize, backgroundColor: color, marginLeft: dotSpacing }, animatedStyle3]}
       />
-    </HStack>
+    </View>
   );
 }
 
@@ -196,13 +187,13 @@ export function TypingIndicator({
       entering={FadeInUp.duration(200)}
       exiting={FadeOutDown.duration(200)}
     >
-      <View style={styles.indicatorContainer}>
-        <HStack space="sm" style={{ alignItems: 'center' }}>
-          <View style={styles.typingBubble}>
+      <View className="px-3 py-2">
+        <View className="flex-row items-center gap-2">
+          <View className="bg-gray-100 px-2 py-1 rounded-full">
             <TypingDots color={colors.gray[600]} size="sm" />
           </View>
-          <Text style={styles.typingText}>{getTypingText()}</Text>
-        </HStack>
+          <Text className="text-[13px] text-gray-600 italic">{getTypingText()}</Text>
+        </View>
       </View>
     </Animated.View>
   );
@@ -221,17 +212,17 @@ export function TypingBubble({ typingUsers }: { typingUsers: TypingUser[] }) {
     <Animated.View
       entering={ZoomIn.springify().damping(15)}
       exiting={ZoomOut.springify().damping(15)}
-      style={styles.bubbleWrapper}
+      className="items-start px-3 py-1"
     >
-      <View style={styles.bubble}>
-        <HStack space="sm" style={{ alignItems: 'center' }}>
+      <View className="bg-gray-100 px-3 py-2 rounded-xl" style={{ borderBottomLeftRadius: 4 }}>
+        <View className="flex-row items-center gap-2">
           <TypingDots color={colors.gray[600]} size="md" />
-        </HStack>
+        </View>
       </View>
       {typingUsers.length === 1 ? (
-        <Text style={styles.bubbleLabel}>{firstName}</Text>
+        <Text className="text-[11px] text-gray-500 mt-0.5 ml-1">{firstName}</Text>
       ) : (
-        <Text style={styles.bubbleLabel}>
+        <Text className="text-[11px] text-gray-500 mt-0.5 ml-1">
           {firstName} +{typingUsers.length - 1}
         </Text>
       )}
@@ -388,65 +379,12 @@ export function TypingStatus({ typingUsers }: { typingUsers: TypingUser[] }) {
       entering={FadeIn.duration(150)}
       exiting={FadeOut.duration(150)}
     >
-      <HStack space="xs" style={{ alignItems: 'center' }}>
+      <View className="flex-row items-center gap-1">
         <TypingDots color={colors.primary[500]} size="sm" />
-        <Text style={styles.headerTypingText}>{getText()}</Text>
-      </HStack>
+        <Text className="text-xs text-blue-500 italic">{getText()}</Text>
+      </View>
     </Animated.View>
   );
 }
-
-// =============================================================================
-// STYLES
-// =============================================================================
-
-const styles = StyleSheet.create({
-  dotsContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: 20,
-  },
-  dot: {
-    borderRadius: 999,
-  },
-  indicatorContainer: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-  },
-  typingBubble: {
-    backgroundColor: colors.gray[100],
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: borderRadius.full,
-  },
-  typingText: {
-    fontSize: 13,
-    color: colors.gray[600],
-    fontStyle: 'italic',
-  },
-  bubbleWrapper: {
-    alignItems: 'flex-start',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-  },
-  bubble: {
-    backgroundColor: colors.gray[100],
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.xl,
-    borderBottomLeftRadius: 4,
-  },
-  bubbleLabel: {
-    fontSize: 11,
-    color: colors.gray[500],
-    marginTop: 2,
-    marginLeft: spacing.xs,
-  },
-  headerTypingText: {
-    fontSize: 12,
-    color: colors.primary[500],
-    fontStyle: 'italic',
-  },
-});
 
 export default TypingIndicator;

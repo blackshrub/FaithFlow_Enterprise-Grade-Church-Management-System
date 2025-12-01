@@ -1,22 +1,15 @@
 /**
- * Speech Service - OpenAI TTS Integration
+ * Speech Service - Google Cloud TTS Integration
  *
- * Converts text to natural-sounding speech using OpenAI's TTS API.
- * Supports bilingual (English/Indonesian) with automatic voice selection.
+ * Converts text to natural-sounding speech using Google Cloud Text-to-Speech API.
+ * Supports bilingual (English/Indonesian) with WaveNet voices.
  *
  * Uses expo-audio for playback.
  *
- * Models:
- * - tts-1: Standard quality, faster, lower cost
- * - tts-1-hd: Higher quality, slower, higher cost
- *
- * Voices:
- * - alloy: Neutral, balanced
- * - echo: Warm, conversational
- * - fable: Expressive, storytelling
- * - onyx: Deep, authoritative
- * - nova: Friendly, upbeat
- * - shimmer: Soft, gentle
+ * Voice Types:
+ * - WaveNet: Neural network-based, most natural (recommended)
+ * - Standard: Basic TTS, faster but less natural
+ * - Neural2: Latest generation, even more natural
  */
 
 import {
@@ -26,51 +19,72 @@ import {
 } from 'expo-audio';
 // Use legacy API for file system operations (v54+ deprecated the main API)
 import * as FileSystem from 'expo-file-system/legacy';
+import {
+  type GoogleTTSVoice,
+  GOOGLE_TTS_VOICES,
+  DEFAULT_TTS_SETTINGS,
+} from '@/constants/voice';
 
-export type TTSModel = 'tts-1' | 'tts-1-hd';
-export type TTSVoice = 'alloy' | 'echo' | 'fable' | 'onyx' | 'nova' | 'shimmer';
+export type { GoogleTTSVoice };
 
 export interface TTSOptions {
-  /** TTS model to use */
-  model?: TTSModel;
-  /** Voice to use */
-  voice?: TTSVoice;
-  /** Playback speed (0.25 to 4.0) */
-  speed?: number;
-  /** Response format */
-  responseFormat?: 'mp3' | 'opus' | 'aac' | 'flac';
+  /** Voice to use (e.g., 'id-ID-Wavenet-D') */
+  voice?: GoogleTTSVoice;
+  /** Speaking rate (0.25 to 4.0, default 1.0) */
+  speakingRate?: number;
+  /** Pitch adjustment (-20.0 to 20.0 semitones, default 0) */
+  pitch?: number;
+  /** Audio encoding (MP3, OGG_OPUS, LINEAR16) */
+  audioEncoding?: 'MP3' | 'OGG_OPUS' | 'LINEAR16';
   /** Callback when audio starts playing (after loading) */
   onPlaybackStart?: () => void;
+  /** Known language - skip auto-detection when provided */
+  language?: 'en' | 'id';
 }
 
-// Voice recommendations per language for best quality
-const VOICE_BY_LANGUAGE: Record<'en' | 'id', TTSVoice> = {
-  en: 'nova', // Friendly, clear English
-  id: 'alloy', // Neutral, works well for Indonesian
-};
+// Google Cloud TTS API endpoint
+const GOOGLE_TTS_ENDPOINT = 'https://texttospeech.googleapis.com/v1/text:synthesize';
 
-// Default options (without onPlaybackStart which is optional)
-// Using 'opus' format for faster download (smaller file size than mp3)
+// Default options
 const DEFAULT_OPTIONS: Omit<Required<TTSOptions>, 'onPlaybackStart'> = {
-  model: 'tts-1',
-  voice: 'nova',
-  speed: 1.0,
-  responseFormat: 'opus', // opus is ~50% smaller than mp3, much faster to download
+  voice: DEFAULT_TTS_SETTINGS.voice,
+  speakingRate: DEFAULT_TTS_SETTINGS.speakingRate,
+  pitch: DEFAULT_TTS_SETTINGS.pitch,
+  audioEncoding: DEFAULT_TTS_SETTINGS.audioEncoding,
 };
 
 // Audio state
 let currentPlayer: AudioPlayer | null = null;
 let currentAudioUri: string | null = null;
-let currentTextHash: string | null = null; // Track which text is loaded
+let currentTextHash: string | null = null;
 let isPlaying = false;
-let isPaused = false; // Track if audio is paused (can resume)
-let isCachedAudio = false; // Track if current audio is from persistent cache (don't delete on cleanup)
+let isPaused = false;
+let isCachedAudio = false;
 let playbackSubscription: { remove: () => void } | null = null;
 let currentResolve: (() => void) | null = null;
 
 // Session cache - keeps TTS audio in memory during session
-// Cleared when user starts new conversation
-const sessionCache = new Map<string, string>(); // textHash -> filePath
+const sessionCache = new Map<string, string>();
+const MAX_SESSION_CACHE_SIZE = 10; // Limit cache to 10 audio files
+
+/**
+ * Manage session cache size - evict oldest entries when full
+ */
+function maintainCacheSize(): void {
+  if (sessionCache.size > MAX_SESSION_CACHE_SIZE) {
+    // Get oldest entry (first in map)
+    const oldestKey = sessionCache.keys().next().value;
+    if (oldestKey) {
+      const oldPath = sessionCache.get(oldestKey);
+      sessionCache.delete(oldestKey);
+      // Delete file in background
+      if (oldPath) {
+        FileSystem.deleteAsync(oldPath, { idempotent: true }).catch(() => {});
+      }
+      if (__DEV__) console.log('[SpeechService] Evicted oldest cache entry');
+    }
+  }
+}
 
 /**
  * Simple hash function to identify text content
@@ -86,72 +100,195 @@ function hashText(text: string): string {
 }
 
 /**
+ * Number to words conversion for Indonesian
+ */
+const INDONESIAN_NUMBERS: Record<number, string> = {
+  0: 'nol', 1: 'satu', 2: 'dua', 3: 'tiga', 4: 'empat',
+  5: 'lima', 6: 'enam', 7: 'tujuh', 8: 'delapan', 9: 'sembilan',
+  10: 'sepuluh', 11: 'sebelas', 12: 'dua belas', 13: 'tiga belas',
+  14: 'empat belas', 15: 'lima belas', 16: 'enam belas',
+  17: 'tujuh belas', 18: 'delapan belas', 19: 'sembilan belas',
+  20: 'dua puluh', 30: 'tiga puluh', 40: 'empat puluh', 50: 'lima puluh',
+  60: 'enam puluh', 70: 'tujuh puluh', 80: 'delapan puluh', 90: 'sembilan puluh',
+  100: 'seratus',
+};
+
+function numberToIndonesian(num: number): string {
+  if (num <= 20) return INDONESIAN_NUMBERS[num] || String(num);
+  if (num < 100) {
+    const tens = Math.floor(num / 10) * 10;
+    const ones = num % 10;
+    return ones === 0 ? INDONESIAN_NUMBERS[tens] : `${INDONESIAN_NUMBERS[tens]} ${INDONESIAN_NUMBERS[ones]}`;
+  }
+  if (num < 200) {
+    const remainder = num % 100;
+    return remainder === 0 ? 'seratus' : `seratus ${numberToIndonesian(remainder)}`;
+  }
+  if (num < 1000) {
+    const hundreds = Math.floor(num / 100);
+    const remainder = num % 100;
+    return remainder === 0
+      ? `${INDONESIAN_NUMBERS[hundreds]} ratus`
+      : `${INDONESIAN_NUMBERS[hundreds]} ratus ${numberToIndonesian(remainder)}`;
+  }
+  return String(num);
+}
+
+/**
+ * Number to words conversion for English
+ */
+const ENGLISH_NUMBERS: Record<number, string> = {
+  0: 'zero', 1: 'one', 2: 'two', 3: 'three', 4: 'four',
+  5: 'five', 6: 'six', 7: 'seven', 8: 'eight', 9: 'nine',
+  10: 'ten', 11: 'eleven', 12: 'twelve', 13: 'thirteen',
+  14: 'fourteen', 15: 'fifteen', 16: 'sixteen',
+  17: 'seventeen', 18: 'eighteen', 19: 'nineteen',
+  20: 'twenty', 30: 'thirty', 40: 'forty', 50: 'fifty',
+  60: 'sixty', 70: 'seventy', 80: 'eighty', 90: 'ninety',
+};
+
+function numberToEnglish(num: number): string {
+  if (num <= 20) return ENGLISH_NUMBERS[num] || String(num);
+  if (num < 100) {
+    const tens = Math.floor(num / 10) * 10;
+    const ones = num % 10;
+    return ones === 0 ? ENGLISH_NUMBERS[tens] : `${ENGLISH_NUMBERS[tens]} ${ENGLISH_NUMBERS[ones]}`;
+  }
+  if (num < 1000) {
+    const hundreds = Math.floor(num / 100);
+    const remainder = num % 100;
+    return remainder === 0
+      ? `${ENGLISH_NUMBERS[hundreds]} hundred`
+      : `${ENGLISH_NUMBERS[hundreds]} hundred ${numberToEnglish(remainder)}`;
+  }
+  return String(num);
+}
+
+/**
+ * Convert Bible verse references to spoken form
+ * Examples:
+ * - "Yohanes 1:23-24" → "Yohanes pasal satu ayat dua puluh tiga sampai dua puluh empat"
+ * - "John 1:23-24" → "John chapter one verse twenty three to twenty four"
+ */
+function convertVerseReferences(text: string, lang: 'en' | 'id'): string {
+  // Pattern: Book Chapter:Verse or Book Chapter:Verse-Verse
+  // e.g., "Yohanes 3:16", "John 3:16-17", "Mazmur 23:1-6"
+  const versePattern = /([A-Za-z]+(?:\s+[A-Za-z]+)?)\s+(\d+):(\d+)(?:-(\d+))?/g;
+
+  return text.replace(versePattern, (match, book, chapter, verseStart, verseEnd) => {
+    const chapterNum = parseInt(chapter, 10);
+    const verseStartNum = parseInt(verseStart, 10);
+    const verseEndNum = verseEnd ? parseInt(verseEnd, 10) : null;
+
+    if (lang === 'id') {
+      // Indonesian: "Yohanes pasal satu ayat dua puluh tiga sampai dua puluh empat"
+      const chapterWord = numberToIndonesian(chapterNum);
+      const verseStartWord = numberToIndonesian(verseStartNum);
+      if (verseEndNum) {
+        const verseEndWord = numberToIndonesian(verseEndNum);
+        return `${book} pasal ${chapterWord} ayat ${verseStartWord} sampai ${verseEndWord}`;
+      }
+      return `${book} pasal ${chapterWord} ayat ${verseStartWord}`;
+    } else {
+      // English: "John chapter one verse twenty three to twenty four"
+      const chapterWord = numberToEnglish(chapterNum);
+      const verseStartWord = numberToEnglish(verseStartNum);
+      if (verseEndNum) {
+        const verseEndWord = numberToEnglish(verseEndNum);
+        return `${book} chapter ${chapterWord} verse ${verseStartWord} to ${verseEndWord}`;
+      }
+      return `${book} chapter ${chapterWord} verse ${verseStartWord}`;
+    }
+  });
+}
+
+/**
+ * Strip markdown formatting from text for TTS
+ * Removes: bold, italic, headers, links, code blocks, lists, etc.
+ */
+function stripMarkdown(text: string): string {
+  return text
+    // Remove code blocks (```...```)
+    .replace(/```[\s\S]*?```/g, '')
+    // Remove inline code (`...`)
+    .replace(/`([^`]+)`/g, '$1')
+    // Remove images ![alt](url)
+    .replace(/!\[([^\]]*)\]\([^)]+\)/g, '$1')
+    // Convert links [text](url) to just text
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    // Remove bold/italic (**, *, __, _)
+    .replace(/\*\*\*([^*]+)\*\*\*/g, '$1')
+    .replace(/\*\*([^*]+)\*\*/g, '$1')
+    .replace(/\*([^*]+)\*/g, '$1')
+    .replace(/___([^_]+)___/g, '$1')
+    .replace(/__([^_]+)__/g, '$1')
+    .replace(/_([^_]+)_/g, '$1')
+    // Remove headers (# ## ### etc.)
+    .replace(/^#{1,6}\s+/gm, '')
+    // Remove blockquotes
+    .replace(/^>\s+/gm, '')
+    // Remove horizontal rules
+    .replace(/^[-*_]{3,}\s*$/gm, '')
+    // Remove list markers (-, *, +, 1.)
+    .replace(/^[\s]*[-*+]\s+/gm, '')
+    .replace(/^[\s]*\d+\.\s+/gm, '')
+    // Remove strikethrough ~~text~~
+    .replace(/~~([^~]+)~~/g, '$1')
+    // Remove extra whitespace
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+/**
  * Detect language from text (simple heuristic)
  */
 function detectLanguage(text: string): 'en' | 'id' {
   const indonesianKeywords = [
-    'yang',
-    'tidak',
-    'apa',
-    'bagaimana',
-    'mengapa',
-    'gereja',
-    'saya',
-    'kamu',
-    'dan',
-    'untuk',
-    'dengan',
-    'ini',
-    'itu',
-    'adalah',
-    'dalam',
-    'pada',
-    'dari',
-    'ke',
-    'akan',
-    'sudah',
-    'bisa',
-    'harus',
-    'jika',
-    'atau',
-    'tetapi',
-    'karena',
+    'yang', 'tidak', 'apa', 'bagaimana', 'mengapa', 'gereja', 'saya',
+    'kamu', 'dan', 'untuk', 'dengan', 'ini', 'itu', 'adalah', 'dalam',
+    'pada', 'dari', 'ke', 'akan', 'sudah', 'bisa', 'harus', 'jika',
+    'atau', 'tetapi', 'karena', 'Tuhan', 'Yesus', 'Alkitab', 'doa',
   ];
 
   const words = text.toLowerCase().split(/\s+/);
   const matchCount = words.filter((w) => indonesianKeywords.includes(w)).length;
 
-  // If more than 10% of words are Indonesian keywords, assume Indonesian
   return matchCount / words.length > 0.1 ? 'id' : 'en';
 }
 
 /**
- * Get optimal voice for detected language
+ * Get the appropriate voice for detected language
  */
-export function getVoiceForLanguage(lang: 'en' | 'id'): TTSVoice {
-  return VOICE_BY_LANGUAGE[lang];
+export function getVoiceForLanguage(lang: 'en' | 'id'): GoogleTTSVoice {
+  return lang === 'id' ? DEFAULT_TTS_SETTINGS.voice : DEFAULT_TTS_SETTINGS.voiceEN;
 }
 
 /**
- * Convert ArrayBuffer to Base64
+ * Get language code from voice name
  */
-function arrayBufferToBase64(buffer: ArrayBuffer): string {
-  let binary = '';
-  const bytes = new Uint8Array(buffer);
-  const len = bytes.byteLength;
-  for (let i = 0; i < len; i++) {
-    binary += String.fromCharCode(bytes[i]);
+function getLanguageCode(voice: GoogleTTSVoice): string {
+  // Extract language code from voice name (e.g., 'id-ID-Wavenet-D' -> 'id-ID')
+  const parts = voice.split('-');
+  return `${parts[0]}-${parts[1]}`;
+}
+
+/**
+ * Get file extension for audio encoding
+ */
+function getFileExtension(encoding: string): string {
+  switch (encoding) {
+    case 'OGG_OPUS': return 'ogg';
+    case 'LINEAR16': return 'wav';
+    default: return 'mp3';
   }
-  return btoa(binary);
 }
 
 /**
  * Clear session cache (call when starting new conversation)
  */
 export async function clearSessionCache(): Promise<void> {
-  console.log(`[SpeechService] Clearing session cache (${sessionCache.size} entries)`);
+  if (__DEV__) console.log(`[SpeechService] Clearing session cache (${sessionCache.size} entries)`);
 
-  // Delete cached files
   for (const filePath of sessionCache.values()) {
     try {
       await FileSystem.deleteAsync(filePath, { idempotent: true });
@@ -176,13 +313,11 @@ async function playAudioFile(
   currentTextHash = textHash;
   isCachedAudio = isFromCache;
 
-  // Configure audio mode for playback
   await setAudioModeAsync({
     playsInSilentMode: true,
     shouldPlayInBackground: false,
   });
 
-  // Create player and play
   currentPlayer = createAudioPlayer(filePath);
   isPlaying = true;
   isPaused = false;
@@ -208,7 +343,6 @@ async function playAudioFile(
         isPaused = false;
         playbackSubscription?.remove();
         playbackSubscription = null;
-        // Don't delete session cached files - just resolve
         const resolveFunc = currentResolve;
         currentResolve = null;
         resolveFunc?.();
@@ -220,10 +354,10 @@ async function playAudioFile(
 }
 
 /**
- * Convert text to speech and play audio
+ * Convert text to speech and play audio using Google Cloud TTS
  *
  * @param text - Text to convert to speech
- * @param apiKey - OpenAI API key
+ * @param apiKey - Google Cloud API key
  * @param options - TTS options
  * @returns Promise that resolves when audio finishes playing
  */
@@ -232,7 +366,16 @@ export async function speakText(
   apiKey: string,
   options?: TTSOptions
 ): Promise<void> {
-  const textHash = hashText(text);
+  // Strip markdown formatting before TTS (prevents reading *, #, etc.)
+  let cleanText = stripMarkdown(text);
+
+  // Detect language first (needed for verse conversion)
+  const lang = options?.language ?? detectLanguage(cleanText);
+
+  // Convert Bible verse references to spoken form (e.g., "John 3:16" → "John chapter three verse sixteen")
+  cleanText = convertVerseReferences(cleanText, lang);
+
+  const textHash = hashText(cleanText);
 
   // Check if we can resume the same audio
   if (isPaused && currentPlayer && currentTextHash === textHash) {
@@ -240,7 +383,6 @@ export async function speakText(
     isPlaying = true;
     isPaused = false;
 
-    // Set up subscription for completion if not already set
     if (!playbackSubscription) {
       playbackSubscription = currentPlayer.addListener('playbackStatusUpdate', (status) => {
         if (status.didJustFinish) {
@@ -258,7 +400,6 @@ export async function speakText(
     currentPlayer.play();
     options?.onPlaybackStart?.();
 
-    // Return existing promise or create new one
     return new Promise((resolve) => {
       currentResolve = resolve;
     });
@@ -267,22 +408,22 @@ export async function speakText(
   // Different text or no cached audio - need to load fresh
   await stopSpeaking();
 
-  // Detect language and get optimal voice
-  const detectedLang = detectLanguage(text);
-  const optimalVoice = getVoiceForLanguage(detectedLang);
+  const optimalVoice = getVoiceForLanguage(lang);
 
   const opts = {
     ...DEFAULT_OPTIONS,
-    voice: optimalVoice, // Use detected language voice
+    voice: optimalVoice,
     ...options,
   };
 
-  console.log(
-    `[SpeechService] Speaking ${text.length} chars, lang: ${detectedLang}, voice: ${opts.voice}`
-  );
+  if (__DEV__) {
+    console.log(
+      `[SpeechService] Speaking ${cleanText.length} chars (was ${text.length}), lang: ${lang}${options?.language ? ' (explicit)' : ' (detected)'}, voice: ${opts.voice}`
+    );
+  }
 
   try {
-    // Check session cache first (instant playback for repeated content)
+    // Check session cache first
     const cachedPath = sessionCache.get(textHash);
     if (cachedPath) {
       const fileInfo = await FileSystem.getInfoAsync(cachedPath);
@@ -290,65 +431,72 @@ export async function speakText(
         console.log('[SpeechService] Using session cache');
         return playAudioFile(cachedPath, textHash, true, opts);
       } else {
-        // Cache entry is stale, remove it
         sessionCache.delete(textHash);
       }
     }
 
-    // Request audio from OpenAI TTS API
-    const response = await fetch('https://api.openai.com/v1/audio/speech', {
+    // Request audio from Google Cloud TTS API
+    const languageCode = getLanguageCode(opts.voice);
+
+    const response = await fetch(`${GOOGLE_TTS_ENDPOINT}?key=${apiKey}`, {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: opts.model,
-        input: text,
-        voice: opts.voice,
-        speed: opts.speed,
-        response_format: opts.responseFormat,
+        input: { text: cleanText },
+        voice: {
+          languageCode,
+          name: opts.voice,
+        },
+        audioConfig: {
+          audioEncoding: opts.audioEncoding,
+          speakingRate: opts.speakingRate,
+          pitch: opts.pitch,
+        },
       }),
     });
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({}));
       throw new Error(
-        error.error?.message || `TTS API error: ${response.status}`
+        error.error?.message || `Google TTS API error: ${response.status}`
       );
     }
 
-    // Get audio as ArrayBuffer
-    const audioBuffer = await response.arrayBuffer();
-    const base64Audio = arrayBufferToBase64(audioBuffer);
+    const data = await response.json();
+    const audioContent = data.audioContent; // Base64 encoded audio
 
-    // Save to temporary file (React Native needs file URI)
-    const tempFileName = `tts_${Date.now()}.${opts.responseFormat}`;
+    if (!audioContent) {
+      throw new Error('No audio content in response');
+    }
+
+    // Save to temporary file
+    const ext = getFileExtension(opts.audioEncoding);
+    const tempFileName = `tts_${Date.now()}.${ext}`;
     const tempFilePath = `${FileSystem.cacheDirectory}${tempFileName}`;
 
-    await FileSystem.writeAsStringAsync(tempFilePath, base64Audio, {
+    await FileSystem.writeAsStringAsync(tempFilePath, audioContent, {
       encoding: 'base64',
     });
 
-    // Save to session cache for instant replay later
+    // Save to session cache (with size limit)
     sessionCache.set(textHash, tempFilePath);
+    maintainCacheSize();
 
     currentAudioUri = tempFilePath;
-    currentTextHash = textHash; // Store hash for resume check
-    isCachedAudio = true; // Mark as session cached - don't delete on cleanup
+    currentTextHash = textHash;
+    isCachedAudio = true;
 
-    // Configure audio mode for playback
     await setAudioModeAsync({
       playsInSilentMode: true,
       shouldPlayInBackground: false,
     });
 
-    // Create player and play
     currentPlayer = createAudioPlayer(tempFilePath);
     isPlaying = true;
     isPaused = false;
 
-    // Wait for playback to finish
     return new Promise((resolve) => {
       if (!currentPlayer) {
         resolve();
@@ -358,9 +506,7 @@ export async function speakText(
       currentResolve = resolve;
       let hasStarted = false;
 
-      // Subscribe to playback status
       playbackSubscription = currentPlayer.addListener('playbackStatusUpdate', (status) => {
-        // Call onPlaybackStart when audio actually starts
         if (!hasStarted && status.playing) {
           hasStarted = true;
           opts.onPlaybackStart?.();
@@ -372,18 +518,14 @@ export async function speakText(
           isPaused = false;
           playbackSubscription?.remove();
           playbackSubscription = null;
-          // Save resolve before cleanup (cleanup sets currentResolve to null)
           const resolveFunc = currentResolve;
           cleanup();
           resolveFunc?.();
         }
       });
 
-      // Start playback
       currentPlayer.play();
 
-      // Also call onPlaybackStart immediately after play() as fallback
-      // (in case status update doesn't fire quickly)
       setTimeout(() => {
         if (!hasStarted && isPlaying) {
           hasStarted = true;
@@ -398,55 +540,47 @@ export async function speakText(
 }
 
 /**
- * Clean up audio resources (full cleanup)
- * @param preserveCachedFile - If true, don't delete files from persistent cache
+ * Clean up audio resources
  */
 async function cleanup(preserveCachedFile: boolean = false): Promise<void> {
-  // Remove subscription
   if (playbackSubscription) {
     try {
       playbackSubscription.remove();
-    } catch (e) {
-      // Ignore cleanup errors
+    } catch {
+      // Ignore
     }
     playbackSubscription = null;
   }
 
-  // Release player
   if (currentPlayer) {
     try {
       currentPlayer.release();
-    } catch (e) {
-      // Ignore cleanup errors
+    } catch {
+      // Ignore
     }
     currentPlayer = null;
   }
 
-  // Delete temp file ONLY if it's not a cached file
-  // Cached files should persist for future use
   if (currentAudioUri) {
     if (isCachedAudio) {
-      console.log('[SpeechService] Preserving cached audio file:', currentAudioUri);
+      console.log('[SpeechService] Preserving cached audio file');
     } else if (!preserveCachedFile) {
       console.log('[SpeechService] Deleting temp audio file');
       try {
         await FileSystem.deleteAsync(currentAudioUri, { idempotent: true });
-      } catch (e) {
-        // Ignore cleanup errors
+      } catch {
+        // Ignore
       }
     }
   }
   currentAudioUri = null;
-
-  // Reset state
   currentTextHash = null;
   currentResolve = null;
   isCachedAudio = false;
 }
 
 /**
- * Stop currently playing speech (full stop + cleanup)
- * Use this when leaving a page or switching to different content
+ * Stop currently playing speech
  */
 export async function stopSpeaking(): Promise<void> {
   if (currentPlayer) {
@@ -462,12 +596,11 @@ export async function stopSpeaking(): Promise<void> {
 }
 
 /**
- * Pause current speech (keeps audio cached for resume)
- * Use this for play/pause toggle on same content
+ * Pause current speech
  */
 export async function pauseSpeaking(): Promise<void> {
   if (currentPlayer && isPlaying) {
-    console.log('[SpeechService] Pausing audio (cached for resume)');
+    console.log('[SpeechService] Pausing audio');
     currentPlayer.pause();
     isPlaying = false;
     isPaused = true;
@@ -494,7 +627,7 @@ export function isSpeaking(): boolean {
 }
 
 /**
- * Check if audio is paused (can be resumed)
+ * Check if audio is paused
  */
 export function isPausedSpeaking(): boolean {
   return isPaused;
@@ -510,26 +643,19 @@ export function canResume(text: string): boolean {
 /**
  * Get available voices
  */
-export function getAvailableVoices(): TTSVoice[] {
-  return ['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer'];
+export function getAvailableVoices(): GoogleTTSVoice[] {
+  return Object.keys(GOOGLE_TTS_VOICES) as GoogleTTSVoice[];
 }
 
 /**
  * Get voice description
  */
-export function getVoiceDescription(voice: TTSVoice): string {
-  const descriptions: Record<TTSVoice, string> = {
-    alloy: 'Neutral, balanced',
-    echo: 'Warm, conversational',
-    fable: 'Expressive, storytelling',
-    onyx: 'Deep, authoritative',
-    nova: 'Friendly, upbeat',
-    shimmer: 'Soft, gentle',
-  };
-  return descriptions[voice];
+export function getVoiceDescription(voice: GoogleTTSVoice): string {
+  const info = GOOGLE_TTS_VOICES[voice];
+  return info ? `${info.label} (${info.gender})` : voice;
 }
 
-// Import cache service lazily to avoid circular deps
+// Import cache service lazily
 let ttsCache: typeof import('./ttsCache') | null = null;
 async function getTTSCache() {
   if (!ttsCache) {
@@ -539,20 +665,12 @@ async function getTTSCache() {
 }
 
 export interface CachedTTSOptions extends TTSOptions {
-  /** Content type for cache expiration */
   contentType: 'devotion' | 'verse' | 'figure' | 'general';
-  /** Content ID for cache key (e.g., devotion ID, verse ID) */
   contentId: string;
 }
 
 /**
  * Speak text with caching support for daily content
- *
- * Use this for devotions, verse of the day, and bible figures
- * where content is valid for 24+ hours.
- *
- * First user triggers API call and caches result.
- * Subsequent users get instant playback from cache.
  */
 export async function speakTextCached(
   text: string,
@@ -561,8 +679,11 @@ export async function speakTextCached(
 ): Promise<void> {
   const cache = await getTTSCache();
 
-  // Detect language and get optimal voice
-  const detectedLang = detectLanguage(text);
+  // Clean text same as speakText (strip markdown, convert verse references)
+  let cleanText = stripMarkdown(text);
+  const detectedLang = options.language ?? detectLanguage(cleanText);
+  cleanText = convertVerseReferences(cleanText, detectedLang);
+
   const optimalVoice = getVoiceForLanguage(detectedLang);
 
   const opts = {
@@ -571,23 +692,20 @@ export async function speakTextCached(
     ...options,
   };
 
-  // Generate cache key
   const cacheKey = cache.generateDailyCacheKey(
     options.contentType,
     options.contentId,
     opts.voice,
-    opts.model,
-    opts.speed
+    'google-tts',
+    opts.speakingRate
   );
 
-  // Check if we can resume existing audio (same text)
-  const textHash = hashText(text);
+  const textHash = hashText(cleanText);
   if (isPaused && currentPlayer && currentTextHash === textHash) {
     console.log('[SpeechService] Resuming cached paused audio');
     isPlaying = true;
     isPaused = false;
 
-    // Set up subscription for completion if not already set
     if (!playbackSubscription) {
       playbackSubscription = currentPlayer.addListener('playbackStatusUpdate', (status) => {
         if (status.didJustFinish) {
@@ -609,60 +727,66 @@ export async function speakTextCached(
     });
   }
 
-  // Stop any currently playing audio
   await stopSpeaking();
 
-  // Check cache first
   const cachedFilePath = await cache.getCachedAudio(cacheKey);
 
   if (cachedFilePath) {
-    // Play from cache - no API call needed!
     console.log('[SpeechService] Playing from cache:', cacheKey);
-    return playCachedAudio(cachedFilePath, text, opts);
+    return playCachedAudio(cachedFilePath, cleanText, opts);
   }
 
-  // Not cached - fetch from API and cache it
-  console.log('[SpeechService] Fetching TTS and caching:', cacheKey);
+  if (__DEV__) {
+    console.log(
+      `[SpeechService] Fetching TTS: ${cleanText.length} chars (was ${text.length}), lang: ${detectedLang}, voice: ${opts.voice}`
+    );
+  }
 
   try {
-    // Request audio from OpenAI TTS API
-    const response = await fetch('https://api.openai.com/v1/audio/speech', {
+    const languageCode = getLanguageCode(opts.voice);
+
+    const response = await fetch(`${GOOGLE_TTS_ENDPOINT}?key=${apiKey}`, {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: opts.model,
-        input: text,
-        voice: opts.voice,
-        speed: opts.speed,
-        response_format: opts.responseFormat,
+        input: { text: cleanText },
+        voice: {
+          languageCode,
+          name: opts.voice,
+        },
+        audioConfig: {
+          audioEncoding: opts.audioEncoding,
+          speakingRate: opts.speakingRate,
+          pitch: opts.pitch,
+        },
       }),
     });
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({}));
       throw new Error(
-        error.error?.message || `TTS API error: ${response.status}`
+        error.error?.message || `Google TTS API error: ${response.status}`
       );
     }
 
-    // Get audio as ArrayBuffer
-    const audioBuffer = await response.arrayBuffer();
-    const base64Audio = arrayBufferToBase64(audioBuffer);
+    const data = await response.json();
+    const audioContent = data.audioContent;
 
-    // Cache the audio for future use
+    if (!audioContent) {
+      throw new Error('No audio content in response');
+    }
+
     const filePath = await cache.cacheAudio(
       cacheKey,
-      base64Audio,
-      opts.responseFormat,
+      audioContent,
+      getFileExtension(opts.audioEncoding),
       options.contentType,
       options.contentId
     );
 
-    // Play the cached audio
-    return playCachedAudio(filePath, text, opts);
+    return playCachedAudio(filePath, cleanText, opts);
   } catch (error) {
     console.error('[SpeechService] Cached TTS error:', error);
     throw error;
@@ -679,20 +803,17 @@ async function playCachedAudio(
 ): Promise<void> {
   currentAudioUri = filePath;
   currentTextHash = hashText(text);
-  isCachedAudio = true; // Mark as cached - don't delete on cleanup
+  isCachedAudio = true;
 
-  // Configure audio mode for playback
   await setAudioModeAsync({
     playsInSilentMode: true,
     shouldPlayInBackground: false,
   });
 
-  // Create player and play
   currentPlayer = createAudioPlayer(filePath);
   isPlaying = true;
   isPaused = false;
 
-  // Wait for playback to finish
   return new Promise((resolve) => {
     if (!currentPlayer) {
       resolve();
@@ -701,35 +822,86 @@ async function playCachedAudio(
 
     currentResolve = resolve;
     let hasStarted = false;
+    let audioDuration = 0;
+    let lastPosition = 0;
+    let stuckCount = 0;
 
-    // Subscribe to playback status
+    const finishPlayback = () => {
+      if (__DEV__) console.log('[SpeechService] Playback finished (playCachedAudio)');
+      isPlaying = false;
+      isPaused = false;
+      playbackSubscription?.remove();
+      playbackSubscription = null;
+      currentPlayer?.release();
+      currentPlayer = null;
+      currentTextHash = null;
+      const resolveFunc = currentResolve;
+      currentResolve = null;
+      resolveFunc?.();
+    };
+
     playbackSubscription = currentPlayer.addListener('playbackStatusUpdate', (status) => {
+      // Track when playback actually starts
       if (!hasStarted && status.playing) {
         hasStarted = true;
         opts.onPlaybackStart?.();
       }
 
+      // Store duration for fallback detection (expo-audio uses seconds)
+      if (status.duration && status.duration > 0) {
+        audioDuration = status.duration;
+      }
+
+      // Primary: Check didJustFinish (most reliable)
       if (status.didJustFinish) {
-        console.log('[SpeechService] Playback finished (playCachedAudio)');
-        isPlaying = false;
-        isPaused = false;
-        playbackSubscription?.remove();
-        playbackSubscription = null;
-        // Don't cleanup cached files - just reset state
-        currentPlayer?.release();
-        currentPlayer = null;
-        currentTextHash = null;
-        // Save resolve before clearing
-        const resolveFunc = currentResolve;
-        currentResolve = null;
-        resolveFunc?.();
+        finishPlayback();
+        return;
+      }
+
+      // Fallback 1: Position reached/exceeded duration (both in seconds)
+      if (
+        audioDuration > 0 &&
+        status.currentTime !== undefined &&
+        status.currentTime >= audioDuration - 0.1 // within 100ms of end
+      ) {
+        if (__DEV__) console.log('[SpeechService] Detected end via position');
+        finishPlayback();
+        return;
+      }
+
+      // Fallback 2: Position stuck at near-end (for OGG_OPUS issues)
+      if (hasStarted && audioDuration > 0 && status.currentTime !== undefined) {
+        const nearEnd = status.currentTime >= audioDuration - 0.5; // within 500ms of end
+        const positionStuck = Math.abs(status.currentTime - lastPosition) < 0.01; // position not moving
+
+        if (nearEnd && positionStuck) {
+          stuckCount++;
+          if (stuckCount >= 3) {
+            if (__DEV__) console.log('[SpeechService] Detected end via stuck position');
+            finishPlayback();
+            return;
+          }
+        } else {
+          stuckCount = 0;
+        }
+        lastPosition = status.currentTime;
+      }
+
+      // Fallback 3: Playback stopped unexpectedly (not paused, not buffering)
+      if (hasStarted && !status.playing && !status.isBuffering && !isPaused && isPlaying) {
+        // Small delay to avoid false positives during buffering
+        setTimeout(() => {
+          if (!isPlaying) return; // Already handled
+          if (currentPlayer && !isPaused) {
+            if (__DEV__) console.log('[SpeechService] Detected end via stopped state');
+            finishPlayback();
+          }
+        }, 200);
       }
     });
 
-    // Start playback
     currentPlayer.play();
 
-    // Fallback for onPlaybackStart
     setTimeout(() => {
       if (!hasStarted && isPlaying) {
         hasStarted = true;
@@ -740,12 +912,7 @@ async function playCachedAudio(
 }
 
 /**
- * Preload audio for cached content (fetch and cache without playing)
- *
- * Call this when a page opens to pre-fetch audio in the background.
- * When user clicks play, audio will be instantly available from cache.
- *
- * This is a fire-and-forget operation - errors are silently ignored.
+ * Preload audio for cached content
  */
 export async function preloadAudio(
   text: string,
@@ -754,7 +921,6 @@ export async function preloadAudio(
 ): Promise<boolean> {
   const cache = await getTTSCache();
 
-  // Detect language and get optimal voice
   const detectedLang = detectLanguage(text);
   const optimalVoice = getVoiceForLanguage(detectedLang);
 
@@ -764,38 +930,41 @@ export async function preloadAudio(
     ...options,
   };
 
-  // Generate cache key
   const cacheKey = cache.generateDailyCacheKey(
     options.contentType,
     options.contentId,
     opts.voice,
-    opts.model,
-    opts.speed
+    'google-tts',
+    opts.speakingRate
   );
 
-  // Check if already cached
   const cachedFilePath = await cache.getCachedAudio(cacheKey);
   if (cachedFilePath) {
     console.log('[SpeechService] Preload: Already cached:', cacheKey);
-    return true; // Already cached, nothing to do
+    return true;
   }
 
-  // Fetch and cache in background
   console.log('[SpeechService] Preloading audio:', cacheKey);
 
   try {
-    const response = await fetch('https://api.openai.com/v1/audio/speech', {
+    const languageCode = getLanguageCode(opts.voice);
+
+    const response = await fetch(`${GOOGLE_TTS_ENDPOINT}?key=${apiKey}`, {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: opts.model,
-        input: text,
-        voice: opts.voice,
-        speed: opts.speed,
-        response_format: opts.responseFormat,
+        input: { text },
+        voice: {
+          languageCode,
+          name: opts.voice,
+        },
+        audioConfig: {
+          audioEncoding: opts.audioEncoding,
+          speakingRate: opts.speakingRate,
+          pitch: opts.pitch,
+        },
       }),
     });
 
@@ -804,15 +973,17 @@ export async function preloadAudio(
       return false;
     }
 
-    // Get audio as ArrayBuffer
-    const audioBuffer = await response.arrayBuffer();
-    const base64Audio = arrayBufferToBase64(audioBuffer);
+    const data = await response.json();
+    const audioContent = data.audioContent;
 
-    // Cache the audio for future use
+    if (!audioContent) {
+      return false;
+    }
+
     await cache.cacheAudio(
       cacheKey,
-      base64Audio,
-      opts.responseFormat,
+      audioContent,
+      getFileExtension(opts.audioEncoding),
       options.contentType,
       options.contentId
     );
@@ -826,7 +997,7 @@ export async function preloadAudio(
 }
 
 /**
- * Check if audio is already cached for instant playback
+ * Check if audio is already cached
  */
 export async function isAudioCached(options: CachedTTSOptions): Promise<boolean> {
   const cache = await getTTSCache();
@@ -834,172 +1005,16 @@ export async function isAudioCached(options: CachedTTSOptions): Promise<boolean>
     options.contentType,
     options.contentId,
     options.voice ?? DEFAULT_OPTIONS.voice,
-    options.model ?? DEFAULT_OPTIONS.model,
-    options.speed ?? DEFAULT_OPTIONS.speed
+    'google-tts',
+    options.speakingRate ?? DEFAULT_OPTIONS.speakingRate
   );
   const cachedFilePath = await cache.getCachedAudio(cacheKey);
   return cachedFilePath !== null;
 }
 
-/**
- * Speak text with chunked streaming for faster first-audio playback
- *
- * For long content, this splits text into chunks and plays the first
- * chunk immediately while fetching the rest in background.
- *
- * @param text - Full text to speak
- * @param apiKey - OpenAI API key
- * @param options - TTS options
- * @param chunkSize - Approx characters per chunk (default 300)
- */
-export async function speakTextStreaming(
-  text: string,
-  apiKey: string,
-  options?: TTSOptions,
-  chunkSize: number = 300
-): Promise<void> {
-  // For short text, just use regular speakText
-  if (text.length <= chunkSize * 1.5) {
-    return speakText(text, apiKey, options);
-  }
-
-  // Split text into chunks at sentence boundaries
-  const chunks = splitIntoChunks(text, chunkSize);
-  console.log(`[SpeechService] Streaming ${chunks.length} chunks`);
-
-  // Detect language and get optimal voice
-  const detectedLang = detectLanguage(text);
-  const optimalVoice = getVoiceForLanguage(detectedLang);
-
-  const opts = {
-    ...DEFAULT_OPTIONS,
-    voice: optimalVoice,
-    ...options,
-  };
-
-  let hasCalledOnPlaybackStart = false;
-
-  // Play chunks sequentially
-  for (let i = 0; i < chunks.length; i++) {
-    // Check if we should stop
-    if (!isPlaying && i > 0) {
-      console.log('[SpeechService] Streaming stopped');
-      break;
-    }
-
-    const chunk = chunks[i];
-    console.log(`[SpeechService] Playing chunk ${i + 1}/${chunks.length} (${chunk.length} chars)`);
-
-    try {
-      // Fetch audio for this chunk
-      const response = await fetch('https://api.openai.com/v1/audio/speech', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: opts.model,
-          input: chunk,
-          voice: opts.voice,
-          speed: opts.speed,
-          response_format: opts.responseFormat,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`TTS API error: ${response.status}`);
-      }
-
-      const audioBuffer = await response.arrayBuffer();
-      const base64Audio = arrayBufferToBase64(audioBuffer);
-
-      // Save to temp file
-      const tempFileName = `tts_stream_${Date.now()}_${i}.${opts.responseFormat}`;
-      const tempFilePath = `${FileSystem.cacheDirectory}${tempFileName}`;
-
-      await FileSystem.writeAsStringAsync(tempFilePath, base64Audio, {
-        encoding: 'base64',
-      });
-
-      // Configure audio mode
-      await setAudioModeAsync({
-        playsInSilentMode: true,
-        shouldPlayInBackground: false,
-      });
-
-      // Play this chunk
-      await new Promise<void>((resolve) => {
-        const player = createAudioPlayer(tempFilePath);
-        currentPlayer = player;
-        currentAudioUri = tempFilePath;
-        isPlaying = true;
-        isPaused = false;
-        isCachedAudio = false;
-
-        const subscription = player.addListener('playbackStatusUpdate', (status) => {
-          // Call onPlaybackStart on first chunk
-          if (!hasCalledOnPlaybackStart && status.playing) {
-            hasCalledOnPlaybackStart = true;
-            opts.onPlaybackStart?.();
-          }
-
-          if (status.didJustFinish) {
-            subscription.remove();
-            player.release();
-            // Clean up temp file
-            FileSystem.deleteAsync(tempFilePath, { idempotent: true }).catch(() => {});
-            resolve();
-          }
-        });
-
-        player.play();
-      });
-
-    } catch (error) {
-      console.error(`[SpeechService] Chunk ${i + 1} error:`, error);
-      break;
-    }
-  }
-
-  // Cleanup
-  isPlaying = false;
-  isPaused = false;
-  currentPlayer = null;
-  currentAudioUri = null;
-}
-
-/**
- * Split text into chunks at sentence boundaries
- */
-function splitIntoChunks(text: string, targetSize: number): string[] {
-  const chunks: string[] = [];
-
-  // Split by sentence endings
-  const sentences = text.split(/(?<=[.!?])\s+/);
-
-  let currentChunk = '';
-
-  for (const sentence of sentences) {
-    if (currentChunk.length + sentence.length > targetSize && currentChunk.length > 0) {
-      chunks.push(currentChunk.trim());
-      currentChunk = sentence;
-    } else {
-      currentChunk += (currentChunk ? ' ' : '') + sentence;
-    }
-  }
-
-  if (currentChunk.trim()) {
-    chunks.push(currentChunk.trim());
-  }
-
-  return chunks;
-}
-
 export default {
   speakText,
   speakTextCached,
-  speakTextStreaming,
   stopSpeaking,
   pauseSpeaking,
   resumeSpeaking,

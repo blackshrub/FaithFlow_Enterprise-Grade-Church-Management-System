@@ -2,12 +2,20 @@
 import "react-native-url-polyfill/auto";
 
 import "../global.css";
+
+// Register third-party components for NativeWind className support
+import { Image } from "expo-image";
+import { LinearGradient } from "expo-linear-gradient";
+import { cssInterop } from "nativewind";
+cssInterop(Image, { className: "style" });
+cssInterop(LinearGradient, { className: "style" });
+
 import { Stack } from "expo-router";
 import { GluestackUIProvider } from "@/components/ui/gluestack-ui-provider";
-import { QueryClientProvider } from "@tanstack/react-query";
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { StatusBar } from "expo-status-bar";
 import { useColorScheme } from "nativewind";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { router } from "expo-router";
 import { initializeI18n } from "@/i18n";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -17,13 +25,20 @@ import Toast from 'react-native-toast-message';
 import { UnifiedOverlayHost } from '@/components/overlay/UnifiedOverlayHost';
 import { MQTTProvider } from '@/components/providers/MQTTProvider';
 import { queryClient } from '@/lib/queryClient';
+import { queryPersister, shouldPersistQuery } from '@/lib/storage';
 import { preloadBiblesOffline } from '@/hooks/useBibleOffline';
-import { useVoiceSettingsStore } from '@/stores/voiceSettings';
-import { useReadingPreferencesStore } from '@/stores/readingPreferences';
+// MMKV: Zustand stores with persist middleware auto-load from MMKV (sync)
+// No need to manually call loadSettings/loadPreferences anymore
 // DISABLED: Call feature temporarily disabled
 // import { IncomingCallOverlay } from '@/components/call';
 // import { useCallSignalingInit } from '@/hooks/useCallSignaling';
 import { enableScreens } from 'react-native-screens';
+import { markAppReady } from '@/utils/performance';
+import { ErrorBoundary, flushCrashQueue } from '@/components/ErrorBoundary';
+import { BiometricLockScreen } from '@/components/auth/BiometricLockScreen';
+import { useBiometricLock } from '@/hooks/useBiometricLock';
+import { BibleNoteEditorHost } from '@/components/bible/BibleNoteEditorHost';
+import { useVoiceSettingsStore } from '@/stores/voiceSettings';
 // Note: We do NOT use CallKit because iOS requires VoIP PushKit for CallKit (we use standard FCM)
 // The in-app IncomingCallOverlay provides a WhatsApp-style UI instead
 
@@ -44,6 +59,20 @@ export default function RootLayout() {
   const { colorScheme } = useColorScheme();
   const [i18nInitialized, setI18nInitialized] = useState(false);
 
+  // Biometric lock - locks app when backgrounded, prompts on resume
+  useBiometricLock({ autoPrompt: true });
+
+  // Initialize voice settings (TTS/STT) - required for AudioPlayButton visibility
+  const loadVoiceSettings = useVoiceSettingsStore((state) => state.loadSettings);
+  useEffect(() => {
+    loadVoiceSettings();
+  }, [loadVoiceSettings]);
+
+  // Flush any queued crash reports when app starts
+  useEffect(() => {
+    flushCrashQueue();
+  }, []);
+
   // DISABLED: Call feature temporarily disabled
   // useCallSignalingInit();
 
@@ -54,14 +83,20 @@ export default function RootLayout() {
    */
   const [fontsLoaded, _fontError] = useFonts(BIBLE_FONT_FILES);
 
+  /**
+   * SYNCHRONOUS BOOTSTRAPPING with MMKV
+   *
+   * i18n and Zustand stores now use MMKV (synchronous):
+   * - initializeI18n() is now sync (MMKV)
+   * - Voice settings auto-loaded by Zustand persist (MMKV)
+   * - Reading preferences auto-loaded by Zustand persist (MMKV)
+   *
+   * This eliminates the loading delay from AsyncStorage!
+   */
   useEffect(() => {
-    initializeI18n().then(() => {
-      setI18nInitialized(true);
-    });
-
-    // Load voice settings and reading preferences
-    useVoiceSettingsStore.getState().loadSettings();
-    useReadingPreferencesStore.getState().loadPreferences();
+    // i18n is now synchronous with MMKV
+    initializeI18n();
+    setI18nInitialized(true);
   }, []);
 
   // Preload additional Bible translations after fonts are ready
@@ -103,9 +138,34 @@ export default function RootLayout() {
   // Wait for i18n and fonts before showing navigation content
   const isReady = i18nInitialized && fontsLoaded;
 
+  /**
+   * PERFORMANCE MONITORING - Track cold start time
+   * Mark app as ready when i18n and fonts are loaded
+   */
+  useEffect(() => {
+    if (isReady) {
+      markAppReady();
+    }
+  }, [isReady]);
+
   return (
+    <ErrorBoundary isGlobal>
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <QueryClientProvider client={queryClient}>
+      <PersistQueryClientProvider
+        client={queryClient}
+        persistOptions={{
+          persister: queryPersister,
+          // Max age of 24 hours for persisted cache
+          maxAge: 1000 * 60 * 60 * 24,
+          // Buster key for cache invalidation on app updates
+          buster: 'v1',
+          // Filter which queries to persist (offline-first content only)
+          dehydrateOptions: {
+            shouldDehydrateQuery: (query) =>
+              shouldPersistQuery(query.queryKey),
+          },
+        }}
+      >
         <GluestackUIProvider mode={colorScheme ?? "light"}>
           {/* MQTT Provider for real-time messaging */}
           <MQTTProvider>
@@ -176,16 +236,23 @@ export default function RootLayout() {
              */}
             <UnifiedOverlayHost />
 
+            {/* Bible Note Editor Host - bridges bibleUIStore to overlay system */}
+            <BibleNoteEditorHost />
+
             {/* Toast must be rendered at root level */}
             <Toast />
 
             {/* DISABLED: Call feature temporarily disabled */}
             {/* <IncomingCallOverlay /> */}
+
+            {/* Biometric lock screen overlay */}
+            <BiometricLockScreen />
             </>
             )}
           </MQTTProvider>
         </GluestackUIProvider>
-      </QueryClientProvider>
+      </PersistQueryClientProvider>
     </GestureHandlerRootView>
+    </ErrorBoundary>
   );
 }

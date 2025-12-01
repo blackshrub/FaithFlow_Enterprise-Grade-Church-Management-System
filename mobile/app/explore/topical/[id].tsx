@@ -9,8 +9,9 @@
  */
 
 import React from 'react';
-import { ScrollView, View, Text, StyleSheet, Pressable, Share } from 'react-native';
+import { ScrollView, View, Pressable, Share } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Text } from '@/components/ui/text';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ExploreColors, ExploreTypography, ExploreSpacing } from '@/constants/explore/designSystem';
 import { formatBibleReference } from '@/constants/explore/bibleBooks';
@@ -48,13 +49,20 @@ export default function TopicalVersesScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
-        <View style={styles.header}>
-          <Pressable onPress={() => router.back()} style={styles.backButton}>
+      <SafeAreaView className="flex-1 bg-white" edges={['top']}>
+        <View
+          className="flex-row justify-between items-center border-b"
+          style={{
+            paddingHorizontal: ExploreSpacing.md,
+            paddingVertical: ExploreSpacing.sm,
+            borderBottomColor: ExploreColors.neutral[100],
+          }}
+        >
+          <Pressable onPress={() => router.back()} style={{ padding: ExploreSpacing.xs }}>
             <ArrowLeft size={24} color={ExploreColors.neutral[900]} />
           </Pressable>
         </View>
-        <ScrollView contentContainerStyle={styles.loadingContainer}>
+        <ScrollView contentContainerStyle={{ padding: ExploreSpacing.screenMargin }}>
           <TopicalVersesSkeleton />
         </ScrollView>
       </SafeAreaView>
@@ -63,9 +71,16 @@ export default function TopicalVersesScreen() {
 
   if (!category) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
-        <View style={styles.header}>
-          <Pressable onPress={() => router.back()} style={styles.backButton}>
+      <SafeAreaView className="flex-1 bg-white" edges={['top']}>
+        <View
+          className="flex-row justify-between items-center border-b"
+          style={{
+            paddingHorizontal: ExploreSpacing.md,
+            paddingVertical: ExploreSpacing.sm,
+            borderBottomColor: ExploreColors.neutral[100],
+          }}
+        >
+          <Pressable onPress={() => router.back()} style={{ padding: ExploreSpacing.xs }}>
             <ArrowLeft size={24} color={ExploreColors.neutral[900]} />
           </Pressable>
         </View>
@@ -81,30 +96,77 @@ export default function TopicalVersesScreen() {
   const categoryDescription = category.description?.[contentLanguage] || category.description?.en;
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView className="flex-1 bg-white" edges={['top']}>
       {/* Header */}
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.backButton}>
+      <View
+        className="flex-row justify-between items-center border-b"
+        style={{
+          paddingHorizontal: ExploreSpacing.md,
+          paddingVertical: ExploreSpacing.sm,
+          borderBottomColor: ExploreColors.neutral[100],
+        }}
+      >
+        <Pressable onPress={() => router.back()} style={{ padding: ExploreSpacing.xs }}>
           <ArrowLeft size={24} color={ExploreColors.neutral[900]} />
         </Pressable>
-        <Text style={styles.headerTitle} numberOfLines={1}>
+        <Text
+          className="flex-1 text-center"
+          numberOfLines={1}
+          style={{
+            ...ExploreTypography.h4,
+            color: ExploreColors.neutral[900],
+          }}
+        >
           {categoryName}
         </Text>
         <View style={{ width: 40 }} />
       </View>
 
       <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        className="flex-1"
+        contentContainerStyle={{ paddingBottom: ExploreSpacing.xl }}
         showsVerticalScrollIndicator={false}
       >
         {/* Category Header */}
-        <Animated.View entering={FadeInDown.duration(400)} style={styles.categoryHeader}>
-          <Text style={styles.categoryTitle}>{categoryName}</Text>
+        <Animated.View
+          entering={FadeInDown.duration(400)}
+          className="border-b"
+          style={{
+            paddingHorizontal: ExploreSpacing.screenMargin,
+            paddingTop: ExploreSpacing.xl,
+            paddingBottom: ExploreSpacing.lg,
+            borderBottomColor: ExploreColors.neutral[100],
+            marginBottom: ExploreSpacing.lg,
+          }}
+        >
+          <Text
+            style={{
+              ...ExploreTypography.h2,
+              color: ExploreColors.neutral[900],
+              marginBottom: ExploreSpacing.sm,
+            }}
+          >
+            {categoryName}
+          </Text>
           {categoryDescription && (
-            <Text style={styles.categoryDescription}>{categoryDescription}</Text>
+            <Text
+              style={{
+                ...ExploreTypography.body,
+                color: ExploreColors.neutral[700],
+                lineHeight: 24,
+                marginBottom: ExploreSpacing.sm,
+              }}
+            >
+              {categoryDescription}
+            </Text>
           )}
-          <Text style={styles.verseCount}>
+          <Text
+            className="font-bold uppercase"
+            style={{
+              ...ExploreTypography.caption,
+              color: ExploreColors.primary[600],
+            }}
+          >
             {verses?.length || 0} {contentLanguage === 'en' ? 'verses' : 'ayat'}
           </Text>
         </Animated.View>
@@ -120,7 +182,7 @@ export default function TopicalVersesScreen() {
             }
           />
         ) : (
-          <View style={styles.versesList}>
+          <View style={{ paddingHorizontal: ExploreSpacing.screenMargin }}>
             {verses.map((verse: Partial<TopicalVerse> & { id: string }, index: number) => (
               <VerseCard
                 key={verse.id}
@@ -136,19 +198,44 @@ export default function TopicalVersesScreen() {
         {category.related_categories && category.related_categories.length > 0 && (
           <Animated.View
             entering={FadeInDown.duration(400).delay(300)}
-            style={styles.relatedSection}
+            className="border-t"
+            style={{
+              paddingHorizontal: ExploreSpacing.screenMargin,
+              paddingTop: ExploreSpacing.xl,
+              marginTop: ExploreSpacing.lg,
+              borderTopColor: ExploreColors.neutral[100],
+            }}
           >
-            <Text style={styles.relatedTitle}>
+            <Text
+              style={{
+                ...ExploreTypography.h4,
+                color: ExploreColors.neutral[900],
+                marginBottom: ExploreSpacing.md,
+              }}
+            >
               {contentLanguage === 'en' ? 'Related Topics' : 'Topik Terkait'}
             </Text>
-            <View style={styles.relatedList}>
+            <View>
               {category.related_categories.map((relatedId, index) => (
                 <Pressable
                   key={relatedId}
                   onPress={() => router.push(`/explore/topical/${relatedId}`)}
-                  style={styles.relatedItem}
+                  className="flex-row justify-between items-center"
+                  style={{
+                    backgroundColor: ExploreColors.neutral[50],
+                    borderRadius: 12,
+                    paddingHorizontal: ExploreSpacing.md,
+                    paddingVertical: ExploreSpacing.sm,
+                    marginBottom: ExploreSpacing.xs,
+                  }}
                 >
-                  <Text style={styles.relatedItemText}>
+                  <Text
+                    className="font-semibold"
+                    style={{
+                      ...ExploreTypography.body,
+                      color: ExploreColors.primary[700],
+                    }}
+                  >
                     {/* In real app, fetch category name by ID */}
                     {contentLanguage === 'en' ? 'Related Topic' : 'Topik Terkait'} {index + 1}
                   </Text>
@@ -209,34 +296,89 @@ function VerseCard({ verse, contentLanguage, index }: VerseCardProps) {
 
   return (
     <Animated.View entering={FadeInDown.duration(400).delay(index * 50)}>
-      <ExploreCard style={styles.verseCard}>
+      <ExploreCard style={{ marginBottom: ExploreSpacing.md }}>
         {/* Verse Text */}
-        <Text style={styles.verseText}>"{verseText}"</Text>
-        <Text style={styles.verseReference}>{reference}</Text>
+        <Text
+          className="italic"
+          style={{
+            ...ExploreTypography.body,
+            color: ExploreColors.neutral[900],
+            lineHeight: 28,
+            fontSize: 17,
+          }}
+        >
+          "{verseText}"
+        </Text>
+        <Text
+          className="font-bold"
+          style={{
+            ...ExploreTypography.body,
+            color: ExploreColors.spiritual[700],
+          }}
+        >
+          {reference}
+        </Text>
 
         {/* Actions */}
-        <View style={styles.verseActions}>
-          <Pressable onPress={handleCopy} style={styles.actionButton}>
+        <View
+          className="flex-row border-t"
+          style={{
+            paddingTop: ExploreSpacing.sm,
+            borderTopColor: ExploreColors.neutral[100],
+            marginTop: ExploreSpacing.sm,
+          }}
+        >
+          <Pressable
+            onPress={handleCopy}
+            className="flex-row items-center"
+            style={{ marginRight: ExploreSpacing.lg }}
+          >
             <Copy size={18} color={ExploreColors.neutral[600]} />
-            <Text style={styles.actionText}>
+            <Text
+              className="font-semibold"
+              style={{
+                ...ExploreTypography.caption,
+                color: ExploreColors.neutral[600],
+              }}
+            >
               {contentLanguage === 'en' ? 'Copy' : 'Salin'}
             </Text>
           </Pressable>
 
-          <Pressable onPress={handleBookmark} style={styles.actionButton}>
+          <Pressable
+            onPress={handleBookmark}
+            className="flex-row items-center"
+            style={{ marginRight: ExploreSpacing.lg }}
+          >
             <BookmarkIcon
               size={18}
               color={isBookmarked ? ExploreColors.primary[600] : ExploreColors.neutral[600]}
               fill={isBookmarked ? ExploreColors.primary[600] : 'transparent'}
             />
-            <Text style={[styles.actionText, isBookmarked && styles.actionTextActive]}>
+            <Text
+              className="font-semibold"
+              style={{
+                ...ExploreTypography.caption,
+                color: isBookmarked ? ExploreColors.primary[600] : ExploreColors.neutral[600],
+              }}
+            >
               {contentLanguage === 'en' ? 'Save' : 'Simpan'}
             </Text>
           </Pressable>
 
-          <Pressable onPress={handleShare} style={styles.actionButton}>
+          <Pressable
+            onPress={handleShare}
+            className="flex-row items-center"
+            style={{ marginRight: ExploreSpacing.lg }}
+          >
             <Share2 size={18} color={ExploreColors.neutral[600]} />
-            <Text style={styles.actionText}>
+            <Text
+              className="font-semibold"
+              style={{
+                ...ExploreTypography.caption,
+                color: ExploreColors.neutral[600],
+              }}
+            >
               {contentLanguage === 'en' ? 'Share' : 'Bagikan'}
             </Text>
           </Pressable>
@@ -244,8 +386,23 @@ function VerseCard({ verse, contentLanguage, index }: VerseCardProps) {
 
         {/* Application Note */}
         {applicationNote && (applicationNote[contentLanguage] || applicationNote.en || applicationNote) && (
-          <View style={styles.applicationNote}>
-            <Text style={styles.applicationNoteText}>
+          <View
+            className="italic"
+            style={{
+              backgroundColor: ExploreColors.primary[50],
+              borderRadius: 8,
+              padding: ExploreSpacing.sm,
+              marginTop: ExploreSpacing.xs,
+            }}
+          >
+            <Text
+              style={{
+                ...ExploreTypography.caption,
+                color: ExploreColors.neutral[800],
+                lineHeight: 18,
+                fontStyle: 'italic',
+              }}
+            >
               {applicationNote[contentLanguage] || applicationNote.en || applicationNote}
             </Text>
           </View>
@@ -255,146 +412,3 @@ function VerseCard({ verse, contentLanguage, index }: VerseCardProps) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: ExploreSpacing.md,
-    paddingVertical: ExploreSpacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: ExploreColors.neutral[100],
-  },
-  backButton: {
-    padding: ExploreSpacing.xs,
-  },
-  headerTitle: {
-    ...ExploreTypography.h4,
-    color: ExploreColors.neutral[900],
-    flex: 1,
-    textAlign: 'center',
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: ExploreSpacing.xl,
-  },
-  loadingContainer: {
-    padding: ExploreSpacing.screenMargin,
-  },
-  categoryHeader: {
-    paddingHorizontal: ExploreSpacing.screenMargin,
-    paddingTop: ExploreSpacing.xl,
-    paddingBottom: ExploreSpacing.lg,
-    borderBottomWidth: 1,
-    borderBottomColor: ExploreColors.neutral[100],
-    marginBottom: ExploreSpacing.lg,
-  },
-  categoryTitle: {
-    ...ExploreTypography.h2,
-    color: ExploreColors.neutral[900],
-    marginBottom: ExploreSpacing.sm,
-  },
-  categoryDescription: {
-    ...ExploreTypography.body,
-    color: ExploreColors.neutral[700],
-    lineHeight: 24,
-    marginBottom: ExploreSpacing.sm,
-  },
-  verseCount: {
-    ...ExploreTypography.caption,
-    color: ExploreColors.primary[600],
-    fontWeight: '700',
-    textTransform: 'uppercase',
-  },
-  versesList: {
-    paddingHorizontal: ExploreSpacing.screenMargin,
-  },
-  verseCard: {
-    marginBottom: ExploreSpacing.md,
-  },
-  verseContent: {
-    marginBottom: ExploreSpacing.sm,
-  },
-  verseText: {
-    ...ExploreTypography.body,
-    color: ExploreColors.neutral[900],
-    fontStyle: 'italic',
-    lineHeight: 28,
-    fontSize: 17,
-  },
-  verseReference: {
-    ...ExploreTypography.body,
-    color: ExploreColors.spiritual[700],
-    fontWeight: '700',
-  },
-  verseActions: {
-    flexDirection: 'row',
-    paddingTop: ExploreSpacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: ExploreColors.neutral[100],
-    marginTop: ExploreSpacing.sm,
-  },
-  actionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginRight: ExploreSpacing.lg,
-  },
-  actionIcon: {
-    marginRight: 4,
-  },
-  actionText: {
-    ...ExploreTypography.caption,
-    color: ExploreColors.neutral[600],
-    fontWeight: '600',
-  },
-  actionTextActive: {
-    color: ExploreColors.primary[600],
-  },
-  applicationNote: {
-    backgroundColor: ExploreColors.primary[50],
-    borderRadius: 8,
-    padding: ExploreSpacing.sm,
-    marginTop: ExploreSpacing.xs,
-  },
-  applicationNoteText: {
-    ...ExploreTypography.caption,
-    color: ExploreColors.neutral[800],
-    lineHeight: 18,
-    fontStyle: 'italic',
-  },
-  relatedSection: {
-    paddingHorizontal: ExploreSpacing.screenMargin,
-    paddingTop: ExploreSpacing.xl,
-    marginTop: ExploreSpacing.lg,
-    borderTopWidth: 1,
-    borderTopColor: ExploreColors.neutral[100],
-  },
-  relatedTitle: {
-    ...ExploreTypography.h4,
-    color: ExploreColors.neutral[900],
-    marginBottom: ExploreSpacing.md,
-  },
-  relatedList: {
-  },
-  relatedItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: ExploreColors.neutral[50],
-    borderRadius: 12,
-    paddingHorizontal: ExploreSpacing.md,
-    paddingVertical: ExploreSpacing.sm,
-    marginBottom: ExploreSpacing.xs,
-  },
-  relatedItemText: {
-    ...ExploreTypography.body,
-    color: ExploreColors.primary[700],
-    fontWeight: '600',
-  },
-});

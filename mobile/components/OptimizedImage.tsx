@@ -8,13 +8,14 @@
  * - Automatic retry on failure
  * - Memory-efficient rendering
  * - Loading/error states
+ *
+ * Styling: NativeWind-first with inline style for animated/dynamic values
  */
 
 import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Image as RNImage,
-  StyleSheet,
   ActivityIndicator,
   Animated,
   ImageStyle,
@@ -206,12 +207,12 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
 
   const renderContent = () => {
     if (!sourceUri) {
-      return <View style={[styles.placeholder, style]} />;
+      return <View className="bg-neutral-100" style={style} />;
     }
 
     if (loadState === 'loading' && !currentUri) {
       return (
-        <View style={[styles.loadingContainer, style]}>
+        <View className="bg-neutral-100 justify-center items-center" style={style}>
           {showLoading && (
             <ActivityIndicator
               size="small"
@@ -225,9 +226,12 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
 
     if (loadState === 'error') {
       return (
-        <View style={[styles.errorContainer, style]}>
-          <View style={styles.errorIcon}>
-            <View style={styles.errorIconInner} />
+        <View className="bg-neutral-100 justify-center items-center" style={style}>
+          <View
+            className="justify-center items-center"
+            style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: '#e0e0e0' }}
+          >
+            <View style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: '#999' }} />
           </View>
         </View>
       );
@@ -259,44 +263,11 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
   };
 
   return (
-    <View style={[styles.container, containerStyle]}>
+    <View className="overflow-hidden" style={containerStyle}>
       {renderContent()}
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    overflow: 'hidden',
-  },
-  loadingContainer: {
-    backgroundColor: '#f5f5f5',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  placeholder: {
-    backgroundColor: '#f5f5f5',
-  },
-  errorContainer: {
-    backgroundColor: '#f5f5f5',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  errorIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#e0e0e0',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  errorIconInner: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: '#999',
-  },
-});
 
 /**
  * Optimized Image with Blurhash placeholder
@@ -328,9 +299,7 @@ export const LazyOptimizedImage: React.FC<LazyOptimizedImageProps> = ({
 }) => {
   if (!isVisible) {
     // Render placeholder until visible
-    return (
-      <View style={[styles.placeholder, props.style]} />
-    );
+    return <View className="bg-neutral-100" style={props.style} />;
   }
 
   return <OptimizedImage {...props} />;

@@ -8,10 +8,12 @@
  * - ```monospace``` → monospace text
  * - `code` → inline code
  * - URLs → clickable links with preview
+ *
+ * Styling: NativeWind-first for basic text formatting
  */
 
 import React, { useMemo } from 'react';
-import { Text, StyleSheet, Linking, TextStyle } from 'react-native';
+import { Text, Linking, TextStyle } from 'react-native';
 import { colors } from '@/constants/theme';
 
 // =============================================================================
@@ -169,31 +171,39 @@ export function WhatsAppText({
   };
 
   return (
-    <Text style={[styles.base, style]} selectable={selectable}>
+    <Text
+      className="text-base leading-[22px]"
+      style={[{ color: colors.gray[900] }, style]}
+      selectable={selectable}
+    >
       {parts.map((part, index) => {
         switch (part.type) {
           case 'bold':
             return (
-              <Text key={index} style={styles.bold}>
+              <Text key={index} className="font-bold">
                 {part.content}
               </Text>
             );
           case 'italic':
             return (
-              <Text key={index} style={styles.italic}>
+              <Text key={index} className="italic">
                 {part.content}
               </Text>
             );
           case 'strikethrough':
             return (
-              <Text key={index} style={styles.strikethrough}>
+              <Text key={index} className="line-through">
                 {part.content}
               </Text>
             );
           case 'monospace':
           case 'code':
             return (
-              <Text key={index} style={styles.monospace}>
+              <Text
+                key={index}
+                className="text-sm px-1 rounded"
+                style={{ fontFamily: 'monospace', backgroundColor: 'rgba(0,0,0,0.05)' }}
+              >
                 {part.content}
               </Text>
             );
@@ -201,7 +211,8 @@ export function WhatsAppText({
             return (
               <Text
                 key={index}
-                style={styles.link}
+                className="underline"
+                style={{ color: '#0066CC' }}
                 onPress={() => handleLinkPress(part.url!)}
               >
                 {part.content}
@@ -214,37 +225,5 @@ export function WhatsAppText({
     </Text>
   );
 }
-
-// =============================================================================
-// STYLES
-// =============================================================================
-
-const styles = StyleSheet.create({
-  base: {
-    fontSize: 16,
-    color: colors.gray[900],
-    lineHeight: 22,
-  },
-  bold: {
-    fontWeight: '700',
-  },
-  italic: {
-    fontStyle: 'italic',
-  },
-  strikethrough: {
-    textDecorationLine: 'line-through',
-  },
-  monospace: {
-    fontFamily: 'monospace',
-    backgroundColor: 'rgba(0,0,0,0.05)',
-    paddingHorizontal: 4,
-    borderRadius: 4,
-    fontSize: 14,
-  },
-  link: {
-    color: '#0066CC',
-    textDecorationLine: 'underline',
-  },
-});
 
 export default WhatsAppText;

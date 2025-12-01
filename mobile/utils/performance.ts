@@ -713,6 +713,239 @@ export const COMMUNITY_LIST_QUERY_OPTIONS = {
 } as const;
 
 // ============================================================================
+// PERFORMANCE MONITORING & METRICS
+// ============================================================================
+
+/**
+ * Performance metrics storage
+ * Tracks cold start, tab switches, navigation, and render times
+ */
+interface PerformanceMetrics {
+  coldStartTime: number | null;
+  appReadyTime: number | null;
+  tabSwitchTimes: Record<string, number[]>;
+  navigationTimes: Record<string, number[]>;
+  renderTimes: Record<string, number[]>;
+}
+
+const metrics: PerformanceMetrics = {
+  coldStartTime: null,
+  appReadyTime: null,
+  tabSwitchTimes: {},
+  navigationTimes: {},
+  renderTimes: {},
+};
+
+// Track app launch time immediately (before any React renders)
+const APP_LAUNCH_TIME = Date.now();
+
+/**
+ * Mark app as ready (call after initial render is complete)
+ * Returns cold start duration in milliseconds
+ */
+export const markAppReady = (): number => {
+  const now = Date.now();
+  metrics.appReadyTime = now;
+  metrics.coldStartTime = now - APP_LAUNCH_TIME;
+
+  if (__DEV__) {
+    console.log(`[Performance] Cold start: ${metrics.coldStartTime}ms`);
+  }
+
+  return metrics.coldStartTime;
+};
+
+/**
+ * Create a timer for measuring operations
+ * @param name - Name of the operation for logging
+ */
+export const createTimer = (name: string) => {
+  const start = performance.now();
+
+  return {
+    /**
+     * Stop timer and return duration
+     * @param log - Whether to log the result (default: __DEV__)
+     */
+    stop: (log: boolean = __DEV__): number => {
+      const duration = performance.now() - start;
+
+      if (log) {
+        console.log(`[Performance] ${name}: ${duration.toFixed(2)}ms`);
+      }
+
+      return duration;
+    },
+
+    /**
+     * Stop timer and record to metrics
+     * @param category - Category to record under (tabSwitch, navigation, render)
+     */
+    record: (category: 'tabSwitch' | 'navigation' | 'render'): number => {
+      const duration = performance.now() - start;
+
+      const storage =
+        category === 'tabSwitch'
+          ? metrics.tabSwitchTimes
+          : category === 'navigation'
+          ? metrics.navigationTimes
+          : metrics.renderTimes;
+
+      if (!storage[name]) {
+        storage[name] = [];
+      }
+      storage[name].push(duration);
+
+      // Keep only last 10 measurements
+      if (storage[name].length > 10) {
+        storage[name].shift();
+      }
+
+      if (__DEV__) {
+        console.log(`[Performance] ${category}/${name}: ${duration.toFixed(2)}ms`);
+      }
+
+      return duration;
+    },
+  };
+};
+
+/**
+ * Track tab switch performance
+ * @param tabName - Name of the tab being switched to
+ */
+export const trackTabSwitch = (tabName: string) => {
+  return createTimer(tabName);
+};
+
+/**
+ * Track navigation performance
+ * @param screenName - Name of the screen being navigated to
+ */
+export const trackNavigation = (screenName: string) => {
+  return createTimer(screenName);
+};
+
+/**
+ * Track component render performance
+ * @param componentName - Name of the component
+ */
+export const trackRender = (componentName: string) => {
+  return createTimer(componentName);
+};
+
+/**
+ * Get average time for a category/name combination
+ */
+export const getAverageTime = (
+  category: 'tabSwitch' | 'navigation' | 'render',
+  name: string
+): number | null => {
+  const storage =
+    category === 'tabSwitch'
+      ? metrics.tabSwitchTimes
+      : category === 'navigation'
+      ? metrics.navigationTimes
+      : metrics.renderTimes;
+
+  const times = storage[name];
+  if (!times || times.length === 0) return null;
+
+  return times.reduce((a, b) => a + b, 0) / times.length;
+};
+
+/**
+ * Get all performance metrics
+ */
+export const getMetrics = (): PerformanceMetrics => {
+  return { ...metrics };
+};
+
+/**
+ * Generate performance report
+ */
+export const generatePerformanceReport = (): string => {
+  const lines: string[] = ['=== FaithFlow Performance Report ===', ''];
+
+  // Cold start
+  lines.push(`Cold Start: ${metrics.coldStartTime ?? 'Not recorded'}ms`);
+  lines.push('');
+
+  // Tab switches
+  lines.push('Tab Switch Times (avg):');
+  Object.entries(metrics.tabSwitchTimes).forEach(([tab, times]) => {
+    const avg = times.reduce((a, b) => a + b, 0) / times.length;
+    lines.push(`  ${tab}: ${avg.toFixed(2)}ms (${times.length} samples)`);
+  });
+  lines.push('');
+
+  // Navigation
+  lines.push('Navigation Times (avg):');
+  Object.entries(metrics.navigationTimes).forEach(([screen, times]) => {
+    const avg = times.reduce((a, b) => a + b, 0) / times.length;
+    lines.push(`  ${screen}: ${avg.toFixed(2)}ms (${times.length} samples)`);
+  });
+  lines.push('');
+
+  // Render
+  lines.push('Render Times (avg):');
+  Object.entries(metrics.renderTimes).forEach(([component, times]) => {
+    const avg = times.reduce((a, b) => a + b, 0) / times.length;
+    lines.push(`  ${component}: ${avg.toFixed(2)}ms (${times.length} samples)`);
+  });
+
+  return lines.join('\n');
+};
+
+/**
+ * Log performance report to console
+ */
+export const logPerformanceReport = (): void => {
+  console.log(generatePerformanceReport());
+};
+
+/**
+ * Reset all metrics (useful for testing)
+ */
+export const resetMetrics = (): void => {
+  metrics.coldStartTime = null;
+  metrics.appReadyTime = null;
+  metrics.tabSwitchTimes = {};
+  metrics.navigationTimes = {};
+  metrics.renderTimes = {};
+};
+
+/**
+ * Hook for measuring component mount/render time
+ * Usage: const renderTime = useRenderTime('MyComponent');
+ */
+export const useRenderTime = (componentName: string): number | null => {
+  const renderTimeRef = useRef<number | null>(null);
+  const startTimeRef = useRef<number>(performance.now());
+
+  useEffect(() => {
+    const duration = performance.now() - startTimeRef.current;
+    renderTimeRef.current = duration;
+
+    if (!metrics.renderTimes[componentName]) {
+      metrics.renderTimes[componentName] = [];
+    }
+    metrics.renderTimes[componentName].push(duration);
+
+    // Keep only last 10 measurements
+    if (metrics.renderTimes[componentName].length > 10) {
+      metrics.renderTimes[componentName].shift();
+    }
+
+    if (__DEV__) {
+      console.log(`[Performance] Render ${componentName}: ${duration.toFixed(2)}ms`);
+    }
+  }, [componentName]);
+
+  return renderTimeRef.current;
+};
+
+// ============================================================================
 // EXPORTS
 // ============================================================================
 
@@ -753,4 +986,17 @@ export default {
   // Memory
   estimateListMemory,
   isLowMemoryDevice,
+
+  // Performance Monitoring
+  markAppReady,
+  createTimer,
+  trackTabSwitch,
+  trackNavigation,
+  trackRender,
+  getAverageTime,
+  getMetrics,
+  generatePerformanceReport,
+  logPerformanceReport,
+  resetMetrics,
+  useRenderTime,
 };

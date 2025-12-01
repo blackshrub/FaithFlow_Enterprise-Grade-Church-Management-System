@@ -32,7 +32,14 @@
     "otpVerifyError": "Invalid OTP. Please try again.",
     "logout": "Logout",
     "logoutConfirm": "Are you sure you want to logout?",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "lockScreen": {
+      "title": "App Locked",
+      "subtitle": "Use {{biometric}} to unlock",
+      "loggedInAs": "Logged in as",
+      "unlock": "Unlock with {{biometric}}",
+      "useDifferentAccount": "Use a different account"
+    }
   },
   "tabs": {
     "home": "Home",
@@ -682,6 +689,8 @@
     "cancel": "Cancel",
     "delete": "Delete",
     "edit": "Edit",
+    "disable": "Disable",
+    "enable": "Enable",
     "close": "Close",
     "ok": "OK",
     "yes": "Yes",
@@ -859,6 +868,10 @@
   "communities": {
     "title": "Communities",
     "subtitle": "Connect with your church family",
+    "community": "Community",
+    "groupsYoureIn": "Groups you're in",
+    "addGroup": "Add group",
+    "settings": "Community Settings",
     "myCommunities": "My Communities",
     "discover": "Discover",
     "discoverComingSoon": "Community discovery is coming soon. Check back later!",
@@ -871,6 +884,12 @@
     "typeMessage": "Type a message...",
     "sendError": "Failed to send message. Please try again.",
     "loadError": "Failed to load messages",
+    "noThreadsYet": "No threads yet",
+    "threads": {
+      "announcement": "Announcements",
+      "general": "General Discussion",
+      "custom": "Custom Thread"
+    },
     "chat": {
       "title": "Chat",
       "noMessages": "No messages yet",
@@ -891,7 +910,9 @@
       "document": "Document",
       "voiceMessage": "Voice Message",
       "sendingMedia": "Sending media...",
-      "mediaError": "Failed to send media"
+      "mediaError": "Failed to send media",
+      "announcementOnly": "Only admins can post in this channel",
+      "memberCount": "{{count}} members"
     },
     "info": {
       "title": "Community Info",
@@ -928,7 +949,7 @@
     "description": "Ask questions about faith, get biblical guidance, or simply talk through what's on your heart.",
     "shortDesc": "Ask anything",
     "buttonDesc": "Chat with your spiritual companion",
-    "cta": "Start Chat",
+    "cta": "Chat Now",
     "inputPlaceholder": "Type your message...",
     "thinking": "Thinking...",
     "suggestionsTitle": "Try asking about:",
@@ -963,5 +984,34 @@
     "numeric": "Please enter a number",
     "alphanumeric": "Only letters and numbers allowed",
     "url": "Please enter a valid URL"
+  },
+  "settings": {
+    "security": {
+      "title": "Security",
+      "biometricLogin": "Biometric Login",
+      "biometricDescription": "Use fingerprint or face to unlock the app",
+      "checkingHardware": "Checking device capabilities...",
+      "notSupported": "Biometric authentication is not supported on this device.",
+      "notEnrolled": "No {{biometric}} enrolled. Please set up {{biometric}} in your device settings.",
+      "enabled": "Enabled",
+      "disabled": "Disabled",
+      "lastUsed": "Last used",
+      "disableTitle": "Disable Biometric Login",
+      "disableMessage": "Are you sure you want to disable {{biometric}} login?",
+      "enabledTitle": "Biometric Enabled",
+      "enabledMessage": "{{biometric}} login has been enabled. You can now unlock the app with {{biometric}}.",
+      "loginRequired": "Please log in first to enable biometric authentication.",
+      "howItWorks": "How It Works",
+      "howItWorksDescription": "After enabling, when you return to the app after 5 seconds, you'll be asked to authenticate with your biometric. This keeps your church data secure.",
+      "privacyNote": "Your biometric data never leaves your device. We only store a secure token to verify your identity."
+    }
+  },
+  "errorBoundary": {
+    "title": "Something Went Wrong",
+    "message": "We're sorry, but something unexpected happened. Our team has been notified.",
+    "tryAgain": "Try Again",
+    "goHome": "Go Home",
+    "reportSent": "Error report sent",
+    "offlineNote": "You appear to be offline. The error will be reported when you're back online."
   }
 }

@@ -5,7 +5,7 @@
  * Uses AIOrchestrator for intelligent intent-based model routing.
  */
 
-import { api } from './index';
+import { api } from '../api';
 import type { CompanionContext } from '@/stores/companionStore';
 import { SPIRITUAL_COMPANION_SYSTEM_PROMPT } from '@/constants/companionPrompt';
 import {

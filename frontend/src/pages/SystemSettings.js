@@ -397,12 +397,14 @@ function FaithAssistantTab({ settings, onSave, onTest, showKeys, setShowKeys, is
 
 function VoiceIntegrationTab({ settings, onSave, onTest, showKeys, setShowKeys, isSaving, isTesting }) {
   const [formData, setFormData] = useState({
+    google_tts_api_key: settings.google_tts_api_key || '',
     openai_api_key: settings.openai_api_key || '',
     groq_api_key: settings.groq_api_key || '',
     stt_provider: settings.stt_provider || 'groq',
-    tts_voice: settings.tts_voice || 'nova',
-    tts_model: settings.tts_model || 'tts-1',
+    tts_voice: settings.tts_voice || 'id-ID-Chirp3-HD-Sulafat',
+    tts_voice_en: settings.tts_voice_en || 'en-US-Chirp-HD-F',
     tts_speed: settings.tts_speed || 1.0,
+    tts_pitch: settings.tts_pitch || 0.0,
     stt_model: settings.stt_model || 'whisper-1',
     voice_enabled: settings.voice_enabled ?? true,
   });
@@ -416,7 +418,7 @@ function VoiceIntegrationTab({ settings, onSave, onTest, showKeys, setShowKeys, 
       <Alert>
         <AlertTitle>Voice Features (Text-to-Speech & Speech-to-Text)</AlertTitle>
         <AlertDescription>
-          Configure OpenAI API for voice features in the mobile app. This powers:
+          Configure Google Cloud TTS for text-to-speech, and Groq/OpenAI for speech-to-text in the mobile app. This powers:
           listen-to-devotion buttons, voice input for Faith Assistant chat, and voice chat mode.
         </AlertDescription>
       </Alert>
@@ -436,49 +438,45 @@ function VoiceIntegrationTab({ settings, onSave, onTest, showKeys, setShowKeys, 
       <Separator />
 
       <div className="space-y-4">
-        <h3 className="text-lg font-semibold">OpenAI API</h3>
+        <h3 className="text-lg font-semibold">Google Cloud TTS (Text-to-Speech)</h3>
+        <Alert className="bg-blue-50 border-blue-200">
+          <AlertDescription className="text-blue-800">
+            <strong>Google Cloud TTS</strong> provides high-quality WaveNet voices for natural-sounding speech in Indonesian and English.
+            Get your API key from <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noreferrer" className="text-primary hover:underline">Google Cloud Console</a>
+          </AlertDescription>
+        </Alert>
 
         <div className="space-y-2">
-          <Label htmlFor="openai-key">API Key</Label>
+          <Label htmlFor="google-tts-key">Google TTS API Key</Label>
           <div className="relative">
             <Input
-              id="openai-key"
-              value={formData.openai_api_key}
-              onChange={(e) => handleChange('openai_api_key', e.target.value)}
-              type={showKeys.openai ? 'text' : 'password'}
-              placeholder="sk-proj-xxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+              id="google-tts-key"
+              value={formData.google_tts_api_key}
+              onChange={(e) => handleChange('google_tts_api_key', e.target.value)}
+              type={showKeys.googleTts ? 'text' : 'password'}
+              placeholder="AIzaSyxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
             />
             <Button
               type="button"
               variant="ghost"
               size="icon"
               className="absolute right-0 top-0 h-full px-3"
-              onClick={() => setShowKeys({ ...showKeys, openai: !showKeys.openai })}
+              onClick={() => setShowKeys({ ...showKeys, googleTts: !showKeys.googleTts })}
             >
-              {showKeys.openai ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              {showKeys.googleTts ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </Button>
           </div>
           <p className="text-sm text-muted-foreground">
-            Get from <a href="https://platform.openai.com/api-keys" target="_blank" rel="noreferrer" className="text-primary hover:underline">https://platform.openai.com/api-keys</a>
+            Required for text-to-speech. Get from <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noreferrer" className="text-primary hover:underline">Google Cloud Console</a>
           </p>
-        </div>
-
-        <div className="flex items-center gap-4">
-          <Button
-            variant="outline"
-            onClick={() => onTest({ api_key: formData.openai_api_key })}
-            disabled={isTesting || !formData.openai_api_key}
-          >
-            {isTesting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-            Test Connection
-          </Button>
         </div>
       </div>
 
       <Separator />
 
       <div className="space-y-4">
-        <h3 className="text-lg font-semibold">Groq API (Fast Speech-to-Text)</h3>
+        <h3 className="text-lg font-semibold">Speech-to-Text (STT)</h3>
+
         <Alert className="bg-green-50 border-green-200">
           <AlertDescription className="text-green-800">
             <strong>Recommended:</strong> Groq Whisper is ~10x faster than OpenAI (0.3s vs 2-4s latency) with the same accuracy.
@@ -512,6 +510,31 @@ function VoiceIntegrationTab({ settings, onSave, onTest, showKeys, setShowKeys, 
         </div>
 
         <div className="space-y-2">
+          <Label htmlFor="openai-key">OpenAI API Key (STT Fallback)</Label>
+          <div className="relative">
+            <Input
+              id="openai-key"
+              value={formData.openai_api_key}
+              onChange={(e) => handleChange('openai_api_key', e.target.value)}
+              type={showKeys.openai ? 'text' : 'password'}
+              placeholder="sk-proj-xxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+            />
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="absolute right-0 top-0 h-full px-3"
+              onClick={() => setShowKeys({ ...showKeys, openai: !showKeys.openai })}
+            >
+              {showKeys.openai ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </Button>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Optional fallback. Get from <a href="https://platform.openai.com/api-keys" target="_blank" rel="noreferrer" className="text-primary hover:underline">https://platform.openai.com/api-keys</a>
+          </p>
+        </div>
+
+        <div className="space-y-2">
           <Label htmlFor="stt-provider">STT Provider</Label>
           <Select
             value={formData.stt_provider}
@@ -534,11 +557,11 @@ function VoiceIntegrationTab({ settings, onSave, onTest, showKeys, setShowKeys, 
       <Separator />
 
       <div className="space-y-4">
-        <h3 className="text-lg font-semibold">Text-to-Speech (TTS) Settings</h3>
+        <h3 className="text-lg font-semibold">Google TTS Voice Settings</h3>
 
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
-            <Label htmlFor="tts-voice">Default Voice</Label>
+            <Label htmlFor="tts-voice">Indonesian Voice</Label>
             <Select
               value={formData.tts_voice}
               onValueChange={(value) => handleChange('tts_voice', value)}
@@ -547,48 +570,81 @@ function VoiceIntegrationTab({ settings, onSave, onTest, showKeys, setShowKeys, 
                 <SelectValue placeholder="Select voice" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="nova">Nova (Female, warm)</SelectItem>
-                <SelectItem value="alloy">Alloy (Neutral)</SelectItem>
-                <SelectItem value="echo">Echo (Male)</SelectItem>
-                <SelectItem value="fable">Fable (British accent)</SelectItem>
-                <SelectItem value="onyx">Onyx (Male, deep)</SelectItem>
-                <SelectItem value="shimmer">Shimmer (Female, expressive)</SelectItem>
+                <SelectItem value="id-ID-Chirp3-HD-Sulafat">✨ Sulafat (Male) - Recommended</SelectItem>
+                <SelectItem value="id-ID-Chirp3-HD-Aoede">✨ Aoede (Female)</SelectItem>
+                <SelectItem value="id-ID-Chirp3-HD-Puck">✨ Puck (Male)</SelectItem>
+                <SelectItem value="id-ID-Chirp3-HD-Kore">✨ Kore (Female)</SelectItem>
+                <SelectItem value="id-ID-Chirp3-HD-Charon">✨ Charon (Male)</SelectItem>
+                <SelectItem value="id-ID-Chirp3-HD-Fenrir">✨ Fenrir (Male)</SelectItem>
+                <SelectItem value="id-ID-Wavenet-A">Sari (Female) - Legacy</SelectItem>
+                <SelectItem value="id-ID-Wavenet-B">Dewi (Female) - Legacy</SelectItem>
+                <SelectItem value="id-ID-Wavenet-C">Budi (Male) - Legacy</SelectItem>
+                <SelectItem value="id-ID-Wavenet-D">Putri (Female) - Legacy</SelectItem>
               </SelectContent>
             </Select>
-            <p className="text-sm text-muted-foreground">Nova recommended for warm, conversational tone</p>
+            <p className="text-sm text-muted-foreground">✨ = Chirp3-HD (latest, most natural)</p>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="tts-model">TTS Model</Label>
+            <Label htmlFor="tts-voice-en">English Voice</Label>
             <Select
-              value={formData.tts_model}
-              onValueChange={(value) => handleChange('tts_model', value)}
+              value={formData.tts_voice_en}
+              onValueChange={(value) => handleChange('tts_voice_en', value)}
             >
-              <SelectTrigger id="tts-model">
-                <SelectValue placeholder="Select model" />
+              <SelectTrigger id="tts-voice-en">
+                <SelectValue placeholder="Select voice" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="tts-1">TTS-1 (Fast, $0.015/1K chars)</SelectItem>
-                <SelectItem value="tts-1-hd">TTS-1-HD (High quality, $0.030/1K chars)</SelectItem>
+                <SelectItem value="en-US-Chirp-HD-F">✨ Chirp F (Female) - Recommended</SelectItem>
+                <SelectItem value="en-US-Chirp-HD-D">✨ Chirp D (Male)</SelectItem>
+                <SelectItem value="en-US-Chirp-HD-O">✨ Chirp O (Female)</SelectItem>
+                <SelectItem value="en-US-Chirp3-HD-Despina">Despina (Female)</SelectItem>
+                <SelectItem value="en-US-Chirp3-HD-Aoede">Aoede (Female)</SelectItem>
+                <SelectItem value="en-US-Chirp3-HD-Puck">Puck (Male)</SelectItem>
+                <SelectItem value="en-US-Chirp3-HD-Charon">Charon (Male)</SelectItem>
+                <SelectItem value="en-US-Chirp3-HD-Kore">Kore (Female)</SelectItem>
+                <SelectItem value="en-US-Chirp3-HD-Fenrir">Fenrir (Male)</SelectItem>
+                <SelectItem value="en-US-Chirp3-HD-Leda">Leda (Female)</SelectItem>
+                <SelectItem value="en-US-Wavenet-C">Clara (Female) - Legacy</SelectItem>
+                <SelectItem value="en-US-Wavenet-F">Faith (Female) - Legacy</SelectItem>
+                <SelectItem value="en-US-Wavenet-D">David (Male) - Legacy</SelectItem>
+                <SelectItem value="en-US-Wavenet-J">James (Male) - Legacy</SelectItem>
               </SelectContent>
             </Select>
-            <p className="text-sm text-muted-foreground">TTS-1 recommended for faster playback</p>
+            <p className="text-sm text-muted-foreground">✨ = Chirp-HD (recommended, most natural)</p>
           </div>
         </div>
 
-        <div className="space-y-2 max-w-xs">
-          <Label htmlFor="tts-speed">Speech Speed: {formData.tts_speed}x</Label>
-          <input
-            id="tts-speed"
-            type="range"
-            min="0.5"
-            max="2.0"
-            step="0.1"
-            value={formData.tts_speed}
-            onChange={(e) => handleChange('tts_speed', parseFloat(e.target.value))}
-            className="w-full"
-          />
-          <p className="text-sm text-muted-foreground">0.5x (slow) to 2.0x (fast), 1.0x is normal</p>
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="space-y-2 max-w-xs">
+            <Label htmlFor="tts-speed">Speech Speed: {formData.tts_speed}x</Label>
+            <input
+              id="tts-speed"
+              type="range"
+              min="0.25"
+              max="4.0"
+              step="0.1"
+              value={formData.tts_speed}
+              onChange={(e) => handleChange('tts_speed', parseFloat(e.target.value))}
+              className="w-full"
+            />
+            <p className="text-sm text-muted-foreground">0.25x (slow) to 4.0x (fast), 1.0x is normal</p>
+          </div>
+
+          <div className="space-y-2 max-w-xs">
+            <Label htmlFor="tts-pitch">Pitch: {formData.tts_pitch > 0 ? '+' : ''}{formData.tts_pitch} semitones</Label>
+            <input
+              id="tts-pitch"
+              type="range"
+              min="-20"
+              max="20"
+              step="1"
+              value={formData.tts_pitch}
+              onChange={(e) => handleChange('tts_pitch', parseFloat(e.target.value))}
+              className="w-full"
+            />
+            <p className="text-sm text-muted-foreground">-20 (lower) to +20 (higher), 0 is normal</p>
+          </div>
         </div>
       </div>
 
@@ -597,10 +653,10 @@ function VoiceIntegrationTab({ settings, onSave, onTest, showKeys, setShowKeys, 
       <div className="bg-muted/50 rounded-lg p-4">
         <h4 className="font-medium mb-2">Cost Estimate</h4>
         <p className="text-sm text-muted-foreground">
-          <strong>TTS (OpenAI):</strong> ~$0.015 per 1,000 characters. A typical devotion (~1,500 chars) costs ~$0.02.<br/>
+          <strong>TTS (Google WaveNet):</strong> ~$0.016 per 1 million characters. A typical devotion (~1,500 chars) costs ~$0.00002.<br/>
           <strong>STT (Groq):</strong> Free tier with generous limits, or $0.111/hr for audio. <span className="text-green-600 font-medium">10x faster than OpenAI!</span><br/>
           <strong>STT (OpenAI):</strong> ~$0.006 per minute (fallback option).<br/>
-          For 100 users: 1 devotion/day + 5 voice messages = ~$2.50/day or ~$75/month (STT free with Groq).
+          Google TTS is significantly cheaper than OpenAI TTS while providing excellent quality WaveNet voices.
         </p>
       </div>
 

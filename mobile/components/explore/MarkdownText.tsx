@@ -12,7 +12,7 @@
  */
 
 import React from 'react';
-import { Text, View, TextStyle, StyleSheet, ViewStyle } from 'react-native';
+import { Text, View, TextStyle, ViewStyle } from 'react-native';
 import { ExploreColors, ExploreTypography, ExploreSpacing } from '@/constants/explore/designSystem';
 
 interface MarkdownTextProps {
@@ -42,28 +42,72 @@ export function MarkdownText({ children, style, containerStyle }: MarkdownTextPr
 
         if (h1Match) {
           return (
-            <Text key={pIndex} style={[styles.heading1, style]}>
+            <Text
+              key={pIndex}
+              style={[
+                {
+                  ...ExploreTypography.h1,
+                  color: ExploreColors.neutral[900],
+                  marginBottom: ExploreSpacing.md,
+                  marginTop: ExploreSpacing.lg,
+                },
+                style,
+              ]}
+            >
               {renderInlineMarkdown(h1Match[1])}
             </Text>
           );
         }
         if (h2Match) {
           return (
-            <Text key={pIndex} style={[styles.heading2, style]}>
+            <Text
+              key={pIndex}
+              style={[
+                {
+                  ...ExploreTypography.h2,
+                  color: ExploreColors.neutral[900],
+                  marginBottom: ExploreSpacing.md,
+                  marginTop: ExploreSpacing.lg,
+                },
+                style,
+              ]}
+            >
               {renderInlineMarkdown(h2Match[1])}
             </Text>
           );
         }
         if (h3Match) {
           return (
-            <Text key={pIndex} style={[styles.heading3, style]}>
+            <Text
+              key={pIndex}
+              style={[
+                {
+                  ...ExploreTypography.h3,
+                  color: ExploreColors.neutral[900],
+                  marginBottom: ExploreSpacing.sm,
+                  marginTop: ExploreSpacing.md,
+                },
+                style,
+              ]}
+            >
               {renderInlineMarkdown(h3Match[1])}
             </Text>
           );
         }
         if (h4Match) {
           return (
-            <Text key={pIndex} style={[styles.heading4, style]}>
+            <Text
+              key={pIndex}
+              style={[
+                {
+                  ...ExploreTypography.h4,
+                  color: ExploreColors.neutral[900],
+                  marginBottom: ExploreSpacing.sm,
+                  marginTop: ExploreSpacing.md,
+                },
+                style,
+              ]}
+            >
               {renderInlineMarkdown(h4Match[1])}
             </Text>
           );
@@ -79,15 +123,38 @@ export function MarkdownText({ children, style, containerStyle }: MarkdownTextPr
 
         if (isBulletList && lines.some(line => line.trim().startsWith('- ') || line.trim().startsWith('• '))) {
           return (
-            <View key={pIndex} style={styles.bulletList}>
+            <View key={pIndex} style={{ marginBottom: ExploreSpacing.md }}>
               {lines.map((line, lIndex) => {
                 const trimmedLine = line.trim();
                 if (!trimmedLine) return null;
                 const bulletText = trimmedLine.replace(/^[-•]\s*/, '');
                 return (
-                  <View key={lIndex} style={styles.bulletItem}>
-                    <Text style={styles.bullet}>•</Text>
-                    <Text style={[styles.bulletText, style]}>
+                  <View
+                    key={lIndex}
+                    className="flex-row items-start"
+                    style={{ marginBottom: ExploreSpacing.xs }}
+                  >
+                    <Text
+                      style={{
+                        ...ExploreTypography.body,
+                        color: ExploreColors.primary[500],
+                        marginRight: ExploreSpacing.sm,
+                        lineHeight: 28,
+                      }}
+                    >
+                      •
+                    </Text>
+                    <Text
+                      className="flex-1"
+                      style={[
+                        {
+                          ...ExploreTypography.body,
+                          color: ExploreColors.neutral[800],
+                          lineHeight: 28,
+                        },
+                        style,
+                      ]}
+                    >
                       {renderInlineMarkdown(bulletText)}
                     </Text>
                   </View>
@@ -101,7 +168,18 @@ export function MarkdownText({ children, style, containerStyle }: MarkdownTextPr
         const linesWithBreaks = trimmedParagraph.split('\n');
 
         return (
-          <Text key={pIndex} style={[styles.paragraph, style]}>
+          <Text
+            key={pIndex}
+            style={[
+              {
+                ...ExploreTypography.body,
+                color: ExploreColors.neutral[800],
+                lineHeight: 28,
+                marginBottom: ExploreSpacing.md,
+              },
+              style,
+            ]}
+          >
             {linesWithBreaks.map((line, lIndex) => (
               <React.Fragment key={lIndex}>
                 {renderInlineMarkdown(line)}
@@ -137,7 +215,7 @@ function renderInlineMarkdown(text: string): React.ReactNode[] {
     if (matchedText.startsWith('**') && matchedText.endsWith('**')) {
       const boldText = matchedText.slice(2, -2);
       parts.push(
-        <Text key={key++} style={styles.bold}>
+        <Text key={key++} className="font-bold">
           {boldText}
         </Text>
       );
@@ -146,7 +224,7 @@ function renderInlineMarkdown(text: string): React.ReactNode[] {
     else if (matchedText.startsWith('*') && matchedText.endsWith('*')) {
       const italicText = matchedText.slice(1, -1);
       parts.push(
-        <Text key={key++} style={styles.italic}>
+        <Text key={key++} className="italic">
           {italicText}
         </Text>
       );
@@ -159,7 +237,11 @@ function renderInlineMarkdown(text: string): React.ReactNode[] {
       (matchedText.startsWith('«') && matchedText.endsWith('»'))
     ) {
       parts.push(
-        <Text key={key++} style={styles.quoted}>
+        <Text
+          key={key++}
+          className="italic"
+          style={{ color: ExploreColors.neutral[700] }}
+        >
           {matchedText}
         </Text>
       );
@@ -178,68 +260,5 @@ function renderInlineMarkdown(text: string): React.ReactNode[] {
 
   return parts.length > 0 ? parts : [text];
 }
-
-const styles = StyleSheet.create({
-  paragraph: {
-    ...ExploreTypography.body,
-    color: ExploreColors.neutral[800],
-    lineHeight: 28,
-    marginBottom: ExploreSpacing.md,
-  },
-  heading1: {
-    ...ExploreTypography.h1,
-    color: ExploreColors.neutral[900],
-    marginBottom: ExploreSpacing.md,
-    marginTop: ExploreSpacing.lg,
-  },
-  heading2: {
-    ...ExploreTypography.h2,
-    color: ExploreColors.neutral[900],
-    marginBottom: ExploreSpacing.md,
-    marginTop: ExploreSpacing.lg,
-  },
-  heading3: {
-    ...ExploreTypography.h3,
-    color: ExploreColors.neutral[900],
-    marginBottom: ExploreSpacing.sm,
-    marginTop: ExploreSpacing.md,
-  },
-  heading4: {
-    ...ExploreTypography.h4,
-    color: ExploreColors.neutral[900],
-    marginBottom: ExploreSpacing.sm,
-    marginTop: ExploreSpacing.md,
-  },
-  bold: {
-    fontWeight: '700',
-  },
-  italic: {
-    fontStyle: 'italic',
-  },
-  quoted: {
-    fontStyle: 'italic',
-    color: ExploreColors.neutral[700],
-  },
-  bulletList: {
-    marginBottom: ExploreSpacing.md,
-  },
-  bulletItem: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: ExploreSpacing.xs,
-  },
-  bullet: {
-    ...ExploreTypography.body,
-    color: ExploreColors.primary[500],
-    marginRight: ExploreSpacing.sm,
-    lineHeight: 28,
-  },
-  bulletText: {
-    ...ExploreTypography.body,
-    color: ExploreColors.neutral[800],
-    lineHeight: 28,
-    flex: 1,
-  },
-});
 
 export default MarkdownText;

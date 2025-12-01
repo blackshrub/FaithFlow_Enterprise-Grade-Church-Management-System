@@ -17,6 +17,8 @@
  * - categoryFilter: Event category filter
  * - noteEditor: Bible verse note editor
  * - streakDetails: Streak statistics
+ *
+ * Styling: NativeWind-first with inline style for dynamic/calculated values
  */
 
 import React, { useState, useCallback, useMemo } from 'react';
@@ -28,7 +30,6 @@ import {
   Platform,
   ScrollView,
   Dimensions,
-  StyleSheet,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
@@ -56,7 +57,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { useModalHost, ModalPayloads } from '@/stores/modalHost';
-import { SharedAxisModal } from './SharedAxisModal';
+import { SharedAxisModal } from '../overlay/SharedAxisModal';
 import { Text } from '@/components/ui/text';
 import { Heading } from '@/components/ui/heading';
 import { Button, ButtonText } from '@/components/ui/button';
@@ -200,11 +201,18 @@ function RatingModalContent({ props, onClose }: RatingModalContentProps) {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.modalContainer}
+      className="flex-1 justify-center items-center"
     >
-      <View style={styles.modalCard}>
+      <View
+        className="bg-white rounded-3xl w-full"
+        style={{
+          maxWidth: SCREEN_WIDTH - 32,
+          maxHeight: SCREEN_HEIGHT - 120,
+          ...shadows.xl,
+        }}
+      >
         <ScrollView showsVerticalScrollIndicator={false}>
-          <View style={styles.modalContent}>
+          <View className="p-6">
             {/* Header */}
             <HStack className="items-center justify-between mb-6">
               <View className="flex-1 pr-4">
@@ -217,7 +225,7 @@ function RatingModalContent({ props, onClose }: RatingModalContentProps) {
               </View>
               <Pressable
                 onPress={onClose}
-                style={styles.closeButton}
+                className="w-10 h-10 rounded-full items-center justify-center bg-gray-100"
               >
                 <Icon as={X} size="sm" className="text-gray-600" />
               </Pressable>
@@ -230,11 +238,20 @@ function RatingModalContent({ props, onClose }: RatingModalContentProps) {
                   {t('rating.question')}
                 </Text>
 
-                <View style={[styles.ratingDisplay, { backgroundColor: colors.gray[50] }]}>
-                  <Text style={[styles.ratingValue, { color: getRatingColor(rating) }]}>
+                <View
+                  className="items-center justify-center py-6 mb-4 rounded-2xl"
+                  style={{ backgroundColor: colors.gray[50] }}
+                >
+                  <Text
+                    className="text-[56px] leading-[64px] font-bold mb-1"
+                    style={{ color: getRatingColor(rating) }}
+                  >
                     {rating}
                   </Text>
-                  <Text style={[styles.ratingLabel, { color: getRatingColor(rating) }]}>
+                  <Text
+                    className="text-sm font-bold uppercase tracking-wide"
+                    style={{ color: getRatingColor(rating) }}
+                  >
                     {getRatingLabel(rating)}
                   </Text>
                 </View>
@@ -264,7 +281,7 @@ function RatingModalContent({ props, onClose }: RatingModalContentProps) {
                 <Text className="text-gray-700 font-semibold mb-3 text-base">
                   {t('rating.feedbackLabel')}
                 </Text>
-                <View style={styles.textInputContainer}>
+                <View className="rounded-2xl overflow-hidden bg-gray-50 border border-gray-200">
                   <TextInput
                     value={review}
                     onChangeText={setReview}
@@ -274,7 +291,8 @@ function RatingModalContent({ props, onClose }: RatingModalContentProps) {
                     numberOfLines={5}
                     maxLength={1000}
                     textAlignVertical="top"
-                    style={styles.textInput}
+                    className="p-4 text-base text-gray-900"
+                    style={{ minHeight: 120, lineHeight: 24 }}
                   />
                 </View>
                 <Text className="text-xs text-gray-500 mt-2 text-right">
@@ -287,8 +305,8 @@ function RatingModalContent({ props, onClose }: RatingModalContentProps) {
                 onPress={handleSubmit}
                 disabled={isSubmitting}
                 size="xl"
-                className="mt-2"
-                style={styles.submitButton}
+                className="mt-2 rounded-xl"
+                style={shadows.md}
               >
                 <Icon as={isSubmitting ? Star : Send} size="sm" className="text-white mr-2" />
                 <ButtonText className="font-bold text-base">
@@ -326,8 +344,15 @@ function CategoryFilterContent({ props, onClose }: CategoryFilterContentProps) {
   };
 
   return (
-    <View style={styles.modalCard}>
-      <View style={styles.modalContent}>
+    <View
+      className="bg-white rounded-3xl w-full"
+      style={{
+        maxWidth: SCREEN_WIDTH - 32,
+        maxHeight: SCREEN_HEIGHT - 120,
+        ...shadows.xl,
+      }}
+    >
+      <View className="p-6">
         {/* Header */}
         <HStack className="items-center justify-between mb-6">
           <View className="flex-1">
@@ -336,7 +361,10 @@ function CategoryFilterContent({ props, onClose }: CategoryFilterContentProps) {
             </Heading>
             <Text className="text-gray-500 text-sm">{t('events.selectCategoryDesc')}</Text>
           </View>
-          <Pressable onPress={onClose} style={styles.closeButton}>
+          <Pressable
+            onPress={onClose}
+            className="w-10 h-10 rounded-full items-center justify-center bg-gray-100"
+          >
             <Icon as={X} size="sm" className="text-gray-600" />
           </Pressable>
         </HStack>
@@ -347,18 +375,19 @@ function CategoryFilterContent({ props, onClose }: CategoryFilterContentProps) {
           className="active:opacity-70 mb-3"
         >
           <View
-            style={[
-              styles.categoryItem,
-              {
-                backgroundColor: props.selectedCategory === null ? colors.primary[50] : colors.gray[50],
-                borderColor: props.selectedCategory === null ? colors.primary[500] : 'transparent',
-              },
-            ]}
+            className="p-4 rounded-2xl border-2"
+            style={{
+              backgroundColor: props.selectedCategory === null ? colors.primary[50] : colors.gray[50],
+              borderColor: props.selectedCategory === null ? colors.primary[500] : 'transparent',
+            }}
           >
             <HStack space="md" className="items-center">
-              <View style={[styles.categoryIcon, {
-                backgroundColor: props.selectedCategory === null ? colors.primary[100] : colors.gray[100],
-              }]}>
+              <View
+                className="w-12 h-12 rounded-xl items-center justify-center"
+                style={{
+                  backgroundColor: props.selectedCategory === null ? colors.primary[100] : colors.gray[100],
+                }}
+              >
                 <Icon as={Filter} size="lg" className={props.selectedCategory === null ? 'text-primary-600' : 'text-gray-400'} />
               </View>
 
@@ -370,7 +399,7 @@ function CategoryFilterContent({ props, onClose }: CategoryFilterContentProps) {
               </VStack>
 
               {props.selectedCategory === null && (
-                <View style={styles.checkIcon}>
+                <View className="w-6 h-6 rounded-full items-center justify-center bg-primary-500">
                   <Icon as={Check} size="xs" className="text-white" />
                 </View>
               )}
@@ -391,20 +420,24 @@ function CategoryFilterContent({ props, onClose }: CategoryFilterContentProps) {
                   className="active:opacity-70"
                 >
                   <View
-                    style={[
-                      styles.categoryItem,
-                      shadows.sm,
-                      {
-                        backgroundColor: isSelected ? colors.primary[50] : colors.white,
-                        borderColor: isSelected ? colors.primary[500] : colors.gray[200],
-                      },
-                    ]}
+                    className="p-4 rounded-2xl border-2"
+                    style={{
+                      backgroundColor: isSelected ? colors.primary[50] : colors.white,
+                      borderColor: isSelected ? colors.primary[500] : colors.gray[200],
+                      ...shadows.sm,
+                    }}
                   >
                     <HStack space="md" className="items-center">
-                      <View style={[styles.categoryIcon, {
-                        backgroundColor: isSelected ? colors.primary[100] : colors.gray[100],
-                      }]}>
-                        <View style={[styles.categoryDot, { backgroundColor: colors.primary[500] }]} />
+                      <View
+                        className="w-12 h-12 rounded-xl items-center justify-center"
+                        style={{
+                          backgroundColor: isSelected ? colors.primary[100] : colors.gray[100],
+                        }}
+                      >
+                        <View
+                          className="w-4 h-4 rounded-full"
+                          style={{ backgroundColor: colors.primary[500] }}
+                        />
                       </View>
 
                       <VStack className="flex-1">
@@ -414,7 +447,7 @@ function CategoryFilterContent({ props, onClose }: CategoryFilterContentProps) {
                       </VStack>
 
                       {isSelected && (
-                        <View style={styles.checkIcon}>
+                        <View className="w-6 h-6 rounded-full items-center justify-center bg-primary-500">
                           <Icon as={Check} size="xs" className="text-white" />
                         </View>
                       )}
@@ -470,51 +503,65 @@ function CalendarContent({ props, onClose }: CalendarContentProps) {
   };
 
   return (
-    <View style={[styles.modalCard, { maxWidth: SCREEN_WIDTH - 32 }]}>
-      <View style={styles.modalContent}>
-        {/* Header */}
-        <HStack className="justify-between items-center mb-4">
-          <VStack>
-            <Heading size="xl" className="text-gray-900 font-bold">
-              {t('events.calendar.title')}
-            </Heading>
-            <Text className="text-gray-500 text-sm">{t('events.calendar.selectDate')}</Text>
-          </VStack>
+    <View
+      className="bg-white rounded-3xl w-full p-6"
+      style={{
+        maxWidth: SCREEN_WIDTH - 32,
+        maxHeight: SCREEN_HEIGHT - 120,
+        ...shadows.xl,
+      }}
+    >
+      {/* Header */}
+      <HStack className="justify-between items-center mb-4">
+        <VStack>
+          <Heading size="xl" className="text-gray-900 font-bold">
+            {t('events.calendar.title')}
+          </Heading>
+          <Text className="text-gray-500 text-sm">{t('events.calendar.selectDate')}</Text>
+        </VStack>
 
-          <Pressable onPress={onClose} style={styles.closeButton}>
-            <Icon as={X} size="md" className="text-gray-600" />
-          </Pressable>
-        </HStack>
+        <Pressable
+          onPress={onClose}
+          className="w-10 h-10 rounded-full items-center justify-center bg-gray-100"
+        >
+          <Icon as={X} size="md" className="text-gray-600" />
+        </Pressable>
+      </HStack>
 
-        {/* Month Navigation */}
-        <HStack className="justify-between items-center mb-4 px-2">
-          <Pressable onPress={handlePrevMonth} style={styles.monthNavButton}>
-            <Icon as={ChevronLeft} size="md" className="text-gray-700" />
-          </Pressable>
+      {/* Month Navigation */}
+      <HStack className="justify-between items-center mb-4 px-2">
+        <Pressable
+          onPress={handlePrevMonth}
+          className="w-9 h-9 rounded-full items-center justify-center bg-gray-100"
+        >
+          <Icon as={ChevronLeft} size="md" className="text-gray-700" />
+        </Pressable>
 
-          <Text className="text-gray-900 font-bold text-base">
-            {currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-          </Text>
+        <Text className="text-gray-900 font-bold text-base">
+          {currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+        </Text>
 
-          <Pressable onPress={handleNextMonth} style={styles.monthNavButton}>
-            <Icon as={ChevronRight} size="md" className="text-gray-700" />
-          </Pressable>
-        </HStack>
+        <Pressable
+          onPress={handleNextMonth}
+          className="w-9 h-9 rounded-full items-center justify-center bg-gray-100"
+        >
+          <Icon as={ChevronRight} size="md" className="text-gray-700" />
+        </Pressable>
+      </HStack>
 
-        {/* Calendar */}
-        <Calendar
-          calendarMonthId={currentMonth.toISOString().split('T')[0]}
-          calendarColorScheme="light"
-          calendarFirstDayOfWeek="monday"
-          calendarDayHeight={48}
-          onCalendarDayPress={handleDateSelect}
-        />
+      {/* Calendar */}
+      <Calendar
+        calendarMonthId={currentMonth.toISOString().split('T')[0]}
+        calendarColorScheme="light"
+        calendarFirstDayOfWeek="monday"
+        calendarDayHeight={48}
+        onCalendarDayPress={handleDateSelect}
+      />
 
-        {/* Done Button */}
-        <Button onPress={onClose} size="lg" className="mt-4">
-          <ButtonText className="font-bold">{t('common.done')}</ButtonText>
-        </Button>
-      </View>
+      {/* Done Button */}
+      <Button onPress={onClose} size="lg" className="mt-4">
+        <ButtonText className="font-bold">{t('common.done')}</ButtonText>
+      </Button>
     </View>
   );
 }
@@ -545,52 +592,61 @@ function NoteEditorContent({ props, onClose }: NoteEditorContentProps) {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.modalContainer}
+      className="flex-1 justify-center items-center"
     >
-      <View style={styles.modalCard}>
-        <View style={styles.modalContent}>
-          {/* Header */}
-          <HStack className="justify-between items-center mb-4">
-            <VStack className="flex-1">
-              <Heading size="lg" className="text-gray-900 font-bold">
-                {t('bible.addNote')}
-              </Heading>
-              <Text className="text-primary-600 font-semibold text-sm">
-                {verseReference}
-              </Text>
-            </VStack>
+      <View
+        className="bg-white rounded-3xl w-full p-6"
+        style={{
+          maxWidth: SCREEN_WIDTH - 32,
+          maxHeight: SCREEN_HEIGHT - 120,
+          ...shadows.xl,
+        }}
+      >
+        {/* Header */}
+        <HStack className="justify-between items-center mb-4">
+          <VStack className="flex-1">
+            <Heading size="lg" className="text-gray-900 font-bold">
+              {t('bible.addNote')}
+            </Heading>
+            <Text className="text-primary-600 font-semibold text-sm">
+              {verseReference}
+            </Text>
+          </VStack>
 
-            <Pressable onPress={onClose} style={styles.closeButton}>
-              <Icon as={X} size="md" className="text-gray-600" />
-            </Pressable>
-          </HStack>
+          <Pressable
+            onPress={onClose}
+            className="w-10 h-10 rounded-full items-center justify-center bg-gray-100"
+          >
+            <Icon as={X} size="md" className="text-gray-600" />
+          </Pressable>
+        </HStack>
 
-          {/* Note Input */}
-          <View style={styles.textInputContainer}>
-            <TextInput
-              value={note}
-              onChangeText={setNote}
-              placeholder={t('bible.notePlaceholder')}
-              placeholderTextColor={colors.gray[400]}
-              multiline
-              numberOfLines={8}
-              textAlignVertical="top"
-              style={[styles.textInput, { minHeight: 200 }]}
-              autoFocus
-            />
-          </View>
-
-          {/* Actions */}
-          <HStack space="md" className="mt-4">
-            <Button variant="outline" onPress={onClose} className="flex-1">
-              <ButtonText>{t('common.cancel')}</ButtonText>
-            </Button>
-            <Button onPress={handleSave} className="flex-1">
-              <Icon as={Save} size="sm" className="text-white mr-2" />
-              <ButtonText className="font-bold">{t('common.save')}</ButtonText>
-            </Button>
-          </HStack>
+        {/* Note Input */}
+        <View className="rounded-2xl overflow-hidden bg-gray-50 border border-gray-200">
+          <TextInput
+            value={note}
+            onChangeText={setNote}
+            placeholder={t('bible.notePlaceholder')}
+            placeholderTextColor={colors.gray[400]}
+            multiline
+            numberOfLines={8}
+            textAlignVertical="top"
+            autoFocus
+            className="p-4 text-base text-gray-900"
+            style={{ minHeight: 200, lineHeight: 24 }}
+          />
         </View>
+
+        {/* Actions */}
+        <HStack space="md" className="mt-4">
+          <Button variant="outline" onPress={onClose} className="flex-1">
+            <ButtonText>{t('common.cancel')}</ButtonText>
+          </Button>
+          <Button onPress={handleSave} className="flex-1">
+            <Icon as={Save} size="sm" className="text-white mr-2" />
+            <ButtonText className="font-bold">{t('common.save')}</ButtonText>
+          </Button>
+        </HStack>
       </View>
     </KeyboardAvoidingView>
   );
@@ -616,13 +672,23 @@ function StreakDetailsContent({ props, onClose }: StreakDetailsContentProps) {
   ];
 
   return (
-    <View style={styles.modalCard}>
+    <View
+      className="bg-white rounded-3xl w-full"
+      style={{
+        maxWidth: SCREEN_WIDTH - 32,
+        maxHeight: SCREEN_HEIGHT - 120,
+        ...shadows.xl,
+      }}
+    >
       <ScrollView showsVerticalScrollIndicator={false}>
-        <View style={styles.modalContent}>
+        <View className="p-6">
           {/* Header */}
           <HStack className="justify-between items-center mb-6">
             <HStack space="md" className="items-center">
-              <View style={styles.fireIconContainer}>
+              <View
+                className="w-12 h-12 rounded-full items-center justify-center"
+                style={{ backgroundColor: ExploreColors.secondary[50] }}
+              >
                 <Flame size={28} color={ExploreColors.secondary[600]} />
               </View>
               <Heading size="xl" className="text-gray-900 font-bold">
@@ -630,40 +696,53 @@ function StreakDetailsContent({ props, onClose }: StreakDetailsContentProps) {
               </Heading>
             </HStack>
 
-            <Pressable onPress={onClose} style={styles.closeButton}>
+            <Pressable
+              onPress={onClose}
+              className="w-10 h-10 rounded-full items-center justify-center bg-gray-100"
+            >
               <Icon as={X} size="md" className="text-gray-600" />
             </Pressable>
           </HStack>
 
           {/* Stats Grid */}
-          <View style={styles.statsGrid}>
-            <View style={styles.statCard}>
-              <View style={[styles.statIconContainer, { backgroundColor: ExploreColors.secondary[50] }]}>
+          <View className="flex-row gap-4 mb-6">
+            <View className="flex-1 items-center p-4 rounded-xl bg-gray-50">
+              <View
+                className="w-10 h-10 rounded-full items-center justify-center mb-2"
+                style={{ backgroundColor: ExploreColors.secondary[50] }}
+              >
                 <Flame size={20} color={ExploreColors.secondary[600]} />
               </View>
-              <Text style={styles.statValue}>{props.streakCount}</Text>
-              <Text style={styles.statLabel}>{t('explore.currentStreak')}</Text>
+              <Text className="text-3xl font-bold text-gray-900">{props.streakCount}</Text>
+              <Text className="text-xs text-gray-500 mt-1">{t('explore.currentStreak')}</Text>
             </View>
 
-            <View style={styles.statCard}>
-              <View style={[styles.statIconContainer, { backgroundColor: colors.primary[50] }]}>
+            <View className="flex-1 items-center p-4 rounded-xl bg-gray-50">
+              <View
+                className="w-10 h-10 rounded-full items-center justify-center mb-2"
+                style={{ backgroundColor: colors.primary[50] }}
+              >
                 <Trophy size={20} color={colors.primary[600]} />
               </View>
-              <Text style={styles.statValue}>{props.longestStreak}</Text>
-              <Text style={styles.statLabel}>{t('explore.longestStreak')}</Text>
+              <Text className="text-3xl font-bold text-gray-900">{props.longestStreak}</Text>
+              <Text className="text-xs text-gray-500 mt-1">{t('explore.longestStreak')}</Text>
             </View>
           </View>
 
           {/* Week Progress */}
-          <View style={styles.weekProgressContainer}>
+          <View className="p-4 rounded-xl bg-gray-50 mb-6">
             <Text className="text-gray-700 font-semibold mb-3">{t('explore.thisWeek')}</Text>
             <HStack className="justify-between">
               {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, index) => (
-                <View key={index} style={styles.dayContainer}>
-                  <View style={[
-                    styles.dayCircle,
-                    props.currentWeekDays[index] && styles.dayCircleActive,
-                  ]}>
+                <View key={index} className="items-center">
+                  <View
+                    className="w-8 h-8 rounded-full items-center justify-center"
+                    style={{
+                      backgroundColor: props.currentWeekDays[index]
+                        ? ExploreColors.secondary[500]
+                        : colors.gray[200],
+                    }}
+                  >
                     {props.currentWeekDays[index] && (
                       <Check size={14} color={colors.white} />
                     )}
@@ -675,11 +754,14 @@ function StreakDetailsContent({ props, onClose }: StreakDetailsContentProps) {
           </View>
 
           {/* Rules */}
-          <View style={styles.rulesContainer}>
+          <View className="p-4 rounded-xl bg-gray-50">
             <Text className="text-gray-700 font-semibold mb-3">{t('explore.howStreaksWork')}</Text>
             {streakRules.map((rule, index) => (
               <HStack key={index} space="sm" className="items-start mb-2">
-                <View style={styles.ruleBullet}>
+                <View
+                  className="w-5 h-5 rounded-full items-center justify-center mt-0.5"
+                  style={{ backgroundColor: colors.primary[50] }}
+                >
                   <Target size={12} color={colors.primary[600]} />
                 </View>
                 <Text className="text-gray-600 text-sm flex-1">{rule}</Text>
@@ -696,188 +778,6 @@ function StreakDetailsContent({ props, onClose }: StreakDetailsContentProps) {
     </View>
   );
 }
-
-// ============================================================================
-// STYLES
-// ============================================================================
-
-const styles = StyleSheet.create({
-  modalContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalCard: {
-    backgroundColor: colors.white,
-    borderRadius: borderRadius['3xl'],
-    maxWidth: SCREEN_WIDTH - 32,
-    maxHeight: SCREEN_HEIGHT - 120,
-    width: '100%',
-    ...shadows.xl,
-  },
-  modalContent: {
-    padding: spacing.xl,
-  },
-  closeButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.gray[100],
-  },
-
-  // Rating styles
-  ratingDisplay: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: spacing.xl,
-    marginBottom: spacing.md,
-    borderRadius: borderRadius['2xl'],
-  },
-  ratingValue: {
-    fontSize: 56,
-    lineHeight: 64,
-    fontWeight: '700',
-    marginBottom: spacing.xs,
-  },
-  ratingLabel: {
-    fontSize: 14,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  textInputContainer: {
-    borderRadius: borderRadius['2xl'],
-    overflow: 'hidden',
-    backgroundColor: colors.gray[50],
-    borderWidth: 1,
-    borderColor: colors.gray[200],
-  },
-  textInput: {
-    padding: spacing.lg,
-    fontSize: 16,
-    lineHeight: 24,
-    color: colors.gray[900],
-    minHeight: 120,
-  },
-  submitButton: {
-    borderRadius: borderRadius.xl,
-    ...shadows.md,
-  },
-
-  // Category styles
-  categoryItem: {
-    padding: spacing.md,
-    borderRadius: borderRadius['2xl'],
-    borderWidth: 2,
-    borderColor: 'transparent',
-  },
-  categoryIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: borderRadius.xl,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  categoryDot: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-  },
-  checkIcon: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.primary[500],
-  },
-
-  // Calendar styles
-  monthNavButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.gray[100],
-  },
-
-  // Streak styles
-  fireIconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: ExploreColors.secondary[50],
-  },
-  statsGrid: {
-    flexDirection: 'row',
-    gap: spacing.md,
-    marginBottom: spacing.lg,
-  },
-  statCard: {
-    flex: 1,
-    alignItems: 'center',
-    padding: spacing.lg,
-    borderRadius: borderRadius.xl,
-    backgroundColor: colors.gray[50],
-  },
-  statIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.sm,
-  },
-  statValue: {
-    fontSize: 32,
-    fontWeight: '700',
-    color: colors.gray[900],
-  },
-  statLabel: {
-    fontSize: 12,
-    color: colors.gray[500],
-    marginTop: spacing.xs,
-  },
-  weekProgressContainer: {
-    padding: spacing.lg,
-    borderRadius: borderRadius.xl,
-    backgroundColor: colors.gray[50],
-    marginBottom: spacing.lg,
-  },
-  dayContainer: {
-    alignItems: 'center',
-  },
-  dayCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.gray[200],
-  },
-  dayCircleActive: {
-    backgroundColor: ExploreColors.secondary[500],
-  },
-  rulesContainer: {
-    padding: spacing.lg,
-    borderRadius: borderRadius.xl,
-    backgroundColor: colors.gray[50],
-  },
-  ruleBullet: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.primary[50],
-    marginTop: 2,
-  },
-});
 
 // ============================================================================
 // EXPORTS

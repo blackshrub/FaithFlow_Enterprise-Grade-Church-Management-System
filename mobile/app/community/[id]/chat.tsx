@@ -1,105 +1,74 @@
 /**
  * Community Chat Screen - WhatsApp-Style Real-Time Messaging
  *
- * Features:
+ * Clean, elegant, production-ready chat experience with:
  * - Real-time messaging via MQTT
  * - Message list with infinite scroll
  * - Typing indicators
  * - Message status (sent, delivered, read)
  * - Reply to messages
  * - Reactions (long-press)
- * - Image/media preview with full-screen viewer
- * - Poll messages with voting
- * - Media upload with progress
- * - Header menu with navigation
- * - Skeleton loading
+ * - Media support (images, videos, documents, voice)
+ * - Poll messages
+ * - Location sharing
+ *
+ * Styling: NativeWind-first with inline style for dynamic/shadow values
+ *
+ * Extracted components for maintainability:
+ * - MessageBubble: Individual message rendering
+ * - ChatHeader: WhatsApp-style header
+ * - ChatInputBar: Message input with attachments
+ * - ChatMenuSheet: Bottom sheet menu
  */
 
 import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import {
   View,
-  Pressable,
-  TextInput,
   KeyboardAvoidingView,
   Platform,
   Alert,
   ActivityIndicator,
-  Linking,
+  Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Svg, { Path, Circle, Rect, G } from 'react-native-svg';
 import { useTranslation } from 'react-i18next';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import Animated, {
-  FadeInUp,
-  FadeOut,
-  useSharedValue,
-  useAnimatedStyle,
-  withRepeat,
-  withTiming,
-  withDelay,
-  interpolate,
-} from 'react-native-reanimated';
-import { withPremiumMotionV10 } from '@/hoc';
-import { PMotionV10 } from '@/components/motion/premium-motion';
-import {
-  ArrowLeft,
-  X,
-  MoreVertical,
-  Users,
-  Info,
-  Search,
-  Settings,
-  Megaphone,
-  BarChart3,
-  FileText,
-  Video,
-  // Phone, // DISABLED: Call feature temporarily disabled
-  Timer,
-} from 'lucide-react-native';
+import Animated from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { FlashList } from '@shopify/flash-list';
-import { Image } from 'expo-image';
-import BottomSheet, { BottomSheetBackdrop } from '@gorhom/bottom-sheet';
 
-import { Text } from '@/components/ui/text';
-import { AttachmentPicker, MediaAttachment } from '@/components/chat/AttachmentPicker';
+import { withPremiumMotionV10 } from '@/hoc';
+import { PMotionV10 } from '@/components/motion/premium-motion';
 import { VStack } from '@/components/ui/vstack';
-import { HStack } from '@/components/ui/hstack';
-import { Icon } from '@/components/ui/icon';
-import { Avatar, AvatarFallbackText, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
+import { HStack } from '@/components/ui/hstack';
 
-// Chat components
+// Chat components - extracted for cleaner code
+import {
+  MessageBubble,
+  ChatHeader,
+  ChatInputBar,
+  ChatMenuSheet,
+  type ChatInputBarRef,
+} from '@/components/chat';
+
+// Additional chat components
+import { AttachmentPicker, MediaAttachment } from '@/components/chat/AttachmentPicker';
 import { MediaPreview } from '@/components/chat/MediaPreview';
 import { UploadProgress, UploadStatus } from '@/components/chat/UploadProgress';
-import { VoiceNoteInput, VoiceNotePlayer } from '@/components/chat/VoiceNote';
-import { WhatsAppText } from '@/components/chat/WhatsAppText';
-import { LinkPreview } from '@/components/chat/LinkPreview';
 import { MessageActionsSheet, ForwardMessageModal } from '@/components/chat/MessageActions';
-import { LocationSharer, LocationPreview, LocationData, LiveLocationData } from '@/components/chat/LocationSharing';
-
-// NEW: Enhanced WhatsApp-style components
+import { LocationSharer, LocationData, LiveLocationData } from '@/components/chat/LocationSharing';
 import { EmojiPickerSheet } from '@/components/chat/EmojiPicker';
-import { GifPickerSheet, GifButton, type GifItem } from '@/components/chat/GifPicker';
+import { GifPickerSheet, type GifItem } from '@/components/chat/GifPicker';
 import { MediaGalleryViewer, type MediaItem } from '@/components/chat/MediaGallery';
 import { ReadReceiptList } from '@/components/chat/ReadReceipts';
-import {
-  DisappearingMessagesSettings,
-  DisappearingIndicator,
-  type DisappearingDuration,
-} from '@/components/chat/DisappearingMessages';
-
-// Community components
-import { PollCard, Poll } from '@/components/communities/PollCard';
+import { DisappearingMessagesSettings, type DisappearingDuration } from '@/components/chat/DisappearingMessages';
 import { CreatePollModal } from '@/components/communities/CreatePollModal';
 
-// Chat performance optimizations
 import {
-  SendButton,
   ScrollToBottomFAB,
-  MessageStatusIndicator,
   ConnectionBanner,
-  AttachmentButton,
   SwipeToReplyWrapper,
   DoubleTapReaction,
   DateHeader,
@@ -126,480 +95,375 @@ import {
 import { useCommunitySubscription, useTypingIndicator } from '@/hooks/useMqtt';
 import { useAuthStore } from '@/stores/auth';
 import { useNavigationStore } from '@/stores/navigation';
-// DISABLED: Call feature temporarily disabled
-// import { useCallStore } from '@/stores/call';
-// import { CallType } from '@/types/call';
 import { uploadMedia, UploadProgressCallback } from '@/services/mediaUpload';
-import { colors, spacing, borderRadius, shadows } from '@/constants/theme';
-import type { CommunityMessage } from '@/types/communities';
+import { getThreadById } from '@/mock/community-mockdata';
+import type { CommunityMessage, CommunityThread } from '@/types/communities';
 
 // =============================================================================
-// TYPES
+// CONSTANTS
 // =============================================================================
 
-interface MessageBubbleProps {
-  message: CommunityMessage;
-  isOwnMessage: boolean;
-  showSender: boolean;
-  currentMemberId?: string;
-  onLongPress?: () => void;
-  onReply?: () => void;
-  onReact?: (emoji: string) => void;
-  onImagePress?: (uri: string) => void;
-  onReplyPreviewPress?: (messageId: string) => void;
-  onReadReceiptPress?: (message: CommunityMessage) => void;
-}
-
-// =============================================================================
-// MESSAGE BUBBLE COMPONENT
-// =============================================================================
-
-// Custom comparison for MessageBubble to prevent unnecessary re-renders
-const areMessagePropsEqual = (
-  prevProps: MessageBubbleProps,
-  nextProps: MessageBubbleProps
-): boolean => {
-  // Fast path: same message ID and same modification timestamp
-  if (prevProps.message.id !== nextProps.message.id) return false;
-  if (prevProps.message.updated_at !== nextProps.message.updated_at) return false;
-  if (prevProps.isOwnMessage !== nextProps.isOwnMessage) return false;
-  if (prevProps.showSender !== nextProps.showSender) return false;
-
-  // Check reactions changed (shallow comparison)
-  const prevReactions = JSON.stringify(prevProps.message.reactions || {});
-  const nextReactions = JSON.stringify(nextProps.message.reactions || {});
-  if (prevReactions !== nextReactions) return false;
-
-  // Check read_by changed
-  const prevReadCount = prevProps.message.read_by?.length || 0;
-  const nextReadCount = nextProps.message.read_by?.length || 0;
-  if (prevReadCount !== nextReadCount) return false;
-
-  // Check poll votes changed
-  if (prevProps.message.poll && nextProps.message.poll) {
-    const prevPollVotes = prevProps.message.poll.total_votes;
-    const nextPollVotes = nextProps.message.poll.total_votes;
-    if (prevPollVotes !== nextPollVotes) return false;
-  }
-
-  return true;
+// WhatsApp iOS exact colors - lighter beige like real WhatsApp
+const COLORS = {
+  // Background - exact WhatsApp light beige (lighter than before)
+  headerBg: '#F5F2EC',
+  chatBg: '#F5F2EC',
+  // Loading
+  primary: '#128C7E',
 };
+const PRIMARY_500 = '#128C7E';
 
-const MessageBubble = React.memo(
-  ({ message, isOwnMessage, showSender, currentMemberId, onLongPress, onReply: _onReply, onReact, onImagePress, onReplyPreviewPress, onReadReceiptPress }: MessageBubbleProps) => {
-    const { t } = useTranslation();
+// =============================================================================
+// CHAT BACKGROUND COMPONENT - WhatsApp-style SVG Doodle Pattern
+// =============================================================================
 
-    const formatTime = (dateString: string) => {
-      const date = new Date(dateString);
-      return date.toLocaleTimeString('en-US', {
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true,
-      });
-    };
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
-    // Determine message status for indicator
-    const getMessageStatus = (): 'sending' | 'sent' | 'delivered' | 'read' | 'failed' => {
-      if (message.is_optimistic) return 'sending';
-      if (message.send_failed) return 'failed';
-      const readCount = message.read_by?.length || 0;
-      if (readCount > 0) return 'read';
-      if ((message.delivered_to?.length ?? 0) > 0) return 'delivered';
-      return 'sent';
-    };
+// Hand-drawn doodle pattern based on provided PNG
+// Artsy, creative icons with hand-drawn style
+const DOODLE_COLOR = '#D5D0C8'; // Subtle beige/taupe color
 
-    // Handle double-tap quick reaction (heart) - reserved for future gesture
-    const handleDoubleTap = useCallback(() => {
-      onReact?.('❤️');
-    }, [onReact]);
-    void handleDoubleTap;
+// Large SVG tile with many hand-drawn style icons (based on provided PNG)
+const DoodlePatternSVG = React.memo(() => {
+  const TILE_SIZE = 280; // Large tile with many icons
+  const C = DOODLE_COLOR;
+  const SW = 1.8; // Hand-drawn stroke width
 
-    // Handle tap on reply preview to jump to original message
-    const handleReplyPreviewTap = useCallback(() => {
-      if (message.reply_to_message_id) {
-        onReplyPreviewPress?.(message.reply_to_message_id);
+  return (
+    <Svg width={TILE_SIZE} height={TILE_SIZE} viewBox={`0 0 ${TILE_SIZE} ${TILE_SIZE}`}>
+      {/* Row 1 */}
+
+      {/* Sun with rays - top left */}
+      <G transform="translate(15, 15) scale(0.9)">
+        <Circle cx="12" cy="12" r="6" fill="none" stroke={C} strokeWidth={SW} />
+        <Path d="M12 2v4M12 20v4M2 12h4M20 12h4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" stroke={C} strokeWidth={SW} strokeLinecap="round" />
+      </G>
+
+      {/* Heart with arrow */}
+      <G transform="translate(55, 20) rotate(-15) scale(0.8)">
+        <Path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="none" stroke={C} strokeWidth={SW} />
+        <Path d="M2 14l20-10" stroke={C} strokeWidth={SW} strokeLinecap="round" />
+        <Path d="M22 4l-3 1 1-3" fill="none" stroke={C} strokeWidth={SW} />
+      </G>
+
+      {/* Magnifying glass */}
+      <G transform="translate(100, 10) scale(0.85)">
+        <Circle cx="11" cy="11" r="8" fill="none" stroke={C} strokeWidth={SW} />
+        <Path d="M21 21l-4.35-4.35" stroke={C} strokeWidth={SW} strokeLinecap="round" />
+      </G>
+
+      {/* Laptop */}
+      <G transform="translate(145, 8) scale(0.85)">
+        <Rect x="3" y="4" width="18" height="12" rx="2" fill="none" stroke={C} strokeWidth={SW} />
+        <Path d="M2 20h20" stroke={C} strokeWidth={SW} strokeLinecap="round" />
+        <Path d="M7 8h10M7 11h6" stroke={C} strokeWidth={SW * 0.8} strokeLinecap="round" />
+      </G>
+
+      {/* Crown */}
+      <G transform="translate(200, 12) scale(0.85)">
+        <Path d="M2 17l3-10 5 6 5-10 5 10 3 6H2z" fill="none" stroke={C} strokeWidth={SW} strokeLinejoin="round" />
+        <Circle cx="5" cy="7" r="1.5" fill={C} />
+        <Circle cx="12" cy="3" r="1.5" fill={C} />
+        <Circle cx="19" cy="7" r="1.5" fill={C} />
+      </G>
+
+      {/* Swirl decoration */}
+      <G transform="translate(245, 15) scale(0.8)">
+        <Path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9c2.49 0 4.74-1.01 6.36-2.64" fill="none" stroke={C} strokeWidth={SW} strokeLinecap="round" />
+        <Path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5" fill="none" stroke={C} strokeWidth={SW} strokeLinecap="round" />
+      </G>
+
+      {/* Row 2 */}
+
+      {/* Rocket */}
+      <G transform="translate(10, 70) rotate(-20) scale(0.9)">
+        <Path d="M12 2c-3 3-5 8-5 13l2 2 6 0 2-2c0-5-2-10-5-13z" fill="none" stroke={C} strokeWidth={SW} />
+        <Circle cx="12" cy="11" r="2" fill="none" stroke={C} strokeWidth={SW} />
+        <Path d="M7 17l-2 4M17 17l2 4M10 21l2-2 2 2" stroke={C} strokeWidth={SW} strokeLinecap="round" />
+      </G>
+
+      {/* Feather */}
+      <G transform="translate(55, 55) rotate(15) scale(0.75)">
+        <Path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z" fill="none" stroke={C} strokeWidth={SW} />
+        <Path d="M16 8L2 22M17 7l4-4" stroke={C} strokeWidth={SW} strokeLinecap="round" />
+      </G>
+
+      {/* Christmas ornament */}
+      <G transform="translate(95, 50) scale(0.85)">
+        <Circle cx="12" cy="14" r="8" fill="none" stroke={C} strokeWidth={SW} />
+        <Rect x="10" y="4" width="4" height="3" fill="none" stroke={C} strokeWidth={SW} />
+        <Path d="M12 2v2" stroke={C} strokeWidth={SW} />
+      </G>
+
+      {/* Thumbs up */}
+      <G transform="translate(135, 60) scale(0.85)">
+        <Path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3" fill="none" stroke={C} strokeWidth={SW} />
+      </G>
+
+      {/* Warning triangle */}
+      <G transform="translate(180, 55) scale(0.8)">
+        <Path d="M12 2L2 20h20L12 2z" fill="none" stroke={C} strokeWidth={SW} strokeLinejoin="round" />
+        <Path d="M12 9v4M12 17h.01" stroke={C} strokeWidth={SW} strokeLinecap="round" />
+      </G>
+
+      {/* Star outline */}
+      <G transform="translate(220, 60) scale(0.7)">
+        <Path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="none" stroke={C} strokeWidth={SW} />
+      </G>
+
+      {/* Light bulb / plug */}
+      <G transform="translate(250, 50) scale(0.8)">
+        <Path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-7 7c0 2.38 1.19 4.47 3 5.74V17a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2v-2.26c1.81-1.27 3-3.36 3-5.74a7 7 0 0 0-7-7z" fill="none" stroke={C} strokeWidth={SW} />
+      </G>
+
+      {/* Row 3 */}
+
+      {/* Paintbrush */}
+      <G transform="translate(15, 135) rotate(-30) scale(0.85)">
+        <Path d="M18.37 2.63L14 7l-1.59-1.59a2 2 0 0 0-2.82 0L8 7l9 9 1.59-1.59a2 2 0 0 0 0-2.82L17 10l4.37-4.37a2.12 2.12 0 1 0-3-3z" fill="none" stroke={C} strokeWidth={SW} />
+        <Path d="M9 8L3 14l3 3 6-6" fill="none" stroke={C} strokeWidth={SW} />
+      </G>
+
+      {/* Letter A */}
+      <G transform="translate(60, 130) scale(0.9)">
+        <Path d="M12 4L4 20h4l2-5h8l2 5h4L12 4z" fill="none" stroke={C} strokeWidth={SW} />
+        <Path d="M8 13h8" stroke={C} strokeWidth={SW} />
+      </G>
+
+      {/* Ribbon banner */}
+      <G transform="translate(100, 120) scale(0.85)">
+        <Path d="M2 12h4l2-4h8l2 4h4M6 12v6l4-2 4 2 4-2 4 2v-6" fill="none" stroke={C} strokeWidth={SW} strokeLinejoin="round" />
+      </G>
+
+      {/* Lightning bolt */}
+      <G transform="translate(150, 115) scale(0.9)">
+        <Path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" fill="none" stroke={C} strokeWidth={SW} strokeLinejoin="round" />
+      </G>
+
+      {/* Music note */}
+      <G transform="translate(195, 125) scale(0.8)">
+        <Path d="M9 18V5l12-2v13" stroke={C} strokeWidth={SW} fill="none" />
+        <Circle cx="6" cy="18" r="3" fill="none" stroke={C} strokeWidth={SW} />
+        <Circle cx="18" cy="16" r="3" fill="none" stroke={C} strokeWidth={SW} />
+      </G>
+
+      {/* Arrow pointing right */}
+      <G transform="translate(235, 130) scale(0.85)">
+        <Path d="M5 12h14M12 5l7 7-7 7" stroke={C} strokeWidth={SW} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+      </G>
+
+      {/* Row 4 */}
+
+      {/* Swirl left */}
+      <G transform="translate(5, 185) scale(0.7)">
+        <Path d="M3 12c0 5 4 9 9 9 3.5 0 6.5-2 8-5" fill="none" stroke={C} strokeWidth={SW} strokeLinecap="round" />
+        <Path d="M12 3c-5 0-9 4-9 9" fill="none" stroke={C} strokeWidth={SW} strokeLinecap="round" />
+      </G>
+
+      {/* Lips/mouth */}
+      <G transform="translate(35, 185) scale(0.85)">
+        <Path d="M12 19c-5 0-9-3-9-7s4-7 9-7 9 3 9 7-4 7-9 7z" fill="none" stroke={C} strokeWidth={SW} />
+        <Path d="M3 12h18" stroke={C} strokeWidth={SW} />
+        <Rect x="8" y="13" width="2" height="3" fill={C} />
+        <Rect x="14" y="13" width="2" height="3" fill={C} />
+      </G>
+
+      {/* Flower */}
+      <G transform="translate(85, 180) scale(0.85)">
+        <Circle cx="12" cy="12" r="4" fill="none" stroke={C} strokeWidth={SW} />
+        <Path d="M12 2c1.5 2 1.5 4 0 6M12 18c-1.5 2-1.5 4 0 6M2 12c2-1.5 4-1.5 6 0M18 12c2 1.5 4 1.5 6 0M4.93 4.93c2.12.7 3.54 2.12 4.24 4.24M14.83 14.83c.7 2.12 2.12 3.54 4.24 4.24M4.93 19.07c2.12-.7 3.54-2.12 4.24-4.24M14.83 9.17c.7-2.12 2.12-3.54 4.24-4.24" stroke={C} strokeWidth={SW} strokeLinecap="round" />
+      </G>
+
+      {/* Ruler */}
+      <G transform="translate(130, 190) rotate(-10) scale(0.9)">
+        <Rect x="2" y="6" width="20" height="12" rx="1" fill="none" stroke={C} strokeWidth={SW} />
+        <Path d="M6 6v4M10 6v3M14 6v4M18 6v3" stroke={C} strokeWidth={SW} />
+      </G>
+
+      {/* Apple */}
+      <G transform="translate(175, 175) scale(0.85)">
+        <Path d="M12 3c-1 0-2 .5-2.5 1.5C8 4 6 5 6 8c0 5 3 10 6 10s6-5 6-10c0-3-2-4-3.5-3.5-.5-1-1.5-1.5-2.5-1.5z" fill="none" stroke={C} strokeWidth={SW} />
+        <Path d="M12 1v3" stroke={C} strokeWidth={SW} strokeLinecap="round" />
+        <Path d="M14 2c1 1 2 1 3 0" stroke={C} strokeWidth={SW} strokeLinecap="round" fill="none" />
+      </G>
+
+      {/* Curved arrow */}
+      <G transform="translate(220, 185) scale(0.8)">
+        <Path d="M3 12c0-5 4-9 9-9s9 4 9 9" fill="none" stroke={C} strokeWidth={SW} strokeLinecap="round" />
+        <Path d="M16 3l5 0 0 5" stroke={C} strokeWidth={SW} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+      </G>
+
+      {/* Heart small */}
+      <G transform="translate(255, 190) scale(0.65)">
+        <Path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="none" stroke={C} strokeWidth={SW * 1.5} />
+      </G>
+
+      {/* Row 5 */}
+
+      {/* Moon face */}
+      <G transform="translate(60, 235) scale(0.85)">
+        <Circle cx="12" cy="12" r="10" fill="none" stroke={C} strokeWidth={SW} />
+        <Circle cx="8" cy="10" r="1.5" fill={C} />
+        <Circle cx="15" cy="9" r="1" fill={C} />
+        <Path d="M8 15c2 2 6 2 8 0" fill="none" stroke={C} strokeWidth={SW} strokeLinecap="round" />
+      </G>
+
+      {/* Shooting star */}
+      <G transform="translate(115, 230) scale(0.85)">
+        <Path d="M12 2l1.5 3 3.5.5-2.5 2.5.5 3.5-3-1.5-3 1.5.5-3.5L7 5.5l3.5-.5L12 2z" fill="none" stroke={C} strokeWidth={SW} />
+        <Path d="M20 8l-6 6M18 16l-4 4M22 12l-5 5" stroke={C} strokeWidth={SW} strokeLinecap="round" />
+      </G>
+
+      {/* Glasses */}
+      <G transform="translate(175, 240) scale(0.9)">
+        <Circle cx="6" cy="12" r="4" fill="none" stroke={C} strokeWidth={SW} />
+        <Circle cx="18" cy="12" r="4" fill="none" stroke={C} strokeWidth={SW} />
+        <Path d="M10 12h4M2 12h0M22 12h0" stroke={C} strokeWidth={SW} />
+        <Path d="M4 8l-2-2M20 8l2-2" stroke={C} strokeWidth={SW} strokeLinecap="round" />
+      </G>
+
+      {/* Swirl right */}
+      <G transform="translate(230, 235) scale(0.75)">
+        <Path d="M21 12c0 5-4 9-9 9-3.5 0-6.5-2-8-5" fill="none" stroke={C} strokeWidth={SW} strokeLinecap="round" />
+        <Path d="M12 3c5 0 9 4 9 9" fill="none" stroke={C} strokeWidth={SW} strokeLinecap="round" />
+        <Circle cx="12" cy="12" r="3" fill="none" stroke={C} strokeWidth={SW} />
+      </G>
+
+      {/* Scattered dots */}
+      <Circle cx="45" cy="45" r="2.5" fill={C} opacity="0.6" />
+      <Circle cx="130" cy="95" r="2" fill={C} opacity="0.5" />
+      <Circle cx="210" cy="100" r="2.5" fill={C} opacity="0.6" />
+      <Circle cx="75" cy="165" r="2" fill={C} opacity="0.5" />
+      <Circle cx="160" cy="160" r="2.5" fill={C} opacity="0.6" />
+      <Circle cx="245" cy="170" r="2" fill={C} opacity="0.5" />
+      <Circle cx="25" cy="220" r="2.5" fill={C} opacity="0.6" />
+      <Circle cx="150" cy="250" r="2" fill={C} opacity="0.5" />
+
+      {/* Small stars scattered */}
+      <G transform="translate(165, 35) scale(0.4)">
+        <Path d="M12 2l2 4 4.5.7-3.3 3.2.8 4.6L12 12.5l-4 2 .8-4.6L5.5 6.7 10 6l2-4z" fill="none" stroke={C} strokeWidth={SW * 2} />
+      </G>
+      <G transform="translate(45, 100) scale(0.35)">
+        <Path d="M12 2l2 4 4.5.7-3.3 3.2.8 4.6L12 12.5l-4 2 .8-4.6L5.5 6.7 10 6l2-4z" fill="none" stroke={C} strokeWidth={SW * 2} />
+      </G>
+    </Svg>
+  );
+});
+
+DoodlePatternSVG.displayName = 'DoodlePatternSVG';
+
+// Chat background with repeating SVG doodle pattern
+const ChatBackground = React.memo(({ children }: { children: React.ReactNode }) => {
+  // Calculate how many tiles we need to cover the screen
+  const TILE_SIZE = 280; // Match DoodlePatternSVG tile size
+  const cols = Math.ceil(SCREEN_WIDTH / TILE_SIZE) + 1;
+  const rows = Math.ceil(SCREEN_HEIGHT / TILE_SIZE) + 1;
+
+  // Generate tile positions
+  const tiles = useMemo(() => {
+    const result = [];
+    for (let row = 0; row < rows; row++) {
+      for (let col = 0; col < cols; col++) {
+        result.push({ key: `${row}-${col}`, x: col * TILE_SIZE, y: row * TILE_SIZE });
       }
-    }, [message.reply_to_message_id, onReplyPreviewPress]);
-
-    // Deleted message
-    if (message.is_deleted) {
-      return (
-        <View
-          className={`my-1 px-4 ${isOwnMessage ? 'items-end' : 'items-start'}`}
-        >
-          <View
-            className="px-4 py-2 rounded-2xl"
-            style={{
-              backgroundColor: isOwnMessage ? colors.gray[200] : colors.gray[100],
-            }}
-          >
-            <Text className="text-gray-500 italic text-sm">
-              {t('chat.messageDeleted', 'This message was deleted')}
-            </Text>
-          </View>
-        </View>
-      );
     }
+    return result;
+  }, [cols, rows]);
 
-    // Poll message - render PollCard
-    if (message.message_type === 'poll' && message.poll) {
-      return (
-        <View className={`my-1 px-4 ${isOwnMessage ? 'items-end' : 'items-start'}`}>
-          {/* Sender name (for group messages) */}
-          {showSender && !isOwnMessage && message.sender && (
-            <Text className="text-xs text-gray-500 ml-2 mb-1">
-              {message.sender.name}
-            </Text>
-          )}
-          <View style={{ maxWidth: '85%', minWidth: 280 }}>
-            <PollCard
-              poll={message.poll as Poll}
-              messageId={message.id}
-              currentMemberId={currentMemberId}
-              myVotes={message.poll.my_votes || []}
-            />
-          </View>
-        </View>
-      );
-    }
-
-    return (
-      <Pressable
-        onLongPress={() => {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-          onLongPress?.();
-        }}
-        delayLongPress={500}
-        className={`my-0.5 px-4 ${isOwnMessage ? 'items-end' : 'items-start'}`}
+  return (
+    <View className="flex-1" style={{ backgroundColor: COLORS.chatBg }}>
+      {/* SVG Pattern Layer - absolute positioned behind content */}
+      <View
+        className="absolute inset-0"
+        style={{ opacity: 0.8 }}
+        pointerEvents="none"
       >
-        <View
-          style={{
-            maxWidth: '80%',
-          }}
-        >
-          {/* Sender name (for group messages) */}
-          {showSender && !isOwnMessage && message.sender && (
-            <Text className="text-xs text-gray-500 ml-2 mb-1">
-              {message.sender.name}
-            </Text>
-          )}
-
-          {/* Reply reference - tappable to jump to original */}
-          {message.reply_to && (
-            <Pressable
-              onPress={handleReplyPreviewTap}
-              className="px-3 py-2 mb-1 rounded-lg border-l-2 border-primary-400 active:opacity-70"
-              style={{ backgroundColor: colors.gray[100] }}
-            >
-              <Text className="text-xs text-primary-600 font-medium">
-                {message.reply_to.sender_name}
-              </Text>
-              <Text className="text-xs text-gray-600" numberOfLines={1}>
-                {message.reply_to.preview}
-              </Text>
-            </Pressable>
-          )}
-
-          {/* Message content - WhatsApp-exact colors */}
+        {tiles.map((tile) => (
           <View
-            className="px-4 py-2 rounded-2xl"
+            key={tile.key}
             style={{
-              // WhatsApp colors: #DCF8C6 for outgoing (light green), #FFFFFF for incoming
-              backgroundColor: isOwnMessage ? '#DCF8C6' : '#FFFFFF',
-              borderBottomRightRadius: isOwnMessage ? 4 : borderRadius['2xl'],
-              borderBottomLeftRadius: isOwnMessage ? borderRadius['2xl'] : 4,
-              // Subtle shadow for WhatsApp depth effect
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 1 },
-              shadowOpacity: 0.08,
-              shadowRadius: 2,
-              elevation: 1,
+              position: 'absolute',
+              left: tile.x,
+              top: tile.y,
             }}
           >
-            {/* Image message */}
-            {message.message_type === 'image' && message.media?.url && (
-              <Pressable
-                onPress={() => onImagePress?.(message.media!.url)}
-              >
-                <Image
-                  source={{ uri: message.media.url }}
-                  style={{
-                    width: 200,
-                    height: 200,
-                    borderRadius: borderRadius.lg,
-                    marginBottom: message.text ? spacing.sm : 0,
-                  }}
-                  contentFit="cover"
-                  cachePolicy="memory-disk"
-                  transition={200}
-                  placeholder={message.media.thumbnail_url}
-                  placeholderContentFit="cover"
-                />
-              </Pressable>
-            )}
-
-            {/* Video message */}
-            {message.message_type === 'video' && message.media?.url && (
-              <Pressable
-                onPress={() => onImagePress?.(message.media!.url)}
-                className="relative"
-              >
-                <Image
-                  source={{ uri: message.media.thumbnail_url || message.media.url }}
-                  style={{
-                    width: 200,
-                    height: 200,
-                    borderRadius: borderRadius.lg,
-                    marginBottom: message.text ? spacing.sm : 0,
-                  }}
-                  cachePolicy="memory-disk"
-                  transition={200}
-                  contentFit="cover"
-                />
-                <View
-                  className="absolute inset-0 items-center justify-center"
-                  style={{ backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: borderRadius.lg }}
-                >
-                  <View
-                    className="w-12 h-12 rounded-full items-center justify-center"
-                    style={{ backgroundColor: 'rgba(255,255,255,0.9)' }}
-                  >
-                    <Icon as={Video} size="md" className="text-gray-800" />
-                  </View>
-                </View>
-              </Pressable>
-            )}
-
-            {/* Document message - WhatsApp style */}
-            {message.message_type === 'document' && message.media && (
-              <Pressable
-                onPress={async () => {
-                  if (message.media?.url) {
-                    try {
-                      const canOpen = await Linking.canOpenURL(message.media.url);
-                      if (canOpen) {
-                        await Linking.openURL(message.media.url);
-                      } else {
-                        Alert.alert(t('common.error', 'Error'), t('chat.cannotOpenDocument', 'Cannot open this document'));
-                      }
-                    } catch (error) {
-                      Alert.alert(t('common.error', 'Error'), t('chat.failedToOpenDocument', 'Failed to open document'));
-                    }
-                  }
-                }}
-                className="flex-row items-center py-2"
-              >
-                <View
-                  className="w-10 h-10 rounded-lg items-center justify-center mr-3"
-                  style={{ backgroundColor: colors.gray[200] }}
-                >
-                  <Icon
-                    as={FileText}
-                    size="md"
-                    style={{ color: colors.gray[600] }}
-                  />
-                </View>
-                <VStack className="flex-1">
-                  <Text className="font-medium text-gray-900" numberOfLines={1}>
-                    {message.media.file_name || t('chat.document', 'Document')}
-                  </Text>
-                  <Text className="text-xs text-gray-500">
-                    {message.media.file_size ? `${Math.round(message.media.file_size / 1024)} KB` : t('chat.file', 'File')}
-                  </Text>
-                </VStack>
-              </Pressable>
-            )}
-
-            {/* Audio/Voice message - WhatsApp style */}
-            {message.message_type === 'audio' && message.media?.url && (
-              <VoiceNotePlayer
-                uri={message.media.url}
-                duration={message.media.duration || 0}
-                isOwnMessage={isOwnMessage}
-              />
-            )}
-
-            {/* Location message */}
-            {(message.message_type === 'location' || message.message_type === 'live_location') && message.location && (
-              <LocationPreview
-                location={{
-                  latitude: message.location.latitude,
-                  longitude: message.location.longitude,
-                  address: message.location.address,
-                  ...(message.message_type === 'live_location' && {
-                    duration: message.location.duration,
-                    expiresAt: message.location.expires_at,
-                    isActive: new Date(message.location.expires_at || '').getTime() > Date.now(),
-                  }),
-                }}
-                isOwnMessage={isOwnMessage}
-              />
-            )}
-
-            {/* Text content with WhatsApp-style formatting */}
-            {message.text && (
-              <WhatsAppText style={{ color: colors.gray[900] }}>
-                {message.text}
-              </WhatsAppText>
-            )}
-
-            {/* Link preview for URLs in text messages */}
-            {message.text && message.message_type === 'text' && (() => {
-              const urlMatch = message.text.match(/https?:\/\/[^\s]+/);
-              if (urlMatch) {
-                return <LinkPreview url={urlMatch[0]} isOwnMessage={isOwnMessage} compact />;
-              }
-              return null;
-            })()}
-
-            {/* Time & status - WhatsApp style */}
-            <HStack className="justify-end items-center mt-1">
-              {message.is_edited && (
-                <Text className="text-xs mr-1 text-gray-500">{t('chat.edited', 'edited')}</Text>
-              )}
-              <Text className="text-xs text-gray-500">
-                {formatTime(message.created_at)}
-              </Text>
-              {isOwnMessage && onReadReceiptPress ? (
-                <Pressable
-                  onPress={() => onReadReceiptPress(message)}
-                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                >
-                  <MessageStatusIndicator
-                    status={getMessageStatus()}
-                    isOwnMessage={isOwnMessage}
-                  />
-                </Pressable>
-              ) : (
-                <MessageStatusIndicator
-                  status={getMessageStatus()}
-                  isOwnMessage={isOwnMessage}
-                />
-              )}
-            </HStack>
+            <DoodlePatternSVG />
           </View>
+        ))}
+      </View>
+      {/* Content Layer */}
+      {children}
+    </View>
+  );
+});
 
-          {/* Reactions */}
-          {message.reactions && Object.keys(message.reactions).length > 0 && (
-            <HStack space="xs" className="mt-1 ml-2">
-              {Object.entries(message.reactions).map(([emoji, memberIds]) => (
-                <View
-                  key={emoji}
-                  className="px-2 py-0.5 rounded-full flex-row items-center"
-                  style={{ backgroundColor: colors.gray[100] }}
-                >
-                  <Text className="text-sm">{emoji}</Text>
-                  {memberIds.length > 1 && (
-                    <Text className="text-xs text-gray-600 ml-1">
-                      {memberIds.length}
-                    </Text>
-                  )}
-                </View>
-              ))}
-            </HStack>
-          )}
-        </View>
-      </Pressable>
-    );
-  },
-  areMessagePropsEqual
-);
+ChatBackground.displayName = 'ChatBackground';
 
-MessageBubble.displayName = 'MessageBubble';
+// Alias for backwards compatibility
+const PatternBackground = ChatBackground;
 
 // =============================================================================
 // TYPING INDICATOR COMPONENT
 // =============================================================================
 
-// Animated dot for typing indicator
-function AnimatedDot({ delay }: { delay: number }) {
-  const progress = useSharedValue(0);
-
-  React.useEffect(() => {
-    progress.value = withDelay(
-      delay,
-      withRepeat(withTiming(1, { duration: 600 }), -1, true)
-    );
-  }, [delay, progress]);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(progress.value, [0, 1], [0.4, 1]),
-    transform: [{ scale: interpolate(progress.value, [0, 1], [0.8, 1]) }],
-  }));
-
-  return (
-    <Animated.View
-      style={[
-        { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.gray[400] },
-        animatedStyle,
-      ]}
-    />
-  );
-}
-
-const TypingIndicator = ({ text }: { text: string | null }) => {
+const TypingIndicator = React.memo(({ text }: { text: string | null }) => {
   if (!text) return null;
 
   return (
-    <Animated.View
-      entering={FadeInUp.duration(200)}
-      exiting={FadeOut.duration(200)}
-      className="px-4 py-2"
-    >
-      <HStack space="sm" className="items-center">
-        <View
-          className="px-3 py-2 rounded-2xl"
-          style={{ backgroundColor: colors.gray[100] }}
-        >
-          <HStack space="xs" className="items-center">
-            {/* Animated dots */}
-            <AnimatedDot delay={0} />
-            <AnimatedDot delay={200} />
-            <AnimatedDot delay={400} />
-          </HStack>
+    <Animated.View className="px-4 py-2">
+      <View className="bg-gray-100 rounded-2xl px-3 py-2 self-start">
+        <View className="flex-row gap-1">
+          <View className="w-2 h-2 rounded-full bg-gray-400" />
+          <View className="w-2 h-2 rounded-full bg-gray-400" />
+          <View className="w-2 h-2 rounded-full bg-gray-400" />
         </View>
-        <Text className="text-gray-500 text-sm">{text}</Text>
-      </HStack>
+      </View>
     </Animated.View>
   );
-};
+});
+
+TypingIndicator.displayName = 'TypingIndicator';
 
 // =============================================================================
-// MAIN SCREEN
+// MAIN CHAT SCREEN
 // =============================================================================
 
 function CommunityChatScreen() {
   const { t } = useTranslation();
   const router = useRouter();
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, thread_id } = useLocalSearchParams<{ id: string; thread_id?: string }>();
   const { member } = useAuthStore();
-  // DISABLED: Call feature temporarily disabled
-  // const { initiateCall } = useCallStore();
 
+  // Get thread details if thread_id is provided
+  const thread: CommunityThread | undefined = thread_id ? getThreadById(thread_id) : undefined;
+
+  // Input state
   const [inputText, setInputText] = useState('');
   const [replyingTo, setReplyingTo] = useState<CommunityMessage | null>(null);
-  const [isInputFocused, setIsInputFocused] = useState(false);
-  const [showAttachmentPicker, setShowAttachmentPicker] = useState(false);
-  const [pendingAttachment, setPendingAttachment] = useState<MediaAttachment | null>(null);
+  const inputRef = useRef<ChatInputBarRef>(null);
+  const listRef = useRef<any>(null);
 
-  // New state for enhanced features
+  // UI state
   const [showMenu, setShowMenu] = useState(false);
+  const [showAttachmentPicker, setShowAttachmentPicker] = useState(false);
   const [showPollModal, setShowPollModal] = useState(false);
+  const [showLocationSharer, setShowLocationSharer] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
-  const [uploadStatus, setUploadStatus] = useState<UploadStatus | null>(null);
-  const [uploadProgress, setUploadProgress] = useState(0);
-  // Connection status for future connection banner feature
   const [connectionStatus, setConnectionStatus] = useState<'connected' | 'connecting' | 'disconnected'>('connected');
   void setConnectionStatus;
 
-  // WhatsApp UX feature states
+  // Upload state
+  const [uploadStatus, setUploadStatus] = useState<UploadStatus | null>(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [pendingAttachment, setPendingAttachment] = useState<MediaAttachment | null>(null);
+
+  // Message actions state
   const [selectedMessage, setSelectedMessage] = useState<CommunityMessage | null>(null);
   const [showActionsSheet, setShowActionsSheet] = useState(false);
   const [showForwardModal, setShowForwardModal] = useState(false);
-  const [showLocationSharer, setShowLocationSharer] = useState(false);
   const [starredMessages, setStarredMessages] = useState<Set<string>>(new Set());
 
-  // NEW: Enhanced chat feature states
+  // Enhanced features state
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showGifPicker, setShowGifPicker] = useState(false);
   const [reactionTargetMessage, setReactionTargetMessage] = useState<CommunityMessage | null>(null);
@@ -607,42 +471,27 @@ function CommunityChatScreen() {
   const [mediaGalleryIndex, setMediaGalleryIndex] = useState(0);
   const [showMediaGallery, setShowMediaGallery] = useState(false);
 
-  // NEW: Read receipts and disappearing messages states
+  // Read receipts and disappearing messages
   const [showReadReceiptList, setShowReadReceiptList] = useState(false);
   const [readReceiptMessage, setReadReceiptMessage] = useState<CommunityMessage | null>(null);
   const [showDisappearingSettings, setShowDisappearingSettings] = useState(false);
   const [disappearingDuration, setDisappearingDuration] = useState<DisappearingDuration>('off');
 
-  // Track unread messages - the first unread message ID when chat opens
+  // Unread tracking
   const [firstUnreadMessageId, setFirstUnreadMessageId] = useState<string | null>(null);
   const initialLoadRef = useRef(true);
 
-  const inputRef = useRef<TextInput>(null);
-  const listRef = useRef<any>(null); // FlashList ref with complex generic
-  const menuSheetRef = useRef<BottomSheet>(null);
-  const menuSnapPoints = useMemo(() => ['55%'], []);
-
-  // Scroll position tracking for FAB
-  const {
-    isAtBottom,
-    newMessageCount,
-    handleScroll,
-    incrementNewMessages: _incrementNewMessages,
-    resetNewMessages,
-  } = useScrollPosition();
-
-  // Message queue for offline reliability (reserved for future offline support)
-  const messageQueue = useMessageQueue();
-  void messageQueue;
-
-  // Typing indicator state
+  // Typing indicator refs
   const lastTypingRef = useRef<number>(0);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Fetch community details
-  const { data: community, isLoading: isLoadingCommunity } = useCommunity(id);
+  // Scroll position tracking
+  const { isAtBottom, newMessageCount, handleScroll, resetNewMessages } = useScrollPosition();
+  const messageQueue = useMessageQueue();
+  void messageQueue;
 
-  // Fetch messages with infinite scroll
+  // Data queries
+  const { data: community, isLoading: isLoadingCommunity } = useCommunity(id);
   const {
     data: messagesData,
     isLoading: isLoadingMessages,
@@ -650,43 +499,8 @@ function CommunityChatScreen() {
     hasNextPage,
     isFetchingNextPage,
   } = useCommunityMessages(id, 'general');
-
-  // Fetch starred messages for this community
   const { data: starredMessagesData } = useStarredMessages(id);
-
-  // Fetch user's communities for forwarding messages
   const { data: myCommunities } = useMyCommunities();
-
-  // Transform communities for forward modal (exclude current community)
-  const forwardChats = useMemo(() => {
-    if (!myCommunities) return [];
-    return myCommunities
-      .filter((c) => c.id !== id)
-      .map((c) => ({
-        id: c.id,
-        name: c.name,
-        avatar: c.cover_image || c.avatar_url,
-      }));
-  }, [myCommunities, id]);
-
-  // Initialize starred messages set from backend data
-  useEffect(() => {
-    if (starredMessagesData) {
-      const starredIds = new Set(starredMessagesData.map(msg => msg.id));
-      setStarredMessages(starredIds);
-    }
-  }, [starredMessagesData]);
-
-  // Track current route for notification suppression
-  const setCurrentRoute = useNavigationStore((state) => state.setCurrentRoute);
-  useEffect(() => {
-    if (id) {
-      setCurrentRoute(`/community/${id}/chat`, { communityId: id });
-    }
-    return () => {
-      setCurrentRoute('', {});
-    };
-  }, [id, setCurrentRoute]);
 
   // Mutations
   const sendMessageMutation = useSendMessage();
@@ -698,23 +512,20 @@ function CommunityChatScreen() {
   const forwardMessageMutation = useForwardMessage();
   const starMessageMutation = useStarMessage();
 
-  // Check user permissions
-  const isLeader = community?.my_role === 'admin' || community?.my_role === 'leader';
-
-  // MQTT subscription
-  const { sendTyping, typingUsers: _typingUsers } = useCommunitySubscription(id, 'general');
+  // MQTT
+  const { sendTyping } = useCommunitySubscription(id, 'general');
   const typingIndicatorText = useTypingIndicator(id);
 
-  // Flatten messages from all pages
+  // Computed values
+  const isLeader = community?.my_role === 'admin' || community?.my_role === 'leader';
+
   const messages = useMemo(() => {
     if (!messagesData?.pages) return [];
     return messagesData.pages.flatMap((page) => page.messages);
   }, [messagesData]);
 
-  // Group messages by date for date headers
   const groupedMessages = useMessageGrouping(messages);
 
-  // Map message IDs to their indices for scroll-to-message
   const messageIndexMap = useMemo(() => {
     const map = new Map<string, number>();
     groupedMessages.forEach((item, index) => {
@@ -725,39 +536,17 @@ function CommunityChatScreen() {
     return map;
   }, [groupedMessages]);
 
-  // Handle scroll to a specific message (for reply preview tap)
-  const scrollToMessage = useCallback((messageId: string) => {
-    const index = messageIndexMap.get(messageId);
-    if (index !== undefined && listRef.current) {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      listRef.current.scrollToIndex({
-        index,
-        animated: true,
-        viewPosition: 0.5, // Center the message
-      });
-    }
-  }, [messageIndexMap]);
+  const forwardChats = useMemo(() => {
+    if (!myCommunities) return [];
+    return myCommunities
+      .filter((c) => c.id !== id)
+      .map((c) => ({
+        id: c.id,
+        name: c.name,
+        avatar: c.cover_image || c.avatar_url,
+      }));
+  }, [myCommunities, id]);
 
-  // Handle message reaction
-  const handleReaction = useCallback((messageId: string, emoji: string) => {
-    if (!member) return;
-
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-
-    // Determine if adding or removing reaction
-    const existingReaction = messages.find(m => m.id === messageId)?.reactions?.[emoji];
-    const hasReacted = existingReaction?.includes(member.id);
-
-    reactToMessageMutation.mutate({
-      messageId,
-      emoji,
-      action: hasReacted ? 'remove' : 'add',
-      communityId: id,
-      channelType: 'general',
-    });
-  }, [member, reactToMessageMutation, messages, id]);
-
-  // Collect all media items from messages for gallery viewer
   const allMediaItems = useMemo((): MediaItem[] => {
     return messages
       .filter((m) => (m.message_type === 'image' || m.message_type === 'video') && m.media?.url)
@@ -773,163 +562,92 @@ function CommunityChatScreen() {
       }));
   }, [messages]);
 
-  // Handle opening media gallery
-  const handleOpenMediaGallery = useCallback((uri: string) => {
-    const index = allMediaItems.findIndex((item) => item.uri === uri);
-    if (index !== -1) {
-      setMediaGalleryItems(allMediaItems);
-      setMediaGalleryIndex(index);
-      setShowMediaGallery(true);
-    } else {
-      // Fallback: single image preview
-      setPreviewImage(uri);
+  const unreadCount = useMemo(() => {
+    if (!firstUnreadMessageId || !member) return 0;
+    let count = 0;
+    for (const msg of messages) {
+      const isOwnMessage = msg.sender?.id === member.id;
+      const isRead = msg.read_by?.some((r) => r.member_id === member.id);
+      if (!isOwnMessage && !isRead) count++;
     }
-  }, [allMediaItems]);
+    return count;
+  }, [messages, member, firstUnreadMessageId]);
 
-  // Handle full emoji picker selection for reactions
-  const handleEmojiSelect = useCallback((emoji: string) => {
-    if (reactionTargetMessage) {
-      handleReaction(reactionTargetMessage.id, emoji);
+  // Effects
+  useEffect(() => {
+    if (starredMessagesData) {
+      setStarredMessages(new Set(starredMessagesData.map((msg) => msg.id)));
     }
-    setShowEmojiPicker(false);
-    setReactionTargetMessage(null);
-  }, [reactionTargetMessage, handleReaction]);
+  }, [starredMessagesData]);
 
-  // Handle GIF selection
-  // NOTE: GIF sending requires media upload support - for now send as text with URL
-  const handleGifSelect = useCallback(async (gif: GifItem) => {
-    if (!member) return;
-
-    setShowGifPicker(false);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-
-    try {
-      // Send GIF URL as text message (backend would need to support GIF media type)
-      await sendMessageMutation.mutateAsync({
-        communityId: id,
-        channelType: 'general',
-        message: {
-          message_type: 'text',
-          text: gif.url, // Send GIF URL as message text
-        },
-      });
-    } catch (error) {
-      Alert.alert(t('common.error', 'Error'), t('chat.failedToSendGif', 'Failed to send GIF'));
+  const setCurrentRoute = useNavigationStore((state) => state.setCurrentRoute);
+  useEffect(() => {
+    if (id) {
+      setCurrentRoute(`/community/${id}/chat`, { communityId: id, threadId: thread_id });
     }
-  }, [member, id, sendMessageMutation]);
+    return () => setCurrentRoute('', {});
+  }, [id, thread_id, setCurrentRoute]);
 
-  // Handle edit message
-  const handleEditMessage = useCallback(async (newText: string) => {
-    if (!selectedMessage) return;
+  // Check if user can post in this thread (announcement threads are admin-only)
+  const canPostInThread = useMemo(() => {
+    if (!thread) return true; // Default channel allows all
+    if (thread.who_can_post === 'all_members') return true;
+    // Admin-only posting
+    return isLeader || thread.admin_member_ids.includes(member?.id || '');
+  }, [thread, isLeader, member?.id]);
 
-    try {
-      await editMessageMutation.mutateAsync({
-        messageId: selectedMessage.id,
-        text: newText,
-      });
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    } catch (error) {
-      console.error('[EditMessage] Failed:', error);
-      Alert.alert(t('common.error', 'Error'), t('chat.couldNotEditMessage', 'Could not edit message. Please try again.'));
-    }
-  }, [selectedMessage, editMessageMutation]);
-
-  // Check if message can be edited (within 15 minutes)
-  const canEditMessage = useCallback((message: CommunityMessage): boolean => {
-    if (!message || !member) return false;
-    if (message.sender?.id !== member.id) return false;
-    if (message.message_type !== 'text') return false;
-    if (message.is_deleted) return false;
-
-    const createdAt = new Date(message.created_at).getTime();
-    const now = Date.now();
-    const fifteenMinutes = 15 * 60 * 1000;
-    return (now - createdAt) < fifteenMinutes;
-  }, [member]);
-
-  // Detect unread messages on initial load
   useEffect(() => {
     if (initialLoadRef.current && messages.length > 0 && member) {
       initialLoadRef.current = false;
-
-      // Find the first unread message (oldest unread that's not from current user)
-      // Messages are in reverse chronological order (newest first)
-      let unreadCount = 0;
-      let firstUnreadId: string | null = null;
-
       for (let i = messages.length - 1; i >= 0; i--) {
         const msg = messages[i];
-        const isOwnMessage = msg.sender?.id === member.id;
-        const isRead = msg.read_by?.some((r) => r.member_id === member.id);
-
-        if (!isOwnMessage && !isRead) {
-          unreadCount++;
-          if (!firstUnreadId) {
-            firstUnreadId = msg.id;
-          }
+        if (msg.sender?.id !== member.id && !msg.read_by?.some((r) => r.member_id === member.id)) {
+          setFirstUnreadMessageId(msg.id);
+          break;
         }
-      }
-
-      if (firstUnreadId && unreadCount > 0) {
-        setFirstUnreadMessageId(firstUnreadId);
       }
     }
   }, [messages, member]);
 
-  // Handle typing indicator
+  useEffect(() => {
+    if (messages.length > 0 && member) {
+      const latestMessage = messages[0];
+      if (
+        latestMessage &&
+        latestMessage.sender?.id !== member.id &&
+        !latestMessage.read_by?.some((r) => r.member_id === member.id)
+      ) {
+        markAsReadMutation.mutate(latestMessage.id);
+      }
+    }
+  }, [messages, member]);
+
+  useEffect(() => {
+    return () => {
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    };
+  }, []);
+
+  // Handlers
   const handleTyping = useCallback(() => {
     const now = Date.now();
     if (now - lastTypingRef.current > 2000) {
       sendTyping(true);
       lastTypingRef.current = now;
     }
-
-    // Clear previous timeout
-    if (typingTimeoutRef.current) {
-      clearTimeout(typingTimeoutRef.current);
-    }
-
-    // Set timeout to stop typing
-    typingTimeoutRef.current = setTimeout(() => {
-      sendTyping(false);
-    }, 3000);
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    typingTimeoutRef.current = setTimeout(() => sendTyping(false), 3000);
   }, [sendTyping]);
 
-  // Scroll to bottom handler
-  const handleScrollToBottom = useCallback(() => {
-    listRef.current?.scrollToOffset({ offset: 0, animated: true });
-    resetNewMessages();
-  }, [resetNewMessages]);
-
-  // Menu backdrop renderer
-  const renderMenuBackdrop = useCallback(
-    (props: any) => (
-      <BottomSheetBackdrop
-        {...props}
-        disappearsOnIndex={-1}
-        appearsOnIndex={0}
-        opacity={0.5}
-        pressBehavior="close"
-      />
-    ),
-    []
-  );
-
-  // Handle send message
   const handleSend = useCallback(async () => {
     if (!inputText.trim() || !member) return;
-
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
     const messageText = inputText.trim();
     setInputText('');
     setReplyingTo(null);
-
-    // Stop typing indicator
     sendTyping(false);
-    if (typingTimeoutRef.current) {
-      clearTimeout(typingTimeoutRef.current);
-    }
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
 
     try {
       await sendMessageMutation.mutateAsync({
@@ -943,322 +661,280 @@ function CommunityChatScreen() {
       });
     } catch (error) {
       Alert.alert(t('common.error'), t('communities.sendError'));
-      setInputText(messageText); // Restore text on error
+      setInputText(messageText);
     }
   }, [inputText, id, member, replyingTo, sendMessageMutation, sendTyping, t]);
 
-  // Handle message long press - open WhatsApp-style action sheet
+  const handleReaction = useCallback(
+    (messageId: string, emoji: string) => {
+      if (!member) return;
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      const existingReaction = messages.find((m) => m.id === messageId)?.reactions?.[emoji];
+      const hasReacted = existingReaction?.includes(member.id);
+      reactToMessageMutation.mutate({
+        messageId,
+        emoji,
+        action: hasReacted ? 'remove' : 'add',
+        communityId: id,
+        channelType: 'general',
+      });
+    },
+    [member, reactToMessageMutation, messages, id]
+  );
+
+  const scrollToMessage = useCallback(
+    (messageId: string) => {
+      const index = messageIndexMap.get(messageId);
+      if (index !== undefined && listRef.current) {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        listRef.current.scrollToIndex({ index, animated: true, viewPosition: 0.5 });
+      }
+    },
+    [messageIndexMap]
+  );
+
+  const handleOpenMediaGallery = useCallback(
+    (uri: string) => {
+      const index = allMediaItems.findIndex((item) => item.uri === uri);
+      if (index !== -1) {
+        setMediaGalleryItems(allMediaItems);
+        setMediaGalleryIndex(index);
+        setShowMediaGallery(true);
+      } else {
+        setPreviewImage(uri);
+      }
+    },
+    [allMediaItems]
+  );
+
   const handleMessageLongPress = useCallback((message: CommunityMessage) => {
     setSelectedMessage(message);
     setShowActionsSheet(true);
   }, []);
 
-  // Handle message star/unstar
-  const handleStarMessage = useCallback(async (messageId: string) => {
-    const isCurrentlyStarred = starredMessages.has(messageId);
-    const action = isCurrentlyStarred ? 'remove' : 'add';
+  const handleScrollToBottom = useCallback(() => {
+    listRef.current?.scrollToOffset({ offset: 0, animated: true });
+    resetNewMessages();
+  }, [resetNewMessages]);
 
-    // Optimistic update
-    setStarredMessages((prev) => {
-      const newSet = new Set(prev);
-      if (isCurrentlyStarred) {
-        newSet.delete(messageId);
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      } else {
-        newSet.add(messageId);
+  const handleMediaUpload = useCallback(
+    async (attachment: MediaAttachment) => {
+      if (!member) return;
+      setUploadStatus('uploading');
+      setUploadProgress(0);
+      setPendingAttachment(attachment);
+
+      try {
+        const progressCallback: UploadProgressCallback = (progress) => {
+          setUploadProgress(progress.percentage);
+        };
+        const result = await uploadMedia(id, attachment, progressCallback);
+
+        await sendMediaMutation.mutateAsync({
+          communityId: id,
+          channelType: 'general',
+          messageType: attachment.type,
+          media: {
+            seaweedfs_fid: result.fid || result.media?.seaweedfs_fid || '',
+            mime_type: attachment.mimeType,
+            file_name: attachment.fileName,
+            file_size: attachment.fileSize || 0,
+            width: attachment.width,
+            height: attachment.height,
+          },
+          text: inputText.trim() || undefined,
+        });
+
+        setUploadStatus('success');
+        setInputText('');
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        setTimeout(() => {
+          setUploadStatus(null);
+          setPendingAttachment(null);
+        }, 1500);
+      } catch (error) {
+        setUploadStatus('error');
+        Alert.alert(t('chat.uploadFailed', 'Upload Failed'), t('chat.couldNotUploadMedia'));
       }
-      return newSet;
-    });
+    },
+    [id, member, inputText, sendMediaMutation]
+  );
 
-    try {
-      await starMessageMutation.mutateAsync({ messageId, action });
-    } catch (error) {
-      // Rollback on error
-      console.error('[StarMessage] Failed:', error);
+  const handleVoiceUpload = useCallback(
+    async (uri: string, duration: number) => {
+      if (!member) return;
+      const voiceAttachment: MediaAttachment = {
+        uri,
+        type: 'audio',
+        mimeType: 'audio/m4a',
+        fileName: `voice_${Date.now()}.m4a`,
+        duration,
+      };
+      await handleMediaUpload(voiceAttachment);
+    },
+    [member, handleMediaUpload]
+  );
+
+  const handleShareLocation = useCallback(
+    async (location: LocationData) => {
+      if (!member) return;
+      try {
+        await sendMessageMutation.mutateAsync({
+          communityId: id,
+          channelType: 'general',
+          message: {
+            message_type: 'location',
+            text: location.address || `${location.latitude}, ${location.longitude}`,
+            location: {
+              latitude: location.latitude,
+              longitude: location.longitude,
+              address: location.address,
+            },
+          },
+        });
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      } catch (error) {
+        Alert.alert(t('common.error'), t('chat.failedToShareLocation'));
+      }
+    },
+    [id, member, sendMessageMutation, t]
+  );
+
+  const handleShareLiveLocation = useCallback(
+    async (location: LiveLocationData) => {
+      if (!member) return;
+      try {
+        await sendMessageMutation.mutateAsync({
+          communityId: id,
+          channelType: 'general',
+          message: {
+            message_type: 'live_location',
+            text: location.address || `${location.latitude}, ${location.longitude}`,
+            location: {
+              latitude: location.latitude,
+              longitude: location.longitude,
+              address: location.address,
+              duration: location.duration,
+              expires_at: location.expiresAt,
+            },
+          },
+        });
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      } catch (error) {
+        Alert.alert(t('common.error'), t('chat.failedToShareLiveLocation'));
+      }
+    },
+    [id, member, sendMessageMutation, t]
+  );
+
+  const handleStarMessage = useCallback(
+    async (messageId: string) => {
+      const isStarred = starredMessages.has(messageId);
       setStarredMessages((prev) => {
         const newSet = new Set(prev);
-        if (isCurrentlyStarred) {
-          newSet.add(messageId); // Restore star
-        } else {
-          newSet.delete(messageId); // Remove star
-        }
+        isStarred ? newSet.delete(messageId) : newSet.add(messageId);
         return newSet;
       });
-    }
-  }, [starredMessages, starMessageMutation]);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
-  // Handle message delete
-  const handleDeleteMessage = useCallback(async (messageId: string, forEveryone: boolean) => {
-    try {
-      await deleteMessageMutation.mutateAsync({
-        messageId,
-        forEveryone,
-      });
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    } catch (error) {
-      console.error('[DeleteMessage] Failed:', error);
-      Alert.alert(t('common.error', 'Error'), t('chat.couldNotDeleteMessage', 'Could not delete message. Please try again.'));
-    }
-  }, [deleteMessageMutation]);
-
-  // Handle message forward
-  const handleForwardMessage = useCallback(async (chatIds: string[]) => {
-    if (!selectedMessage) return;
-
-    try {
-      const result = await forwardMessageMutation.mutateAsync({
-        messageId: selectedMessage.id,
-        targetCommunityIds: chatIds,
-      });
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      Alert.alert(t('common.success', 'Success'), t('chat.messageForwardedTo', 'Message forwarded to {{count}} chat(s)', { count: result.forwarded_count }));
-    } catch (error) {
-      console.error('[ForwardMessage] Failed:', error);
-      Alert.alert(t('common.error', 'Error'), t('chat.couldNotForwardMessage', 'Could not forward message. Please try again.'));
-    }
-  }, [selectedMessage, forwardMessageMutation]);
-
-  // DISABLED: Call feature temporarily disabled
-  // // Handle voice call initiation
-  // const handleVoiceCall = useCallback(async () => {
-  //   if (!community || !member) return;
-  //
-  //   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-  //
-  //   try {
-  //     // Initiate call: empty callee_ids means group/community call
-  //     await initiateCall([], CallType.VOICE, id);
-  //     // Navigate to call screen
-  //     router.push(`/call/${id}` as any);
-  //   } catch (error) {
-  //     console.error('[VoiceCall] Failed:', error);
-  //     Alert.alert(t('common.error', 'Error'), t('chat.couldNotStartVoiceCall', 'Could not start voice call. Please try again.'));
-  //   }
-  // }, [community, member, id, initiateCall, router, t]);
-  //
-  // // Handle video call initiation
-  // const handleVideoCall = useCallback(async () => {
-  //   if (!community || !member) return;
-  //
-  //   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-  //
-  //   try {
-  //     // Initiate call: empty callee_ids means group/community call
-  //     await initiateCall([], CallType.VIDEO, id);
-  //     // Navigate to call screen
-  //     router.push(`/call/${id}` as any);
-  //   } catch (error) {
-  //     console.error('[VideoCall] Failed:', error);
-  //     Alert.alert(t('common.error', 'Error'), t('chat.couldNotStartVideoCall', 'Could not start video call. Please try again.'));
-  //   }
-  // }, [community, member, id, initiateCall, router, t]);
-
-  // Handle location sharing
-  const handleShareLocation = useCallback(async (location: LocationData) => {
-    if (!member) return;
-
-    // Send location as a message
-    try {
-      await sendMessageMutation.mutateAsync({
-        communityId: id,
-        channelType: 'general',
-        message: {
-          message_type: 'location' as const,
-          text: location.address || `${location.latitude}, ${location.longitude}`,
-          location: {
-            latitude: location.latitude,
-            longitude: location.longitude,
-            address: location.address,
-          },
-        },
-      });
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    } catch (error) {
-      Alert.alert(t('common.error', 'Error'), t('chat.failedToShareLocation', 'Failed to share location'));
-    }
-  }, [id, member, sendMessageMutation, t]);
-
-  // Handle live location sharing
-  const handleShareLiveLocation = useCallback(async (location: LiveLocationData) => {
-    if (!member) return;
-
-    try {
-      await sendMessageMutation.mutateAsync({
-        communityId: id,
-        channelType: 'general',
-        message: {
-          message_type: 'live_location' as const,
-          text: location.address || `${location.latitude}, ${location.longitude}`,
-          location: {
-            latitude: location.latitude,
-            longitude: location.longitude,
-            address: location.address,
-            duration: location.duration,
-            expires_at: location.expiresAt,
-          },
-        },
-      });
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    } catch (error) {
-      Alert.alert(t('common.error', 'Error'), t('chat.failedToShareLiveLocation', 'Failed to share live location'));
-    }
-  }, [id, member, sendMessageMutation, t]);
-
-  // Mark messages as read
-  useEffect(() => {
-    if (messages.length > 0 && member) {
-      // Mark the latest unread message as read
-      const latestMessage = messages[0];
-      if (
-        latestMessage &&
-        latestMessage.sender?.id !== member.id &&
-        !latestMessage.read_by?.some((r) => r.member_id === member.id)
-      ) {
-        markAsReadMutation.mutate(latestMessage.id);
+      try {
+        await starMessageMutation.mutateAsync({ messageId, action: isStarred ? 'remove' : 'add' });
+      } catch (error) {
+        setStarredMessages((prev) => {
+          const newSet = new Set(prev);
+          isStarred ? newSet.add(messageId) : newSet.delete(messageId);
+          return newSet;
+        });
       }
-    }
-  }, [messages, member]);
+    },
+    [starredMessages, starMessageMutation]
+  );
 
-  // Cleanup typing timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (typingTimeoutRef.current) {
-        clearTimeout(typingTimeoutRef.current);
+  const handleDeleteMessage = useCallback(
+    async (messageId: string, forEveryone: boolean) => {
+      try {
+        await deleteMessageMutation.mutateAsync({ messageId, forEveryone });
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      } catch (error) {
+        Alert.alert(t('common.error'), t('chat.couldNotDeleteMessage'));
       }
-    };
-  }, []);
+    },
+    [deleteMessageMutation, t]
+  );
 
-  // Handle media upload
-  const handleMediaUpload = useCallback(async (attachment: MediaAttachment) => {
-    if (!member) return;
-
-    setUploadStatus('uploading');
-    setUploadProgress(0);
-    setPendingAttachment(attachment);
-
-    try {
-      const progressCallback: UploadProgressCallback = (progress) => {
-        setUploadProgress(progress.percentage);
-      };
-
-      const result = await uploadMedia(
-        id,
-        attachment,
-        progressCallback
-      );
-
-      // Send the media message
-      await sendMediaMutation.mutateAsync({
-        communityId: id,
-        channelType: 'general',
-        messageType: attachment.type,
-        media: {
-          seaweedfs_fid: result.fid || result.media?.seaweedfs_fid || '',
-          mime_type: attachment.mimeType,
-          file_name: attachment.fileName,
-          file_size: attachment.fileSize || 0,
-          width: attachment.width,
-          height: attachment.height,
-        },
-        text: inputText.trim() || undefined,
-      });
-
-      setUploadStatus('success');
-      setInputText('');
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-
-      // Clear status after a delay
-      setTimeout(() => {
-        setUploadStatus(null);
-        setPendingAttachment(null);
-      }, 1500);
-    } catch (error) {
-      setUploadStatus('error');
-      Alert.alert(t('chat.uploadFailed', 'Upload Failed'), t('chat.couldNotUploadMedia', 'Could not upload media. Please try again.'));
-    }
-  }, [id, member, inputText, sendMediaMutation]);
-
-  // Handle voice note upload
-  const handleVoiceUpload = useCallback(async (uri: string, duration: number) => {
-    if (!member) return;
-
-    setUploadStatus('uploading');
-    setUploadProgress(0);
-
-    // Create voice attachment object
-    const voiceAttachment: MediaAttachment = {
-      uri,
-      type: 'audio',
-      mimeType: 'audio/m4a',
-      fileName: `voice_${Date.now()}.m4a`,
-      duration,
-    };
-
-    setPendingAttachment(voiceAttachment);
-
-    try {
-      const progressCallback: UploadProgressCallback = (progress) => {
-        setUploadProgress(progress.percentage);
-      };
-
-      const result = await uploadMedia(
-        id,
-        voiceAttachment,
-        progressCallback
-      );
-
-      if (!result.success) {
-        throw new Error(result.error || 'Upload failed');
+  const handleEditMessage = useCallback(
+    async (newText: string) => {
+      if (!selectedMessage) return;
+      try {
+        await editMessageMutation.mutateAsync({ messageId: selectedMessage.id, text: newText });
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      } catch (error) {
+        Alert.alert(t('common.error'), t('chat.couldNotEditMessage'));
       }
+    },
+    [selectedMessage, editMessageMutation, t]
+  );
 
-      // Send the audio message
-      await sendMediaMutation.mutateAsync({
-        communityId: id,
-        channelType: 'general',
-        messageType: 'audio',
-        media: {
-          seaweedfs_fid: result.fid || result.media?.seaweedfs_fid || '',
-          mime_type: voiceAttachment.mimeType,
-          file_name: voiceAttachment.fileName,
-          file_size: 0, // Will be set by backend
-          duration: duration,
-        },
-      });
-
-      setUploadStatus('success');
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-
-      // Clear status after a delay
-      setTimeout(() => {
-        setUploadStatus(null);
-        setPendingAttachment(null);
-      }, 1500);
-    } catch (error) {
-      console.error('[VoiceUpload] Failed:', error);
-      setUploadStatus('error');
-      Alert.alert(t('chat.uploadFailed', 'Upload Failed'), t('chat.couldNotSendVoiceMessage', 'Could not send voice message. Please try again.'));
-    }
-  }, [id, member, sendMediaMutation]);
-
-  // Calculate unread count for the divider
-  const unreadCount = useMemo(() => {
-    if (!firstUnreadMessageId || !member) return 0;
-    let count = 0;
-    for (const msg of messages) {
-      const isOwnMessage = msg.sender?.id === member.id;
-      const isRead = msg.read_by?.some((r) => r.member_id === member.id);
-      if (!isOwnMessage && !isRead) {
-        count++;
+  const handleForwardMessage = useCallback(
+    async (chatIds: string[]) => {
+      if (!selectedMessage) return;
+      try {
+        const result = await forwardMessageMutation.mutateAsync({
+          messageId: selectedMessage.id,
+          targetCommunityIds: chatIds,
+        });
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        Alert.alert(t('common.success'), t('chat.messageForwardedTo', { count: result.forwarded_count }));
+      } catch (error) {
+        Alert.alert(t('common.error'), t('chat.couldNotForwardMessage'));
       }
-    }
-    return count;
-  }, [messages, member, firstUnreadMessageId]);
+    },
+    [selectedMessage, forwardMessageMutation, t]
+  );
 
-  // Render message item with WhatsApp-style gestures
+  const handleGifSelect = useCallback(
+    async (gif: GifItem) => {
+      if (!member) return;
+      setShowGifPicker(false);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      try {
+        await sendMessageMutation.mutateAsync({
+          communityId: id,
+          channelType: 'general',
+          message: { message_type: 'text', text: gif.url },
+        });
+      } catch (error) {
+        Alert.alert(t('common.error'), t('chat.failedToSendGif'));
+      }
+    },
+    [member, id, sendMessageMutation, t]
+  );
+
+  const handleEmojiSelect = useCallback(
+    (emoji: string) => {
+      if (reactionTargetMessage) {
+        handleReaction(reactionTargetMessage.id, emoji);
+      }
+      setShowEmojiPicker(false);
+      setReactionTargetMessage(null);
+    },
+    [reactionTargetMessage, handleReaction]
+  );
+
+  const canEditMessage = useCallback(
+    (message: CommunityMessage): boolean => {
+      if (!message || !member) return false;
+      if (message.sender?.id !== member.id) return false;
+      if (message.message_type !== 'text' || message.is_deleted) return false;
+      const fifteenMinutes = 15 * 60 * 1000;
+      return Date.now() - new Date(message.created_at).getTime() < fifteenMinutes;
+    },
+    [member]
+  );
+
+  // Render message item
   const renderMessage = useCallback(
     ({ item, index }: { item: CommunityMessage | { type: 'date_header'; date: string }; index: number }) => {
-      // Render date header
       if (item && 'type' in item && item.type === 'date_header') {
         return <DateHeader date={item.date} />;
       }
@@ -1266,7 +942,6 @@ function CommunityChatScreen() {
       const message = item as CommunityMessage;
       const isOwnMessage = message.sender?.id === member?.id;
 
-      // Find previous message (skip date headers) for sender grouping
       let prevMessage: CommunityMessage | null = null;
       for (let i = index + 1; i < groupedMessages.length; i++) {
         const prev = groupedMessages[i];
@@ -1276,18 +951,12 @@ function CommunityChatScreen() {
         }
       }
 
-      const showSender =
-        !isOwnMessage &&
-        (!prevMessage || prevMessage.sender?.id !== message.sender?.id);
-
-      // Check if this is the first unread message
+      const showSender = !isOwnMessage && (!prevMessage || prevMessage.sender?.id !== message.sender?.id);
       const showUnreadDivider = message.id === firstUnreadMessageId && unreadCount > 0;
 
       return (
         <Animated.View entering={PMotionV10.cardStagger(index, 400)}>
-          {/* Unread messages divider - shown above the first unread message */}
           {showUnreadDivider && <UnreadDivider count={unreadCount} />}
-
           <SwipeToReplyWrapper
             onReply={() => {
               setReplyingTo(message);
@@ -1323,321 +992,150 @@ function CommunityChatScreen() {
     [member?.id, groupedMessages, handleMessageLongPress, handleReaction, handleOpenMediaGallery, scrollToMessage, firstUnreadMessageId, unreadCount]
   );
 
-  // Loading state
+  // Loading state - iOS style (matches ChatHeader layout)
   if (isLoadingCommunity || (isLoadingMessages && messages.length === 0)) {
     return (
-      <SafeAreaView className="flex-1 bg-white" edges={['top']}>
-        {/* Header skeleton */}
-        <HStack className="px-4 py-3 border-b border-gray-100 items-center" space="md">
-          <Skeleton className="w-10 h-10 rounded-full" isLoaded={false} />
-          <VStack className="flex-1">
-            <Skeleton className="h-5 w-32" isLoaded={false} />
-            <Skeleton className="h-3 w-20 mt-1" isLoaded={false} />
+      <SafeAreaView className="flex-1" style={{ backgroundColor: COLORS.headerBg }} edges={['top']}>
+        {/* Header skeleton - matches ChatHeader styling exactly */}
+        <View
+          className="flex-row items-center"
+          style={{ height: 56, borderBottomColor: '#D1D7DB', borderBottomWidth: 0.5 }}
+        >
+          {/* Back chevron area */}
+          <View style={{ width: 44, paddingLeft: 4, alignItems: 'center', justifyContent: 'center' }}>
+            <Skeleton className="w-7 h-7 rounded" isLoaded={false} />
+          </View>
+          {/* Avatar - marginLeft: 20, w-11 h-11 */}
+          <View style={{ marginLeft: 20 }}>
+            <Skeleton className="w-11 h-11 rounded-full" isLoaded={false} />
+          </View>
+          {/* Title + subtitle */}
+          <VStack className="flex-1 gap-1 ml-3">
+            <Skeleton className="w-36 h-[17px] rounded" isLoaded={false} />
+            <Skeleton className="w-24 h-[13px] rounded" isLoaded={false} />
           </VStack>
-        </HStack>
-
-        {/* Messages skeleton */}
-        <VStack className="flex-1 p-4" space="md">
-          {[1, 2, 3, 4, 5].map((i) => (
-            <View
-              key={i}
-              className={`${i % 2 === 0 ? 'items-end' : 'items-start'}`}
-            >
-              <Skeleton
-                className="h-12 rounded-2xl"
-                style={{ width: `${60 + Math.random() * 20}%` }}
-                isLoaded={false}
-              />
-            </View>
-          ))}
-        </VStack>
+          {/* Action buttons - Video (27px) + Phone (22px) */}
+          <View className="flex-row items-center pr-3 gap-2">
+            <Skeleton className="w-[27px] h-[27px] rounded" isLoaded={false} />
+            <Skeleton className="w-[22px] h-[22px] rounded" isLoaded={false} />
+          </View>
+        </View>
+        {/* Messages skeleton with pattern background */}
+        <PatternBackground>
+          <VStack className="flex-1 p-4 gap-3">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <View key={i} className={i % 2 === 0 ? 'items-end' : 'items-start'}>
+                <Skeleton
+                  className={`${i % 3 === 0 ? 'w-[45%]' : i % 2 === 0 ? 'w-[65%]' : 'w-[55%]'} h-14 rounded-2xl`}
+                  isLoaded={false}
+                />
+              </View>
+            ))}
+          </VStack>
+        </PatternBackground>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView className="flex-1" style={{ backgroundColor: '#ECE5DD' }} edges={['top']}>
-      {/* Header - WhatsApp teal color (#075E54 or #128C7E) */}
-      <Animated.View
-        entering={PMotionV10.subtleSlide('right')}
-        exiting={PMotionV10.screenFadeOut}
-        style={{
-          backgroundColor: '#075E54',
-          ...shadows.sm,
+    <SafeAreaView className="flex-1" style={{ backgroundColor: COLORS.headerBg }} edges={['top']}>
+      {/* Header - iOS style white background */}
+      <ChatHeader
+        communityName={thread ? thread.name : (community?.name || 'Community')}
+        communityImage={thread?.cover_image || community?.cover_image}
+        memberCount={thread ? thread.member_count : (community?.member_count || 0)}
+        typingText={typingIndicatorText}
+        onBack={() => {
+          // If in a thread, go back to community threads list
+          if (thread_id) {
+            router.push(`/community/${id}` as any);
+          } else {
+            router.back();
+          }
         }}
-      >
-        <HStack className="px-4 py-3 items-center" space="md">
-          {/* Back button */}
-          <Pressable
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              router.back();
-            }}
-            className="active:opacity-70"
-          >
-            <Icon as={ArrowLeft} size="lg" style={{ color: '#FFFFFF' }} />
-          </Pressable>
+        onPress={() => router.push(`/community/${id}/info` as any)}
+        onSearch={() => router.push(`/community/${id}/search` as any)}
+        onMenu={() => setShowMenu(true)}
+      />
 
-          {/* Community avatar */}
-          <Avatar size="md" className="bg-gray-300">
-            {community?.cover_image ? (
-              <AvatarImage source={{ uri: community.cover_image }} />
-            ) : (
-              <AvatarFallbackText className="text-gray-600">
-                {community?.name?.substring(0, 2).toUpperCase() || '??'}
-              </AvatarFallbackText>
-            )}
-          </Avatar>
-
-          {/* Community info */}
-          <Pressable
-            className="flex-1 active:opacity-70"
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              router.push(`/community/${id}/info` as any);
-            }}
-          >
-            <Text className="font-bold text-base" style={{ color: '#FFFFFF' }} numberOfLines={1}>
-              {community?.name || 'Community'}
-            </Text>
-            {typingIndicatorText ? (
-              <HStack space="xs" style={{ alignItems: 'center' }}>
-                <Text className="text-xs italic" style={{ color: '#25D366' }}>
-                  {typingIndicatorText}
-                </Text>
-              </HStack>
-            ) : (
-              <Text className="text-xs" style={{ color: 'rgba(255,255,255,0.8)' }}>
-                {t('chat.memberCount', '{{count}} members', { count: community?.member_count || 0 })}
-              </Text>
-            )}
-          </Pressable>
-
-          {/* Voice call button - DISABLED: Call feature temporarily disabled */}
-          {/* <Pressable
-            onPress={handleVoiceCall}
-            className="active:opacity-70 p-2"
-          >
-            <Icon as={Phone} size="md" style={{ color: '#FFFFFF' }} />
-          </Pressable> */}
-
-          {/* Video call button - DISABLED: Call feature temporarily disabled */}
-          {/* <Pressable
-            onPress={handleVideoCall}
-            className="active:opacity-70 p-2"
-          >
-            <Icon as={Video} size="md" style={{ color: '#FFFFFF' }} />
-          </Pressable> */}
-
-          {/* Search button */}
-          <Pressable
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              router.push(`/community/${id}/search` as any);
-            }}
-            className="active:opacity-70 p-2"
-          >
-            <Icon as={Search} size="md" style={{ color: '#FFFFFF' }} />
-          </Pressable>
-
-          {/* Menu button */}
-          <Pressable
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              setShowMenu(true);
-            }}
-            className="active:opacity-70 p-2"
-          >
-            <Icon as={MoreVertical} size="md" style={{ color: '#FFFFFF' }} />
-          </Pressable>
-        </HStack>
-      </Animated.View>
-
-      {/* Connection Status Banner */}
+      {/* Connection Status */}
       <ConnectionBanner status={connectionStatus} />
 
-      {/* Messages list */}
+      {/* Messages - WhatsApp style with pattern background */}
       <KeyboardAvoidingView
         className="flex-1"
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
       >
-        <Animated.View entering={PMotionV10.screenFadeIn} style={{ flex: 1 }}>
-          <FlashList
-            ref={listRef}
-            data={groupedMessages}
-            renderItem={renderMessage}
-            keyExtractor={(item: CommunityMessage | { type: 'date_header'; date: string }) => {
-              if (item && 'type' in item && item.type === 'date_header') {
-                return `date-${item.date}`;
+        <PatternBackground>
+          <Animated.View entering={PMotionV10.screenFadeIn} className="flex-1">
+            <FlashList
+              ref={listRef}
+              data={groupedMessages}
+              renderItem={renderMessage}
+              keyExtractor={(item: CommunityMessage | { type: 'date_header'; date: string }) =>
+                item && 'type' in item && item.type === 'date_header'
+                  ? `date-${item.date}`
+                  : (item as CommunityMessage).id
               }
-              return (item as CommunityMessage).id;
-            }}
-            getItemType={(item: CommunityMessage | { type: 'date_header'; date: string }) => {
-              if (item && 'type' in item && item.type === 'date_header') {
-                return 'date_header';
-              }
-              return 'message';
-            }}
-            estimatedItemSize={80}
-            inverted
-            // High refresh rate optimizations (90Hz/120Hz/144Hz)
-            drawDistance={800} // Increased for smoother scrolling at high refresh rates
-            estimatedListSize={{ height: 800, width: 400 }}
-            overrideItemLayout={(layout: { size: number }, item: CommunityMessage | { type: 'date_header'; date: string }) => {
-              // Date header
-              if (item && 'type' in item && item.type === 'date_header') {
-                layout.size = 48;
-                return;
-              }
+              getItemType={(item: CommunityMessage | { type: 'date_header'; date: string }) => (item && 'type' in item && item.type === 'date_header' ? 'date_header' : 'message')}
+              estimatedItemSize={80}
+              inverted
+              drawDistance={800}
+              contentContainerStyle={{ paddingVertical: 16 }}
+              onEndReached={() => hasNextPage && !isFetchingNextPage && fetchNextPage()}
+              onEndReachedThreshold={0.3}
+              onScroll={handleScroll}
+              scrollEventThrottle={8}
+              ListFooterComponent={isFetchingNextPage ? <ActivityIndicator className="py-4" color={PRIMARY_500} /> : null}
+              ListHeaderComponent={<TypingIndicator text={typingIndicatorText} />}
+              removeClippedSubviews={Platform.OS === 'android'}
+            />
+            <ScrollToBottomFAB visible={!isAtBottom} newMessageCount={newMessageCount} onPress={handleScrollToBottom} />
+          </Animated.View>
+        </PatternBackground>
 
-              const msg = item as CommunityMessage;
-              // Estimate item height for better virtualization
-              if (msg.is_deleted) layout.size = 50;
-              else if (msg.message_type === 'poll') layout.size = 300;
-              else if (msg.message_type === 'image' || msg.message_type === 'video') {
-                layout.size = 260 + (msg.text ? 40 : 0);
-              } else if (msg.message_type === 'document') layout.size = 100;
-              else if (msg.message_type === 'audio') layout.size = 80;
-              else {
-                const textLength = msg.text?.length || 0;
-                const lines = Math.ceil(textLength / 38);
-                layout.size = 60 + lines * 22 + (msg.reply_to ? 55 : 0);
-              }
-            }}
-            contentContainerStyle={{
-              paddingVertical: spacing.md,
-            }}
-            onEndReached={() => {
-              if (hasNextPage && !isFetchingNextPage) {
-                fetchNextPage();
-              }
-            }}
-            onEndReachedThreshold={0.3}
-            onScroll={handleScroll}
-            // Lower scrollEventThrottle for smoother 120Hz tracking (8ms = ~120fps)
-            scrollEventThrottle={8}
-            ListFooterComponent={
-              isFetchingNextPage ? (
-                <View className="py-4 items-center">
-                  <ActivityIndicator color={colors.primary[500]} />
-                </View>
-              ) : null
-            }
-            ListHeaderComponent={
-              <TypingIndicator text={typingIndicatorText} />
-            }
-            // Extra optimizations for smooth scrolling at high refresh rates
-            maintainVisibleContentPosition={{
-              minIndexForVisible: 1,
-              autoscrollToTopThreshold: 10,
-            }}
-            // Reduce re-renders during fast scrolling
-            removeClippedSubviews={Platform.OS === 'android'}
+        {/* Input Bar - show read-only message for announcement threads */}
+        {canPostInThread ? (
+          <ChatInputBar
+            ref={inputRef}
+            value={inputText}
+            onChangeText={setInputText}
+            onSend={handleSend}
+            onTyping={handleTyping}
+            onAttachmentPress={() => setShowAttachmentPicker(true)}
+            onGifPress={() => setShowGifPicker(true)}
+            onVoiceSend={handleVoiceUpload}
+            replyingTo={replyingTo ? { id: replyingTo.id, senderName: replyingTo.sender?.name || 'Unknown', preview: replyingTo.text || 'Media' } : null}
+            onClearReply={() => setReplyingTo(null)}
+            isSending={sendMessageMutation.isPending}
+            isVoiceDisabled={!member || uploadStatus === 'uploading'}
           />
-
-          {/* Scroll to Bottom FAB */}
-          <ScrollToBottomFAB
-            visible={!isAtBottom}
-            newMessageCount={newMessageCount}
-            onPress={handleScrollToBottom}
-          />
-        </Animated.View>
-
-        {/* Reply preview */}
-        {replyingTo && (
+        ) : (
           <View
-            className="bg-white border-t border-gray-100 px-4 py-3"
-            style={shadows.sm}
+            className="flex-row items-center justify-center py-4 px-6"
+            style={{ backgroundColor: '#F5F5F5', borderTopWidth: 0.5, borderTopColor: '#E0E0E0' }}
           >
-            <HStack className="items-center" space="md">
-              <View className="flex-1 pl-3 border-l-2 border-primary-500">
-                <Text className="text-primary-600 font-medium text-sm">
-                  {replyingTo.sender?.name || 'Unknown'}
-                </Text>
-                <Text className="text-gray-600 text-sm" numberOfLines={1}>
-                  {replyingTo.text || 'Media'}
-                </Text>
-              </View>
-              <Pressable
-                onPress={() => setReplyingTo(null)}
-                className="p-2 active:opacity-70"
-              >
-                <Icon as={X} size="sm" className="text-gray-500" />
-              </Pressable>
-            </HStack>
+            <Text className="text-[14px] text-center" style={{ color: '#8E8E93' }}>
+              {t('chat.announcementOnly', 'Only admins can post in this channel')}
+            </Text>
           </View>
         )}
-
-        {/* Input bar */}
-        <View
-          className="bg-white border-t border-gray-100 px-4 py-3"
-          style={shadows.md}
-        >
-          <HStack space="sm" className="items-end">
-            {/* Animated Attachment button */}
-            <AttachmentButton
-              onPress={() => setShowAttachmentPicker(true)}
-            />
-
-            {/* GIF button */}
-            <GifButton onPress={() => setShowGifPicker(true)} />
-
-            {/* Text input */}
-            <View
-              className="flex-1 rounded-3xl px-4 py-2"
-              style={{
-                backgroundColor: colors.gray[100],
-                borderColor: isInputFocused ? colors.primary[300] : colors.gray[200],
-                borderWidth: isInputFocused ? 1.5 : 1,
-                minHeight: 44,
-                maxHeight: 120,
-              }}
-            >
-              <TextInput
-                ref={inputRef}
-                value={inputText}
-                onChangeText={(text) => {
-                  setInputText(text);
-                  handleTyping();
-                }}
-                placeholder={t('communities.typeMessage', 'Type a message...')}
-                placeholderTextColor={colors.gray[400]}
-                multiline
-                maxLength={4000}
-                onFocus={() => setIsInputFocused(true)}
-                onBlur={() => setIsInputFocused(false)}
-                style={{
-                  fontSize: 16,
-                  color: colors.gray[900],
-                  paddingVertical: Platform.OS === 'ios' ? 8 : 4,
-                }}
-              />
-            </View>
-
-            {/* Send/Voice button */}
-            {inputText.trim() ? (
-              <SendButton
-                onPress={handleSend}
-                disabled={!inputText.trim()}
-                isSending={sendMessageMutation.isPending}
-              />
-            ) : (
-              <VoiceNoteInput
-                onSend={(uri, duration) => {
-                  handleVoiceUpload(uri, duration);
-                }}
-                disabled={!member || uploadStatus === 'uploading'}
-              />
-            )}
-          </HStack>
-        </View>
-
-        {/* Safe area bottom padding */}
-        <SafeAreaView edges={['bottom']} className="bg-white" />
       </KeyboardAvoidingView>
 
-      {/* Attachment Picker */}
+      {/* Modals and Sheets */}
+      <ChatMenuSheet
+        visible={showMenu}
+        onClose={() => setShowMenu(false)}
+        onAnnouncements={() => router.push(`/community/${id}/announcements` as any)}
+        onSubgroups={() => router.push(`/community/${id}/subgroups` as any)}
+        onCreatePoll={() => setShowPollModal(true)}
+        onCommunityInfo={() => router.push(`/community/${id}/info` as any)}
+        onDisappearingMessages={() => setShowDisappearingSettings(true)}
+        onSettings={isLeader ? () => router.push(`/community/${id}/settings` as any) : undefined}
+        isLeader={isLeader}
+        disappearingDuration={disappearingDuration}
+      />
+
       <AttachmentPicker
         visible={showAttachmentPicker}
         onClose={() => setShowAttachmentPicker(false)}
@@ -1648,7 +1146,6 @@ function CommunityChatScreen() {
         onLocationPress={() => setShowLocationSharer(true)}
       />
 
-      {/* Upload Progress */}
       {uploadStatus && pendingAttachment && (
         <UploadProgress
           fileName={pendingAttachment.fileName}
@@ -1658,15 +1155,10 @@ function CommunityChatScreen() {
             setUploadStatus(null);
             setPendingAttachment(null);
           }}
-          onRetry={() => {
-            if (pendingAttachment) {
-              handleMediaUpload(pendingAttachment);
-            }
-          }}
+          onRetry={() => pendingAttachment && handleMediaUpload(pendingAttachment)}
         />
       )}
 
-      {/* Create Poll Modal */}
       <CreatePollModal
         visible={showPollModal}
         communityId={id}
@@ -1678,17 +1170,10 @@ function CommunityChatScreen() {
         }}
       />
 
-      {/* Image Preview Modal */}
       {previewImage && (
-        <MediaPreview
-          uri={previewImage}
-          type="image"
-          visible={!!previewImage}
-          onClose={() => setPreviewImage(null)}
-        />
+        <MediaPreview uri={previewImage} type="image" visible={!!previewImage} onClose={() => setPreviewImage(null)} />
       )}
 
-      {/* Message Actions Sheet - WhatsApp-style long press menu */}
       <MessageActionsSheet
         message={selectedMessage}
         visible={showActionsSheet}
@@ -1709,37 +1194,21 @@ function CommunityChatScreen() {
           setShowActionsSheet(false);
           setShowForwardModal(true);
         }}
-        onStar={() => {
-          if (selectedMessage) {
-            handleStarMessage(selectedMessage.id);
-          }
-        }}
-        onCopy={() => {
-          // Copy handled internally by MessageActionsSheet
-        }}
+        onStar={() => selectedMessage && handleStarMessage(selectedMessage.id)}
+        onCopy={() => {}}
         onEdit={handleEditMessage}
-        onDelete={(forEveryone) => {
-          if (selectedMessage) {
-            handleDeleteMessage(selectedMessage.id, forEveryone);
-          }
-        }}
+        onDelete={(forEveryone) => selectedMessage && handleDeleteMessage(selectedMessage.id, forEveryone)}
         onInfo={() => {
           if (selectedMessage) {
             const sentAt = new Date(selectedMessage.created_at).toLocaleString();
             const readCount = selectedMessage.read_by?.length || 0;
-            const readByNames = selectedMessage.read_by?.slice(0, 5).map(r => r.member_name).join(', ') || t('chat.noOneYet', 'No one yet');
-            const moreReaders = readCount > 5 ? `\n+${readCount - 5} ${t('chat.more', 'more')}` : '';
-
-            Alert.alert(
-              t('chat.messageInfo', 'Message Info'),
-              `${t('chat.sent', 'Sent')}: ${sentAt}\n\n${t('chat.readBy', 'Read by')} (${readCount}):\n${readByNames}${moreReaders}`,
-              [{ text: t('common.ok', 'OK') }]
-            );
+            const readByNames = selectedMessage.read_by?.slice(0, 5).map((r) => r.member_name).join(', ') || t('chat.noOneYet');
+            const moreReaders = readCount > 5 ? `\n+${readCount - 5} ${t('chat.more')}` : '';
+            Alert.alert(t('chat.messageInfo'), `${t('chat.sent')}: ${sentAt}\n\n${t('chat.readBy')} (${readCount}):\n${readByNames}${moreReaders}`);
           }
         }}
       />
 
-      {/* Forward Message Modal */}
       <ForwardMessageModal
         message={selectedMessage}
         visible={showForwardModal}
@@ -1751,7 +1220,6 @@ function CommunityChatScreen() {
         chats={forwardChats}
       />
 
-      {/* Location Sharer */}
       <LocationSharer
         visible={showLocationSharer}
         onClose={() => setShowLocationSharer(false)}
@@ -1759,154 +1227,6 @@ function CommunityChatScreen() {
         onShareLiveLocation={handleShareLiveLocation}
       />
 
-      {/* Menu Bottom Sheet (replaces laggy Modal) */}
-      <BottomSheet
-        ref={menuSheetRef}
-        index={showMenu ? 0 : -1}
-        snapPoints={menuSnapPoints}
-        enablePanDownToClose
-        enableDynamicSizing={false}
-        onClose={() => setShowMenu(false)}
-        backdropComponent={renderMenuBackdrop}
-        handleIndicatorStyle={{ backgroundColor: colors.gray[300] }}
-      >
-        <View className="flex-1 px-4 pt-2">
-          {/* Announcements */}
-          <Pressable
-            onPress={() => {
-              setShowMenu(false);
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              router.push(`/community/${id}/announcements` as any);
-            }}
-            className="flex-row items-center px-4 py-4 rounded-xl active:bg-gray-50"
-          >
-            <View
-              className="w-10 h-10 rounded-full items-center justify-center mr-4"
-              style={{ backgroundColor: colors.warning[100] }}
-            >
-              <Icon as={Megaphone} size="md" style={{ color: colors.warning[500] }} />
-            </View>
-            <VStack className="flex-1">
-              <Text className="text-gray-900 font-medium">{t('chat.menu.announcements', 'Announcements')}</Text>
-              <Text className="text-gray-500 text-xs">{t('chat.menu.announcementsDesc', 'Important updates from leaders')}</Text>
-            </VStack>
-          </Pressable>
-
-          {/* Sub-groups */}
-          <Pressable
-            onPress={() => {
-              setShowMenu(false);
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              router.push(`/community/${id}/subgroups` as any);
-            }}
-            className="flex-row items-center px-4 py-4 rounded-xl active:bg-gray-50"
-          >
-            <View
-              className="w-10 h-10 rounded-full items-center justify-center mr-4"
-              style={{ backgroundColor: colors.secondary[100] }}
-            >
-              <Icon as={Users} size="md" style={{ color: colors.secondary[500] }} />
-            </View>
-            <VStack className="flex-1">
-              <Text className="text-gray-900 font-medium">{t('chat.menu.subgroups', 'Sub-groups')}</Text>
-              <Text className="text-gray-500 text-xs">{t('chat.menu.subgroupsDesc', 'Smaller groups within community')}</Text>
-            </VStack>
-          </Pressable>
-
-          {/* Create Poll */}
-          <Pressable
-            onPress={() => {
-              setShowMenu(false);
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              setShowPollModal(true);
-            }}
-            className="flex-row items-center px-4 py-4 rounded-xl active:bg-gray-50"
-          >
-            <View
-              className="w-10 h-10 rounded-full items-center justify-center mr-4"
-              style={{ backgroundColor: colors.info[100] }}
-            >
-              <Icon as={BarChart3} size="md" style={{ color: colors.info[500] }} />
-            </View>
-            <VStack className="flex-1">
-              <Text className="text-gray-900 font-medium">{t('chat.menu.createPoll', 'Create Poll')}</Text>
-              <Text className="text-gray-500 text-xs">{t('chat.menu.createPollDesc', 'Ask the community a question')}</Text>
-            </VStack>
-          </Pressable>
-
-          {/* Community Info */}
-          <Pressable
-            onPress={() => {
-              setShowMenu(false);
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              router.push(`/community/${id}/info` as any);
-            }}
-            className="flex-row items-center px-4 py-4 rounded-xl active:bg-gray-50"
-          >
-            <View
-              className="w-10 h-10 rounded-full items-center justify-center mr-4"
-              style={{ backgroundColor: colors.gray[100] }}
-            >
-              <Icon as={Info} size="md" style={{ color: colors.gray[500] }} />
-            </View>
-            <VStack className="flex-1">
-              <Text className="text-gray-900 font-medium">{t('chat.menu.communityInfo', 'Community Info')}</Text>
-              <Text className="text-gray-500 text-xs">{t('chat.menu.communityInfoDesc', 'Members, description, media')}</Text>
-            </VStack>
-          </Pressable>
-
-          {/* Disappearing Messages */}
-          <Pressable
-            onPress={() => {
-              setShowMenu(false);
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              setShowDisappearingSettings(true);
-            }}
-            className="flex-row items-center px-4 py-4 rounded-xl active:bg-gray-50"
-          >
-            <View
-              className="w-10 h-10 rounded-full items-center justify-center mr-4"
-              style={{ backgroundColor: colors.success[100] }}
-            >
-              <Icon as={Timer} size="md" style={{ color: colors.success[500] }} />
-            </View>
-            <VStack className="flex-1">
-              <Text className="text-gray-900 font-medium">{t('chat.menu.disappearingMessages', 'Disappearing Messages')}</Text>
-              <Text className="text-gray-500 text-xs">
-                {disappearingDuration === 'off' ? t('chat.menu.off', 'Off') : t('chat.menu.messagesDisappearAfter', 'Messages disappear after {{duration}}', { duration: disappearingDuration })}
-              </Text>
-            </VStack>
-            {disappearingDuration !== 'off' && (
-              <DisappearingIndicator duration={disappearingDuration} size="sm" />
-            )}
-          </Pressable>
-
-          {/* Settings (Leaders only) */}
-          {isLeader && (
-            <Pressable
-              onPress={() => {
-                setShowMenu(false);
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                router.push(`/community/${id}/settings` as any);
-              }}
-              className="flex-row items-center px-4 py-4 rounded-xl active:bg-gray-50"
-            >
-              <View
-                className="w-10 h-10 rounded-full items-center justify-center mr-4"
-                style={{ backgroundColor: colors.primary[100] }}
-              >
-                <Icon as={Settings} size="md" style={{ color: colors.primary[500] }} />
-              </View>
-              <VStack className="flex-1">
-                <Text className="text-gray-900 font-medium">{t('chat.menu.settings', 'Settings')}</Text>
-                <Text className="text-gray-500 text-xs">{t('chat.menu.settingsDesc', 'Manage community settings')}</Text>
-              </VStack>
-            </Pressable>
-          )}
-        </View>
-      </BottomSheet>
-
-      {/* NEW: Full Emoji Picker for reactions */}
       <EmojiPickerSheet
         visible={showEmojiPicker}
         onClose={() => {
@@ -1916,14 +1236,8 @@ function CommunityChatScreen() {
         onEmojiSelect={handleEmojiSelect}
       />
 
-      {/* NEW: GIF Picker */}
-      <GifPickerSheet
-        visible={showGifPicker}
-        onClose={() => setShowGifPicker(false)}
-        onGifSelect={handleGifSelect}
-      />
+      <GifPickerSheet visible={showGifPicker} onClose={() => setShowGifPicker(false)} onGifSelect={handleGifSelect} />
 
-      {/* NEW: Media Gallery Viewer */}
       {showMediaGallery && mediaGalleryItems.length > 0 && (
         <MediaGalleryViewer
           media={mediaGalleryItems}
@@ -1933,7 +1247,6 @@ function CommunityChatScreen() {
         />
       )}
 
-      {/* NEW: Read Receipt List */}
       {readReceiptMessage && (
         <ReadReceiptList
           visible={showReadReceiptList}
@@ -1953,7 +1266,6 @@ function CommunityChatScreen() {
         />
       )}
 
-      {/* NEW: Disappearing Messages Settings */}
       <DisappearingMessagesSettings
         visible={showDisappearingSettings}
         onClose={() => setShowDisappearingSettings(false)}
@@ -1961,7 +1273,6 @@ function CommunityChatScreen() {
         onDurationChange={(duration) => {
           setDisappearingDuration(duration);
           setShowDisappearingSettings(false);
-          // TODO: Save to backend
         }}
         isAdmin={isLeader}
       />
@@ -1969,5 +1280,4 @@ function CommunityChatScreen() {
   );
 }
 
-// Apply Premium Motion V10 Ultra HOC for production-grade transitions
 export default withPremiumMotionV10(CommunityChatScreen);

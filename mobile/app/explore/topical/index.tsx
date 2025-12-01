@@ -9,8 +9,9 @@
  */
 
 import React from 'react';
-import { ScrollView, View, Text, StyleSheet, Pressable } from 'react-native';
+import { ScrollView, View, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Text } from '@/components/ui/text';
 import { useRouter } from 'expo-router';
 import { ExploreColors, ExploreTypography, ExploreSpacing } from '@/constants/explore/designSystem';
 import { useTopicalCategories } from '@/hooks/explore/useExploreMock';
@@ -62,17 +63,30 @@ export default function TopicalCategoriesScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
-        <View style={styles.header}>
-          <Pressable onPress={() => router.back()} style={styles.backButton}>
+      <SafeAreaView className="flex-1 bg-white" edges={['top']}>
+        <View
+          className="flex-row justify-between items-center border-b"
+          style={{
+            paddingHorizontal: ExploreSpacing.md,
+            paddingVertical: ExploreSpacing.sm,
+            borderBottomColor: ExploreColors.neutral[100],
+          }}
+        >
+          <Pressable onPress={() => router.back()} style={{ padding: ExploreSpacing.xs }}>
             <ArrowLeft size={24} color={ExploreColors.neutral[900]} />
           </Pressable>
-          <Text style={styles.headerTitle}>
+          <Text
+            className="flex-1 text-center"
+            style={{
+              ...ExploreTypography.h3,
+              color: ExploreColors.neutral[900],
+            }}
+          >
             {contentLanguage === 'en' ? 'Topical Verses' : 'Ayat Topikal'}
           </Text>
           <View style={{ width: 40 }} />
         </View>
-        <ScrollView contentContainerStyle={styles.loadingContainer}>
+        <ScrollView contentContainerStyle={{ padding: ExploreSpacing.screenMargin }}>
           <TopicalCategoriesSkeleton />
         </ScrollView>
       </SafeAreaView>
@@ -80,13 +94,26 @@ export default function TopicalCategoriesScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView className="flex-1 bg-white" edges={['top']}>
       {/* Header - Static, not animated */}
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.backButton}>
+      <View
+        className="flex-row justify-between items-center border-b"
+        style={{
+          paddingHorizontal: ExploreSpacing.md,
+          paddingVertical: ExploreSpacing.sm,
+          borderBottomColor: ExploreColors.neutral[100],
+        }}
+      >
+        <Pressable onPress={() => router.back()} style={{ padding: ExploreSpacing.xs }}>
           <ArrowLeft size={24} color={ExploreColors.neutral[900]} />
         </Pressable>
-        <Text style={styles.headerTitle}>
+        <Text
+          className="flex-1 text-center"
+          style={{
+            ...ExploreTypography.h3,
+            color: ExploreColors.neutral[900],
+          }}
+        >
           {contentLanguage === 'en' ? 'Topical Verses' : 'Ayat Topikal'}
         </Text>
         <View style={{ width: 40 }} />
@@ -94,13 +121,23 @@ export default function TopicalCategoriesScreen() {
 
       {/* Content - Animated */}
       <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        className="flex-1"
+        contentContainerStyle={{ paddingBottom: ExploreSpacing.xl }}
         showsVerticalScrollIndicator={false}
       >
         <Animated.View entering={SlideInRight.duration(250)}>
           {/* Description */}
-          <Text style={styles.description}>
+          <Text
+            className="text-center"
+            style={{
+              ...ExploreTypography.body,
+              color: ExploreColors.neutral[700],
+              paddingHorizontal: ExploreSpacing.screenMargin,
+              paddingTop: ExploreSpacing.lg,
+              paddingBottom: ExploreSpacing.xl,
+              lineHeight: 24,
+            }}
+          >
             {contentLanguage === 'en'
               ? 'Explore Bible verses organized by life topics and themes'
               : 'Jelajahi ayat-ayat Alkitab yang diatur berdasarkan topik dan tema kehidupan'}
@@ -117,7 +154,10 @@ export default function TopicalCategoriesScreen() {
               }
             />
           ) : (
-            <View style={styles.categoriesGrid}>
+            <View
+              className="flex-row flex-wrap justify-between"
+              style={{ paddingHorizontal: ExploreSpacing.screenMargin }}
+            >
               {categories.map((category, index) => (
                 <CategoryCard
                   key={category.id}
@@ -158,41 +198,93 @@ function CategoryCard({ category, onPress, contentLanguage, index }: CategoryCar
   const colorScheme = colors[index % colors.length];
 
   return (
-    <Animated.View entering={FadeInDown.duration(400).delay(index * 40)} style={styles.categoryCardContainer}>
+    <Animated.View
+      entering={FadeInDown.duration(400).delay(index * 40)}
+      style={{ width: '48%', marginBottom: ExploreSpacing.md }}
+    >
       <ExploreCard
         onPress={onPress}
-        style={[
-          styles.categoryCard,
-          {
-            backgroundColor: colorScheme.bg,
-            borderWidth: 1,
-            borderColor: colorScheme.border,
-          },
-        ]}
+        style={{
+          padding: ExploreSpacing.lg,
+          minHeight: 180,
+          position: 'relative',
+          backgroundColor: colorScheme.bg,
+          borderWidth: 1,
+          borderColor: colorScheme.border,
+        }}
       >
         {/* Icon */}
-        <View style={[styles.categoryIcon, { backgroundColor: colorScheme.bg }]}>
+        <View
+          className="items-center justify-center"
+          style={{
+            width: 56,
+            height: 56,
+            borderRadius: 28,
+            backgroundColor: colorScheme.bg,
+            marginBottom: ExploreSpacing.md,
+          }}
+        >
           <Icon size={32} color={colorScheme.icon} />
         </View>
 
         {/* Content */}
-        <View style={styles.categoryContent}>
-          <Text style={styles.categoryName}>{name}</Text>
+        <View>
+          <Text
+            style={{
+              ...ExploreTypography.h4,
+              color: ExploreColors.neutral[900],
+              fontSize: 16,
+              marginBottom: ExploreSpacing.xs,
+            }}
+          >
+            {name}
+          </Text>
           {description && (
-            <Text style={styles.categoryDescription} numberOfLines={2}>
+            <Text
+              numberOfLines={2}
+              style={{
+                ...ExploreTypography.caption,
+                color: ExploreColors.neutral[700],
+                lineHeight: 18,
+              }}
+            >
               {description}
             </Text>
           )}
-          <Text style={styles.categoryCount}>
+          <Text
+            className="font-semibold"
+            style={{
+              ...ExploreTypography.caption,
+              color: ExploreColors.neutral[600],
+              marginTop: ExploreSpacing.xs,
+            }}
+          >
             {category.verse_count} {contentLanguage === 'en' ? 'verses' : 'ayat'}
           </Text>
         </View>
 
         {/* Popular Badge */}
         {category.is_popular && (
-          <View style={styles.popularBadge}>
+          <View
+            className="absolute flex-row items-center"
+            style={{
+              top: ExploreSpacing.xs,
+              right: ExploreSpacing.xs,
+              backgroundColor: ExploreColors.secondary[100],
+              paddingHorizontal: ExploreSpacing.xs,
+              paddingVertical: 4,
+              borderRadius: 10,
+            }}
+          >
             <TrendingUp size={12} color={ExploreColors.secondary[700]} />
-            <Text style={styles.popularText}>
+            <Text
+              className="font-bold uppercase"
+              style={{
+                ...ExploreTypography.caption,
+                color: ExploreColors.secondary[800],
+                fontSize: 10,
+              }}
+            >
               {contentLanguage === 'en' ? 'Popular' : 'Populer'}
             </Text>
           </View>
@@ -202,108 +294,3 @@ function CategoryCard({ category, onPress, contentLanguage, index }: CategoryCar
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: ExploreSpacing.md,
-    paddingVertical: ExploreSpacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: ExploreColors.neutral[100],
-  },
-  backButton: {
-    padding: ExploreSpacing.xs,
-  },
-  headerTitle: {
-    ...ExploreTypography.h3,
-    color: ExploreColors.neutral[900],
-    flex: 1,
-    textAlign: 'center',
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: ExploreSpacing.xl,
-  },
-  loadingContainer: {
-    padding: ExploreSpacing.screenMargin,
-  },
-  description: {
-    ...ExploreTypography.body,
-    color: ExploreColors.neutral[700],
-    textAlign: 'center',
-    paddingHorizontal: ExploreSpacing.screenMargin,
-    paddingTop: ExploreSpacing.lg,
-    paddingBottom: ExploreSpacing.xl,
-    lineHeight: 24,
-  },
-  categoriesGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    paddingHorizontal: ExploreSpacing.screenMargin,
-    justifyContent: 'space-between',
-  },
-  categoryCardContainer: {
-    width: '48%',
-    marginBottom: ExploreSpacing.md,
-  },
-  categoryCard: {
-    padding: ExploreSpacing.lg,
-    minHeight: 180,
-    position: 'relative',
-  },
-  categoryIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: ExploreSpacing.md,
-  },
-  categoryContent: {
-  },
-  categoryName: {
-    ...ExploreTypography.h4,
-    color: ExploreColors.neutral[900],
-    fontSize: 16,
-    marginBottom: ExploreSpacing.xs,
-  },
-  categoryDescription: {
-    ...ExploreTypography.caption,
-    color: ExploreColors.neutral[700],
-    lineHeight: 18,
-  },
-  categoryCount: {
-    ...ExploreTypography.caption,
-    color: ExploreColors.neutral[600],
-    fontWeight: '600',
-    marginTop: ExploreSpacing.xs,
-  },
-  popularBadge: {
-    position: 'absolute',
-    top: ExploreSpacing.xs,
-    right: ExploreSpacing.xs,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: ExploreColors.secondary[100],
-    paddingHorizontal: ExploreSpacing.xs,
-    paddingVertical: 4,
-    borderRadius: 10,
-  },
-  popularIcon: {
-    marginRight: 4,
-  },
-  popularText: {
-    ...ExploreTypography.caption,
-    color: ExploreColors.secondary[800],
-    fontWeight: '700',
-    fontSize: 10,
-    textTransform: 'uppercase',
-  },
-});

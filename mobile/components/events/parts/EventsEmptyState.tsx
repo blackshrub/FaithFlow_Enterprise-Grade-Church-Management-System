@@ -2,10 +2,11 @@
  * EventsEmptyState - Empty State for Events
  *
  * Memoized empty state component with different states for each tab.
+ * Styling: NativeWind-first with inline style for spacing constants
  */
 
 import React, { memo, useMemo, useCallback } from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { View, Text, Pressable } from 'react-native';
 import { CalendarDays, Heart, Sparkles, ArrowRight } from 'lucide-react-native';
 import type { LucideIcon } from 'lucide-react-native';
 
@@ -36,19 +37,13 @@ interface EmptyContent {
 }
 
 // =============================================================================
-// COLORS
+// COLORS (for icon colors and dynamic backgrounds)
 // =============================================================================
 
 const Colors = {
-  neutral: {
-    200: '#e5e5e5',
-    400: '#a3a3a3',
-    500: '#737373',
-    800: '#262626',
-  },
-  gradient: {
-    end: '#0f3460',
-  },
+  neutral200: '#e5e5e5',
+  neutral400: '#a3a3a3',
+  gradientEnd: '#0f3460',
   white: '#ffffff',
 };
 
@@ -100,67 +95,47 @@ export const EventsEmptyState = memo(function EventsEmptyState({
   }, [content]);
 
   return (
-    <View style={styles.container}>
-      <View style={styles.iconWrap}>
-        <MemoIcon icon={content.icon} size={48} color={Colors.neutral[400]} />
+    <View
+      className="items-center"
+      style={{
+        paddingVertical: spacing.xxl + spacing.ml,
+        paddingHorizontal: spacing.xxl,
+      }}
+    >
+      <View
+        className="w-[100px] h-[100px] rounded-full items-center justify-center"
+        style={{ backgroundColor: Colors.neutral200, marginBottom: spacing.l }}
+      >
+        <MemoIcon icon={content.icon} size={48} color={Colors.neutral400} />
       </View>
-      <Text style={styles.title}>{content.title}</Text>
-      <Text style={styles.desc}>{content.desc}</Text>
-      <Pressable onPress={handleAction} style={styles.button}>
-        <Text style={styles.buttonText}>{content.action}</Text>
+      <Text
+        className="text-xl font-bold text-neutral-800 text-center"
+        style={{ marginBottom: spacing.s }}
+      >
+        {content.title}
+      </Text>
+      <Text
+        className="text-[15px] text-neutral-500 text-center leading-[22px]"
+        style={{ marginBottom: spacing.l }}
+      >
+        {content.desc}
+      </Text>
+      <Pressable
+        onPress={handleAction}
+        className="flex-row items-center"
+        style={{
+          backgroundColor: Colors.gradientEnd,
+          paddingHorizontal: spacing.l,
+          paddingVertical: spacing.sm,
+          borderRadius: spacing.l,
+          gap: spacing.s,
+        }}
+      >
+        <Text className="text-[15px] font-semibold text-white">{content.action}</Text>
         <MemoIcon icon={ArrowRight} size={18} color={Colors.white} />
       </Pressable>
     </View>
   );
-});
-
-// =============================================================================
-// STYLES
-// =============================================================================
-
-const styles = StyleSheet.create({
-  container: {
-    alignItems: 'center',
-    paddingVertical: spacing.xxl + spacing.ml,
-    paddingHorizontal: spacing.xxl,
-  },
-  iconWrap: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: Colors.neutral[200],
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.l,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: Colors.neutral[800],
-    marginBottom: spacing.s,
-    textAlign: 'center',
-  },
-  desc: {
-    fontSize: 15,
-    color: Colors.neutral[500],
-    textAlign: 'center',
-    marginBottom: spacing.l,
-    lineHeight: 22,
-  },
-  button: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.gradient.end,
-    paddingHorizontal: spacing.l,
-    paddingVertical: spacing.sm,
-    borderRadius: spacing.l,
-    gap: spacing.s,
-  },
-  buttonText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: Colors.white,
-  },
 });
 
 export default EventsEmptyState;

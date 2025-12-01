@@ -1,6 +1,10 @@
 /**
  * Devotion Detail Screen
  *
+ * Styling Strategy:
+ * - NativeWind (className) for all layout and styling
+ * - Inline style for: custom colors from ExploreColors
+ *
  * Handles both:
  * - Single Daily Devotions (dev_xxx IDs)
  * - Devotion Plans (plan_xxx IDs) with day-by-day navigation
@@ -13,18 +17,14 @@ import {
   Text,
   Image,
   ImageBackground,
-  StyleSheet,
   Pressable,
   Dimensions,
+  Share,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
-import {
-  ExploreColors,
-  ExploreTypography,
-  ExploreSpacing,
-} from '@/constants/explore/designSystem';
+import { ExploreColors } from '@/constants/explore/designSystem';
 import { formatBibleReference } from '@/constants/explore/bibleBooks';
 import {
   useDevotionPlan,
@@ -48,7 +48,6 @@ import {
   Play,
   Lock,
 } from 'lucide-react-native';
-import { Share } from 'react-native';
 import { DailyDevotionSkeleton } from '@/components/explore/LoadingSkeleton';
 import { MarkdownText } from '@/components/explore/MarkdownText';
 import { AudioPlayButton } from '@/components/explore/AudioPlayButton';
@@ -62,17 +61,11 @@ export default function DevotionDetailScreen() {
   const router = useRouter();
   const contentLanguage = useExploreStore((state) => state.contentLanguage);
 
-  // Try to fetch as daily devotion (dev_xxx) or devotion plan (plan_xxx)
   const { data: dailyDevotion, isLoading: isDailyLoading } = useDailyDevotion(id as string);
   const { data: plan, isLoading: isPlanLoading } = useDevotionPlan(id as string);
 
   const isLoading = isDailyLoading && isPlanLoading;
 
-  // Determine which type of content we have
-  const isDailyDevotion = !!dailyDevotion && !plan;
-  const isDevotionPlan = !!plan && !dailyDevotion;
-
-  // If we have a single daily devotion, show that view
   if (dailyDevotion && !plan) {
     return (
       <DailyDevotionView
@@ -83,7 +76,6 @@ export default function DevotionDetailScreen() {
     );
   }
 
-  // If we have a devotion plan, show the plan view
   if (plan) {
     return (
       <DevotionPlanView
@@ -94,32 +86,30 @@ export default function DevotionDetailScreen() {
     );
   }
 
-  // Loading state
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
-        <View style={styles.header}>
-          <Pressable onPress={() => router.back()} style={styles.backButton}>
+      <SafeAreaView className="flex-1 bg-white" edges={['top']}>
+        <View className="flex-row justify-between items-center px-3 py-2 border-b border-neutral-100">
+          <Pressable onPress={() => router.back()} className="p-1">
             <ArrowLeft size={24} color={ExploreColors.neutral[900]} />
           </Pressable>
         </View>
-        <ScrollView contentContainerStyle={styles.loadingContainer}>
+        <ScrollView contentContainerStyle={{ padding: 20 }}>
           <DailyDevotionSkeleton />
         </ScrollView>
       </SafeAreaView>
     );
   }
 
-  // No content found
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.backButton}>
+    <SafeAreaView className="flex-1 bg-white" edges={['top']}>
+      <View className="flex-row justify-between items-center px-3 py-2 border-b border-neutral-100">
+        <Pressable onPress={() => router.back()} className="p-1">
           <ArrowLeft size={24} color={ExploreColors.neutral[900]} />
         </Pressable>
       </View>
-      <View style={styles.errorContainer}>
-        <Text style={styles.errorText}>
+      <View className="flex-1 justify-center items-center p-5">
+        <Text className="text-base text-neutral-500">
           {contentLanguage === 'en' ? 'Content not found' : 'Konten tidak ditemukan'}
         </Text>
       </View>
@@ -142,19 +132,13 @@ function DailyDevotionView({ devotion, contentLanguage, onBack }: DailyDevotionV
   const content = devotion.content[contentLanguage] || devotion.content.en;
   const summary = devotion.summary?.[contentLanguage] || devotion.summary?.en;
 
-  // Get verse text for TTS
   const verseText = devotion.main_verse?.text
     ? (typeof devotion.main_verse.text === 'string'
         ? devotion.main_verse.text
         : devotion.main_verse.text?.[contentLanguage] || devotion.main_verse.text?.en || '')
     : '';
 
-  // Build TTS text: title + verse + beginning of content
-  const ttsText = [
-    title,
-    verseText,
-    content.substring(0, 500), // First 500 chars of content for preview
-  ].filter(Boolean).join('. ');
+  const ttsText = [title, verseText, content.substring(0, 500)].filter(Boolean).join('. ');
 
   const handleShare = async () => {
     try {
@@ -167,67 +151,38 @@ function DailyDevotionView({ devotion, contentLanguage, onBack }: DailyDevotionV
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Pressable
-          onPress={onBack}
-          style={styles.backButton}
-          accessibilityRole="button"
-          accessibilityLabel={contentLanguage === 'en' ? 'Go back' : 'Kembali'}
-        >
+    <SafeAreaView className="flex-1 bg-white" edges={['top']}>
+      <View className="flex-row justify-between items-center px-3 py-2 border-b border-neutral-100">
+        <Pressable onPress={onBack} className="p-1">
           <ArrowLeft size={24} color={ExploreColors.neutral[900]} />
         </Pressable>
-
-        <Pressable
-          onPress={handleShare}
-          style={styles.iconButton}
-          accessibilityRole="button"
-          accessibilityLabel={contentLanguage === 'en' ? 'Share' : 'Bagikan'}
-        >
+        <Pressable onPress={handleShare} className="p-1">
           <Share2 size={24} color={ExploreColors.neutral[600]} />
         </Pressable>
       </View>
 
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Hero Image - Slide in from right for page navigation feel */}
+      <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 24 }} showsVerticalScrollIndicator={false}>
         {devotion.image_url && (
           <Animated.View entering={SlideInRight.duration(250)}>
-            <ImageBackground
-              source={{ uri: devotion.image_url }}
-              style={styles.heroImage}
-            >
-              <LinearGradient
-                colors={['transparent', 'rgba(0,0,0,0.7)']}
-                style={styles.heroGradient}
-              >
-                {/* Reading Time Badge */}
+            <ImageBackground source={{ uri: devotion.image_url }} className="w-full h-[220px]">
+              <LinearGradient colors={['transparent', 'rgba(0,0,0,0.7)']} className="flex-1 p-3 justify-end">
                 {devotion.reading_time_minutes && (
-                  <View style={styles.heroBadge}>
+                  <View className="absolute top-3 right-3 flex-row items-center gap-1.5 bg-black/60 px-2 py-1.5 rounded-lg">
                     <Clock size={14} color="#FFFFFF" />
-                    <Text style={styles.heroBadgeText}>
+                    <Text className="text-white text-sm font-semibold">
                       {devotion.reading_time_minutes} {contentLanguage === 'en' ? 'min read' : 'menit baca'}
                     </Text>
                   </View>
                 )}
-
-                {/* Audio Play Button - Bottom Right (cached for 24h, preloads when page opens) */}
                 {ttsText && devotion.id && (
-                  <View style={styles.audioButtonOverlay}>
+                  <View className="absolute bottom-3 right-3">
                     <AudioPlayButton
                       text={ttsText}
                       variant="icon"
                       size={56}
                       color="#FFFFFF"
                       backgroundColor="rgba(0, 0, 0, 0.6)"
-                      cacheConfig={{
-                        contentType: 'devotion',
-                        contentId: devotion.id,
-                      }}
+                      cacheConfig={{ contentType: 'devotion', contentId: devotion.id }}
                       autoPreload
                     />
                   </View>
@@ -237,47 +192,56 @@ function DailyDevotionView({ devotion, contentLanguage, onBack }: DailyDevotionV
           </Animated.View>
         )}
 
-        <Animated.View
-          entering={SlideInRight.duration(250).delay(30)}
-          style={styles.contentContainer}
-        >
-          {/* Title */}
-          <Text style={styles.title}>{title}</Text>
+        <Animated.View entering={SlideInRight.duration(250).delay(30)} className="px-5 pt-6">
+          {/* Title with Audio Button */}
+          <View className="flex-row items-start justify-between mb-1">
+            <Text className="text-[32px] font-extrabold flex-1 mr-3" style={{ color: ExploreColors.neutral[900], lineHeight: 40, letterSpacing: -0.5 }}>
+              {title}
+            </Text>
+            {ttsText && devotion.id && (
+              <AudioPlayButton
+                text={ttsText}
+                variant="icon"
+                size={48}
+                color={ExploreColors.primary[500]}
+                backgroundColor={ExploreColors.primary[50]}
+                cacheConfig={{ contentType: 'devotion', contentId: devotion.id }}
+                autoPreload
+              />
+            )}
+          </View>
 
-          {/* Main Verse */}
           {devotion.main_verse && (
-            <View style={styles.verseContainer}>
-              <View style={styles.verseAccent} />
-              <View style={styles.verseContent}>
-                <Text style={styles.verseText}>
+            <View className="flex-row rounded-xl p-4 mb-6" style={{ backgroundColor: ExploreColors.spiritual[50] }}>
+              <View className="w-1 rounded-full mr-3" style={{ backgroundColor: ExploreColors.spiritual[500] }} />
+              <View className="flex-1">
+                <Text className="text-lg font-semibold italic mb-2" style={{ color: ExploreColors.neutral[900], lineHeight: 28 }}>
                   "{typeof devotion.main_verse.text === 'string'
                     ? devotion.main_verse.text
                     : devotion.main_verse.text?.[contentLanguage] || devotion.main_verse.text?.en || ''}"
                 </Text>
-                <Text style={styles.verseReference}>
+                <Text className="text-base font-semibold" style={{ color: ExploreColors.spiritual[700] }}>
                   {formatBibleReference(devotion.main_verse, contentLanguage)}
                 </Text>
               </View>
             </View>
           )}
 
-          {/* Main Content */}
-          <MarkdownText style={styles.dayContent}>{content}</MarkdownText>
+          <MarkdownText style={{ fontSize: 16, color: ExploreColors.neutral[800], lineHeight: 28, marginBottom: 24 }}>
+            {content}
+          </MarkdownText>
 
-          {/* Additional Verses */}
           {devotion.additional_verses && devotion.additional_verses.length > 0 && (
-            <View style={styles.additionalVersesSection}>
-              <Text style={styles.sectionTitle}>
+            <View className="mb-6">
+              <Text className="text-lg font-semibold mb-3" style={{ color: ExploreColors.neutral[900], lineHeight: 24 }}>
                 {contentLanguage === 'en' ? 'Related Verses' : 'Ayat Terkait'}
               </Text>
               {devotion.additional_verses.map((verse, index) => (
-                <View key={index} style={styles.additionalVerse}>
-                  <Text style={styles.additionalVerseText}>
-                    "{typeof verse.text === 'string'
-                      ? verse.text
-                      : verse.text?.[contentLanguage] || verse.text?.en || ''}"
+                <View key={index} className="rounded-xl p-3 mb-2" style={{ backgroundColor: ExploreColors.neutral[50] }}>
+                  <Text className="text-base italic mb-1" style={{ color: ExploreColors.neutral[800] }}>
+                    "{typeof verse.text === 'string' ? verse.text : verse.text?.[contentLanguage] || verse.text?.en || ''}"
                   </Text>
-                  <Text style={styles.additionalVerseReference}>
+                  <Text className="text-[13px] font-semibold" style={{ color: ExploreColors.neutral[600] }}>
                     {formatBibleReference(verse, contentLanguage)}
                   </Text>
                 </View>
@@ -285,19 +249,17 @@ function DailyDevotionView({ devotion, contentLanguage, onBack }: DailyDevotionV
             </View>
           )}
 
-          {/* Tags */}
           {devotion.tags && devotion.tags.length > 0 && (
-            <View style={styles.tagsContainer}>
+            <View className="flex-row flex-wrap gap-2 mt-4">
               {devotion.tags.map((tag, index) => (
-                <View key={index} style={styles.tag}>
-                  <Text style={styles.tagText}>{tag}</Text>
+                <View key={index} className="px-3 py-1.5 rounded-2xl" style={{ backgroundColor: ExploreColors.primary[50] }}>
+                  <Text className="text-[13px] font-medium" style={{ color: ExploreColors.primary[700] }}>{tag}</Text>
                 </View>
               ))}
             </View>
           )}
 
-          {/* Bottom spacing */}
-          <View style={{ height: 40 }} />
+          <View className="h-10" />
         </Animated.View>
       </ScrollView>
     </SafeAreaView>
@@ -316,18 +278,11 @@ interface DevotionPlanViewProps {
 
 function DevotionPlanView({ plan, contentLanguage, onBack }: DevotionPlanViewProps) {
   const router = useRouter();
-
-  // State for current view
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
-
-  // Data queries
   const { data: progress } = useSinglePlanProgress(plan.id);
-
-  // Mutations
   const subscribeToPlan = useSubscribeToPlan();
   const completePlanDay = useCompletePlanDay();
 
-  // Set initial day when plan loads
   useEffect(() => {
     if (plan && progress?.subscribed && progress.current_day > 0) {
       setSelectedDay(progress.current_day);
@@ -349,11 +304,7 @@ function DevotionPlanView({ plan, contentLanguage, onBack }: DevotionPlanViewPro
   const handleCompleteDay = async () => {
     if (!plan.id || !selectedDay) return;
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    await completePlanDay.mutateAsync({
-      planId: plan.id,
-      dayNumber: selectedDay,
-    });
-
+    await completePlanDay.mutateAsync({ planId: plan.id, dayNumber: selectedDay });
     if (selectedDay < plan.duration_days) {
       setTimeout(() => setSelectedDay(selectedDay + 1), 500);
     }
@@ -362,37 +313,26 @@ function DevotionPlanView({ plan, contentLanguage, onBack }: DevotionPlanViewPro
   const handleShare = async () => {
     const title = plan.title[contentLanguage] || plan.title.en;
     const description = plan.description?.[contentLanguage] || plan.description?.en || '';
-
     try {
       await Share.share({
-        message: `📖 ${title}\n\n${description}\n\n${plan.duration_days} ${
-          contentLanguage === 'en' ? 'day devotion plan' : 'hari rencana renungan'
-        }\n\nShared from FaithFlow`,
+        message: `📖 ${title}\n\n${description}\n\n${plan.duration_days} ${contentLanguage === 'en' ? 'day devotion plan' : 'hari rencana renungan'}\n\nShared from FaithFlow`,
       });
     } catch (error) {
       console.error('Error sharing:', error);
     }
   };
 
-  const isDayCompleted = useCallback(
-    (dayNum: number) => completedDays.includes(dayNum),
-    [completedDays]
-  );
-
-  const isDayAccessible = useCallback(
-    (dayNum: number) => {
-      if (!isSubscribed) return false;
-      return dayNum <= currentDay || dayNum === 1;
-    },
-    [isSubscribed, currentDay]
-  );
+  const isDayCompleted = useCallback((dayNum: number) => completedDays.includes(dayNum), [completedDays]);
+  const isDayAccessible = useCallback((dayNum: number) => {
+    if (!isSubscribed) return false;
+    return dayNum <= currentDay || dayNum === 1;
+  }, [isSubscribed, currentDay]);
 
   const title = plan.title[contentLanguage] || plan.title.en;
   const subtitle = plan.subtitle?.[contentLanguage] || plan.subtitle?.en;
   const description = plan.description?.[contentLanguage] || plan.description?.en || '';
   const introduction = plan.introduction?.[contentLanguage] || plan.introduction?.en;
 
-  // If a day is selected, show day content
   if (selectedDay !== null && plan.plan_days && plan.plan_days.length > 0) {
     const dayData = plan.plan_days.find((d) => d.day_number === selectedDay);
     if (dayData) {
@@ -406,11 +346,7 @@ function DevotionPlanView({ plan, contentLanguage, onBack }: DevotionPlanViewPro
           onBack={() => setSelectedDay(null)}
           onComplete={handleCompleteDay}
           onPrevDay={() => selectedDay > 1 && setSelectedDay(selectedDay - 1)}
-          onNextDay={() =>
-            selectedDay < plan.duration_days &&
-            isDayAccessible(selectedDay + 1) &&
-            setSelectedDay(selectedDay + 1)
-          }
+          onNextDay={() => selectedDay < plan.duration_days && isDayAccessible(selectedDay + 1) && setSelectedDay(selectedDay + 1)}
           contentLanguage={contentLanguage}
           isPending={completePlanDay.isPending}
         />
@@ -418,120 +354,80 @@ function DevotionPlanView({ plan, contentLanguage, onBack }: DevotionPlanViewPro
     }
   }
 
-  // Plan overview screen
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Pressable
-          onPress={onBack}
-          style={styles.backButton}
-          accessibilityRole="button"
-          accessibilityLabel={contentLanguage === 'en' ? 'Go back' : 'Kembali'}
-        >
+    <SafeAreaView className="flex-1 bg-white" edges={['top']}>
+      <View className="flex-row justify-between items-center px-3 py-2 border-b border-neutral-100">
+        <Pressable onPress={onBack} className="p-1">
           <ArrowLeft size={24} color={ExploreColors.neutral[900]} />
         </Pressable>
-
-        <Pressable
-          onPress={handleShare}
-          style={styles.iconButton}
-          accessibilityRole="button"
-          accessibilityLabel={contentLanguage === 'en' ? 'Share this plan' : 'Bagikan rencana ini'}
-        >
+        <Pressable onPress={handleShare} className="p-1">
           <Share2 size={24} color={ExploreColors.neutral[600]} />
         </Pressable>
       </View>
 
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Hero Image */}
+      <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 24 }} showsVerticalScrollIndicator={false}>
         <Animated.View entering={FadeIn.duration(400)}>
           <ImageBackground
-            source={{
-              uri: plan.cover_image_url || 'https://images.unsplash.com/photo-1504052434569-70ad5836ab65?w=800',
-            }}
-            style={styles.heroImage}
+            source={{ uri: plan.cover_image_url || 'https://images.unsplash.com/photo-1504052434569-70ad5836ab65?w=800' }}
+            className="w-full h-[220px]"
           >
-            <LinearGradient
-              colors={['transparent', 'rgba(0,0,0,0.8)']}
-              style={styles.heroGradient}
-            >
-              {/* Duration Badge */}
-              <View style={styles.heroBadge}>
+            <LinearGradient colors={['transparent', 'rgba(0,0,0,0.8)']} className="flex-1 p-3 justify-end">
+              <View className="absolute top-3 right-3 flex-row items-center gap-1.5 bg-black/60 px-2 py-1.5 rounded-lg">
                 <Calendar size={16} color="#FFFFFF" />
-                <Text style={styles.heroBadgeText}>
+                <Text className="text-white text-sm font-semibold">
                   {plan.duration_days} {contentLanguage === 'en' ? 'Days' : 'Hari'}
                 </Text>
               </View>
-
-              {/* Completed Badge */}
               {isCompleted && (
-                <View style={styles.heroCompletedBadge}>
+                <View className="absolute top-3 left-3 flex-row items-center gap-1.5 px-2 py-1.5 rounded-lg" style={{ backgroundColor: ExploreColors.success[500] }}>
                   <CheckCircle2 size={16} color="#FFFFFF" fill="#FFFFFF" />
-                  <Text style={styles.heroCompletedText}>
-                    {contentLanguage === 'en' ? 'Completed' : 'Selesai'}
-                  </Text>
+                  <Text className="text-white text-[13px] font-bold">{contentLanguage === 'en' ? 'Completed' : 'Selesai'}</Text>
                 </View>
               )}
             </LinearGradient>
           </ImageBackground>
         </Animated.View>
 
-        <Animated.View
-          entering={FadeInDown.duration(500).delay(200)}
-          style={styles.contentContainer}
-        >
-          {/* Title & Subtitle */}
-          <Text style={styles.title}>{title}</Text>
-          {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
+        <Animated.View entering={FadeInDown.duration(500).delay(200)} className="px-5 pt-6">
+          <Text className="text-[36px] font-extrabold mb-1" style={{ color: ExploreColors.neutral[900], lineHeight: 44, letterSpacing: -0.5 }}>
+            {title}
+          </Text>
+          {subtitle && <Text className="text-base italic mb-3" style={{ color: ExploreColors.neutral[600] }}>{subtitle}</Text>}
+          <Text className="text-base mb-4" style={{ color: ExploreColors.neutral[700], lineHeight: 26 }}>{description}</Text>
 
-          {/* Description */}
-          <Text style={styles.description}>{description}</Text>
-
-          {/* Introduction */}
           {introduction && (
-            <View style={styles.introSection}>
-              <Text style={styles.sectionTitle}>
+            <View className="mb-6">
+              <Text className="text-lg font-semibold mb-3" style={{ color: ExploreColors.neutral[900], lineHeight: 24 }}>
                 {contentLanguage === 'en' ? 'Introduction' : 'Pendahuluan'}
               </Text>
-              <Text style={styles.introText}>{introduction}</Text>
+              <Text className="text-base" style={{ color: ExploreColors.neutral[700], lineHeight: 26 }}>{introduction}</Text>
             </View>
           )}
 
-          {/* Progress Section (if subscribed) */}
           {isSubscribed && !isCompleted && (
-            <View style={styles.progressSection}>
-              <View style={styles.progressHeader}>
-                <Text style={styles.progressLabel}>
-                  {contentLanguage === 'en'
-                    ? `Day ${currentDay} of ${plan.duration_days}`
-                    : `Hari ${currentDay} dari ${plan.duration_days}`}
+            <View className="mb-6 gap-2">
+              <View className="flex-row justify-between items-center">
+                <Text className="text-base" style={{ color: ExploreColors.neutral[600] }}>
+                  {contentLanguage === 'en' ? `Day ${currentDay} of ${plan.duration_days}` : `Hari ${currentDay} dari ${plan.duration_days}`}
                 </Text>
-                <Text style={styles.progressPercent}>
+                <Text className="text-base font-bold" style={{ color: ExploreColors.primary[600] }}>
                   {Math.round((completedDays.length / plan.duration_days) * 100)}%
                 </Text>
               </View>
-              <View style={styles.progressBarBg}>
+              <View className="h-2 rounded overflow-hidden" style={{ backgroundColor: ExploreColors.neutral[100] }}>
                 <View
-                  style={[
-                    styles.progressBarFill,
-                    { width: `${(completedDays.length / plan.duration_days) * 100}%` },
-                  ]}
+                  className="h-full rounded"
+                  style={{ width: `${(completedDays.length / plan.duration_days) * 100}%`, backgroundColor: ExploreColors.primary[500] }}
                 />
               </View>
             </View>
           )}
 
-          {/* Day Selector */}
-          <View style={styles.daySelector}>
-            <Text style={styles.sectionTitle}>
+          <View className="mt-3">
+            <Text className="text-lg font-semibold mb-3" style={{ color: ExploreColors.neutral[900], lineHeight: 24 }}>
               {contentLanguage === 'en' ? 'Daily Devotions' : 'Renungan Harian'}
             </Text>
-
-            <View style={styles.daysGrid}>
+            <View className="gap-2">
               {plan.plan_days?.map((day, index) => {
                 const dayNum = day.day_number;
                 const completed = isDayCompleted(dayNum);
@@ -539,10 +435,7 @@ function DevotionPlanView({ plan, contentLanguage, onBack }: DevotionPlanViewPro
                 const isCurrent = dayNum === currentDay;
 
                 return (
-                  <Animated.View
-                    key={dayNum}
-                    entering={FadeInRight.duration(300).delay(index * 50)}
-                  >
+                  <Animated.View key={dayNum} entering={FadeInRight.duration(300).delay(index * 50)}>
                     <Pressable
                       onPress={() => {
                         if (accessible) {
@@ -550,89 +443,65 @@ function DevotionPlanView({ plan, contentLanguage, onBack }: DevotionPlanViewPro
                           setSelectedDay(dayNum);
                         }
                       }}
-                      style={[
-                        styles.dayCard,
-                        completed && styles.dayCardCompleted,
-                        isCurrent && !completed && styles.dayCardCurrent,
-                        !accessible && styles.dayCardLocked,
-                      ]}
+                      className={`flex-row items-center rounded-xl p-3 gap-3 ${
+                        completed ? 'border' : isCurrent && !completed ? 'border-2' : ''
+                      } ${!accessible ? 'opacity-60' : ''}`}
+                      style={{
+                        backgroundColor: completed
+                          ? ExploreColors.success[50]
+                          : isCurrent
+                          ? ExploreColors.primary[50]
+                          : ExploreColors.neutral[50],
+                        borderColor: completed
+                          ? ExploreColors.success[200]
+                          : isCurrent
+                          ? ExploreColors.primary[500]
+                          : 'transparent',
+                      }}
                     >
-                      {/* Day Number */}
                       <View
-                        style={[
-                          styles.dayNumber,
-                          completed && styles.dayNumberCompleted,
-                          isCurrent && !completed && styles.dayNumberCurrent,
-                        ]}
+                        className="w-9 h-9 rounded-full items-center justify-center"
+                        style={{
+                          backgroundColor: completed
+                            ? ExploreColors.success[500]
+                            : isCurrent
+                            ? ExploreColors.primary[500]
+                            : ExploreColors.neutral[200],
+                        }}
                       >
                         {completed ? (
                           <Check size={16} color="#FFFFFF" />
                         ) : !accessible ? (
                           <Lock size={14} color={ExploreColors.neutral[400]} />
                         ) : (
-                          <Text
-                            style={[
-                              styles.dayNumberText,
-                              isCurrent && styles.dayNumberTextCurrent,
-                            ]}
-                          >
+                          <Text className={`text-base font-bold ${isCurrent ? 'text-white' : ''}`} style={{ color: isCurrent ? '#FFFFFF' : ExploreColors.neutral[600] }}>
                             {dayNum}
                           </Text>
                         )}
                       </View>
 
-                      {/* Day Title */}
-                      <View style={styles.dayInfo}>
-                        <Text
-                          style={[
-                            styles.dayLabel,
-                            !accessible && styles.dayLabelLocked,
-                          ]}
-                        >
+                      <View className="flex-1">
+                        <Text className="text-[10px] font-semibold uppercase" style={{ color: accessible ? ExploreColors.neutral[500] : ExploreColors.neutral[400] }}>
                           {contentLanguage === 'en' ? 'Day' : 'Hari'} {dayNum}
                         </Text>
                         <Text
-                          style={[
-                            styles.dayTitle,
-                            !accessible && styles.dayTitleLocked,
-                          ]}
+                          className="text-base font-semibold mt-0.5"
                           numberOfLines={2}
+                          style={{ color: accessible ? ExploreColors.neutral[800] : ExploreColors.neutral[500] }}
                         >
                           {day.title[contentLanguage] || day.title.en}
                         </Text>
                         {day.reading_time_minutes && (
-                          <View style={styles.dayMeta}>
-                            <Clock
-                              size={12}
-                              color={
-                                accessible
-                                  ? ExploreColors.neutral[500]
-                                  : ExploreColors.neutral[300]
-                              }
-                            />
-                            <Text
-                              style={[
-                                styles.dayMetaText,
-                                !accessible && styles.dayMetaTextLocked,
-                              ]}
-                            >
+                          <View className="flex-row items-center gap-1 mt-1">
+                            <Clock size={12} color={accessible ? ExploreColors.neutral[500] : ExploreColors.neutral[300]} />
+                            <Text className="text-[13px]" style={{ color: accessible ? ExploreColors.neutral[500] : ExploreColors.neutral[300] }}>
                               {day.reading_time_minutes} {contentLanguage === 'en' ? 'min' : 'mnt'}
                             </Text>
                           </View>
                         )}
                       </View>
 
-                      {/* Arrow */}
-                      {accessible && (
-                        <ChevronRight
-                          size={20}
-                          color={
-                            completed
-                              ? ExploreColors.success[500]
-                              : ExploreColors.neutral[400]
-                          }
-                        />
-                      )}
+                      {accessible && <ChevronRight size={20} color={completed ? ExploreColors.success[500] : ExploreColors.neutral[400]} />}
                     </Pressable>
                   </Animated.View>
                 );
@@ -640,42 +509,36 @@ function DevotionPlanView({ plan, contentLanguage, onBack }: DevotionPlanViewPro
             </View>
           </View>
 
-          {/* Bottom spacing */}
-          <View style={{ height: 100 }} />
+          <View className="h-[100px]" />
         </Animated.View>
       </ScrollView>
 
-      {/* Subscribe/Continue Button */}
       {!isSubscribed ? (
-        <View style={styles.bottomContainer}>
+        <View className="absolute bottom-0 left-0 right-0 p-5 bg-white border-t border-neutral-100">
           <Pressable
             onPress={handleSubscribe}
-            style={styles.subscribeButton}
             disabled={subscribeToPlan.isPending}
+            className="flex-row items-center justify-center gap-2 py-3 rounded-2xl"
+            style={{ backgroundColor: ExploreColors.primary[500] }}
           >
             <BookOpen size={20} color="#FFFFFF" />
-            <Text style={styles.subscribeButtonText}>
+            <Text className="text-base font-bold text-white">
               {subscribeToPlan.isPending
-                ? contentLanguage === 'en'
-                  ? 'Starting...'
-                  : 'Memulai...'
-                : contentLanguage === 'en'
-                ? 'Start This Plan'
-                : 'Mulai Rencana Ini'}
+                ? contentLanguage === 'en' ? 'Starting...' : 'Memulai...'
+                : contentLanguage === 'en' ? 'Start This Plan' : 'Mulai Rencana Ini'}
             </Text>
           </Pressable>
         </View>
       ) : !isCompleted ? (
-        <View style={styles.bottomContainer}>
+        <View className="absolute bottom-0 left-0 right-0 p-5 bg-white border-t border-neutral-100">
           <Pressable
             onPress={() => setSelectedDay(currentDay)}
-            style={styles.continueButton}
+            className="flex-row items-center justify-center gap-2 py-3 rounded-2xl"
+            style={{ backgroundColor: ExploreColors.primary[500] }}
           >
             <Play size={20} color="#FFFFFF" fill="#FFFFFF" />
-            <Text style={styles.continueButtonText}>
-              {contentLanguage === 'en'
-                ? `Continue Day ${currentDay}`
-                : `Lanjutkan Hari ${currentDay}`}
+            <Text className="text-base font-bold text-white">
+              {contentLanguage === 'en' ? `Continue Day ${currentDay}` : `Lanjutkan Hari ${currentDay}`}
             </Text>
           </Pressable>
         </View>
@@ -720,93 +583,45 @@ function DayContentView({
   const prayer = day.prayer?.[contentLanguage] || day.prayer?.en;
   const planTitle = plan.title[contentLanguage] || plan.title.en;
 
-  // Build TTS text: title + verse + content + prayer
   const verseText = day.main_verse?.text || '';
-  const ttsText = [
-    title,
-    verseText,
-    content.substring(0, 500),
-    prayer,
-  ].filter(Boolean).join('. ');
+  const ttsText = [title, verseText, content.substring(0, 500), prayer].filter(Boolean).join('. ');
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Pressable
-          onPress={onBack}
-          style={styles.backButton}
-          accessibilityRole="button"
-          accessibilityLabel={contentLanguage === 'en' ? 'Back to plan' : 'Kembali ke rencana'}
-        >
+    <SafeAreaView className="flex-1 bg-white" edges={['top']}>
+      <View className="flex-row justify-between items-center px-3 py-2 border-b border-neutral-100">
+        <Pressable onPress={onBack} className="p-1">
           <ArrowLeft size={24} color={ExploreColors.neutral[900]} />
         </Pressable>
 
-        {/* Day Navigation */}
-        <View style={styles.dayNav}>
-          <Pressable
-            onPress={onPrevDay}
-            disabled={dayNumber === 1}
-            style={[
-              styles.dayNavButton,
-              dayNumber === 1 && styles.dayNavButtonDisabled,
-            ]}
-          >
-            <ChevronLeft
-              size={20}
-              color={dayNumber === 1 ? ExploreColors.neutral[300] : ExploreColors.neutral[700]}
-            />
+        <View className="flex-row items-center gap-2">
+          <Pressable onPress={onPrevDay} disabled={dayNumber === 1} className={`p-1 ${dayNumber === 1 ? 'opacity-50' : ''}`}>
+            <ChevronLeft size={20} color={dayNumber === 1 ? ExploreColors.neutral[300] : ExploreColors.neutral[700]} />
           </Pressable>
-
-          <Text style={styles.dayNavText}>
+          <Text className="text-base font-semibold" style={{ color: ExploreColors.neutral[700] }}>
             {contentLanguage === 'en' ? 'Day' : 'Hari'} {dayNumber}/{totalDays}
           </Text>
-
-          <Pressable
-            onPress={onNextDay}
-            disabled={dayNumber === totalDays}
-            style={[
-              styles.dayNavButton,
-              dayNumber === totalDays && styles.dayNavButtonDisabled,
-            ]}
-          >
-            <ChevronRight
-              size={20}
-              color={dayNumber === totalDays ? ExploreColors.neutral[300] : ExploreColors.neutral[700]}
-            />
+          <Pressable onPress={onNextDay} disabled={dayNumber === totalDays} className={`p-1 ${dayNumber === totalDays ? 'opacity-50' : ''}`}>
+            <ChevronRight size={20} color={dayNumber === totalDays ? ExploreColors.neutral[300] : ExploreColors.neutral[700]} />
           </Pressable>
         </View>
 
-        <View style={{ width: 40 }} />
+        <View className="w-10" />
       </View>
 
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Day Image with Audio Button Overlay */}
+      <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 24 }} showsVerticalScrollIndicator={false}>
         {day.image_url && (
           <Animated.View entering={FadeIn.duration(400)}>
-            <View style={styles.dayImageContainer}>
-              <Image
-                source={{ uri: day.image_url }}
-                style={styles.dayImage}
-                resizeMode="cover"
-              />
-              {/* Audio Play Button - Bottom Right (cached for 24h, preloads when page opens) */}
+            <View className="relative w-full">
+              <Image source={{ uri: day.image_url }} className="w-full h-[200px]" resizeMode="cover" />
               {ttsText && plan.id && (
-                <View style={styles.audioButtonOverlay}>
+                <View className="absolute bottom-3 right-3">
                   <AudioPlayButton
                     text={ttsText}
                     variant="icon"
                     size={56}
                     color="#FFFFFF"
                     backgroundColor="rgba(0, 0, 0, 0.6)"
-                    cacheConfig={{
-                      contentType: 'devotion',
-                      contentId: `${plan.id}_day${dayNumber}`,
-                    }}
+                    cacheConfig={{ contentType: 'devotion', contentId: `${plan.id}_day${dayNumber}` }}
                     autoPreload
                   />
                 </View>
@@ -815,52 +630,60 @@ function DayContentView({
           </Animated.View>
         )}
 
-        <Animated.View
-          entering={FadeInDown.duration(500).delay(200)}
-          style={styles.contentContainer}
-        >
-          {/* Plan Title */}
-          <Text style={styles.planTitleSmall}>{planTitle}</Text>
+        <Animated.View entering={FadeInDown.duration(500).delay(200)} className="px-5 pt-6">
+          <Text className="text-[13px] font-semibold uppercase mb-1" style={{ color: ExploreColors.primary[600] }}>{planTitle}</Text>
+          {/* Title with Audio Button */}
+          <View className="flex-row items-start justify-between mb-2">
+            <Text className="text-[26px] font-bold flex-1 mr-3" style={{ color: ExploreColors.neutral[900], lineHeight: 34, letterSpacing: -0.3 }}>{title}</Text>
+            {ttsText && plan.id && (
+              <AudioPlayButton
+                text={ttsText}
+                variant="icon"
+                size={44}
+                color={ExploreColors.primary[500]}
+                backgroundColor={ExploreColors.primary[50]}
+                cacheConfig={{ contentType: 'devotion', contentId: `${plan.id}_day${dayNumber}` }}
+                autoPreload
+              />
+            )}
+          </View>
 
-          {/* Day Title */}
-          <Text style={styles.dayContentTitle}>{title}</Text>
-
-          {/* Reading Time */}
           {day.reading_time_minutes && (
-            <View style={styles.readingTimeRow}>
+            <View className="flex-row items-center gap-1.5 mb-4">
               <Clock size={14} color={ExploreColors.neutral[500]} />
-              <Text style={styles.readingTimeText}>
+              <Text className="text-[13px]" style={{ color: ExploreColors.neutral[500] }}>
                 {day.reading_time_minutes} {contentLanguage === 'en' ? 'min read' : 'menit baca'}
               </Text>
             </View>
           )}
 
-          {/* Main Verse */}
           {day.main_verse && (
-            <View style={styles.verseContainer}>
-              <View style={styles.verseAccent} />
-              <View style={styles.verseContent}>
-                <Text style={styles.verseText}>"{day.main_verse.text || ''}"</Text>
-                <Text style={styles.verseReference}>
+            <View className="flex-row rounded-xl p-4 mb-6" style={{ backgroundColor: ExploreColors.spiritual[50] }}>
+              <View className="w-1 rounded-full mr-3" style={{ backgroundColor: ExploreColors.spiritual[500] }} />
+              <View className="flex-1">
+                <Text className="text-lg font-semibold italic mb-2" style={{ color: ExploreColors.neutral[900], lineHeight: 28 }}>
+                  "{day.main_verse.text || ''}"
+                </Text>
+                <Text className="text-base font-semibold" style={{ color: ExploreColors.spiritual[700] }}>
                   {formatBibleReference(day.main_verse, contentLanguage)}
                 </Text>
               </View>
             </View>
           )}
 
-          {/* Content */}
-          <MarkdownText style={styles.dayContent}>{content}</MarkdownText>
+          <MarkdownText style={{ fontSize: 16, color: ExploreColors.neutral[800], lineHeight: 28, marginBottom: 24 }}>
+            {content}
+          </MarkdownText>
 
-          {/* Additional Verses */}
           {day.additional_verses && day.additional_verses.length > 0 && (
-            <View style={styles.additionalVersesSection}>
-              <Text style={styles.sectionTitle}>
+            <View className="mb-6">
+              <Text className="text-lg font-semibold mb-3" style={{ color: ExploreColors.neutral[900], lineHeight: 24 }}>
                 {contentLanguage === 'en' ? 'Related Verses' : 'Ayat Terkait'}
               </Text>
               {day.additional_verses.map((verse, index) => (
-                <View key={index} style={styles.additionalVerse}>
-                  <Text style={styles.additionalVerseText}>"{verse.text || ''}"</Text>
-                  <Text style={styles.additionalVerseReference}>
+                <View key={index} className="rounded-xl p-3 mb-2" style={{ backgroundColor: ExploreColors.neutral[50] }}>
+                  <Text className="text-base italic mb-1" style={{ color: ExploreColors.neutral[800] }}>"{verse.text || ''}"</Text>
+                  <Text className="text-[13px] font-semibold" style={{ color: ExploreColors.neutral[600] }}>
                     {formatBibleReference(verse, contentLanguage)}
                   </Text>
                 </View>
@@ -868,69 +691,66 @@ function DayContentView({
             </View>
           )}
 
-          {/* Reflection Questions */}
           {day.reflection_questions && day.reflection_questions.length > 0 && (
-            <View style={styles.reflectionSection}>
-              <Text style={styles.sectionTitle}>
+            <View className="mb-6">
+              <Text className="text-lg font-semibold mb-3" style={{ color: ExploreColors.neutral[900], lineHeight: 24 }}>
                 {contentLanguage === 'en' ? 'Reflection Questions' : 'Pertanyaan Refleksi'}
               </Text>
               {day.reflection_questions.map((q, index) => {
                 const question = q[contentLanguage] || q.en;
                 return (
-                  <View key={index} style={styles.reflectionItem}>
-                    <Text style={styles.reflectionNumber}>{index + 1}</Text>
-                    <Text style={styles.reflectionText}>{question}</Text>
+                  <View key={index} className="flex-row gap-2 mb-2">
+                    <Text
+                      className="w-6 h-6 rounded-full text-center text-[13px] font-bold"
+                      style={{ backgroundColor: ExploreColors.primary[100], color: ExploreColors.primary[700], lineHeight: 24 }}
+                    >
+                      {index + 1}
+                    </Text>
+                    <Text className="flex-1 text-base" style={{ color: ExploreColors.neutral[700], lineHeight: 24 }}>{question}</Text>
                   </View>
                 );
               })}
             </View>
           )}
 
-          {/* Prayer */}
           {prayer && (
-            <View style={styles.prayerSection}>
-              <Text style={styles.sectionTitle}>
+            <View className="mb-6">
+              <Text className="text-lg font-semibold mb-3" style={{ color: ExploreColors.neutral[900], lineHeight: 24 }}>
                 {contentLanguage === 'en' ? 'Closing Prayer' : 'Doa Penutup'}
               </Text>
-              <View style={styles.prayerContainer}>
-                <Text style={styles.prayerText}>{prayer}</Text>
+              <View className="rounded-xl p-4" style={{ backgroundColor: ExploreColors.spiritual[50] }}>
+                <Text className="text-base italic" style={{ color: ExploreColors.neutral[800], lineHeight: 26 }}>{prayer}</Text>
               </View>
             </View>
           )}
 
-          {/* Bottom spacing */}
-          <View style={{ height: 120 }} />
+          <View className="h-[120px]" />
         </Animated.View>
       </ScrollView>
 
-      {/* Complete Button */}
       {!isCompleted && (
-        <View style={styles.bottomContainer}>
+        <View className="absolute bottom-0 left-0 right-0 p-5 bg-white border-t border-neutral-100">
           <Pressable
             onPress={onComplete}
-            style={[styles.completeButton, isPending && styles.completeButtonDisabled]}
             disabled={isPending}
+            className={`flex-row items-center justify-center gap-2 py-3 rounded-2xl ${isPending ? 'opacity-60' : ''}`}
+            style={{ backgroundColor: ExploreColors.success[500] }}
           >
             <Check size={20} color="#FFFFFF" />
-            <Text style={styles.completeButtonText}>
+            <Text className="text-base font-bold text-white">
               {isPending
-                ? contentLanguage === 'en'
-                  ? 'Completing...'
-                  : 'Menyelesaikan...'
-                : contentLanguage === 'en'
-                ? 'Mark Day as Complete'
-                : 'Tandai Hari Selesai'}
+                ? contentLanguage === 'en' ? 'Completing...' : 'Menyelesaikan...'
+                : contentLanguage === 'en' ? 'Mark Day as Complete' : 'Tandai Hari Selesai'}
             </Text>
           </Pressable>
         </View>
       )}
 
-      {/* Completed Badge */}
       {isCompleted && (
-        <View style={styles.completedBadgeContainer}>
-          <View style={styles.completedBadge}>
+        <View className="absolute bottom-5 left-0 right-0 items-center">
+          <View className="flex-row items-center gap-1 px-4 py-2 rounded-3xl" style={{ backgroundColor: ExploreColors.success[50] }}>
             <CheckCircle2 size={16} color={ExploreColors.success[600]} />
-            <Text style={styles.completedText}>
+            <Text className="text-base font-semibold" style={{ color: ExploreColors.success[700] }}>
               {contentLanguage === 'en' ? 'Day Completed' : 'Hari Selesai'}
             </Text>
           </View>
@@ -939,484 +759,3 @@ function DayContentView({
     </SafeAreaView>
   );
 }
-
-// ============================================================================
-// STYLES
-// ============================================================================
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: ExploreSpacing.md,
-    paddingVertical: ExploreSpacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: ExploreColors.neutral[100],
-  },
-  backButton: {
-    padding: ExploreSpacing.xs,
-  },
-  iconButton: {
-    padding: ExploreSpacing.xs,
-  },
-  headerActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: ExploreSpacing.sm,
-  },
-  dayNav: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: ExploreSpacing.sm,
-  },
-  dayNavButton: {
-    padding: ExploreSpacing.xs,
-  },
-  dayNavButtonDisabled: {
-    opacity: 0.5,
-  },
-  dayNavText: {
-    ...ExploreTypography.body,
-    color: ExploreColors.neutral[700],
-    fontWeight: '600',
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: ExploreSpacing.xl,
-  },
-  loadingContainer: {
-    padding: ExploreSpacing.screenMargin,
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: ExploreSpacing.screenMargin,
-  },
-  errorText: {
-    ...ExploreTypography.body,
-    color: ExploreColors.neutral[500],
-  },
-  heroImage: {
-    width: '100%',
-    height: 220,
-  },
-  heroGradient: {
-    flex: 1,
-    padding: ExploreSpacing.md,
-    justifyContent: 'flex-end',
-  },
-  heroBadge: {
-    position: 'absolute',
-    top: ExploreSpacing.md,
-    right: ExploreSpacing.md,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    paddingHorizontal: ExploreSpacing.sm,
-    paddingVertical: 6,
-    borderRadius: 8,
-  },
-  heroBadgeText: {
-    ...ExploreTypography.body,
-    color: '#FFFFFF',
-    fontWeight: '600',
-    fontSize: 14,
-  },
-  audioButtonOverlay: {
-    position: 'absolute',
-    bottom: ExploreSpacing.md,
-    right: ExploreSpacing.md,
-  },
-  heroCompletedBadge: {
-    position: 'absolute',
-    top: ExploreSpacing.md,
-    left: ExploreSpacing.md,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: ExploreColors.success[500],
-    paddingHorizontal: ExploreSpacing.sm,
-    paddingVertical: 6,
-    borderRadius: 8,
-  },
-  heroCompletedText: {
-    ...ExploreTypography.caption,
-    color: '#FFFFFF',
-    fontWeight: '700',
-  },
-  contentContainer: {
-    paddingHorizontal: ExploreSpacing.screenMargin,
-    paddingTop: ExploreSpacing.xl,
-  },
-  title: {
-    ...ExploreTypography.h1,
-    color: ExploreColors.neutral[900],
-    marginBottom: ExploreSpacing.xs,
-  },
-  subtitle: {
-    ...ExploreTypography.body,
-    color: ExploreColors.neutral[600],
-    marginBottom: ExploreSpacing.md,
-    fontStyle: 'italic',
-  },
-  description: {
-    ...ExploreTypography.body,
-    color: ExploreColors.neutral[700],
-    lineHeight: 26,
-    marginBottom: ExploreSpacing.lg,
-  },
-  introSection: {
-    marginBottom: ExploreSpacing.xl,
-  },
-  sectionTitle: {
-    ...ExploreTypography.h4,
-    color: ExploreColors.neutral[900],
-    marginBottom: ExploreSpacing.md,
-  },
-  introText: {
-    ...ExploreTypography.body,
-    color: ExploreColors.neutral[700],
-    lineHeight: 26,
-  },
-  progressSection: {
-    marginBottom: ExploreSpacing.xl,
-    gap: ExploreSpacing.sm,
-  },
-  progressHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  progressLabel: {
-    ...ExploreTypography.body,
-    color: ExploreColors.neutral[600],
-  },
-  progressPercent: {
-    ...ExploreTypography.body,
-    color: ExploreColors.primary[600],
-    fontWeight: '700',
-  },
-  progressBarBg: {
-    height: 8,
-    backgroundColor: ExploreColors.neutral[100],
-    borderRadius: 4,
-    overflow: 'hidden',
-  },
-  progressBarFill: {
-    height: '100%',
-    backgroundColor: ExploreColors.primary[500],
-    borderRadius: 4,
-  },
-  daySelector: {
-    marginTop: ExploreSpacing.md,
-  },
-  daysGrid: {
-    gap: ExploreSpacing.sm,
-  },
-  dayCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: ExploreColors.neutral[50],
-    borderRadius: 12,
-    padding: ExploreSpacing.md,
-    gap: ExploreSpacing.md,
-  },
-  dayCardCompleted: {
-    backgroundColor: ExploreColors.success[50],
-    borderWidth: 1,
-    borderColor: ExploreColors.success[200],
-  },
-  dayCardCurrent: {
-    backgroundColor: ExploreColors.primary[50],
-    borderWidth: 2,
-    borderColor: ExploreColors.primary[500],
-  },
-  dayCardLocked: {
-    opacity: 0.6,
-  },
-  dayNumber: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: ExploreColors.neutral[200],
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  dayNumberCompleted: {
-    backgroundColor: ExploreColors.success[500],
-  },
-  dayNumberCurrent: {
-    backgroundColor: ExploreColors.primary[500],
-  },
-  dayNumberText: {
-    ...ExploreTypography.body,
-    color: ExploreColors.neutral[600],
-    fontWeight: '700',
-  },
-  dayNumberTextCurrent: {
-    color: '#FFFFFF',
-  },
-  dayInfo: {
-    flex: 1,
-  },
-  dayLabel: {
-    ...ExploreTypography.caption,
-    color: ExploreColors.neutral[500],
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    fontSize: 10,
-  },
-  dayLabelLocked: {
-    color: ExploreColors.neutral[400],
-  },
-  dayTitle: {
-    ...ExploreTypography.body,
-    color: ExploreColors.neutral[800],
-    fontWeight: '600',
-    marginTop: 2,
-  },
-  dayTitleLocked: {
-    color: ExploreColors.neutral[500],
-  },
-  dayMeta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginTop: 4,
-  },
-  dayMetaText: {
-    ...ExploreTypography.caption,
-    color: ExploreColors.neutral[500],
-  },
-  dayMetaTextLocked: {
-    color: ExploreColors.neutral[300],
-  },
-  bottomContainer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    padding: ExploreSpacing.screenMargin,
-    backgroundColor: '#FFFFFF',
-    borderTopWidth: 1,
-    borderTopColor: ExploreColors.neutral[100],
-  },
-  subscribeButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: ExploreSpacing.sm,
-    backgroundColor: ExploreColors.primary[500],
-    paddingVertical: ExploreSpacing.md,
-    borderRadius: 16,
-  },
-  subscribeButtonText: {
-    ...ExploreTypography.body,
-    color: '#FFFFFF',
-    fontWeight: '700',
-    fontSize: 16,
-  },
-  continueButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: ExploreSpacing.sm,
-    backgroundColor: ExploreColors.primary[500],
-    paddingVertical: ExploreSpacing.md,
-    borderRadius: 16,
-  },
-  continueButtonText: {
-    ...ExploreTypography.body,
-    color: '#FFFFFF',
-    fontWeight: '700',
-    fontSize: 16,
-  },
-  dayImageContainer: {
-    position: 'relative',
-    width: '100%',
-  },
-  dayImage: {
-    width: '100%',
-    height: 200,
-  },
-  planTitleSmall: {
-    ...ExploreTypography.caption,
-    color: ExploreColors.primary[600],
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    marginBottom: ExploreSpacing.xs,
-  },
-  dayContentTitle: {
-    ...ExploreTypography.h2,
-    color: ExploreColors.neutral[900],
-    marginBottom: ExploreSpacing.sm,
-  },
-  readingTimeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginBottom: ExploreSpacing.lg,
-  },
-  readingTimeText: {
-    ...ExploreTypography.caption,
-    color: ExploreColors.neutral[500],
-  },
-  verseContainer: {
-    flexDirection: 'row',
-    backgroundColor: ExploreColors.spiritual[50],
-    borderRadius: 12,
-    padding: ExploreSpacing.lg,
-    marginBottom: ExploreSpacing.xl,
-  },
-  verseAccent: {
-    width: 4,
-    backgroundColor: ExploreColors.spiritual[500],
-    borderRadius: 2,
-    marginRight: ExploreSpacing.md,
-  },
-  verseContent: {
-    flex: 1,
-  },
-  verseText: {
-    ...ExploreTypography.h4,
-    color: ExploreColors.neutral[900],
-    fontStyle: 'italic',
-    lineHeight: 28,
-    marginBottom: ExploreSpacing.sm,
-  },
-  verseReference: {
-    ...ExploreTypography.body,
-    color: ExploreColors.spiritual[700],
-    fontWeight: '600',
-  },
-  dayContent: {
-    ...ExploreTypography.body,
-    color: ExploreColors.neutral[800],
-    lineHeight: 28,
-    marginBottom: ExploreSpacing.xl,
-  },
-  additionalVersesSection: {
-    marginBottom: ExploreSpacing.xl,
-  },
-  additionalVerse: {
-    backgroundColor: ExploreColors.neutral[50],
-    borderRadius: 12,
-    padding: ExploreSpacing.md,
-    marginBottom: ExploreSpacing.sm,
-  },
-  additionalVerseText: {
-    ...ExploreTypography.body,
-    color: ExploreColors.neutral[800],
-    fontStyle: 'italic',
-    marginBottom: ExploreSpacing.xs,
-  },
-  additionalVerseReference: {
-    ...ExploreTypography.caption,
-    color: ExploreColors.neutral[600],
-    fontWeight: '600',
-  },
-  reflectionSection: {
-    marginBottom: ExploreSpacing.xl,
-  },
-  reflectionItem: {
-    flexDirection: 'row',
-    gap: ExploreSpacing.sm,
-    marginBottom: ExploreSpacing.sm,
-  },
-  reflectionNumber: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: ExploreColors.primary[100],
-    textAlign: 'center',
-    ...ExploreTypography.caption,
-    lineHeight: 24,
-    color: ExploreColors.primary[700],
-    fontWeight: '700',
-  },
-  reflectionText: {
-    flex: 1,
-    ...ExploreTypography.body,
-    color: ExploreColors.neutral[700],
-    lineHeight: 24,
-  },
-  prayerSection: {
-    marginBottom: ExploreSpacing.xl,
-  },
-  prayerContainer: {
-    backgroundColor: ExploreColors.spiritual[50],
-    borderRadius: 12,
-    padding: ExploreSpacing.lg,
-  },
-  prayerText: {
-    ...ExploreTypography.body,
-    color: ExploreColors.neutral[800],
-    fontStyle: 'italic',
-    lineHeight: 26,
-  },
-  completeButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: ExploreSpacing.sm,
-    backgroundColor: ExploreColors.success[500],
-    paddingVertical: ExploreSpacing.md,
-    borderRadius: 16,
-  },
-  completeButtonDisabled: {
-    opacity: 0.6,
-  },
-  completeButtonText: {
-    ...ExploreTypography.body,
-    color: '#FFFFFF',
-    fontWeight: '700',
-    fontSize: 16,
-  },
-  completedBadgeContainer: {
-    position: 'absolute',
-    bottom: ExploreSpacing.screenMargin,
-    left: 0,
-    right: 0,
-    alignItems: 'center',
-  },
-  completedBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: ExploreSpacing.xs,
-    backgroundColor: ExploreColors.success[50],
-    paddingHorizontal: ExploreSpacing.lg,
-    paddingVertical: ExploreSpacing.sm,
-    borderRadius: 24,
-  },
-  completedText: {
-    ...ExploreTypography.body,
-    color: ExploreColors.success[700],
-    fontWeight: '600',
-  },
-  tagsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginTop: ExploreSpacing.lg,
-  },
-  tag: {
-    backgroundColor: ExploreColors.primary[50],
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-  },
-  tagText: {
-    ...ExploreTypography.caption,
-    color: ExploreColors.primary[700],
-    fontWeight: '500',
-  },
-});

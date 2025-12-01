@@ -6,10 +6,12 @@
  * - Fixed position at bottom above tab bar
  * - Slide up/down animation
  * - Shows: verse count, Highlight, Copy, Share, Done buttons
+ *
+ * Styling: NativeWind-first with inline style for shadows/dynamic values
  */
 
-import React, { useState } from 'react';
-import { View, Pressable, StyleSheet } from 'react-native';
+import React from 'react';
+import { View, Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { SlideInDown, SlideOutDown } from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
@@ -70,24 +72,23 @@ export function VerseSelectionBar({
     <Animated.View
       entering={SlideInDown.duration(250)}
       exiting={SlideOutDown.duration(200)}
-      style={[
-        styles.container,
-        {
-          bottom: bottomOffset,
-          // Shadow for iOS
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: -2 },
-          shadowOpacity: 0.1,
-          shadowRadius: 8,
-          // Elevation for Android
-          elevation: 8,
-        },
-      ]}
+      className="absolute left-4 right-4 bg-white rounded-2xl z-[1000]"
+      style={{
+        bottom: bottomOffset,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: -2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+        elevation: 8,
+      }}
     >
-      <View style={styles.content}>
+      <View className="flex-row items-center justify-between py-3 px-4">
         {/* Left: Verse count */}
-        <View style={styles.leftSection}>
-          <Text style={styles.countText}>
+        <View className="flex-1">
+          <Text
+            className="text-[15px] font-semibold"
+            style={{ color: colors.gray[900] }}
+          >
             {verseCount} {verseText}
           </Text>
         </View>
@@ -97,12 +98,10 @@ export function VerseSelectionBar({
           {/* Highlight button */}
           <Pressable
             onPress={onHighlight}
-            style={[
-              styles.actionButton,
-              hasHighlightedVerse && {
-                backgroundColor: colors.warning[100],
-              },
-            ]}
+            className="w-10 h-10 rounded-[20px] justify-center items-center"
+            style={{
+              backgroundColor: hasHighlightedVerse ? colors.warning[100] : colors.gray[100],
+            }}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
             <Icon
@@ -117,12 +116,10 @@ export function VerseSelectionBar({
           {/* Bookmark button */}
           <Pressable
             onPress={onBookmark}
-            style={[
-              styles.actionButton,
-              hasBookmarkedVerse && {
-                backgroundColor: colors.primary[100],
-              },
-            ]}
+            className="w-10 h-10 rounded-[20px] justify-center items-center"
+            style={{
+              backgroundColor: hasBookmarkedVerse ? colors.primary[100] : colors.gray[100],
+            }}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
             <Icon
@@ -137,7 +134,8 @@ export function VerseSelectionBar({
           {/* Note button */}
           <Pressable
             onPress={onNote}
-            style={styles.actionButton}
+            className="w-10 h-10 rounded-[20px] justify-center items-center"
+            style={{ backgroundColor: colors.gray[100] }}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
             <Icon as={FileText} size="md" className="text-gray-700" />
@@ -146,7 +144,8 @@ export function VerseSelectionBar({
           {/* Copy button */}
           <Pressable
             onPress={onCopy}
-            style={styles.actionButton}
+            className="w-10 h-10 rounded-[20px] justify-center items-center"
+            style={{ backgroundColor: colors.gray[100] }}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
             <Icon as={Copy} size="md" className="text-gray-700" />
@@ -155,7 +154,8 @@ export function VerseSelectionBar({
           {/* Share button */}
           <Pressable
             onPress={onShare}
-            style={styles.actionButton}
+            className="w-10 h-10 rounded-[20px] justify-center items-center"
+            style={{ backgroundColor: colors.gray[100] }}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
             <Icon as={ShareIcon} size="md" className="text-gray-700" />
@@ -164,7 +164,8 @@ export function VerseSelectionBar({
           {/* Done button */}
           <Pressable
             onPress={onDone}
-            style={[styles.actionButton, styles.doneButton]}
+            className="w-10 h-10 rounded-[20px] justify-center items-center"
+            style={{ backgroundColor: colors.primary[500] }}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
             <Icon as={X} size="md" className="text-white" />
@@ -174,40 +175,3 @@ export function VerseSelectionBar({
     </Animated.View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    position: 'absolute',
-    left: 16,
-    right: 16,
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
-    zIndex: 1000,
-  },
-  content: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-  },
-  leftSection: {
-    flex: 1,
-  },
-  countText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: colors.gray[900],
-  },
-  actionButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.gray[100],
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  doneButton: {
-    backgroundColor: colors.primary[500],
-  },
-});

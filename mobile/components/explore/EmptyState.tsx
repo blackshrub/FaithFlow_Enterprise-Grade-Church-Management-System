@@ -3,12 +3,15 @@
  *
  * Design: Calm, encouraging, never guilt-inducing
  * Following UI/UX spec: "Progress over Perfection" principle
+ *
+ * Styling: NativeWind-first with inline style for theme values
  */
 
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View } from 'react-native';
 import { ExploreColors, ExploreTypography, ExploreSpacing } from '@/constants/explore/designSystem';
 import { BookOpen, Heart, Calendar, Search, Sparkles } from 'lucide-react-native';
+import { Text } from '@/components/ui/text';
 
 type EmptyStateType = 'no_results' | 'no_content' | 'error' | 'offline' | 'loading' | 'empty';
 
@@ -41,7 +44,7 @@ const typeMessages: Record<string, { title: string; description: string; icon: R
     icon: <Sparkles size={48} color={ExploreColors.spiritual[400]} />,
   },
   offline: {
-    title: 'You\'re Offline',
+    title: "You're Offline",
     description: 'Check your internet connection.',
     icon: <Sparkles size={48} color={ExploreColors.neutral[400]} />,
   },
@@ -71,18 +74,47 @@ export function EmptyState({
   const displayIcon = icon || typeConfig?.icon;
 
   return (
-    <View style={[styles.container, variant === 'minimal' && styles.containerMinimal]}>
-      {displayIcon && <View style={styles.iconContainer}>{displayIcon}</View>}
+    <View
+      className="items-center justify-center"
+      style={{
+        paddingVertical: variant === 'minimal' ? ExploreSpacing.xl : ExploreSpacing['3xl'],
+        paddingHorizontal: ExploreSpacing.xl,
+      }}
+    >
+      {displayIcon && (
+        <View style={{ marginBottom: ExploreSpacing.lg }}>
+          {displayIcon}
+        </View>
+      )}
 
-      <Text style={styles.title}>{displayTitle}</Text>
+      <Text
+        className="text-center"
+        style={{
+          ...ExploreTypography.h3,
+          color: ExploreColors.neutral[900],
+          marginBottom: ExploreSpacing.sm,
+        }}
+      >
+        {displayTitle}
+      </Text>
 
       {displayDescription && (
-        <Text style={[styles.description, variant === 'encouraging' && styles.descriptionEncouraging]}>
+        <Text
+          className="text-center max-w-[280px]"
+          style={{
+            ...ExploreTypography.body,
+            color: variant === 'encouraging' ? ExploreColors.primary[700] : ExploreColors.neutral[600],
+          }}
+        >
           {displayDescription}
         </Text>
       )}
 
-      {action && <View style={styles.actionContainer}>{action}</View>}
+      {action && (
+        <View style={{ marginTop: ExploreSpacing.lg }}>
+          {action}
+        </View>
+      )}
     </View>
   );
 }
@@ -245,36 +277,3 @@ export function StreakBrokenEmptyState({ language = 'en' }: { language?: 'en' | 
     />
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: ExploreSpacing['3xl'],
-    paddingHorizontal: ExploreSpacing.xl,
-  },
-  containerMinimal: {
-    paddingVertical: ExploreSpacing.xl,
-  },
-  iconContainer: {
-    marginBottom: ExploreSpacing.lg,
-  },
-  title: {
-    ...ExploreTypography.h3,
-    color: ExploreColors.neutral[900],
-    textAlign: 'center',
-    marginBottom: ExploreSpacing.sm,
-  },
-  description: {
-    ...ExploreTypography.body,
-    color: ExploreColors.neutral[600],
-    textAlign: 'center',
-    maxWidth: 280,
-  },
-  descriptionEncouraging: {
-    color: ExploreColors.primary[700],
-  },
-  actionContainer: {
-    marginTop: ExploreSpacing.lg,
-  },
-});

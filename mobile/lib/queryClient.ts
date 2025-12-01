@@ -1,6 +1,11 @@
 /**
  * Optimized React Query Configuration for FaithFlow Mobile
  * Phase 9.1.1 - Performance Optimization
+ *
+ * Combined with MMKV persistence for instant app launch:
+ * - Cached data loads synchronously from MMKV
+ * - Stale times prevent unnecessary refetches
+ * - Offline-first experience with background sync
  */
 
 import { QueryClient } from '@tanstack/react-query';

@@ -32,7 +32,14 @@
     "otpVerifyError": "Kode OTP tidak valid. Silakan coba lagi.",
     "logout": "Keluar",
     "logoutConfirm": "Apakah Anda yakin ingin keluar?",
-    "cancel": "Batal"
+    "cancel": "Batal",
+    "lockScreen": {
+      "title": "Aplikasi Terkunci",
+      "subtitle": "Gunakan {{biometric}} untuk membuka",
+      "loggedInAs": "Masuk sebagai",
+      "unlock": "Buka dengan {{biometric}}",
+      "useDifferentAccount": "Gunakan akun lain"
+    }
   },
   "tabs": {
     "home": "Beranda",
@@ -855,6 +862,10 @@
   "communities": {
     "title": "Komunitas",
     "subtitle": "Terhubung dengan keluarga gereja",
+    "community": "Komunitas",
+    "groupsYoureIn": "Grup yang kamu ikuti",
+    "addGroup": "Tambah grup",
+    "settings": "Pengaturan Komunitas",
     "myCommunities": "Komunitas Saya",
     "discover": "Temukan",
     "discoverComingSoon": "Penemuan komunitas akan segera hadir. Nantikan!",
@@ -867,6 +878,12 @@
     "typeMessage": "Ketik pesan...",
     "sendError": "Gagal mengirim pesan. Silakan coba lagi.",
     "loadError": "Gagal memuat pesan",
+    "noThreadsYet": "Belum ada thread",
+    "threads": {
+      "announcement": "Pengumuman",
+      "general": "Diskusi Umum",
+      "custom": "Thread Kustom"
+    },
     "chat": {
       "title": "Obrolan",
       "noMessages": "Belum ada pesan",
@@ -887,7 +904,9 @@
       "document": "Dokumen",
       "voiceMessage": "Pesan Suara",
       "sendingMedia": "Mengirim media...",
-      "mediaError": "Gagal mengirim media"
+      "mediaError": "Gagal mengirim media",
+      "announcementOnly": "Hanya admin yang dapat mengirim di channel ini",
+      "memberCount": "{{count}} anggota"
     },
     "info": {
       "title": "Info Komunitas",
@@ -924,7 +943,7 @@
     "description": "Ajukan pertanyaan tentang iman, dapatkan bimbingan alkitabiah, atau berbagi apa yang ada di hati Anda.",
     "shortDesc": "Tanya apa saja",
     "buttonDesc": "Ngobrol dengan pendamping rohanimu",
-    "cta": "Mulai Chat",
+    "cta": "Chat Sekarang",
     "inputPlaceholder": "Ketik pesan Anda...",
     "thinking": "Sedang berpikir...",
     "suggestionsTitle": "Coba tanyakan tentang:",
@@ -959,5 +978,34 @@
     "numeric": "Silakan masukkan angka",
     "alphanumeric": "Hanya huruf dan angka yang diperbolehkan",
     "url": "Silakan masukkan URL yang valid"
+  },
+  "settings": {
+    "security": {
+      "title": "Keamanan",
+      "biometricLogin": "Login Biometrik",
+      "biometricDescription": "Gunakan sidik jari atau wajah untuk membuka aplikasi",
+      "checkingHardware": "Memeriksa kemampuan perangkat...",
+      "notSupported": "Autentikasi biometrik tidak didukung di perangkat ini.",
+      "notEnrolled": "{{biometric}} belum terdaftar. Silakan atur {{biometric}} di pengaturan perangkat Anda.",
+      "enabled": "Aktif",
+      "disabled": "Nonaktif",
+      "lastUsed": "Terakhir digunakan",
+      "disableTitle": "Nonaktifkan Login Biometrik",
+      "disableMessage": "Yakin ingin menonaktifkan login {{biometric}}?",
+      "enabledTitle": "Biometrik Diaktifkan",
+      "enabledMessage": "Login {{biometric}} telah diaktifkan. Anda sekarang dapat membuka aplikasi dengan {{biometric}}.",
+      "loginRequired": "Silakan masuk terlebih dahulu untuk mengaktifkan autentikasi biometrik.",
+      "howItWorks": "Cara Kerjanya",
+      "howItWorksDescription": "Setelah diaktifkan, saat Anda kembali ke aplikasi setelah 5 detik, Anda akan diminta untuk mengautentikasi dengan biometrik Anda. Ini menjaga keamanan data gereja Anda.",
+      "privacyNote": "Data biometrik Anda tidak pernah meninggalkan perangkat Anda. Kami hanya menyimpan token aman untuk memverifikasi identitas Anda."
+    }
+  },
+  "errorBoundary": {
+    "title": "Terjadi Kesalahan",
+    "message": "Maaf, terjadi kesalahan yang tidak terduga. Tim kami telah diberitahu.",
+    "tryAgain": "Coba Lagi",
+    "goHome": "Ke Beranda",
+    "reportSent": "Laporan error terkirim",
+    "offlineNote": "Anda tampaknya offline. Error akan dilaporkan saat Anda kembali online."
   }
 }

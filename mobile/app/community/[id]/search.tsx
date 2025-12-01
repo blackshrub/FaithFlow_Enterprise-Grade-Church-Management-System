@@ -24,7 +24,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Image } from 'expo-image';
 import * as Haptics from 'expo-haptics';
 import Animated, { ZoomIn } from 'react-native-reanimated';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { mmkv } from '@/lib/storage';
 import {
   ArrowLeft,
   Search,
@@ -240,15 +240,16 @@ export default function CommunitySearchScreen() {
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [inputFocused, setInputFocused] = useState(true);
 
-  // Load recent searches
+  // Load recent searches (synchronous with MMKV)
   useEffect(() => {
-    AsyncStorage.getItem(`${RECENT_SEARCHES_KEY}_${communityId}`)
-      .then((data) => {
-        if (data) {
-          setRecentSearches(JSON.parse(data));
-        }
-      })
-      .catch(console.error);
+    try {
+      const data = mmkv.getString(`${RECENT_SEARCHES_KEY}_${communityId}`);
+      if (data) {
+        setRecentSearches(JSON.parse(data));
+      }
+    } catch (error) {
+      console.error('Failed to load recent searches:', error);
+    }
   }, [communityId]);
 
   // Debounce search query
@@ -268,7 +269,7 @@ export default function CommunitySearchScreen() {
     isFetching,
   } = useSearchMessages(communityId, debouncedQuery, shouldSearch);
 
-  const saveRecentSearch = useCallback(async (searchQuery: string) => {
+  const saveRecentSearch = useCallback((searchQuery: string) => {
     if (!searchQuery.trim()) return;
 
     const updated = [
@@ -277,24 +278,24 @@ export default function CommunitySearchScreen() {
     ].slice(0, MAX_RECENT_SEARCHES);
 
     setRecentSearches(updated);
-    await AsyncStorage.setItem(
+    mmkv.setString(
       `${RECENT_SEARCHES_KEY}_${communityId}`,
       JSON.stringify(updated)
     );
   }, [communityId, recentSearches]);
 
-  const removeRecentSearch = useCallback(async (searchQuery: string) => {
+  const removeRecentSearch = useCallback((searchQuery: string) => {
     const updated = recentSearches.filter((s) => s !== searchQuery);
     setRecentSearches(updated);
-    await AsyncStorage.setItem(
+    mmkv.setString(
       `${RECENT_SEARCHES_KEY}_${communityId}`,
       JSON.stringify(updated)
     );
   }, [communityId, recentSearches]);
 
-  const clearAllRecent = useCallback(async () => {
+  const clearAllRecent = useCallback(() => {
     setRecentSearches([]);
-    await AsyncStorage.removeItem(`${RECENT_SEARCHES_KEY}_${communityId}`);
+    mmkv.delete(`${RECENT_SEARCHES_KEY}_${communityId}`);
   }, [communityId]);
 
   const handleResultPress = useCallback((message: CommunityMessage) => {

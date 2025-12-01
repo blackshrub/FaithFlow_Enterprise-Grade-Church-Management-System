@@ -106,6 +106,7 @@ import ProfileUpdateKiosk from "./pages/Kiosk/ProfileUpdate";
 import EventCheckinKiosk from "./pages/Kiosk/EventCheckin";
 import SmartLanding from "./components/SmartLanding";
 import UserManagement from "./pages/System/UserManagement";
+import CrashLogs from "./pages/System/CrashLogs";
 import SystemSettings from "./pages/SystemSettings";
 
 import FaithFlowLogo from './components/Branding/FaithFlowLogo';
@@ -267,6 +268,7 @@ function App() {
 
               {/* System Routes */}
               <Route path="users/management" element={<UserManagement />} />
+              <Route path="system/crash-logs" element={<CrashLogs />} />
               <Route path="system-settings" element={<SystemSettings />} />
               
               {/* Placeholder routes - will be implemented in next phases */}

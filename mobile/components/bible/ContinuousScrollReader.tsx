@@ -8,12 +8,14 @@
  * - Tap single verse for quick actions
  * - FlashList with item type detection
  * - Smooth animations with Moti
+ *
+ * Styling: NativeWind-first with inline style for dynamic values
  */
 
 import React, { useCallback, useRef, useState, useEffect } from 'react';
-import { View, Pressable, StyleSheet, ViewToken } from 'react-native';
+import { View, Pressable, ViewToken } from 'react-native';
 import { FlashList, ListRenderItem } from '@shopify/flash-list';
-import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
+import Animated, { FadeIn } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 
 import { Text } from '@/components/ui/text';
@@ -249,7 +251,13 @@ export function ContinuousScrollReader({
 
       return (
         <Animated.View entering={FadeIn.duration(300)}>
-          <View style={[styles.chapterHeader, { backgroundColor: currentTheme.background }]}>
+          <View
+            className="py-6 mb-4"
+            style={{
+              backgroundColor: currentTheme.background,
+              paddingHorizontal: spacing.md,
+            }}
+          >
             <Heading
               size="xl"
               style={{
@@ -300,31 +308,27 @@ export function ContinuousScrollReader({
             onLongPress={() => handleVerseLongPress(item)}
           >
             <View
-              style={[
-                styles.verseContainer,
-                {
-                  backgroundColor, // Flash highlight > Regular highlight > Transparent
-                  paddingVertical: getVerseSpacing(),
-                  paddingHorizontal: spacing.md,
-                  marginBottom: getVerseSpacing() * 0.5,
-                  // Add left border for selected verses
-                  ...(isSelected && {
-                    borderLeftWidth: 3,
-                    borderLeftColor: colors.primary[500],
-                  }),
-                },
-              ]}
+              className="flex-row rounded-lg"
+              style={{
+                backgroundColor, // Flash highlight > Regular highlight > Transparent
+                paddingVertical: getVerseSpacing(),
+                paddingHorizontal: spacing.md,
+                marginBottom: getVerseSpacing() * 0.5,
+                // Add left border for selected verses
+                ...(isSelected && {
+                  borderLeftWidth: 3,
+                  borderLeftColor: colors.primary[500],
+                }),
+              }}
             >
               {/* Verse number */}
               {preferences.showVerseNumbers && (
                 <Text
-                  style={[
-                    styles.verseNumber,
-                    {
-                      fontSize: getFontSize() * 0.7,
-                      color: currentTheme.verseNumber,
-                    },
-                  ]}
+                  className="font-bold mr-2 mt-0.5 min-w-[24px]"
+                  style={{
+                    fontSize: getFontSize() * 0.7,
+                    color: currentTheme.verseNumber,
+                  }}
                 >
                   {item.verse}
                 </Text>
@@ -332,20 +336,18 @@ export function ContinuousScrollReader({
 
               {/* Verse text */}
               <Text
-                style={[
-                  styles.verseText,
-                  {
-                    fontFamily: appliedFont,
-                    fontSize: getFontSize(),
-                    lineHeight: getFontSize() * getLineHeight(),
-                    color: currentTheme.text,
-                    textDecorationLine: isSelected ? 'underline' : 'none',
-                    textDecorationStyle: isSelected ? 'dotted' : 'solid',
-                    textDecorationColor: isSelected ? colors.primary[500] : 'transparent',
-                    textAlign: preferences.textAlign,
-                    letterSpacing: getWordSpacing(),
-                  },
-                ]}
+                className="flex-1"
+                style={{
+                  fontFamily: appliedFont,
+                  fontSize: getFontSize(),
+                  lineHeight: getFontSize() * getLineHeight(),
+                  color: currentTheme.text,
+                  textDecorationLine: isSelected ? 'underline' : 'none',
+                  textDecorationStyle: isSelected ? 'dotted' : 'solid',
+                  textDecorationColor: isSelected ? colors.primary[500] : 'transparent',
+                  textAlign: preferences.textAlign,
+                  letterSpacing: getWordSpacing(),
+                }}
               >
                 {item.text}
               </Text>
@@ -446,7 +448,10 @@ export function ContinuousScrollReader({
 
   if (isLoading) {
     return (
-      <View style={[styles.loadingContainer, { backgroundColor: currentTheme.background }]}>
+      <View
+        className="flex-1 justify-center items-center"
+        style={{ backgroundColor: currentTheme.background }}
+      >
         <Text style={{ color: currentTheme.text }}>Loading...</Text>
       </View>
     );
@@ -475,29 +480,3 @@ export function ContinuousScrollReader({
     />
   );
 }
-
-const styles = StyleSheet.create({
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  chapterHeader: {
-    paddingVertical: spacing.xl,
-    paddingHorizontal: spacing.md,
-    marginBottom: spacing.md,
-  },
-  verseContainer: {
-    flexDirection: 'row',
-    borderRadius: 8,
-  },
-  verseNumber: {
-    fontWeight: '700',
-    marginRight: spacing.sm,
-    marginTop: 2,
-    minWidth: 24,
-  },
-  verseText: {
-    flex: 1,
-  },
-});

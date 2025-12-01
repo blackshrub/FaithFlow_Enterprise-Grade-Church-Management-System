@@ -5,10 +5,12 @@
  * - Compact horizontal row of color dots
  * - Slide up animation
  * - 5 colors: yellow, green, blue, pink, orange
+ *
+ * Styling: NativeWind-first with inline style for shadows/dynamic values
  */
 
 import React from 'react';
-import { View, Pressable, StyleSheet } from 'react-native';
+import { View, Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { SlideInDown, SlideOutDown } from 'react-native-reanimated';
 import { Check, X } from 'lucide-react-native';
@@ -74,19 +76,17 @@ export function HighlightColorPicker({
     <Animated.View
       entering={SlideInDown.duration(200)}
       exiting={SlideOutDown.duration(150)}
-      style={[
-        styles.container,
-        {
-          bottom: bottomOffset,
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: -2 },
-          shadowOpacity: 0.1,
-          shadowRadius: 8,
-          elevation: 8,
-        },
-      ]}
+      className="absolute left-4 right-4 bg-white rounded-xl z-[999]"
+      style={{
+        bottom: bottomOffset,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: -2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+        elevation: 8,
+      }}
     >
-      <View style={styles.content}>
+      <View className="py-3 px-4">
         <HStack space="sm" className="items-center justify-center">
           {COLOR_OPTIONS.map((option) => {
             const isSelected = selectedColor === option.key;
@@ -95,14 +95,12 @@ export function HighlightColorPicker({
               <Pressable
                 key={option.key}
                 onPress={() => handleOptionPress(option)}
-                style={[
-                  styles.colorButton,
-                  {
-                    backgroundColor: option.color,
-                    borderWidth: isSelected ? 2 : 1,
-                    borderColor: isSelected ? colors.gray[700] : colors.gray[300],
-                  },
-                ]}
+                className="w-12 h-12 rounded-3xl justify-center items-center"
+                style={{
+                  backgroundColor: option.color,
+                  borderWidth: isSelected ? 2 : 1,
+                  borderColor: isSelected ? colors.gray[700] : colors.gray[300],
+                }}
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               >
                 {option.isClear ? (
@@ -126,25 +124,3 @@ export function HighlightColorPicker({
     </Animated.View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    position: 'absolute',
-    left: 16,
-    right: 16,
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    zIndex: 999, // Below action bar (1000)
-  },
-  content: {
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-  },
-  colorButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-});

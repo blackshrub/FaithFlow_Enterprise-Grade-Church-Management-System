@@ -1,63 +1,209 @@
-import React, { useState } from "react";
+/**
+ * Login Screen - World-Class Premium Design
+ *
+ * A sophisticated, elegant login experience featuring:
+ * - Animated gradient backgrounds
+ * - Premium glass morphism effects
+ * - Smooth entrance animations
+ * - Biometric authentication support
+ * - WhatsApp OTP login flow
+ *
+ * Styling: NativeWind-first with inline style for dynamic/shadow values
+ */
+
+import React, { useState, useEffect } from "react";
 import {
   View,
-  StyleSheet,
+  Text,
   Pressable,
   Dimensions,
   Platform,
   KeyboardAvoidingView,
   ScrollView,
+  StyleSheet,
 } from "react-native";
 import { useRouter } from "expo-router";
-import Animated, { FadeInUp, FadeInDown, ZoomIn } from "react-native-reanimated";
+import Animated, {
+  FadeInUp,
+  FadeInDown,
+  FadeIn,
+  ZoomIn,
+  interpolate,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withTiming,
+  Easing,
+} from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Text } from "@/components/ui/text";
+import { Image } from "expo-image";
+import { Ionicons } from "@expo/vector-icons";
+import { Fingerprint, Scan, Sparkles, BookOpen, Users, Heart, ChevronRight, Calendar, Gift, Compass, Bot, MoreHorizontal } from 'lucide-react-native';
+
+import { Button, ButtonText, ButtonSpinner } from "@/components/ui/button";
 import { PhoneInput } from "@/components/forms/PhoneInput";
 import { useSendOTP } from "@/hooks/useAuth";
-import { Image } from "@/components/ui/image";
 import { useAuthStore } from "@/stores/auth";
-import { Ionicons } from "@expo/vector-icons";
+import { useBiometricAuthStore, useBiometricName, useBiometricAvailable } from "@/stores/biometricAuth";
 
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
 // Premium color palette
-const Colors = {
-  gradient: {
-    start: '#4F46E5',
-    middle: '#6366F1',
-    end: '#818CF8',
-  },
-  white: '#FFFFFF',
-  neutral: {
-    50: '#FAFAFA',
-    100: '#F5F5F5',
-    200: '#E5E5E5',
-    300: '#D4D4D4',
-    400: '#A3A3A3',
-    500: '#737373',
-    600: '#525252',
-    700: '#404040',
-    800: '#262626',
-    900: '#171717',
-  },
+const COLORS = {
+  // Primary gradient - Deep indigo to violet
+  gradientStart: '#4338CA',
+  gradientMid: '#6366F1',
+  gradientEnd: '#8B5CF6',
+
+  // Accent
+  accent: '#A78BFA',
+  accentLight: '#C4B5FD',
+
+  // Glass effects
+  glassWhite: 'rgba(255, 255, 255, 0.15)',
+  glassBorder: 'rgba(255, 255, 255, 0.25)',
+
+  // Text
+  textPrimary: '#1F2937',
+  textSecondary: '#6B7280',
+  textWhite: '#FFFFFF',
+  textWhiteMuted: 'rgba(255, 255, 255, 0.8)',
+
+  // Surface
+  surface: '#FFFFFF',
+  surfaceLight: '#F9FAFB',
 };
+
+// Animated background orb
+function FloatingOrb({ delay = 0, size = 200, top, left, opacity = 0.15 }: {
+  delay?: number;
+  size?: number;
+  top?: string | number;
+  left?: string | number;
+  opacity?: number;
+}) {
+  const animation = useSharedValue(0);
+
+  useEffect(() => {
+    animation.value = withRepeat(
+      withTiming(1, { duration: 8000, easing: Easing.inOut(Easing.sin) }),
+      -1,
+      true
+    );
+  }, []);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateY: interpolate(animation.value, [0, 1], [-20, 20]) },
+      { scale: interpolate(animation.value, [0, 1], [1, 1.1]) },
+    ],
+  }));
+
+  return (
+    <Animated.View
+      className="absolute"
+      style={[
+        {
+          top,
+          left,
+          width: size,
+          height: size,
+          borderRadius: size / 2,
+          backgroundColor: `rgba(255, 255, 255, ${opacity})`,
+        },
+        animatedStyle,
+      ]}
+    />
+  );
+}
+
+// Feature highlight badge - compact for horizontal scrolling
+function FeatureBadge({ icon: Icon, label, delay }: {
+  icon: React.ElementType;
+  label: string;
+  delay: number;
+}) {
+  return (
+    <Animated.View
+      entering={FadeInUp.delay(delay).duration(400).springify()}
+      className="items-center w-[76px]"
+    >
+      <View
+        className="w-10 h-10 rounded-xl items-center justify-center mb-1.5"
+        style={{
+          backgroundColor: 'rgba(255, 255, 255, 0.15)',
+          borderWidth: 1,
+          borderColor: 'rgba(255, 255, 255, 0.2)',
+        }}
+      >
+        <Icon size={18} color={COLORS.textWhite} strokeWidth={1.5} />
+      </View>
+      <Text
+        className="text-[10px] font-semibold text-center"
+        style={{ color: COLORS.textWhiteMuted }}
+        numberOfLines={1}
+      >
+        {label}
+      </Text>
+    </Animated.View>
+  );
+}
 
 export default function LoginScreen() {
   const router = useRouter();
   const [phone, setPhone] = useState("");
   const [phoneError, setPhoneError] = useState("");
-  const { loginDemo } = useAuthStore();
+  const [isDemoLoading, setIsDemoLoading] = useState(false);
+  const [isBiometricLoading, setIsBiometricLoading] = useState(false);
+  const { loginDemo, isAuthenticated } = useAuthStore();
 
   const sendOTP = useSendOTP();
 
+  // Biometric auth
+  const biometricName = useBiometricName();
+  const biometricAvailable = useBiometricAvailable();
+  const {
+    isEnabled: biometricEnabled,
+    biometricTypes,
+    authenticate,
+    checkHardwareSupport,
+  } = useBiometricAuthStore();
+
+  // Check biometric support on mount
+  useEffect(() => {
+    checkHardwareSupport();
+  }, [checkHardwareSupport]);
+
+  // Auto-prompt biometric if enabled
+  useEffect(() => {
+    if (biometricEnabled && biometricAvailable && !isAuthenticated) {
+      handleBiometricLogin();
+    }
+  }, [biometricEnabled, biometricAvailable]);
+
+  // Get biometric icon
+  const BiometricIcon = biometricTypes.includes('facial') ? Scan : Fingerprint;
+
+  const handleBiometricLogin = async () => {
+    setIsBiometricLoading(true);
+    try {
+      const success = await authenticate('Login with ' + biometricName);
+      if (success) {
+        router.replace("/(tabs)");
+      }
+    } finally {
+      setIsBiometricLoading(false);
+    }
+  };
+
   const validatePhone = (): boolean => {
     if (!phone) {
-      setPhoneError("Nomor telepon harus diisi");
+      setPhoneError("Phone number is required");
       return false;
     }
     if (phone.length < 9 || phone.length > 13) {
-      setPhoneError("Nomor telepon tidak valid");
+      setPhoneError("Invalid phone number");
       return false;
     }
     setPhoneError("");
@@ -73,103 +219,147 @@ export default function LoginScreen() {
         params: { phone: `+62${phone}` },
       });
     } catch (error: any) {
-      setPhoneError(error.response?.data?.detail || "Gagal mengirim OTP");
+      setPhoneError(error.response?.data?.detail || "Failed to send OTP");
     }
   };
 
   const handleDemoLogin = async () => {
-    await loginDemo();
-    router.replace("/(tabs)");
+    setIsDemoLoading(true);
+    try {
+      await loginDemo();
+      router.replace("/(tabs)");
+    } finally {
+      setIsDemoLoading(false);
+    }
   };
 
-  // Feature items to highlight
-  const features = [
-    { icon: 'book-outline' as const, label: 'Bible' },
-    { icon: 'people-outline' as const, label: 'Community' },
-    { icon: 'heart-outline' as const, label: 'Prayer' },
-  ];
-
   return (
-    <View style={styles.container}>
-      {/* Full gradient background */}
+    <View className="flex-1">
+      {/* Animated Gradient Background */}
       <LinearGradient
-        colors={[Colors.gradient.start, Colors.gradient.middle, Colors.gradient.end]}
-        style={StyleSheet.absoluteFillObject}
+        colors={[COLORS.gradientStart, COLORS.gradientMid, COLORS.gradientEnd]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
+        style={StyleSheet.absoluteFill}
       />
 
-      {/* Decorative circles */}
-      <View style={styles.decorativeCircle1} />
-      <View style={styles.decorativeCircle2} />
+      {/* Floating Orbs for depth */}
+      <FloatingOrb top={-80} left={SCREEN_WIDTH * 0.6} size={280} opacity={0.08} />
+      <FloatingOrb top={SCREEN_HEIGHT * 0.2} left={-60} size={200} opacity={0.1} />
+      <FloatingOrb top={SCREEN_HEIGHT * 0.5} left={SCREEN_WIDTH * 0.7} size={150} opacity={0.06} />
 
-      <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
+      <SafeAreaView className="flex-1" edges={['top', 'bottom']}>
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={styles.keyboardView}
+          className="flex-1"
         >
           <ScrollView
-            contentContainerStyle={styles.scrollContent}
+            contentContainerStyle={{ flexGrow: 1, justifyContent: 'space-between', paddingBottom: 20 }}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
             bounces={false}
           >
-            {/* Top section with logo and welcome */}
+            {/* Hero Section */}
             <Animated.View
-              entering={FadeInDown.duration(600).delay(100)}
-              style={styles.headerSection}
+              entering={FadeIn.duration(800)}
+              className="items-center pt-8 px-6"
             >
-              {/* Logo with glow effect */}
+              {/* Logo with premium glow */}
               <Animated.View
                 entering={ZoomIn.delay(200).springify()}
-                style={styles.logoContainer}
+                className="relative mb-6"
               >
-                <View style={styles.logoGlow} />
-                <Image
-                  source={require("@/assets/icon.png")}
-                  alt="FaithFlow Logo"
-                  style={styles.logo}
+                {/* Outer glow */}
+                <View
+                  className="absolute rounded-[40px]"
+                  style={{
+                    top: -16,
+                    left: -16,
+                    right: -16,
+                    bottom: -16,
+                    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                  }}
                 />
+                {/* Inner container with glass effect */}
+                <View
+                  className="w-[88px] h-[88px] rounded-3xl p-1"
+                  style={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+                    borderWidth: 1.5,
+                    borderColor: 'rgba(255, 255, 255, 0.3)',
+                  }}
+                >
+                  <Image
+                    source={require("@/assets/icon.png")}
+                    className="w-full h-full rounded-[20px]"
+                    contentFit="contain"
+                  />
+                </View>
               </Animated.View>
 
-              <Text style={styles.welcomeTitle}>Welcome to FaithFlow</Text>
-              <Text style={styles.welcomeSubtitle}>
-                Your spiritual journey companion
-              </Text>
+              {/* App Title */}
+              <Animated.View entering={FadeInDown.delay(300).duration(600)}>
+                <Text
+                  className="text-4xl font-bold text-center"
+                  style={{ color: COLORS.textWhite, letterSpacing: -0.5 }}
+                >
+                  FaithFlow
+                </Text>
+                <Text
+                  className="text-base text-center mt-1.5"
+                  style={{ color: COLORS.textWhiteMuted }}
+                >
+                  Your spiritual journey, elevated
+                </Text>
+              </Animated.View>
 
-              {/* Feature highlights */}
-              <View style={styles.featuresRow}>
-                {features.map((feature, index) => (
-                  <Animated.View
-                    key={feature.label}
-                    entering={FadeInUp.delay(400 + index * 100).duration(400)}
-                    style={styles.featureItem}
-                  >
-                    <View style={styles.featureIconBg}>
-                      <Ionicons name={feature.icon} size={20} color={Colors.white} />
-                    </View>
-                    <Text style={styles.featureLabel}>{feature.label}</Text>
-                  </Animated.View>
-                ))}
+              {/* Feature Badges - Two rows */}
+              <View className="mt-6 mb-2 gap-3">
+                <View className="flex-row justify-center gap-2 flex-wrap">
+                  <FeatureBadge icon={BookOpen} label="Read Bible" delay={400} />
+                  <FeatureBadge icon={Users} label="Join Community" delay={450} />
+                  <FeatureBadge icon={Calendar} label="Attend Events" delay={500} />
+                  <FeatureBadge icon={Gift} label="Give Faithfully" delay={550} />
+                </View>
+                <View className="flex-row justify-center gap-2 flex-wrap">
+                  <FeatureBadge icon={Heart} label="Join in Prayer" delay={600} />
+                  <FeatureBadge icon={Compass} label="Explore Faith" delay={650} />
+                  <FeatureBadge icon={Bot} label="Faith Assistant" delay={700} />
+                  <FeatureBadge icon={MoreHorizontal} label="And more..." delay={750} />
+                </View>
               </View>
             </Animated.View>
 
-            {/* Bottom section with form card */}
+            {/* Login Card with Glass Morphism */}
             <Animated.View
-              entering={FadeInUp.duration(600).delay(300)}
-              style={styles.formSection}
+              entering={FadeInUp.duration(700).delay(400)}
+              className="px-5 pt-5"
             >
-              <View style={styles.formCard}>
-                {/* Card header */}
-                <View style={styles.cardHeader}>
-                  <Text style={styles.cardTitle}>Sign In</Text>
-                  <Text style={styles.cardSubtitle}>
-                    Enter your WhatsApp number to continue
+              <View
+                className="bg-white rounded-[28px] p-6"
+                style={{
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 20 },
+                  shadowOpacity: 0.15,
+                  shadowRadius: 40,
+                  elevation: 20,
+                }}
+              >
+                {/* Card Header */}
+                <View className="items-center mb-6">
+                  <Text
+                    className="text-2xl font-bold mb-1"
+                    style={{ color: COLORS.textPrimary, letterSpacing: -0.3 }}
+                  >
+                    Welcome Back
+                  </Text>
+                  <Text className="text-sm text-center" style={{ color: COLORS.textSecondary }}>
+                    Sign in with your WhatsApp number
                   </Text>
                 </View>
 
                 {/* Phone Input */}
-                <View style={styles.inputContainer}>
+                <View className="mb-4">
                   <PhoneInput
                     value={phone}
                     onChangeText={setPhone}
@@ -179,58 +369,104 @@ export default function LoginScreen() {
                   />
                 </View>
 
-                {/* Primary Button - Gradient */}
-                <Pressable
-                  onPress={handleSendOTP}
-                  disabled={sendOTP.isPending || !phone}
-                  style={({ pressed }) => [
-                    styles.primaryButton,
-                    pressed && styles.buttonPressed,
-                    (!phone || sendOTP.isPending) && styles.buttonDisabled,
-                  ]}
-                >
-                  <LinearGradient
-                    colors={[Colors.gradient.start, Colors.gradient.middle]}
-                    style={styles.buttonGradient}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 0 }}
+                {/* Primary CTA - WhatsApp Login - Using Gluestack Button with gradient */}
+                <View className="rounded-2xl overflow-hidden">
+                  <Button
+                    size="lg"
+                    onPress={handleSendOTP}
+                    isDisabled={sendOTP.isPending || !phone}
+                    className="w-full bg-transparent relative overflow-hidden"
                   >
-                    {sendOTP.isPending ? (
-                      <Text style={styles.buttonText}>Sending OTP...</Text>
-                    ) : (
-                      <>
-                        <Ionicons name="logo-whatsapp" size={20} color={Colors.white} />
-                        <Text style={styles.buttonText}>Continue with WhatsApp</Text>
-                      </>
+                    {/* Gradient background - absolute positioned */}
+                    <LinearGradient
+                      colors={[COLORS.gradientStart, COLORS.gradientMid]}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 0 }}
+                      style={StyleSheet.absoluteFill}
+                    />
+                    {/* Content */}
+                    <View className="flex-row items-center justify-center gap-2.5 z-[1]">
+                      {sendOTP.isPending ? (
+                        <ButtonSpinner color={COLORS.textWhite} />
+                      ) : (
+                        <Ionicons name="logo-whatsapp" size={22} color={COLORS.textWhite} />
+                      )}
+                      <ButtonText className="text-white font-semibold">
+                        {sendOTP.isPending ? 'Sending...' : 'Continue with WhatsApp'}
+                      </ButtonText>
+                    </View>
+                    {/* Chevron positioned at right edge */}
+                    {!sendOTP.isPending && (
+                      <View className="absolute right-4 z-[1]">
+                        <ChevronRight size={20} color={COLORS.textWhite} strokeWidth={2.5} />
+                      </View>
                     )}
-                  </LinearGradient>
-                </Pressable>
-
-                {/* Divider */}
-                <View style={styles.divider}>
-                  <View style={styles.dividerLine} />
-                  <Text style={styles.dividerText}>or</Text>
-                  <View style={styles.dividerLine} />
+                  </Button>
                 </View>
 
-                {/* Demo Button */}
-                <Pressable
-                  onPress={handleDemoLogin}
-                  style={({ pressed }) => [
-                    styles.secondaryButton,
-                    pressed && styles.secondaryButtonPressed,
-                  ]}
-                >
-                  <Ionicons name="play-circle-outline" size={20} color={Colors.gradient.start} />
-                  <Text style={styles.secondaryButtonText}>Try Demo Mode</Text>
-                </Pressable>
+                {/* Biometric Login Option */}
+                {biometricEnabled && biometricAvailable && (
+                  <Animated.View entering={FadeIn.delay(500)}>
+                    <View className="flex-row items-center my-5">
+                      <View className="flex-1 h-px bg-gray-200" />
+                      <Text className="text-xs px-3 uppercase tracking-wider font-medium" style={{ color: COLORS.textSecondary }}>
+                        quick access
+                      </Text>
+                      <View className="flex-1 h-px bg-gray-200" />
+                    </View>
 
-                {/* Terms text */}
-                <Text style={styles.termsText}>
+                    <Button
+                      size="lg"
+                      variant="outline"
+                      onPress={handleBiometricLogin}
+                      isDisabled={isBiometricLoading}
+                      className="w-full border-gray-200 bg-gray-50"
+                    >
+                      {isBiometricLoading ? (
+                        <ButtonSpinner color={COLORS.gradientMid} />
+                      ) : (
+                        <BiometricIcon size={24} color={COLORS.gradientMid} strokeWidth={1.5} />
+                      )}
+                      <ButtonText style={{ color: COLORS.gradientMid }}>
+                        {isBiometricLoading ? 'Authenticating...' : `Sign in with ${biometricName}`}
+                      </ButtonText>
+                    </Button>
+                  </Animated.View>
+                )}
+
+                {/* Demo Mode Divider */}
+                <View className="flex-row items-center my-5">
+                  <View className="flex-1 h-px bg-gray-200" />
+                  <Text className="text-xs px-3 uppercase tracking-wider font-medium" style={{ color: COLORS.textSecondary }}>
+                    or explore
+                  </Text>
+                  <View className="flex-1 h-px bg-gray-200" />
+                </View>
+
+                {/* Demo Button - Using Gluestack Button */}
+                <Button
+                  size="lg"
+                  variant="outline"
+                  onPress={handleDemoLogin}
+                  isDisabled={isDemoLoading}
+                  className="w-full border-gray-200 bg-white"
+                >
+                  {isDemoLoading ? (
+                    <ButtonSpinner color={COLORS.textSecondary} />
+                  ) : (
+                    <Ionicons name="play-circle-outline" size={22} color={COLORS.textSecondary} />
+                  )}
+                  <ButtonText style={{ color: COLORS.textSecondary }}>
+                    {isDemoLoading ? 'Loading...' : 'Try Demo Mode'}
+                  </ButtonText>
+                </Button>
+
+                {/* Terms */}
+                <Text className="text-[11px] text-center mt-5 leading-4" style={{ color: COLORS.textSecondary }}>
                   By continuing, you agree to our{' '}
-                  <Text style={styles.termsLink}>Terms of Service</Text>
+                  <Text className="font-medium" style={{ color: COLORS.gradientMid }}>Terms of Service</Text>
                   {' '}and{' '}
-                  <Text style={styles.termsLink}>Privacy Policy</Text>
+                  <Text className="font-medium" style={{ color: COLORS.gradientMid }}>Privacy Policy</Text>
                 </Text>
               </View>
             </Animated.View>
@@ -240,220 +476,3 @@ export default function LoginScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.gradient.start,
-  },
-  safeArea: {
-    flex: 1,
-  },
-  keyboardView: {
-    flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    justifyContent: 'space-between',
-    paddingBottom: 20,
-  },
-
-  // Decorative elements
-  decorativeCircle1: {
-    position: 'absolute',
-    top: -SCREEN_WIDTH * 0.3,
-    right: -SCREEN_WIDTH * 0.2,
-    width: SCREEN_WIDTH * 0.7,
-    height: SCREEN_WIDTH * 0.7,
-    borderRadius: SCREEN_WIDTH * 0.35,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-  },
-  decorativeCircle2: {
-    position: 'absolute',
-    top: '15%',
-    left: -SCREEN_WIDTH * 0.15,
-    width: SCREEN_WIDTH * 0.4,
-    height: SCREEN_WIDTH * 0.4,
-    borderRadius: SCREEN_WIDTH * 0.2,
-    backgroundColor: 'rgba(255,255,255,0.05)',
-  },
-
-  // Header section
-  headerSection: {
-    alignItems: 'center',
-    paddingTop: 32,
-    paddingHorizontal: 24,
-  },
-  logoContainer: {
-    position: 'relative',
-    marginBottom: 20,
-  },
-  logoGlow: {
-    position: 'absolute',
-    top: -8,
-    left: -8,
-    right: -8,
-    bottom: -8,
-    borderRadius: 36,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-  },
-  logo: {
-    width: 72,
-    height: 72,
-    borderRadius: 18,
-  },
-  welcomeTitle: {
-    fontSize: 26,
-    fontWeight: '700',
-    color: Colors.white,
-    textAlign: 'center',
-    marginBottom: 6,
-  },
-  welcomeSubtitle: {
-    fontSize: 15,
-    color: 'rgba(255,255,255,0.8)',
-    textAlign: 'center',
-    marginBottom: 28,
-  },
-
-  // Features row
-  featuresRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 28,
-  },
-  featureItem: {
-    alignItems: 'center',
-    gap: 6,
-  },
-  featureIconBg: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  featureLabel: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: 'rgba(255,255,255,0.9)',
-  },
-
-  // Form section
-  formSection: {
-    paddingHorizontal: 20,
-    marginTop: 24,
-  },
-  formCard: {
-    backgroundColor: Colors.white,
-    borderRadius: 24,
-    padding: 24,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.15,
-        shadowRadius: 24,
-      },
-      android: {
-        elevation: 12,
-      },
-    }),
-  },
-  cardHeader: {
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  cardTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: Colors.neutral[900],
-    marginBottom: 4,
-  },
-  cardSubtitle: {
-    fontSize: 13,
-    color: Colors.neutral[500],
-    textAlign: 'center',
-  },
-
-  // Input
-  inputContainer: {
-    marginBottom: 16,
-  },
-
-  // Buttons
-  primaryButton: {
-    borderRadius: 14,
-    overflow: 'hidden',
-  },
-  buttonGradient: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 15,
-    gap: 8,
-  },
-  buttonText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: Colors.white,
-  },
-  buttonPressed: {
-    opacity: 0.9,
-    transform: [{ scale: 0.98 }],
-  },
-  buttonDisabled: {
-    opacity: 0.5,
-  },
-
-  // Divider
-  divider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 16,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: Colors.neutral[200],
-  },
-  dividerText: {
-    fontSize: 12,
-    color: Colors.neutral[400],
-    paddingHorizontal: 12,
-  },
-
-  // Secondary button
-  secondaryButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 13,
-    borderRadius: 14,
-    borderWidth: 1.5,
-    borderColor: Colors.neutral[200],
-    gap: 8,
-  },
-  secondaryButtonPressed: {
-    backgroundColor: Colors.neutral[50],
-  },
-  secondaryButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: Colors.gradient.start,
-  },
-
-  // Terms
-  termsText: {
-    fontSize: 11,
-    color: Colors.neutral[400],
-    textAlign: 'center',
-    lineHeight: 16,
-    marginTop: 16,
-  },
-  termsLink: {
-    color: Colors.gradient.start,
-    fontWeight: '500',
-  },
-});

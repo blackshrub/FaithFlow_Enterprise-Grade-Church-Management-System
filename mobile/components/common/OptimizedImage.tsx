@@ -13,6 +13,7 @@
 import React, { memo, useMemo, useState, useCallback } from 'react';
 import { View, StyleSheet, ViewStyle, StyleProp } from 'react-native';
 import { Image, ImageProps, ImageContentFit } from 'expo-image';
+// Note: StyleSheet kept for absoluteFill utility
 import { OPTIMIZED_IMAGE_PROPS, getResponsiveImageSize } from '@/utils/performance';
 
 // ============================================================================
@@ -179,7 +180,7 @@ export const OptimizedImage = memo(function OptimizedImage({
   // Container style
   const computedContainerStyle = useMemo(
     () => [
-      styles.container,
+      { position: 'relative' as const },
       dimensions,
       { borderRadius, overflow: 'hidden' as const },
       containerStyle,
@@ -201,7 +202,7 @@ export const OptimizedImage = memo(function OptimizedImage({
   if (!source) {
     return (
       <View style={computedContainerStyle}>
-        <View style={[styles.placeholder, { backgroundColor: placeholderColor }]} />
+        <View className="flex-1" style={{ backgroundColor: placeholderColor }} />
       </View>
     );
   }
@@ -211,11 +212,8 @@ export const OptimizedImage = memo(function OptimizedImage({
       {/* Loading placeholder */}
       {isLoading && showPlaceholder && (
         <View
-          style={[
-            StyleSheet.absoluteFill,
-            styles.placeholder,
-            { backgroundColor: placeholderColor },
-          ]}
+          className="flex-1"
+          style={[StyleSheet.absoluteFill, { backgroundColor: placeholderColor }]}
         />
       )}
 
@@ -265,17 +263,15 @@ export const OptimizedAvatar = memo(function OptimizedAvatar({
   if (!uri) {
     return (
       <View
-        style={[
-          styles.avatarFallback,
-          {
-            width: size,
-            height: size,
-            borderRadius: size / 2,
-            backgroundColor: fallbackColor,
-          },
-        ]}
+        className="justify-center items-center"
+        style={{
+          width: size,
+          height: size,
+          borderRadius: size / 2,
+          backgroundColor: fallbackColor,
+        }}
       >
-        <View style={styles.avatarInitials}>
+        <View>
           {/* You would add Text component here for initials */}
         </View>
       </View>
@@ -311,55 +307,30 @@ export const HeroImage = memo(function HeroImage({
   children,
 }: HeroImageProps) {
   return (
-    <View style={styles.heroContainer}>
+    <View className="w-full relative">
       <OptimizedImage
         uri={uri}
         context="custom"
         width={undefined}
         height={undefined}
         aspectRatio={aspectRatio}
-        containerStyle={styles.heroImage}
+        containerStyle={{ width: '100%' }}
       />
-      {gradient && <View style={styles.heroGradient} />}
-      {children && <View style={styles.heroContent}>{children}</View>}
+      {gradient && (
+        <View
+          style={[StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(0,0,0,0.3)' }]}
+        />
+      )}
+      {children && (
+        <View
+          className="justify-end p-4"
+          style={StyleSheet.absoluteFillObject}
+        >
+          {children}
+        </View>
+      )}
     </View>
   );
-});
-
-// ============================================================================
-// STYLES
-// ============================================================================
-
-const styles = StyleSheet.create({
-  container: {
-    position: 'relative',
-  },
-  placeholder: {
-    flex: 1,
-  },
-  avatarFallback: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  avatarInitials: {
-    // Style for initials text
-  },
-  heroContainer: {
-    width: '100%',
-    position: 'relative',
-  },
-  heroImage: {
-    width: '100%',
-  },
-  heroGradient: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.3)',
-  },
-  heroContent: {
-    ...StyleSheet.absoluteFillObject,
-    justifyContent: 'flex-end',
-    padding: 16,
-  },
 });
 
 export default OptimizedImage;

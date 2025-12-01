@@ -3,28 +3,59 @@
  *
  * Shows Bible studies overview and progress.
  * Used via: overlay.showBottomSheet(StudiesModal, payload)
+ *
+ * Standardized styling:
+ * - Header title: 22px font-bold
+ * - Close button: 44x44 with 20px icon
+ * - NativeWind + minimal inline styles
  */
 
 import React from 'react';
 import {
   View,
+  Text,
   ScrollView,
-  StyleSheet,
   Pressable,
+  Dimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { X, BookOpen, Clock, CheckCircle2, Play, ChevronRight } from 'lucide-react-native';
+import * as Haptics from 'expo-haptics';
 
 import type { OverlayProps } from '@/components/overlay/types';
-import { Text } from '@/components/ui/text';
-import { Heading } from '@/components/ui/heading';
-import { Button, ButtonText } from '@/components/ui/button';
-import { Icon } from '@/components/ui/icon';
-import { HStack } from '@/components/ui/hstack';
-import { colors, spacing, borderRadius } from '@/constants/theme';
-import { overlayTheme } from '@/theme/overlayTheme';
-import { interaction } from '@/constants/interaction';
+
+const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+
+// Consistent colors
+const Colors = {
+  neutral: {
+    50: '#FAFAFA',
+    100: '#F5F5F5',
+    200: '#E5E5E5',
+    300: '#D4D4D4',
+    400: '#A3A3A3',
+    500: '#737373',
+    600: '#525252',
+    700: '#404040',
+    800: '#262626',
+    900: '#171717',
+  },
+  white: '#FFFFFF',
+  primary: {
+    50: '#EFF6FF',
+    100: '#DBEAFE',
+    500: '#3B82F6',
+    600: '#2563EB',
+    700: '#1D4ED8',
+  },
+  success: {
+    50: '#ECFDF5',
+    100: '#D1FAE5',
+    500: '#10B981',
+    600: '#059669',
+  },
+};
 
 // Study type
 interface BibleStudy {
@@ -66,69 +97,97 @@ export const StudiesModal: React.FC<OverlayProps<StudiesPayload>> = ({
   };
 
   return (
-    <View style={styles.sheetContainer}>
-      {/* Handle */}
-      <View style={styles.handleContainer}>
-        <View style={styles.handle} />
+    <View
+      className="bg-white rounded-t-3xl"
+      style={{
+        maxHeight: SCREEN_HEIGHT * 0.85,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: -4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 24,
+        elevation: 12,
+      }}
+    >
+      {/* Handle indicator */}
+      <View className="items-center pt-3 pb-1">
+        <View className="w-10 h-1 rounded-full bg-neutral-300" />
       </View>
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: insets.bottom + spacing.md }}
+        contentContainerStyle={{ paddingBottom: insets.bottom + 16 }}
       >
-        <View style={styles.sheetContent}>
+        <View className="px-5 pt-2">
           {/* Header */}
-          <HStack className="justify-between items-center mb-6">
-            <HStack space="md" className="items-center">
-              <View style={styles.headerIconContainer}>
-                <BookOpen size={28} color={colors.primary[600]} />
+          <View className="flex-row items-center justify-between mb-6">
+            <View className="flex-row items-center gap-3">
+              <View
+                className="w-12 h-12 rounded-full items-center justify-center"
+                style={{ backgroundColor: Colors.primary[50] }}
+              >
+                <BookOpen size={26} color={Colors.primary[600]} />
               </View>
-              <Heading size="xl" className="text-gray-900 font-bold">
+              <Text
+                className="text-[22px] font-bold text-neutral-900"
+                style={{ letterSpacing: -0.3 }}
+              >
                 {t('explore.studies.title', 'Bible Studies')}
-              </Heading>
-            </HStack>
-
-            <Pressable
-              onPress={() => {
-                interaction.haptics.tap();
-                onClose();
-              }}
-              style={({ pressed }) => [
-                styles.closeButton,
-                pressed && styles.pressedMicro,
-              ]}
-            >
-              <Icon as={X} size="md" className="text-gray-600" />
-            </Pressable>
-          </HStack>
-
-          {/* Stats Grid */}
-          <View style={styles.statsGrid}>
-            <View style={styles.statCard}>
-              <View style={styles.statRow}>
-                <View style={[styles.statIconContainer, { backgroundColor: colors.primary[50] }]}>
-                  <BookOpen size={24} color={colors.primary[600]} />
-                </View>
-                <Text style={[styles.statValue, { color: colors.primary[600] }]}>{totalStudies}</Text>
-              </View>
-              <Text style={styles.statLabel}>{t('explore.studies.total', 'Total Studies')}</Text>
+              </Text>
             </View>
 
-            <View style={styles.statCard}>
-              <View style={styles.statRow}>
-                <View style={[styles.statIconContainer, { backgroundColor: colors.success[50] }]}>
-                  <CheckCircle2 size={24} color={colors.success[600]} />
+            {/* Close button - 44px */}
+            <Pressable
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                onClose();
+              }}
+              className="w-11 h-11 rounded-full bg-neutral-100 items-center justify-center active:opacity-70"
+            >
+              <X size={20} color={Colors.neutral[600]} />
+            </Pressable>
+          </View>
+
+          {/* Stats Grid */}
+          <View className="flex-row gap-3 mb-5">
+            <View className="flex-1 items-center py-5 px-3 rounded-2xl bg-neutral-50">
+              <View className="flex-row items-center gap-3 mb-1">
+                <View
+                  className="w-11 h-11 rounded-full items-center justify-center"
+                  style={{ backgroundColor: Colors.primary[50] }}
+                >
+                  <BookOpen size={22} color={Colors.primary[600]} />
                 </View>
-                <Text style={[styles.statValue, { color: colors.success[600] }]}>{completedStudies}</Text>
+                <Text className="text-[40px] font-bold" style={{ color: Colors.primary[600], lineHeight: 44 }}>
+                  {totalStudies}
+                </Text>
               </View>
-              <Text style={styles.statLabel}>{t('explore.studies.completed', 'Completed')}</Text>
+              <Text className="text-[14px] font-medium text-neutral-600 mt-1">
+                {t('explore.studies.total', 'Total Studies')}
+              </Text>
+            </View>
+
+            <View className="flex-1 items-center py-5 px-3 rounded-2xl bg-neutral-50">
+              <View className="flex-row items-center gap-3 mb-1">
+                <View
+                  className="w-11 h-11 rounded-full items-center justify-center"
+                  style={{ backgroundColor: Colors.success[50] }}
+                >
+                  <CheckCircle2 size={22} color={Colors.success[600]} />
+                </View>
+                <Text className="text-[40px] font-bold" style={{ color: Colors.success[600], lineHeight: 44 }}>
+                  {completedStudies}
+                </Text>
+              </View>
+              <Text className="text-[14px] font-medium text-neutral-600 mt-1">
+                {t('explore.studies.completed', 'Completed')}
+              </Text>
             </View>
           </View>
 
           {/* Studies List */}
           {studies.length > 0 ? (
-            <View style={styles.studiesContainer}>
-              <Text style={styles.sectionTitle}>
+            <View className="mb-5">
+              <Text className="text-base font-semibold text-neutral-800 mb-3">
                 {t('explore.studies.yourStudies', 'Your Studies')}
               </Text>
               {studies.slice(0, 5).map((study) => {
@@ -140,270 +199,97 @@ export const StudiesModal: React.FC<OverlayProps<StudiesPayload>> = ({
                     key={study.id}
                     onPress={() => {
                       if (onStudyPress) {
-                        interaction.haptics.tap();
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                         onStudyPress(study.id);
                         onClose();
                       }
                     }}
-                    style={({ pressed }) => [
-                      styles.studyItem,
-                      pressed && styles.pressedMicro,
-                    ]}
+                    className="flex-row items-center p-3 bg-neutral-50 rounded-xl mb-2 active:opacity-80"
                   >
-                    <View style={styles.studyContent}>
-                      <View style={styles.studyHeader}>
-                        <Text style={styles.studyTitle} numberOfLines={1}>{study.title}</Text>
+                    <View className="flex-1">
+                      <View className="flex-row items-center justify-between mb-1">
+                        <Text className="text-[15px] font-semibold text-neutral-800 flex-1 mr-2" numberOfLines={1}>
+                          {study.title}
+                        </Text>
                         {status === 'completed' ? (
-                          <CheckCircle2 size={20} color={colors.success[500]} />
+                          <CheckCircle2 size={20} color={Colors.success[500]} />
                         ) : status === 'in-progress' ? (
-                          <Play size={20} color={colors.primary[500]} fill={colors.primary[500]} />
+                          <Play size={20} color={Colors.primary[500]} fill={Colors.primary[500]} />
                         ) : (
-                          <Clock size={20} color={colors.gray[400]} />
+                          <Clock size={20} color={Colors.neutral[400]} />
                         )}
                       </View>
 
-                      <View style={styles.studyMeta}>
-                        <Text style={styles.studyProgress}>
+                      <View className="flex-row items-center justify-between mb-2">
+                        <Text className="text-[13px] text-neutral-500">
                           {study.completedDays}/{study.totalDays} {t('explore.studies.days', 'days')}
                         </Text>
-                        <Text style={styles.studyPercent}>{progress}%</Text>
+                        <Text className="text-[13px] font-semibold text-neutral-600">{progress}%</Text>
                       </View>
 
-                      <View style={styles.progressBar}>
+                      <View className="h-1.5 bg-neutral-200 rounded overflow-hidden">
                         <View
-                          style={[
-                            styles.progressFill,
-                            {
-                              width: `${progress}%`,
-                              backgroundColor: status === 'completed'
-                                ? colors.success[500]
-                                : colors.primary[500]
-                            }
-                          ]}
+                          className="h-full rounded"
+                          style={{
+                            width: `${progress}%`,
+                            backgroundColor: status === 'completed'
+                              ? Colors.success[500]
+                              : Colors.primary[500],
+                          }}
                         />
                       </View>
                     </View>
-                    <ChevronRight size={20} color={colors.gray[400]} />
+                    <ChevronRight size={20} color={Colors.neutral[400]} style={{ marginLeft: 8 }} />
                   </Pressable>
                 );
               })}
             </View>
           ) : (
-            <View style={styles.emptyContainer}>
-              <BookOpen size={48} color={colors.gray[300]} />
-              <Text style={styles.emptyTitle}>
+            <View className="items-center p-6 bg-neutral-50 rounded-2xl mb-5">
+              <BookOpen size={48} color={Colors.neutral[300]} />
+              <Text className="text-[18px] font-semibold text-neutral-700 mt-3 mb-2">
                 {t('explore.studies.noStudies', 'No Studies Yet')}
               </Text>
-              <Text style={styles.emptyDescription}>
+              <Text className="text-[14px] text-neutral-500 text-center leading-5">
                 {t('explore.studies.startStudying', 'Start a Bible study to deepen your faith and understanding of Scripture.')}
               </Text>
             </View>
           )}
 
           {/* Info Card */}
-          <View style={styles.infoCard}>
-            <Text style={styles.infoTitle}>
+          <View className="p-4 rounded-2xl mb-5" style={{ backgroundColor: Colors.primary[50] }}>
+            <Text className="text-[15px] font-semibold mb-2" style={{ color: Colors.primary[700] }}>
               {t('explore.studies.whatAreStudies', 'What are Bible Studies?')}
             </Text>
-            <Text style={styles.infoText}>
+            <Text className="text-[14px] leading-5" style={{ color: Colors.primary[600] }}>
               {t('explore.studies.description', 'Bible studies are structured multi-day journeys through Scripture. Each study includes daily readings, reflections, and questions to help you grow spiritually.')}
             </Text>
           </View>
 
-          {/* Close Button */}
-          <Button
+          {/* Done Button */}
+          <Pressable
             onPress={() => {
-              interaction.haptics.tap();
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               onClose();
             }}
-            size="lg"
-            className="mt-4"
+            className="items-center justify-center py-4 rounded-2xl active:opacity-80"
+            style={{
+              backgroundColor: Colors.primary[600],
+              shadowColor: Colors.primary[600],
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.3,
+              shadowRadius: 8,
+              elevation: 4,
+            }}
           >
-            <ButtonText className="font-bold">{t('common.done')}</ButtonText>
-          </Button>
+            <Text className="text-base font-bold text-white">
+              {t('common.done', 'Done')}
+            </Text>
+          </Pressable>
         </View>
       </ScrollView>
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  sheetContainer: {
-    backgroundColor: colors.white,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 24,
-    elevation: 12,
-  },
-  handleContainer: {
-    alignItems: 'center',
-    paddingTop: spacing.sm,
-    paddingBottom: spacing.xs,
-  },
-  handle: {
-    width: 40,
-    height: 4,
-    backgroundColor: colors.gray[300],
-    borderRadius: 2,
-  },
-  sheetContent: {
-    paddingHorizontal: spacing.xl,
-    paddingTop: spacing.xs,
-  },
-  closeButton: {
-    width: overlayTheme.closeButton.size,
-    height: overlayTheme.closeButton.size,
-    borderRadius: overlayTheme.closeButton.borderRadius,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: overlayTheme.closeButton.backgroundColor,
-  },
-  pressedMicro: {
-    opacity: interaction.press.opacity,
-    transform: [{ scale: interaction.press.scale }],
-  },
-  headerIconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.primary[50],
-  },
-  statsGrid: {
-    flexDirection: 'row',
-    gap: spacing.md,
-    marginBottom: spacing.lg,
-  },
-  statCard: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: spacing.lg,
-    paddingHorizontal: spacing.md,
-    borderRadius: borderRadius['2xl'],
-    backgroundColor: colors.gray[50],
-  },
-  statRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    marginBottom: spacing.xs,
-  },
-  statIconContainer: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  statValue: {
-    fontSize: 40,
-    fontWeight: '700',
-    lineHeight: 44,
-  },
-  statLabel: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: colors.gray[600],
-    marginTop: spacing.xs,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.gray[800],
-    marginBottom: spacing.md,
-  },
-  studiesContainer: {
-    marginBottom: spacing.lg,
-  },
-  studyItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: spacing.md,
-    backgroundColor: colors.gray[50],
-    borderRadius: borderRadius.xl,
-    marginBottom: spacing.sm,
-  },
-  studyContent: {
-    flex: 1,
-  },
-  studyHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: spacing.xs,
-  },
-  studyTitle: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: colors.gray[800],
-    flex: 1,
-    marginRight: spacing.sm,
-  },
-  studyMeta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: spacing.sm,
-  },
-  studyProgress: {
-    fontSize: 13,
-    color: colors.gray[500],
-  },
-  studyPercent: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: colors.gray[600],
-  },
-  progressBar: {
-    height: 6,
-    backgroundColor: colors.gray[200],
-    borderRadius: 3,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: '100%',
-    borderRadius: 3,
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    padding: spacing.xl,
-    backgroundColor: colors.gray[50],
-    borderRadius: borderRadius['2xl'],
-    marginBottom: spacing.lg,
-  },
-  emptyTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: colors.gray[700],
-    marginTop: spacing.md,
-    marginBottom: spacing.sm,
-  },
-  emptyDescription: {
-    fontSize: 14,
-    color: colors.gray[500],
-    textAlign: 'center',
-    lineHeight: 20,
-  },
-  infoCard: {
-    padding: spacing.lg,
-    borderRadius: borderRadius['2xl'],
-    backgroundColor: colors.primary[50],
-  },
-  infoTitle: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: colors.primary[700],
-    marginBottom: spacing.sm,
-  },
-  infoText: {
-    fontSize: 14,
-    color: colors.primary[600],
-    lineHeight: 20,
-  },
-});
 
 export default StudiesModal;

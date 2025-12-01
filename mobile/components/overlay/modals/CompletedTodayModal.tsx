@@ -3,28 +3,66 @@
  *
  * Shows today's completed activities and progress.
  * Used via: overlay.showBottomSheet(CompletedTodayModal, payload)
+ *
+ * Standardized styling:
+ * - Header title: 22px font-bold
+ * - Close button: 44x44 with 20px icon
+ * - NativeWind + minimal inline styles
  */
 
 import React from 'react';
 import {
   View,
+  Text,
   ScrollView,
-  StyleSheet,
   Pressable,
+  Dimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { X, Sparkles, BookOpen, CheckCircle2, Circle, Calendar } from 'lucide-react-native';
+import * as Haptics from 'expo-haptics';
 
 import type { OverlayProps } from '@/components/overlay/types';
-import { Text } from '@/components/ui/text';
-import { Heading } from '@/components/ui/heading';
-import { Button, ButtonText } from '@/components/ui/button';
-import { Icon } from '@/components/ui/icon';
-import { HStack } from '@/components/ui/hstack';
-import { colors, spacing, borderRadius } from '@/constants/theme';
-import { overlayTheme } from '@/theme/overlayTheme';
-import { interaction } from '@/constants/interaction';
+
+const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+
+// Consistent colors
+const Colors = {
+  neutral: {
+    50: '#FAFAFA',
+    100: '#F5F5F5',
+    200: '#E5E5E5',
+    300: '#D4D4D4',
+    400: '#A3A3A3',
+    500: '#737373',
+    600: '#525252',
+    700: '#404040',
+    800: '#262626',
+    900: '#171717',
+  },
+  white: '#FFFFFF',
+  primary: {
+    50: '#EFF6FF',
+    100: '#DBEAFE',
+    500: '#3B82F6',
+    600: '#2563EB',
+    700: '#1D4ED8',
+  },
+  success: {
+    50: '#ECFDF5',
+    100: '#D1FAE5',
+    500: '#10B981',
+    600: '#059669',
+  },
+  amber: {
+    50: '#FFFBEB',
+    100: '#FEF3C7',
+    500: '#F59E0B',
+    600: '#D97706',
+    800: '#92400E',
+  },
+};
 
 // Payload type
 export interface CompletedTodayPayload {
@@ -50,8 +88,8 @@ export const CompletedTodayModal: React.FC<OverlayProps<CompletedTodayPayload>> 
       completed: payload.devotionCompleted,
       detail: payload.devotionTitle || t('explore.completedToday.noDevotionYet', 'Not started yet'),
       icon: BookOpen,
-      color: colors.primary[600],
-      bgColor: colors.primary[50],
+      color: Colors.primary[600],
+      bgColor: Colors.primary[50],
     },
     {
       label: t('explore.completedToday.quizzes', 'Quizzes Completed'),
@@ -60,8 +98,8 @@ export const CompletedTodayModal: React.FC<OverlayProps<CompletedTodayPayload>> 
         ? t('explore.completedToday.quizzesCount', '{{count}} completed today', { count: payload.quizzesCompleted })
         : t('explore.completedToday.noQuizzesYet', 'No quizzes taken yet'),
       icon: Sparkles,
-      color: '#F59E0B',
-      bgColor: '#FEF3C7',
+      color: Colors.amber[500],
+      bgColor: Colors.amber[100],
     },
     {
       label: t('explore.completedToday.verses', 'Verses Read'),
@@ -70,94 +108,112 @@ export const CompletedTodayModal: React.FC<OverlayProps<CompletedTodayPayload>> 
         ? t('explore.completedToday.versesCount', '{{count}} verses today', { count: payload.versesRead })
         : t('explore.completedToday.noVersesYet', 'No verses read yet'),
       icon: Calendar,
-      color: colors.success[600],
-      bgColor: colors.success[50],
+      color: Colors.success[600],
+      bgColor: Colors.success[50],
     },
   ];
 
   const completedCount = activities.filter(a => a.completed).length;
+  const progressPercent = (completedCount / activities.length) * 100;
 
   return (
-    <View style={styles.sheetContainer}>
-      {/* Handle */}
-      <View style={styles.handleContainer}>
-        <View style={styles.handle} />
+    <View
+      className="bg-white rounded-t-3xl"
+      style={{
+        maxHeight: SCREEN_HEIGHT * 0.85,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: -4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 24,
+        elevation: 12,
+      }}
+    >
+      {/* Handle indicator */}
+      <View className="items-center pt-3 pb-1">
+        <View className="w-10 h-1 rounded-full bg-neutral-300" />
       </View>
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: insets.bottom + spacing.md }}
+        contentContainerStyle={{ paddingBottom: insets.bottom + 16 }}
       >
-        <View style={styles.sheetContent}>
+        <View className="px-5 pt-2">
           {/* Header */}
-          <HStack className="justify-between items-center mb-6">
-            <HStack space="md" className="items-center">
-              <View style={styles.headerIconContainer}>
-                <Sparkles size={28} color="#F59E0B" />
+          <View className="flex-row items-center justify-between mb-6">
+            <View className="flex-row items-center gap-3">
+              <View
+                className="w-12 h-12 rounded-full items-center justify-center"
+                style={{ backgroundColor: Colors.amber[100] }}
+              >
+                <Sparkles size={26} color={Colors.amber[500]} />
               </View>
-              <Heading size="xl" className="text-gray-900 font-bold">
+              <Text
+                className="text-[22px] font-bold text-neutral-900"
+                style={{ letterSpacing: -0.3 }}
+              >
                 {t('explore.completedToday.title', "Today's Progress")}
-              </Heading>
-            </HStack>
+              </Text>
+            </View>
 
+            {/* Close button - 44px */}
             <Pressable
               onPress={() => {
-                interaction.haptics.tap();
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 onClose();
               }}
-              style={({ pressed }) => [
-                styles.closeButton,
-                pressed && styles.pressedMicro,
-              ]}
+              className="w-11 h-11 rounded-full bg-neutral-100 items-center justify-center active:opacity-70"
             >
-              <Icon as={X} size="md" className="text-gray-600" />
+              <X size={20} color={Colors.neutral[600]} />
             </Pressable>
-          </HStack>
+          </View>
 
           {/* Summary Card */}
-          <View style={styles.summaryCard}>
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryValue}>{completedCount}</Text>
-              <Text style={styles.summaryLabel}>
+          <View className="p-4 rounded-2xl bg-neutral-50 mb-5">
+            <View className="flex-row items-baseline gap-2 mb-3">
+              <Text className="text-[48px] font-bold" style={{ color: Colors.amber[500], lineHeight: 52 }}>
+                {completedCount}
+              </Text>
+              <Text className="text-base text-neutral-600">
                 {t('explore.completedToday.of', 'of')} {activities.length} {t('explore.completedToday.activities', 'activities')}
               </Text>
             </View>
-            <View style={styles.progressBar}>
+            <View className="h-2 bg-neutral-200 rounded overflow-hidden">
               <View
-                style={[
-                  styles.progressFill,
-                  { width: `${(completedCount / activities.length) * 100}%` }
-                ]}
+                className="h-full rounded"
+                style={{ width: `${progressPercent}%`, backgroundColor: Colors.amber[500] }}
               />
             </View>
           </View>
 
           {/* Activities List */}
-          <View style={styles.activitiesContainer}>
-            <Text style={styles.sectionTitle}>
+          <View className="mb-5">
+            <Text className="text-base font-semibold text-neutral-800 mb-3">
               {t('explore.completedToday.activitiesTitle', 'Activities')}
             </Text>
             {activities.map((activity, index) => (
-              <View key={index} style={styles.activityItem}>
-                <View style={[styles.activityIcon, { backgroundColor: activity.bgColor }]}>
+              <View key={index} className="flex-row items-center p-3 bg-neutral-50 rounded-xl mb-2 gap-3">
+                <View
+                  className="w-11 h-11 rounded-full items-center justify-center"
+                  style={{ backgroundColor: activity.bgColor }}
+                >
                   <activity.icon size={20} color={activity.color} />
                 </View>
-                <View style={styles.activityContent}>
-                  <Text style={styles.activityLabel}>{activity.label}</Text>
-                  <Text style={styles.activityDetail}>{activity.detail}</Text>
+                <View className="flex-1">
+                  <Text className="text-[15px] font-semibold text-neutral-800 mb-0.5">{activity.label}</Text>
+                  <Text className="text-[13px] text-neutral-500">{activity.detail}</Text>
                 </View>
                 {activity.completed ? (
-                  <CheckCircle2 size={24} color={colors.success[500]} fill={colors.success[100]} />
+                  <CheckCircle2 size={24} color={Colors.success[500]} fill={Colors.success[100]} />
                 ) : (
-                  <Circle size={24} color={colors.gray[300]} />
+                  <Circle size={24} color={Colors.neutral[300]} />
                 )}
               </View>
             ))}
           </View>
 
           {/* Encouragement */}
-          <View style={styles.encouragementCard}>
-            <Text style={styles.encouragementText}>
+          <View className="p-4 rounded-2xl mb-5" style={{ backgroundColor: Colors.amber[100] }}>
+            <Text className="text-[15px] font-medium text-center leading-[22px]" style={{ color: Colors.amber[800] }}>
               {completedCount === activities.length
                 ? t('explore.completedToday.allDone', '🎉 Amazing! You completed all activities today!')
                 : completedCount > 0
@@ -166,152 +222,30 @@ export const CompletedTodayModal: React.FC<OverlayProps<CompletedTodayPayload>> 
             </Text>
           </View>
 
-          {/* Close Button */}
-          <Button
+          {/* Done Button */}
+          <Pressable
             onPress={() => {
-              interaction.haptics.tap();
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               onClose();
             }}
-            size="lg"
-            className="mt-4"
+            className="items-center justify-center py-4 rounded-2xl active:opacity-80"
+            style={{
+              backgroundColor: Colors.primary[600],
+              shadowColor: Colors.primary[600],
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.3,
+              shadowRadius: 8,
+              elevation: 4,
+            }}
           >
-            <ButtonText className="font-bold">{t('common.done')}</ButtonText>
-          </Button>
+            <Text className="text-base font-bold text-white">
+              {t('common.done', 'Done')}
+            </Text>
+          </Pressable>
         </View>
       </ScrollView>
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  sheetContainer: {
-    backgroundColor: colors.white,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 24,
-    elevation: 12,
-  },
-  handleContainer: {
-    alignItems: 'center',
-    paddingTop: spacing.sm,
-    paddingBottom: spacing.xs,
-  },
-  handle: {
-    width: 40,
-    height: 4,
-    backgroundColor: colors.gray[300],
-    borderRadius: 2,
-  },
-  sheetContent: {
-    paddingHorizontal: spacing.xl,
-    paddingTop: spacing.xs,
-  },
-  closeButton: {
-    width: overlayTheme.closeButton.size,
-    height: overlayTheme.closeButton.size,
-    borderRadius: overlayTheme.closeButton.borderRadius,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: overlayTheme.closeButton.backgroundColor,
-  },
-  pressedMicro: {
-    opacity: interaction.press.opacity,
-    transform: [{ scale: interaction.press.scale }],
-  },
-  headerIconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#FEF3C7',
-  },
-  summaryCard: {
-    padding: spacing.lg,
-    borderRadius: borderRadius['2xl'],
-    backgroundColor: colors.gray[50],
-    marginBottom: spacing.lg,
-  },
-  summaryRow: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    gap: spacing.sm,
-    marginBottom: spacing.md,
-  },
-  summaryValue: {
-    fontSize: 48,
-    fontWeight: '700',
-    color: '#F59E0B',
-    lineHeight: 52,
-  },
-  summaryLabel: {
-    fontSize: 16,
-    color: colors.gray[600],
-  },
-  progressBar: {
-    height: 8,
-    backgroundColor: colors.gray[200],
-    borderRadius: 4,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: '100%',
-    backgroundColor: '#F59E0B',
-    borderRadius: 4,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.gray[800],
-    marginBottom: spacing.md,
-  },
-  activitiesContainer: {
-    marginBottom: spacing.lg,
-  },
-  activityItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: spacing.md,
-    backgroundColor: colors.gray[50],
-    borderRadius: borderRadius.xl,
-    marginBottom: spacing.sm,
-    gap: spacing.md,
-  },
-  activityIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  activityContent: {
-    flex: 1,
-  },
-  activityLabel: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: colors.gray[800],
-    marginBottom: 2,
-  },
-  activityDetail: {
-    fontSize: 13,
-    color: colors.gray[500],
-  },
-  encouragementCard: {
-    padding: spacing.lg,
-    borderRadius: borderRadius['2xl'],
-    backgroundColor: '#FEF3C7',
-  },
-  encouragementText: {
-    fontSize: 15,
-    fontWeight: '500',
-    color: '#92400E',
-    textAlign: 'center',
-    lineHeight: 22,
-  },
-});
 
 export default CompletedTodayModal;

@@ -1,6 +1,14 @@
 // components/overlay/UnifiedOverlayHost.tsx
+/**
+ * Unified Overlay Host
+ *
+ * Central host for all overlays (modals and bottom sheets).
+ * Uses the overlay store to manage visibility and content.
+ *
+ * Styling: NativeWind-first with inline style for z-index
+ */
 import React from 'react';
-import { StyleSheet, Pressable, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import Animated, {
   FadeIn,
   FadeOut,
@@ -18,14 +26,18 @@ export const UnifiedOverlayHost = () => {
   if (!type || !Component) return null;
 
   return (
-    <View style={styles.container}>
+    <View className="absolute inset-0 justify-end" style={{ zIndex: 9999 }}>
       {/* Backdrop with its own fade animation */}
       <Animated.View
         entering={FadeIn.duration(200)}
         exiting={FadeOut.duration(150)}
-        style={StyleSheet.absoluteFill}
+        className="absolute inset-0"
       >
-        <Pressable style={styles.backdrop} onPress={close} />
+        <Pressable
+          className="absolute inset-0"
+          style={{ backgroundColor: 'rgba(0,0,0,0.45)' }}
+          onPress={close}
+        />
       </Animated.View>
 
       {type === 'center-modal' && (
@@ -42,7 +54,7 @@ export const UnifiedOverlayHost = () => {
         <Animated.View
           entering={SlideInDown.duration(250)}
           exiting={SlideOutDown.duration(200)}
-          style={styles.bottomSheetWrapper}
+          className="w-full"
         >
           <BaseBottomSheet
             visible
@@ -56,20 +68,5 @@ export const UnifiedOverlayHost = () => {
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    ...StyleSheet.absoluteFillObject,
-    zIndex: 9999,
-    justifyContent: 'flex-end',
-  },
-  backdrop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.45)',
-  },
-  bottomSheetWrapper: {
-    width: '100%',
-  },
-});
 
 export default UnifiedOverlayHost;

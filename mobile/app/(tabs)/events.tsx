@@ -1,5 +1,9 @@
 /**
  * Events Screen - Premium Redesign V11 (TodayStyle Architecture)
+ *
+ * Styling Strategy:
+ * - NativeWind (className) for all layout and styling
+ * - Inline style only for: dynamic values, custom colors, shadows
  */
 
 import React, { useState, useCallback, useMemo, useRef, memo } from 'react';
@@ -7,7 +11,6 @@ import {
   View,
   Text,
   Pressable,
-  StyleSheet,
   RefreshControl,
   Share,
   Alert,
@@ -18,13 +21,11 @@ import { useTranslation } from 'react-i18next';
 import { useRouter } from 'expo-router';
 import { withPremiumMotionV10 } from '@/hoc';
 import { PMotionV10 } from '@/components/motion/premium-motion';
-import { spacing, radius } from '@/constants/spacing';
 import {
   Filter,
   ChevronRight,
   Sparkles,
   CalendarDays,
-  CheckCircle,
   XCircle,
   ArrowRight,
   Heart,
@@ -67,7 +68,7 @@ import { EventsHeader, type EventsTab } from '@/components/events/EventsHeader';
 // Shared motion from today-motion module
 import { todayListItemMotion } from '@/components/motion/today-motion';
 
-// Premium monochrome palette with accent - consistent with other pages
+// Custom colors not in tailwind
 const Colors = {
   gradient: {
     start: '#1a1a2e',
@@ -76,31 +77,6 @@ const Colors = {
   },
   accent: {
     primary: '#d4af37',
-    light: '#f4d03f',
-    dark: '#b8860b',
-    sage: '#87a878',
-  },
-  neutral: {
-    50: '#fafafa',
-    100: '#f5f5f5',
-    200: '#e5e5e5',
-    300: '#d4d4d4',
-    400: '#a3a3a3',
-    500: '#737373',
-    600: '#525252',
-    700: '#404040',
-    800: '#262626',
-    900: '#171717',
-  },
-  white: '#ffffff',
-  success: '#22c55e',
-  warning: '#f59e0b',
-  error: '#ef4444',
-  primary: {
-    50: '#eff6ff',
-    100: '#dbeafe',
-    500: '#3b82f6',
-    600: '#2563eb',
   },
 };
 
@@ -116,6 +92,7 @@ function EventsScreen() {
   const { member } = useAuthStore();
   const [activeTab, setActiveTab] = useState<Tab>('upcoming');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
   // Focus key for animations - kept static to avoid replaying on tab switch
   const focusKey = 0;
@@ -182,7 +159,7 @@ function EventsScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
     // Build events array with status for calendar markers
-    const calendarEvents: Array<{ id: string; date: string; status: 'upcoming' | 'rsvp' | 'attended' | 'passed' }> = [];
+    const calendarEvents: Array<{ id: string; date: string; status: 'upcoming' | 'rsvp' | 'attended' | 'passed'; title?: string }> = [];
 
     // Add upcoming events
     upcomingQuery.data?.forEach((event) => {
@@ -193,6 +170,7 @@ function EventsScreen() {
           id: event.id,
           date: event.event_date,
           status: isPassed ? 'passed' : 'upcoming',
+          title: event.name,
         });
       }
     });
@@ -200,15 +178,15 @@ function EventsScreen() {
     // Add RSVP events (mark as rsvp)
     rsvpsQuery.data?.forEach((event) => {
       if (event.event_date) {
-        // Check if already added as upcoming
         const existing = calendarEvents.find((e) => e.id === event.id);
         if (existing) {
-          existing.status = 'rsvp'; // Upgrade status to rsvp
+          existing.status = 'rsvp';
         } else {
           calendarEvents.push({
             id: event.id,
             date: event.event_date,
             status: 'rsvp',
+            title: event.name,
           });
         }
       }
@@ -219,12 +197,13 @@ function EventsScreen() {
       if (event.event_date) {
         const existing = calendarEvents.find((e) => e.id === event.id);
         if (existing) {
-          existing.status = 'attended'; // Upgrade status to attended
+          existing.status = 'attended';
         } else {
           calendarEvents.push({
             id: event.id,
             date: event.event_date,
             status: 'attended',
+            title: event.name,
           });
         }
       }
@@ -232,11 +211,18 @@ function EventsScreen() {
 
     overlay.showBottomSheet(CalendarSheet, {
       events: calendarEvents,
-      onDateSelect: (_date: Date) => {
-        // Optional: future date filtering logic
+      selectedDate: selectedDate || undefined,
+      onDateSelect: (date: Date) => {
+        // Immediately update filter when selecting a date
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      },
+      onConfirm: (date: Date) => {
+        // Apply date filter when user confirms
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        setSelectedDate(date);
       },
     });
-  }, [overlay, upcomingQuery.data, rsvpsQuery.data, attendedQuery.data]);
+  }, [overlay, upcomingQuery.data, rsvpsQuery.data, attendedQuery.data, selectedDate]);
 
   // Handle tab change with Shared Axis X direction detection
   const handleTabChange = useCallback((newTab: Tab) => {
@@ -259,7 +245,22 @@ function EventsScreen() {
     return attendedQuery;
   };
 
-  const { data: events = [], isLoading, isError, refetch } = getCurrentTabData();
+  const { data: rawEvents = [], isLoading, isError, refetch } = getCurrentTabData();
+
+  // Filter events by selected date
+  const events = useMemo(() => {
+    if (!selectedDate) return rawEvents;
+
+    return rawEvents.filter((event) => {
+      if (!event.event_date) return false;
+      const eventDate = new Date(event.event_date);
+      return (
+        eventDate.getDate() === selectedDate.getDate() &&
+        eventDate.getMonth() === selectedDate.getMonth() &&
+        eventDate.getFullYear() === selectedDate.getFullYear()
+      );
+    });
+  }, [rawEvents, selectedDate]);
 
   // Prepare search data
   const allEvents = [
@@ -411,7 +412,6 @@ function EventsScreen() {
   }, [overlay, handleSubmitRating]);
 
   const getEventRating = useCallback((eventId: string): { rated: boolean; rating?: number; review?: string } => {
-    // Placeholder / mocked rating
     const hash = eventId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
     const hasRating = hash % 3 === 0;
 
@@ -461,14 +461,14 @@ function EventsScreen() {
 
   // Loading skeleton
   const LoadingSkeleton = () => (
-    <View style={styles.skeletonWrap}>
+    <View className="gap-4">
       {[1, 2, 3].map((i) => (
-        <View key={i} style={styles.skeletonCard}>
-          <View style={styles.skeletonImage} />
-          <View style={styles.skeletonContent}>
-            <View style={[styles.skeletonLine, { width: '40%', marginBottom: 8 }]} />
-            <View style={[styles.skeletonLine, { width: '80%', marginBottom: 12 }]} />
-            <View style={[styles.skeletonLine, { width: '60%' }]} />
+        <View key={i} className="bg-white rounded-[18px] overflow-hidden">
+          <View className="h-40 bg-neutral-200" />
+          <View className="p-4">
+            <View className="h-3.5 bg-neutral-200 rounded-lg w-2/5 mb-2" />
+            <View className="h-3.5 bg-neutral-200 rounded-lg w-4/5 mb-3" />
+            <View className="h-3.5 bg-neutral-200 rounded-lg w-3/5" />
           </View>
         </View>
       ))}
@@ -477,15 +477,33 @@ function EventsScreen() {
 
   // Empty state
   const EmptyState = () => {
+    const hasFilters = selectedCategory || selectedDate;
+
     const getEmptyContent = () => {
+      // If we have active filters and no results, show filter clear option
+      if (hasFilters) {
+        return {
+          icon: CalendarDays,
+          title: t('events.noEventsForFilter', 'No events found'),
+          desc: selectedDate
+            ? t('events.noEventsForDateDesc', 'No events on this date. Try selecting a different date or clear the filter.')
+            : t('events.noEventsForCategoryDesc', 'No events in this category.'),
+          action: t('events.clearFilters', 'Clear Filters'),
+          onAction: () => {
+            setSelectedCategory(null);
+            setSelectedDate(null);
+          },
+        };
+      }
+
       switch (activeTab) {
         case 'upcoming':
           return {
             icon: CalendarDays,
             title: t('events.noUpcomingEvents'),
             desc: t('events.noUpcomingEventsDesc'),
-            action: selectedCategory ? t('events.clearFilters') : t('common.refresh'),
-            onAction: selectedCategory ? () => setSelectedCategory(null) : handleRefresh,
+            action: t('common.refresh'),
+            onAction: handleRefresh,
           };
         case 'my_rsvps':
           return {
@@ -510,15 +528,28 @@ function EventsScreen() {
     const IconComponent = content.icon;
 
     return (
-      <View style={styles.emptyWrap}>
-        <View style={styles.emptyIcon}>
-          <IconComponent size={48} color={Colors.neutral[400]} />
+      <View className="items-center py-16 px-10">
+        <View className="w-[100px] h-[100px] rounded-full bg-neutral-200 items-center justify-center mb-6">
+          <IconComponent size={48} color="#A3A3A3" />
         </View>
-        <Text style={styles.emptyTitle}>{content.title}</Text>
-        <Text style={styles.emptyDesc}>{content.desc}</Text>
-        <Pressable onPress={content.onAction} style={styles.emptyBtn}>
-          <Text style={styles.emptyBtnText}>{content.action}</Text>
-          <ArrowRight size={18} color={Colors.white} />
+        <Text className="text-xl font-bold text-typography-800 mb-2 text-center">
+          {content.title}
+        </Text>
+        <Text
+          className="text-[15px] text-typography-500 text-center mb-6"
+          style={{ lineHeight: 22 }}
+        >
+          {content.desc}
+        </Text>
+        <Pressable
+          onPress={content.onAction}
+          className="flex-row items-center px-6 py-3 rounded-3xl gap-2"
+          style={{ backgroundColor: Colors.gradient.end }}
+        >
+          <Text className="text-[15px] font-semibold text-white">
+            {content.action}
+          </Text>
+          <ArrowRight size={18} color="#FFFFFF" />
         </Pressable>
       </View>
     );
@@ -527,13 +558,23 @@ function EventsScreen() {
   // Error state
   if (isError) {
     return (
-      <View style={[styles.container, { paddingTop: insets.top }]}>
-        <View style={styles.errorWrap}>
-          <XCircle size={48} color={Colors.error} />
-          <Text style={styles.errorTitle}>{t('events.loadError')}</Text>
-          <Text style={styles.errorDesc}>{t('events.loadErrorDesc')}</Text>
-          <Pressable onPress={handleRefresh} style={styles.retryBtn}>
-            <Text style={styles.retryBtnText}>{t('common.retry')}</Text>
+      <View className="flex-1 bg-background-100" style={{ paddingTop: insets.top }}>
+        <View className="flex-1 items-center justify-center px-10">
+          <XCircle size={48} color="#EF4444" />
+          <Text className="text-xl font-bold text-typography-800 mt-4 mb-2">
+            {t('events.loadError')}
+          </Text>
+          <Text className="text-[15px] text-typography-500 text-center mb-6">
+            {t('events.loadErrorDesc')}
+          </Text>
+          <Pressable
+            onPress={handleRefresh}
+            className="px-6 py-3 rounded-[20px]"
+            style={{ backgroundColor: Colors.gradient.end }}
+          >
+            <Text className="text-[15px] font-semibold text-white">
+              {t('common.retry')}
+            </Text>
           </Pressable>
         </View>
       </View>
@@ -541,8 +582,7 @@ function EventsScreen() {
   }
 
   return (
-    // Important: PLAIN View here; withPremiumMotionV10 handles screen transitions.
-    <View style={styles.container}>
+    <View className="flex-1 bg-background-100">
       <StatusBar barStyle="light-content" />
 
       {/* Today-style extracted header */}
@@ -562,8 +602,8 @@ function EventsScreen() {
       {/* Content */}
       {isSearching ? (
         <Animated.ScrollView
-          style={styles.scroll}
-          contentContainerStyle={styles.scrollContent}
+          className="flex-1"
+          contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 20, paddingBottom: 120 }}
           showsVerticalScrollIndicator={false}
         >
           <SearchBar />
@@ -577,19 +617,52 @@ function EventsScreen() {
           )}
         </Animated.ScrollView>
       ) : (
-        <View style={styles.flex1}>
+        <View className="flex-1">
           {/* Static header - search bar and filter */}
-          <View style={styles.staticHeader}>
+          <View className="px-5 pt-5">
             <SearchBar />
+
+            {/* Active date filter indicator */}
+            {selectedDate && (
+              <Pressable
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  setSelectedDate(null);
+                }}
+                className="flex-row items-center bg-blue-50 rounded-[18px] p-3 mb-3 gap-2 border border-blue-200"
+              >
+                <CalendarDays size={18} color="#2563EB" />
+                <Text className="flex-1 text-[15px] font-semibold text-blue-700">
+                  {selectedDate.toLocaleDateString('en-US', {
+                    weekday: 'short',
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric',
+                  })}
+                </Text>
+                <XCircle size={18} color="#2563EB" />
+              </Pressable>
+            )}
+
             {categories.length > 0 && (
-              <Pressable onPress={handleOpenCategoryFilter} style={styles.filterBtn}>
+              <Pressable
+                onPress={handleOpenCategoryFilter}
+                className="flex-row items-center bg-white rounded-[18px] p-3 mb-5 gap-2"
+                style={{
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.04,
+                  shadowRadius: 8,
+                  elevation: 2,
+                }}
+              >
                 <Filter size={18} color={Colors.gradient.end} />
-                <Text style={styles.filterText}>
+                <Text className="flex-1 text-[15px] font-semibold text-typography-800">
                   {selectedCategory
                     ? categories.find((c) => c.id === selectedCategory)?.name
                     : t('events.allCategories')}
                 </Text>
-                <ChevronRight size={18} color={Colors.neutral[400]} />
+                <ChevronRight size={18} color="#A3A3A3" />
               </Pressable>
             )}
           </View>
@@ -607,7 +680,7 @@ function EventsScreen() {
                 ? PMotionV10.sharedAxisXExitForward
                 : PMotionV10.sharedAxisXExitBackward
             }
-            style={styles.flex1}
+            className="flex-1"
           >
             <FlashList
               data={events}
@@ -617,7 +690,7 @@ function EventsScreen() {
               onScroll={handleScrollEvent}
               scrollEventThrottle={16}
               showsVerticalScrollIndicator={false}
-              contentContainerStyle={styles.flashListContentNoHeader}
+              contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 120 }}
               refreshControl={
                 <RefreshControl
                   refreshing={refreshing}
@@ -632,8 +705,6 @@ function EventsScreen() {
           </Animated.View>
         </View>
       )}
-
-      {/* Rating Modal is rendered by unified overlay host */}
     </View>
   );
 }
@@ -642,148 +713,3 @@ function EventsScreen() {
 const MemoizedEventsScreen = memo(EventsScreen);
 MemoizedEventsScreen.displayName = 'EventsScreen';
 export default withPremiumMotionV10(MemoizedEventsScreen);
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.neutral[100],
-  },
-  flex1: {
-    flex: 1,
-  },
-  // Scroll
-  scroll: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingHorizontal: spacing.ml,
-    paddingTop: spacing.ml,
-    paddingBottom: spacing.xxl * 3,
-  },
-  // Static header for search bar and filter (no transition)
-  staticHeader: {
-    paddingHorizontal: spacing.ml,
-    paddingTop: spacing.ml,
-  },
-  // FlashList content when static header is used
-  flashListContentNoHeader: {
-    paddingHorizontal: spacing.ml,
-    paddingBottom: spacing.xxl * 3,
-  },
-  // Filter
-  filterBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.white,
-    borderRadius: radius.card,
-    padding: spacing.sm,
-    marginBottom: spacing.ml,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    elevation: 2,
-    gap: spacing.s,
-  },
-  filterText: {
-    flex: 1,
-    fontSize: 15,
-    fontWeight: '600',
-    color: Colors.neutral[800],
-  },
-  // Loading
-  skeletonWrap: {
-    gap: spacing.m,
-  },
-  skeletonCard: {
-    backgroundColor: Colors.white,
-    borderRadius: radius.card,
-    overflow: 'hidden',
-  },
-  skeletonImage: {
-    height: 160,
-    backgroundColor: Colors.neutral[200],
-  },
-  skeletonContent: {
-    padding: spacing.m,
-  },
-  skeletonLine: {
-    height: 14,
-    backgroundColor: Colors.neutral[200],
-    borderRadius: 7,
-  },
-  // Empty
-  emptyWrap: {
-    alignItems: 'center',
-    paddingVertical: spacing.xxl + spacing.ml,
-    paddingHorizontal: spacing.xxl,
-  },
-  emptyIcon: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: Colors.neutral[200],
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.l,
-  },
-  emptyTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: Colors.neutral[800],
-    marginBottom: spacing.s,
-    textAlign: 'center',
-  },
-  emptyDesc: {
-    fontSize: 15,
-    color: Colors.neutral[500],
-    textAlign: 'center',
-    marginBottom: spacing.l,
-    lineHeight: 22,
-  },
-  emptyBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.gradient.end,
-    paddingHorizontal: spacing.l,
-    paddingVertical: spacing.sm,
-    borderRadius: spacing.l,
-    gap: spacing.s,
-  },
-  emptyBtnText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: Colors.white,
-  },
-  // Error
-  errorWrap: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: spacing.xxl,
-  },
-  errorTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: Colors.neutral[800],
-    marginTop: spacing.m,
-    marginBottom: spacing.s,
-  },
-  errorDesc: {
-    fontSize: 15,
-    color: Colors.neutral[500],
-    textAlign: 'center',
-    marginBottom: spacing.l,
-  },
-  retryBtn: {
-    backgroundColor: Colors.gradient.end,
-    paddingHorizontal: spacing.l,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.xl,
-  },
-  retryBtnText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: Colors.white,
-  },
-});

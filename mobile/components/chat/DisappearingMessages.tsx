@@ -6,19 +6,18 @@
  * - Set message auto-delete timer (24h, 7d, 90d, off)
  * - Visual indicator in chat header
  * - Countdown display on messages
+ *
+ * Styling: NativeWind-first with inline style for dynamic values
  */
 
 import React, { useCallback, useMemo, useRef } from 'react';
-import { View, Pressable, StyleSheet } from 'react-native';
+import { View, Pressable } from 'react-native';
 import BottomSheet, { BottomSheetBackdrop } from '@gorhom/bottom-sheet';
 import * as Haptics from 'expo-haptics';
 import { Timer, Clock, Check } from 'lucide-react-native';
 
-import { Text } from '@/components/ui/text';
-import { HStack } from '@/components/ui/hstack';
-import { VStack } from '@/components/ui/vstack';
-import { Icon } from '@/components/ui/icon';
-import { colors, borderRadius } from '@/constants/theme';
+import { Text } from 'react-native';
+import { colors } from '@/constants/theme';
 
 // =============================================================================
 // TYPES
@@ -71,9 +70,17 @@ const DURATION_OPTIONS: Array<{
   {
     value: 'off',
     label: 'Off',
-    description: 'Messages won\'t disappear',
+    description: "Messages won't disappear",
   },
 ];
+
+// Colors for icon usage only
+const Colors = {
+  gray300: colors.gray[300],
+  gray400: colors.gray[400],
+  gray500: colors.gray[500],
+  whatsappTeal: '#128C7E',
+};
 
 // =============================================================================
 // HELPER FUNCTIONS
@@ -135,15 +142,15 @@ export function DisappearingIndicator({
 }: DisappearingIndicatorProps) {
   if (duration === 'off') return null;
 
-  const iconSize = size === 'sm' ? 'xs' : 'sm';
+  const iconSize = size === 'sm' ? 12 : 16;
 
   return (
-    <HStack space="xs" className="items-center">
-      <Icon as={Timer} size={iconSize} style={{ color: colors.gray[500] }} />
-      <Text style={[styles.indicatorText, size === 'md' && styles.indicatorTextMd]}>
+    <View className="flex-row items-center gap-1">
+      <Timer size={iconSize} color={Colors.gray500} />
+      <Text className={`text-gray-500 ${size === 'md' ? 'text-[13px]' : 'text-[11px]'}`}>
         {getDurationLabel(duration)}
       </Text>
-    </HStack>
+    </View>
   );
 }
 
@@ -162,15 +169,15 @@ export function MessageCountdown({ expiresAt, size = 'sm' }: MessageCountdownPro
     return () => clearInterval(interval);
   }, [expiresAt]);
 
-  const iconSize = size === 'sm' ? '2xs' : 'xs';
+  const iconSize = size === 'sm' ? 10 : 12;
 
   return (
-    <HStack space="xs" className="items-center">
-      <Icon as={Clock} size={iconSize} style={{ color: colors.gray[400] }} />
-      <Text style={[styles.countdownText, size === 'md' && styles.countdownTextMd]}>
+    <View className="flex-row items-center gap-1">
+      <Clock size={iconSize} color={Colors.gray400} />
+      <Text className={`text-gray-400 ${size === 'md' ? 'text-xs' : 'text-[10px]'}`}>
         {countdown}
       </Text>
-    </HStack>
+    </View>
   );
 }
 
@@ -221,51 +228,55 @@ export function DisappearingMessagesSettings({
       enablePanDownToClose
       onClose={onClose}
       backdropComponent={renderBackdrop}
-      backgroundStyle={styles.sheetBackground}
-      handleIndicatorStyle={styles.handleIndicator}
+      backgroundStyle={{ backgroundColor: '#FFFFFF', borderTopLeftRadius: 20, borderTopRightRadius: 20 }}
+      handleIndicatorStyle={{ backgroundColor: Colors.gray300, width: 40 }}
     >
-      <View style={styles.container}>
+      <View className="flex-1 px-5 pt-2">
         {/* Header */}
-        <VStack space="xs" className="mb-4">
-          <HStack space="sm" className="items-center">
-            <Icon as={Timer} size="lg" style={{ color: '#128C7E' }} />
-            <Text style={styles.title}>Disappearing messages</Text>
-          </HStack>
-          <Text style={styles.description}>
+        <View className="mb-4">
+          <View className="flex-row items-center gap-2 mb-1">
+            <Timer size={24} color={Colors.whatsappTeal} />
+            <Text className="text-xl font-semibold text-gray-900">
+              Disappearing messages
+            </Text>
+          </View>
+          <Text className="text-sm text-gray-500 leading-5">
             When turned on, new messages will disappear after the selected time
           </Text>
-        </VStack>
+        </View>
 
         {/* Options */}
-        <VStack space="xs">
+        <View className="gap-1">
           {DURATION_OPTIONS.map((option) => (
             <Pressable
               key={option.value}
-              style={[
-                styles.optionRow,
-                currentDuration === option.value && styles.optionRowSelected,
-                !isAdmin && styles.optionRowDisabled,
-              ]}
+              className={`flex-row items-center py-4 px-3 rounded-xl mb-2 ${
+                currentDuration === option.value ? 'bg-green-50' : 'bg-gray-50'
+              } ${!isAdmin ? 'opacity-60' : ''}`}
               onPress={() => handleSelect(option.value)}
               disabled={!isAdmin}
             >
-              <VStack className="flex-1">
-                <Text style={styles.optionLabel}>{option.label}</Text>
-                <Text style={styles.optionDescription}>{option.description}</Text>
-              </VStack>
+              <View className="flex-1">
+                <Text className="text-base font-medium text-gray-900">
+                  {option.label}
+                </Text>
+                <Text className="text-[13px] text-gray-500 mt-0.5">
+                  {option.description}
+                </Text>
+              </View>
               {currentDuration === option.value && (
-                <View style={styles.checkIcon}>
-                  <Icon as={Check} size="md" style={{ color: '#128C7E' }} />
+                <View className="w-8 h-8 rounded-full bg-green-50 items-center justify-center">
+                  <Check size={20} color={Colors.whatsappTeal} />
                 </View>
               )}
             </Pressable>
           ))}
-        </VStack>
+        </View>
 
         {/* Admin notice */}
         {!isAdmin && (
-          <View style={styles.noticeContainer}>
-            <Text style={styles.noticeText}>
+          <View className="bg-gray-100 rounded-xl p-3 mt-4">
+            <Text className="text-[13px] text-gray-600 text-center">
               Only admins can change disappearing messages settings
             </Text>
           </View>
@@ -288,121 +299,14 @@ export function DisappearingBadge({ duration, onPress }: DisappearingBadgeProps)
   if (duration === 'off') return null;
 
   return (
-    <Pressable onPress={onPress} style={styles.badge}>
-      <Icon as={Timer} size="xs" style={{ color: 'rgba(255,255,255,0.9)' }} />
+    <Pressable
+      onPress={onPress}
+      className="w-5 h-5 rounded-full items-center justify-center ml-1"
+      style={{ backgroundColor: 'rgba(255,255,255,0.2)' }}
+    >
+      <Timer size={12} color="rgba(255,255,255,0.9)" />
     </Pressable>
   );
 }
-
-// =============================================================================
-// STYLES
-// =============================================================================
-
-const styles = StyleSheet.create({
-  // Sheet styles
-  sheetBackground: {
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-  },
-  handleIndicator: {
-    backgroundColor: colors.gray[300],
-    width: 40,
-  },
-  container: {
-    flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 8,
-  },
-
-  // Header
-  title: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: colors.gray[900],
-  },
-  description: {
-    fontSize: 14,
-    color: colors.gray[500],
-    lineHeight: 20,
-  },
-
-  // Options
-  optionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 12,
-    borderRadius: borderRadius.lg,
-    backgroundColor: colors.gray[50],
-    marginBottom: 8,
-  },
-  optionRowSelected: {
-    backgroundColor: '#E8F5E9',
-  },
-  optionRowDisabled: {
-    opacity: 0.6,
-  },
-  optionLabel: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: colors.gray[900],
-  },
-  optionDescription: {
-    fontSize: 13,
-    color: colors.gray[500],
-    marginTop: 2,
-  },
-  checkIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#E8F5E9',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  // Notice
-  noticeContainer: {
-    backgroundColor: colors.gray[100],
-    borderRadius: borderRadius.lg,
-    padding: 12,
-    marginTop: 16,
-  },
-  noticeText: {
-    fontSize: 13,
-    color: colors.gray[600],
-    textAlign: 'center',
-  },
-
-  // Indicator
-  indicatorText: {
-    fontSize: 11,
-    color: colors.gray[500],
-  },
-  indicatorTextMd: {
-    fontSize: 13,
-  },
-
-  // Countdown
-  countdownText: {
-    fontSize: 10,
-    color: colors.gray[400],
-  },
-  countdownTextMd: {
-    fontSize: 12,
-  },
-
-  // Badge
-  badge: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginLeft: 4,
-  },
-});
 
 export default DisappearingMessagesSettings;

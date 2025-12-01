@@ -2,12 +2,15 @@
  * HistoryItem - Memoized Giving History Item
  *
  * Displays a single giving transaction in the history list.
+ *
+ * Styling: NativeWind-first with inline style for dynamic colors
  */
 
 import React, { memo, useMemo } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View } from 'react-native';
 import { CheckCircle, Clock, XCircle } from 'lucide-react-native';
 
+import { Text } from '@/components/ui/text';
 import { MemoIcon } from '@/components/ui/MemoIcon';
 import { PremiumCard3 } from '@/components/ui/premium-card';
 
@@ -78,55 +81,36 @@ export const HistoryItem = memo(function HistoryItem({
 
   return (
     <PremiumCard3 selected={false}>
-      <View style={styles.content}>
-        <View style={[styles.statusIcon, { backgroundColor: statusConfig.color }]}>
+      <View className="flex-row items-center gap-3.5">
+        <View
+          className="w-10 h-10 rounded-[10px] items-center justify-center"
+          style={{ backgroundColor: statusConfig.color }}
+        >
           <MemoIcon icon={statusConfig.icon} size={18} color="#FFF" />
         </View>
-        <View style={styles.info}>
-          <Text style={styles.fundName}>{transaction.fund_name}</Text>
-          <Text style={styles.date}>{formattedDate}</Text>
+        <View className="flex-1">
+          <Text
+            className="text-[15px] font-semibold"
+            style={{ color: Colors.neutral[900] }}
+          >
+            {transaction.fund_name}
+          </Text>
+          <Text
+            className="text-[13px] mt-0.5"
+            style={{ color: Colors.neutral[500] }}
+          >
+            {formattedDate}
+          </Text>
         </View>
-        <Text style={styles.amount}>{formattedAmount}</Text>
+        <Text
+          className="text-base font-bold"
+          style={{ color: Colors.neutral[900] }}
+        >
+          {formattedAmount}
+        </Text>
       </View>
     </PremiumCard3>
   );
-});
-
-// =============================================================================
-// STYLES
-// =============================================================================
-
-const styles = StyleSheet.create({
-  content: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-  },
-  statusIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  info: {
-    flex: 1,
-  },
-  fundName: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: Colors.neutral[900],
-  },
-  date: {
-    fontSize: 13,
-    color: Colors.neutral[500],
-    marginTop: 2,
-  },
-  amount: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: Colors.neutral[900],
-  },
 });
 
 export default HistoryItem;

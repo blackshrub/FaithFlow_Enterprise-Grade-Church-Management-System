@@ -1,9 +1,12 @@
 // components/overlay/SharedAxisModal.tsx
+/**
+ * SharedAxisModal - Wrapper with Material 3 shared axis Y animation
+ *
+ * Styling: NativeWind-first with inline style for z-index
+ */
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View } from 'react-native';
 import Animated, {
-  FadeIn,
-  FadeOut,
   SlideInUp,
   SlideOutUp,
 } from 'react-native-reanimated';
@@ -18,7 +21,10 @@ export const SharedAxisModal = ({ visible, children }: Props) => {
   if (!visible) return null;
 
   return (
-    <View style={styles.center}>
+    <View
+      className="absolute inset-0 justify-center items-center"
+      style={{ zIndex: 99999 }}
+    >
       <Animated.View
         entering={SlideInUp.duration(200)}
         exiting={SlideOutUp.duration(180)}
@@ -29,14 +35,5 @@ export const SharedAxisModal = ({ visible, children }: Props) => {
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  center: {
-    ...StyleSheet.absoluteFillObject,
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 99999,
-  },
-});
 
 export default SharedAxisModal;

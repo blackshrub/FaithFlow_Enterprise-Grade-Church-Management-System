@@ -2,11 +2,12 @@
  * useVoice Hook
  *
  * Easy-to-use hook for voice features in Faith Assistant.
- * Combines TTS (speaking) and STT (listening) with state management.
+ * Combines TTS (speaking via Google Cloud TTS) and STT (listening via Groq/OpenAI) with state management.
  *
  * Features:
- * - One-tap voice input
- * - Auto language detection
+ * - One-tap voice input (Groq STT - 10x faster than OpenAI)
+ * - Auto language detection (Indonesian/English)
+ * - Bilingual WaveNet voices (Google Cloud TTS)
  * - Speaking state with pause/resume
  * - Error handling
  * - Loading states
@@ -15,10 +16,10 @@
  * ```tsx
  * const { speak, startListening, stopListening, isListening, isSpeaking } = useVoice();
  *
- * // Speak a response
+ * // Speak a response (Google Cloud TTS)
  * await speak("Hello, how can I help you?");
  *
- * // Listen for voice input
+ * // Listen for voice input (Groq/OpenAI Whisper)
  * startListening();
  * // ... user speaks ...
  * const text = await stopListening();
@@ -26,6 +27,7 @@
  */
 
 import { useState, useCallback, useRef, useEffect } from 'react';
+import { AppState, type AppStateStatus } from 'react-native';
 import {
   speakText,
   stopSpeaking,
@@ -41,13 +43,16 @@ import {
   isRecording as checkIsRecording,
   getTranscriptionPrompt,
   preCheckPermission,
+  resetAudio,
+  subscribeToMetering,
   type TranscriptionOptions,
   type TranscriptionResult,
 } from '@/services/voice/voiceInputService';
 import { useVoiceSettingsStore } from '@/stores/voiceSettings';
 import {
-  DEV_OPENAI_API_KEY,
+  DEV_GOOGLE_TTS_API_KEY,
   DEV_GROQ_API_KEY,
+  DEV_OPENAI_API_KEY,
   DEFAULT_STT_PROVIDER,
   type STTProvider,
 } from '@/constants/voice';
@@ -65,6 +70,8 @@ export interface UseVoiceOptions {
   onSpeechComplete?: () => void;
   /** Callback on error */
   onError?: (error: Error) => void;
+  /** Callback for real-time metering updates (for waveform visualization + silence detection) */
+  onMeteringUpdate?: (metering: number, isSilent: boolean, silenceDurationMs: number) => void;
 }
 
 export interface UseVoiceReturn {
@@ -98,6 +105,14 @@ export interface UseVoiceReturn {
   clearError: () => void;
   /** Whether voice is available */
   isAvailable: boolean;
+
+  // Metering / Silence detection
+  /** Current audio level in dB (updated ~10 times per second during recording) */
+  metering: number;
+  /** Whether currently silent (below threshold) */
+  isSilent: boolean;
+  /** How long silence has been detected (in ms) */
+  silenceDuration: number;
 }
 
 /**
@@ -111,6 +126,7 @@ export function useVoice(options?: UseVoiceOptions): UseVoiceReturn {
     onTranscriptionComplete,
     onSpeechComplete,
     onError,
+    onMeteringUpdate,
   } = options || {};
 
   // Get API key and settings from store
@@ -118,21 +134,20 @@ export function useVoice(options?: UseVoiceOptions): UseVoiceReturn {
     getEffectiveApiKey,
     getEffectiveVoice,
     getEffectiveSpeed,
-    getEffectiveModel,
     isEnabled,
     isLoaded,
   } = useVoiceSettingsStore();
 
   // In dev mode, always use hardcoded key for immediate testing
-  const apiKey = DEV_OPENAI_API_KEY || getEffectiveApiKey();
+  // TTS uses Google Cloud TTS
+  const ttsApiKey = DEV_GOOGLE_TTS_API_KEY || getEffectiveApiKey();
   const systemVoice = getEffectiveVoice();
   const systemSpeed = getEffectiveSpeed();
-  const systemModel = getEffectiveModel();
 
   // Determine STT provider and key
   // Groq is ~10x faster than OpenAI for STT (0.3-0.5s vs 2-4s)
   const sttProvider: STTProvider = DEV_GROQ_API_KEY ? 'groq' : DEFAULT_STT_PROVIDER;
-  const sttApiKey = sttProvider === 'groq' ? DEV_GROQ_API_KEY : apiKey;
+  const sttApiKey = sttProvider === 'groq' ? DEV_GROQ_API_KEY : DEV_OPENAI_API_KEY;
 
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isListening, setIsListening] = useState(false);
@@ -140,14 +155,65 @@ export function useVoice(options?: UseVoiceOptions): UseVoiceReturn {
   const [error, setError] = useState<Error | null>(null);
   const [recordingDuration, setRecordingDuration] = useState(0);
 
+  // Metering state for waveform visualization and silence detection
+  const [metering, setMetering] = useState(-160); // dB
+  const [isSilentState, setIsSilentState] = useState(false);
+  const [silenceDuration, setSilenceDuration] = useState(0);
+
   const durationIntervalRef = useRef<ReturnType<typeof setInterval> | null>(
     null
   );
   const recordingStartTimeRef = useRef<number>(0);
+  const appStateRef = useRef<AppStateStatus>(AppState.currentState);
+  const meteringUnsubscribeRef = useRef<(() => void) | null>(null);
+  const lastBackgroundTimeRef = useRef<number>(0);
 
   // Pre-check permission on mount (speeds up first recording by ~100ms)
   useEffect(() => {
     preCheckPermission();
+  }, []);
+
+  // Reset audio when app comes back from background after inactivity
+  // This prevents "recorder not prepared" errors after the app was in background
+  // Threshold matches STALE_AUDIO_THRESHOLD_MS in voiceInputService.ts (30 seconds)
+  useEffect(() => {
+    const handleAppStateChange = (nextAppState: AppStateStatus) => {
+      const prevState = appStateRef.current;
+
+      // App was in background and is now active
+      if (prevState.match(/inactive|background/) && nextAppState === 'active') {
+        const backgroundDuration = Date.now() - lastBackgroundTimeRef.current;
+
+        // If app was in background for more than 30 seconds, reset audio session
+        // This prevents "recorder not prepared" errors from stale audio state
+        // Note: resetAudio() now properly uses operationPromise, so startRecording
+        // will wait for it to complete (no more race conditions)
+        if (backgroundDuration > 30 * 1000) {
+          if (__DEV__) {
+            console.log(`[useVoice] App returned after ${Math.round(backgroundDuration / 1000)}s, resetting audio...`);
+          }
+          // Reset audio (properly tracked with operationPromise now)
+          resetAudio().catch((err) => {
+            if (__DEV__) console.warn('[useVoice] Background audio reset failed:', err);
+          });
+          // Also re-check permission in case it was revoked
+          preCheckPermission();
+        }
+      }
+
+      // App is going to background - record the time
+      if (nextAppState.match(/inactive|background/)) {
+        lastBackgroundTimeRef.current = Date.now();
+      }
+
+      appStateRef.current = nextAppState;
+    };
+
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+
+    return () => {
+      subscription.remove();
+    };
   }, []);
 
   // Cleanup on unmount
@@ -175,12 +241,12 @@ export function useVoice(options?: UseVoiceOptions): UseVoiceReturn {
   );
 
   /**
-   * Speak text aloud
+   * Speak text aloud using Google Cloud TTS
    */
   const speak = useCallback(
     async (text: string, opts?: TTSOptions) => {
-      if (!apiKey) {
-        handleError(new Error('OpenAI API key not configured'));
+      if (!ttsApiKey) {
+        handleError(new Error('Google Cloud TTS API key not configured'));
         return;
       }
 
@@ -192,13 +258,12 @@ export function useVoice(options?: UseVoiceOptions): UseVoiceReturn {
         // Apply system defaults if not overridden
         const effectiveOpts: TTSOptions = {
           voice: systemVoice,
-          speed: systemSpeed,
-          model: systemModel,
+          speakingRate: systemSpeed,
           ...ttsOptions,
           ...opts,
         };
 
-        await speakText(text, apiKey, effectiveOpts);
+        await speakText(text, ttsApiKey, effectiveOpts);
 
         setIsSpeaking(false);
         setIsProcessing(false);
@@ -208,7 +273,7 @@ export function useVoice(options?: UseVoiceOptions): UseVoiceReturn {
         handleError(err instanceof Error ? err : new Error(String(err)));
       }
     },
-    [apiKey, systemVoice, systemSpeed, systemModel, ttsOptions, onSpeechComplete, handleError]
+    [ttsApiKey, systemVoice, systemSpeed, ttsOptions, onSpeechComplete, handleError]
   );
 
   /**
@@ -265,6 +330,20 @@ export function useVoice(options?: UseVoiceOptions): UseVoiceReturn {
       setRecordingDuration(0);
       recordingStartTimeRef.current = Date.now();
 
+      // Subscribe to metering updates BEFORE starting recording
+      // This ensures we don't miss any metering updates
+      if (__DEV__) console.log('[useVoice] Subscribing to metering updates...');
+      meteringUnsubscribeRef.current = subscribeToMetering((meter, silent, silenceDur) => {
+        setMetering(meter);
+        setIsSilentState(silent);
+        setSilenceDuration(silenceDur);
+        onMeteringUpdate?.(meter, silent, silenceDur);
+        // Debug: Log every 10th update to avoid log spam
+        if (__DEV__ && Math.random() < 0.1) {
+          console.log(`[useVoice] Metering: ${meter.toFixed(1)} dB, silent: ${silent}, silenceDur: ${(silenceDur / 1000).toFixed(1)}s`);
+        }
+      });
+
       await startRecording();
       setIsListening(true);
 
@@ -276,7 +355,7 @@ export function useVoice(options?: UseVoiceOptions): UseVoiceReturn {
     } catch (err) {
       handleError(err instanceof Error ? err : new Error(String(err)));
     }
-  }, [sttApiKey, handleError]);
+  }, [sttApiKey, handleError, onMeteringUpdate]);
 
   /**
    * Stop listening and transcribe
@@ -289,6 +368,17 @@ export function useVoice(options?: UseVoiceOptions): UseVoiceReturn {
         clearInterval(durationIntervalRef.current);
         durationIntervalRef.current = null;
       }
+
+      // Unsubscribe from metering
+      if (meteringUnsubscribeRef.current) {
+        meteringUnsubscribeRef.current();
+        meteringUnsubscribeRef.current = null;
+      }
+
+      // Reset metering state
+      setMetering(-160);
+      setIsSilentState(false);
+      setSilenceDuration(0);
 
       if (!checkIsRecording()) {
         setIsListening(false);
@@ -343,6 +433,17 @@ export function useVoice(options?: UseVoiceOptions): UseVoiceReturn {
       durationIntervalRef.current = null;
     }
 
+    // Unsubscribe from metering
+    if (meteringUnsubscribeRef.current) {
+      meteringUnsubscribeRef.current();
+      meteringUnsubscribeRef.current = null;
+    }
+
+    // Reset metering state
+    setMetering(-160);
+    setIsSilentState(false);
+    setSilenceDuration(0);
+
     try {
       await cancelRecording();
       setIsListening(false);
@@ -378,12 +479,17 @@ export function useVoice(options?: UseVoiceOptions): UseVoiceReturn {
     isProcessing,
     error,
     clearError,
-    // Voice is available if we have TTS key (OpenAI) or STT key (OpenAI/Groq)
+    // Voice is available if we have TTS key (Google) or STT key (Groq/OpenAI)
     // In dev mode, always available; in production, check store state
     isAvailable:
-      !!DEV_OPENAI_API_KEY ||
+      !!DEV_GOOGLE_TTS_API_KEY ||
       !!DEV_GROQ_API_KEY ||
-      (isLoaded && isEnabled && !!apiKey),
+      (isLoaded && isEnabled && !!ttsApiKey),
+
+    // Metering / Silence detection
+    metering,
+    isSilent: isSilentState,
+    silenceDuration,
   };
 }
 

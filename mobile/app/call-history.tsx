@@ -12,7 +12,6 @@
 import React, { useState, useCallback, useMemo, memo } from 'react';
 import {
   View,
-  StyleSheet,
   Pressable,
   RefreshControl,
 } from 'react-native';
@@ -110,7 +109,7 @@ function FilterTabs({ selected, onSelect }: FilterTabsProps) {
   ];
 
   return (
-    <HStack space="sm" style={styles.filterTabs}>
+    <HStack space="sm" style={{ paddingHorizontal: spacing.md, paddingBottom: spacing.md }}>
       {tabs.map((tab) => (
         <Pressable
           key={tab.id}
@@ -118,16 +117,18 @@ function FilterTabs({ selected, onSelect }: FilterTabsProps) {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             onSelect(tab.id);
           }}
-          style={[
-            styles.filterTab,
-            selected === tab.id && styles.filterTabActive,
-          ]}
+          className="rounded-full"
+          style={{
+            paddingHorizontal: spacing.md,
+            paddingVertical: spacing.xs,
+            backgroundColor: selected === tab.id ? colors.primary[500] : colors.gray[100],
+          }}
         >
           <Text
-            style={[
-              styles.filterTabText,
-              selected === tab.id && styles.filterTabTextActive,
-            ]}
+            className="text-sm font-medium"
+            style={{
+              color: selected === tab.id ? colors.white : colors.gray[600],
+            }}
           >
             {tab.label}
           </Text>
@@ -158,24 +159,51 @@ const CallItem = memo(function CallItem({ item, onPress, onCallPress }: CallItem
 
   return (
     <Animated.View entering={FadeInLeft.duration(200)}>
-      <Pressable onPress={onPress} style={styles.callItem}>
+      <Pressable
+        onPress={onPress}
+        className="border-b"
+        style={{
+          paddingHorizontal: spacing.md,
+          paddingVertical: spacing.sm,
+          borderBottomColor: colors.gray[100],
+        }}
+      >
         <HStack space="md" style={{ alignItems: 'center' }}>
           {/* Avatar */}
-          <View style={styles.avatarContainer}>
+          <View className="relative">
             {otherAvatar ? (
               <Image
                 source={{ uri: otherAvatar }}
-                style={styles.avatar}
+                style={{ width: 50, height: 50, borderRadius: 25 }}
               />
             ) : (
-              <View style={styles.avatarPlaceholder}>
-                <Text style={styles.avatarText}>
+              <View
+                className="items-center justify-center"
+                style={{
+                  width: 50,
+                  height: 50,
+                  borderRadius: 25,
+                  backgroundColor: colors.primary[100],
+                }}
+              >
+                <Text className="text-xl font-semibold" style={{ color: colors.primary[600] }}>
                   {otherName?.charAt(0).toUpperCase() || '?'}
                 </Text>
               </View>
             )}
             {/* Call type badge */}
-            <View style={styles.callTypeBadge}>
+            <View
+              className="absolute items-center justify-center border-2"
+              style={{
+                bottom: -2,
+                right: -2,
+                width: 18,
+                height: 18,
+                borderRadius: 9,
+                backgroundColor: colors.gray[600],
+                borderColor: colors.white,
+              }}
+            >
               {isVideo ? (
                 <Video size={10} color={colors.white} />
               ) : (
@@ -187,8 +215,9 @@ const CallItem = memo(function CallItem({ item, onPress, onCallPress }: CallItem
           {/* Info */}
           <VStack style={{ flex: 1 }}>
             <Text
-              style={[styles.name, isMissed && styles.missedText]}
+              className="text-base font-medium"
               numberOfLines={1}
+              style={{ color: isMissed ? colors.error[500] : colors.gray[900] }}
             >
               {otherName}
             </Text>
@@ -201,7 +230,7 @@ const CallItem = memo(function CallItem({ item, onPress, onCallPress }: CallItem
               ) : (
                 <PhoneIncoming size={14} color={colors.success[500]} />
               )}
-              <Text style={styles.callInfo}>
+              <Text className="text-[13px]" style={{ color: colors.gray[500] }}>
                 {isMissed
                   ? 'Missed call'
                   : item.duration_seconds
@@ -213,14 +242,16 @@ const CallItem = memo(function CallItem({ item, onPress, onCallPress }: CallItem
 
           {/* Time & Action */}
           <VStack style={{ alignItems: 'flex-end' }}>
-            <Text style={styles.time}>{formatCallTime(item.initiated_at)}</Text>
+            <Text className="text-xs mb-1" style={{ color: colors.gray[400] }}>
+              {formatCallTime(item.initiated_at)}
+            </Text>
             <Pressable
               onPress={(e) => {
                 e.stopPropagation();
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 onCallPress();
               }}
-              style={styles.callButton}
+              style={{ padding: spacing.xs }}
             >
               {isVideo ? (
                 <Video size={18} color={colors.primary[500]} />
@@ -254,10 +285,12 @@ function EmptyState({ filter }: { filter: FilterType }) {
   };
 
   return (
-    <View style={styles.emptyContainer}>
+    <View className="flex-1 items-center justify-center" style={{ padding: spacing.xl }}>
       <Clock size={48} color={colors.gray[300]} />
-      <Text style={styles.emptyText}>{getMessage()}</Text>
-      <Text style={styles.emptySubtext}>
+      <Text className="text-lg font-semibold" style={{ color: colors.gray[700], marginTop: spacing.md }}>
+        {getMessage()}
+      </Text>
+      <Text className="text-sm text-center" style={{ color: colors.gray[500], marginTop: spacing.xs }}>
         Your call history will appear here
       </Text>
     </View>
@@ -272,13 +305,13 @@ function LoadingSkeleton() {
   return (
     <VStack space="md" style={{ padding: spacing.md }}>
       {[1, 2, 3, 4, 5].map((i) => (
-        <HStack key={i} space="md" style={{ alignItems: 'center' }}>
-          <Skeleton height={50} width={50} style={{ borderRadius: 25 }} />
-          <VStack style={{ flex: 1 }} space="xs">
+        <HStack key={i} space="md" className="items-center">
+          <Skeleton height={50} width={50} className="rounded-full" />
+          <VStack className="flex-1" space="xs">
             <Skeleton height={16} width="60%" />
             <Skeleton height={12} width="40%" />
           </VStack>
-          <Skeleton height={32} width={32} style={{ borderRadius: 16 }} />
+          <Skeleton height={32} width={32} className="rounded-full" />
         </HStack>
       ))}
     </VStack>
@@ -346,12 +379,16 @@ export default function CallHistoryScreen() {
         }}
       />
 
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView className="flex-1 bg-white" edges={['top']}>
         {/* Header */}
-        <HStack space="md" style={styles.header}>
+        <HStack
+          space="md"
+          className="items-center"
+          style={{ paddingHorizontal: spacing.md, paddingVertical: spacing.sm }}
+        >
           <Pressable
             onPress={() => router.back()}
-            style={styles.backButton}
+            style={{ padding: spacing.xs }}
           >
             <ArrowLeft size={24} color={colors.gray[900]} />
           </Pressable>
@@ -394,121 +431,3 @@ export default function CallHistoryScreen() {
     </>
   );
 }
-
-// =============================================================================
-// STYLES
-// =============================================================================
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.white,
-  },
-  header: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    alignItems: 'center',
-  },
-  backButton: {
-    padding: spacing.xs,
-  },
-  filterTabs: {
-    paddingHorizontal: spacing.md,
-    paddingBottom: spacing.md,
-  },
-  filterTab: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: borderRadius.full,
-    backgroundColor: colors.gray[100],
-  },
-  filterTabActive: {
-    backgroundColor: colors.primary[500],
-  },
-  filterTabText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: colors.gray[600],
-  },
-  filterTabTextActive: {
-    color: colors.white,
-  },
-  callItem: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.gray[100],
-  },
-  avatarContainer: {
-    position: 'relative',
-  },
-  avatar: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-  },
-  avatarPlaceholder: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: colors.primary[100],
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarText: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: colors.primary[600],
-  },
-  callTypeBadge: {
-    position: 'absolute',
-    bottom: -2,
-    right: -2,
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    backgroundColor: colors.gray[600],
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: colors.white,
-  },
-  name: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: colors.gray[900],
-  },
-  missedText: {
-    color: colors.error[500],
-  },
-  callInfo: {
-    fontSize: 13,
-    color: colors.gray[500],
-  },
-  time: {
-    fontSize: 12,
-    color: colors.gray[400],
-    marginBottom: 4,
-  },
-  callButton: {
-    padding: spacing.xs,
-  },
-  emptyContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: spacing.xl,
-  },
-  emptyText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: colors.gray[700],
-    marginTop: spacing.md,
-  },
-  emptySubtext: {
-    fontSize: 14,
-    color: colors.gray[500],
-    marginTop: spacing.xs,
-    textAlign: 'center',
-  },
-});

@@ -12,13 +12,13 @@
  */
 
 import React from 'react';
-import { Pressable, StyleSheet, View, Image } from 'react-native';
+import { Pressable, View, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 
 import { Text } from '@/components/ui/text';
 import { useAuthStore } from '@/stores/auth';
-import { colors, shadows, borderRadius } from '@/constants/theme';
+import { colors, shadows } from '@/constants/theme';
 
 interface ProfileButtonProps {
   size?: number;
@@ -53,30 +53,50 @@ export function ProfileButton({ size = 36, showBorder = true }: ProfileButtonPro
   return (
     <Pressable
       onPress={handlePress}
+      className="items-center justify-center"
       style={({ pressed }) => [
-        styles.button,
-        pressed && styles.pressed,
-        showBorder && styles.withBorder,
-        { width: size, height: size, borderRadius: size / 2 },
+        {
+          width: size,
+          height: size,
+          borderRadius: size / 2,
+          backgroundColor: colors.white,
+          ...shadows.sm,
+          ...(showBorder && {
+            borderWidth: 2,
+            borderColor: colors.primary[500],
+          }),
+          ...(pressed && {
+            opacity: 0.8,
+            transform: [{ scale: 0.95 }],
+          }),
+        },
       ]}
     >
       {avatarUrl ? (
         <Image
           source={{ uri: avatarUrl }}
-          style={[
-            styles.avatar,
-            { width: size - 4, height: size - 4, borderRadius: (size - 4) / 2 },
-          ]}
+          style={{
+            width: size - 4,
+            height: size - 4,
+            borderRadius: (size - 4) / 2,
+            backgroundColor: colors.gray[200],
+          }}
           resizeMode="cover"
         />
       ) : (
         <View
-          style={[
-            styles.initialsContainer,
-            { width: size - 4, height: size - 4, borderRadius: (size - 4) / 2 },
-          ]}
+          className="items-center justify-center"
+          style={{
+            width: size - 4,
+            height: size - 4,
+            borderRadius: (size - 4) / 2,
+            backgroundColor: colors.primary[100],
+          }}
         >
-          <Text style={[styles.initials, { fontSize: size * 0.4 }]}>
+          <Text
+            className="font-bold"
+            style={{ fontSize: size * 0.4, color: colors.primary[700] }}
+          >
             {getInitials()}
           </Text>
         </View>
@@ -84,32 +104,3 @@ export function ProfileButton({ size = 36, showBorder = true }: ProfileButtonPro
     </Pressable>
   );
 }
-
-const styles = StyleSheet.create({
-  button: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.white,
-    ...shadows.sm,
-  },
-  withBorder: {
-    borderWidth: 2,
-    borderColor: colors.primary[500],
-  },
-  pressed: {
-    opacity: 0.8,
-    transform: [{ scale: 0.95 }],
-  },
-  avatar: {
-    backgroundColor: colors.gray[200],
-  },
-  initialsContainer: {
-    backgroundColor: colors.primary[100],
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  initials: {
-    color: colors.primary[700],
-    fontWeight: '700',
-  },
-});

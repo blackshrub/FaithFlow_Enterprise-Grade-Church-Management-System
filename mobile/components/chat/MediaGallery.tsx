@@ -277,10 +277,13 @@ function ZoomableImage({
 
   return (
     <GestureDetector gesture={composed}>
-      <Animated.View style={[styles.imageContainer, animatedStyle]}>
+      <Animated.View
+        className="justify-center items-center"
+        style={[{ width: SCREEN_WIDTH, height: SCREEN_HEIGHT }, animatedStyle]}
+      >
         <Image
           source={{ uri }}
-          style={styles.fullImage}
+          style={{ width: SCREEN_WIDTH, height: SCREEN_HEIGHT }}
           contentFit="contain"
           transition={200}
         />
@@ -340,16 +343,26 @@ function VideoPlayerComponent({ uri, onSwipeDown }: VideoPlayerProps) {
 
   return (
     <GestureDetector gesture={panGesture}>
-      <Animated.View style={[styles.videoContainer, animatedStyle]}>
+      <Animated.View
+        className="justify-center items-center"
+        style={[{ width: SCREEN_WIDTH, height: SCREEN_HEIGHT }, animatedStyle]}
+      >
         <VideoView
           player={player}
-          style={styles.fullVideo}
+          style={{ width: SCREEN_WIDTH, height: SCREEN_HEIGHT * 0.7 }}
           contentFit="contain"
           nativeControls={true}
         />
-        <Pressable style={styles.playOverlay} onPress={togglePlayback}>
+        <Pressable
+          style={StyleSheet.absoluteFillObject}
+          className="justify-center items-center"
+          onPress={togglePlayback}
+        >
           {!isPlaying && (
-            <View style={styles.playButton}>
+            <View
+              className="justify-center items-center"
+              style={{ width: 80, height: 80, borderRadius: 40, backgroundColor: 'rgba(0,0,0,0.5)' }}
+            >
               <Icon as={Play} size="3xl" style={{ color: '#FFFFFF' }} />
             </View>
           )}
@@ -377,28 +390,32 @@ export function MediaGrid({ media, onItemPress, columns = 3 }: MediaGridProps) {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             onItemPress(index);
           }}
-          style={[styles.gridItem, { width: itemSize, height: itemSize }]}
+          className="rounded overflow-hidden"
+          style={{ width: itemSize, height: itemSize, margin: 2, backgroundColor: colors.gray[100] }}
         >
           {isDocument ? (
-            <View style={styles.documentThumbnail}>
+            <View className="w-full h-full justify-center items-center p-2" style={{ backgroundColor: colors.gray[100] }}>
               <Icon as={FileText} size="xl" style={{ color: colors.gray[400] }} />
-              <Text style={styles.documentName} numberOfLines={1}>
+              <Text className="text-[10px] text-center mt-1" style={{ color: colors.gray[600] }} numberOfLines={1}>
                 {item.file_name}
               </Text>
             </View>
           ) : (
             <Image
               source={{ uri: item.thumbnail_uri || item.uri }}
-              style={styles.gridImage}
+              className="w-full h-full"
               contentFit="cover"
               transition={100}
             />
           )}
           {isVideo && (
-            <View style={styles.videoIndicator}>
+            <View
+              className="absolute bottom-1 left-1 flex-row items-center rounded px-1 py-0.5"
+              style={{ backgroundColor: 'rgba(0,0,0,0.6)' }}
+            >
               <Icon as={Play} size="sm" style={{ color: '#FFFFFF' }} />
               {item.duration && (
-                <Text style={styles.videoDuration}>
+                <Text className="text-[10px] text-white ml-0.5">
                   {Math.floor(item.duration / 60)}:{String(Math.floor(item.duration % 60)).padStart(2, '0')}
                 </Text>
               )}
@@ -411,7 +428,7 @@ export function MediaGrid({ media, onItemPress, columns = 3 }: MediaGridProps) {
   );
 
   return (
-    <View style={styles.gridContainer}>
+    <View className="flex-1" style={{ minHeight: 200 }}>
       <FlashList
         data={media}
         renderItem={renderItem}
@@ -509,34 +526,41 @@ export function MediaGalleryViewer({
       onRequestClose={onClose}
     >
       <StatusBar hidden />
-      <GestureHandlerRootView style={styles.fullscreenContainer}>
+      <GestureHandlerRootView className="flex-1 bg-black">
         {/* Header */}
-        <View style={styles.header}>
-          <Pressable onPress={onClose} style={styles.headerButton}>
+        <View
+          className="absolute top-0 left-0 right-0 flex-row items-center justify-between px-4 pb-3"
+          style={{
+            zIndex: 10,
+            paddingTop: Platform.OS === 'ios' ? 50 : 20,
+            backgroundColor: 'rgba(0,0,0,0.5)',
+          }}
+        >
+          <Pressable onPress={onClose} className="p-2">
             <Icon as={X} size="lg" style={{ color: '#FFFFFF' }} />
           </Pressable>
 
-          <View style={styles.headerCenter}>
-            <Text style={styles.headerTitle}>
+          <View className="flex-1 items-center">
+            <Text className="text-base font-semibold text-white">
               {currentIndex + 1} / {media.length}
             </Text>
             {communityName && (
-              <Text style={styles.headerSubtitle}>{communityName}</Text>
+              <Text className="text-xs" style={{ color: 'rgba(255,255,255,0.7)' }}>{communityName}</Text>
             )}
           </View>
 
           <HStack space="sm">
-            <Pressable onPress={handleDownload} style={styles.headerButton}>
+            <Pressable onPress={handleDownload} className="p-2">
               <Icon as={Download} size="md" style={{ color: '#FFFFFF' }} />
             </Pressable>
-            <Pressable onPress={handleShare} style={styles.headerButton}>
+            <Pressable onPress={handleShare} className="p-2">
               <Icon as={Share2} size="md" style={{ color: '#FFFFFF' }} />
             </Pressable>
           </HStack>
         </View>
 
         {/* Media Viewer */}
-        <View style={styles.mediaViewer}>
+        <View className="flex-1 justify-center items-center">
           {currentItem.type === 'video' ? (
             <VideoPlayerComponent uri={currentItem.uri} onSwipeDown={onClose} />
           ) : currentItem.type === 'image' ? (
@@ -547,9 +571,9 @@ export function MediaGalleryViewer({
               onSwipeRight={currentIndex > 0 ? handlePrev : undefined}
             />
           ) : (
-            <View style={styles.documentViewer}>
+            <View className="items-center justify-center p-10">
               <Icon as={FileText} size="xl" style={{ color: colors.gray[400] }} />
-              <Text style={styles.documentViewerName}>{currentItem.file_name}</Text>
+              <Text className="text-base text-white text-center mt-4">{currentItem.file_name}</Text>
             </View>
           )}
         </View>
@@ -560,7 +584,16 @@ export function MediaGalleryViewer({
             {currentIndex > 0 && (
               <Pressable
                 onPress={handlePrev}
-                style={[styles.navButton, styles.navButtonLeft]}
+                className="absolute justify-center items-center"
+                style={{
+                  top: '50%',
+                  marginTop: -25,
+                  left: 16,
+                  width: 50,
+                  height: 50,
+                  borderRadius: 25,
+                  backgroundColor: 'rgba(0,0,0,0.5)',
+                }}
               >
                 <Icon as={ChevronLeft} size="xl" style={{ color: '#FFFFFF' }} />
               </Pressable>
@@ -568,7 +601,16 @@ export function MediaGalleryViewer({
             {currentIndex < media.length - 1 && (
               <Pressable
                 onPress={handleNext}
-                style={[styles.navButton, styles.navButtonRight]}
+                className="absolute justify-center items-center"
+                style={{
+                  top: '50%',
+                  marginTop: -25,
+                  right: 16,
+                  width: 50,
+                  height: 50,
+                  borderRadius: 25,
+                  backgroundColor: 'rgba(0,0,0,0.5)',
+                }}
               >
                 <Icon as={ChevronRight} size="xl" style={{ color: '#FFFFFF' }} />
               </Pressable>
@@ -578,10 +620,16 @@ export function MediaGalleryViewer({
 
         {/* Bottom Info */}
         {currentItem.sender_name && (
-          <View style={styles.bottomInfo}>
-            <Text style={styles.senderName}>{currentItem.sender_name}</Text>
+          <View
+            className="absolute bottom-0 left-0 right-0 px-4 py-4"
+            style={{
+              paddingBottom: Platform.OS === 'ios' ? 40 : 16,
+              backgroundColor: 'rgba(0,0,0,0.5)',
+            }}
+          >
+            <Text className="text-sm font-medium text-white">{currentItem.sender_name}</Text>
             {currentItem.created_at && (
-              <Text style={styles.timestamp}>
+              <Text className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.7)' }}>
                 {new Date(currentItem.created_at).toLocaleDateString('en-US', {
                   month: 'short',
                   day: 'numeric',
@@ -622,12 +670,20 @@ export function MediaTabs({ media, onViewAll }: MediaTabsProps) {
   };
 
   return (
-    <View style={styles.mediaTabsContainer}>
+    <View className="bg-white overflow-hidden" style={{ borderRadius: borderRadius.xl }}>
       {/* Tabs */}
-      <HStack space="sm" style={styles.tabsRow}>
+      <HStack
+        space="sm"
+        className="px-4 py-3 items-center"
+        style={{ borderBottomWidth: 1, borderBottomColor: colors.gray[100] }}
+      >
         <Pressable
           onPress={() => setSelectedTab('images')}
-          style={[styles.tab, selectedTab === 'images' && styles.tabActive]}
+          className="flex-row items-center px-3 py-2"
+          style={{
+            borderRadius: borderRadius.lg,
+            backgroundColor: selectedTab === 'images' ? colors.primary[50] : colors.gray[50],
+          }}
         >
           <Icon
             as={ImageIcon}
@@ -635,14 +691,19 @@ export function MediaTabs({ media, onViewAll }: MediaTabsProps) {
             style={{ color: selectedTab === 'images' ? colors.primary[600] : colors.gray[500] }}
           />
           <Text
-            style={[styles.tabText, selectedTab === 'images' && styles.tabTextActive]}
+            className={`text-xs ml-1 ${selectedTab === 'images' ? 'font-semibold' : ''}`}
+            style={{ color: selectedTab === 'images' ? colors.primary[600] : colors.gray[500] }}
           >
             {images.length}
           </Text>
         </Pressable>
         <Pressable
           onPress={() => setSelectedTab('videos')}
-          style={[styles.tab, selectedTab === 'videos' && styles.tabActive]}
+          className="flex-row items-center px-3 py-2"
+          style={{
+            borderRadius: borderRadius.lg,
+            backgroundColor: selectedTab === 'videos' ? colors.primary[50] : colors.gray[50],
+          }}
         >
           <Icon
             as={Video}
@@ -650,14 +711,19 @@ export function MediaTabs({ media, onViewAll }: MediaTabsProps) {
             style={{ color: selectedTab === 'videos' ? colors.primary[600] : colors.gray[500] }}
           />
           <Text
-            style={[styles.tabText, selectedTab === 'videos' && styles.tabTextActive]}
+            className={`text-xs ml-1 ${selectedTab === 'videos' ? 'font-semibold' : ''}`}
+            style={{ color: selectedTab === 'videos' ? colors.primary[600] : colors.gray[500] }}
           >
             {videos.length}
           </Text>
         </Pressable>
         <Pressable
           onPress={() => setSelectedTab('documents')}
-          style={[styles.tab, selectedTab === 'documents' && styles.tabActive]}
+          className="flex-row items-center px-3 py-2"
+          style={{
+            borderRadius: borderRadius.lg,
+            backgroundColor: selectedTab === 'documents' ? colors.primary[50] : colors.gray[50],
+          }}
         >
           <Icon
             as={FileText}
@@ -665,14 +731,15 @@ export function MediaTabs({ media, onViewAll }: MediaTabsProps) {
             style={{ color: selectedTab === 'documents' ? colors.primary[600] : colors.gray[500] }}
           />
           <Text
-            style={[styles.tabText, selectedTab === 'documents' && styles.tabTextActive]}
+            className={`text-xs ml-1 ${selectedTab === 'documents' ? 'font-semibold' : ''}`}
+            style={{ color: selectedTab === 'documents' ? colors.primary[600] : colors.gray[500] }}
           >
             {documents.length}
           </Text>
         </Pressable>
 
-        <Pressable onPress={onViewAll} style={styles.viewAllButton}>
-          <Text style={styles.viewAllText}>View all</Text>
+        <Pressable onPress={onViewAll} className="ml-auto px-3 py-2">
+          <Text className="text-sm font-medium" style={{ color: colors.primary[600] }}>View all</Text>
         </Pressable>
       </HStack>
 
@@ -689,227 +756,5 @@ export function MediaTabs({ media, onViewAll }: MediaTabsProps) {
     </View>
   );
 }
-
-// =============================================================================
-// STYLES
-// =============================================================================
-
-const styles = StyleSheet.create({
-  // Zoomable Image
-  imageContainer: {
-    width: SCREEN_WIDTH,
-    height: SCREEN_HEIGHT,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  fullImage: {
-    width: SCREEN_WIDTH,
-    height: SCREEN_HEIGHT,
-  },
-
-  // Video
-  videoContainer: {
-    width: SCREEN_WIDTH,
-    height: SCREEN_HEIGHT,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  fullVideo: {
-    width: SCREEN_WIDTH,
-    height: SCREEN_HEIGHT * 0.7,
-  },
-  playOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  playButton: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-
-  // Grid
-  gridContainer: {
-    flex: 1,
-    minHeight: 200,
-  },
-  gridItem: {
-    margin: 2,
-    borderRadius: 4,
-    overflow: 'hidden',
-    backgroundColor: colors.gray[100],
-  },
-  gridImage: {
-    width: '100%',
-    height: '100%',
-  },
-  videoIndicator: {
-    position: 'absolute',
-    bottom: 4,
-    left: 4,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    borderRadius: 4,
-    paddingHorizontal: 4,
-    paddingVertical: 2,
-  },
-  videoDuration: {
-    fontSize: 10,
-    color: '#FFFFFF',
-    marginLeft: 2,
-  },
-  documentThumbnail: {
-    width: '100%',
-    height: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: colors.gray[100],
-    padding: 8,
-  },
-  documentName: {
-    fontSize: 10,
-    color: colors.gray[600],
-    marginTop: 4,
-    textAlign: 'center',
-  },
-
-  // Fullscreen viewer
-  fullscreenContainer: {
-    flex: 1,
-    backgroundColor: '#000000',
-  },
-  header: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingTop: Platform.OS === 'ios' ? 50 : 20,
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-  },
-  headerButton: {
-    padding: 8,
-  },
-  headerCenter: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  headerTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#FFFFFF',
-  },
-  headerSubtitle: {
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.7)',
-  },
-  mediaViewer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  navButton: {
-    position: 'absolute',
-    top: '50%',
-    marginTop: -25,
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  navButtonLeft: {
-    left: 16,
-  },
-  navButtonRight: {
-    right: 16,
-  },
-  bottomInfo: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    paddingBottom: Platform.OS === 'ios' ? 40 : 16,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-  },
-  senderName: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#FFFFFF',
-  },
-  timestamp: {
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.7)',
-    marginTop: 2,
-  },
-  documentViewer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 40,
-  },
-  documentViewerName: {
-    fontSize: 16,
-    color: '#FFFFFF',
-    marginTop: 16,
-    textAlign: 'center',
-  },
-
-  // Media Tabs
-  mediaTabsContainer: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: borderRadius.xl,
-    overflow: 'hidden',
-  },
-  tabsRow: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.gray[100],
-    alignItems: 'center',
-  },
-  tab: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: borderRadius.lg,
-    backgroundColor: colors.gray[50],
-  },
-  tabActive: {
-    backgroundColor: colors.primary[50],
-  },
-  tabText: {
-    fontSize: 12,
-    color: colors.gray[500],
-    marginLeft: 4,
-  },
-  tabTextActive: {
-    color: colors.primary[600],
-    fontWeight: '600',
-  },
-  viewAllButton: {
-    marginLeft: 'auto',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
-  viewAllText: {
-    fontSize: 14,
-    color: colors.primary[600],
-    fontWeight: '500',
-  },
-});
 
 export default MediaGalleryViewer;

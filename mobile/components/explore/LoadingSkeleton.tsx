@@ -5,7 +5,7 @@
  */
 
 import React, { useEffect } from 'react';
-import { View, StyleSheet, ViewStyle } from 'react-native';
+import { View, ViewStyle } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -56,12 +56,24 @@ export function Skeleton({ width = '100%', height = 20, borderRadius = 8, style 
   );
 }
 
+// Card style for skeleton containers
+const cardStyle = {
+  backgroundColor: '#FFFFFF',
+  borderRadius: ExploreBorderRadius.card,
+  padding: ExploreSpacing.cardPadding,
+  shadowColor: 'rgba(139, 69, 19, 0.08)',
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 1,
+  shadowRadius: 8,
+  elevation: 2,
+} as const;
+
 /**
  * Devotion card skeleton
  */
 export function DailyDevotionSkeleton() {
   return (
-    <View style={styles.card}>
+    <View style={cardStyle}>
       {/* Image */}
       <Skeleton height={160} borderRadius={12} style={{ marginBottom: ExploreSpacing.md }} />
 
@@ -86,7 +98,7 @@ export function DailyDevotionSkeleton() {
  */
 export function VerseOfTheDaySkeleton() {
   return (
-    <View style={styles.card}>
+    <View style={cardStyle}>
       {/* Accent bar */}
       <View
         style={{
@@ -124,7 +136,7 @@ export function VerseOfTheDaySkeleton() {
  */
 export function BibleFigureSkeleton() {
   return (
-    <View style={styles.card}>
+    <View style={cardStyle}>
       {/* Image */}
       <Skeleton height={200} borderRadius={12} style={{ marginBottom: ExploreSpacing.md }} />
 
@@ -147,7 +159,7 @@ export function BibleFigureSkeleton() {
  */
 export function DailyQuizSkeleton() {
   return (
-    <View style={styles.card}>
+    <View style={cardStyle}>
       {/* Header */}
       <View style={{ flexDirection: 'row', gap: ExploreSpacing.md, marginBottom: ExploreSpacing.md }}>
         <Skeleton width={48} height={48} borderRadius={24} />
@@ -196,7 +208,7 @@ export function ExploreHomeSkeleton() {
  */
 export function CompactListItemSkeleton() {
   return (
-    <View style={[styles.card, { flexDirection: 'row', gap: ExploreSpacing.md }]}>
+    <View className="flex-row" style={{ ...cardStyle, gap: ExploreSpacing.md }}>
       <Skeleton width={64} height={64} borderRadius={32} />
       <View style={{ flex: 1, gap: ExploreSpacing.xs }}>
         <Skeleton height={20} width="70%" />
@@ -213,7 +225,7 @@ export function BibleFigureListSkeleton() {
   return (
     <View style={{ gap: ExploreSpacing.md }}>
       {[1, 2, 3, 4].map((i) => (
-        <View key={i} style={[styles.card, { flexDirection: 'row', gap: ExploreSpacing.md }]}>
+        <View key={i} className="flex-row" style={{ ...cardStyle, gap: ExploreSpacing.md }}>
           <Skeleton width={80} height={80} borderRadius={12} />
           <View style={{ flex: 1, gap: ExploreSpacing.xs }}>
             <Skeleton height={20} width="70%" />
@@ -231,7 +243,7 @@ export function BibleFigureListSkeleton() {
  */
 export function BibleStudySkeleton() {
   return (
-    <View style={styles.card}>
+    <View style={cardStyle}>
       {/* Image */}
       <Skeleton height={160} borderRadius={12} style={{ marginBottom: ExploreSpacing.md }} />
 
@@ -271,7 +283,7 @@ export function TopicalVersesSkeleton() {
   return (
     <View style={{ gap: ExploreSpacing.md }}>
       {[1, 2, 3, 4, 5].map((i) => (
-        <View key={i} style={styles.card}>
+        <View key={i} style={cardStyle}>
           <Skeleton height={18} width="100%" style={{ marginBottom: ExploreSpacing.xs }} />
           <Skeleton height={18} width="90%" style={{ marginBottom: ExploreSpacing.sm }} />
           <Skeleton height={14} width="40%" />
@@ -286,9 +298,9 @@ export function TopicalVersesSkeleton() {
  */
 export function TopicalCategoriesSkeleton() {
   return (
-    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: ExploreSpacing.md }}>
+    <View className="flex-row flex-wrap" style={{ gap: ExploreSpacing.md }}>
       {[1, 2, 3, 4, 5, 6].map((i) => (
-        <View key={i} style={[styles.card, { width: '47%', minHeight: 100 }]}>
+        <View key={i} style={{ ...cardStyle, width: '47%', minHeight: 100 }}>
           <Skeleton width={40} height={40} borderRadius={20} style={{ marginBottom: ExploreSpacing.sm }} />
           <Skeleton height={18} width="80%" style={{ marginBottom: ExploreSpacing.xs }} />
           <Skeleton height={14} width="50%" />
@@ -297,16 +309,3 @@ export function TopicalCategoriesSkeleton() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: ExploreBorderRadius.card,
-    padding: ExploreSpacing.cardPadding,
-    shadowColor: 'rgba(139, 69, 19, 0.08)',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 1,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-});

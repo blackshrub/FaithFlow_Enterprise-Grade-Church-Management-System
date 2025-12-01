@@ -23,12 +23,26 @@ import type {
   CommunitySubgroup,
 } from '@/types/communities';
 
+// Import mock data for development
+import {
+  getMyCommunities as getMockCommunities,
+  getDiscoverCommunities as getMockDiscoverCommunities,
+  getCommunityById as getMockCommunityById,
+  getMembersForCommunity as getMockMembers,
+  getMessagesForCommunity as getMockMessages,
+  getSubgroupsForCommunity as getMockSubgroups,
+} from '@/mock/community-mockdata';
+
+// Flag to use mock data (set to true for development without backend)
+const USE_MOCK_DATA = true;
+
 // ============================================================================
 // Communities
 // ============================================================================
 
 /**
  * Fetch my communities (member authenticated)
+ * Uses mock data when USE_MOCK_DATA is true
  */
 export function useMyCommunities() {
   const { member } = useAuthStore();
@@ -36,12 +50,20 @@ export function useMyCommunities() {
   return useQuery({
     queryKey: QUERY_KEYS.MY_COMMUNITIES,
     queryFn: async () => {
+      // Use mock data for development
+      if (USE_MOCK_DATA) {
+        // Simulate network delay for realistic feel
+        await new Promise(resolve => setTimeout(resolve, 300));
+        return getMockCommunities();
+      }
+
       const response = await api.get<{ communities: CommunityWithStatus[]; total: number }>(
         API_ENDPOINTS.MY_COMMUNITIES
       );
       return response.data.communities;
     },
-    enabled: !!member?.id,
+    // Enable even without member when using mock data
+    enabled: USE_MOCK_DATA || !!member?.id,
     staleTime: CACHE_TIMES.COMMUNITIES,
     gcTime: CACHE_TIMES.COMMUNITIES,
   });
@@ -49,51 +71,77 @@ export function useMyCommunities() {
 
 /**
  * Fetch public communities for discovery
+ * Uses mock data when USE_MOCK_DATA is true
  */
 export function usePublicCommunities(churchId: string) {
   return useQuery({
     queryKey: [...QUERY_KEYS.COMMUNITIES, churchId],
     queryFn: async () => {
+      // Use mock data for development
+      if (USE_MOCK_DATA) {
+        await new Promise(resolve => setTimeout(resolve, 300));
+        return getMockDiscoverCommunities();
+      }
+
       const response = await api.get<{ communities: CommunityWithStatus[]; total: number }>(
         API_ENDPOINTS.COMMUNITIES_PUBLIC(churchId)
       );
       return response.data.communities;
     },
-    enabled: !!churchId,
+    enabled: USE_MOCK_DATA || !!churchId,
     staleTime: CACHE_TIMES.COMMUNITIES,
   });
 }
 
 /**
  * Fetch single community
+ * Uses mock data when USE_MOCK_DATA is true
  */
 export function useCommunity(communityId: string) {
   return useQuery({
     queryKey: QUERY_KEYS.COMMUNITY_DETAIL(communityId),
     queryFn: async () => {
+      // Use mock data for development
+      if (USE_MOCK_DATA) {
+        await new Promise(resolve => setTimeout(resolve, 200));
+        const community = getMockCommunityById(communityId);
+        // React Query requires non-undefined return value
+        if (!community) {
+          throw new Error(`Community not found: ${communityId}`);
+        }
+        return community;
+      }
+
       const response = await api.get<CommunityWithStatus>(
         API_ENDPOINTS.COMMUNITY_DETAIL(communityId)
       );
       return response.data;
     },
-    enabled: !!communityId,
+    enabled: !!communityId && communityId !== '[id]',
     staleTime: CACHE_TIMES.COMMUNITIES,
   });
 }
 
 /**
  * Fetch community members
+ * Uses mock data when USE_MOCK_DATA is true
  */
 export function useCommunityMembers(churchId: string, communityId: string) {
   return useQuery({
     queryKey: QUERY_KEYS.COMMUNITY_MEMBERS(communityId),
     queryFn: async () => {
+      // Use mock data for development
+      if (USE_MOCK_DATA) {
+        await new Promise(resolve => setTimeout(resolve, 200));
+        return getMockMembers(communityId) || [];
+      }
+
       const response = await api.get<{ members: CommunityMember[]; total: number }>(
         API_ENDPOINTS.COMMUNITY_MEMBERS(churchId, communityId)
       );
       return response.data.members;
     },
-    enabled: !!communityId && !!churchId,
+    enabled: (USE_MOCK_DATA || (!!communityId && !!churchId)) && communityId !== '[id]',
     staleTime: CACHE_TIMES.COMMUNITIES,
   });
 }
@@ -247,6 +295,7 @@ export function useArchiveCommunity() {
 
 /**
  * Fetch messages with infinite scroll (cursor pagination)
+ * Uses mock data when USE_MOCK_DATA is true
  */
 export function useCommunityMessages(
   communityId: string,
@@ -256,6 +305,19 @@ export function useCommunityMessages(
   return useInfiniteQuery({
     queryKey: ['community', 'messages', communityId, channelType, subgroupId],
     queryFn: async ({ pageParam }) => {
+      // Use mock data for development
+      if (USE_MOCK_DATA) {
+        await new Promise(resolve => setTimeout(resolve, 200));
+        const messages = getMockMessages(communityId) || [];
+        return {
+          messages,
+          total: messages.length,
+          has_more: false,
+          oldest_message_id: messages.length > 0 ? messages[messages.length - 1].id : undefined,
+          newest_message_id: messages.length > 0 ? messages[0].id : undefined,
+        } as MessageListResponse;
+      }
+
       const params = new URLSearchParams();
       params.set('channel_type', channelType);
       params.set('limit', '50');
@@ -270,7 +332,7 @@ export function useCommunityMessages(
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage) =>
       lastPage.has_more ? lastPage.oldest_message_id : undefined,
-    enabled: !!communityId,
+    enabled: !!communityId && communityId !== '[id]',
     staleTime: 1000 * 30, // 30 seconds
   });
 }
@@ -518,17 +580,24 @@ export function useSendTyping() {
 
 /**
  * Fetch community sub-groups
+ * Uses mock data when USE_MOCK_DATA is true
  */
 export function useCommunitySubgroups(communityId: string) {
   return useQuery({
     queryKey: ['community', 'subgroups', communityId],
     queryFn: async () => {
+      // Use mock data for development
+      if (USE_MOCK_DATA) {
+        await new Promise(resolve => setTimeout(resolve, 200));
+        return getMockSubgroups(communityId) || [];
+      }
+
       const response = await api.get<{ subgroups: CommunitySubgroup[]; total: number }>(
         `/api/mobile/communities/${communityId}/subgroups`
       );
       return response.data.subgroups;
     },
-    enabled: !!communityId,
+    enabled: !!communityId && communityId !== '[id]',
     staleTime: CACHE_TIMES.COMMUNITIES,
   });
 }

@@ -5,16 +5,19 @@
  * - Instagram/Pinterest style image card
  * - Text overlaid on image with gradient
  * - Premium shadows and typography
+ *
+ * Styling: NativeWind-first with inline style for shadows/dynamic values
  */
 
-import React, { memo, useCallback } from 'react';
-import { View, Text, ImageBackground, StyleSheet, Pressable } from 'react-native';
+import React, { memo } from 'react';
+import { View, ImageBackground, Pressable } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { ExploreColors, ExploreSpacing, ExploreBorderRadius, ExploreShadows } from '@/constants/explore/designSystem';
+import { ExploreColors, ExploreShadows } from '@/constants/explore/designSystem';
 import type { DailyDevotion } from '@/types/explore';
-import { Clock, BookOpen, CheckCircle, Volume2 } from 'lucide-react-native';
+import { Clock, BookOpen, CheckCircle } from 'lucide-react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { AudioPlayButton } from './AudioPlayButton';
+import { Text } from '@/components/ui/text';
 
 const CARD_HEIGHT = 220;
 
@@ -71,56 +74,68 @@ export const DailyDevotionCard = memo(function DailyDevotionCard({
       onPress={onPress}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
-      style={[styles.container, animatedStyle]}
+      className="rounded-2xl overflow-hidden"
+      style={[{ ...ExploreShadows.level2 }, animatedStyle]}
       testID="daily-devotion-card"
     >
       <ImageBackground
         source={{ uri: imageUrl }}
-        style={styles.imageBackground}
-        imageStyle={styles.image}
+        className="w-full justify-end"
+        style={{ height: CARD_HEIGHT }}
+        imageStyle={{ borderRadius: 16 }}
         resizeMode="cover"
       >
         {/* Gradient Overlay */}
         <LinearGradient
           colors={['transparent', 'rgba(0,0,0,0.3)', 'rgba(0,0,0,0.85)']}
           locations={[0, 0.4, 1]}
-          style={styles.gradient}
+          className="absolute inset-0 rounded-2xl"
         />
 
         {/* Completed Badge */}
         {completed && (
-          <View style={styles.completedBadge}>
+          <View className="absolute top-3 right-3 flex-row items-center gap-1 bg-black/50 px-2.5 py-1.5 rounded-[20px]">
             <CheckCircle size={14} color="#FFFFFF" fill={ExploreColors.success[500]} />
-            <Text style={styles.completedText}>Completed</Text>
+            <Text className="text-xs font-semibold text-white">Completed</Text>
           </View>
         )}
 
         {/* Content Overlay */}
-        <View style={styles.content}>
+        <View className="p-5 gap-1.5">
           {/* Title */}
-          <Text style={styles.title} numberOfLines={2}>
+          <Text
+            className="text-[22px] font-bold text-white leading-7"
+            style={{
+              textShadowColor: 'rgba(0,0,0,0.3)',
+              textShadowOffset: { width: 0, height: 1 },
+              textShadowRadius: 3,
+            }}
+            numberOfLines={2}
+          >
             {title}
           </Text>
 
           {/* Meta Row */}
-          <View style={styles.metaRow}>
+          <View className="flex-row items-center gap-4 mt-1">
             {devotion.reading_time_minutes != null && (
-              <View style={styles.metaItem}>
+              <View className="flex-row items-center gap-1">
                 <Clock size={14} color="rgba(255,255,255,0.8)" />
-                <Text style={styles.metaText}>{devotion.reading_time_minutes} min</Text>
+                <Text className="text-[13px] font-medium text-white/80">
+                  {devotion.reading_time_minutes} min
+                </Text>
               </View>
             )}
 
             {verseRef && (
-              <View style={styles.metaItem}>
+              <View className="flex-row items-center gap-1">
                 <BookOpen size={14} color="rgba(255,255,255,0.8)" />
-                <Text style={styles.metaText}>{verseRef}</Text>
+                <Text className="text-[13px] font-medium text-white/80">{verseRef}</Text>
               </View>
             )}
 
             {/* Audio Play Button */}
             {ttsText && (
-              <View style={styles.audioButton}>
+              <View className="ml-auto">
                 <AudioPlayButton
                   text={ttsText}
                   variant="icon"
@@ -135,73 +150,4 @@ export const DailyDevotionCard = memo(function DailyDevotionCard({
       </ImageBackground>
     </AnimatedPressable>
   );
-});
-
-const styles = StyleSheet.create({
-  container: {
-    borderRadius: ExploreBorderRadius.card,
-    overflow: 'hidden',
-    ...ExploreShadows.level2,
-  },
-  imageBackground: {
-    width: '100%',
-    height: CARD_HEIGHT,
-    justifyContent: 'flex-end',
-  },
-  image: {
-    borderRadius: ExploreBorderRadius.card,
-  },
-  gradient: {
-    ...StyleSheet.absoluteFillObject,
-    borderRadius: ExploreBorderRadius.card,
-  },
-  completedBadge: {
-    position: 'absolute',
-    top: ExploreSpacing.md,
-    right: ExploreSpacing.md,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 20,
-  },
-  completedText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#FFFFFF',
-  },
-  content: {
-    padding: ExploreSpacing.lg,
-    gap: 6,
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#FFFFFF',
-    lineHeight: 28,
-    textShadowColor: 'rgba(0,0,0,0.3)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 3,
-  },
-  metaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: ExploreSpacing.md,
-    marginTop: 4,
-  },
-  metaItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  metaText: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: 'rgba(255,255,255,0.8)',
-  },
-  audioButton: {
-    marginLeft: 'auto',
-  },
 });

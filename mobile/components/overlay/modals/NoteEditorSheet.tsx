@@ -3,47 +3,119 @@
  *
  * Bible verse note editor sheet.
  * Used via: overlay.showBottomSheet(NoteEditorSheet, payload)
+ *
+ * Standardized styling:
+ * - Header title: 20px font-bold (slightly smaller for two-line header)
+ * - Close button: 44x44 with 20px icon
+ * - NativeWind + minimal inline styles
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import {
   View,
+  Text,
   TextInput,
-  StyleSheet,
   Pressable,
   Dimensions,
-  KeyboardAvoidingView,
+  ScrollView,
+  Keyboard,
   Platform,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+  Easing,
+} from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
 import { X, Save } from 'lucide-react-native';
+import * as Haptics from 'expo-haptics';
 
 import type { OverlayProps } from '@/components/overlay/types';
 import type { NoteEditorPayload } from '@/stores/overlayStore';
-import { Text } from '@/components/ui/text';
-import { Heading } from '@/components/ui/heading';
-import { Button, ButtonText } from '@/components/ui/button';
-import { Icon } from '@/components/ui/icon';
-import { VStack } from '@/components/ui/vstack';
-import { HStack } from '@/components/ui/hstack';
-import { colors, spacing, borderRadius } from '@/constants/theme';
-import { overlayTheme } from '@/theme/overlayTheme';
-import { interaction } from '@/constants/interaction';
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+
+// Consistent colors
+const Colors = {
+  neutral: {
+    50: '#FAFAFA',
+    100: '#F5F5F5',
+    200: '#E5E5E5',
+    300: '#D4D4D4',
+    400: '#A3A3A3',
+    500: '#737373',
+    600: '#525252',
+    700: '#404040',
+    800: '#262626',
+    900: '#171717',
+  },
+  white: '#FFFFFF',
+  primary: {
+    50: '#EFF6FF',
+    100: '#DBEAFE',
+    500: '#3B82F6',
+    600: '#2563EB',
+    700: '#1D4ED8',
+  },
+};
 
 export const NoteEditorSheet: React.FC<OverlayProps<NoteEditorPayload>> = ({
   payload,
   onClose,
 }) => {
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
+  const inputRef = useRef<TextInput>(null);
+  const scrollViewRef = useRef<ScrollView>(null);
+
+  // Keyboard height for bottom margin
+  const keyboardHeight = useSharedValue(0);
+
+  useEffect(() => {
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+
+    const showSub = Keyboard.addListener(showEvent, (e) => {
+      keyboardHeight.value = withTiming(e.endCoordinates.height, {
+        duration: Platform.OS === 'ios' ? 250 : 200,
+        easing: Easing.out(Easing.cubic),
+      });
+    });
+
+    const hideSub = Keyboard.addListener(hideEvent, () => {
+      keyboardHeight.value = withTiming(0, {
+        duration: 200,
+        easing: Easing.out(Easing.cubic),
+      });
+    });
+
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, [keyboardHeight]);
+
+  // Delayed focus
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      inputRef.current?.focus();
+    }, 400);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Animated style for keyboard
+  const animatedContainerStyle = useAnimatedStyle(() => ({
+    marginBottom: keyboardHeight.value,
+  }));
 
   if (!payload) return null;
 
   const [note, setNote] = useState(payload.existingNote || '');
 
   const handleSave = useCallback(() => {
-    interaction.haptics.success();
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     if (payload.onSave) {
       payload.onSave(note.trim());
     }
@@ -53,131 +125,98 @@ export const NoteEditorSheet: React.FC<OverlayProps<NoteEditorPayload>> = ({
   const verseReference = `${payload.book} ${payload.chapter}:${payload.verse}`;
 
   return (
-    <View style={styles.sheetCard}>
+    <Animated.View
+      className="bg-white rounded-t-[24px] overflow-hidden"
+      style={[{ maxHeight: SCREEN_HEIGHT * 0.7 }, animatedContainerStyle]}
+    >
       {/* Handle indicator */}
-      <View style={styles.handleContainer}>
-        <View style={styles.handle} />
+      <View className="items-center py-3">
+        <View className="w-10 h-1 rounded-full bg-neutral-300" />
       </View>
 
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        bounces={false}
+        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: insets.bottom + 24 }}
       >
-        <View style={styles.sheetContent}>
-          {/* Header */}
-          <HStack className="justify-between items-center mb-4">
-            <VStack className="flex-1">
-              <Heading size="lg" className="text-gray-900 font-bold">
-                {t('bible.addNote')}
-              </Heading>
-              <Text className="text-primary-600 font-semibold text-sm">
-                {verseReference}
-              </Text>
-            </VStack>
-
-            <Pressable
-              onPress={() => {
-                interaction.haptics.tap();
-                onClose();
-              }}
-              style={({ pressed }) => [
-                styles.closeButton,
-                pressed && styles.pressedMicro,
-              ]}
+        {/* Header */}
+        <View className="flex-row items-start justify-between mb-4">
+          <View className="flex-1">
+            <Text
+              className="text-[20px] font-bold text-neutral-900 mb-1"
+              style={{ letterSpacing: -0.3 }}
             >
-              <Icon as={X} size="md" className="text-gray-600" />
-            </Pressable>
-          </HStack>
-
-          {/* Note Input */}
-          <View style={styles.textInputContainer}>
-            <TextInput
-              value={note}
-              onChangeText={setNote}
-              placeholder={t('bible.notePlaceholder')}
-              placeholderTextColor={colors.gray[400]}
-              multiline
-              numberOfLines={8}
-              textAlignVertical="top"
-              style={[styles.textInput, { minHeight: 200 }]}
-              autoFocus
-            />
+              {t('bible.addNote', 'Add Note')}
+            </Text>
+            <Text className="text-[14px] font-semibold" style={{ color: Colors.primary[600] }}>
+              {verseReference}
+            </Text>
           </View>
 
-          {/* Actions */}
-          <HStack space="md" className="mt-4">
-            <Button
-              variant="outline"
-              onPress={() => {
-                interaction.haptics.tap();
-                onClose();
-              }}
-              className="flex-1"
-            >
-              <ButtonText>{t('common.cancel')}</ButtonText>
-            </Button>
-            <Button onPress={handleSave} className="flex-1">
-              <Icon as={Save} size="sm" className="text-white mr-2" />
-              <ButtonText className="font-bold">{t('common.save')}</ButtonText>
-            </Button>
-          </HStack>
+          {/* Close button - 44px */}
+          <Pressable
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              onClose();
+            }}
+            className="w-11 h-11 rounded-full bg-neutral-100 items-center justify-center active:opacity-70"
+          >
+            <X size={20} color={Colors.neutral[600]} />
+          </Pressable>
         </View>
-      </KeyboardAvoidingView>
-    </View>
+
+        {/* Note Input */}
+        <View className="rounded-2xl overflow-hidden border border-neutral-200 bg-neutral-50 mb-4">
+          <TextInput
+            ref={inputRef}
+            value={note}
+            onChangeText={setNote}
+            placeholder={t('bible.notePlaceholder', 'Write your thoughts, reflections, or insights about this verse...')}
+            placeholderTextColor={Colors.neutral[400]}
+            multiline
+            numberOfLines={6}
+            textAlignVertical="top"
+            className="p-4 text-base text-neutral-900"
+            style={{ minHeight: 150, lineHeight: 24 }}
+          />
+        </View>
+
+        {/* Actions */}
+        <View className="flex-row gap-3">
+          <Pressable
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              onClose();
+            }}
+            className="flex-1 items-center justify-center py-4 rounded-2xl border border-neutral-200 active:opacity-80"
+          >
+            <Text className="text-base font-semibold text-neutral-700">
+              {t('common.cancel', 'Cancel')}
+            </Text>
+          </Pressable>
+
+          <Pressable
+            onPress={handleSave}
+            className="flex-1 flex-row items-center justify-center py-4 rounded-2xl gap-2 active:opacity-80"
+            style={{
+              backgroundColor: Colors.primary[600],
+              shadowColor: Colors.primary[600],
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.3,
+              shadowRadius: 8,
+              elevation: 4,
+            }}
+          >
+            <Save size={18} color={Colors.white} />
+            <Text className="text-base font-bold text-white">
+              {t('common.save', 'Save')}
+            </Text>
+          </Pressable>
+        </View>
+      </ScrollView>
+    </Animated.View>
   );
 };
-
-const styles = StyleSheet.create({
-  sheetCard: {
-    backgroundColor: overlayTheme.sheet.backgroundColor,
-    borderTopLeftRadius: overlayTheme.sheet.borderRadiusTop,
-    borderTopRightRadius: overlayTheme.sheet.borderRadiusTop,
-    maxHeight: SCREEN_HEIGHT * 0.8,
-    shadowColor: overlayTheme.modal.shadow.color,
-    shadowOpacity: overlayTheme.modal.shadow.opacity,
-    shadowRadius: overlayTheme.modal.shadow.radius,
-    shadowOffset: overlayTheme.modal.shadow.offset,
-    elevation: 12,
-  },
-  handleContainer: {
-    alignItems: 'center',
-    paddingTop: spacing.sm,
-    paddingBottom: spacing.xs,
-  },
-  handle: {
-    width: overlayTheme.sheet.handleWidth,
-    height: overlayTheme.sheet.handleHeight,
-    borderRadius: overlayTheme.sheet.handleHeight / 2,
-    backgroundColor: overlayTheme.sheet.handleColor,
-  },
-  sheetContent: {
-    padding: spacing.xl,
-  },
-  closeButton: {
-    width: overlayTheme.closeButton.size,
-    height: overlayTheme.closeButton.size,
-    borderRadius: overlayTheme.closeButton.borderRadius,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: overlayTheme.closeButton.backgroundColor,
-  },
-  pressedMicro: {
-    opacity: interaction.press.opacity,
-    transform: [{ scale: interaction.press.scale }],
-  },
-  textInputContainer: {
-    borderRadius: borderRadius['2xl'],
-    overflow: 'hidden',
-    backgroundColor: colors.gray[50],
-    borderWidth: 1,
-    borderColor: colors.gray[200],
-  },
-  textInput: {
-    padding: spacing.lg,
-    fontSize: 16,
-    lineHeight: 24,
-    color: colors.gray[900],
-    minHeight: 120,
-  },
-});
 
 export default NoteEditorSheet;

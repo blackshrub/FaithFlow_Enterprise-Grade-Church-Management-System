@@ -2,12 +2,10 @@
  * Explore Home Screen - Premium Motion V10 Ultra
  *
  * Design Philosophy: "A sanctuary in your pocket"
- * - Premium monochrome palette with gold accent
- * - Full-bleed gradient header matching Today/Give/Events
- * - Progressive disclosure (show daily content first)
- * - Generous spacing and premium shadows
- * - Celebration moments via unified overlay system
- * - V10 Ultra smooth animations with card-level stagger
+ *
+ * Styling Strategy:
+ * - NativeWind (className) for all layout and styling
+ * - Inline style for: dynamic values, shadows, custom colors from Colors object
  *
  * Option D Makeover:
  * - Unified overlay for CelebrationModal and StreakDetailsModal
@@ -19,7 +17,6 @@
 import React, { useCallback, useEffect, useRef, memo } from 'react';
 import {
   View,
-  StyleSheet,
   RefreshControl,
   Pressable,
   StatusBar,
@@ -81,9 +78,9 @@ import {
   useTodayCollapsibleHeader,
   todayListItemMotion,
 } from '@/components/motion/today-motion';
-import { spacing } from '@/constants/theme';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const STUDY_CARD_WIDTH = (SCREEN_WIDTH - 48 - 16) / 1.8;
 
 // Premium monochrome palette with gold accent (V10 aligned)
 const Colors = {
@@ -263,87 +260,104 @@ function ExploreScreen() {
   const {
     statsRowAnimatedStyle,
     greetingAnimatedStyle: titleRowAnimatedStyle,
+    headerPaddingAnimatedStyle,
   } = useTodayCollapsibleHeader(scrollY);
 
-  // Render premium header with shared today-motion
+  // Render premium header with shared today-motion (matching Today screen structure)
   const renderHeader = () => (
     <LinearGradient
       colors={[Colors.gradient.start, Colors.gradient.mid, Colors.gradient.end]}
-      style={[styles.headerGradient, { paddingTop: insets.top + spacing.md }]}
+      className="overflow-hidden"
+      style={{ paddingTop: insets.top + 4 }}
     >
-      {/* Animated content wrapper with shared headerEnterStyle */}
-      <Animated.View style={headerEnterStyle}>
-        {/* Title row - stagger index 0 */}
-        <Animated.View key={`title-${animationKey}`} entering={todayListItemMotion(0)} style={[styles.headerTop, titleRowAnimatedStyle]}>
-          <View style={styles.titleWrap}>
-            <View style={styles.titleRow}>
-              <Compass size={24} color={Colors.accent.gold} style={styles.titleIcon} />
-              <Text style={styles.headerTitle}>{t('explore.title', 'Explore')}</Text>
+      {/* Animated content wrapper - matching Today screen pattern with animated padding */}
+      <Animated.View className="px-5" style={[headerEnterStyle, headerPaddingAnimatedStyle]}>
+        {/* Top row: Title + Language toggle - aligned horizontally */}
+        <Animated.View
+          key={`top-${animationKey}`}
+          entering={todayListItemMotion(0)}
+          style={titleRowAnimatedStyle}
+          className="flex-row justify-between items-start mb-5"
+        >
+          {/* Title section - left side */}
+          <View>
+            <Text className="text-[32px] font-bold text-white mb-1" style={{ letterSpacing: -0.5 }}>
+              {t('explore.title', 'Explore')}
+            </Text>
+            <View className="flex-row items-center gap-1.5">
+              <Compass size={14} color={Colors.accent.gold} />
+              <Text className="text-[13px] text-white/60 font-medium">
+                {t('explore.subtitle', 'Discover your faith journey')}
+              </Text>
             </View>
-            <Text style={styles.headerSubtitle}>{t('explore.subtitle', 'Discover your faith journey')}</Text>
           </View>
 
-          {/* Language toggle */}
+          {/* Language toggle - right side */}
           <Pressable
             onPress={handleLanguageToggle}
-            className="active:scale-95 active:opacity-90"
-            style={styles.langBtn}
+            className="flex-row items-center gap-2 bg-white/15 px-4 py-2.5 rounded-full active:scale-95 active:opacity-90 mt-1"
           >
             <Globe size={16} color={Colors.white} />
-            <Text style={styles.langText}>{contentLanguage.toUpperCase()}</Text>
+            <Text className="text-[13px] font-semibold text-white">{contentLanguage.toUpperCase()}</Text>
           </Pressable>
         </Animated.View>
 
         {/* Stats row - Collapsible with shared statsRowAnimatedStyle - stagger index 1 */}
-        <Animated.View key={`stats-${animationKey}`} entering={todayListItemMotion(1)} style={[styles.statsRow, statsRowAnimatedStyle]}>
+        <Animated.View
+          key={`stats-${animationKey}`}
+          entering={todayListItemMotion(1)}
+          style={statsRowAnimatedStyle}
+          className="flex-row items-center rounded-2xl py-4 px-6"
+        >
+          <View
+            className="absolute inset-0 rounded-2xl"
+            style={{ backgroundColor: 'rgba(255,255,255,0.06)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' }}
+          />
           {/* Streak */}
           <Pressable
             onPress={handleStreakPress}
-            className="active:scale-95 active:opacity-90"
-            style={styles.statItem}
+            className="flex-1 flex-row items-center gap-2.5 active:scale-95 active:opacity-90"
           >
-            <View style={styles.statIconWrap}>
-              <Flame size={18} color={Colors.streak} fill={Colors.streak} />
+            <View className="w-10 h-10 rounded-xl items-center justify-center" style={{ backgroundColor: 'rgba(212,175,55,0.2)' }}>
+              <Flame size={20} color={Colors.streak} fill={Colors.streak} />
             </View>
-            <View>
-              <Text style={styles.statValue}>{currentStreak ?? 0}</Text>
-              <Text style={styles.statLabel}>{t('explore.streak.label', 'Streak')}</Text>
+            <View className="gap-0.5">
+              <Text className="text-[18px] font-bold text-white leading-tight">{currentStreak ?? 0}</Text>
+              <Text className="text-[11px] font-medium text-white/60">{t('explore.streak.label', 'Streak')}</Text>
             </View>
           </Pressable>
 
-          <View style={styles.statDivider} />
+          <View className="w-px h-8 bg-white/15 mx-2" />
 
           {/* Completed today */}
           <Pressable
             onPress={handleCompletedTodayPress}
-            className="active:scale-95 active:opacity-90"
-            style={styles.statItem}
+            className="flex-1 flex-row items-center gap-2.5 active:scale-95 active:opacity-90"
           >
-            <View style={styles.statIconWrap}>
-              <Sparkles size={18} color={Colors.accent.gold} />
+            <View className="w-10 h-10 rounded-xl items-center justify-center" style={{ backgroundColor: 'rgba(212,175,55,0.2)' }}>
+              <Sparkles size={20} color={Colors.accent.gold} />
             </View>
-            <View>
-              <Text style={styles.statValue}>
+            <View className="gap-0.5">
+              <Text className="text-[18px] font-bold text-white leading-tight">
                 {homeData?.daily_devotion?.completed ? 1 : 0}
               </Text>
-              <Text style={styles.statLabel}>{t('explore.completedToday', 'Done')}</Text>
+              <Text className="text-[11px] font-medium text-white/60">{t('explore.completedToday', 'Done')}</Text>
             </View>
           </Pressable>
 
-          <View style={styles.statDivider} />
+          <View className="w-px h-8 bg-white/15 mx-2" />
 
           {/* Studies */}
           <Pressable
             onPress={handleStudiesPress}
-            className="active:scale-95 active:opacity-90"
-            style={styles.statItem}
+            className="flex-1 flex-row items-center gap-2.5 active:scale-95 active:opacity-90"
           >
-            <View style={styles.statIconWrap}>
-              <BookOpen size={18} color={Colors.accent.gold} />
+            <View className="w-10 h-10 rounded-xl items-center justify-center" style={{ backgroundColor: 'rgba(212,175,55,0.2)' }}>
+              <BookOpen size={20} color={Colors.accent.gold} />
             </View>
-            <View>
-              <Text style={styles.statValue}>{bibleStudies?.length || 0}</Text>
-              <Text style={styles.statLabel}>{t('explore.studies', 'Studies')}</Text>
+            <View className="gap-0.5">
+              <Text className="text-[18px] font-bold text-white leading-tight">{bibleStudies?.length || 0}</Text>
+              <Text className="text-[11px] font-medium text-white/60">{t('explore.studies', 'Studies')}</Text>
             </View>
           </Pressable>
         </Animated.View>
@@ -361,9 +375,9 @@ function ExploreScreen() {
       return (
         <Animated.View
           entering={PMotionV10.screenFadeIn}
-          style={styles.errorContainer}
+          className="p-8 items-center"
         >
-          <Text style={styles.errorText}>{t('explore.error.loadContent', 'Failed to load content')}</Text>
+          <Text className="text-[15px] text-red-500 text-center">{t('explore.error.loadContent', 'Failed to load content')}</Text>
         </Animated.View>
       );
     }
@@ -380,15 +394,15 @@ function ExploreScreen() {
     let sectionIndex = 2;
 
     return (
-      <View style={styles.contentContainer}>
+      <View>
         {/* Daily Devotion */}
         {homeData.daily_devotion && (
           <Animated.View
             key={`devotion-${animationKey}`}
             entering={todayListItemMotion(sectionIndex++)}
-            style={styles.section}
+            className="mb-8"
           >
-            <Text style={styles.sectionTitle}>
+            <Text className="text-xl font-bold text-neutral-900 mb-4" style={{ letterSpacing: -0.3 }}>
               {t('explore.todaysDevotions', "Today's Devotion")}
             </Text>
             <DailyDevotionCard
@@ -408,9 +422,9 @@ function ExploreScreen() {
           <Animated.View
             key={`verse-${animationKey}`}
             entering={todayListItemMotion(sectionIndex++)}
-            style={styles.section}
+            className="mb-8"
           >
-            <Text style={styles.sectionTitle}>
+            <Text className="text-xl font-bold text-neutral-900 mb-4" style={{ letterSpacing: -0.3 }}>
               {t('explore.verseOfTheDay', 'Verse of the Day')}
             </Text>
             <VerseOfTheDayCard
@@ -429,9 +443,9 @@ function ExploreScreen() {
           <Animated.View
             key={`figure-${animationKey}`}
             entering={todayListItemMotion(sectionIndex++)}
-            style={styles.section}
+            className="mb-8"
           >
-            <Text style={styles.sectionTitle}>
+            <Text className="text-xl font-bold text-neutral-900 mb-4" style={{ letterSpacing: -0.3 }}>
               {t('explore.bibleFigureOfTheDay', 'Bible Figure of the Day')}
             </Text>
             <BibleFigureCard
@@ -450,9 +464,9 @@ function ExploreScreen() {
           <Animated.View
             key={`quiz-${animationKey}`}
             entering={todayListItemMotion(sectionIndex++)}
-            style={styles.section}
+            className="mb-8"
           >
-            <Text style={styles.sectionTitle}>
+            <Text className="text-xl font-bold text-neutral-900 mb-4" style={{ letterSpacing: -0.3 }}>
               {t('explore.dailyChallenge', 'Daily Challenge')}
             </Text>
             <DailyQuizCard
@@ -473,10 +487,10 @@ function ExploreScreen() {
           <Animated.View
             key={`studies-${animationKey}`}
             entering={todayListItemMotion(sectionIndex++)}
-            style={styles.section}
+            className="mb-8"
           >
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>
+            <View className="flex-row justify-between items-center mb-4">
+              <Text className="text-xl font-bold text-neutral-900" style={{ letterSpacing: -0.3 }}>
                 {t('explore.bibleStudies', 'Bible Studies')}
               </Text>
               <Pressable
@@ -484,10 +498,11 @@ function ExploreScreen() {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   router.push('/explore/studies');
                 }}
-                className="active:scale-95 active:opacity-90"
-                style={styles.viewAllBtn}
+                className="flex-row items-center gap-1 active:scale-95 active:opacity-90"
               >
-                <Text style={styles.viewAllText}>{t('explore.viewAll', 'View All')}</Text>
+                <Text className="text-sm font-semibold" style={{ color: Colors.accent.goldDark }}>
+                  {t('explore.viewAll', 'View All')}
+                </Text>
                 <ChevronRight size={16} color={Colors.accent.goldDark} />
               </Pressable>
             </View>
@@ -497,8 +512,8 @@ function ExploreScreen() {
               horizontal
               showsHorizontalScrollIndicator={false}
               keyExtractor={(item) => item.id}
-              style={styles.carouselContainer}
-              contentContainerStyle={styles.carousel}
+              className="-mx-6"
+              contentContainerStyle={{ paddingHorizontal: 24 }}
               renderItem={({ item, index }) => (
                 <Animated.View entering={todayListItemMotion(index)}>
                   <BibleStudyCard
@@ -519,9 +534,9 @@ function ExploreScreen() {
         <Animated.View
           key={`companion-${animationKey}`}
           entering={todayListItemMotion(sectionIndex++)}
-          style={styles.section}
+          className="mb-8"
         >
-          <Text style={styles.sectionTitle}>
+          <Text className="text-xl font-bold text-neutral-900 mb-4" style={{ letterSpacing: -0.3 }}>
             {t('companion.sectionTitle', 'Your Companion')}
           </Text>
           <FaithAssistantCard variant="compact" />
@@ -531,13 +546,13 @@ function ExploreScreen() {
         <Animated.View
           key={`more-${animationKey}`}
           entering={todayListItemMotion(sectionIndex++)}
-          style={styles.section}
+          className="mb-8"
         >
-          <Text style={styles.sectionTitle}>
+          <Text className="text-xl font-bold text-neutral-900 mb-4" style={{ letterSpacing: -0.3 }}>
             {t('explore.exploreMore', 'Explore More')}
           </Text>
 
-          <View style={styles.quickGrid}>
+          <View className="gap-4">
             <QuickCard
               title={t('explore.bibleFigures', 'Bible Figures')}
               desc={t('explore.heroesOfFaith', 'Heroes of Faith')}
@@ -563,19 +578,19 @@ function ExploreScreen() {
         </Animated.View>
 
         {/* Bottom spacing */}
-        <View style={styles.bottomSpacer} />
+        <View className="h-[120px]" />
       </View>
     );
   };
 
   return (
-    <Animated.View style={styles.container}>
+    <Animated.View className="flex-1 bg-neutral-100">
       <StatusBar barStyle="light-content" />
       {renderHeader()}
 
       <Animated.ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
+        className="flex-1"
+        contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 24 }}
         onScroll={handleScrollEvent}
         scrollEventThrottle={16}
         refreshControl={
@@ -607,8 +622,6 @@ interface BibleStudyCardProps {
   contentLanguage: string;
 }
 
-const STUDY_CARD_WIDTH = (SCREEN_WIDTH - spacing.lg * 2 - spacing.md) / 1.8;
-
 function BibleStudyCard({ study, onPress, contentLanguage }: BibleStudyCardProps) {
   const { t } = useTranslation();
   const title = study.title[contentLanguage] || study.title.en;
@@ -638,54 +651,73 @@ function BibleStudyCard({ study, onPress, contentLanguage }: BibleStudyCardProps
   };
 
   return (
-    <View style={styles.studyCardWrapper}>
+    <View
+      style={{
+        width: STUDY_CARD_WIDTH,
+        height: 180,
+        marginRight: 16,
+        borderRadius: 20,
+        backgroundColor: Colors.neutral[900],
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.2,
+        shadowRadius: 16,
+        elevation: 8,
+      }}
+    >
       <Pressable
         onPress={onPress}
-        className="active:scale-95 active:opacity-90"
-        style={styles.studyCard}
+        className="flex-1 overflow-hidden rounded-[20px] active:scale-[0.97] active:opacity-95"
       >
         <ImageBackground
           source={{
             uri: study.cover_image_url || 'https://images.unsplash.com/photo-1504052434569-70ad5836ab65?w=400',
           }}
-          style={styles.studyImage}
-          imageStyle={styles.studyImageStyle}
+          className="flex-1"
+          imageStyle={{ borderRadius: 20 }}
         >
+          {/* Gradient overlay - absolute to cover entire image */}
           <LinearGradient
-            colors={['transparent', 'rgba(0,0,0,0.8)']}
-            style={styles.studyOverlay}
-          >
+            colors={['rgba(0,0,0,0.4)', 'rgba(0,0,0,0.2)', 'rgba(0,0,0,0.85)']}
+            locations={[0, 0.4, 1]}
+            className="absolute inset-0 rounded-[20px]"
+          />
+
+          {/* Content - sits on top of gradient */}
+          <View className="flex-1 justify-between p-3.5">
+            {/* Difficulty badge */}
             <View
-              style={[
-                styles.difficultyBadge,
-                { backgroundColor: difficultyColors[difficulty] || Colors.neutral[500] },
-              ]}
+              className="self-end px-3 py-1.5 rounded-full"
+              style={{ backgroundColor: difficultyColors[difficulty] || Colors.neutral[500] }}
             >
-              <Text style={styles.difficultyText}>
+              <Text className="text-[10px] font-bold text-white uppercase tracking-wide">
                 {getDifficultyLabel(difficulty)}
               </Text>
             </View>
 
-            <View style={styles.studyInfo}>
-              <Text style={styles.studyTitle} numberOfLines={2}>{title}</Text>
-              <View style={styles.studyMeta}>
-                <View style={styles.metaItem}>
-                  <BookOpen size={12} color={Colors.white} />
-                  <Text style={styles.metaText}>{lessonCount}</Text>
+            {/* Bottom content */}
+            <View className="gap-2.5">
+              <Text className="text-[16px] font-bold text-white leading-[20px]" numberOfLines={2}>
+                {title}
+              </Text>
+              <View className="flex-row items-center gap-3">
+                <View className="flex-row items-center gap-1.5 bg-white/20 px-2 py-1 rounded-full">
+                  <BookOpen size={11} color={Colors.white} />
+                  <Text className="text-[11px] font-semibold text-white">{lessonCount}</Text>
                 </View>
-                <View style={styles.metaItem}>
-                  <Clock size={12} color={Colors.white} />
-                  <Text style={styles.metaText}>{formatDuration(duration)}</Text>
+                <View className="flex-row items-center gap-1.5 bg-white/20 px-2 py-1 rounded-full">
+                  <Clock size={11} color={Colors.white} />
+                  <Text className="text-[11px] font-semibold text-white">{formatDuration(duration)}</Text>
                 </View>
                 {rating > 0 && (
-                  <View style={styles.metaItem}>
-                    <Star size={12} color="#F59E0B" fill="#F59E0B" />
-                    <Text style={styles.metaText}>{rating.toFixed(1)}</Text>
+                  <View className="flex-row items-center gap-1">
+                    <Star size={11} color="#F59E0B" fill="#F59E0B" />
+                    <Text className="text-[11px] font-semibold text-white">{rating.toFixed(1)}</Text>
                   </View>
                 )}
               </View>
             </View>
-          </LinearGradient>
+          </View>
         </ImageBackground>
       </Pressable>
     </View>
@@ -715,26 +747,48 @@ function QuickCard({ title, desc, icon, gradient, onPress }: QuickCardProps) {
   return (
     <Pressable
       onPress={handlePress}
-      className="active:scale-95 active:opacity-90"
-      style={styles.quickCard}
+      className="overflow-hidden active:scale-[0.98] active:opacity-95"
+      style={{
+        borderRadius: 20,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.15,
+        shadowRadius: 16,
+        elevation: 8,
+      }}
     >
       <LinearGradient
         colors={gradient}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
-        style={styles.quickGradient}
+        className="relative overflow-hidden"
+        style={{ borderRadius: 20, paddingVertical: 14, paddingHorizontal: 16 }}
       >
         {/* Decorative circles */}
-        <View style={[styles.quickCircle, styles.quickCircle1]} />
-        <View style={[styles.quickCircle, styles.quickCircle2]} />
+        <View
+          className="absolute rounded-full"
+          style={{ width: 80, height: 80, top: -30, right: -20, backgroundColor: 'rgba(255,255,255,0.1)' }}
+        />
+        <View
+          className="absolute rounded-full"
+          style={{ width: 50, height: 50, bottom: -25, left: 10, backgroundColor: 'rgba(255,255,255,0.1)' }}
+        />
 
-        <View style={styles.quickContent}>
-          <View style={styles.quickIconWrap}>{icon}</View>
-          <View style={styles.quickTextWrap}>
-            <Text style={styles.quickTitle}>{title}</Text>
-            <Text style={styles.quickDesc}>{desc}</Text>
+        <View className="flex-row items-center gap-[14px]">
+          <View
+            className="w-12 h-12 items-center justify-center"
+            style={{ borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.25)' }}
+          >
+            {icon}
           </View>
-          <View style={styles.quickArrow}>
+          <View className="flex-1 gap-0.5">
+            <Text className="text-base font-bold text-white">{title}</Text>
+            <Text className="text-[13px] font-medium" style={{ color: 'rgba(255,255,255,0.8)' }}>{desc}</Text>
+          </View>
+          <View
+            className="w-8 h-8 items-center justify-center"
+            style={{ borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.2)' }}
+          >
             <ChevronRight size={18} color="rgba(255,255,255,0.7)" />
           </View>
         </View>
@@ -742,283 +796,3 @@ function QuickCard({ title, desc, icon, gradient, onPress }: QuickCardProps) {
     </Pressable>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.neutral[100],
-  },
-  // Header
-  headerGradient: {
-    paddingBottom: spacing.md,
-    paddingHorizontal: spacing.lg,
-  },
-  headerTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: spacing.sm,
-  },
-  titleWrap: {
-    flex: 1,
-  },
-  titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    marginBottom: 4,
-  },
-  titleIcon: {},
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: Colors.white,
-    letterSpacing: -0.5,
-    lineHeight: 32,
-    includeFontPadding: false,
-  },
-  headerSubtitle: {
-    fontSize: 15,
-    color: 'rgba(255,255,255,0.6)',
-  },
-  langBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: 20,
-  },
-  langText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: Colors.white,
-  },
-  // Stats
-  statsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    borderRadius: 16,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
-  },
-  statItem: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  statIconWrap: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    backgroundColor: 'rgba(212,175,55,0.2)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  statValue: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: Colors.white,
-  },
-  statLabel: {
-    fontSize: 11,
-    color: 'rgba(255,255,255,0.6)',
-    fontWeight: '500',
-  },
-  statDivider: {
-    width: 1,
-    height: 28,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    marginHorizontal: spacing.sm,
-  },
-  // Scroll
-  scroll: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
-  },
-  contentContainer: {},
-  // Sections
-  section: {
-    marginBottom: spacing.xl,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.md,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: Colors.neutral[900],
-    marginBottom: spacing.md,
-    letterSpacing: -0.3,
-  },
-  viewAllBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  viewAllText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: Colors.accent.goldDark,
-  },
-  // Carousel
-  carouselContainer: {
-    marginHorizontal: -spacing.lg,
-  },
-  carousel: {
-    paddingHorizontal: spacing.lg,
-  },
-  // Study Card
-  studyCard: {
-    height: 180,
-    borderRadius: 16,
-    overflow: 'hidden',
-    backgroundColor: Colors.neutral[200],
-  },
-  studyImage: {
-    flex: 1,
-  },
-  studyImageStyle: {
-    borderRadius: 16,
-  },
-  studyOverlay: {
-    flex: 1,
-    padding: spacing.md,
-    justifyContent: 'space-between',
-  },
-  difficultyBadge: {
-    alignSelf: 'flex-end',
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  difficultyText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: Colors.white,
-  },
-  studyInfo: {
-    gap: spacing.sm,
-  },
-  studyTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: Colors.white,
-    lineHeight: 20,
-  },
-  studyMeta: {
-    flexDirection: 'row',
-    gap: spacing.md,
-  },
-  metaItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  metaText: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: 'rgba(255,255,255,0.8)',
-  },
-  // Quick Access Cards
-  quickGrid: {
-    gap: spacing.md,
-  },
-  quickCard: {
-    borderRadius: 16,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 6,
-  },
-  quickGradient: {
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.md,
-    position: 'relative',
-    overflow: 'hidden',
-  },
-  quickCircle: {
-    position: 'absolute',
-    borderRadius: 100,
-    backgroundColor: 'rgba(255,255,255,0.1)',
-  },
-  quickCircle1: {
-    width: 80,
-    height: 80,
-    top: -20,
-    right: -20,
-  },
-  quickCircle2: {
-    width: 60,
-    height: 60,
-    bottom: -30,
-    left: 20,
-  },
-  quickContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-  },
-  quickIconWrap: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
-    backgroundColor: 'rgba(255,255,255,0.25)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  quickTextWrap: {
-    flex: 1,
-    gap: 2,
-  },
-  quickTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: Colors.white,
-  },
-  quickDesc: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: 'rgba(255,255,255,0.8)',
-  },
-  quickArrow: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  // Error
-  errorContainer: {
-    padding: spacing.xl,
-    alignItems: 'center',
-  },
-  errorText: {
-    fontSize: 15,
-    color: Colors.error,
-    textAlign: 'center',
-  },
-  // Bottom spacing
-  bottomSpacer: {
-    height: 120,
-  },
-  // Study card wrapper
-  studyCardWrapper: {
-    width: STUDY_CARD_WIDTH,
-    marginRight: spacing.md,
-  },
-});

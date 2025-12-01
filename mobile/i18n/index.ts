@@ -2,24 +2,24 @@
  * i18n Configuration for FaithFlow Mobile App
  *
  * Supports English (en) and Indonesian (id) languages.
- * Uses react-i18next with async storage for persistence.
+ * Uses MMKV for fast, synchronous storage - no flash of wrong language.
  */
 
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import * as Localization from 'expo-localization';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { mmkv } from '@/lib/storage';
 
 // Import translation files
 import en from '../locales/en.json';
 import id from '../locales/id.json';
 
-const LANGUAGE_STORAGE_KEY = '@FaithFlow:language';
+const LANGUAGE_STORAGE_KEY = 'faithflow_language';
 
-// Get stored language or device language
-const getInitialLanguage = async (): Promise<string> => {
+// Get stored language or device language (synchronous with MMKV!)
+const getInitialLanguage = (): string => {
   try {
-    const storedLanguage = await AsyncStorage.getItem(LANGUAGE_STORAGE_KEY);
+    const storedLanguage = mmkv.getString(LANGUAGE_STORAGE_KEY);
     if (storedLanguage) {
       return storedLanguage;
     }
@@ -33,20 +33,20 @@ const getInitialLanguage = async (): Promise<string> => {
   }
 };
 
-// Save language preference
-export const saveLanguage = async (language: string): Promise<void> => {
+// Save language preference (synchronous with MMKV!)
+export const saveLanguage = (language: string): void => {
   try {
-    await AsyncStorage.setItem(LANGUAGE_STORAGE_KEY, language);
+    mmkv.setString(LANGUAGE_STORAGE_KEY, language);
   } catch (error) {
     console.error('Error saving language:', error);
   }
 };
 
-// Initialize i18n
-export const initializeI18n = async (): Promise<void> => {
-  const initialLanguage = await getInitialLanguage();
+// Initialize i18n (now synchronous!)
+export const initializeI18n = (): void => {
+  const initialLanguage = getInitialLanguage();
 
-  await i18n
+  i18n
     .use(initReactI18next)
     .init({
       resources: {
@@ -66,9 +66,9 @@ export const initializeI18n = async (): Promise<void> => {
 };
 
 // Change language
-export const changeLanguage = async (language: 'en' | 'id'): Promise<void> => {
-  await i18n.changeLanguage(language);
-  await saveLanguage(language);
+export const changeLanguage = (language: 'en' | 'id'): void => {
+  i18n.changeLanguage(language);
+  saveLanguage(language);
 };
 
 // Get current language

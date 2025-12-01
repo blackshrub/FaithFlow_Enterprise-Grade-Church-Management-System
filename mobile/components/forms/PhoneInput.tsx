@@ -15,7 +15,7 @@ export function PhoneInput({
   value,
   onChangeText,
   error,
-  placeholder = "8123456789",
+  placeholder = "812 3456 7890",
   disabled = false,
 }: PhoneInputProps) {
   const handleChange = (text: string) => {
@@ -24,19 +24,17 @@ export function PhoneInput({
     onChangeText(cleaned);
   };
 
-  // Format display value with +62 prefix
-  const displayValue = value ? `+62${value}` : "";
-
   return (
     <VStack space="xs">
       <Input
         variant="outline"
-        size="lg"
+        size="xl"
         isDisabled={disabled}
         isInvalid={!!error}
+        className="h-14 rounded-xl border-outline-200 bg-background-50"
       >
-        <InputSlot className="pl-3">
-          <Text className="text-typography-500">+62</Text>
+        <InputSlot className="pl-4">
+          <Text className="text-[18px] font-medium text-typography-700">+62</Text>
         </InputSlot>
         <InputField
           placeholder={placeholder}
@@ -46,10 +44,11 @@ export function PhoneInput({
           maxLength={13}
           autoComplete="tel"
           textContentType="telephoneNumber"
+          className="text-[18px] pl-2"
         />
       </Input>
       {error && (
-        <Text size="sm" className="text-error-500">
+        <Text size="sm" className="text-error-500 ml-1">
           {error}
         </Text>
       )}

@@ -9,10 +9,12 @@
  * - Gradient background
  * - Pulsing animation on idle
  * - Haptic feedback
+ *
+ * Styling: NativeWind-first with inline style for dynamic/animated values
  */
 
 import React, { useEffect } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -77,16 +79,17 @@ export function GrowFab({ size = 56 }: GrowFabProps) {
   };
 
   return (
-    <View style={styles.container}>
+    <View className="items-center justify-center -mt-5">
       {/* Pulsing ring when closed */}
       {!isOpen && (
         <Animated.View
+          className="absolute"
           style={[
-            styles.pulseRing,
             {
               width: size,
               height: size,
               borderRadius: size / 2,
+              backgroundColor: colors.success[500],
             },
             pulseStyle,
           ]}
@@ -94,14 +97,16 @@ export function GrowFab({ size = 56 }: GrowFabProps) {
       )}
 
       {/* Main FAB */}
-      <Pressable onPress={handlePress} style={styles.pressable}>
+      <Pressable onPress={handlePress} style={{ zIndex: 10 }}>
         <Animated.View
           style={[
-            styles.fab,
             {
               width: size,
               height: size,
               borderRadius: size / 2,
+              backgroundColor: colors.white,
+              overflow: 'hidden',
+              ...shadows.xl,
             },
             fabStyle,
           ]}
@@ -110,10 +115,8 @@ export function GrowFab({ size = 56 }: GrowFabProps) {
             colors={isOpen ? ['#ff4d4d', '#cc0000'] : ['#00a651', '#006431']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
-            style={[
-              styles.gradient,
-              { borderRadius: size / 2 },
-            ]}
+            className="items-center justify-center"
+            style={{ width: size, height: size, borderRadius: size / 2 }}
           >
             {isOpen ? (
               <PlusIcon size={28} color={colors.white} />
@@ -126,27 +129,3 @@ export function GrowFab({ size = 56 }: GrowFabProps) {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: -20, // Float above the tab bar
-  },
-  pressable: {
-    zIndex: 10,
-  },
-  fab: {
-    ...shadows.xl,
-    backgroundColor: colors.white,
-  },
-  gradient: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  pulseRing: {
-    position: 'absolute',
-    backgroundColor: colors.success[500],
-  },
-});

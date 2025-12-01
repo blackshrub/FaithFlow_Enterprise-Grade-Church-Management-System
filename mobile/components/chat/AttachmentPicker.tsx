@@ -6,6 +6,8 @@
  * - Take photo with camera
  * - Pick documents
  * - Returns media info for upload
+ *
+ * Styling: NativeWind-first with inline style for dynamic values
  */
 
 import React, { useCallback } from 'react';
@@ -22,12 +24,8 @@ import {
 } from 'lucide-react-native';
 import BottomSheet, { BottomSheetBackdrop } from '@gorhom/bottom-sheet';
 
-import { Text } from '@/components/ui/text';
-import { Heading } from '@/components/ui/heading';
-import { VStack } from '@/components/ui/vstack';
-import { HStack } from '@/components/ui/hstack';
-import { Icon } from '@/components/ui/icon';
-import { colors, spacing, borderRadius } from '@/constants/theme';
+import { Text } from 'react-native';
+import { colors } from '@/constants/theme';
 
 // =============================================================================
 // TYPES
@@ -259,44 +257,41 @@ export function AttachmentPicker({ visible, onClose, onSelect, onLocationPress }
       handleIndicatorStyle={{ backgroundColor: colors.gray[300] }}
     >
       <View className="flex-1 px-5 pt-2">
-        <HStack className="justify-between items-center mb-4">
-          <Heading size="lg" className="text-gray-900 font-bold">
-            Attach
-          </Heading>
+        <View className="flex-row justify-between items-center mb-4">
+          <Text className="text-xl font-bold text-gray-900">Attach</Text>
           <Pressable
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               onClose();
             }}
-            className="active:opacity-70 p-2"
+            className="p-2"
           >
-            <Icon as={X} size="md" className="text-gray-500" />
+            <X size={24} color={colors.gray[500]} />
           </Pressable>
-        </HStack>
+        </View>
 
-        <HStack space="lg" className="justify-center py-4">
-          {options.map((option) => (
-            <Pressable
-              key={option.label}
-              onPress={option.onPress}
-              className="items-center active:opacity-70"
-            >
-              <View
-                className="w-16 h-16 rounded-full items-center justify-center mb-2"
-                style={{ backgroundColor: option.bgColor }}
+        <View className="flex-row justify-center py-4 gap-6">
+          {options.map((option) => {
+            const IconComponent = option.icon;
+            return (
+              <Pressable
+                key={option.label}
+                onPress={option.onPress}
+                className="items-center"
               >
-                <Icon
-                  as={option.icon}
-                  size="xl"
-                  style={{ color: option.color }}
-                />
-              </View>
-              <Text className="text-gray-700 text-sm font-medium">
-                {option.label}
-              </Text>
-            </Pressable>
-          ))}
-        </HStack>
+                <View
+                  className="w-16 h-16 rounded-full items-center justify-center mb-2"
+                  style={{ backgroundColor: option.bgColor }}
+                >
+                  <IconComponent size={28} color={option.color} />
+                </View>
+                <Text className="text-sm font-medium text-gray-700">
+                  {option.label}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
       </View>
     </BottomSheet>
   );

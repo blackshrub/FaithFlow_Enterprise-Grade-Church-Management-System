@@ -5,12 +5,13 @@
  * - Engaging gradient background
  * - Progress indicators
  * - Celebration elements
+ *
+ * Styling: NativeWind-first with inline style for dynamic/animated values
  */
 
 import React, { memo } from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { View, Text, Pressable } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { ExploreColors, ExploreSpacing, ExploreBorderRadius, ExploreShadows } from '@/constants/explore/designSystem';
 import type { DailyQuiz } from '@/types/explore';
 import { Brain, Trophy, Clock, Zap, ChevronRight, CheckCircle } from 'lucide-react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
@@ -22,6 +23,27 @@ interface DailyQuizCardProps {
   completed?: boolean;
   score?: number;
 }
+
+// Colors for icon usage
+const Colors = {
+  secondary: {
+    100: '#FFEDD5',
+    500: '#F97316',
+    600: '#EA580C',
+    700: '#C2410C',
+  },
+  success: {
+    600: '#16A34A',
+  },
+  neutral: {
+    500: '#737373',
+    600: '#525252',
+    700: '#404040',
+    800: '#262626',
+    900: '#171717',
+  },
+  white: '#FFFFFF',
+};
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -58,7 +80,17 @@ export const DailyQuizCard = memo(function DailyQuizCard({
       onPress={onPress}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
-      style={[styles.container, animatedStyle]}
+      className="rounded-2xl overflow-hidden"
+      style={[
+        animatedStyle,
+        {
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.1,
+          shadowRadius: 8,
+          elevation: 3,
+        },
+      ]}
       testID="daily-quiz-card"
     >
       {/* Background Gradient */}
@@ -71,34 +103,42 @@ export const DailyQuizCard = memo(function DailyQuizCard({
         }
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
-        style={styles.gradient}
+        className="absolute inset-0"
       />
 
       {/* Main Content */}
-      <View style={styles.content}>
+      <View className="p-5 gap-4">
         {/* Header */}
-        <View style={styles.header}>
+        <View className="flex-row items-center gap-4">
           {/* Icon */}
-          <View style={[
-            styles.iconContainer,
-            completed && isPerfect && styles.iconContainerPerfect,
-          ]}>
+          <View
+            className={`w-12 h-12 rounded-full items-center justify-center ${
+              completed && isPerfect ? '' : ''
+            }`}
+            style={{
+              backgroundColor: completed && isPerfect
+                ? Colors.secondary[100]
+                : 'rgba(255,255,255,0.8)',
+            }}
+          >
             {completed ? (
               isPerfect ? (
-                <Trophy size={24} color={ExploreColors.secondary[600]} />
+                <Trophy size={24} color={Colors.secondary[600]} />
               ) : (
-                <CheckCircle size={24} color={ExploreColors.success[600]} />
+                <CheckCircle size={24} color={Colors.success[600]} />
               )
             ) : (
-              <Brain size={24} color={ExploreColors.secondary[600]} />
+              <Brain size={24} color={Colors.secondary[600]} />
             )}
           </View>
 
           {/* Title & Description */}
-          <View style={styles.headerText}>
-            <Text style={styles.title} numberOfLines={1}>{title}</Text>
+          <View className="flex-1 gap-0.5">
+            <Text className="text-[17px] font-bold text-neutral-900" numberOfLines={1}>
+              {title}
+            </Text>
             {description && (
-              <Text style={styles.description} numberOfLines={1}>
+              <Text className="text-sm text-neutral-600" numberOfLines={1}>
                 {description}
               </Text>
             )}
@@ -106,16 +146,18 @@ export const DailyQuizCard = memo(function DailyQuizCard({
         </View>
 
         {/* Stats Row */}
-        <View style={styles.statsRow}>
-          <View style={styles.statItem}>
-            <Zap size={16} color={ExploreColors.secondary[600]} />
-            <Text style={styles.statText}>Questions:{questionCount}</Text>
+        <View className="flex-row gap-5">
+          <View className="flex-row items-center gap-1">
+            <Zap size={16} color={Colors.secondary[600]} />
+            <Text className="text-[13px] font-semibold text-neutral-700">
+              Questions: {questionCount}
+            </Text>
           </View>
 
           {quiz.time_limit_seconds && (
-            <View style={styles.statItem}>
-              <Clock size={16} color={ExploreColors.neutral[500]} />
-              <Text style={styles.statText}>
+            <View className="flex-row items-center gap-1">
+              <Clock size={16} color={Colors.neutral[500]} />
+              <Text className="text-[13px] font-semibold text-neutral-700">
                 {Math.floor(quiz.time_limit_seconds / 60)} min
               </Text>
             </View>
@@ -124,133 +166,49 @@ export const DailyQuizCard = memo(function DailyQuizCard({
 
         {/* CTA Button */}
         {completed && score !== undefined ? (
-          <View style={[
-            styles.resultBadge,
-            isPerfect && styles.resultBadgePerfect,
-            !isPerfect && isPassed && styles.resultBadgePassed,
-            !isPassed && styles.resultBadgeFailed,
-          ]}>
-            <Text style={[
-              styles.resultText,
-              isPerfect && styles.resultTextPerfect,
-            ]}>
+          <View
+            className={`p-3 rounded-xl items-center ${
+              isPerfect
+                ? ''
+                : isPassed
+                  ? ''
+                  : ''
+            }`}
+            style={{
+              backgroundColor: isPerfect
+                ? 'rgba(245, 158, 11, 0.2)'
+                : isPassed
+                  ? 'rgba(16, 185, 129, 0.2)'
+                  : 'rgba(0, 0, 0, 0.05)',
+            }}
+          >
+            <Text
+              className="text-base font-bold"
+              style={{ color: isPerfect ? Colors.secondary[700] : Colors.neutral[800] }}
+            >
               {isPerfect ? '🏆 Perfect Score!' : `Score: ${score}%`}
             </Text>
             {isPerfect && (
-              <Text style={styles.resultSubtext}>Amazing job!</Text>
+              <Text
+                className="text-[13px] font-medium mt-0.5"
+                style={{ color: Colors.secondary[600] }}
+              >
+                Amazing job!
+              </Text>
             )}
           </View>
         ) : (
-          <View style={styles.ctaButton}>
-            <Text style={styles.ctaText}>
+          <View
+            className="flex-row items-center justify-center gap-1.5 py-4 px-5 rounded-xl"
+            style={{ backgroundColor: Colors.secondary[500] }}
+          >
+            <Text className="text-[15px] font-semibold text-white">
               {language === 'en' ? 'Start Challenge' : 'Mulai Tantangan'}
             </Text>
-            <ChevronRight size={18} color="#FFFFFF" />
+            <ChevronRight size={18} color={Colors.white} />
           </View>
         )}
       </View>
     </AnimatedPressable>
   );
-});
-
-const styles = StyleSheet.create({
-  container: {
-    borderRadius: ExploreBorderRadius.card,
-    overflow: 'hidden',
-    ...ExploreShadows.level1,
-  },
-  gradient: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  content: {
-    padding: ExploreSpacing.lg,
-    gap: ExploreSpacing.md,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: ExploreSpacing.md,
-  },
-  iconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: 'rgba(255,255,255,0.8)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  iconContainerPerfect: {
-    backgroundColor: ExploreColors.secondary[100],
-  },
-  headerText: {
-    flex: 1,
-    gap: 2,
-  },
-  title: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: ExploreColors.neutral[900],
-  },
-  description: {
-    fontSize: 14,
-    fontWeight: '400',
-    color: ExploreColors.neutral[600],
-  },
-  statsRow: {
-    flexDirection: 'row',
-    gap: ExploreSpacing.lg,
-  },
-  statItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  statText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: ExploreColors.neutral[700],
-  },
-  ctaButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    backgroundColor: ExploreColors.secondary[500],
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: ExploreBorderRadius.button,
-  },
-  ctaText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#FFFFFF',
-  },
-  resultBadge: {
-    padding: 12,
-    borderRadius: ExploreBorderRadius.button,
-    alignItems: 'center',
-  },
-  resultBadgePerfect: {
-    backgroundColor: 'rgba(245, 158, 11, 0.2)',
-  },
-  resultBadgePassed: {
-    backgroundColor: 'rgba(16, 185, 129, 0.2)',
-  },
-  resultBadgeFailed: {
-    backgroundColor: 'rgba(0, 0, 0, 0.05)',
-  },
-  resultText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: ExploreColors.neutral[800],
-  },
-  resultTextPerfect: {
-    color: ExploreColors.secondary[700],
-  },
-  resultSubtext: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: ExploreColors.secondary[600],
-    marginTop: 2,
-  },
 });

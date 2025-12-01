@@ -3151,6 +3151,28 @@
   resolved "https://registry.npmjs.org/@tanstack/query-core/-/query-core-5.90.11.tgz"
   integrity sha512-f9z/nXhCgWDF4lHqgIE30jxLe4sYv15QodfdPDKYAk7nAEjNcndy4dHz3ezhdUaR23BpWa4I2EH4/DZ0//Uf8A==
 
+"@tanstack/query-persist-client-core@5.91.10":
+  version "5.91.10"
+  resolved "https://registry.yarnpkg.com/@tanstack/query-persist-client-core/-/query-persist-client-core-5.91.10.tgz#759ff4b220d7ab31944ca02c9f30cc27804faf93"
+  integrity sha512-oZQk/kap5jHx2w+JcSI6CvDFXR5jmAldqJsH5IEQizVOEwaRlCyYEBZ3Df56HXNxW4spWX0cjhI/4o+mnCGtHw==
+  dependencies:
+    "@tanstack/query-core" "5.90.11"
+
+"@tanstack/query-sync-storage-persister@^5.90.13":
+  version "5.90.13"
+  resolved "https://registry.yarnpkg.com/@tanstack/query-sync-storage-persister/-/query-sync-storage-persister-5.90.13.tgz#6d65202820554c703328de11041e7772c00f5801"
+  integrity sha512-ysJFlPzQat1FyXKiKx+bK1kDiF0zdHgZV5Kc3V7rw6w5Uz7shaiQaAmp3VJoZXl63diE4mErFBSra/z+6iBigg==
+  dependencies:
+    "@tanstack/query-core" "5.90.11"
+    "@tanstack/query-persist-client-core" "5.91.10"
+
+"@tanstack/react-query-persist-client@^5.90.13":
+  version "5.90.13"
+  resolved "https://registry.yarnpkg.com/@tanstack/react-query-persist-client/-/react-query-persist-client-5.90.13.tgz#d61eb2adf362e8a72d5d2757178d3970171e5d1e"
+  integrity sha512-04R+o/su8wuqlEvUl6dJLLI8auUCFCCJ2qGfELPSJSE4mF0HOh+ZtmsDRuLXA/jBMyV6X2RZLrZTMRWNgWM4gw==
+  dependencies:
+    "@tanstack/query-persist-client-core" "5.91.10"
+
 "@tanstack/react-query@^5.90.11":
   version "5.90.11"
   resolved "https://registry.npmjs.org/@tanstack/react-query/-/react-query-5.90.11.tgz"
@@ -4791,6 +4813,13 @@ expo-linking@~8.0.9:
   integrity sha512-a0UHhlVyfwIbn8b1PSFPoFiIDJeps2iEq109hVH3CHd0CMKuRxFfNio9Axe2BjXhiJCYWR4OV1iIyzY/GjiVkQ==
   dependencies:
     expo-constants "~18.0.10"
+    invariant "^2.2.4"
+
+expo-local-authentication@^17.0.7:
+  version "17.0.7"
+  resolved "https://registry.yarnpkg.com/expo-local-authentication/-/expo-local-authentication-17.0.7.tgz#799239fc817cf8a16ea047c96425ff05ed1e502a"
+  integrity sha512-yRWcgYn/OIwxEDEk7cM7tRjQSHaTp5hpKwzq+g9NmSMJ1etzUzt0yGzkDiOjObj3YqFo0ucyDJ8WfanLhZDtMw==
+  dependencies:
     invariant "^2.2.4"
 
 expo-localization@~17.0.7:
@@ -7498,9 +7527,9 @@ react-fast-compare@^3.2.2:
   resolved "https://registry.npmjs.org/react-fast-compare/-/react-fast-compare-3.2.2.tgz"
   integrity sha512-nsO+KSNgo1SbJqJEYRE9ERzo7YtYbou/OqjSQKxV7jcKox7+usiUVZOAC+XnDOABXggQTno0Y1CpVnuWEc1boQ==
 
-react-freeze@^1.0.0:
+react-freeze@^1.0.0, react-freeze@^1.0.4:
   version "1.0.4"
-  resolved "https://registry.npmjs.org/react-freeze/-/react-freeze-1.0.4.tgz"
+  resolved "https://registry.yarnpkg.com/react-freeze/-/react-freeze-1.0.4.tgz#cbbea2762b0368b05cbe407ddc9d518c57c6f3ad"
   integrity sha512-r4F0Sec0BLxWicc7HEyo2x3/2icUTrRmDjaaRyzzn+7aDyFZliszMDOgLVwSnQnYENOlL1o569Ze2HZefk8clA==
 
 react-i18next@^16.3.5:
@@ -7552,6 +7581,16 @@ react-native-is-edge-to-edge@^1.1.6, react-native-is-edge-to-edge@^1.2.1:
   version "1.2.1"
   resolved "https://registry.npmjs.org/react-native-is-edge-to-edge/-/react-native-is-edge-to-edge-1.2.1.tgz"
   integrity sha512-FLbPWl/MyYQWz+KwqOZsSyj2JmLKglHatd3xLZWskXOpRaio4LfEDEz8E/A6uD8QoTHW6Aobw1jbEwK7KMgR7Q==
+
+react-native-mmkv@^4.0.1:
+  version "4.0.1"
+  resolved "https://registry.yarnpkg.com/react-native-mmkv/-/react-native-mmkv-4.0.1.tgz#076baaec4056f6027aabec21d5d233c57b91ede9"
+  integrity sha512-0JjO0U33b2hngFACsGwxoMCOZlCChP6R42aqvU85kXBaxY/kltSYr0FW9T6lkU3uEkE4IWMV1eLjoJplEY920w==
+
+react-native-nitro-modules@^0.31.10:
+  version "0.31.10"
+  resolved "https://registry.yarnpkg.com/react-native-nitro-modules/-/react-native-nitro-modules-0.31.10.tgz#d21907327200d5761ba6cf328dec36b1516bc270"
+  integrity sha512-hcvjTu9YJE9fMmnAUvhG8CxvYLpOuMQ/2eyi/S6GyrecezF6Rmk/uRQEL6v09BRFWA/xRVZNQVulQPS+2HS3mQ==
 
 react-native-qrcode-svg@^6.3.20:
   version "6.3.20"

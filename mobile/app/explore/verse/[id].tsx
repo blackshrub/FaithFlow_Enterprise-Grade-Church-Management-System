@@ -1,6 +1,10 @@
 /**
  * Verse of the Day Detail Screen
  *
+ * Styling Strategy:
+ * - NativeWind (className) for all layout and styling
+ * - Inline style for: custom colors from ExploreColors
+ *
  * Design: Focused on the verse with reflection
  * - Large, readable verse text
  * - Spiritual blue accent
@@ -8,10 +12,10 @@
  */
 
 import React, { useEffect, useState } from 'react';
-import { ScrollView, View, Text, StyleSheet, Pressable, Share } from 'react-native';
+import { ScrollView, View, Text, Pressable, Share } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ExploreColors, ExploreTypography, ExploreSpacing } from '@/constants/explore/designSystem';
+import { ExploreColors } from '@/constants/explore/designSystem';
 import { formatBibleReference } from '@/constants/explore/bibleBooks';
 import {
   useContentById,
@@ -25,7 +29,7 @@ import { ArrowLeft, Check, Share2, Copy } from 'lucide-react-native';
 import { VerseOfTheDaySkeleton } from '@/components/explore/LoadingSkeleton';
 import { MarkdownText } from '@/components/explore/MarkdownText';
 import { AudioPlayButton } from '@/components/explore/AudioPlayButton';
-import Animated, { FadeInDown, SlideInRight } from 'react-native-reanimated';
+import Animated, { SlideInRight } from 'react-native-reanimated';
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
 
@@ -107,13 +111,13 @@ export default function VerseOfTheDayScreen() {
 
   if (isLoading || !verse) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
-        <View style={styles.header}>
-          <Pressable onPress={() => router.back()} style={styles.backButton}>
+      <SafeAreaView className="flex-1 bg-white" edges={['top']}>
+        <View className="flex-row justify-between items-center px-3 py-2 border-b border-neutral-100">
+          <Pressable onPress={() => router.back()} className="p-1">
             <ArrowLeft size={24} color={ExploreColors.neutral[900]} />
           </Pressable>
         </View>
-        <ScrollView contentContainerStyle={styles.loadingContainer}>
+        <ScrollView contentContainerStyle={{ padding: 20 }}>
           <VerseOfTheDaySkeleton />
         </ScrollView>
       </SafeAreaView>
@@ -133,12 +137,12 @@ export default function VerseOfTheDayScreen() {
   ].filter(Boolean).join('. ');
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView className="flex-1 bg-white" edges={['top']}>
       {/* Header - Static, not animated */}
-      <View style={styles.header}>
+      <View className="flex-row justify-between items-center px-3 py-2 border-b border-neutral-100">
         <Pressable
           onPress={() => router.back()}
-          style={styles.backButton}
+          className="p-1"
           accessibilityRole="button"
           accessibilityLabel={contentLanguage === 'en' ? 'Go back' : 'Kembali'}
           accessibilityHint={
@@ -150,10 +154,10 @@ export default function VerseOfTheDayScreen() {
           <ArrowLeft size={24} color={ExploreColors.neutral[900]} />
         </Pressable>
 
-        <View style={styles.headerActions}>
+        <View className="flex-row gap-2">
           <Pressable
             onPress={handleCopy}
-            style={styles.iconButton}
+            className="p-1"
             accessibilityRole="button"
             accessibilityLabel={
               copied
@@ -176,7 +180,7 @@ export default function VerseOfTheDayScreen() {
 
           <Pressable
             onPress={handleShare}
-            style={styles.iconButton}
+            className="p-1"
             accessibilityRole="button"
             accessibilityLabel={contentLanguage === 'en' ? 'Share this verse' : 'Bagikan ayat ini'}
             accessibilityHint={
@@ -192,14 +196,15 @@ export default function VerseOfTheDayScreen() {
 
       {/* Content - Animated */}
       <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        className="flex-1"
+        contentContainerStyle={{ paddingBottom: 24 }}
         showsVerticalScrollIndicator={false}
       >
-        <Animated.View entering={SlideInRight.duration(250)} style={styles.contentContainer}>
+        <Animated.View entering={SlideInRight.duration(250)} className="px-5 pt-6">
           {/* Verse Card with Audio Button */}
           <View
-            style={styles.verseCard}
+            className="flex-row rounded-2xl p-6 mb-6"
+            style={{ backgroundColor: ExploreColors.spiritual[50] }}
             accessible={true}
             accessibilityLabel={
               contentLanguage === 'en'
@@ -208,11 +213,22 @@ export default function VerseOfTheDayScreen() {
             }
             accessibilityRole="text"
           >
-            <View style={styles.verseAccent} />
-            <View style={styles.verseContent}>
-              <Text style={styles.verseText}>"{verseText}"</Text>
-              <View style={styles.verseFooter}>
-                <Text style={styles.verseReference}>
+            <View
+              className="w-1.5 rounded-full mr-4"
+              style={{ backgroundColor: ExploreColors.spiritual[500] }}
+            />
+            <View className="flex-1">
+              <Text
+                className="text-[28px] font-bold italic mb-4"
+                style={{ color: ExploreColors.neutral[900], lineHeight: 36, letterSpacing: -0.3 }}
+              >
+                "{verseText}"
+              </Text>
+              <View className="flex-row items-center justify-between">
+                <Text
+                  className="text-lg font-bold"
+                  style={{ color: ExploreColors.spiritual[700] }}
+                >
                   {formatBibleReference(verse.verse, contentLanguage)}
                 </Text>
                 {/* Audio Play Button (cached for 24h, preloads when page opens) */}
@@ -236,41 +252,54 @@ export default function VerseOfTheDayScreen() {
 
           {/* Commentary */}
           {commentary && (
-            <View style={styles.section}>
+            <View className="mb-6">
               <Text
-                style={styles.sectionTitle}
+                className="text-[22px] font-semibold mb-3"
+                style={{ color: ExploreColors.neutral[900], lineHeight: 28 }}
                 accessibilityRole="header"
               >
                 {contentLanguage === 'en' ? 'Commentary' : 'Komentar'}
               </Text>
-              <MarkdownText style={styles.sectionContent}>{commentary}</MarkdownText>
+              <MarkdownText
+                style={{ fontSize: 16, color: ExploreColors.neutral[800], lineHeight: 28 }}
+              >
+                {commentary}
+              </MarkdownText>
             </View>
           )}
 
           {/* Reflection Prompt */}
           {reflection && (
-            <View style={styles.section}>
+            <View className="mb-6">
               <Text
-                style={styles.sectionTitle}
+                className="text-[22px] font-semibold mb-3"
+                style={{ color: ExploreColors.neutral[900], lineHeight: 28 }}
                 accessibilityRole="header"
               >
                 {contentLanguage === 'en' ? 'Reflect' : 'Renungkan'}
               </Text>
-              <MarkdownText style={styles.sectionContent}>{reflection}</MarkdownText>
+              <MarkdownText
+                style={{ fontSize: 16, color: ExploreColors.neutral[800], lineHeight: 28 }}
+              >
+                {reflection}
+              </MarkdownText>
             </View>
           )}
 
           {/* Bottom spacing for button */}
-          <View style={{ height: 100 }} />
+          <View className="h-[100px]" />
         </Animated.View>
       </ScrollView>
 
       {/* Complete Button */}
       {!isCompleted && (
-        <View style={styles.bottomContainer}>
+        <View className="absolute bottom-0 left-0 right-0 p-5 bg-white border-t border-neutral-100">
           <Pressable
             onPress={handleComplete}
-            style={[styles.completeButton, trackComplete.isPending && styles.completeButtonDisabled]}
+            className={`flex-row items-center justify-center gap-2 py-3 rounded-2xl ${
+              trackComplete.isPending ? 'opacity-60' : ''
+            }`}
+            style={{ backgroundColor: ExploreColors.success[500] }}
             disabled={trackComplete.isPending}
             accessibilityRole="button"
             accessibilityLabel={
@@ -289,7 +318,7 @@ export default function VerseOfTheDayScreen() {
             }}
           >
             <Check size={20} color="#FFFFFF" />
-            <Text style={styles.completeButtonText}>
+            <Text className="text-base font-semibold text-white">
               {trackComplete.isPending
                 ? contentLanguage === 'en'
                   ? 'Completing...'
@@ -305,7 +334,7 @@ export default function VerseOfTheDayScreen() {
       {/* Completed Badge */}
       {isCompleted && (
         <View
-          style={styles.completedBadgeContainer}
+          className="absolute bottom-5 left-0 right-0 items-center"
           accessible={true}
           accessibilityRole="text"
           accessibilityLabel={
@@ -315,9 +344,15 @@ export default function VerseOfTheDayScreen() {
           }
           accessibilityLiveRegion="polite"
         >
-          <View style={styles.completedBadge}>
+          <View
+            className="flex-row items-center gap-1 px-4 py-2 rounded-3xl"
+            style={{ backgroundColor: ExploreColors.success[50] }}
+          >
             <Check size={16} color={ExploreColors.success[600]} />
-            <Text style={styles.completedText}>
+            <Text
+              className="text-base font-semibold"
+              style={{ color: ExploreColors.success[700] }}
+            >
               {contentLanguage === 'en' ? 'Completed' : 'Selesai'}
             </Text>
           </View>
@@ -327,7 +362,8 @@ export default function VerseOfTheDayScreen() {
       {/* Copy Toast */}
       {copied && (
         <View
-          style={styles.copyToast}
+          className="absolute top-20 self-center px-4 py-2 rounded-3xl"
+          style={{ backgroundColor: ExploreColors.neutral[900] }}
           accessible={true}
           accessibilityRole="alert"
           accessibilityLabel={
@@ -335,7 +371,7 @@ export default function VerseOfTheDayScreen() {
           }
           accessibilityLiveRegion="assertive"
         >
-          <Text style={styles.copyToastText}>
+          <Text className="text-base font-semibold text-white">
             {contentLanguage === 'en' ? 'Verse copied!' : 'Ayat disalin!'}
           </Text>
         </View>
@@ -343,145 +379,3 @@ export default function VerseOfTheDayScreen() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: ExploreSpacing.md,
-    paddingVertical: ExploreSpacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: ExploreColors.neutral[100],
-  },
-  backButton: {
-    padding: ExploreSpacing.xs,
-  },
-  headerActions: {
-    flexDirection: 'row',
-    gap: ExploreSpacing.sm,
-  },
-  iconButton: {
-    padding: ExploreSpacing.xs,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: ExploreSpacing.xl,
-  },
-  loadingContainer: {
-    padding: ExploreSpacing.screenMargin,
-  },
-  contentContainer: {
-    paddingHorizontal: ExploreSpacing.screenMargin,
-    paddingTop: ExploreSpacing.xl,
-  },
-  verseCard: {
-    flexDirection: 'row',
-    backgroundColor: ExploreColors.spiritual[50],
-    borderRadius: 16,
-    padding: ExploreSpacing.xl,
-    marginBottom: ExploreSpacing.xl,
-  },
-  verseAccent: {
-    width: 6,
-    backgroundColor: ExploreColors.spiritual[500],
-    borderRadius: 3,
-    marginRight: ExploreSpacing.lg,
-  },
-  verseContent: {
-    flex: 1,
-  },
-  verseText: {
-    ...ExploreTypography.h2,
-    color: ExploreColors.neutral[900],
-    fontStyle: 'italic',
-    lineHeight: 36,
-    marginBottom: ExploreSpacing.md,
-  },
-  verseReference: {
-    ...ExploreTypography.h4,
-    color: ExploreColors.spiritual[700],
-    fontWeight: '700',
-  },
-  section: {
-    marginBottom: ExploreSpacing.xl,
-  },
-  sectionTitle: {
-    ...ExploreTypography.h3,
-    color: ExploreColors.neutral[900],
-    marginBottom: ExploreSpacing.md,
-  },
-  sectionContent: {
-    ...ExploreTypography.body,
-    color: ExploreColors.neutral[800],
-    lineHeight: 28,
-  },
-  bottomContainer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    padding: ExploreSpacing.screenMargin,
-    backgroundColor: '#FFFFFF',
-    borderTopWidth: 1,
-    borderTopColor: ExploreColors.neutral[100],
-  },
-  completeButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: ExploreSpacing.sm,
-    backgroundColor: ExploreColors.success[500],
-    paddingVertical: ExploreSpacing.md,
-    borderRadius: 16,
-  },
-  completeButtonDisabled: {
-    opacity: 0.6,
-  },
-  completeButtonText: {
-    ...ExploreTypography.body,
-    color: '#FFFFFF',
-    fontWeight: '600',
-  },
-  completedBadgeContainer: {
-    position: 'absolute',
-    bottom: ExploreSpacing.screenMargin,
-    left: 0,
-    right: 0,
-    alignItems: 'center',
-  },
-  completedBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: ExploreSpacing.xs,
-    backgroundColor: ExploreColors.success[50],
-    paddingHorizontal: ExploreSpacing.lg,
-    paddingVertical: ExploreSpacing.sm,
-    borderRadius: 24,
-  },
-  completedText: {
-    ...ExploreTypography.body,
-    color: ExploreColors.success[700],
-    fontWeight: '600',
-  },
-  copyToast: {
-    position: 'absolute',
-    top: 80,
-    alignSelf: 'center',
-    backgroundColor: ExploreColors.neutral[900],
-    paddingHorizontal: ExploreSpacing.lg,
-    paddingVertical: ExploreSpacing.sm,
-    borderRadius: 24,
-  },
-  copyToastText: {
-    ...ExploreTypography.body,
-    color: '#FFFFFF',
-    fontWeight: '600',
-  },
-});

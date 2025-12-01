@@ -7,13 +7,12 @@
  * - Line height
  * - Font family
  *
- * Persists preferences using AsyncStorage.
+ * Uses MMKV for fast, synchronous storage operations.
  */
 
 import { create } from 'zustand';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-
-const STORAGE_KEY = 'faithflow_reading_preferences';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import { mmkvStorage } from '@/lib/storage';
 
 export type FontSize = 'small' | 'medium' | 'large' | 'xlarge';
 export type ReadingTheme = 'light' | 'sepia' | 'dark';
@@ -31,16 +30,15 @@ export interface ReadingPreferences {
 }
 
 interface ReadingPreferencesState extends ReadingPreferences {
-  /** Whether preferences are loaded */
+  /** Whether preferences are loaded (always true with MMKV sync) */
   isLoaded: boolean;
 
-  // Actions
-  loadPreferences: () => Promise<void>;
-  setFontSize: (size: FontSize) => Promise<void>;
-  setTheme: (theme: ReadingTheme) => Promise<void>;
-  setLineHeight: (height: number) => Promise<void>;
-  setFontFamily: (family: FontFamily) => Promise<void>;
-  resetToDefaults: () => Promise<void>;
+  // Actions (now synchronous thanks to MMKV)
+  setFontSize: (size: FontSize) => void;
+  setTheme: (theme: ReadingTheme) => void;
+  setLineHeight: (height: number) => void;
+  setFontFamily: (family: FontFamily) => void;
+  resetToDefaults: () => void;
 
   // Computed values
   getFontSizeValue: () => number;
@@ -95,108 +93,72 @@ const DEFAULT_PREFERENCES: ReadingPreferences = {
   fontFamily: 'system',
 };
 
-export const useReadingPreferencesStore = create<ReadingPreferencesState>(
-  (set, get) => ({
-    ...DEFAULT_PREFERENCES,
-    isLoaded: false,
+export const useReadingPreferencesStore = create<ReadingPreferencesState>()(
+  persist(
+    (set, get) => ({
+      ...DEFAULT_PREFERENCES,
+      isLoaded: true, // Always true with MMKV sync storage
 
-    /**
-     * Load preferences from storage
-     */
-    loadPreferences: async () => {
-      try {
-        const stored = await AsyncStorage.getItem(STORAGE_KEY);
-        if (stored) {
-          const prefs = JSON.parse(stored) as Partial<ReadingPreferences>;
-          set({
-            ...DEFAULT_PREFERENCES,
-            ...prefs,
-            isLoaded: true,
-          });
-        } else {
-          set({ isLoaded: true });
-        }
-        console.log('[ReadingPreferences] Loaded');
-      } catch (error) {
-        console.error('[ReadingPreferences] Failed to load:', error);
-        set({ isLoaded: true });
-      }
-    },
+      /**
+       * Set font size
+       */
+      setFontSize: (fontSize: FontSize) => {
+        set({ fontSize });
+      },
 
-    /**
-     * Save current preferences
-     */
-    _savePreferences: async () => {
-      try {
-        const { fontSize, theme, lineHeight, fontFamily } = get();
-        await AsyncStorage.setItem(
-          STORAGE_KEY,
-          JSON.stringify({ fontSize, theme, lineHeight, fontFamily })
-        );
-      } catch (error) {
-        console.error('[ReadingPreferences] Failed to save:', error);
-      }
-    },
+      /**
+       * Set theme
+       */
+      setTheme: (theme: ReadingTheme) => {
+        set({ theme });
+      },
 
-    /**
-     * Set font size
-     */
-    setFontSize: async (fontSize: FontSize) => {
-      set({ fontSize });
-      const { _savePreferences } = get() as any;
-      await _savePreferences();
-    },
+      /**
+       * Set line height
+       */
+      setLineHeight: (lineHeight: number) => {
+        set({ lineHeight: Math.max(1.2, Math.min(2.0, lineHeight)) });
+      },
 
-    /**
-     * Set theme
-     */
-    setTheme: async (theme: ReadingTheme) => {
-      set({ theme });
-      const { _savePreferences } = get() as any;
-      await _savePreferences();
-    },
+      /**
+       * Set font family
+       */
+      setFontFamily: (fontFamily: FontFamily) => {
+        set({ fontFamily });
+      },
 
-    /**
-     * Set line height
-     */
-    setLineHeight: async (lineHeight: number) => {
-      set({ lineHeight: Math.max(1.2, Math.min(2.0, lineHeight)) });
-      const { _savePreferences } = get() as any;
-      await _savePreferences();
-    },
+      /**
+       * Reset to defaults
+       */
+      resetToDefaults: () => {
+        set(DEFAULT_PREFERENCES);
+      },
 
-    /**
-     * Set font family
-     */
-    setFontFamily: async (fontFamily: FontFamily) => {
-      set({ fontFamily });
-      const { _savePreferences } = get() as any;
-      await _savePreferences();
-    },
+      /**
+       * Get font size value in pixels
+       */
+      getFontSizeValue: () => {
+        return FONT_SIZE_VALUES[get().fontSize];
+      },
 
-    /**
-     * Reset to defaults
-     */
-    resetToDefaults: async () => {
-      set(DEFAULT_PREFERENCES);
-      const { _savePreferences } = get() as any;
-      await _savePreferences();
-    },
-
-    /**
-     * Get font size value in pixels
-     */
-    getFontSizeValue: () => {
-      return FONT_SIZE_VALUES[get().fontSize];
-    },
-
-    /**
-     * Get theme colors
-     */
-    getThemeColors: () => {
-      return THEME_COLORS[get().theme];
-    },
-  })
+      /**
+       * Get theme colors
+       */
+      getThemeColors: () => {
+        return THEME_COLORS[get().theme];
+      },
+    }),
+    {
+      name: 'faithflow-reading-preferences',
+      storage: createJSONStorage(() => mmkvStorage),
+      partialize: (state) => ({
+        fontSize: state.fontSize,
+        theme: state.theme,
+        lineHeight: state.lineHeight,
+        fontFamily: state.fontFamily,
+      }),
+    }
+  )
 );
 
 /**

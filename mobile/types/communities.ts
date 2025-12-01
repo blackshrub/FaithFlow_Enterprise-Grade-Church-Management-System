@@ -43,6 +43,57 @@ export type MessageType =
 export type ChannelType = 'announcement' | 'general' | 'subgroup';
 
 /**
+ * Thread type for WhatsApp-style communities
+ * - announcement: One-way, admin-only posting (default, cannot be deleted)
+ * - general: Two-way discussion (default, cannot be deleted)
+ * - custom: User-created threads
+ */
+export type ThreadType = 'announcement' | 'general' | 'custom';
+
+/**
+ * Community Thread (Group Chat within a Community)
+ * WhatsApp Communities have multiple group chats/threads:
+ * - Announcement (one-way, admin-only)
+ * - General Discussion (two-way, default)
+ * - Custom threads created by members
+ */
+export interface CommunityThread {
+  id: string;
+  church_id: string;
+  community_id: string;
+  name: string;
+  description?: string;
+  cover_image?: string;
+  thread_type: ThreadType;
+
+  // Permissions
+  is_default: boolean; // true for Announcement and General threads
+  can_be_deleted: boolean; // false for default threads
+  who_can_post: 'admins_only' | 'all_members';
+
+  // Creator info (for custom threads)
+  created_by_member_id?: string;
+  created_by_name?: string;
+
+  // Admin info
+  admin_member_ids: string[];
+
+  // Stats
+  member_count: number;
+  message_count: number;
+
+  // Status for current user
+  unread_count?: number;
+  last_message?: MessagePreview;
+  is_muted?: boolean;
+  is_pinned?: boolean;
+
+  // Timestamps
+  created_at: string;
+  updated_at: string;
+}
+
+/**
  * Community settings
  */
 export interface CommunitySettings {
@@ -106,6 +157,7 @@ export interface MessagePreview {
   text_preview: string;
   message_type: MessageType;
   created_at: string;
+  thread_name?: string; // Name of the thread where this message is from
 }
 
 /**

@@ -1,9 +1,11 @@
 /**
  * SpeakButton Component
  *
- * Button to read text aloud using OpenAI TTS.
+ * Button to read text aloud using Google Cloud TTS.
  * Shows play/pause/stop states with visual feedback.
  * Uses API key from voiceSettings store.
+ *
+ * Styling: NativeWind-first with inline style for dynamic values
  *
  * Usage:
  * ```tsx
@@ -12,7 +14,7 @@
  */
 
 import React, { useCallback, useState } from 'react';
-import { Pressable, StyleSheet, ActivityIndicator } from 'react-native';
+import { Pressable, ActivityIndicator } from 'react-native';
 import { Volume2, VolumeX, Pause, Play } from 'lucide-react-native';
 import {
   speakText,
@@ -20,7 +22,7 @@ import {
   pauseSpeaking,
   resumeSpeaking,
   isSpeaking,
-  type TTSVoice,
+  type GoogleTTSVoice,
 } from '@/services/voice/speechService';
 import { useVoiceSettingsStore } from '@/stores/voiceSettings';
 
@@ -28,7 +30,7 @@ interface SpeakButtonProps {
   /** Text to speak */
   text: string;
   /** Optional voice override */
-  voice?: TTSVoice;
+  voice?: GoogleTTSVoice;
   /** Callback when speech starts */
   onStart?: () => void;
   /** Callback when speech ends */
@@ -56,7 +58,15 @@ export function SpeakButton({
   color = '#6B7280',
 }: SpeakButtonProps) {
   const [state, setState] = useState<SpeakState>('idle');
-  const { isEnabled, getEffectiveApiKey, preferences } = useVoiceSettingsStore();
+  const {
+    isEnabled,
+    getEffectiveApiKey,
+    getEffectiveVoice,
+    getEffectiveSpeed,
+  } = useVoiceSettingsStore();
+
+  const effectiveVoice = getEffectiveVoice();
+  const effectiveSpeed = getEffectiveSpeed();
 
   const handlePress = useCallback(async () => {
     if (disabled || !text || !isEnabled) return;
@@ -77,9 +87,8 @@ export function SpeakButton({
 
           setState('playing');
           await speakText(text, apiKey, {
-            voice: voice ?? preferences.voice,
-            speed: preferences.speed,
-            model: preferences.useHDModel ? 'tts-1-hd' : 'tts-1',
+            voice: voice ?? effectiveVoice,
+            speakingRate: effectiveSpeed,
           });
 
           setState('idle');
@@ -109,7 +118,7 @@ export function SpeakButton({
       setState('idle');
       onError?.(error instanceof Error ? error : new Error(String(error)));
     }
-  }, [state, text, voice, disabled, isEnabled, getEffectiveApiKey, preferences, onStart, onEnd, onError]);
+  }, [state, text, voice, disabled, isEnabled, getEffectiveApiKey, effectiveVoice, effectiveSpeed, onStart, onEnd, onError]);
 
   const handleLongPress = useCallback(async () => {
     // Stop completely
@@ -147,34 +156,18 @@ export function SpeakButton({
       onPress={handlePress}
       onLongPress={handleLongPress}
       disabled={isDisabled}
-      style={[
-        styles.button,
-        {
-          width: size,
-          height: size,
-          borderRadius: size / 2,
-        },
-        state === 'playing' && styles.buttonActive,
-        isDisabled && styles.buttonDisabled,
-      ]}
+      className={`items-center justify-center ${
+        state === 'playing' ? 'bg-blue-500/10' : 'bg-transparent'
+      } ${isDisabled ? 'opacity-50' : ''}`}
+      style={{
+        width: size,
+        height: size,
+        borderRadius: size / 2,
+      }}
     >
       {renderIcon()}
     </Pressable>
   );
 }
-
-const styles = StyleSheet.create({
-  button: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'transparent',
-  },
-  buttonActive: {
-    backgroundColor: 'rgba(59, 130, 246, 0.1)',
-  },
-  buttonDisabled: {
-    opacity: 0.5,
-  },
-});
 
 export default SpeakButton;

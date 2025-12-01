@@ -7,6 +7,8 @@
  * - Navigate between results (up/down arrows)
  * - Highlight matched text
  * - Show match count
+ *
+ * Styling: NativeWind-first with inline style for dynamic colors
  */
 
 import React, { useState, useCallback, useRef, useMemo, useEffect } from 'react';
@@ -14,7 +16,6 @@ import {
   View,
   TextInput,
   Pressable,
-  StyleSheet,
   Keyboard,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
@@ -30,7 +31,7 @@ import Animated, { SlideInDown } from 'react-native-reanimated';
 import { Text } from '@/components/ui/text';
 import { HStack } from '@/components/ui/hstack';
 import { Icon } from '@/components/ui/icon';
-import { colors, borderRadius } from '@/constants/theme';
+import { colors } from '@/constants/theme';
 import type { CommunityMessage } from '@/types/communities';
 
 // =============================================================================
@@ -137,16 +138,17 @@ export function MessageSearchHeader({
   return (
     <Animated.View
       entering={SlideInDown.duration(200)}
-      style={styles.container}
+      className="px-2 py-2.5"
+      style={{ backgroundColor: '#075E54' }}
     >
       <HStack space="sm" className="items-center flex-1">
         {/* Back button */}
-        <Pressable onPress={handleClose} style={styles.backButton}>
+        <Pressable onPress={handleClose} className="p-2">
           <Icon as={ArrowLeft} size="md" style={{ color: '#FFFFFF' }} />
         </Pressable>
 
         {/* Search input */}
-        <View style={styles.inputContainer}>
+        <View className="flex-1 flex-row items-center bg-white rounded-lg px-3 py-2">
           <Icon as={Search} size="sm" style={{ color: colors.gray[400] }} />
           <TextInput
             ref={inputRef}
@@ -157,13 +159,14 @@ export function MessageSearchHeader({
             }}
             placeholder="Search..."
             placeholderTextColor={colors.gray[400]}
-            style={styles.input}
+            className="flex-1 text-base ml-2 py-0"
+            style={{ color: colors.gray[900] }}
             autoCorrect={false}
             autoCapitalize="none"
             returnKeyType="search"
           />
           {query.length > 0 && (
-            <Pressable onPress={handleClear} style={styles.clearButton}>
+            <Pressable onPress={handleClear} className="p-1">
               <Icon as={X} size="sm" style={{ color: colors.gray[500] }} />
             </Pressable>
           )}
@@ -171,7 +174,7 @@ export function MessageSearchHeader({
 
         {/* Results count */}
         {query.length >= 2 && (
-          <Text style={styles.resultCount}>
+          <Text className="text-sm min-w-[40px] text-center" style={{ color: '#FFFFFF' }}>
             {results.length > 0
               ? `${currentResultIndex + 1}/${results.length}`
               : '0'}
@@ -183,14 +186,14 @@ export function MessageSearchHeader({
           <HStack space="xs">
             <Pressable
               onPress={handlePrevious}
-              style={styles.navButton}
+              className="p-2 opacity-80"
               disabled={results.length === 0}
             >
               <Icon as={ChevronUp} size="md" style={{ color: '#FFFFFF' }} />
             </Pressable>
             <Pressable
               onPress={handleNext}
-              style={styles.navButton}
+              className="p-2 opacity-80"
               disabled={results.length === 0}
             >
               <Icon as={ChevronDown} size="md" style={{ color: '#FFFFFF' }} />
@@ -238,7 +241,8 @@ export function HighlightedText({ text, highlight, style }: HighlightedTextProps
     parts.push(
       <Text
         key={key++}
-        style={[style, styles.highlightedText]}
+        className="font-semibold"
+        style={[style, { backgroundColor: '#FFE082', color: colors.gray[900] }]}
       >
         {text.slice(matchIndex, matchIndex + highlight.length)}
       </Text>
@@ -357,54 +361,5 @@ export function useMessageSearch(messages: CommunityMessage[]) {
     prevResult,
   };
 }
-
-// =============================================================================
-// STYLES
-// =============================================================================
-
-const styles = StyleSheet.create({
-  container: {
-    backgroundColor: '#075E54',
-    paddingHorizontal: 8,
-    paddingVertical: 10,
-  },
-  backButton: {
-    padding: 8,
-  },
-  inputContainer: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: borderRadius.lg,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
-  input: {
-    flex: 1,
-    fontSize: 16,
-    color: colors.gray[900],
-    marginLeft: 8,
-    paddingVertical: 0,
-  },
-  clearButton: {
-    padding: 4,
-  },
-  resultCount: {
-    fontSize: 14,
-    color: '#FFFFFF',
-    minWidth: 40,
-    textAlign: 'center',
-  },
-  navButton: {
-    padding: 8,
-    opacity: 0.8,
-  },
-  highlightedText: {
-    backgroundColor: '#FFE082',
-    color: colors.gray[900],
-    fontWeight: '600',
-  },
-});
 
 export default MessageSearchHeader;

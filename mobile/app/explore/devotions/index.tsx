@@ -15,7 +15,6 @@ import {
   Text,
   Image,
   ImageBackground,
-  StyleSheet,
   Pressable,
   TextInput,
 } from 'react-native';
@@ -77,17 +76,25 @@ export default function DevotionPlansLibraryScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
-        <View style={styles.header}>
-          <Pressable onPress={() => router.back()} style={styles.backButton}>
+      <SafeAreaView className="flex-1 bg-white" edges={['top']}>
+        <View
+          className="flex-row justify-between items-center"
+          style={{
+            paddingHorizontal: ExploreSpacing.md,
+            paddingVertical: ExploreSpacing.sm,
+            borderBottomWidth: 1,
+            borderBottomColor: ExploreColors.neutral[100],
+          }}
+        >
+          <Pressable onPress={() => router.back()} style={{ padding: ExploreSpacing.xs }}>
             <ArrowLeft size={24} color={ExploreColors.neutral[900]} />
           </Pressable>
-          <Text style={styles.headerTitle}>
+          <Text style={{ ...ExploreTypography.h3, color: ExploreColors.neutral[900] }}>
             {t('explore.devotionPlans')}
           </Text>
           <View style={{ width: 40 }} />
         </View>
-        <ScrollView contentContainerStyle={styles.loadingContainer}>
+        <ScrollView contentContainerStyle={{ padding: ExploreSpacing.screenMargin }}>
           <ExploreHomeSkeleton />
         </ScrollView>
       </SafeAreaView>
@@ -95,18 +102,26 @@ export default function DevotionPlansLibraryScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView className="flex-1 bg-white" edges={['top']}>
       {/* Header - Static, not animated */}
-      <View style={styles.header}>
+      <View
+        className="flex-row justify-between items-center"
+        style={{
+          paddingHorizontal: ExploreSpacing.md,
+          paddingVertical: ExploreSpacing.sm,
+          borderBottomWidth: 1,
+          borderBottomColor: ExploreColors.neutral[100],
+        }}
+      >
         <Pressable
           onPress={() => router.back()}
-          style={styles.backButton}
+          style={{ padding: ExploreSpacing.xs }}
           accessibilityRole="button"
           accessibilityLabel={t('explore.goBack')}
         >
           <ArrowLeft size={24} color={ExploreColors.neutral[900]} />
         </Pressable>
-        <Text style={styles.headerTitle}>
+        <Text style={{ ...ExploreTypography.h3, color: ExploreColors.neutral[900] }}>
           {t('explore.devotionPlans')}
         </Text>
         <View style={{ width: 40 }} />
@@ -114,17 +129,33 @@ export default function DevotionPlansLibraryScreen() {
 
       {/* Content - Animated */}
       <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        className="flex-1"
+        contentContainerStyle={{ paddingBottom: ExploreSpacing.xl }}
         showsVerticalScrollIndicator={false}
       >
         <Animated.View entering={SlideInRight.duration(250)}>
           {/* Search Bar */}
-          <View style={styles.searchContainer}>
-            <View style={styles.searchBar}>
+          <View
+            style={{
+              paddingHorizontal: ExploreSpacing.screenMargin,
+              paddingTop: ExploreSpacing.md,
+              paddingBottom: ExploreSpacing.sm,
+            }}
+          >
+            <View
+              className="flex-row items-center"
+              style={{
+                gap: ExploreSpacing.sm,
+                backgroundColor: ExploreColors.neutral[50],
+                borderRadius: 12,
+                paddingHorizontal: ExploreSpacing.md,
+                paddingVertical: ExploreSpacing.sm,
+              }}
+            >
               <Search size={20} color={ExploreColors.neutral[400]} />
               <TextInput
-                style={styles.searchInput}
+                className="flex-1"
+                style={{ ...ExploreTypography.body, color: ExploreColors.neutral[900] }}
                 placeholder={t('explore.searchDevotionPlans')}
                 placeholderTextColor={ExploreColors.neutral[400]}
                 value={searchQuery}
@@ -134,12 +165,28 @@ export default function DevotionPlansLibraryScreen() {
           </View>
 
           {/* Description */}
-          <Text style={styles.description}>
+          <Text
+            style={{
+              ...ExploreTypography.body,
+              color: ExploreColors.neutral[700],
+              paddingHorizontal: ExploreSpacing.screenMargin,
+              paddingVertical: ExploreSpacing.md,
+              lineHeight: 24,
+            }}
+          >
             {t('explore.devotionPlansDescription')}
           </Text>
 
           {/* Results Count */}
-          <Text style={styles.resultsCount}>
+          <Text
+            className="uppercase font-semibold"
+            style={{
+              ...ExploreTypography.caption,
+              color: ExploreColors.neutral[600],
+              paddingHorizontal: ExploreSpacing.screenMargin,
+              marginBottom: ExploreSpacing.md,
+            }}
+          >
             {filteredPlans.length}{' '}
             {filteredPlans.length === 1 ? t('explore.plan') : t('explore.plans')}
           </Text>
@@ -151,7 +198,7 @@ export default function DevotionPlansLibraryScreen() {
               message={t('explore.noDevotionPlansMatch')}
             />
           ) : (
-            <View style={styles.plansList}>
+            <View style={{ paddingHorizontal: ExploreSpacing.screenMargin, gap: ExploreSpacing.lg }}>
               {filteredPlans.map((plan, index) => (
                 <PlanCard
                   key={plan.id}
@@ -211,9 +258,17 @@ function PlanCard({
     <Animated.View entering={FadeInDown.duration(400).delay(index * 80)}>
       <Pressable
         onPress={onPress}
+        className="bg-white overflow-hidden"
         style={({ pressed }) => [
-          styles.planCard,
-          pressed && styles.planCardPressed,
+          {
+            borderRadius: 16,
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.1,
+            shadowRadius: 12,
+            elevation: 4,
+          },
+          pressed && { opacity: 0.95, transform: [{ scale: 0.98 }] },
         ]}
       >
         {/* Cover Image with Gradient Overlay */}
@@ -223,28 +278,56 @@ function PlanCard({
               plan.cover_image_url ||
               'https://images.unsplash.com/photo-1504052434569-70ad5836ab65?w=800',
           }}
-          style={styles.coverImageContainer}
-          imageStyle={styles.coverImage}
+          style={{ height: 180 }}
+          imageStyle={{ borderTopLeftRadius: 16, borderTopRightRadius: 16 }}
         >
           <LinearGradient
             colors={['transparent', 'rgba(0,0,0,0.8)']}
-            style={styles.imageGradient}
+            className="flex-1 justify-between"
+            style={{ padding: ExploreSpacing.md }}
           >
             {/* Top Right Badges Container */}
-            <View style={styles.topRightBadges}>
+            <View
+              className="absolute items-end"
+              style={{ top: ExploreSpacing.md, right: ExploreSpacing.md, gap: 6 }}
+            >
               {/* Duration Badge */}
-              <View style={styles.durationBadge}>
+              <View
+                className="flex-row items-center"
+                style={{
+                  gap: 4,
+                  backgroundColor: 'rgba(0,0,0,0.6)',
+                  paddingHorizontal: ExploreSpacing.sm,
+                  paddingVertical: 4,
+                  borderRadius: 8,
+                }}
+              >
                 <Calendar size={14} color="#FFFFFF" />
-                <Text style={styles.durationText}>
+                <Text
+                  className="font-semibold"
+                  style={{ ...ExploreTypography.caption, color: '#FFFFFF', fontSize: 12 }}
+                >
                   {plan.duration_days} {t('explore.days')}
                 </Text>
               </View>
 
               {/* Completed Badge - Under Duration */}
               {isCompleted && (
-                <View style={styles.completedBadge}>
+                <View
+                  className="flex-row items-center"
+                  style={{
+                    gap: 4,
+                    backgroundColor: ExploreColors.success[500],
+                    paddingHorizontal: ExploreSpacing.sm,
+                    paddingVertical: 4,
+                    borderRadius: 8,
+                  }}
+                >
                   <CheckCircle2 size={14} color="#FFFFFF" fill="#FFFFFF" />
-                  <Text style={styles.completedBadgeText}>
+                  <Text
+                    className="font-bold"
+                    style={{ ...ExploreTypography.caption, color: '#FFFFFF', fontSize: 11 }}
+                  >
                     {t('explore.completed')}
                   </Text>
                 </View>
@@ -252,12 +335,31 @@ function PlanCard({
             </View>
 
             {/* Title on Image */}
-            <View style={styles.imageTextContainer}>
-              <Text style={styles.planTitleOnImage} numberOfLines={2}>
+            <View className="mt-auto">
+              <Text
+                numberOfLines={2}
+                style={{
+                  ...ExploreTypography.h3,
+                  color: '#FFFFFF',
+                  textShadowColor: 'rgba(0,0,0,0.5)',
+                  textShadowOffset: { width: 0, height: 1 },
+                  textShadowRadius: 4,
+                }}
+              >
                 {title}
               </Text>
               {subtitle && (
-                <Text style={styles.planSubtitle} numberOfLines={1}>
+                <Text
+                  numberOfLines={1}
+                  style={{
+                    ...ExploreTypography.body,
+                    color: 'rgba(255,255,255,0.9)',
+                    marginTop: 4,
+                    textShadowColor: 'rgba(0,0,0,0.5)',
+                    textShadowOffset: { width: 0, height: 1 },
+                    textShadowRadius: 4,
+                  }}
+                >
                   {subtitle}
                 </Text>
               )}
@@ -266,23 +368,29 @@ function PlanCard({
         </ImageBackground>
 
         {/* Card Content */}
-        <View style={styles.cardContent}>
+        <View style={{ padding: ExploreSpacing.lg, gap: ExploreSpacing.md }}>
           {/* Description */}
-          <Text style={styles.planDescription} numberOfLines={2}>
+          <Text
+            numberOfLines={2}
+            style={{ ...ExploreTypography.body, color: ExploreColors.neutral[700], lineHeight: 22 }}
+          >
             {description}
           </Text>
 
           {/* Stats Row */}
-          <View style={styles.statsRow}>
+          <View className="flex-row items-center flex-wrap" style={{ gap: ExploreSpacing.md }}>
             {/* Rating */}
             {plan.average_rating !== undefined && plan.average_rating > 0 && (
-              <View style={styles.statItem}>
+              <View className="flex-row items-center" style={{ gap: 4 }}>
                 <Star
                   size={14}
                   color={ExploreColors.warning[500]}
                   fill={ExploreColors.warning[500]}
                 />
-                <Text style={styles.statText}>
+                <Text
+                  className="font-medium"
+                  style={{ ...ExploreTypography.caption, color: ExploreColors.neutral[600] }}
+                >
                   {plan.average_rating.toFixed(1)}
                 </Text>
               </View>
@@ -290,8 +398,18 @@ function PlanCard({
 
             {/* Categories */}
             {plan.categories && plan.categories.length > 0 && (
-              <View style={styles.categoryTag}>
-                <Text style={styles.categoryText}>
+              <View
+                style={{
+                  backgroundColor: ExploreColors.spiritual[50],
+                  paddingHorizontal: ExploreSpacing.sm,
+                  paddingVertical: 4,
+                  borderRadius: 8,
+                }}
+              >
+                <Text
+                  className="font-semibold"
+                  style={{ ...ExploreTypography.caption, color: ExploreColors.spiritual[700], fontSize: 11 }}
+                >
                   {plan.categories[0]}
                 </Text>
               </View>
@@ -300,18 +418,29 @@ function PlanCard({
 
           {/* Progress Bar (if subscribed and not completed) */}
           {isSubscribed && !isCompleted && (
-            <View style={styles.progressSection}>
-              <View style={styles.progressHeader}>
-                <Text style={styles.progressLabel}>
+            <View style={{ gap: ExploreSpacing.xs }}>
+              <View className="flex-row justify-between items-center">
+                <Text style={{ ...ExploreTypography.caption, color: ExploreColors.neutral[600] }}>
                   {t('explore.dayOf', { current: currentDay, total: plan.duration_days })}
                 </Text>
-                <Text style={styles.progressPercent}>
+                <Text
+                  className="font-semibold"
+                  style={{ ...ExploreTypography.caption, color: ExploreColors.primary[600] }}
+                >
                   {Math.round(progressPercent)}%
                 </Text>
               </View>
-              <View style={styles.progressBarBg}>
+              <View
+                className="overflow-hidden"
+                style={{ height: 6, backgroundColor: ExploreColors.neutral[100], borderRadius: 3 }}
+              >
                 <View
-                  style={[styles.progressBarFill, { width: `${progressPercent}%` }]}
+                  style={{
+                    height: '100%',
+                    width: `${progressPercent}%`,
+                    backgroundColor: ExploreColors.primary[500],
+                    borderRadius: 3,
+                  }}
                 />
               </View>
             </View>
@@ -319,30 +448,42 @@ function PlanCard({
 
           {/* Action Button */}
           <Pressable
-            style={[
-              styles.actionButton,
-              isCompleted && styles.actionButtonCompleted,
-            ]}
+            className="flex-row items-center justify-center"
+            style={{
+              gap: ExploreSpacing.sm,
+              backgroundColor: isCompleted ? ExploreColors.success[500] : ExploreColors.primary[500],
+              paddingVertical: ExploreSpacing.sm + 2,
+              borderRadius: 12,
+            }}
             onPress={onPress}
           >
             {isCompleted ? (
               <>
                 <CheckCircle2 size={18} color="#FFFFFF" />
-                <Text style={styles.actionButtonText}>
+                <Text
+                  className="font-semibold"
+                  style={{ ...ExploreTypography.body, color: '#FFFFFF' }}
+                >
                   {t('explore.review')}
                 </Text>
               </>
             ) : isSubscribed ? (
               <>
                 <Play size={18} color="#FFFFFF" fill="#FFFFFF" />
-                <Text style={styles.actionButtonText}>
+                <Text
+                  className="font-semibold"
+                  style={{ ...ExploreTypography.body, color: '#FFFFFF' }}
+                >
                   {t('explore.resume')}
                 </Text>
               </>
             ) : (
               <>
                 <BookOpen size={18} color="#FFFFFF" />
-                <Text style={styles.actionButtonText}>
+                <Text
+                  className="font-semibold"
+                  style={{ ...ExploreTypography.body, color: '#FFFFFF' }}
+                >
                   {t('explore.start')}
                 </Text>
               </>
@@ -354,235 +495,3 @@ function PlanCard({
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: ExploreSpacing.md,
-    paddingVertical: ExploreSpacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: ExploreColors.neutral[100],
-  },
-  backButton: {
-    padding: ExploreSpacing.xs,
-  },
-  headerTitle: {
-    ...ExploreTypography.h3,
-    color: ExploreColors.neutral[900],
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: ExploreSpacing.xl,
-  },
-  loadingContainer: {
-    padding: ExploreSpacing.screenMargin,
-  },
-  searchContainer: {
-    paddingHorizontal: ExploreSpacing.screenMargin,
-    paddingTop: ExploreSpacing.md,
-    paddingBottom: ExploreSpacing.sm,
-  },
-  searchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: ExploreSpacing.sm,
-    backgroundColor: ExploreColors.neutral[50],
-    borderRadius: 12,
-    paddingHorizontal: ExploreSpacing.md,
-    paddingVertical: ExploreSpacing.sm,
-  },
-  searchInput: {
-    ...ExploreTypography.body,
-    color: ExploreColors.neutral[900],
-    flex: 1,
-  },
-  description: {
-    ...ExploreTypography.body,
-    color: ExploreColors.neutral[700],
-    paddingHorizontal: ExploreSpacing.screenMargin,
-    paddingVertical: ExploreSpacing.md,
-    lineHeight: 24,
-  },
-  resultsCount: {
-    ...ExploreTypography.caption,
-    color: ExploreColors.neutral[600],
-    paddingHorizontal: ExploreSpacing.screenMargin,
-    marginBottom: ExploreSpacing.md,
-    textTransform: 'uppercase',
-    fontWeight: '600',
-  },
-  plansList: {
-    paddingHorizontal: ExploreSpacing.screenMargin,
-    gap: ExploreSpacing.lg,
-  },
-  planCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 4,
-  },
-  planCardPressed: {
-    opacity: 0.95,
-    transform: [{ scale: 0.98 }],
-  },
-  coverImageContainer: {
-    height: 180,
-  },
-  coverImage: {
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-  },
-  imageGradient: {
-    flex: 1,
-    padding: ExploreSpacing.md,
-    justifyContent: 'space-between',
-  },
-  topRightBadges: {
-    position: 'absolute',
-    top: ExploreSpacing.md,
-    right: ExploreSpacing.md,
-    alignItems: 'flex-end',
-    gap: 6,
-  },
-  durationBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    paddingHorizontal: ExploreSpacing.sm,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  durationText: {
-    ...ExploreTypography.caption,
-    color: '#FFFFFF',
-    fontWeight: '600',
-    fontSize: 12,
-  },
-  completedBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: ExploreColors.success[500],
-    paddingHorizontal: ExploreSpacing.sm,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  completedBadgeText: {
-    ...ExploreTypography.caption,
-    color: '#FFFFFF',
-    fontWeight: '700',
-    fontSize: 11,
-  },
-  imageTextContainer: {
-    marginTop: 'auto',
-  },
-  planTitleOnImage: {
-    ...ExploreTypography.h3,
-    color: '#FFFFFF',
-    textShadowColor: 'rgba(0,0,0,0.5)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 4,
-  },
-  planSubtitle: {
-    ...ExploreTypography.body,
-    color: 'rgba(255,255,255,0.9)',
-    marginTop: 4,
-    textShadowColor: 'rgba(0,0,0,0.5)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 4,
-  },
-  cardContent: {
-    padding: ExploreSpacing.lg,
-    gap: ExploreSpacing.md,
-  },
-  planDescription: {
-    ...ExploreTypography.body,
-    color: ExploreColors.neutral[700],
-    lineHeight: 22,
-  },
-  statsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: ExploreSpacing.md,
-    flexWrap: 'wrap',
-  },
-  statItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  statText: {
-    ...ExploreTypography.caption,
-    color: ExploreColors.neutral[600],
-    fontWeight: '500',
-  },
-  categoryTag: {
-    backgroundColor: ExploreColors.spiritual[50],
-    paddingHorizontal: ExploreSpacing.sm,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  categoryText: {
-    ...ExploreTypography.caption,
-    color: ExploreColors.spiritual[700],
-    fontWeight: '600',
-    fontSize: 11,
-  },
-  progressSection: {
-    gap: ExploreSpacing.xs,
-  },
-  progressHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  progressLabel: {
-    ...ExploreTypography.caption,
-    color: ExploreColors.neutral[600],
-  },
-  progressPercent: {
-    ...ExploreTypography.caption,
-    color: ExploreColors.primary[600],
-    fontWeight: '600',
-  },
-  progressBarBg: {
-    height: 6,
-    backgroundColor: ExploreColors.neutral[100],
-    borderRadius: 3,
-    overflow: 'hidden',
-  },
-  progressBarFill: {
-    height: '100%',
-    backgroundColor: ExploreColors.primary[500],
-    borderRadius: 3,
-  },
-  actionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: ExploreSpacing.sm,
-    backgroundColor: ExploreColors.primary[500],
-    paddingVertical: ExploreSpacing.sm + 2,
-    borderRadius: 12,
-  },
-  actionButtonCompleted: {
-    backgroundColor: ExploreColors.success[500],
-  },
-  actionButtonText: {
-    ...ExploreTypography.body,
-    color: '#FFFFFF',
-    fontWeight: '600',
-  },
-});

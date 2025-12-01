@@ -12,6 +12,8 @@
  * - Works with nested clickable areas
  * - Three variants: default, subtle, elevated
  *
+ * Styling: NativeWind-first with inline style for shadows/animated values
+ *
  * Usage:
  * <PremiumCard3 selected={isSelected} onPress={handlePress}>
  *   {children}
@@ -19,7 +21,7 @@
  */
 
 import React from 'react';
-import { View, Pressable, StyleSheet } from 'react-native';
+import { View, Pressable } from 'react-native';
 import type { ViewStyle } from 'react-native';
 import Animated, {
   useAnimatedStyle,
@@ -104,28 +106,79 @@ export function PremiumCard3({
     }
   };
 
-  // Get variant-specific styles
-  const getVariantStyles = () => {
-    switch (variant) {
-      case 'subtle':
-        return {
-          outer: styles.cardOuterSubtle,
-          inner: styles.innerSubtle,
-        };
-      case 'elevated':
-        return {
-          outer: styles.cardOuterElevated,
-          inner: styles.inner,
-        };
-      default:
-        return {
-          outer: styles.cardOuter,
-          inner: styles.inner,
-        };
-    }
+  // Variant style configurations
+  const variantOuterStyles: Record<PremiumCard3Variant, ViewStyle> = {
+    default: {
+      borderRadius: radius.card,
+      overflow: 'visible',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.08,
+      shadowRadius: 12,
+      elevation: 3,
+      backgroundColor: 'transparent',
+    },
+    subtle: {
+      borderRadius: radius.card,
+      overflow: 'visible',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.04,
+      shadowRadius: 6,
+      elevation: 1,
+      backgroundColor: 'transparent',
+    },
+    elevated: {
+      borderRadius: radius.card,
+      overflow: 'visible',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 6 },
+      shadowOpacity: 0.12,
+      shadowRadius: 16,
+      elevation: 5,
+      backgroundColor: 'transparent',
+    },
   };
 
-  const variantStyles = getVariantStyles();
+  const variantInnerStyles: Record<PremiumCard3Variant, ViewStyle> = {
+    default: {
+      borderRadius: radius.card,
+      borderWidth: 1,
+      borderColor: 'rgba(0,0,0,0.08)',
+      padding: spacing.m,
+      backgroundColor: 'rgba(255,255,255,0.95)',
+      overflow: 'hidden',
+    },
+    subtle: {
+      borderRadius: radius.card,
+      borderWidth: 1,
+      borderColor: 'rgba(0,0,0,0.05)',
+      padding: spacing.m,
+      backgroundColor: 'rgba(255,255,255,0.9)',
+      overflow: 'hidden',
+    },
+    elevated: {
+      borderRadius: radius.card,
+      borderWidth: 1,
+      borderColor: 'rgba(0,0,0,0.08)',
+      padding: spacing.m,
+      backgroundColor: 'rgba(255,255,255,0.95)',
+      overflow: 'hidden',
+    },
+  };
+
+  const selectedOuterStyle: ViewStyle = {
+    shadowColor: Colors.accent.gold,
+    shadowOpacity: 0.25,
+    shadowRadius: 14,
+    elevation: 6,
+  };
+
+  const selectedInnerStyle: ViewStyle = {
+    backgroundColor: Colors.accent.goldLight,
+    borderColor: Colors.accent.gold,
+    borderWidth: 2,
+  };
 
   return (
     <AnimatedPressable
@@ -134,10 +187,10 @@ export function PremiumCard3({
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
       disabled={disabled || (!onPress && !onLongPress)}
+      className={disabled ? 'opacity-50' : ''}
       style={[
-        variantStyles.outer,
-        selected && styles.cardOuterSelected,
-        disabled && styles.cardDisabled,
+        variantOuterStyles[variant],
+        selected && selectedOuterStyle,
         animatedStyle,
         style,
       ]}
@@ -145,8 +198,8 @@ export function PremiumCard3({
       {/* Inner surface with frost effect */}
       <View
         style={[
-          variantStyles.inner,
-          selected && styles.innerSelected,
+          variantInnerStyles[variant],
+          selected && selectedInnerStyle,
           innerStyle,
         ]}
       >
@@ -155,88 +208,6 @@ export function PremiumCard3({
     </AnimatedPressable>
   );
 }
-
-const styles = StyleSheet.create({
-  // Default variant outer - soft dual shadows
-  cardOuter: {
-    borderRadius: radius.card,
-    overflow: 'visible',
-    // Soft shadow layer 1: rgba(0,0,0,0.08), y=2, blur=6
-    // Soft shadow layer 2: rgba(0,0,0,0.04), y=8, blur=16
-    // Combined approximation for RN
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    // Android shadow
-    elevation: 3,
-    backgroundColor: 'transparent',
-  },
-
-  // Subtle variant outer (less shadow)
-  cardOuterSubtle: {
-    borderRadius: radius.card,
-    overflow: 'visible',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 6,
-    elevation: 1,
-    backgroundColor: 'transparent',
-  },
-
-  // Elevated variant outer (more shadow)
-  cardOuterElevated: {
-    borderRadius: radius.card,
-    overflow: 'visible',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.12,
-    shadowRadius: 16,
-    elevation: 5,
-    backgroundColor: 'transparent',
-  },
-
-  // Selected state with gold glow
-  cardOuterSelected: {
-    shadowColor: Colors.accent.gold,
-    shadowOpacity: 0.25,
-    shadowRadius: 14,
-    elevation: 6,
-  },
-
-  // Disabled state
-  cardDisabled: {
-    opacity: 0.5,
-  },
-
-  // Default inner surface with frost effect
-  inner: {
-    borderRadius: radius.card,
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.08)',
-    padding: spacing.m,
-    backgroundColor: 'rgba(255,255,255,0.95)', // Frost effect
-    overflow: 'hidden',
-  },
-
-  // Subtle inner surface
-  innerSubtle: {
-    borderRadius: radius.card,
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.05)',
-    padding: spacing.m,
-    backgroundColor: 'rgba(255,255,255,0.9)',
-    overflow: 'hidden',
-  },
-
-  // Selected inner surface
-  innerSelected: {
-    backgroundColor: Colors.accent.goldLight,
-    borderColor: Colors.accent.gold,
-    borderWidth: 2,
-  },
-});
 
 // Legacy export for backward compatibility
 export const PremiumCard2 = PremiumCard3;

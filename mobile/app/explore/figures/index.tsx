@@ -9,7 +9,7 @@
  */
 
 import React, { useState } from 'react';
-import { ScrollView, View, Text, Image, StyleSheet, Pressable, TextInput } from 'react-native';
+import { ScrollView, View, Text, Image, Pressable, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { ExploreColors, ExploreTypography, ExploreSpacing } from '@/constants/explore/designSystem';
@@ -75,17 +75,28 @@ export default function BibleFiguresLibraryScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
-        <View style={styles.header}>
-          <Pressable onPress={() => router.back()} style={styles.backButton}>
+      <SafeAreaView className="flex-1 bg-white" edges={['top']}>
+        <View
+          className="flex-row justify-between items-center"
+          style={{
+            paddingHorizontal: ExploreSpacing.md,
+            paddingVertical: ExploreSpacing.sm,
+            borderBottomWidth: 1,
+            borderBottomColor: ExploreColors.neutral[100],
+          }}
+        >
+          <Pressable onPress={() => router.back()} style={{ padding: ExploreSpacing.xs }}>
             <ArrowLeft size={24} color={ExploreColors.neutral[900]} />
           </Pressable>
-          <Text style={styles.headerTitle}>
+          <Text
+            className="flex-1 text-center"
+            style={{ ...ExploreTypography.h3, color: ExploreColors.neutral[900] }}
+          >
             {contentLanguage === 'en' ? 'Bible Figures' : 'Tokoh Alkitab'}
           </Text>
           <View style={{ width: 40 }} />
         </View>
-        <ScrollView contentContainerStyle={styles.loadingContainer}>
+        <ScrollView contentContainerStyle={{ padding: ExploreSpacing.screenMargin }}>
           <BibleFigureListSkeleton />
         </ScrollView>
       </SafeAreaView>
@@ -93,19 +104,30 @@ export default function BibleFiguresLibraryScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView className="flex-1 bg-white" edges={['top']}>
       {/* Header - Static, not animated */}
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.backButton}>
+      <View
+        className="flex-row justify-between items-center"
+        style={{
+          paddingHorizontal: ExploreSpacing.md,
+          paddingVertical: ExploreSpacing.sm,
+          borderBottomWidth: 1,
+          borderBottomColor: ExploreColors.neutral[100],
+        }}
+      >
+        <Pressable onPress={() => router.back()} style={{ padding: ExploreSpacing.xs }}>
           <ArrowLeft size={24} color={ExploreColors.neutral[900]} />
         </Pressable>
-        <Text style={styles.headerTitle}>
+        <Text
+          className="flex-1 text-center"
+          style={{ ...ExploreTypography.h3, color: ExploreColors.neutral[900] }}
+        >
           {contentLanguage === 'en' ? 'Bible Figures' : 'Tokoh Alkitab'}
         </Text>
-        <View style={styles.headerActions}>
+        <View className="flex-row" style={{ gap: ExploreSpacing.xs }}>
           <Pressable
             onPress={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
-            style={styles.iconButton}
+            style={{ padding: ExploreSpacing.xs }}
           >
             {viewMode === 'grid' ? (
               <List size={20} color={ExploreColors.neutral[600]} />
@@ -113,7 +135,10 @@ export default function BibleFiguresLibraryScreen() {
               <Grid3x3 size={20} color={ExploreColors.neutral[600]} />
             )}
           </Pressable>
-          <Pressable onPress={() => setShowFilters(!showFilters)} style={styles.iconButton}>
+          <Pressable
+            onPress={() => setShowFilters(!showFilters)}
+            style={{ padding: ExploreSpacing.xs }}
+          >
             <Filter size={20} color={ExploreColors.primary[600]} />
           </Pressable>
         </View>
@@ -121,114 +146,171 @@ export default function BibleFiguresLibraryScreen() {
 
       {/* Content - Animated */}
       <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        className="flex-1"
+        contentContainerStyle={{ paddingBottom: ExploreSpacing.xl }}
         showsVerticalScrollIndicator={false}
       >
         <Animated.View entering={SlideInRight.duration(250)}>
           {/* Search Bar */}
-        <View style={styles.searchContainer}>
-          <View style={styles.searchBar}>
-            <Search size={20} color={ExploreColors.neutral[400]} />
-            <TextInput
-              style={styles.searchInput}
-              placeholder={contentLanguage === 'en' ? 'Search figures...' : 'Cari tokoh...'}
-              placeholderTextColor={ExploreColors.neutral[400]}
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-            />
-          </View>
-        </View>
-
-        {/* Filters */}
-        {showFilters && (
-          <Animated.View entering={FadeInDown.duration(300)} style={styles.filtersSection}>
-            <View style={styles.filterGroup}>
-              <Text style={styles.filterLabel}>
-                {contentLanguage === 'en' ? 'Testament' : 'Perjanjian'}
-              </Text>
-              <View style={styles.filterOptions}>
-                {[
-                  { value: 'all', label: contentLanguage === 'en' ? 'All' : 'Semua' },
-                  {
-                    value: 'old_testament',
-                    label: contentLanguage === 'en' ? 'Old Testament' : 'Perjanjian Lama',
-                  },
-                  {
-                    value: 'new_testament',
-                    label: contentLanguage === 'en' ? 'New Testament' : 'Perjanjian Baru',
-                  },
-                ].map((option) => (
-                  <Pressable
-                    key={option.value}
-                    onPress={() => setFilterTestament(option.value as FilterTestament)}
-                    style={[
-                      styles.filterOption,
-                      filterTestament === option.value && styles.filterOptionActive,
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.filterOptionText,
-                        filterTestament === option.value && styles.filterOptionTextActive,
-                      ]}
-                    >
-                      {option.label}
-                    </Text>
-                  </Pressable>
-                ))}
-              </View>
+          <View
+            style={{
+              paddingHorizontal: ExploreSpacing.screenMargin,
+              paddingTop: ExploreSpacing.md,
+              paddingBottom: ExploreSpacing.sm,
+            }}
+          >
+            <View
+              className="flex-row items-center"
+              style={{
+                gap: ExploreSpacing.sm,
+                backgroundColor: ExploreColors.neutral[50],
+                borderRadius: 12,
+                paddingHorizontal: ExploreSpacing.md,
+                paddingVertical: ExploreSpacing.sm,
+              }}
+            >
+              <Search size={20} color={ExploreColors.neutral[400]} />
+              <TextInput
+                className="flex-1"
+                style={{ ...ExploreTypography.body, color: ExploreColors.neutral[900] }}
+                placeholder={contentLanguage === 'en' ? 'Search figures...' : 'Cari tokoh...'}
+                placeholderTextColor={ExploreColors.neutral[400]}
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+              />
             </View>
-          </Animated.View>
-        )}
-
-        {/* Results Count */}
-        <Text style={styles.resultsCount}>
-          {sortedFigures.length}{' '}
-          {contentLanguage === 'en'
-            ? sortedFigures.length === 1
-              ? 'figure found'
-              : 'figures found'
-            : sortedFigures.length === 1
-            ? 'tokoh ditemukan'
-            : 'tokoh ditemukan'}
-        </Text>
-
-        {/* Figures List */}
-        {sortedFigures.length === 0 ? (
-          <EmptyState
-            type="no_results"
-            message={
-              contentLanguage === 'en'
-                ? 'No figures match your search'
-                : 'Tidak ada tokoh yang cocok dengan pencarian Anda'
-            }
-          />
-        ) : viewMode === 'grid' ? (
-          <View style={styles.figuresGrid}>
-            {sortedFigures.map((figure, index) => (
-              <FigureGridCard
-                key={figure.id}
-                figure={figure}
-                onPress={() => handleFigurePress(figure.id)}
-                contentLanguage={contentLanguage}
-                index={index}
-              />
-            ))}
           </View>
-        ) : (
-          <View style={styles.figuresList}>
-            {sortedFigures.map((figure, index) => (
-              <FigureListCard
-                key={figure.id}
-                figure={figure}
-                onPress={() => handleFigurePress(figure.id)}
-                contentLanguage={contentLanguage}
-                index={index}
-              />
-            ))}
-          </View>
-        )}
+
+          {/* Filters */}
+          {showFilters && (
+            <Animated.View
+              entering={FadeInDown.duration(300)}
+              style={{
+                paddingHorizontal: ExploreSpacing.screenMargin,
+                paddingVertical: ExploreSpacing.md,
+                backgroundColor: ExploreColors.neutral[50],
+                borderRadius: 16,
+                marginHorizontal: ExploreSpacing.screenMargin,
+                marginBottom: ExploreSpacing.md,
+              }}
+            >
+              <View style={{ marginBottom: ExploreSpacing.xs }}>
+                <Text
+                  className="uppercase font-semibold"
+                  style={{
+                    ...ExploreTypography.caption,
+                    color: ExploreColors.neutral[700],
+                    marginBottom: ExploreSpacing.xs,
+                  }}
+                >
+                  {contentLanguage === 'en' ? 'Testament' : 'Perjanjian'}
+                </Text>
+                <View className="flex-row flex-wrap" style={{ gap: ExploreSpacing.xs }}>
+                  {[
+                    { value: 'all', label: contentLanguage === 'en' ? 'All' : 'Semua' },
+                    {
+                      value: 'old_testament',
+                      label: contentLanguage === 'en' ? 'Old Testament' : 'Perjanjian Lama',
+                    },
+                    {
+                      value: 'new_testament',
+                      label: contentLanguage === 'en' ? 'New Testament' : 'Perjanjian Baru',
+                    },
+                  ].map((option) => (
+                    <Pressable
+                      key={option.value}
+                      onPress={() => setFilterTestament(option.value as FilterTestament)}
+                      style={{
+                        paddingHorizontal: ExploreSpacing.md,
+                        paddingVertical: ExploreSpacing.xs,
+                        borderRadius: 16,
+                        backgroundColor:
+                          filterTestament === option.value
+                            ? ExploreColors.primary[500]
+                            : '#FFFFFF',
+                        borderWidth: 1,
+                        borderColor:
+                          filterTestament === option.value
+                            ? ExploreColors.primary[500]
+                            : ExploreColors.neutral[200],
+                      }}
+                    >
+                      <Text
+                        className="font-semibold"
+                        style={{
+                          ...ExploreTypography.caption,
+                          color:
+                            filterTestament === option.value
+                              ? '#FFFFFF'
+                              : ExploreColors.neutral[700],
+                        }}
+                      >
+                        {option.label}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </View>
+            </Animated.View>
+          )}
+
+          {/* Results Count */}
+          <Text
+            style={{
+              ...ExploreTypography.caption,
+              color: ExploreColors.neutral[600],
+              paddingHorizontal: ExploreSpacing.screenMargin,
+              marginBottom: ExploreSpacing.md,
+            }}
+          >
+            {sortedFigures.length}{' '}
+            {contentLanguage === 'en'
+              ? sortedFigures.length === 1
+                ? 'figure found'
+                : 'figures found'
+              : sortedFigures.length === 1
+              ? 'tokoh ditemukan'
+              : 'tokoh ditemukan'}
+          </Text>
+
+          {/* Figures List */}
+          {sortedFigures.length === 0 ? (
+            <EmptyState
+              type="no_results"
+              message={
+                contentLanguage === 'en'
+                  ? 'No figures match your search'
+                  : 'Tidak ada tokoh yang cocok dengan pencarian Anda'
+              }
+            />
+          ) : viewMode === 'grid' ? (
+            <View
+              className="flex-row flex-wrap"
+              style={{ paddingHorizontal: ExploreSpacing.screenMargin, gap: ExploreSpacing.md }}
+            >
+              {sortedFigures.map((figure, index) => (
+                <FigureGridCard
+                  key={figure.id}
+                  figure={figure}
+                  onPress={() => handleFigurePress(figure.id)}
+                  contentLanguage={contentLanguage}
+                  index={index}
+                />
+              ))}
+            </View>
+          ) : (
+            <View style={{ paddingHorizontal: ExploreSpacing.screenMargin, gap: ExploreSpacing.md }}>
+              {sortedFigures.map((figure, index) => (
+                <FigureListCard
+                  key={figure.id}
+                  figure={figure}
+                  onPress={() => handleFigurePress(figure.id)}
+                  contentLanguage={contentLanguage}
+                  index={index}
+                />
+              ))}
+            </View>
+          )}
         </Animated.View>
       </ScrollView>
     </SafeAreaView>
@@ -247,21 +329,44 @@ function FigureGridCard({ figure, onPress, contentLanguage, index }: FigureCardP
   const title = figure.title?.[contentLanguage] || figure.title?.en;
 
   return (
-    <Animated.View entering={FadeInDown.duration(400).delay(index * 30)} style={styles.gridCardContainer}>
-      <ExploreCard onPress={onPress} style={styles.gridCard}>
+    <Animated.View entering={FadeInDown.duration(400).delay(index * 30)} style={{ width: '48%' }}>
+      <ExploreCard onPress={onPress} style={{ padding: 0, overflow: 'hidden' }}>
         {figure.image_url ? (
-          <Image source={{ uri: figure.image_url }} style={styles.gridCardImage} resizeMode="cover" />
+          <Image
+            source={{ uri: figure.image_url }}
+            style={{ width: '100%', height: 160 }}
+            resizeMode="cover"
+          />
         ) : (
-          <View style={styles.gridCardImagePlaceholder}>
+          <View
+            className="items-center justify-center"
+            style={{
+              width: '100%',
+              height: 160,
+              backgroundColor: ExploreColors.neutral[100],
+            }}
+          >
             <User size={40} color={ExploreColors.neutral[400]} />
           </View>
         )}
-        <View style={styles.gridCardContent}>
-          <Text style={styles.gridCardName} numberOfLines={1}>
+        <View style={{ padding: ExploreSpacing.md }}>
+          <Text
+            numberOfLines={1}
+            style={{
+              ...ExploreTypography.h4,
+              color: ExploreColors.neutral[900],
+              fontSize: 16,
+              marginBottom: 2,
+            }}
+          >
             {name}
           </Text>
           {title && (
-            <Text style={styles.gridCardTitle} numberOfLines={1}>
+            <Text
+              numberOfLines={1}
+              className="italic"
+              style={{ ...ExploreTypography.caption, color: ExploreColors.neutral[600] }}
+            >
               {title}
             </Text>
           )}
@@ -278,19 +383,48 @@ function FigureListCard({ figure, onPress, contentLanguage, index }: FigureCardP
 
   return (
     <Animated.View entering={FadeInDown.duration(400).delay(index * 30)}>
-      <ExploreCard onPress={onPress} style={styles.listCard}>
-        <View style={styles.listCardContent}>
+      <ExploreCard onPress={onPress} style={{ padding: ExploreSpacing.md }}>
+        <View className="flex-row" style={{ gap: ExploreSpacing.md }}>
           {figure.image_url ? (
-            <Image source={{ uri: figure.image_url }} style={styles.listCardImage} resizeMode="cover" />
+            <Image
+              source={{ uri: figure.image_url }}
+              style={{ width: 80, height: 80, borderRadius: 40 }}
+              resizeMode="cover"
+            />
           ) : (
-            <View style={styles.listCardImagePlaceholder}>
+            <View
+              className="items-center justify-center"
+              style={{
+                width: 80,
+                height: 80,
+                borderRadius: 40,
+                backgroundColor: ExploreColors.neutral[100],
+              }}
+            >
               <User size={28} color={ExploreColors.neutral[400]} />
             </View>
           )}
-          <View style={styles.listCardText}>
-            <Text style={styles.listCardName}>{name}</Text>
-            {title && <Text style={styles.listCardTitle}>{title}</Text>}
-            <Text style={styles.listCardSummary} numberOfLines={2}>
+          <View className="flex-1" style={{ gap: 4 }}>
+            <Text style={{ ...ExploreTypography.h4, color: ExploreColors.neutral[900] }}>
+              {name}
+            </Text>
+            {title && (
+              <Text
+                className="italic"
+                style={{ ...ExploreTypography.caption, color: ExploreColors.neutral[600] }}
+              >
+                {title}
+              </Text>
+            )}
+            <Text
+              numberOfLines={2}
+              style={{
+                ...ExploreTypography.body,
+                color: ExploreColors.neutral[700],
+                fontSize: 14,
+                lineHeight: 20,
+              }}
+            >
               {summary}
             </Text>
           </View>
@@ -300,192 +434,3 @@ function FigureListCard({ figure, onPress, contentLanguage, index }: FigureCardP
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: ExploreSpacing.md,
-    paddingVertical: ExploreSpacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: ExploreColors.neutral[100],
-  },
-  backButton: {
-    padding: ExploreSpacing.xs,
-  },
-  headerTitle: {
-    ...ExploreTypography.h3,
-    color: ExploreColors.neutral[900],
-    flex: 1,
-    textAlign: 'center',
-  },
-  headerActions: {
-    flexDirection: 'row',
-    gap: ExploreSpacing.xs,
-  },
-  iconButton: {
-    padding: ExploreSpacing.xs,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: ExploreSpacing.xl,
-  },
-  loadingContainer: {
-    padding: ExploreSpacing.screenMargin,
-  },
-  searchContainer: {
-    paddingHorizontal: ExploreSpacing.screenMargin,
-    paddingTop: ExploreSpacing.md,
-    paddingBottom: ExploreSpacing.sm,
-  },
-  searchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: ExploreSpacing.sm,
-    backgroundColor: ExploreColors.neutral[50],
-    borderRadius: 12,
-    paddingHorizontal: ExploreSpacing.md,
-    paddingVertical: ExploreSpacing.sm,
-  },
-  searchInput: {
-    ...ExploreTypography.body,
-    color: ExploreColors.neutral[900],
-    flex: 1,
-  },
-  filtersSection: {
-    paddingHorizontal: ExploreSpacing.screenMargin,
-    paddingVertical: ExploreSpacing.md,
-    backgroundColor: ExploreColors.neutral[50],
-    borderRadius: 16,
-    marginHorizontal: ExploreSpacing.screenMargin,
-    marginBottom: ExploreSpacing.md,
-  },
-  filterGroup: {
-    marginBottom: ExploreSpacing.xs,
-  },
-  filterLabel: {
-    ...ExploreTypography.caption,
-    color: ExploreColors.neutral[700],
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    marginBottom: ExploreSpacing.xs,
-  },
-  filterOptions: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: ExploreSpacing.xs,
-  },
-  filterOption: {
-    paddingHorizontal: ExploreSpacing.md,
-    paddingVertical: ExploreSpacing.xs,
-    borderRadius: 16,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: ExploreColors.neutral[200],
-  },
-  filterOptionActive: {
-    backgroundColor: ExploreColors.primary[500],
-    borderColor: ExploreColors.primary[500],
-  },
-  filterOptionText: {
-    ...ExploreTypography.caption,
-    color: ExploreColors.neutral[700],
-    fontWeight: '600',
-  },
-  filterOptionTextActive: {
-    color: '#FFFFFF',
-  },
-  resultsCount: {
-    ...ExploreTypography.caption,
-    color: ExploreColors.neutral[600],
-    paddingHorizontal: ExploreSpacing.screenMargin,
-    marginBottom: ExploreSpacing.md,
-  },
-  figuresGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    paddingHorizontal: ExploreSpacing.screenMargin,
-    gap: ExploreSpacing.md,
-  },
-  gridCardContainer: {
-    width: '48%',
-  },
-  gridCard: {
-    padding: 0,
-    overflow: 'hidden',
-  },
-  gridCardImage: {
-    width: '100%',
-    height: 160,
-  },
-  gridCardImagePlaceholder: {
-    width: '100%',
-    height: 160,
-    backgroundColor: ExploreColors.neutral[100],
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  gridCardContent: {
-    padding: ExploreSpacing.md,
-  },
-  gridCardName: {
-    ...ExploreTypography.h4,
-    color: ExploreColors.neutral[900],
-    fontSize: 16,
-    marginBottom: 2,
-  },
-  gridCardTitle: {
-    ...ExploreTypography.caption,
-    color: ExploreColors.neutral[600],
-    fontStyle: 'italic',
-  },
-  figuresList: {
-    paddingHorizontal: ExploreSpacing.screenMargin,
-    gap: ExploreSpacing.md,
-  },
-  listCard: {
-    padding: ExploreSpacing.md,
-  },
-  listCardContent: {
-    flexDirection: 'row',
-    gap: ExploreSpacing.md,
-  },
-  listCardImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-  },
-  listCardImagePlaceholder: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: ExploreColors.neutral[100],
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  listCardText: {
-    flex: 1,
-    gap: 4,
-  },
-  listCardName: {
-    ...ExploreTypography.h4,
-    color: ExploreColors.neutral[900],
-  },
-  listCardTitle: {
-    ...ExploreTypography.caption,
-    color: ExploreColors.neutral[600],
-    fontStyle: 'italic',
-  },
-  listCardSummary: {
-    ...ExploreTypography.body,
-    color: ExploreColors.neutral[700],
-    fontSize: 14,
-    lineHeight: 20,
-  },
-});

@@ -1,10 +1,10 @@
 /**
- * Profile Screen - Modern Settings Style Design
+ * Profile Screen - iOS Settings Style with NativeWind
  *
- * Design: Clean list-based settings layout (like iOS Settings)
- * - Compact header with avatar
- * - Grouped menu items in cards
- * - Full-width list items with chevrons
+ * Styling Strategy:
+ * - NativeWind (className) for all layout and styling
+ * - Gluestack for AlertDialog, Button components
+ * - React Native + PremiumMotion for animations
  */
 
 import React, { useState, useMemo, useCallback, memo } from 'react';
@@ -12,7 +12,6 @@ import {
   View,
   Text,
   Pressable,
-  StyleSheet,
   ScrollView,
   RefreshControl,
   StatusBar,
@@ -44,6 +43,8 @@ import {
   ChevronRight,
 } from 'lucide-react-native';
 import type { LucideIcon } from 'lucide-react-native';
+
+// Gluestack components for dialogs and buttons
 import {
   AlertDialog,
   AlertDialogBackdrop,
@@ -55,7 +56,6 @@ import {
 import { Button, ButtonText } from '@/components/ui/button';
 import { Heading } from '@/components/ui/heading';
 import { Text as GText } from '@/components/ui/text';
-import { HStack } from '@/components/ui/hstack';
 
 import { useAuthStore } from '@/stores/auth';
 import { useGivingSummary } from '@/hooks/useGiving';
@@ -65,35 +65,13 @@ import { showSuccessToast } from '@/components/ui/Toast';
 
 const SCREEN_KEY = 'profile-screen';
 
-// Colors
-const Colors = {
-  primary: '#4F46E5',
-  primaryLight: '#6366F1',
-  accent: '#C9A962',
-  neutral: {
-    50: '#FAFAFA',
-    100: '#F5F5F5',
-    200: '#E5E5E5',
-    300: '#D4D4D4',
-    400: '#A3A3A3',
-    500: '#737373',
-    600: '#525252',
-    700: '#404040',
-    800: '#262626',
-    900: '#171717',
-  },
-  success: '#10B981',
-  error: '#EF4444',
-  white: '#FFFFFF',
-  background: '#F2F2F7', // iOS-style background
-};
-
 interface MenuItem {
   icon: LucideIcon;
   label: string;
   route: string | null;
   subtitle?: string;
   isDestructive?: boolean;
+  iconBgColor?: string;
 }
 
 interface MenuSection {
@@ -161,33 +139,32 @@ function ProfileScreen() {
     setShowLogoutDialog(false);
   }, []);
 
-  // Menu sections
+  // Menu sections - iOS Settings style with colored icon backgrounds
   const menuSections: MenuSection[] = useMemo(() => [
     {
       items: [
-        { icon: User, label: t('profile.personalInfo', 'Personal Information'), route: '/profile/edit' },
-        { icon: Shield, label: t('profile.privacy', 'Privacy & Security'), route: null },
+        { icon: User, label: t('profile.personalInfo', 'Personal Information'), route: '/profile/edit', iconBgColor: '#007AFF' },
+        { icon: Shield, label: t('profile.privacy', 'Privacy & Security'), route: '/settings/privacy', iconBgColor: '#5856D6' },
       ],
     },
     {
       title: t('profile.preferences', 'PREFERENCES'),
       items: [
-        // Voice & Reading settings moved to Faith Assistant screen for contextual access
-        { icon: Bell, label: t('profile.notifications', 'Notifications'), route: null },
-        { icon: Globe, label: t('profile.language', 'Language'), route: null, subtitle: 'English' },
-        { icon: Moon, label: t('profile.appearance', 'Appearance'), route: null, subtitle: 'Light' },
+        { icon: Bell, label: t('profile.notifications', 'Notifications'), route: '/settings/notifications', iconBgColor: '#FF3B30' },
+        { icon: Globe, label: t('profile.language', 'Language'), route: '/settings/language', subtitle: 'English', iconBgColor: '#34C759' },
+        { icon: Moon, label: t('profile.appearance', 'Appearance'), route: '/settings/appearance', subtitle: 'Light', iconBgColor: '#5856D6' },
       ],
     },
     {
       title: t('profile.support', 'SUPPORT'),
       items: [
-        { icon: HelpCircle, label: t('profile.helpCenter', 'Help Center'), route: null },
-        { icon: Smartphone, label: t('profile.about', 'About FaithFlow'), route: null },
+        { icon: HelpCircle, label: t('profile.helpCenter', 'Help Center'), route: null, iconBgColor: '#FF9500' },
+        { icon: Smartphone, label: t('profile.about', 'About FaithFlow'), route: null, iconBgColor: '#8E8E93' },
       ],
     },
   ], [t]);
 
-  // Render menu item - iOS Settings style
+  // Render menu item - iOS Settings style with NativeWind
   const renderMenuItem = (item: MenuItem, _index: number, isFirst: boolean, isLast: boolean) => {
     const IconComponent = item.icon;
     return (
@@ -197,57 +174,34 @@ function ProfileScreen() {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
           if (item.route) router.push(item.route as any);
         }}
-        style={({ pressed }) => ({
-          backgroundColor: pressed ? Colors.neutral[100] : Colors.white,
-          paddingHorizontal: 16,
-          paddingVertical: 16,
-          minHeight: 56,
-          borderTopLeftRadius: isFirst ? 12 : 0,
-          borderTopRightRadius: isFirst ? 12 : 0,
-          borderBottomLeftRadius: isLast ? 12 : 0,
-          borderBottomRightRadius: isLast ? 12 : 0,
-          borderBottomWidth: isLast ? 0 : StyleSheet.hairlineWidth,
-          borderBottomColor: Colors.neutral[200],
-        })}
+        className="active:bg-background-100 px-4 min-h-[52px] justify-center"
       >
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          {/* Icon container - iOS Settings style */}
-          <View style={{
-            width: 30,
-            height: 30,
-            borderRadius: 7,
-            alignItems: 'center',
-            justifyContent: 'center',
-            marginRight: 12,
-            backgroundColor: Colors.primary,
-          }}>
-            <IconComponent
-              size={18}
-              color={Colors.white}
-              strokeWidth={2}
-            />
+        <View className="flex-row items-center py-3">
+          {/* Icon container - iOS Settings style with colored background */}
+          <View
+            className="w-[29px] h-[29px] rounded-[6px] items-center justify-center mr-3"
+            style={{ backgroundColor: item.iconBgColor || '#007AFF' }}
+          >
+            <IconComponent size={17} color="#FFFFFF" strokeWidth={2} />
           </View>
           {/* Label */}
-          <Text
-            style={{
-              flex: 1,
-              fontSize: 17,
-              color: Colors.neutral[900],
-            }}
-            numberOfLines={1}
-          >
+          <Text className="flex-1 text-[17px] text-typography-900" numberOfLines={1}>
             {item.label}
           </Text>
           {/* Right side - subtitle + chevron */}
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <View className="flex-row items-center">
             {item.subtitle && (
-              <Text style={{ fontSize: 17, color: Colors.neutral[400], marginRight: 6 }} numberOfLines={1}>
+              <Text className="text-[17px] text-typography-400 mr-1.5" numberOfLines={1}>
                 {item.subtitle}
               </Text>
             )}
-            <ChevronRight size={20} color={Colors.neutral[300]} strokeWidth={2} />
+            <ChevronRight size={20} color="#D4D4D4" strokeWidth={2} />
           </View>
         </View>
+        {/* Separator line - indent from left to match iOS Settings */}
+        {!isLast && (
+          <View className="absolute bottom-0 right-0 left-[58px] h-px bg-outline-200" />
+        )}
       </Pressable>
     );
   };
@@ -257,10 +211,14 @@ function ProfileScreen() {
     <Animated.View
       key={section.title || `section-${sectionIndex}`}
       entering={skipAnimations ? undefined : PMotion.sectionStagger(sectionIndex)}
-      style={styles.section}
+      className="mb-7"
     >
-      {section.title && <Text style={styles.sectionTitle}>{section.title}</Text>}
-      <View style={styles.sectionCard}>
+      {section.title && (
+        <Text className="text-[13px] font-medium text-typography-500 mb-2.5 ml-4 tracking-wide">
+          {section.title}
+        </Text>
+      )}
+      <View className="bg-white rounded-xl overflow-hidden">
         {section.items.map((item, index) =>
           renderMenuItem(item, index, index === 0, index === section.items.length - 1)
         )}
@@ -269,28 +227,33 @@ function ProfileScreen() {
   );
 
   return (
-    <View style={styles.container}>
+    <View className="flex-1 bg-[#F2F2F7]">
       <StatusBar barStyle="dark-content" />
 
       {/* Header */}
-      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
-        <View style={styles.headerRow}>
+      <View
+        className="bg-[#F2F2F7] px-4 pb-3"
+        style={{ paddingTop: insets.top + 8 }}
+      >
+        <View className="flex-row items-center h-11">
           <Pressable
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               router.back();
             }}
-            style={({ pressed }) => [styles.backBtn, pressed && styles.btnPressed]}
+            className="w-10 h-10 rounded-full items-center justify-center mr-2 active:opacity-70"
           >
-            <ChevronLeft size={24} color={Colors.neutral[900]} />
+            <ChevronLeft size={24} color="#171717" />
           </Pressable>
-          <Text style={styles.headerTitle}>{t('profile.title', 'Profile')}</Text>
+          <Text className="flex-1 text-lg font-semibold text-typography-900 text-center mr-12">
+            {t('profile.title', 'Profile')}
+          </Text>
         </View>
       </View>
 
       <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 100 }]}
+        className="flex-1"
+        contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 12, paddingBottom: insets.bottom + 100 }}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
@@ -299,60 +262,70 @@ function ProfileScreen() {
         {/* Profile Card */}
         <Animated.View
           entering={skipAnimations ? undefined : PMotion.sectionStagger(0)}
-          style={styles.profileCard}
+          className="mb-5"
         >
           <Pressable
             onPress={() => router.push('/profile/edit')}
-            style={({ pressed }) => [styles.profileCardInner, pressed && styles.profileCardPressed]}
+            className="flex-row items-center bg-white rounded-xl p-4 active:bg-background-100"
           >
             <LinearGradient
-              colors={[Colors.primary, Colors.primaryLight]}
-              style={styles.avatar}
+              colors={['#4F46E5', '#6366F1']}
+              className="w-[60px] h-[60px] rounded-full items-center justify-center"
             >
-              <Text style={styles.avatarText}>{getInitials(member?.full_name || 'User')}</Text>
+              <Text className="text-[22px] font-bold text-white">
+                {getInitials(member?.full_name || 'User')}
+              </Text>
             </LinearGradient>
-            <View style={styles.profileInfo}>
-              <Text style={styles.profileName}>{member?.full_name || 'Guest User'}</Text>
-              <Text style={styles.profileEmail}>
+            <View className="flex-1 ml-3.5">
+              <Text className="text-lg font-semibold text-typography-900 mb-0.5">
+                {member?.full_name || 'Guest User'}
+              </Text>
+              <Text className="text-sm text-typography-500">
                 {member?.email || member?.phone_whatsapp || 'Add email'}
               </Text>
             </View>
-            <ChevronRight size={20} color={Colors.neutral[400]} />
+            <ChevronRight size={20} color="#A3A3A3" />
           </Pressable>
         </Animated.View>
 
         {/* Stats Row */}
         <Animated.View
           entering={skipAnimations ? undefined : PMotion.sectionStagger(1)}
-          style={styles.statsCard}
+          className="flex-row bg-white rounded-xl py-4 px-3 mb-7"
         >
-          <View style={styles.statItem}>
-            <View style={[styles.statIcon, { backgroundColor: '#FEF3C7' }]}>
+          <View className="flex-1 flex-row items-center justify-center">
+            <View className="w-10 h-10 rounded-xl items-center justify-center mr-2.5 bg-warning-100">
               <Heart size={20} color="#D97706" />
             </View>
-            <View style={styles.statTextWrap}>
-              <Text style={styles.statValue}>{formatCurrency(totalGiven)}</Text>
-              <Text style={styles.statLabel}>Given</Text>
+            <View>
+              <Text className="text-[15px] font-bold text-typography-900 mb-0.5">
+                {formatCurrency(totalGiven)}
+              </Text>
+              <Text className="text-xs text-typography-500">Given</Text>
             </View>
           </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <View style={[styles.statIcon, { backgroundColor: '#DBEAFE' }]}>
+          <View className="w-px bg-outline-200 my-1.5" />
+          <View className="flex-1 flex-row items-center justify-center">
+            <View className="w-10 h-10 rounded-xl items-center justify-center mr-2.5 bg-info-100">
               <HandHeart size={20} color="#2563EB" />
             </View>
-            <View style={styles.statTextWrap}>
-              <Text style={styles.statValue}>{myPrayersCount}</Text>
-              <Text style={styles.statLabel}>Prayers</Text>
+            <View>
+              <Text className="text-[15px] font-bold text-typography-900 mb-0.5">
+                {myPrayersCount}
+              </Text>
+              <Text className="text-xs text-typography-500">Prayers</Text>
             </View>
           </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <View style={[styles.statIcon, { backgroundColor: '#D1FAE5' }]}>
+          <View className="w-px bg-outline-200 my-1.5" />
+          <View className="flex-1 flex-row items-center justify-center">
+            <View className="w-10 h-10 rounded-xl items-center justify-center mr-2.5 bg-success-100">
               <Calendar size={20} color="#059669" />
             </View>
-            <View style={styles.statTextWrap}>
-              <Text style={styles.statValue}>{attendedEventsCount}</Text>
-              <Text style={styles.statLabel}>Events</Text>
+            <View>
+              <Text className="text-[15px] font-bold text-typography-900 mb-0.5">
+                {attendedEventsCount}
+              </Text>
+              <Text className="text-xs text-typography-500">Events</Text>
             </View>
           </View>
         </Animated.View>
@@ -363,32 +336,18 @@ function ProfileScreen() {
         {/* Logout */}
         <Animated.View
           entering={skipAnimations ? undefined : PMotion.sectionStagger(menuSections.length + 2)}
-          style={styles.section}
+          className="mb-7"
         >
-          <View style={styles.sectionCard}>
+          <View className="bg-white rounded-xl overflow-hidden">
             <Pressable
               onPress={handleLogoutPress}
-              style={({ pressed }) => ({
-                backgroundColor: pressed ? Colors.neutral[100] : Colors.white,
-                paddingHorizontal: 16,
-                paddingVertical: 16,
-                minHeight: 56,
-                borderRadius: 12,
-              })}
+              className="bg-white active:bg-background-100 px-4 py-4 min-h-[56px] rounded-xl"
             >
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <View style={{
-                  width: 30,
-                  height: 30,
-                  borderRadius: 7,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginRight: 12,
-                  backgroundColor: '#FEE2E2',
-                }}>
-                  <LogOut size={18} color={Colors.error} strokeWidth={2} />
+              <View className="flex-row items-center">
+                <View className="w-[30px] h-[30px] rounded-[7px] items-center justify-center mr-3 bg-error-100">
+                  <LogOut size={18} color="#EF4444" strokeWidth={2} />
                 </View>
-                <Text style={{ flex: 1, fontSize: 17, color: Colors.error }}>
+                <Text className="flex-1 text-[17px] text-error-500">
                   {t('profile.logout', 'Log Out')}
                 </Text>
               </View>
@@ -397,13 +356,15 @@ function ProfileScreen() {
         </Animated.View>
 
         {/* Version */}
-        <Text style={styles.versionText}>FaithFlow v1.0.0</Text>
+        <Text className="text-center text-[13px] text-typography-400 mt-2 mb-6">
+          FaithFlow v1.0.0
+        </Text>
       </ScrollView>
 
-      {/* Logout Dialog */}
+      {/* Logout Dialog - Gluestack AlertDialog */}
       <AlertDialog isOpen={showLogoutDialog} onClose={handleLogoutCancel}>
         <AlertDialogBackdrop />
-        <AlertDialogContent style={styles.dialogContent}>
+        <AlertDialogContent className="rounded-2xl max-w-[320px]">
           <AlertDialogHeader>
             <Heading size="lg">{t('profile.logoutConfirm', 'Log Out?')}</Heading>
           </AlertDialogHeader>
@@ -411,185 +372,20 @@ function ProfileScreen() {
             <GText>{t('profile.logoutConfirmDesc', 'Are you sure you want to log out?')}</GText>
           </AlertDialogBody>
           <AlertDialogFooter>
-            <HStack space="md" className="w-full justify-end">
-              <Button variant="outline" onPress={handleLogoutCancel} style={styles.cancelBtn}>
-                <ButtonText style={styles.cancelBtnText}>{t('common.cancel', 'Cancel')}</ButtonText>
+            <View className="flex-row justify-end gap-3 w-full">
+              <Button variant="outline" onPress={handleLogoutCancel} className="border-outline-300">
+                <ButtonText className="text-typography-700">{t('common.cancel', 'Cancel')}</ButtonText>
               </Button>
-              <Button onPress={handleLogoutConfirm} style={styles.logoutBtn}>
+              <Button onPress={handleLogoutConfirm} className="bg-error-500">
                 <ButtonText>{t('profile.logout', 'Log Out')}</ButtonText>
               </Button>
-            </HStack>
+            </View>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.background,
-  },
-  // Header
-  header: {
-    backgroundColor: Colors.background,
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    height: 44,
-  },
-  backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 8,
-  },
-  btnPressed: {
-    opacity: 0.7,
-  },
-  headerTitle: {
-    flex: 1,
-    fontSize: 18,
-    fontWeight: '600',
-    color: Colors.neutral[900],
-    textAlign: 'center',
-    marginRight: 48, // Offset for back button to center title
-  },
-  // Scroll
-  scroll: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-  },
-  // Profile Card
-  profileCard: {
-    marginBottom: 20,
-  },
-  profileCardInner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.white,
-    borderRadius: 12,
-    padding: 16,
-  },
-  profileCardPressed: {
-    backgroundColor: Colors.neutral[100],
-  },
-  avatar: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarText: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: Colors.white,
-  },
-  profileInfo: {
-    flex: 1,
-    marginLeft: 14,
-  },
-  profileName: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: Colors.neutral[900],
-    marginBottom: 2,
-  },
-  profileEmail: {
-    fontSize: 14,
-    color: Colors.neutral[500],
-  },
-  // Stats
-  statsCard: {
-    flexDirection: 'row',
-    backgroundColor: Colors.white,
-    borderRadius: 12,
-    paddingVertical: 16,
-    paddingHorizontal: 12,
-    marginBottom: 28,
-  },
-  statItem: {
-    flex: 1,
-    flexDirection: 'row',
-    flexWrap: 'nowrap',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  statIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 10,
-  },
-  statTextWrap: {
-    alignItems: 'flex-start',
-  },
-  statValue: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: Colors.neutral[900],
-    marginBottom: 1,
-  },
-  statLabel: {
-    fontSize: 12,
-    color: Colors.neutral[500],
-  },
-  statDivider: {
-    width: 1,
-    backgroundColor: Colors.neutral[200],
-    marginVertical: 6,
-  },
-  // Sections
-  section: {
-    marginBottom: 28,
-  },
-  sectionTitle: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: Colors.neutral[500],
-    marginBottom: 10,
-    marginLeft: 16,
-    letterSpacing: 0.5,
-  },
-  sectionCard: {
-    backgroundColor: Colors.white,
-    borderRadius: 12,
-  },
-  // Version
-  versionText: {
-    textAlign: 'center',
-    fontSize: 13,
-    color: Colors.neutral[400],
-    marginTop: 8,
-    marginBottom: 24,
-  },
-  // Dialog
-  dialogContent: {
-    borderRadius: 16,
-    maxWidth: 320,
-  },
-  cancelBtn: {
-    borderColor: Colors.neutral[300],
-  },
-  cancelBtnText: {
-    color: Colors.neutral[700],
-  },
-  logoutBtn: {
-    backgroundColor: Colors.error,
-  },
-});
 
 const MemoizedProfileScreen = memo(ProfileScreen);
 MemoizedProfileScreen.displayName = 'ProfileScreen';

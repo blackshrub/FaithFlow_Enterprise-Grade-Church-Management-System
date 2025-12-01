@@ -11,9 +11,10 @@
  *
  * Swipe-to-dismiss is handled by the drag handle in each sheet component,
  * NOT by this wrapper - this allows ScrollViews inside to work properly.
+ *
+ * Styling: NativeWind-first
  */
 import React from 'react';
-import { StyleSheet } from 'react-native';
 import Animated from 'react-native-reanimated';
 
 interface Props {
@@ -29,17 +30,10 @@ export const BaseBottomSheet = ({ visible, children }: Props) => {
   // Gesture handling should be done by individual sheet components
   // on their drag handle only, not on the entire sheet
   return (
-    <Animated.View style={styles.sheet}>
+    <Animated.View className="w-full shrink-0">
       {children}
     </Animated.View>
   );
 };
-
-const styles = StyleSheet.create({
-  sheet: {
-    width: '100%',
-    flexShrink: 0,
-  },
-});
 
 export default BaseBottomSheet;

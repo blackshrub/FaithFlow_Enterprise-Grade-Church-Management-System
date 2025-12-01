@@ -111,3 +111,27 @@ export {
   useMessageQueue,
   useMessageGrouping,
 } from './ChatOptimizations';
+
+// WhatsApp-Style Components (NEW - Extracted for cleaner chat.tsx)
+export {
+  MessageBubble,
+  areMessagePropsEqual,
+  type MessageBubbleProps,
+} from './MessageBubble';
+
+export {
+  ChatHeader,
+  type ChatHeaderProps,
+} from './ChatHeader';
+
+export {
+  ChatInputBar,
+  type ChatInputBarProps,
+  type ChatInputBarRef,
+  type ReplyData,
+} from './ChatInputBar';
+
+export {
+  ChatMenuSheet,
+  type ChatMenuSheetProps,
+} from './ChatMenuSheet';

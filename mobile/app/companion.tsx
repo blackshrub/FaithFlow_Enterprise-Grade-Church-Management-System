@@ -1,6 +1,11 @@
 /**
  * Faith Assistant Chat Screen (Pendamping Iman)
  *
+ * Styling Strategy:
+ * - NativeWind (className) for all layout and styling
+ * - Inline style for Colors object and shadows
+ * - React Native Reanimated for animations
+ *
  * Claude-inspired design with:
  * - Clean, minimal interface
  * - Streaming responses (text appears progressively)
@@ -18,7 +23,6 @@ import {
   Text,
   TextInput,
   Pressable,
-  StyleSheet,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -41,7 +45,6 @@ import Animated, {
   withRepeat,
   withTiming,
   withSequence,
-  withDelay,
   Easing,
   interpolate,
 } from 'react-native-reanimated';
@@ -53,8 +56,6 @@ import {
   RotateCcw,
   BookOpen,
   Heart,
-  HelpCircle,
-  Lightbulb,
   Copy,
   Check,
   HandHeart,
@@ -62,8 +63,6 @@ import {
   Volume2,
   Pause,
   Settings,
-  Mic,
-  MicOff,
   Headphones,
   Type,
   Sun,
@@ -75,7 +74,7 @@ import { useCompanionStore, type CompanionMessage } from '@/stores/companionStor
 import { VoiceButton } from '@/components/chat/VoiceButton';
 import { VoiceChatModal } from '@/components/chat/VoiceChatModal';
 import { speakText, stopSpeaking, pauseSpeaking, canResume, clearSessionCache } from '@/services/voice/speechService';
-import { useVoiceSettingsStore, TTSVoice } from '@/stores/voiceSettings';
+import { useVoiceSettingsStore } from '@/stores/voiceSettings';
 import {
   useReadingPreferencesStore,
   useReadingStyles,
@@ -94,33 +93,22 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const isWeb = Platform.OS === 'web';
 const webSafeEntering = <T,>(animation: T): T | undefined => (isWeb ? undefined : animation);
 
-// Claude-inspired color palette
+// Claude-inspired color palette (kept as inline styles)
 const Colors = {
-  // Primary - Warm orange/peach (Claude's signature)
   primary: '#DA7756',
   primaryLight: '#E8956F',
   primaryDark: '#C4634A',
-
-  // Background
   background: '#FFFFFF',
   surface: '#F9FAFB',
   surfaceAlt: '#F3F4F6',
-
-  // Text
   text: '#111827',
   textSecondary: '#6B7280',
   textTertiary: '#9CA3AF',
   textOnPrimary: '#FFFFFF',
-
-  // Borders
   border: '#E5E7EB',
   borderLight: '#F3F4F6',
-
-  // Message bubbles
   userBubble: '#111827',
   assistantBubble: '#FFFFFF',
-
-  // Accents
   accent: '#7C3AED',
   success: '#10B981',
   error: '#EF4444',
@@ -142,10 +130,9 @@ const THINKING_MESSAGES = {
   ],
 };
 
-/**
- * Format relative timestamp
- */
-const formatRelativeTime = (date: Date, language: 'en' | 'id'): string => {
+const formatRelativeTime = (timestamp: Date | string, language: 'en' | 'id'): string => {
+  // Handle both Date and ISO string formats (for MMKV persistence compatibility)
+  const date = typeof timestamp === 'string' ? new Date(timestamp) : timestamp;
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
   const diffMins = Math.floor(diffMs / 60000);
@@ -162,9 +149,6 @@ const formatRelativeTime = (date: Date, language: 'en' | 'id'): string => {
   });
 };
 
-/**
- * Typing indicator with animated dots and empathetic message
- */
 interface TypingIndicatorProps {
   showMessage?: boolean;
   language?: 'en' | 'id';
@@ -189,12 +173,10 @@ const TypingIndicator = memo(({ showMessage = false, language = 'en' }: TypingIn
       );
     };
 
-    // Staggered start for more natural feel
     setTimeout(() => animate(dot1), 0);
     setTimeout(() => animate(dot2), 180);
     setTimeout(() => animate(dot3), 360);
 
-    // Rotate thinking messages every 3 seconds
     if (showMessage) {
       const interval = setInterval(() => {
         setMessageIndex((i) => (i + 1) % THINKING_MESSAGES[language].length);
@@ -228,19 +210,29 @@ const TypingIndicator = memo(({ showMessage = false, language = 'en' }: TypingIn
   }));
 
   return (
-    <View style={styles.typingWrapper}>
+    <View className="gap-2">
       {showMessage && (
         <Animated.Text
           entering={webSafeEntering(FadeIn.duration(300))}
-          style={styles.thinkingText}
+          className="text-[13px] italic mb-1"
+          style={{ color: Colors.textSecondary }}
         >
           {THINKING_MESSAGES[language][messageIndex]}
         </Animated.Text>
       )}
-      <View style={styles.typingContainer}>
-        <Animated.View style={[styles.typingDot, dotStyle1]} />
-        <Animated.View style={[styles.typingDot, dotStyle2]} />
-        <Animated.View style={[styles.typingDot, dotStyle3]} />
+      <View className="flex-row items-center gap-1.5 py-1">
+        <Animated.View
+          className="w-2 h-2 rounded-full"
+          style={[{ backgroundColor: Colors.primary }, dotStyle1]}
+        />
+        <Animated.View
+          className="w-2 h-2 rounded-full"
+          style={[{ backgroundColor: Colors.primary }, dotStyle2]}
+        />
+        <Animated.View
+          className="w-2 h-2 rounded-full"
+          style={[{ backgroundColor: Colors.primary }, dotStyle3]}
+        />
       </View>
     </View>
   );
@@ -248,106 +240,28 @@ const TypingIndicator = memo(({ showMessage = false, language = 'en' }: TypingIn
 
 TypingIndicator.displayName = 'TypingIndicator';
 
-/**
- * Simple markdown renderer for common patterns
- */
-const renderMarkdown = (text: string): React.ReactNode[] => {
-  const elements: React.ReactNode[] = [];
-  const lines = text.split('\n');
+interface ReadingStylesType {
+  fontSizeValue: number;
+  lineHeight: number;
+  colors: {
+    text: string;
+    textSecondary: string;
+    border: string;
+    background: string;
+    card: string;
+  };
+}
 
-  lines.forEach((line, lineIndex) => {
-    // Headers
-    if (line.startsWith('### ')) {
-      elements.push(
-        <Text key={`h3-${lineIndex}`} style={styles.mdH3}>
-          {line.slice(4)}
-        </Text>
-      );
-      return;
-    }
-    if (line.startsWith('## ')) {
-      elements.push(
-        <Text key={`h2-${lineIndex}`} style={styles.mdH2}>
-          {line.slice(3)}
-        </Text>
-      );
-      return;
-    }
-    if (line.startsWith('# ')) {
-      elements.push(
-        <Text key={`h1-${lineIndex}`} style={styles.mdH1}>
-          {line.slice(2)}
-        </Text>
-      );
-      return;
-    }
-
-    // Bullet points
-    if (line.match(/^[\-\*]\s/)) {
-      elements.push(
-        <View key={`bullet-${lineIndex}`} style={styles.mdBullet}>
-          <Text style={styles.mdBulletDot}>•</Text>
-          <Text style={styles.mdBulletText}>{parseBoldItalic(line.slice(2))}</Text>
-        </View>
-      );
-      return;
-    }
-
-    // Numbered lists
-    const numberedMatch = line.match(/^(\d+)\.\s/);
-    if (numberedMatch) {
-      elements.push(
-        <View key={`num-${lineIndex}`} style={styles.mdBullet}>
-          <Text style={styles.mdBulletNum}>{numberedMatch[1]}.</Text>
-          <Text style={styles.mdBulletText}>{parseBoldItalic(line.slice(numberedMatch[0].length))}</Text>
-        </View>
-      );
-      return;
-    }
-
-    // Blockquotes
-    if (line.startsWith('> ')) {
-      elements.push(
-        <View key={`quote-${lineIndex}`} style={styles.mdBlockquote}>
-          <Text style={styles.mdBlockquoteText}>{parseBoldItalic(line.slice(2))}</Text>
-        </View>
-      );
-      return;
-    }
-
-    // Regular paragraph
-    if (line.trim()) {
-      elements.push(
-        <Text key={`p-${lineIndex}`} style={styles.mdParagraph}>
-          {parseBoldItalic(line)}
-        </Text>
-      );
-    } else if (lineIndex > 0 && lineIndex < lines.length - 1) {
-      // Empty line (paragraph break)
-      elements.push(<View key={`br-${lineIndex}`} style={styles.mdBreak} />);
-    }
-  });
-
-  return elements;
-};
-
-/**
- * Parse bold and italic inline formatting
- */
 const parseBoldItalic = (text: string): React.ReactNode => {
   const parts: React.ReactNode[] = [];
   let remaining = text;
   let keyIndex = 0;
 
   while (remaining.length > 0) {
-    // Bold: **text** or __text__
     const boldMatch = remaining.match(/\*\*(.+?)\*\*|__(.+?)__/);
-    // Italic: *text* or _text_
     const italicMatch = remaining.match(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)|(?<!_)_(?!_)(.+?)(?<!_)_(?!_)/);
-    // Inline code: `code`
     const codeMatch = remaining.match(/`(.+?)`/);
 
-    // Find earliest match
     const matches = [
       boldMatch ? { type: 'bold', match: boldMatch, index: boldMatch.index! } : null,
       italicMatch ? { type: 'italic', match: italicMatch, index: italicMatch.index! } : null,
@@ -366,11 +280,19 @@ const parseBoldItalic = (text: string): React.ReactNode => {
 
     const content = first.match![1] || first.match![2];
     if (first.type === 'bold') {
-      parts.push(<Text key={`b-${keyIndex++}`} style={styles.mdBold}>{content}</Text>);
+      parts.push(<Text key={`b-${keyIndex++}`} className="font-bold">{content}</Text>);
     } else if (first.type === 'italic') {
-      parts.push(<Text key={`i-${keyIndex++}`} style={styles.mdItalic}>{content}</Text>);
+      parts.push(<Text key={`i-${keyIndex++}`} className="italic">{content}</Text>);
     } else if (first.type === 'code') {
-      parts.push(<Text key={`c-${keyIndex++}`} style={styles.mdInlineCode}>{content}</Text>);
+      parts.push(
+        <Text
+          key={`c-${keyIndex++}`}
+          className="text-[13px] px-1.5 py-0.5 rounded"
+          style={{ fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace', backgroundColor: Colors.surfaceAlt }}
+        >
+          {content}
+        </Text>
+      );
     }
 
     remaining = remaining.slice(first.index + first.match![0].length);
@@ -379,21 +301,6 @@ const parseBoldItalic = (text: string): React.ReactNode => {
   return parts.length === 1 ? parts[0] : <>{parts}</>;
 };
 
-/**
- * Markdown renderer with reading preferences applied
- */
-interface ReadingStylesType {
-  fontSizeValue: number;
-  lineHeight: number;
-  colors: {
-    text: string;
-    textSecondary: string;
-    border: string;
-    background: string;
-    card: string;
-  };
-}
-
 const renderMarkdownWithStyles = (text: string, readingStyles: ReadingStylesType): React.ReactNode[] => {
   const elements: React.ReactNode[] = [];
   const lines = text.split('\n');
@@ -401,10 +308,13 @@ const renderMarkdownWithStyles = (text: string, readingStyles: ReadingStylesType
   const lineHeightPx = fontSizeValue * lineHeight;
 
   lines.forEach((line, lineIndex) => {
-    // Headers
     if (line.startsWith('### ')) {
       elements.push(
-        <Text key={`h3-${lineIndex}`} style={[styles.mdH3, { color: colors.text, fontSize: fontSizeValue + 1 }]}>
+        <Text
+          key={`h3-${lineIndex}`}
+          className="font-semibold mb-1 mt-0.5"
+          style={{ color: colors.text, fontSize: fontSizeValue + 1 }}
+        >
           {line.slice(4)}
         </Text>
       );
@@ -412,7 +322,11 @@ const renderMarkdownWithStyles = (text: string, readingStyles: ReadingStylesType
     }
     if (line.startsWith('## ')) {
       elements.push(
-        <Text key={`h2-${lineIndex}`} style={[styles.mdH2, { color: colors.text, fontSize: fontSizeValue + 2 }]}>
+        <Text
+          key={`h2-${lineIndex}`}
+          className="font-bold mb-1.5 mt-1"
+          style={{ color: colors.text, fontSize: fontSizeValue + 2 }}
+        >
           {line.slice(3)}
         </Text>
       );
@@ -420,19 +334,22 @@ const renderMarkdownWithStyles = (text: string, readingStyles: ReadingStylesType
     }
     if (line.startsWith('# ')) {
       elements.push(
-        <Text key={`h1-${lineIndex}`} style={[styles.mdH1, { color: colors.text, fontSize: fontSizeValue + 4 }]}>
+        <Text
+          key={`h1-${lineIndex}`}
+          className="font-bold mb-2 mt-1"
+          style={{ color: colors.text, fontSize: fontSizeValue + 4 }}
+        >
           {line.slice(2)}
         </Text>
       );
       return;
     }
 
-    // Bullet points
     if (line.match(/^[\-\*]\s/)) {
       elements.push(
-        <View key={`bullet-${lineIndex}`} style={styles.mdBullet}>
-          <Text style={[styles.mdBulletDot, { color: colors.textSecondary, fontSize: fontSizeValue }]}>•</Text>
-          <Text style={[styles.mdBulletText, { color: colors.text, fontSize: fontSizeValue, lineHeight: lineHeightPx }]}>
+        <View key={`bullet-${lineIndex}`} className="flex-row mb-1">
+          <Text className="w-5" style={{ color: colors.textSecondary, fontSize: fontSizeValue }}>•</Text>
+          <Text className="flex-1" style={{ color: colors.text, fontSize: fontSizeValue, lineHeight: lineHeightPx }}>
             {parseBoldItalic(line.slice(2))}
           </Text>
         </View>
@@ -440,15 +357,14 @@ const renderMarkdownWithStyles = (text: string, readingStyles: ReadingStylesType
       return;
     }
 
-    // Numbered lists
     const numberedMatch = line.match(/^(\d+)\.\s/);
     if (numberedMatch) {
       elements.push(
-        <View key={`num-${lineIndex}`} style={styles.mdBullet}>
-          <Text style={[styles.mdBulletNum, { color: colors.textSecondary, fontSize: fontSizeValue }]}>
+        <View key={`num-${lineIndex}`} className="flex-row mb-1">
+          <Text className="w-6 font-medium" style={{ color: colors.textSecondary, fontSize: fontSizeValue }}>
             {numberedMatch[1]}.
           </Text>
-          <Text style={[styles.mdBulletText, { color: colors.text, fontSize: fontSizeValue, lineHeight: lineHeightPx }]}>
+          <Text className="flex-1" style={{ color: colors.text, fontSize: fontSizeValue, lineHeight: lineHeightPx }}>
             {parseBoldItalic(line.slice(numberedMatch[0].length))}
           </Text>
         </View>
@@ -456,11 +372,10 @@ const renderMarkdownWithStyles = (text: string, readingStyles: ReadingStylesType
       return;
     }
 
-    // Blockquotes
     if (line.startsWith('> ')) {
       elements.push(
-        <View key={`quote-${lineIndex}`} style={styles.mdBlockquote}>
-          <Text style={[styles.mdBlockquoteText, { color: colors.textSecondary, fontSize: fontSizeValue, lineHeight: lineHeightPx }]}>
+        <View key={`quote-${lineIndex}`} className="border-l-[3px] pl-3 my-2" style={{ borderLeftColor: Colors.primary }}>
+          <Text className="italic" style={{ color: colors.textSecondary, fontSize: fontSizeValue, lineHeight: lineHeightPx }}>
             {parseBoldItalic(line.slice(2))}
           </Text>
         </View>
@@ -468,25 +383,20 @@ const renderMarkdownWithStyles = (text: string, readingStyles: ReadingStylesType
       return;
     }
 
-    // Regular paragraph
     if (line.trim()) {
       elements.push(
-        <Text key={`p-${lineIndex}`} style={[styles.mdParagraph, { color: colors.text, fontSize: fontSizeValue, lineHeight: lineHeightPx }]}>
+        <Text key={`p-${lineIndex}`} style={{ color: colors.text, fontSize: fontSizeValue, lineHeight: lineHeightPx }}>
           {parseBoldItalic(line)}
         </Text>
       );
     } else if (lineIndex > 0 && lineIndex < lines.length - 1) {
-      // Empty line (paragraph break)
-      elements.push(<View key={`br-${lineIndex}`} style={styles.mdBreak} />);
+      elements.push(<View key={`br-${lineIndex}`} className="h-2" />);
     }
   });
 
   return elements;
 };
 
-/**
- * Message Bubble Component with copy functionality, TTS, and timestamps
- */
 interface MessageBubbleProps {
   message: CompanionMessage;
   isStreaming?: boolean;
@@ -501,21 +411,11 @@ const MessageBubble = memo(({ message, isStreaming, isLast, language }: MessageB
   const [ttsState, setTtsState] = useState<'idle' | 'loading' | 'playing' | 'paused'>('idle');
   const isMountedRef = useRef(true);
 
-  // Voice settings
-  const {
-    getEffectiveApiKey,
-    getEffectiveVoice,
-    getEffectiveSpeed,
-    getEffectiveModel,
-    isEnabled: voiceEnabled,
-  } = useVoiceSettingsStore();
+  const { getEffectiveApiKey, getEffectiveVoice, getEffectiveSpeed, isEnabled: voiceEnabled } = useVoiceSettingsStore();
   const apiKey = getEffectiveApiKey();
   const canSpeakMessage = voiceEnabled && !!apiKey && !!message.content && !isStreaming;
-
-  // Reading preferences for assistant messages
   const readingStyles = useReadingStyles();
 
-  // Cleanup on unmount
   useEffect(() => {
     isMountedRef.current = true;
     return () => {
@@ -528,60 +428,37 @@ const MessageBubble = memo(({ message, isStreaming, isLast, language }: MessageB
 
   const handleSpeak = useCallback(async () => {
     if (!canSpeakMessage || !message.content) return;
-
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
-    // If playing → pause (keep audio cached for instant resume)
     if (ttsState === 'playing') {
       await pauseSpeaking();
-      if (isMountedRef.current) {
-        setTtsState('paused');
-      }
+      if (isMountedRef.current) setTtsState('paused');
       return;
     }
 
-    // If loading → cancel
     if (ttsState === 'loading') {
       await stopSpeaking();
-      if (isMountedRef.current) {
-        setTtsState('idle');
-      }
+      if (isMountedRef.current) setTtsState('idle');
       return;
     }
 
-    // Start or resume playing
     try {
-      // Check if we can resume (same text is cached)
       const willResume = canResume(message.content);
+      if (!willResume) setTtsState('loading');
 
-      if (!willResume) {
-        // Need to load fresh - show loading state
-        setTtsState('loading');
-      }
-
-      // speakText will automatically resume if same text is cached
       await speakText(message.content, apiKey!, {
         voice: getEffectiveVoice(),
-        model: getEffectiveModel(),
-        speed: getEffectiveSpeed(),
+        speakingRate: getEffectiveSpeed(),
         onPlaybackStart: () => {
-          if (isMountedRef.current) {
-            setTtsState('playing');
-          }
+          if (isMountedRef.current) setTtsState('playing');
         },
       });
-
-      // Audio finished playing naturally
-      if (isMountedRef.current) {
-        setTtsState('idle');
-      }
+      if (isMountedRef.current) setTtsState('idle');
     } catch (error) {
       console.error('[MessageBubble] TTS error:', error);
-      if (isMountedRef.current) {
-        setTtsState('idle');
-      }
+      if (isMountedRef.current) setTtsState('idle');
     }
-  }, [canSpeakMessage, message.content, apiKey, getEffectiveVoice, getEffectiveModel, getEffectiveSpeed, ttsState]);
+  }, [canSpeakMessage, message.content, apiKey, getEffectiveVoice, getEffectiveSpeed, ttsState]);
 
   const handleLongPress = useCallback(() => {
     if (!isStreaming && message.content) {
@@ -609,100 +486,100 @@ const MessageBubble = memo(({ message, isStreaming, isLast, language }: MessageB
   return (
     <Animated.View
       entering={webSafeEntering(isLast ? (isUser ? SlideInRight.duration(250) : FadeInDown.duration(300)) : undefined)}
-      style={[styles.messageRow, isUser && styles.messageRowUser]}
+      className={`flex-row mb-4 items-start ${isUser ? 'justify-end' : ''}`}
     >
-      <View style={[styles.messageColumn, isUser && styles.messageColumnUser]}>
-        {/* Message content */}
+      <View style={{ maxWidth: SCREEN_WIDTH - 48, alignItems: isUser ? 'flex-end' : 'flex-start' }}>
         <Pressable
           onLongPress={handleLongPress}
           onPress={showActions ? handleDismissActions : undefined}
           delayLongPress={400}
-          style={[
-            styles.bubble,
-            isUser ? styles.userBubble : [
-              styles.assistantBubble,
-              {
-                backgroundColor: readingStyles.colors.background,
-                borderColor: readingStyles.colors.border,
-              }
-            ],
-          ]}
+          className={`rounded-[20px] px-4 py-3 ${isUser ? 'rounded-br-[6px]' : 'rounded-bl-[6px] border'}`}
+          style={{
+            backgroundColor: isUser ? Colors.userBubble : readingStyles.colors.background,
+            borderColor: isUser ? undefined : readingStyles.colors.border,
+            maxWidth: SCREEN_WIDTH - 48,
+          }}
         >
           {isUser ? (
-            <Text style={[
-              styles.userText,
-              {
+            <Text
+              className="text-white"
+              style={{
                 fontSize: readingStyles.fontSizeValue,
                 lineHeight: readingStyles.fontSizeValue * readingStyles.lineHeight,
-              }
-            ]}>
+              }}
+            >
               {message.content}
             </Text>
           ) : (
-            <View style={styles.assistantContent}>
+            <View>
               {message.content ? (
                 renderMarkdownWithStyles(message.content, readingStyles)
               ) : (
                 <TypingIndicator language={language} />
               )}
               {isStreaming && message.content && (
-                <View style={styles.cursorContainer}>
-                  <Animated.View style={styles.cursor} />
+                <View className="absolute right-0 bottom-0">
+                  <Animated.View className="w-0.5 h-4" style={{ backgroundColor: Colors.primary }} />
                 </View>
               )}
             </View>
           )}
         </Pressable>
 
-        {/* Assistant avatar - below the bubble */}
         {!isUser && (
-          <View style={styles.avatarRow}>
-            <View style={styles.avatar}>
+          <View className="flex-row items-center mt-1.5 gap-1.5">
+            <View
+              className="w-6 h-6 rounded-full items-center justify-center border"
+              style={{ backgroundColor: Colors.surfaceAlt, borderColor: Colors.border }}
+            >
               <Sparkles size={14} color={Colors.primary} />
             </View>
-            <Text style={styles.assistantLabel}>Faith Assistant</Text>
+            <Text className="text-[11px] font-medium" style={{ color: Colors.textTertiary }}>
+              Faith Assistant
+            </Text>
           </View>
         )}
 
-        {/* Actions (copy, speak) - shown on long press or always for TTS */}
         {(showActions || (!isUser && canSpeakMessage && message.content)) && (
-          <Animated.View entering={webSafeEntering(FadeIn.duration(200))} style={[styles.messageActions, isUser && styles.messageActionsUser]}>
-            {/* TTS Button - only for assistant messages */}
+          <Animated.View
+            entering={webSafeEntering(FadeIn.duration(200))}
+            className={`flex-row mt-1.5 gap-2 ${isUser ? 'justify-end' : ''}`}
+          >
             {!isUser && canSpeakMessage && (
               <Pressable
                 onPress={handleSpeak}
-                style={({ pressed }) => [
-                  styles.actionBtn,
-                  (ttsState === 'playing' || ttsState === 'loading') && styles.actionBtnActive,
-                  ttsState === 'paused' && styles.actionBtnPaused,
-                  pressed && styles.actionBtnPressed,
-                ]}
+                className="flex-row items-center gap-1 py-1 px-2 rounded-lg"
+                style={{
+                  backgroundColor: ttsState === 'playing' || ttsState === 'loading' ? `${Colors.primary}15` : Colors.surface,
+                  borderWidth: ttsState !== 'idle' ? 1 : 0,
+                  borderColor: `${Colors.primary}30`,
+                }}
               >
                 {ttsState === 'loading' ? (
                   <>
-                    <View style={styles.loadingDot} />
-                    <Text style={styles.actionText}>
+                    <View className="w-3.5 h-3.5 rounded-full opacity-60" style={{ backgroundColor: Colors.primary }} />
+                    <Text className="text-xs font-medium" style={{ color: Colors.textSecondary }}>
                       {language === 'id' ? 'Memuat...' : 'Loading...'}
                     </Text>
                   </>
                 ) : ttsState === 'playing' ? (
                   <>
                     <Pause size={14} color={Colors.primary} />
-                    <Text style={[styles.actionText, { color: Colors.primary }]}>
+                    <Text className="text-xs font-medium" style={{ color: Colors.primary }}>
                       {language === 'id' ? 'Jeda' : 'Pause'}
                     </Text>
                   </>
                 ) : ttsState === 'paused' ? (
                   <>
                     <Volume2 size={14} color={Colors.primary} />
-                    <Text style={[styles.actionText, { color: Colors.primary }]}>
+                    <Text className="text-xs font-medium" style={{ color: Colors.primary }}>
                       {language === 'id' ? 'Lanjut' : 'Resume'}
                     </Text>
                   </>
                 ) : (
                   <>
                     <Volume2 size={14} color={Colors.textSecondary} />
-                    <Text style={styles.actionText}>
+                    <Text className="text-xs font-medium" style={{ color: Colors.textSecondary }}>
                       {language === 'id' ? 'Dengar' : 'Listen'}
                     </Text>
                   </>
@@ -710,26 +587,23 @@ const MessageBubble = memo(({ message, isStreaming, isLast, language }: MessageB
               </Pressable>
             )}
 
-            {/* Copy Button - shown on long press */}
             {showActions && (
               <Pressable
                 onPress={handleCopy}
-                style={({ pressed }) => [
-                  styles.actionBtn,
-                  pressed && styles.actionBtnPressed,
-                ]}
+                className="flex-row items-center gap-1 py-1 px-2 rounded-lg"
+                style={{ backgroundColor: Colors.surface }}
               >
                 {copied ? (
                   <>
                     <Check size={14} color={Colors.success} />
-                    <Text style={[styles.actionText, { color: Colors.success }]}>
+                    <Text className="text-xs font-medium" style={{ color: Colors.success }}>
                       {language === 'id' ? 'Tersalin!' : 'Copied!'}
                     </Text>
                   </>
                 ) : (
                   <>
                     <Copy size={14} color={Colors.textSecondary} />
-                    <Text style={styles.actionText}>
+                    <Text className="text-xs font-medium" style={{ color: Colors.textSecondary }}>
                       {language === 'id' ? 'Salin' : 'Copy'}
                     </Text>
                   </>
@@ -739,11 +613,11 @@ const MessageBubble = memo(({ message, isStreaming, isLast, language }: MessageB
           </Animated.View>
         )}
 
-        {/* Timestamp - shown for last message or on action view */}
         {(isLast || showActions) && !isStreaming && message.content && (
           <Animated.Text
             entering={webSafeEntering(FadeIn.duration(200))}
-            style={[styles.timestamp, isUser && styles.timestampUser]}
+            className={`text-[11px] mt-1 ${isUser ? 'text-right mr-1' : 'ml-1'}`}
+            style={{ color: Colors.textTertiary }}
           >
             {formatRelativeTime(message.timestamp, language)}
           </Animated.Text>
@@ -755,9 +629,6 @@ const MessageBubble = memo(({ message, isStreaming, isLast, language }: MessageB
 
 MessageBubble.displayName = 'MessageBubble';
 
-/**
- * Conversation Starter Card
- */
 interface StarterCardProps {
   icon: React.ReactNode;
   title: string;
@@ -770,15 +641,22 @@ const StarterCard = memo(({ icon, title, description, onPress, index }: StarterC
   <Animated.View entering={webSafeEntering(FadeInUp.delay(index * 100).duration(400))}>
     <Pressable
       onPress={onPress}
-      style={({ pressed }) => [
-        styles.starterCard,
-        pressed && styles.starterCardPressed,
-      ]}
+      className="flex-col items-center justify-center rounded-2xl p-4 border w-full active:opacity-80"
+      style={{ backgroundColor: Colors.surface, borderColor: Colors.border }}
     >
-      <View style={styles.starterIcon}>{icon}</View>
-      <View style={styles.starterTextContainer}>
-        <Text style={styles.starterTitle}>{title}</Text>
-        <Text style={styles.starterDescription} numberOfLines={2}>{description}</Text>
+      <View
+        className="w-11 h-11 rounded-xl items-center justify-center border"
+        style={{ backgroundColor: Colors.background, borderColor: Colors.border }}
+      >
+        {icon}
+      </View>
+      <View className="items-center w-full mt-1">
+        <Text className="text-[15px] font-semibold mb-1 text-center" style={{ color: Colors.text }}>
+          {title}
+        </Text>
+        <Text className="text-[13px] leading-[18px] text-center" numberOfLines={2} style={{ color: Colors.textSecondary }}>
+          {description}
+        </Text>
       </View>
     </Pressable>
   </Animated.View>
@@ -786,9 +664,6 @@ const StarterCard = memo(({ icon, title, description, onPress, index }: StarterC
 
 StarterCard.displayName = 'StarterCard';
 
-/**
- * Main Chat Screen
- */
 function CompanionScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -804,26 +679,10 @@ function CompanionScreen() {
   const settingsSnapPoints = useMemo(() => ['70%'], []);
   const language = (i18n.language || 'en') as 'en' | 'id';
 
-  // Reading preferences (for AI response text display)
   const readingStyles = useReadingStyles();
-  const {
-    fontSize,
-    theme: readingTheme,
-    lineHeight,
-    setFontSize,
-    setTheme,
-    setLineHeight,
-  } = useReadingPreferencesStore();
+  const { fontSize, theme: readingTheme, lineHeight, setFontSize, setTheme, setLineHeight } = useReadingPreferencesStore();
+  const { isEnabled: voiceEnabled } = useVoiceSettingsStore();
 
-  // Voice settings (for TTS)
-  const {
-    isEnabled: voiceEnabled,
-    getEffectiveVoice,
-    getEffectiveSpeed,
-    updateUserPreferences: updateVoicePrefs,
-  } = useVoiceSettingsStore();
-
-  // Store state
   const messages = useCompanionStore((s) => s.messages);
   const isLoading = useCompanionStore((s) => s.isLoading);
   const isStreaming = useCompanionStore((s) => s.isStreaming);
@@ -835,108 +694,70 @@ function CompanionScreen() {
   const startStreaming = useCompanionStore((s) => s.startStreaming);
   const stopStreaming = useCompanionStore((s) => s.stopStreaming);
   const setLoading = useCompanionStore((s) => s.setLoading);
-  const setError = useCompanionStore((s) => s.setError);
   const clearChat = useCompanionStore((s) => s.clearChat);
 
-  // Cleanup on unmount - stop any playing TTS when leaving screen
   useEffect(() => {
     return () => {
       stopSpeaking();
     };
   }, []);
 
-  // Get appropriate greeting
   const greeting = COMPANION_GREETINGS[language]?.[entryContext] || COMPANION_GREETINGS[language]?.default || COMPANION_GREETINGS.en.default;
   const starters = CONVERSATION_STARTERS[language] || CONVERSATION_STARTERS.en;
 
-  // Starter cards with icons - designed to feel warm and inviting
   const starterCards = useMemo(() => [
     {
       icon: <BookOpen size={20} color={Colors.primary} strokeWidth={1.8} />,
       title: starters[0]?.label || 'Explain a verse',
-      description: language === 'id'
-        ? 'Bantu saya memahami makna ayat Alkitab'
-        : 'Help me understand the meaning of Scripture',
+      description: language === 'id' ? 'Bantu saya memahami makna ayat Alkitab' : 'Help me understand the meaning of Scripture',
       prompt: starters[0]?.prompt || '',
     },
     {
       icon: <HandHeart size={20} color={Colors.primary} strokeWidth={1.8} />,
       title: starters[1]?.label || 'Life guidance',
-      description: language === 'id'
-        ? 'Saya butuh hikmat untuk keputusan yang sulit'
-        : 'I need wisdom for a difficult decision',
+      description: language === 'id' ? 'Saya butuh hikmat untuk keputusan yang sulit' : 'I need wisdom for a difficult decision',
       prompt: starters[1]?.prompt || '',
     },
     {
       icon: <Heart size={20} color={Colors.primary} strokeWidth={1.8} />,
       title: starters[4]?.label || 'Dealing with doubt',
-      description: language === 'id'
-        ? 'Saya bergumul dan butuh seseorang untuk mendengarkan'
-        : "I'm struggling and need someone to listen",
+      description: language === 'id' ? 'Saya bergumul dan butuh seseorang untuk mendengarkan' : "I'm struggling and need someone to listen",
       prompt: starters[4]?.prompt || '',
     },
     {
       icon: <Flame size={20} color={Colors.primary} strokeWidth={1.8} />,
       title: starters[2]?.label || 'Prayer request',
-      description: language === 'id'
-        ? 'Bantu saya berdoa tentang sesuatu di hati saya'
-        : 'Help me pray about something on my heart',
+      description: language === 'id' ? 'Bantu saya berdoa tentang sesuatu di hati saya' : 'Help me pray about something on my heart',
       prompt: starters[2]?.prompt || '',
     },
   ], [starters, language]);
 
-  /**
-   * Send a message directly (used by both text input and voice input)
-   */
   const sendMessage = useCallback((text: string) => {
     const trimmedText = text.trim();
     if (!trimmedText || isLoading || isStreaming) return;
 
-    // Stop any playing TTS when sending a new message
     stopSpeaking();
-
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     Keyboard.dismiss();
 
-    // Add user message
     addMessage({ role: 'user', content: trimmedText });
     setLoading(true);
 
-    // Build messages array for API
     const apiMessages = messages.length === 0
-      ? [
-          { role: 'assistant' as const, content: greeting },
-          { role: 'user' as const, content: trimmedText },
-        ]
-      : [
-          ...messages.map((m) => ({ role: m.role, content: m.content })),
-          { role: 'user' as const, content: trimmedText },
-        ];
+      ? [{ role: 'assistant' as const, content: greeting }, { role: 'user' as const, content: trimmedText }]
+      : [...messages.map((m) => ({ role: m.role, content: m.content })), { role: 'user' as const, content: trimmedText }];
 
-    // Create placeholder message for streaming
     const assistantMessageId = addMessage({ role: 'assistant', content: '' });
     startStreaming(assistantMessageId);
 
-    // SSE streaming - returns cleanup function (not a Promise)
     sendCompanionMessageStream(
+      { messages: apiMessages, context: entryContext, context_data: contextData },
       {
-        messages: apiMessages,
-        context: entryContext,
-        context_data: contextData,
-      },
-      {
-        onToken: (_token, fullText) => {
-          updateMessage(assistantMessageId, fullText);
-        },
-        onComplete: () => {
-          stopStreaming();
-          // TTS is NOT auto-played - user must click Listen button explicitly
-        },
+        onToken: (_token, fullText) => updateMessage(assistantMessageId, fullText),
+        onComplete: () => stopStreaming(),
         onError: (error) => {
           console.error('Stream error:', error);
-          const errorMessage = language === 'id'
-            ? 'Maaf, terjadi kesalahan. Silakan coba lagi.'
-            : 'Sorry, an error occurred. Please try again.';
+          const errorMessage = language === 'id' ? 'Maaf, terjadi kesalahan. Silakan coba lagi.' : 'Sorry, an error occurred. Please try again.';
           updateMessage(assistantMessageId, errorMessage);
           stopStreaming();
         },
@@ -959,13 +780,11 @@ function CompanionScreen() {
 
   const handleNewChat = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    // Stop any playing TTS and clear session cache
     stopSpeaking();
     clearSessionCache();
     clearChat();
   }, [clearChat]);
 
-  // Scroll to bottom when messages change
   useEffect(() => {
     setTimeout(() => {
       scrollViewRef.current?.scrollToEnd({ animated: true });
@@ -975,33 +794,36 @@ function CompanionScreen() {
   const showWelcome = messages.length === 0;
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View className="flex-1" style={{ backgroundColor: Colors.background, paddingTop: insets.top }}>
       <StatusBar style="dark" />
 
       {/* Header */}
-      <View style={styles.header}>
+      <View className="flex-row items-center justify-between px-4 py-3 border-b" style={{ borderBottomColor: Colors.border }}>
         <Pressable
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             router.back();
           }}
-          style={({ pressed }) => [styles.headerBtn, pressed && styles.headerBtnPressed]}
+          className="w-12 h-12 rounded-full items-center justify-center active:opacity-70"
+          style={{ backgroundColor: 'transparent' }}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
           <ArrowLeft size={24} color={Colors.text} />
         </Pressable>
 
-        <View style={styles.headerCenter}>
-          <View style={styles.headerAvatar}>
+        <View className="flex-row items-center gap-2.5">
+          <View className="w-8 h-8 rounded-full items-center justify-center" style={{ backgroundColor: Colors.primary }}>
             <Sparkles size={16} color={Colors.textOnPrimary} />
           </View>
-          <Text style={styles.headerTitle}>{t('companion.title', 'Faith Assistant')}</Text>
+          <Text className="text-[17px] font-semibold" style={{ color: Colors.text }}>
+            {t('companion.title', 'Faith Assistant')}
+          </Text>
         </View>
 
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+        <View className="flex-row items-center gap-1">
           <Pressable
             onPress={handleNewChat}
-            style={({ pressed }) => [styles.headerBtn, pressed && styles.headerBtnPressed]}
+            className="w-12 h-12 rounded-full items-center justify-center active:opacity-70"
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
             <RotateCcw size={28} color={Colors.textSecondary} />
@@ -1011,7 +833,7 @@ function CompanionScreen() {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               setShowSettings(true);
             }}
-            style={({ pressed }) => [styles.headerBtn, pressed && styles.headerBtnPressed]}
+            className="w-12 h-12 rounded-full items-center justify-center active:opacity-70"
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
             <Settings size={28} color={Colors.textSecondary} />
@@ -1019,36 +841,26 @@ function CompanionScreen() {
         </View>
       </View>
 
-      <KeyboardAvoidingView
-        style={styles.keyboardView}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={0}
-      >
+      <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={0}>
         <ScrollView
           ref={scrollViewRef}
-          style={styles.messagesContainer}
-          contentContainerStyle={styles.messagesContent}
+          className="flex-1"
+          contentContainerClassName="p-4 pb-2"
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          {/* Welcome screen */}
           {showWelcome && (
-            <Animated.View entering={webSafeEntering(FadeIn.duration(500))} style={styles.welcomeContainer}>
-              {/* Logo/Icon */}
-              <View style={styles.welcomeIconWrap}>
+            <Animated.View entering={webSafeEntering(FadeIn.duration(500))} className="items-center pt-10 px-4">
+              <View className="w-16 h-16 rounded-full items-center justify-center mb-5" style={{ backgroundColor: Colors.surfaceAlt }}>
                 <Sparkles size={32} color={Colors.primary} />
               </View>
-
-              {/* Greeting */}
-              <Text style={styles.welcomeTitle}>
+              <Text className="text-2xl font-bold mb-3" style={{ color: Colors.text }}>
                 {t('companion.title', 'Faith Assistant')}
               </Text>
-              <Text style={styles.welcomeSubtitle}>
+              <Text className="text-base text-center leading-6 px-6 mb-6" style={{ color: Colors.textSecondary }}>
                 {greeting}
               </Text>
-
-              {/* Starter Cards */}
-              <View style={styles.startersContainer}>
+              <View className="w-full gap-3">
                 {starterCards.map((card, index) => (
                   <StarterCard
                     key={card.title}
@@ -1063,7 +875,6 @@ function CompanionScreen() {
             </Animated.View>
           )}
 
-          {/* Messages */}
           {!showWelcome && messages.map((msg, index) => (
             <MessageBubble
               key={msg.id}
@@ -1074,18 +885,25 @@ function CompanionScreen() {
             />
           ))}
 
-          {/* Loading indicator with empathetic message (before streaming starts) */}
           {isLoading && !isStreaming && (
-            <Animated.View entering={webSafeEntering(FadeIn.duration(400))} style={[styles.messageRow]}>
-              <View style={styles.messageColumn}>
-                <View style={[styles.bubble, styles.assistantBubble, styles.loadingBubble]}>
+            <Animated.View entering={webSafeEntering(FadeIn.duration(400))} className="flex-row mb-4 items-start">
+              <View>
+                <View
+                  className="rounded-[20px] rounded-bl-[6px] px-4 py-3 border min-w-[180px]"
+                  style={{ backgroundColor: Colors.assistantBubble, borderColor: Colors.border }}
+                >
                   <TypingIndicator showMessage language={language} />
                 </View>
-                <View style={styles.avatarRow}>
-                  <View style={styles.avatar}>
+                <View className="flex-row items-center mt-1.5 gap-1.5">
+                  <View
+                    className="w-6 h-6 rounded-full items-center justify-center border"
+                    style={{ backgroundColor: Colors.surfaceAlt, borderColor: Colors.border }}
+                  >
                     <Sparkles size={14} color={Colors.primary} />
                   </View>
-                  <Text style={styles.assistantLabel}>Faith Assistant</Text>
+                  <Text className="text-[11px] font-medium" style={{ color: Colors.textTertiary }}>
+                    Faith Assistant
+                  </Text>
                 </View>
               </View>
             </Animated.View>
@@ -1093,11 +911,18 @@ function CompanionScreen() {
         </ScrollView>
 
         {/* Input Area */}
-        <View style={[styles.inputArea, { paddingBottom: Math.max(insets.bottom, 12) }]}>
-          <View style={styles.inputContainer}>
+        <View
+          className="border-t pt-3 px-4"
+          style={{ borderTopColor: Colors.border, backgroundColor: Colors.background, paddingBottom: Math.max(insets.bottom, 12) }}
+        >
+          <View
+            className="flex-row items-center gap-2.5 rounded-[28px] pl-[18px] pr-[18px] py-2 border min-h-[52px]"
+            style={{ backgroundColor: Colors.surface, borderColor: Colors.border }}
+          >
             <TextInput
               ref={inputRef}
-              style={[styles.input, { height: Math.max(36, Math.min(inputHeight, 100)) }]}
+              className="flex-1 text-base py-2 leading-5"
+              style={{ color: Colors.text, height: Math.max(36, Math.min(inputHeight, 100)), maxHeight: 100 }}
               placeholder={t('companion.inputPlaceholder', 'Message Faith Assistant...')}
               placeholderTextColor={Colors.textTertiary}
               value={inputText}
@@ -1108,31 +933,22 @@ function CompanionScreen() {
               returnKeyType="default"
               editable={!isLoading && !isStreaming}
             />
-            {/* Voice Chat Button - Full voice conversation */}
             {voiceEnabled && (
               <Pressable
                 onPress={() => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                   setShowVoiceChat(true);
                 }}
-                style={({ pressed }) => [
-                  styles.voiceChatBtn,
-                  pressed && styles.sendBtnPressed,
-                ]}
+                className="w-11 h-11 rounded-full items-center justify-center border-[1.5px]"
+                style={{ backgroundColor: `${Colors.primary}15`, borderColor: Colors.primary }}
                 disabled={isLoading || isStreaming}
               >
                 <Headphones size={20} color={Colors.primary} />
               </Pressable>
             )}
-            {/* STT Button - Speech to text, sends immediately */}
             <VoiceButton
-              onTranscription={(text) => {
-                // Send transcribed text (no auto-play - user must click Listen)
-                sendMessage(text);
-              }}
-              onError={(error) => {
-                console.error('[Companion] Voice error:', error);
-              }}
+              onTranscription={(text) => sendMessage(text)}
+              onError={(error) => console.error('[Companion] Voice error:', error)}
               defaultLanguage={language}
               size={44}
               disabled={isLoading || isStreaming}
@@ -1140,64 +956,54 @@ function CompanionScreen() {
             <Pressable
               onPress={handleSend}
               disabled={!inputText.trim() || isLoading || isStreaming}
-              style={({ pressed }) => [
-                styles.sendBtn,
-                (!inputText.trim() || isLoading || isStreaming) && styles.sendBtnDisabled,
-                pressed && inputText.trim() && !isLoading && !isStreaming && styles.sendBtnPressed,
-              ]}
+              className="w-11 h-11 rounded-full items-center justify-center border"
+              style={{
+                backgroundColor: inputText.trim() && !isLoading && !isStreaming ? Colors.surfaceAlt : Colors.surfaceAlt,
+                borderColor: inputText.trim() && !isLoading && !isStreaming ? Colors.border : Colors.borderLight,
+              }}
             >
-              <Send
-                size={22}
-                color={inputText.trim() && !isLoading && !isStreaming ? Colors.text : Colors.textTertiary}
-              />
+              <Send size={20} color={inputText.trim() && !isLoading && !isStreaming ? Colors.text : Colors.textTertiary} />
             </Pressable>
           </View>
 
-          <Text style={styles.disclaimer}>
-            {language === 'id'
-              ? 'Bukan pengganti nasihat pendeta.'
-              : 'Not a substitute for pastoral guidance.'}
+          <Text className="text-[11px] text-center mt-2.5" style={{ color: Colors.textTertiary }}>
+            {language === 'id' ? 'Bukan pengganti nasihat pendeta.' : 'Not a substitute for pastoral guidance.'}
           </Text>
         </View>
       </KeyboardAvoidingView>
 
-      {/* Settings Bottom Sheet */}
-      <BottomSheet
-        ref={settingsSheetRef}
-        index={showSettings ? 0 : -1}
-        snapPoints={settingsSnapPoints}
-        enablePanDownToClose
-        onClose={() => setShowSettings(false)}
-        backdropComponent={(props) => (
-          <BottomSheetBackdrop
-            {...props}
-            disappearsOnIndex={-1}
-            appearsOnIndex={0}
-            opacity={0.5}
-            pressBehavior="close"
-          />
-        )}
-        backgroundStyle={{ backgroundColor: Colors.background }}
-        handleIndicatorStyle={{ backgroundColor: Colors.border }}
-      >
-        <BottomSheetScrollView style={styles.settingsContainer}>
-          <Text style={styles.settingsTitle}>
+      {/* Settings Bottom Sheet - Only render when visible */}
+      {showSettings && (
+        <BottomSheet
+          ref={settingsSheetRef}
+          index={0}
+          snapPoints={settingsSnapPoints}
+          enablePanDownToClose
+          onClose={() => setShowSettings(false)}
+          backdropComponent={(props) => (
+            <BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0} opacity={0.5} pressBehavior="close" />
+          )}
+          backgroundStyle={{ backgroundColor: Colors.background }}
+          handleIndicatorStyle={{ backgroundColor: Colors.border }}
+        >
+        <BottomSheetScrollView className="flex-1 px-5">
+          <Text className="text-xl font-bold mb-5 text-center" style={{ color: Colors.text }}>
             {language === 'id' ? 'Pengaturan' : 'Settings'}
           </Text>
 
-          {/* Reading Preferences Section */}
-          <View style={styles.settingsSection}>
-            <Text style={styles.settingsSectionTitle}>
-              <Type size={16} color={Colors.primary} style={{ marginRight: 8 }} />
+          <View className="mb-6">
+            <Text className="text-[15px] font-semibold mb-4 flex-row items-center" style={{ color: Colors.text }}>
+              <Type size={16} color={Colors.primary} />
+              {'  '}
               {language === 'id' ? 'Tampilan Teks' : 'Text Display'}
             </Text>
 
             {/* Font Size */}
-            <View style={styles.settingsRow}>
-              <Text style={styles.settingsLabel}>
+            <View className="mb-4">
+              <Text className="text-sm mb-2.5" style={{ color: Colors.textSecondary }}>
                 {language === 'id' ? 'Ukuran Font' : 'Font Size'}
               </Text>
-              <View style={[styles.settingsOptions, { flexWrap: 'wrap' }]}>
+              <View className="flex-row flex-wrap gap-2.5">
                 {([
                   { key: 'small', label: language === 'id' ? 'Kecil' : 'Small' },
                   { key: 'medium', label: language === 'id' ? 'Standar' : 'Standard' },
@@ -1207,16 +1013,16 @@ function CompanionScreen() {
                   <Pressable
                     key={item.key}
                     onPress={() => setFontSize(item.key)}
-                    style={[
-                      styles.settingsOption,
-                      { minWidth: 80, paddingHorizontal: 12 },
-                      fontSize === item.key && styles.settingsOptionActive,
-                    ]}
+                    className="py-2.5 px-3 rounded-[10px] items-center justify-center min-w-[80px] border"
+                    style={{
+                      backgroundColor: fontSize === item.key ? `${Colors.primary}15` : Colors.surfaceAlt,
+                      borderColor: fontSize === item.key ? Colors.primary : Colors.border,
+                    }}
                   >
-                    <Text style={[
-                      styles.settingsOptionText,
-                      fontSize === item.key && styles.settingsOptionTextActive,
-                    ]}>
+                    <Text
+                      className="text-sm font-medium"
+                      style={{ color: fontSize === item.key ? Colors.primary : Colors.textSecondary }}
+                    >
                       {item.label}
                     </Text>
                   </Pressable>
@@ -1225,32 +1031,27 @@ function CompanionScreen() {
             </View>
 
             {/* Theme */}
-            <View style={styles.settingsRow}>
-              <Text style={styles.settingsLabel}>
+            <View className="mb-4">
+              <Text className="text-sm mb-2.5" style={{ color: Colors.textSecondary }}>
                 {language === 'id' ? 'Tema Baca' : 'Reading Theme'}
               </Text>
-              <View style={styles.settingsOptions}>
+              <View className="flex-row gap-2.5">
                 {(['light', 'sepia', 'dark'] as ReadingTheme[]).map((themeOpt) => (
                   <Pressable
                     key={themeOpt}
                     onPress={() => setTheme(themeOpt)}
-                    style={[
-                      styles.settingsOption,
-                      readingTheme === themeOpt && styles.settingsOptionActive,
-                      {
-                        backgroundColor: themeOpt === 'light' ? '#FFFFFF' : themeOpt === 'sepia' ? '#F5F0E6' : '#1A1A1A',
-                        borderColor: themeOpt === 'dark' ? '#374151' : '#E5E7EB',
-                      }
-                    ]}
+                    className="py-2.5 px-4 rounded-[10px] items-center justify-center min-w-[48px] border"
+                    style={{
+                      backgroundColor: themeOpt === 'light' ? '#FFFFFF' : themeOpt === 'sepia' ? '#F5F0E6' : '#1A1A1A',
+                      borderColor: readingTheme === themeOpt ? Colors.primary : themeOpt === 'dark' ? '#374151' : '#E5E7EB',
+                    }}
                   >
                     {themeOpt === 'light' ? (
                       <Sun size={16} color={readingTheme === 'light' ? Colors.primary : '#6B7280'} />
                     ) : themeOpt === 'dark' ? (
                       <Moon size={16} color={readingTheme === 'dark' ? Colors.primary : '#9CA3AF'} />
                     ) : (
-                      <Text style={{ color: readingTheme === 'sepia' ? Colors.primary : '#6B6353', fontSize: 12 }}>
-                        Se
-                      </Text>
+                      <Text style={{ color: readingTheme === 'sepia' ? Colors.primary : '#6B6353', fontSize: 12 }}>Se</Text>
                     )}
                   </Pressable>
                 ))}
@@ -1258,11 +1059,11 @@ function CompanionScreen() {
             </View>
 
             {/* Line Height */}
-            <View style={styles.settingsRow}>
-              <Text style={styles.settingsLabel}>
+            <View className="mb-4">
+              <Text className="text-sm mb-2.5" style={{ color: Colors.textSecondary }}>
                 {language === 'id' ? 'Jarak Baris' : 'Line Spacing'}
               </Text>
-              <View style={[styles.settingsOptions, { flexWrap: 'wrap' }]}>
+              <View className="flex-row flex-wrap gap-2.5">
                 {([
                   { value: 1.4, label: language === 'id' ? 'Rapat' : 'Tight' },
                   { value: 1.6, label: language === 'id' ? 'Standar' : 'Standard' },
@@ -1272,16 +1073,16 @@ function CompanionScreen() {
                   <Pressable
                     key={item.value}
                     onPress={() => setLineHeight(item.value)}
-                    style={[
-                      styles.settingsOption,
-                      { minWidth: 80, paddingHorizontal: 12 },
-                      lineHeight === item.value && styles.settingsOptionActive,
-                    ]}
+                    className="py-2.5 px-3 rounded-[10px] items-center justify-center min-w-[80px] border"
+                    style={{
+                      backgroundColor: lineHeight === item.value ? `${Colors.primary}15` : Colors.surfaceAlt,
+                      borderColor: lineHeight === item.value ? Colors.primary : Colors.border,
+                    }}
                   >
-                    <Text style={[
-                      styles.settingsOptionText,
-                      lineHeight === item.value && styles.settingsOptionTextActive,
-                    ]}>
+                    <Text
+                      className="text-sm font-medium"
+                      style={{ color: lineHeight === item.value ? Colors.primary : Colors.textSecondary }}
+                    >
                       {item.label}
                     </Text>
                   </Pressable>
@@ -1290,20 +1091,17 @@ function CompanionScreen() {
             </View>
 
             {/* Preview */}
-            <View style={[
-              styles.settingsPreview,
-              {
-                backgroundColor: readingStyles.colors.background,
-                borderColor: readingStyles.colors.border,
-              }
-            ]}>
-              <Text style={[
-                {
+            <View
+              className="p-4 rounded-xl border mt-2"
+              style={{ backgroundColor: readingStyles.colors.background, borderColor: readingStyles.colors.border }}
+            >
+              <Text
+                style={{
                   fontSize: readingStyles.fontSizeValue,
                   lineHeight: readingStyles.fontSizeValue * lineHeight,
                   color: readingStyles.colors.text,
-                }
-              ]}>
+                }}
+              >
                 {language === 'id'
                   ? 'Contoh teks dengan pengaturan saat ini. Ini adalah pratinjau bagaimana respons AI akan ditampilkan.'
                   : 'Sample text with current settings. This is a preview of how AI responses will be displayed.'}
@@ -1311,637 +1109,21 @@ function CompanionScreen() {
             </View>
           </View>
 
-          {/* Voice Settings Section */}
-          {voiceEnabled && (
-            <View style={styles.settingsSection}>
-              <Text style={styles.settingsSectionTitle}>
-                <Volume2 size={16} color={Colors.primary} style={{ marginRight: 8 }} />
-                {language === 'id' ? 'Suara (TTS)' : 'Voice (TTS)'}
-              </Text>
-
-              {/* Voice Selection */}
-              <View style={styles.settingsRow}>
-                <Text style={styles.settingsLabel}>
-                  {language === 'id' ? 'Pilih Suara' : 'Voice'}
-                </Text>
-                <View style={[styles.settingsOptions, { flexWrap: 'wrap', gap: 8 }]}>
-                  {(['nova', 'alloy', 'echo', 'shimmer'] as TTSVoice[]).map((voice) => (
-                    <Pressable
-                      key={voice}
-                      onPress={() => updateVoicePrefs({ voice })}
-                      style={[
-                        styles.settingsOption,
-                        { minWidth: 70 },
-                        getEffectiveVoice() === voice && styles.settingsOptionActive,
-                      ]}
-                    >
-                      <Text style={[
-                        styles.settingsOptionText,
-                        getEffectiveVoice() === voice && styles.settingsOptionTextActive,
-                      ]}>
-                        {voice.charAt(0).toUpperCase() + voice.slice(1)}
-                      </Text>
-                    </Pressable>
-                  ))}
-                </View>
-              </View>
-
-              {/* Speed */}
-              <View style={styles.settingsRow}>
-                <Text style={styles.settingsLabel}>
-                  {language === 'id' ? 'Kecepatan' : 'Speed'}
-                </Text>
-                <View style={styles.settingsOptions}>
-                  {[0.75, 1.0, 1.25, 1.5].map((speed) => (
-                    <Pressable
-                      key={speed}
-                      onPress={() => updateVoicePrefs({ speed })}
-                      style={[
-                        styles.settingsOption,
-                        getEffectiveSpeed() === speed && styles.settingsOptionActive,
-                      ]}
-                    >
-                      <Text style={[
-                        styles.settingsOptionText,
-                        getEffectiveSpeed() === speed && styles.settingsOptionTextActive,
-                      ]}>
-                        {speed}x
-                      </Text>
-                    </Pressable>
-                  ))}
-                </View>
-              </View>
-            </View>
-          )}
-
           <View style={{ height: insets.bottom + 20 }} />
         </BottomSheetScrollView>
-      </BottomSheet>
+        </BottomSheet>
+      )}
 
-      {/* Voice Chat Modal - Full voice conversation mode using OpenAI Realtime API */}
       <VoiceChatModal
         visible={showVoiceChat}
         onClose={() => setShowVoiceChat(false)}
         language={language}
         onConversationEnd={(realtimeMessages) => {
-          // Optionally add Realtime conversation to the chat history
-          realtimeMessages.forEach((msg) => {
-            addMessage({ role: msg.role, content: msg.content });
-          });
+          realtimeMessages.forEach((msg) => addMessage({ role: msg.role, content: msg.content }));
         }}
       />
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.background,
-  },
-
-  // Header
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
-  },
-  headerBtn: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerBtnPressed: {
-    backgroundColor: Colors.surfaceAlt,
-  },
-  headerCenter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  headerAvatar: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: Colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerTitle: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: Colors.text,
-  },
-
-  // Keyboard view
-  keyboardView: {
-    flex: 1,
-  },
-
-  // Messages
-  messagesContainer: {
-    flex: 1,
-  },
-  messagesContent: {
-    padding: 16,
-    paddingBottom: 8,
-  },
-
-  // Welcome
-  welcomeContainer: {
-    alignItems: 'center',
-    paddingTop: 40,
-    paddingHorizontal: 16,
-  },
-  welcomeIconWrap: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: Colors.surfaceAlt,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 20,
-  },
-  welcomeTitle: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: Colors.text,
-    marginBottom: 12,
-  },
-  welcomeSubtitle: {
-    fontSize: 16,
-    color: Colors.textSecondary,
-    textAlign: 'center',
-    lineHeight: 24,
-    paddingHorizontal: 24,
-    marginBottom: 24,
-  },
-
-  // Starters
-  startersContainer: {
-    width: '100%',
-    gap: 12,
-  },
-  starterCard: {
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: Colors.surface,
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    width: '100%',
-  },
-  starterCardPressed: {
-    backgroundColor: Colors.surfaceAlt,
-    borderColor: Colors.primary,
-  },
-  starterIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: Colors.background,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: Colors.border,
-    alignSelf: 'center',
-  },
-  starterTextContainer: {
-    alignItems: 'center',
-    alignSelf: 'center',
-    width: '100%',
-    marginTop: 4,
-  },
-  starterTitle: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: Colors.text,
-    marginBottom: 4,
-    textAlign: 'center',
-  },
-  starterDescription: {
-    fontSize: 13,
-    color: Colors.textSecondary,
-    lineHeight: 18,
-    textAlign: 'center',
-  },
-
-  // Message row
-  messageRow: {
-    flexDirection: 'row',
-    marginBottom: 16,
-    alignItems: 'flex-start',
-  },
-  messageRowUser: {
-    justifyContent: 'flex-end',
-  },
-  messageColumn: {
-    maxWidth: SCREEN_WIDTH - 48,
-  },
-  messageColumnUser: {
-    alignItems: 'flex-end',
-  },
-  avatarRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 6,
-    gap: 6,
-  },
-  avatar: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: Colors.surfaceAlt,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  assistantLabel: {
-    fontSize: 11,
-    color: Colors.textTertiary,
-    fontWeight: '500',
-  },
-  // Message actions (copy)
-  messageActions: {
-    flexDirection: 'row',
-    marginTop: 6,
-    gap: 8,
-  },
-  messageActionsUser: {
-    justifyContent: 'flex-end',
-  },
-  actionBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    borderRadius: 8,
-    backgroundColor: Colors.surface,
-  },
-  actionBtnPressed: {
-    backgroundColor: Colors.surfaceAlt,
-  },
-  actionBtnActive: {
-    backgroundColor: `${Colors.primary}15`,
-    borderWidth: 1,
-    borderColor: `${Colors.primary}30`,
-  },
-  actionBtnPaused: {
-    backgroundColor: `${Colors.primary}10`,
-    borderWidth: 1,
-    borderColor: `${Colors.primary}20`,
-  },
-  actionText: {
-    fontSize: 12,
-    color: Colors.textSecondary,
-    fontWeight: '500',
-  },
-  loadingDot: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    backgroundColor: Colors.primary,
-    opacity: 0.6,
-  },
-  // Timestamps
-  timestamp: {
-    fontSize: 11,
-    color: Colors.textTertiary,
-    marginTop: 4,
-    marginLeft: 4,
-  },
-  timestampUser: {
-    textAlign: 'right',
-    marginRight: 4,
-    marginLeft: 0,
-  },
-
-  // Bubble
-  bubble: {
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  userBubble: {
-    backgroundColor: Colors.userBubble,
-    borderBottomRightRadius: 6,
-    maxWidth: SCREEN_WIDTH - 48,
-  },
-  assistantBubble: {
-    backgroundColor: Colors.assistantBubble,
-    borderBottomLeftRadius: 6,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    maxWidth: SCREEN_WIDTH - 48,
-  },
-  userText: {
-    fontSize: 15,
-    lineHeight: 22,
-    color: Colors.textOnPrimary,
-  },
-  assistantContent: {
-    flex: 1,
-  },
-
-  // Typing indicator
-  typingWrapper: {
-    gap: 8,
-  },
-  thinkingText: {
-    fontSize: 13,
-    color: Colors.textSecondary,
-    fontStyle: 'italic',
-    marginBottom: 4,
-  },
-  typingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    paddingVertical: 4,
-  },
-  typingDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: Colors.primary,
-  },
-  loadingBubble: {
-    minWidth: 180,
-  },
-
-  // Cursor
-  cursorContainer: {
-    position: 'absolute',
-    right: 0,
-    bottom: 0,
-  },
-  cursor: {
-    width: 2,
-    height: 16,
-    backgroundColor: Colors.primary,
-  },
-
-  // Markdown styles
-  mdH1: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: Colors.text,
-    marginBottom: 8,
-    marginTop: 4,
-  },
-  mdH2: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: Colors.text,
-    marginBottom: 6,
-    marginTop: 4,
-  },
-  mdH3: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: Colors.text,
-    marginBottom: 4,
-    marginTop: 2,
-  },
-  mdParagraph: {
-    fontSize: 15,
-    lineHeight: 22,
-    color: Colors.text,
-  },
-  mdBold: {
-    fontWeight: '700',
-  },
-  mdItalic: {
-    fontStyle: 'italic',
-  },
-  mdInlineCode: {
-    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
-    fontSize: 13,
-    backgroundColor: Colors.surfaceAlt,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-    overflow: 'hidden',
-  },
-  mdBullet: {
-    flexDirection: 'row',
-    marginBottom: 4,
-  },
-  mdBulletDot: {
-    width: 20,
-    fontSize: 15,
-    color: Colors.textSecondary,
-  },
-  mdBulletNum: {
-    width: 24,
-    fontSize: 15,
-    color: Colors.textSecondary,
-    fontWeight: '500',
-  },
-  mdBulletText: {
-    flex: 1,
-    fontSize: 15,
-    lineHeight: 22,
-    color: Colors.text,
-  },
-  mdBlockquote: {
-    borderLeftWidth: 3,
-    borderLeftColor: Colors.primary,
-    paddingLeft: 12,
-    marginVertical: 8,
-    opacity: 0.9,
-  },
-  mdBlockquoteText: {
-    fontSize: 15,
-    lineHeight: 22,
-    color: Colors.textSecondary,
-    fontStyle: 'italic',
-  },
-  mdBreak: {
-    height: 8,
-  },
-
-  // Input area
-  inputArea: {
-    borderTopWidth: 1,
-    borderTopColor: Colors.border,
-    paddingTop: 12,
-    paddingHorizontal: 16,
-    backgroundColor: Colors.background,
-  },
-  inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    backgroundColor: Colors.surface,
-    borderRadius: 28,
-    paddingLeft: 18,
-    paddingRight: 18,
-    paddingVertical: 8,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    minHeight: 52,
-  },
-  input: {
-    flex: 1,
-    fontSize: 16,
-    color: Colors.text,
-    paddingVertical: 8,
-    lineHeight: 20,
-    maxHeight: 100,
-  },
-  sendBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: Colors.surfaceAlt,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-    alignSelf: 'flex-end',
-    marginBottom: 0,
-  },
-  sendBtnDisabled: {
-    backgroundColor: Colors.surfaceAlt,
-    borderColor: Colors.borderLight,
-  },
-  sendBtnPressed: {
-    opacity: 0.8,
-  },
-  disclaimer: {
-    fontSize: 11,
-    color: Colors.textTertiary,
-    textAlign: 'center',
-    marginTop: 10,
-  },
-
-  // Settings styles
-  settingsContainer: {
-    flex: 1,
-    paddingHorizontal: 20,
-  },
-  settingsTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: Colors.text,
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-  settingsSection: {
-    marginBottom: 24,
-  },
-  settingsSectionTitle: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: Colors.text,
-    marginBottom: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  settingsRow: {
-    marginBottom: 16,
-  },
-  settingsLabel: {
-    fontSize: 14,
-    color: Colors.textSecondary,
-    marginBottom: 10,
-  },
-  settingsOptions: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  settingsOption: {
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 10,
-    backgroundColor: Colors.surfaceAlt,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minWidth: 48,
-  },
-  settingsOptionActive: {
-    backgroundColor: Colors.primary + '15',
-    borderColor: Colors.primary,
-  },
-  settingsOptionText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: Colors.textSecondary,
-  },
-  settingsOptionTextActive: {
-    color: Colors.primary,
-    fontWeight: '600',
-  },
-  settingsPreview: {
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    marginTop: 8,
-  },
-  settingsToggleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 12,
-  },
-  settingsHint: {
-    fontSize: 12,
-    color: Colors.textTertiary,
-    marginTop: 2,
-  },
-  settingsToggle: {
-    width: 50,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: Colors.surfaceAlt,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    padding: 2,
-    justifyContent: 'center',
-  },
-  settingsToggleActive: {
-    backgroundColor: Colors.primary,
-    borderColor: Colors.primary,
-  },
-  settingsToggleThumb: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: '#FFFFFF',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.15,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  settingsToggleThumbActive: {
-    alignSelf: 'flex-end',
-  },
-
-  // Voice chat button - opens full voice conversation modal
-  voiceChatBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: Colors.primary + '15',
-    borderWidth: 1.5,
-    borderColor: Colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
 
 export default memo(CompanionScreen);

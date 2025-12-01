@@ -3,37 +3,69 @@
  *
  * Event rating bottom sheet with slider and review input.
  * Used via: overlay.showBottomSheet(RatingModal, payload)
+ *
+ * Styling Strategy:
+ * - NativeWind (className) for layout and styling
+ * - Inline style for dynamic values, shadows, and colors from Colors object
+ *
+ * Standardized sizing:
+ * - Header title: 22px font-bold
+ * - Header subtitle: 14px
+ * - Section labels: 16px font-semibold
+ * - Rating display: 48px number
+ * - Body text/input: 16px
+ * - Small text: 12px
+ * - Close button: 44x44 with 20px icon
+ * - Submit button icon: 18px
  */
 
 import React, { useState, useCallback } from 'react';
 import {
   View,
+  Text,
   TextInput,
-  KeyboardAvoidingView,
-  Platform,
   ScrollView,
-  StyleSheet,
   Pressable,
   Dimensions,
+  ActivityIndicator,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { X, Send, Star } from 'lucide-react-native';
 import Slider from '@react-native-community/slider';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as Haptics from 'expo-haptics';
 
 import type { OverlayProps } from '@/components/overlay/types';
 import type { RatingPayload } from '@/stores/overlayStore';
-import { Text } from '@/components/ui/text';
-import { Heading } from '@/components/ui/heading';
-import { Button, ButtonText } from '@/components/ui/button';
-import { Icon } from '@/components/ui/icon';
-import { VStack } from '@/components/ui/vstack';
-import { HStack } from '@/components/ui/hstack';
-import { colors, spacing, borderRadius, shadows } from '@/constants/theme';
-import { overlayTheme } from '@/theme/overlayTheme';
-import { interaction } from '@/constants/interaction';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+
+// Consistent colors with app theme
+const Colors = {
+  neutral: {
+    50: '#FAFAFA',
+    100: '#F5F5F5',
+    200: '#E5E5E5',
+    300: '#D4D4D4',
+    400: '#A3A3A3',
+    500: '#737373',
+    600: '#525252',
+    700: '#404040',
+    800: '#262626',
+    900: '#171717',
+  },
+  white: '#FFFFFF',
+  primary: {
+    50: '#EFF6FF',
+    100: '#DBEAFE',
+    500: '#3B82F6',
+    600: '#2563EB',
+    700: '#1D4ED8',
+  },
+  success: '#10B981',
+  warning: '#F59E0B',
+  error: '#EF4444',
+};
 
 export const RatingModal: React.FC<OverlayProps<RatingPayload>> = ({
   payload,
@@ -51,7 +83,7 @@ export const RatingModal: React.FC<OverlayProps<RatingPayload>> = ({
   const handleRatingChange = useCallback((value: number) => {
     const roundedValue = Math.round(value);
     setRating(roundedValue);
-    interaction.haptics.selection();
+    Haptics.selectionAsync();
   }, []);
 
   const handleSubmit = useCallback(async () => {
@@ -59,229 +91,196 @@ export const RatingModal: React.FC<OverlayProps<RatingPayload>> = ({
 
     setIsSubmitting(true);
     try {
-      interaction.haptics.success();
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       await payload.onSubmit(rating, review.trim());
       onClose();
     } catch (error) {
       console.error('Rating submission failed:', error);
-      interaction.haptics.error();
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     } finally {
       setIsSubmitting(false);
     }
   }, [payload, rating, review, onClose]);
 
   const getRatingLabel = (value: number) => {
-    if (value >= 9) return t('rating.excellent');
-    if (value >= 7) return t('rating.great');
-    if (value >= 5) return t('rating.good');
-    if (value >= 3) return t('rating.fair');
-    return t('rating.needsImprovement');
+    if (value >= 9) return t('rating.excellent', 'Excellent');
+    if (value >= 7) return t('rating.great', 'Great');
+    if (value >= 5) return t('rating.good', 'Good');
+    if (value >= 3) return t('rating.fair', 'Fair');
+    return t('rating.needsImprovement', 'Needs Improvement');
   };
 
   const getRatingColor = (value: number) => {
-    if (value >= 8) return colors.success[500];
-    if (value >= 6) return colors.primary[500];
-    if (value >= 4) return colors.warning[500];
-    return colors.error[500];
+    if (value >= 8) return Colors.success;
+    if (value >= 6) return Colors.primary[500];
+    if (value >= 4) return Colors.warning;
+    return Colors.error;
   };
 
   return (
-    <View style={styles.sheetContainer}>
-      {/* Handle */}
-      <View style={styles.handleContainer}>
-        <View style={styles.handle} />
+    <View
+      className="bg-white rounded-t-3xl"
+      style={{
+        maxHeight: SCREEN_HEIGHT * 0.85,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: -4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 24,
+        elevation: 12,
+      }}
+    >
+      {/* Handle indicator */}
+      <View className="items-center pt-3 pb-1">
+        <View className="w-10 h-1 rounded-full bg-neutral-300" />
       </View>
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: insets.bottom + spacing.md }}
+        contentContainerStyle={{ paddingBottom: insets.bottom + 16 }}
+        keyboardShouldPersistTaps="handled"
       >
-        <View style={styles.sheetContent}>
+        <View className="px-5 pt-2">
           {/* Header */}
-          <HStack className="items-center justify-between mb-6">
+          <View className="flex-row items-start justify-between mb-6">
             <View className="flex-1 pr-4">
-              <Heading size="xl" className="text-gray-900 font-bold mb-1">
-                {t('rating.title')}
-              </Heading>
-              <Text className="text-gray-600 text-sm" numberOfLines={2}>
+              <Text
+                className="text-[22px] font-bold text-neutral-900 mb-1"
+                style={{ letterSpacing: -0.3 }}
+              >
+                {t('rating.title', 'Rate This Event')}
+              </Text>
+              <Text className="text-[14px] text-neutral-500" numberOfLines={2}>
                 {payload.eventName}
               </Text>
             </View>
+
+            {/* Close button - 44px for finger-friendly touch */}
             <Pressable
               onPress={() => {
-                interaction.haptics.tap();
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 onClose();
               }}
-              style={({ pressed }) => [
-                styles.closeButton,
-                pressed && styles.pressedMicro,
-              ]}
+              className="w-11 h-11 rounded-full bg-neutral-100 items-center justify-center active:opacity-70"
             >
-              <Icon as={X} size="sm" className="text-gray-600" />
+              <X size={20} color={Colors.neutral[600]} />
             </Pressable>
-          </HStack>
+          </View>
 
-          <VStack space="xl">
+          {/* Rating Question */}
+          <View className="mb-6">
+            <Text className="text-base font-semibold text-neutral-700 mb-3">
+              {t('rating.question', 'How would you rate this event?')}
+            </Text>
+
             {/* Rating Display */}
-            <View>
-              <Text className="text-gray-700 font-semibold mb-3 text-base">
-                {t('rating.question')}
-              </Text>
-
-              <View style={[styles.ratingDisplay, { backgroundColor: colors.gray[50] }]}>
-                <Text style={[styles.ratingValue, { color: getRatingColor(rating) }]}>
-                  {rating}
-                </Text>
-                <Text style={[styles.ratingLabel, { color: getRatingColor(rating) }]}>
-                  {getRatingLabel(rating)}
-                </Text>
-              </View>
-
-              {/* Slider */}
-              <View className="px-2">
-                <Slider
-                  value={rating}
-                  onValueChange={handleRatingChange}
-                  minimumValue={1}
-                  maximumValue={10}
-                  step={1}
-                  minimumTrackTintColor={getRatingColor(rating)}
-                  maximumTrackTintColor={colors.gray[200]}
-                  thumbTintColor={getRatingColor(rating)}
-                  style={{ height: 40 }}
-                />
-                <HStack className="justify-between mt-2">
-                  <Text className="text-xs text-gray-500">1</Text>
-                  <Text className="text-xs text-gray-500">10</Text>
-                </HStack>
-              </View>
-            </View>
-
-            {/* Review Text Area */}
-            <View>
-              <Text className="text-gray-700 font-semibold mb-3 text-base">
-                {t('rating.feedbackLabel')}
-              </Text>
-              <View style={styles.textInputContainer}>
-                <TextInput
-                  value={review}
-                  onChangeText={setReview}
-                  placeholder={t('rating.feedbackPlaceholder')}
-                  placeholderTextColor={colors.gray[400]}
-                  multiline
-                  numberOfLines={4}
-                  maxLength={1000}
-                  textAlignVertical="top"
-                  style={styles.textInput}
-                />
-              </View>
-              <Text className="text-xs text-gray-500 mt-2 text-right">
-                {t('rating.characterCount', { count: review.length, max: 1000 })}
-              </Text>
-            </View>
-
-            {/* Submit Button */}
-            <Button
-              onPress={handleSubmit}
-              disabled={isSubmitting}
-              size="xl"
-              className="mt-2"
-              style={[
-                styles.submitButton,
-                isSubmitting && { opacity: interaction.disableOpacity },
-              ]}
+            <View
+              className="items-center justify-center py-6 mb-4 rounded-2xl"
+              style={{ backgroundColor: Colors.neutral[50] }}
             >
-              <Icon as={isSubmitting ? Star : Send} size="sm" className="text-white mr-2" />
-              <ButtonText className="font-bold text-base">
-                {isSubmitting
-                  ? t('rating.submitting')
-                  : payload.existingRating
-                    ? t('rating.updateButton')
-                    : t('rating.submitButton')}
-              </ButtonText>
-            </Button>
-          </VStack>
+              <Text
+                className="font-bold mb-1"
+                style={{
+                  fontSize: 48,
+                  lineHeight: 56,
+                  color: getRatingColor(rating),
+                }}
+              >
+                {rating}
+              </Text>
+              <Text
+                className="font-bold uppercase tracking-wide"
+                style={{
+                  fontSize: 14,
+                  color: getRatingColor(rating),
+                }}
+              >
+                {getRatingLabel(rating)}
+              </Text>
+            </View>
+
+            {/* Slider */}
+            <View className="px-2">
+              <Slider
+                value={rating}
+                onValueChange={handleRatingChange}
+                minimumValue={1}
+                maximumValue={10}
+                step={1}
+                minimumTrackTintColor={getRatingColor(rating)}
+                maximumTrackTintColor={Colors.neutral[200]}
+                thumbTintColor={getRatingColor(rating)}
+                style={{ height: 40 }}
+              />
+              <View className="flex-row justify-between mt-2">
+                <Text className="text-xs text-neutral-500">1</Text>
+                <Text className="text-xs text-neutral-500">10</Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Review Text Area */}
+          <View className="mb-6">
+            <Text className="text-base font-semibold text-neutral-700 mb-3">
+              {t('rating.feedbackLabel', 'Share your feedback (optional)')}
+            </Text>
+
+            <View
+              className="rounded-2xl overflow-hidden border"
+              style={{
+                backgroundColor: Colors.neutral[50],
+                borderColor: Colors.neutral[200],
+              }}
+            >
+              <TextInput
+                value={review}
+                onChangeText={setReview}
+                placeholder={t('rating.feedbackPlaceholder', 'What did you enjoy? Any suggestions for improvement?')}
+                placeholderTextColor={Colors.neutral[400]}
+                multiline
+                numberOfLines={4}
+                maxLength={1000}
+                textAlignVertical="top"
+                className="p-4 text-base text-neutral-900"
+                style={{ minHeight: 120, lineHeight: 24 }}
+              />
+            </View>
+
+            <Text className="text-xs text-neutral-500 mt-2 text-right">
+              {review.length}/1000
+            </Text>
+          </View>
+
+          {/* Submit Button */}
+          <Pressable
+            onPress={handleSubmit}
+            disabled={isSubmitting}
+            className={`flex-row items-center justify-center py-4 rounded-2xl gap-2 ${isSubmitting ? 'opacity-60' : ''}`}
+            style={{
+              backgroundColor: Colors.primary[600],
+              shadowColor: Colors.primary[600],
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.3,
+              shadowRadius: 8,
+              elevation: 4,
+            }}
+          >
+            {isSubmitting ? (
+              <ActivityIndicator size="small" color={Colors.white} />
+            ) : (
+              <Send size={18} color={Colors.white} />
+            )}
+            <Text className="text-base font-bold text-white">
+              {isSubmitting
+                ? t('rating.submitting', 'Submitting...')
+                : payload.existingRating
+                  ? t('rating.updateButton', 'Update Rating')
+                  : t('rating.submitButton', 'Submit Rating')}
+            </Text>
+          </Pressable>
         </View>
       </ScrollView>
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  sheetContainer: {
-    backgroundColor: colors.white,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 24,
-    elevation: 12,
-  },
-  handleContainer: {
-    alignItems: 'center',
-    paddingTop: spacing.sm,
-    paddingBottom: spacing.xs,
-  },
-  handle: {
-    width: 40,
-    height: 4,
-    backgroundColor: colors.gray[300],
-    borderRadius: 2,
-  },
-  sheetContent: {
-    paddingHorizontal: spacing.xl,
-    paddingTop: spacing.xs,
-  },
-  closeButton: {
-    width: overlayTheme.closeButton.size,
-    height: overlayTheme.closeButton.size,
-    borderRadius: overlayTheme.closeButton.borderRadius,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: overlayTheme.closeButton.backgroundColor,
-  },
-  pressedMicro: {
-    opacity: interaction.press.opacity,
-    transform: [{ scale: interaction.press.scale }],
-  },
-  ratingDisplay: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: spacing.xl,
-    marginBottom: spacing.md,
-    borderRadius: borderRadius['2xl'],
-  },
-  ratingValue: {
-    fontSize: 56,
-    lineHeight: 64,
-    fontWeight: '700',
-    marginBottom: spacing.xs,
-  },
-  ratingLabel: {
-    fontSize: 14,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  textInputContainer: {
-    borderRadius: borderRadius['2xl'],
-    overflow: 'hidden',
-    backgroundColor: colors.gray[50],
-    borderWidth: 1,
-    borderColor: colors.gray[200],
-  },
-  textInput: {
-    padding: spacing.lg,
-    fontSize: 16,
-    lineHeight: 24,
-    color: colors.gray[900],
-    minHeight: 120,
-  },
-  submitButton: {
-    borderRadius: borderRadius.xl,
-    ...shadows.md,
-  },
-});
 
 export default RatingModal;

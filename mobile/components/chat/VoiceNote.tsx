@@ -7,13 +7,15 @@
  * - Waveform visualization during recording
  * - Playback with progress bar
  * - WhatsApp-exact styling
+ *
+ * Styling: NativeWind-first with inline style for dynamic values
  */
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import {
   View,
+  Text,
   Pressable,
-  StyleSheet,
   Animated,
   PanResponder,
   Platform,
@@ -41,11 +43,6 @@ import {
   X,
   ChevronLeft,
 } from 'lucide-react-native';
-
-import { Text } from '@/components/ui/text';
-import { HStack } from '@/components/ui/hstack';
-import { Icon } from '@/components/ui/icon';
-import { colors, borderRadius } from '@/constants/theme';
 
 // =============================================================================
 // TYPES
@@ -116,17 +113,17 @@ function Waveform({
   const barWidth = (width - (heights.length - 1) * 2) / heights.length;
 
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', height, width }}>
+    <View className="flex-row items-center" style={{ height, width }}>
       {heights.map((h, i) => {
         const isActive = progress > i / heights.length;
         return (
           <View
             key={i}
+            className="rounded-sm"
             style={{
               width: barWidth,
               height: h * height,
               backgroundColor: isActive ? activeColor : color,
-              borderRadius: 2,
               marginRight: i < heights.length - 1 ? 2 : 0,
             }}
           />
@@ -154,14 +151,12 @@ function RecordingWaveform({ isRecording }: { isRecording: boolean }) {
   }, [isRecording]);
 
   return (
-    <View style={styles.waveformContainer}>
+    <View className="flex-row items-center h-[30px] gap-0.5">
       {bars.map((height, i) => (
         <View
           key={i}
-          style={[
-            styles.waveformBar,
-            { backgroundColor: '#EF4444', transform: [{ scaleY: height }] },
-          ]}
+          className="w-[3px] rounded-[1.5px]"
+          style={{ backgroundColor: '#EF4444', transform: [{ scaleY: height }], height: 30 }}
         />
       ))}
     </View>
@@ -297,48 +292,42 @@ export function VoiceNoteRecorder({
   ).current;
 
   return (
-    <View style={styles.recorderContainer}>
+    <View className="flex-1 min-h-[44px]">
       {isRecording ? (
         <Animated.View
-          style={[
-            styles.recordingUI,
-            { transform: [{ translateX: slideX }] },
-          ]}
+          className="flex-row items-center justify-between px-3 py-2 bg-white rounded-2xl border border-red-500"
+          style={{ transform: [{ translateX: slideX }] }}
         >
           {/* Cancel hint */}
-          <HStack space="sm" className="items-center">
+          <View className="flex-row items-center gap-1">
             <View style={{ opacity: isCancelling ? 1 : 0.5 }}>
-              <Icon
-                as={ChevronLeft}
-                size="sm"
-                style={{ color: isCancelling ? '#EF4444' : '#8696a0' }}
-              />
+              <ChevronLeft size={16} color={isCancelling ? '#EF4444' : '#8696a0'} />
             </View>
             <Text
-              style={{
-                color: isCancelling ? '#EF4444' : '#8696a0',
-                fontSize: 12,
-              }}
+              className="text-xs ml-1"
+              style={{ color: isCancelling ? '#EF4444' : '#8696a0' }}
             >
               {isCancelling ? 'Release to cancel' : 'Slide to cancel'}
             </Text>
-          </HStack>
+          </View>
 
           {/* Waveform */}
           <RecordingWaveform isRecording={isRecording} />
 
           {/* Duration */}
-          <HStack space="sm" className="items-center">
-            <View style={styles.recordingDot} />
-            <Text style={styles.durationText}>{formatDuration(duration)}</Text>
-          </HStack>
+          <View className="flex-row items-center gap-1">
+            <View className="w-2 h-2 rounded-full bg-red-500" />
+            <Text className="text-sm font-medium text-gray-900 min-w-[40px]">
+              {formatDuration(duration)}
+            </Text>
+          </View>
         </Animated.View>
       ) : (
-        <View style={styles.micButtonContainer} {...panResponder.panHandlers}>
-          <View style={styles.micButton}>
-            <Icon as={Mic} size="md" style={{ color: '#FFFFFF' }} />
+        <View className="items-center justify-center py-2" {...panResponder.panHandlers}>
+          <View className="w-11 h-11 rounded-full bg-[#128C7E] items-center justify-center">
+            <Mic size={20} color="#FFFFFF" />
           </View>
-          <Text style={styles.holdText}>Hold to record</Text>
+          <Text className="text-[10px] text-gray-400 mt-1">Hold to record</Text>
         </View>
       )}
     </View>
@@ -401,30 +390,27 @@ export function VoiceNotePlayer({
   const activeColor = '#34B7F1';
 
   return (
-    <Pressable onPress={togglePlayback} style={styles.playerContainer}>
+    <Pressable onPress={togglePlayback} className="min-w-[200px]">
       <View
-        style={[
-          styles.playerBubble,
-          { backgroundColor },
-          compact && styles.playerBubbleCompact,
-        ]}
+        className={`flex-row items-center gap-2 rounded-2xl ${
+          compact ? 'px-1.5 py-1.5' : 'px-2 py-2'
+        }`}
+        style={{ backgroundColor }}
       >
         {/* Play/Pause button */}
         <View
-          style={[
-            styles.playButton,
-            { backgroundColor: isOwnMessage ? '#128C7E' : '#075E54' },
-          ]}
+          className="w-9 h-9 rounded-full items-center justify-center"
+          style={{ backgroundColor: isOwnMessage ? '#128C7E' : '#075E54' }}
         >
-          <Icon
-            as={isPlaying ? Pause : Play}
-            size={compact ? 'sm' : 'md'}
-            style={{ color: '#FFFFFF', marginLeft: isPlaying ? 0 : 2 }}
-          />
+          {isPlaying ? (
+            <Pause size={compact ? 16 : 20} color="#FFFFFF" />
+          ) : (
+            <Play size={compact ? 16 : 20} color="#FFFFFF" style={{ marginLeft: 2 }} />
+          )}
         </View>
 
         {/* Waveform */}
-        <View style={styles.playerWaveformContainer}>
+        <View className="flex-1">
           <Waveform
             heights={waveform}
             progress={progress}
@@ -436,7 +422,10 @@ export function VoiceNotePlayer({
         </View>
 
         {/* Duration */}
-        <Text style={[styles.playerDuration, { color: waveColor }]}>
+        <Text
+          className="text-xs font-medium min-w-[35px] text-right"
+          style={{ color: waveColor }}
+        >
           {formatDuration(isPlaying ? Math.floor(progress * duration) : duration)}
         </Text>
       </View>
@@ -479,28 +468,37 @@ export function VoiceNoteInput({ onSend, disabled }: VoiceNoteInputProps) {
 
   if (disabled) {
     return (
-      <Pressable style={styles.disabledMicButton}>
-        <Icon as={Mic} size="md" style={{ color: '#9CA3AF' }} />
+      <Pressable
+        className="w-11 h-11 rounded-full items-center justify-center opacity-50"
+        style={{ backgroundColor: '#128C7E' }}
+      >
+        <Mic size={20} color="#FFFFFF" />
       </Pressable>
     );
   }
 
   if (mode === 'preview' && recordedUri) {
     return (
-      <View style={styles.previewContainer}>
+      <View className="flex-row items-center gap-2 px-2">
         {/* Delete button */}
-        <Pressable onPress={handleDelete} style={styles.deleteButton}>
-          <Icon as={Trash2} size="md" style={{ color: '#EF4444' }} />
+        <Pressable
+          onPress={handleDelete}
+          className="w-10 h-10 rounded-full bg-red-100 items-center justify-center"
+        >
+          <Trash2 size={20} color="#EF4444" />
         </Pressable>
 
         {/* Preview player */}
-        <View style={styles.previewPlayer}>
+        <View className="flex-1">
           <VoiceNotePlayer uri={recordedUri} duration={recordedDuration} compact />
         </View>
 
         {/* Send button */}
-        <Pressable onPress={handleSend} style={styles.sendVoiceButton}>
-          <Icon as={Send} size="md" style={{ color: '#FFFFFF' }} />
+        <Pressable
+          onPress={handleSend}
+          className="w-11 h-11 rounded-full bg-[#128C7E] items-center justify-center"
+        >
+          <Send size={20} color="#FFFFFF" />
         </Pressable>
       </View>
     );
@@ -515,7 +513,7 @@ export function VoiceNoteInput({ onSend, disabled }: VoiceNoteInputProps) {
     );
   }
 
-  // Idle mode - show mic button
+  // Idle mode - show mic button (WhatsApp style circular green)
   return (
     <Pressable
       onLongPress={() => {
@@ -523,144 +521,12 @@ export function VoiceNoteInput({ onSend, disabled }: VoiceNoteInputProps) {
         setMode('recording');
       }}
       delayLongPress={150}
-      style={styles.idleMicButton}
+      className="w-11 h-11 rounded-full items-center justify-center active:opacity-80"
+      style={{ backgroundColor: '#128C7E' }}
     >
-      <Icon as={Mic} size="md" style={{ color: '#6B7280' }} />
+      <Mic size={20} color="#FFFFFF" />
     </Pressable>
   );
 }
-
-// =============================================================================
-// STYLES
-// =============================================================================
-
-const styles = StyleSheet.create({
-  // Recorder styles
-  recorderContainer: {
-    flex: 1,
-    minHeight: 44,
-  },
-  recordingUI: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    backgroundColor: '#FFFFFF',
-    borderRadius: borderRadius.xl,
-    borderWidth: 1,
-    borderColor: '#EF4444',
-  },
-  waveformContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    height: 30,
-    gap: 2,
-  },
-  waveformBar: {
-    width: 3,
-    height: 30,
-    borderRadius: 1.5,
-  },
-  recordingDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#EF4444',
-  },
-  durationText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#1F2937',
-    minWidth: 40,
-  },
-  micButtonContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 8,
-  },
-  micButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#128C7E',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  holdText: {
-    fontSize: 10,
-    color: '#9CA3AF',
-    marginTop: 4,
-  },
-
-  // Player styles
-  playerContainer: {
-    minWidth: 200,
-  },
-  playerBubble: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 8,
-    borderRadius: borderRadius.xl,
-    gap: 8,
-  },
-  playerBubbleCompact: {
-    paddingHorizontal: 6,
-    paddingVertical: 6,
-  },
-  playButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  playerWaveformContainer: {
-    flex: 1,
-  },
-  playerDuration: {
-    fontSize: 12,
-    fontWeight: '500',
-    minWidth: 35,
-    textAlign: 'right',
-  },
-
-  // Input styles
-  previewContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 8,
-  },
-  deleteButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#FEE2E2',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  previewPlayer: {
-    flex: 1,
-  },
-  sendVoiceButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#128C7E',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  idleMicButton: {
-    padding: 8,
-    marginBottom: 4,
-  },
-  disabledMicButton: {
-    padding: 8,
-    marginBottom: 4,
-    opacity: 0.5,
-  },
-});
 
 export default VoiceNoteInput;

@@ -7,10 +7,12 @@
  * - Category tags
  * - RSVP/Cancel/Rating actions
  * - Share functionality
+ *
+ * Styling: NativeWind-first with inline style for shadows/spacing constants
  */
 
 import React, { memo } from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { View, Text, Pressable } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Image } from 'expo-image';
 import {
@@ -120,36 +122,78 @@ function EventCardComponent({
         innerStyle={{ padding: 0, overflow: 'hidden' }}
       >
         {/* Event Image or Gradient */}
-        <View style={styles.eventImageWrap}>
+        <View
+          className="h-40 relative overflow-hidden"
+          style={{ borderTopLeftRadius: radius.card, borderTopRightRadius: radius.card }}
+        >
           {event.event_photo ? (
             <Image
               source={{ uri: event.event_photo }}
-              style={styles.eventImage}
+              className="w-full h-full"
               contentFit="cover"
             />
           ) : (
             <LinearGradient
               colors={[Colors.gradient.start, Colors.gradient.end]}
-              style={styles.eventImage}
+              className="w-full h-full"
             />
           )}
           {/* Date Badge */}
-          <View style={styles.dateBadge}>
+          <View
+            className="absolute flex-row items-center bg-white"
+            style={{
+              top: spacing.sm,
+              left: spacing.sm,
+              paddingHorizontal: spacing.sm,
+              paddingVertical: spacing.s,
+              borderRadius: radius.s,
+              gap: spacing.xs,
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.1,
+              shadowRadius: 4,
+              elevation: 2,
+            }}
+          >
             <Calendar size={14} color={Colors.gradient.start} />
-            <Text style={styles.dateBadgeText}>{formatDateShort(event.event_date)}</Text>
+            <Text className="text-[13px] font-bold" style={{ color: Colors.gradient.start }}>
+              {formatDateShort(event.event_date)}
+            </Text>
           </View>
           {/* Attended Badge */}
           {showAttendedBadge && (
-            <View style={styles.attendedBadge}>
+            <View
+              className="absolute flex-row items-center"
+              style={{
+                bottom: spacing.sm,
+                left: spacing.sm,
+                backgroundColor: Colors.success,
+                paddingHorizontal: spacing.sm,
+                paddingVertical: spacing.xs,
+                borderRadius: radius.s,
+                gap: spacing.xs,
+              }}
+            >
               <CheckCircle size={14} color={Colors.white} />
-              <Text style={styles.attendedBadgeText}>{t('events.attended')}</Text>
+              <Text className="text-xs font-bold text-white">{t('events.attended')}</Text>
             </View>
           )}
           {/* Sessions Badge for Series Events */}
           {(event.event_type === 'series' || (event.sessions && event.sessions.length > 0)) && (
-            <View style={styles.sessionsBadge}>
+            <View
+              className="absolute flex-row items-center"
+              style={{
+                top: spacing.sm,
+                right: spacing.sm,
+                backgroundColor: Colors.gradient.end,
+                paddingHorizontal: spacing.s,
+                paddingVertical: spacing.xs,
+                borderRadius: radius.s,
+                gap: spacing.xs,
+              }}
+            >
               <CalendarDays size={14} color={Colors.white} />
-              <Text style={styles.sessionsBadgeText}>
+              <Text className="text-xs font-bold text-white">
                 {event.sessions && event.sessions.length > 0
                   ? `${event.sessions.length} ${t('events.sessions')}`
                   : t('events.series')}
@@ -159,90 +203,142 @@ function EventCardComponent({
         </View>
 
         {/* Event Content */}
-        <View style={styles.eventContent}>
+        <View style={{ padding: spacing.m }}>
           {/* Category Tag */}
           {event.event_category_id && (
-            <View style={[styles.categoryTag, { backgroundColor: getCategoryColor(event.event_category_id) + '20' }]}>
-              <View style={[styles.categoryDot, { backgroundColor: getCategoryColor(event.event_category_id) }]} />
-              <Text style={[styles.categoryText, { color: getCategoryColor(event.event_category_id) }]}>
+            <View
+              className="flex-row items-center self-start"
+              style={{
+                backgroundColor: getCategoryColor(event.event_category_id) + '20',
+                paddingHorizontal: spacing.s,
+                paddingVertical: spacing.xs,
+                borderRadius: radius.s,
+                marginBottom: spacing.s,
+                gap: spacing.xs,
+              }}
+            >
+              <View
+                className="w-1.5 h-1.5 rounded-full"
+                style={{ backgroundColor: getCategoryColor(event.event_category_id) }}
+              />
+              <Text
+                className="text-[11px] font-bold uppercase tracking-wide"
+                style={{ color: getCategoryColor(event.event_category_id) }}
+              >
                 {categories.find((c) => c.id === event.event_category_id)?.name || ''}
               </Text>
             </View>
           )}
 
           {/* Title */}
-          <Text style={styles.eventTitle} numberOfLines={2}>{event.name}</Text>
+          <Text
+            className="text-lg font-bold text-neutral-900 leading-6"
+            numberOfLines={2}
+            style={{ marginBottom: spacing.sm }}
+          >
+            {event.name}
+          </Text>
 
           {/* Meta Info */}
-          <View style={styles.metaRow}>
+          <View style={{ gap: spacing.s, marginBottom: spacing.s }}>
             {event.event_date && (
-              <View style={styles.metaItem}>
+              <View className="flex-row items-center" style={{ gap: spacing.s }}>
                 <Clock size={14} color={Colors.neutral[500]} />
-                <Text style={styles.metaText}>
+                <Text className="text-[13px] text-neutral-600">
                   {formatTimeShort(event.event_date)}
                   {event.event_end_date && ` - ${formatTimeShort(event.event_end_date)}`}
                 </Text>
               </View>
             )}
             {event.location && (
-              <View style={styles.metaItem}>
+              <View className="flex-row items-center flex-1" style={{ gap: spacing.s }}>
                 <MapPin size={14} color={Colors.neutral[500]} />
-                <Text style={styles.metaText} numberOfLines={1}>{event.location}</Text>
+                <Text className="text-[13px] text-neutral-600 flex-1" numberOfLines={1}>
+                  {event.location}
+                </Text>
               </View>
             )}
           </View>
 
           {/* Attendees */}
           {event.max_attendees && (
-            <View style={styles.attendeesRow}>
+            <View
+              className="flex-row items-center"
+              style={{ gap: spacing.s, marginBottom: spacing.sm }}
+            >
               <Users size={14} color={Colors.accent.primary} />
-              <Text style={styles.attendeesText}>
+              <Text className="text-[13px] font-semibold" style={{ color: Colors.accent.dark }}>
                 {event.attendee_count || 0} / {event.max_attendees} {t('events.attendees')}
               </Text>
             </View>
           )}
 
           {/* Actions */}
-          <View style={styles.actionsRow}>
+          <View
+            className="flex-row items-center border-t border-neutral-100"
+            style={{ gap: spacing.s, paddingTop: spacing.sm }}
+          >
             {showRSVPButton && (
               <Pressable
                 onPress={() => onRSVP(event.id)}
-                style={[styles.rsvpBtn, isRSVPPending && styles.btnDisabled]}
+                className={`flex-1 flex-row items-center justify-center ${isRSVPPending ? 'opacity-50' : ''}`}
+                style={{
+                  backgroundColor: Colors.gradient.end,
+                  paddingVertical: spacing.sm,
+                  borderRadius: radius.m,
+                  gap: spacing.s,
+                }}
                 disabled={isRSVPPending || !event.can_rsvp}
               >
                 <Check size={16} color={Colors.white} />
-                <Text style={styles.rsvpBtnText}>{t('events.rsvp')}</Text>
+                <Text className="text-sm font-bold text-white">{t('events.rsvp')}</Text>
               </Pressable>
             )}
 
             {showNoRSVPNeeded && (
-              <View style={styles.noRsvpBtn}>
+              <View
+                className="flex-1 flex-row items-center justify-center bg-neutral-100"
+                style={{ paddingVertical: spacing.sm, borderRadius: radius.m, gap: spacing.s }}
+              >
                 <Calendar size={16} color={Colors.neutral[400]} />
-                <Text style={styles.noRsvpBtnText}>{t('events.noRsvpNeeded')}</Text>
+                <Text className="text-sm font-semibold text-neutral-400">
+                  {t('events.noRsvpNeeded')}
+                </Text>
               </View>
             )}
 
             {showCancelButton && (
               <Pressable
                 onPress={() => onCancelRSVP(event.id)}
-                style={[styles.cancelBtn, isCancelPending && styles.btnDisabled]}
+                className={`flex-1 flex-row items-center justify-center bg-neutral-50 border-[1.5px] ${isCancelPending ? 'opacity-50' : ''}`}
+                style={{
+                  borderColor: Colors.error,
+                  paddingVertical: spacing.sm,
+                  borderRadius: radius.m,
+                  gap: spacing.s,
+                }}
                 disabled={isCancelPending}
               >
                 <X size={16} color={Colors.error} />
-                <Text style={styles.cancelBtnText}>{t('events.cancelRSVP')}</Text>
+                <Text className="text-sm font-semibold" style={{ color: Colors.error }}>
+                  {t('events.cancelRSVP')}
+                </Text>
               </Pressable>
             )}
 
             {activeTab === 'attended' && ratingData && (
               ratingData.rated ? (
-                <View style={styles.ratingRow}>
-                  <View style={styles.ratingDisplay}>
+                <View className="flex-1 flex-row items-center justify-between">
+                  <View className="flex-row items-center" style={{ gap: spacing.xs }}>
                     <Star size={14} color={Colors.accent.primary} fill={Colors.accent.primary} />
-                    <Text style={styles.ratingValue}>{ratingData.rating}/10</Text>
+                    <Text className="text-sm font-bold text-neutral-800">
+                      {ratingData.rating}/10
+                    </Text>
                   </View>
                   <Pressable
                     onPress={() => onOpenRating(event, ratingData.rating, ratingData.review)}
-                    style={styles.editRatingBtn}
+                    className="w-9 h-9 items-center justify-center bg-neutral-100"
+                    style={{ borderRadius: radius.s }}
                   >
                     <Edit3 size={14} color={Colors.neutral[600]} />
                   </Pressable>
@@ -250,17 +346,24 @@ function EventCardComponent({
               ) : (
                 <Pressable
                   onPress={() => onOpenRating(event)}
-                  style={styles.rateBtn}
+                  className="flex-1 flex-row items-center justify-center"
+                  style={{
+                    backgroundColor: Colors.accent.primary,
+                    paddingVertical: spacing.sm,
+                    borderRadius: radius.m,
+                    gap: spacing.s,
+                  }}
                 >
                   <Star size={16} color={Colors.white} />
-                  <Text style={styles.rateBtnText}>{t('events.rateEvent')}</Text>
+                  <Text className="text-sm font-bold text-white">{t('events.rateEvent')}</Text>
                 </Pressable>
               )
             )}
 
             <Pressable
               onPress={() => onShare(event)}
-              style={styles.shareBtn}
+              className="w-11 h-11 items-center justify-center bg-neutral-100"
+              style={{ borderRadius: radius.m }}
             >
               <Share2 size={18} color={Colors.gradient.end} />
             </Pressable>
@@ -272,236 +375,5 @@ function EventCardComponent({
 }
 
 export const EventCard = memo(EventCardComponent);
-
-const styles = StyleSheet.create({
-  eventImageWrap: {
-    height: 160,
-    position: 'relative',
-    overflow: 'hidden',
-    borderTopLeftRadius: radius.card,
-    borderTopRightRadius: radius.card,
-  },
-  eventImage: {
-    width: '100%',
-    height: '100%',
-  },
-  dateBadge: {
-    position: 'absolute',
-    top: spacing.sm,
-    left: spacing.sm,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.white,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.s,
-    borderRadius: radius.s,
-    gap: spacing.xs,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  dateBadgeText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: Colors.gradient.start,
-  },
-  attendedBadge: {
-    position: 'absolute',
-    bottom: spacing.sm,
-    left: spacing.sm,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.success,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: radius.s,
-    gap: spacing.xs,
-  },
-  attendedBadgeText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: Colors.white,
-  },
-  sessionsBadge: {
-    position: 'absolute',
-    top: spacing.sm,
-    right: spacing.sm,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.gradient.end,
-    paddingHorizontal: spacing.s,
-    paddingVertical: spacing.xs,
-    borderRadius: radius.s,
-    gap: spacing.xs,
-  },
-  sessionsBadgeText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: Colors.white,
-  },
-  eventContent: {
-    padding: spacing.m,
-  },
-  categoryTag: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    paddingHorizontal: spacing.s,
-    paddingVertical: spacing.xs,
-    borderRadius: radius.s,
-    marginBottom: spacing.s,
-    gap: spacing.xs,
-  },
-  categoryDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-  },
-  categoryText: {
-    fontSize: 11,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  eventTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: Colors.neutral[900],
-    marginBottom: spacing.sm,
-    lineHeight: 24,
-  },
-  metaRow: {
-    gap: spacing.s,
-    marginBottom: spacing.s,
-  },
-  metaItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.s,
-  },
-  metaText: {
-    fontSize: 13,
-    color: Colors.neutral[600],
-    flex: 1,
-  },
-  attendeesRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.s,
-    marginBottom: spacing.sm,
-  },
-  attendeesText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: Colors.accent.dark,
-  },
-  actionsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.s,
-    paddingTop: spacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: Colors.neutral[100],
-  },
-  rsvpBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: Colors.gradient.end,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.m,
-    gap: spacing.s,
-  },
-  rsvpBtnText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: Colors.white,
-  },
-  noRsvpBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: Colors.neutral[100],
-    paddingVertical: spacing.sm,
-    borderRadius: radius.m,
-    gap: spacing.s,
-  },
-  noRsvpBtnText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: Colors.neutral[400],
-  },
-  cancelBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: Colors.neutral[50],
-    paddingVertical: spacing.sm,
-    borderRadius: radius.m,
-    borderWidth: 1.5,
-    borderColor: Colors.error,
-    gap: spacing.s,
-  },
-  cancelBtnText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: Colors.error,
-  },
-  rateBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: Colors.accent.primary,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.m,
-    gap: spacing.s,
-  },
-  rateBtnText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: Colors.white,
-  },
-  ratingRow: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  ratingDisplay: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-  },
-  ratingValue: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: Colors.neutral[800],
-  },
-  editRatingBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: radius.s,
-    backgroundColor: Colors.neutral[100],
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  shareBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: radius.m,
-    backgroundColor: Colors.neutral[100],
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  btnDisabled: {
-    opacity: 0.5,
-  },
-});
 
 export default EventCard;

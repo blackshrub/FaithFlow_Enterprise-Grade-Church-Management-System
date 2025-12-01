@@ -2,14 +2,17 @@
  * GiveStepIndicator - Step Progress Indicator
  *
  * Memoized step indicator showing progress through the giving flow.
+ *
+ * Styling: NativeWind-first with inline style for dynamic colors
  */
 
 import React, { memo, useMemo } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View } from 'react-native';
 import { Check } from 'lucide-react-native';
 
+import { Text } from '@/components/ui/text';
 import { MemoIcon } from '@/components/ui/MemoIcon';
-import { spacing, radius } from '@/constants/spacing';
+import { spacing } from '@/constants/spacing';
 import type { GiveStep } from '@/stores/ui/giveUI';
 
 // =============================================================================
@@ -66,112 +69,62 @@ export const GiveStepIndicator = memo(function GiveStepIndicator({
   );
 
   return (
-    <View style={styles.container}>
+    <View
+      className="flex-row items-center justify-center bg-white border-b"
+      style={{
+        paddingVertical: spacing.m,
+        paddingHorizontal: spacing.ml,
+        borderBottomColor: Colors.neutral[200],
+      }}
+    >
       {STEPS.map((s, index) => (
         <React.Fragment key={s}>
-          <View style={styles.stepItem}>
+          <View className="items-center">
             <View
-              style={[
-                styles.stepDot,
-                index <= currentIndex && styles.stepDotActive,
-                index < currentIndex && styles.stepDotComplete,
-              ]}
+              className="w-7 h-7 rounded-full items-center justify-center mb-1"
+              style={{
+                backgroundColor:
+                  index < currentIndex
+                    ? Colors.success
+                    : index <= currentIndex
+                      ? Colors.gradient.end
+                      : Colors.neutral[200],
+              }}
             >
               {index < currentIndex ? (
                 <MemoIcon icon={Check} size={12} color={Colors.white} strokeWidth={3} />
               ) : (
                 <Text
-                  style={[
-                    styles.stepNumber,
-                    index <= currentIndex && styles.stepNumberActive,
-                  ]}
+                  className="text-xs font-bold"
+                  style={{
+                    color: index <= currentIndex ? Colors.white : Colors.neutral[500],
+                  }}
                 >
                   {index + 1}
                 </Text>
               )}
             </View>
             <Text
-              style={[
-                styles.stepLabel,
-                index <= currentIndex && styles.stepLabelActive,
-              ]}
+              className="text-[11px] font-medium"
+              style={{
+                color: index <= currentIndex ? Colors.neutral[700] : Colors.neutral[400],
+              }}
             >
               {stepLabels[index]}
             </Text>
           </View>
           {index < STEPS.length - 1 && (
             <View
-              style={[
-                styles.stepLine,
-                index < currentIndex && styles.stepLineActive,
-              ]}
+              className="w-10 h-0.5 mx-2 mb-[18px]"
+              style={{
+                backgroundColor: index < currentIndex ? Colors.success : Colors.neutral[200],
+              }}
             />
           )}
         </React.Fragment>
       ))}
     </View>
   );
-});
-
-// =============================================================================
-// STYLES
-// =============================================================================
-
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: spacing.m,
-    paddingHorizontal: spacing.ml,
-    backgroundColor: Colors.white,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.neutral[200],
-  },
-  stepItem: {
-    alignItems: 'center',
-  },
-  stepDot: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: Colors.neutral[200],
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 4,
-  },
-  stepDotActive: {
-    backgroundColor: Colors.gradient.end,
-  },
-  stepDotComplete: {
-    backgroundColor: Colors.success,
-  },
-  stepNumber: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: Colors.neutral[500],
-  },
-  stepNumberActive: {
-    color: Colors.white,
-  },
-  stepLabel: {
-    fontSize: 11,
-    fontWeight: '500',
-    color: Colors.neutral[400],
-  },
-  stepLabelActive: {
-    color: Colors.neutral[700],
-  },
-  stepLine: {
-    width: 40,
-    height: 2,
-    backgroundColor: Colors.neutral[200],
-    marginHorizontal: 8,
-    marginBottom: 18,
-  },
-  stepLineActive: {
-    backgroundColor: Colors.success,
-  },
 });
 
 export default GiveStepIndicator;

@@ -23,24 +23,41 @@ import type {
 } from '@/types/explore';
 
 // ============================================================================
-// HELPER: Create Bible Reference
+// HELPER: Create Bible Reference (with bilingual text support)
 // ============================================================================
 
+/**
+ * Create a bilingual Bible reference
+ * @param book - Book name in English (will be used for reference formatting)
+ * @param chapter - Chapter number
+ * @param verseStart - Starting verse number
+ * @param verseEnd - Optional ending verse number
+ * @param textEN - English verse text (NIV or other English translation)
+ * @param textID - Indonesian verse text (TB - Terjemahan Baru)
+ */
 function createBibleRef(
   book: string,
   chapter: number,
   verseStart: number,
   verseEnd?: number,
-  translation: string = 'NIV',
-  text?: string
-): BibleReference & { text?: string } {
+  textEN?: string,
+  textID?: string
+): BibleReference & { text?: string | MultilingualText } {
+  // Create bilingual text if both translations provided
+  const text: string | MultilingualText | undefined =
+    textEN && textID
+      ? { en: textEN, id: textID }
+      : textEN
+      ? textEN
+      : undefined;
+
   return {
     book,
     chapter,
     verse_start: verseStart,
     verse_end: verseEnd,
-    translation,
-    ...(text && { text }),
+    translation: 'NIV', // Default to NIV, formatBibleReference will handle per-language translation names
+    ...(text !== undefined && { text }),
   };
 }
 
@@ -92,10 +109,22 @@ Jangan biarkan ketakutan menenggelamkan iman. Tuhan yang sama yang menenangkan l
       en: 'Jesus brings peace to life\'s storms, not just outside but inside our hearts.',
       id: 'Yesus membawa damai dalam badai kehidupan, bukan hanya di luar tetapi di dalam hati kita.',
     },
-    main_verse: createBibleRef('Mark', 4, 39, undefined, 'NIV', 'He got up, rebuked the wind and said to the waves, "Quiet! Be still!" Then the wind died down and it was completely calm.'),
+    main_verse: createBibleRef(
+      'Mark', 4, 39, undefined,
+      'He got up, rebuked the wind and said to the waves, "Quiet! Be still!" Then the wind died down and it was completely calm.',
+      'Lalu Ia bangun, menghardik angin itu dan berkata kepada danau itu: "Diam! Tenanglah!" Lalu angin itu reda dan danau itu menjadi teduh sekali.'
+    ),
     additional_verses: [
-      createBibleRef('Isaiah', 41, 10, undefined, 'NIV', 'So do not fear, for I am with you; do not be dismayed, for I am your God.'),
-      createBibleRef('Philippians', 4, 6, 7, 'NIV', 'Do not be anxious about anything, but in every situation, by prayer and petition, with thanksgiving, present your requests to God.'),
+      createBibleRef(
+        'Isaiah', 41, 10, undefined,
+        'So do not fear, for I am with you; do not be dismayed, for I am your God.',
+        'Janganlah takut, sebab Aku menyertai engkau, janganlah bimbang, sebab Aku ini Allahmu.'
+      ),
+      createBibleRef(
+        'Philippians', 4, 6, 7,
+        'Do not be anxious about anything, but in every situation, by prayer and petition, with thanksgiving, present your requests to God.',
+        'Janganlah hendaknya kamu kuatir tentang apapun juga, tetapi nyatakanlah dalam segala hal keinginanmu kepada Allah dalam doa dan permohonan dengan ucapan syukur.'
+      ),
     ],
     reading_time_minutes: 4,
     tags: ['peace', 'faith', 'trust', 'storms'],
@@ -159,10 +188,22 @@ Jangan menyerah. Terus berdoa. Terus mencari. Terus mengetuk. Kegigihan setia ya
       en: 'Consistency in prayer transforms us and builds a legacy of faith.',
       id: 'Konsistensi dalam doa mengubah kita dan membangun warisan iman.',
     },
-    main_verse: createBibleRef('Luke', 18, 1, undefined, 'NIV', 'Then Jesus told his disciples a parable to show them that they should always pray and not give up.'),
+    main_verse: createBibleRef(
+      'Luke', 18, 1, undefined,
+      'Then Jesus told his disciples a parable to show them that they should always pray and not give up.',
+      'Yesus mengatakan suatu perumpamaan kepada mereka untuk menegaskan bahwa mereka harus selalu berdoa dengan tidak jemu-jemu.'
+    ),
     additional_verses: [
-      createBibleRef('Daniel', 6, 10, undefined, 'NIV', 'Three times a day he got down on his knees and prayed, giving thanks to his God.'),
-      createBibleRef('1 Thessalonians', 5, 17, undefined, 'NIV', 'Pray continually.'),
+      createBibleRef(
+        'Daniel', 6, 10, undefined,
+        'Three times a day he got down on his knees and prayed, giving thanks to his God.',
+        'Tiga kali sehari ia berlutut, berdoa serta memuji Allahnya, seperti yang biasa dilakukannya.'
+      ),
+      createBibleRef(
+        '1 Thessalonians', 5, 17, undefined,
+        'Pray continually.',
+        'Tetaplah berdoa.'
+      ),
     ],
     reading_time_minutes: 5,
     tags: ['prayer', 'persistence', 'faith', 'spiritual discipline'],

@@ -12,7 +12,6 @@ import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react'
 import {
   View,
   Pressable,
-  StyleSheet,
   Linking,
   Platform,
   ActivityIndicator,
@@ -287,34 +286,35 @@ export function LocationSharer({
       enablePanDownToClose
       onClose={onClose}
       backdropComponent={renderBackdrop}
-      backgroundStyle={styles.sheetBackground}
-      handleIndicatorStyle={styles.handleIndicator}
+      backgroundStyle={{ backgroundColor: '#FFFFFF', borderTopLeftRadius: 20, borderTopRightRadius: 20 }}
+      handleIndicatorStyle={{ backgroundColor: colors.gray[300], width: 40 }}
     >
-      <View style={styles.container}>
+      <View className="flex-1 px-5 pt-2">
         {/* Header */}
-        <Text style={styles.title}>Share location</Text>
+        <Text className="text-xl font-semibold mb-4" style={{ color: colors.gray[900] }}>Share location</Text>
 
         {/* Permission denied */}
         {permissionStatus === 'denied' && (
-          <View style={styles.permissionDenied}>
+          <View className="flex-1 items-center justify-center py-10">
             <Icon as={MapPin} size="xl" style={{ color: colors.gray[400] }} />
-            <Text style={styles.permissionText}>
+            <Text className="text-sm text-center mt-3 mb-4" style={{ color: colors.gray[600] }}>
               Location permission is required to share your location
             </Text>
             <Pressable
-              style={styles.settingsButton}
+              className="px-5 py-2.5"
+              style={{ backgroundColor: '#128C7E', borderRadius: borderRadius.lg }}
               onPress={() => Linking.openSettings()}
             >
-              <Text style={styles.settingsButtonText}>Open Settings</Text>
+              <Text className="text-sm font-semibold text-white">Open Settings</Text>
             </Pressable>
           </View>
         )}
 
         {/* Loading */}
         {loading && permissionStatus !== 'denied' && (
-          <View style={styles.loadingContainer}>
+          <View className="flex-1 items-center justify-center py-10">
             <ActivityIndicator size="large" color="#128C7E" />
-            <Text style={styles.loadingText}>Getting your location...</Text>
+            <Text className="text-sm mt-3" style={{ color: colors.gray[500] }}>Getting your location...</Text>
           </View>
         )}
 
@@ -322,22 +322,25 @@ export function LocationSharer({
         {!loading && currentLocation && permissionStatus === 'granted' && (
           <>
             {/* Current location preview */}
-            <View style={styles.locationPreview}>
+            <View className="p-3 mb-4" style={{ backgroundColor: colors.gray[50], borderRadius: borderRadius.lg }}>
               <HStack space="md" className="items-start">
-                <View style={styles.locationIcon}>
+                <View
+                  className="items-center justify-center"
+                  style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: '#E8F5E9' }}
+                >
                   <Icon as={MapPin} size="lg" style={{ color: '#128C7E' }} />
                 </View>
                 <VStack className="flex-1">
-                  <Text style={styles.locationTitle}>Your current location</Text>
-                  <Text style={styles.locationAddress} numberOfLines={2}>
+                  <Text className="text-sm font-semibold" style={{ color: colors.gray[900] }}>Your current location</Text>
+                  <Text className="text-[13px] mt-0.5" style={{ color: colors.gray[600] }} numberOfLines={2}>
                     {currentLocation.address || 'Address unavailable'}
                   </Text>
-                  <Text style={styles.locationCoords}>
+                  <Text className="text-[11px] mt-1 font-mono" style={{ color: colors.gray[400] }}>
                     {currentLocation.latitude.toFixed(6)},{' '}
                     {currentLocation.longitude.toFixed(6)}
                   </Text>
                 </VStack>
-                <Pressable onPress={handleRefreshLocation} style={styles.refreshButton}>
+                <Pressable onPress={handleRefreshLocation} className="p-2">
                   <Icon as={RefreshCw} size="sm" style={{ color: colors.gray[500] }} />
                 </Pressable>
               </HStack>
@@ -345,16 +348,17 @@ export function LocationSharer({
 
             {/* Share current location button */}
             <Pressable
-              style={styles.shareButton}
+              className="flex-row items-center justify-center py-3.5 mb-5"
+              style={{ backgroundColor: '#128C7E', borderRadius: borderRadius.lg }}
               onPress={handleShareCurrentLocation}
             >
               <Icon as={Navigation} size="md" style={{ color: '#FFFFFF' }} />
-              <Text style={styles.shareButtonText}>Send your current location</Text>
+              <Text className="text-base font-semibold text-white ml-2">Send your current location</Text>
             </Pressable>
 
             {/* Live location options */}
-            <Text style={styles.sectionTitle}>Share live location</Text>
-            <Text style={styles.sectionDescription}>
+            <Text className="text-base font-semibold" style={{ color: colors.gray[900] }}>Share live location</Text>
+            <Text className="text-[13px] mt-1" style={{ color: colors.gray[500] }}>
               Members will see your location update in real-time
             </Text>
 
@@ -362,29 +366,25 @@ export function LocationSharer({
               {LIVE_DURATION_OPTIONS.map((option) => (
                 <Pressable
                   key={option.value}
-                  style={[
-                    styles.durationButton,
-                    selectedLiveDuration === option.value &&
-                      styles.durationButtonSelected,
-                  ]}
+                  className="flex-1 flex-row items-center justify-center py-3"
+                  style={{
+                    backgroundColor: selectedLiveDuration === option.value ? '#128C7E' : '#E8F5E9',
+                    borderRadius: borderRadius.lg,
+                  }}
                   onPress={() => handleShareLiveLocation(option.value)}
                 >
                   <Icon
                     as={Clock}
                     size="sm"
                     style={{
-                      color:
-                        selectedLiveDuration === option.value
-                          ? '#FFFFFF'
-                          : '#128C7E',
+                      color: selectedLiveDuration === option.value ? '#FFFFFF' : '#128C7E',
                     }}
                   />
                   <Text
-                    style={[
-                      styles.durationButtonText,
-                      selectedLiveDuration === option.value &&
-                        styles.durationButtonTextSelected,
-                    ]}
+                    className="text-[13px] font-medium ml-1"
+                    style={{
+                      color: selectedLiveDuration === option.value ? '#FFFFFF' : '#128C7E',
+                    }}
                   >
                     {option.label}
                   </Text>
@@ -436,28 +436,28 @@ export function LocationPreview({
 
   return (
     <Pressable onPress={handlePress}>
-      <View style={[styles.previewContainer, { backgroundColor }]}>
+      <View className="my-1 overflow-hidden" style={{ backgroundColor, borderRadius: borderRadius.lg }}>
         {/* Map placeholder */}
-        <View style={styles.mapPlaceholder}>
+        <View className="items-center justify-center relative" style={{ height: 120, backgroundColor: '#E8F5E9' }}>
           <Icon as={MapPin} size="xl" style={{ color: '#128C7E' }} />
           {isLive && location.isActive && (
-            <View style={styles.liveBadge}>
-              <Text style={styles.liveBadgeText}>LIVE</Text>
+            <View className="absolute top-2 right-2 px-2 py-1 rounded" style={{ backgroundColor: '#EF4444' }}>
+              <Text className="text-[10px] font-bold text-white">LIVE</Text>
             </View>
           )}
         </View>
 
         {/* Location info */}
-        <View style={styles.previewContent}>
+        <View className="p-3">
           <HStack space="xs" className="items-center">
             <Icon as={MapPin} size="sm" style={{ color: '#128C7E' }} />
-            <Text style={styles.previewTitle}>
+            <Text className="text-sm font-semibold" style={{ color: colors.gray[900] }}>
               {isLive ? 'Live location' : 'Location'}
             </Text>
           </HStack>
 
           {location.address && (
-            <Text style={styles.previewAddress} numberOfLines={1}>
+            <Text className="text-[13px] mt-0.5" style={{ color: colors.gray[600] }} numberOfLines={1}>
               {location.address}
             </Text>
           )}
@@ -465,14 +465,14 @@ export function LocationPreview({
           {isLive && location.isActive && (
             <HStack space="xs" className="items-center mt-1">
               <Icon as={Clock} size="xs" style={{ color: colors.gray[500] }} />
-              <Text style={styles.previewRemaining}>{liveRemaining}</Text>
+              <Text className="text-xs" style={{ color: colors.gray[500] }}>{liveRemaining}</Text>
             </HStack>
           )}
 
           <HStack space="sm" className="items-center mt-2">
-            <Pressable onPress={handlePress} style={styles.openMapsButton}>
+            <Pressable onPress={handlePress} className="flex-row items-center">
               <Icon as={ExternalLink} size="xs" style={{ color: '#0066CC' }} />
-              <Text style={styles.openMapsText}>Open in Maps</Text>
+              <Text className="text-xs ml-1" style={{ color: '#0066CC' }}>Open in Maps</Text>
             </Pressable>
 
             {/* Stop Live Location button - only show for own active live locations */}
@@ -482,10 +482,11 @@ export function LocationPreview({
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                   onStopLiveLocation();
                 }}
-                style={styles.stopButton}
+                className="flex-row items-center px-2.5 py-1"
+                style={{ backgroundColor: '#FEE2E2', borderRadius: borderRadius.md }}
               >
                 <Icon as={StopCircle} size="xs" style={{ color: '#DC2626' }} />
-                <Text style={styles.stopButtonText}>Stop</Text>
+                <Text className="text-xs font-semibold ml-1" style={{ color: '#DC2626' }}>Stop</Text>
               </Pressable>
             )}
           </HStack>
@@ -494,227 +495,5 @@ export function LocationPreview({
     </Pressable>
   );
 }
-
-// =============================================================================
-// STYLES
-// =============================================================================
-
-const styles = StyleSheet.create({
-  // Sheet styles
-  sheetBackground: {
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-  },
-  handleIndicator: {
-    backgroundColor: colors.gray[300],
-    width: 40,
-  },
-  container: {
-    flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 8,
-  },
-
-  // Title
-  title: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: colors.gray[900],
-    marginBottom: 16,
-  },
-
-  // Loading
-  loadingContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 40,
-  },
-  loadingText: {
-    fontSize: 14,
-    color: colors.gray[500],
-    marginTop: 12,
-  },
-
-  // Permission denied
-  permissionDenied: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 40,
-  },
-  permissionText: {
-    fontSize: 14,
-    color: colors.gray[600],
-    textAlign: 'center',
-    marginTop: 12,
-    marginBottom: 16,
-  },
-  settingsButton: {
-    backgroundColor: '#128C7E',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: borderRadius.lg,
-  },
-  settingsButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#FFFFFF',
-  },
-
-  // Location preview
-  locationPreview: {
-    backgroundColor: colors.gray[50],
-    borderRadius: borderRadius.lg,
-    padding: 12,
-    marginBottom: 16,
-  },
-  locationIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#E8F5E9',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  locationTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.gray[900],
-  },
-  locationAddress: {
-    fontSize: 13,
-    color: colors.gray[600],
-    marginTop: 2,
-  },
-  locationCoords: {
-    fontSize: 11,
-    color: colors.gray[400],
-    marginTop: 4,
-    fontFamily: 'monospace',
-  },
-  refreshButton: {
-    padding: 8,
-  },
-
-  // Share button
-  shareButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#128C7E',
-    borderRadius: borderRadius.lg,
-    paddingVertical: 14,
-    marginBottom: 20,
-  },
-  shareButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#FFFFFF',
-    marginLeft: 8,
-  },
-
-  // Live location section
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.gray[900],
-  },
-  sectionDescription: {
-    fontSize: 13,
-    color: colors.gray[500],
-    marginTop: 4,
-  },
-  durationButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#E8F5E9',
-    borderRadius: borderRadius.lg,
-    paddingVertical: 12,
-  },
-  durationButtonSelected: {
-    backgroundColor: '#128C7E',
-  },
-  durationButtonText: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: '#128C7E',
-    marginLeft: 4,
-  },
-  durationButtonTextSelected: {
-    color: '#FFFFFF',
-  },
-
-  // Message preview
-  previewContainer: {
-    borderRadius: borderRadius.lg,
-    overflow: 'hidden',
-    marginVertical: 4,
-  },
-  mapPlaceholder: {
-    height: 120,
-    backgroundColor: '#E8F5E9',
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'relative',
-  },
-  liveBadge: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    backgroundColor: '#EF4444',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
-  },
-  liveBadgeText: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: '#FFFFFF',
-  },
-  previewContent: {
-    padding: 12,
-  },
-  previewTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.gray[900],
-  },
-  previewAddress: {
-    fontSize: 13,
-    color: colors.gray[600],
-    marginTop: 2,
-  },
-  previewRemaining: {
-    fontSize: 12,
-    color: colors.gray[500],
-  },
-  openMapsText: {
-    fontSize: 12,
-    color: '#0066CC',
-    marginLeft: 4,
-  },
-  openMapsButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  stopButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FEE2E2',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: borderRadius.md,
-  },
-  stopButtonText: {
-    fontSize: 12,
-    color: '#DC2626',
-    fontWeight: '600',
-    marginLeft: 4,
-  },
-});
 
 export default LocationSharer;
