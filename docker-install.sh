@@ -210,6 +210,54 @@ generate_secret() {
     openssl rand -hex 32 2>/dev/null || cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 64 | head -n 1
 }
 
+# Resolve DNS to IP address with multiple fallback methods
+# Handles CNAME records and works without dig installed
+resolve_dns() {
+    local domain="$1"
+    local ip=""
+
+    # Method 1: Try dig (most reliable when available)
+    if command_exists dig; then
+        # Use +trace to follow CNAMEs, grep for A records, get last IP
+        ip=$(dig +short "$domain" 2>/dev/null | grep -E '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$' | tail -1)
+        if [ -n "$ip" ]; then
+            echo "$ip"
+            return 0
+        fi
+    fi
+
+    # Method 2: Try host command
+    if command_exists host; then
+        ip=$(host "$domain" 2>/dev/null | grep -E 'has address' | head -1 | awk '{print $NF}')
+        if [ -n "$ip" ]; then
+            echo "$ip"
+            return 0
+        fi
+    fi
+
+    # Method 3: Try nslookup
+    if command_exists nslookup; then
+        ip=$(nslookup "$domain" 2>/dev/null | grep -A1 'Name:' | grep 'Address:' | head -1 | awk '{print $2}')
+        if [ -n "$ip" ]; then
+            echo "$ip"
+            return 0
+        fi
+    fi
+
+    # Method 4: Try getent (uses system resolver)
+    if command_exists getent; then
+        ip=$(getent hosts "$domain" 2>/dev/null | awk '{print $1}' | head -1)
+        if [ -n "$ip" ]; then
+            echo "$ip"
+            return 0
+        fi
+    fi
+
+    # No resolution possible
+    echo ""
+    return 1
+}
+
 get_public_ip() {
     curl -s ifconfig.me 2>/dev/null || curl -s ipinfo.io/ip 2>/dev/null || curl -s icanhazip.com 2>/dev/null || echo ""
 }
@@ -659,7 +707,7 @@ configure_domain() {
     local dns_ok=true
 
     # Check main domain
-    local domain_ip=$(dig +short "$DOMAIN" 2>/dev/null | head -1)
+    local domain_ip=$(resolve_dns "$DOMAIN")
     if [ "$domain_ip" = "$SERVER_IP" ]; then
         print_success "$DOMAIN -> $SERVER_IP (correct)"
     else
@@ -668,7 +716,7 @@ configure_domain() {
     fi
 
     # Check API subdomain
-    local api_ip=$(dig +short "api.$DOMAIN" 2>/dev/null | head -1)
+    local api_ip=$(resolve_dns "api.$DOMAIN")
     if [ "$api_ip" = "$SERVER_IP" ]; then
         print_success "api.$DOMAIN -> $SERVER_IP (correct)"
     else
@@ -677,7 +725,7 @@ configure_domain() {
     fi
 
     # Check LiveKit subdomain
-    local livekit_ip=$(dig +short "livekit.$DOMAIN" 2>/dev/null | head -1)
+    local livekit_ip=$(resolve_dns "livekit.$DOMAIN")
     if [ "$livekit_ip" = "$SERVER_IP" ]; then
         print_success "livekit.$DOMAIN -> $SERVER_IP (correct)"
     else
@@ -686,7 +734,7 @@ configure_domain() {
     fi
 
     # Check Files subdomain (SeaweedFS)
-    local files_ip=$(dig +short "files.$DOMAIN" 2>/dev/null | head -1)
+    local files_ip=$(resolve_dns "files.$DOMAIN")
     if [ "$files_ip" = "$SERVER_IP" ]; then
         print_success "files.$DOMAIN -> $SERVER_IP (correct)"
     else
@@ -695,7 +743,7 @@ configure_domain() {
     fi
 
     # Check Traefik subdomain (optional admin dashboard)
-    local traefik_ip=$(dig +short "traefik.$DOMAIN" 2>/dev/null | head -1)
+    local traefik_ip=$(resolve_dns "traefik.$DOMAIN")
     if [ "$traefik_ip" = "$SERVER_IP" ]; then
         print_success "traefik.$DOMAIN -> $SERVER_IP (correct)"
     else
@@ -703,7 +751,7 @@ configure_domain() {
     fi
 
     # Check EMQX subdomain (optional admin dashboard)
-    local emqx_ip=$(dig +short "emqx.$DOMAIN" 2>/dev/null | head -1)
+    local emqx_ip=$(resolve_dns "emqx.$DOMAIN")
     if [ "$emqx_ip" = "$SERVER_IP" ]; then
         print_success "emqx.$DOMAIN -> $SERVER_IP (correct)"
     else
