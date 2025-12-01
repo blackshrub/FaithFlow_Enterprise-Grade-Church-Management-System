@@ -223,6 +223,99 @@ command_exists() {
     command -v "$1" >/dev/null 2>&1
 }
 
+# Check if a port is available (not in use)
+port_available() {
+    local port="$1"
+    # Use ss (modern) or netstat (legacy) to check port
+    if command_exists ss; then
+        ! ss -tuln 2>/dev/null | grep -qE ":${port}\s"
+    elif command_exists netstat; then
+        ! netstat -tuln 2>/dev/null | grep -qE ":${port}\s"
+    else
+        # Fallback: try to bind to the port
+        (echo >/dev/tcp/127.0.0.1/"$port") 2>/dev/null && return 1 || return 0
+    fi
+}
+
+# Get process using a specific port
+get_port_process() {
+    local port="$1"
+    if command_exists ss; then
+        ss -tulnp 2>/dev/null | grep ":${port}\s" | awk '{print $NF}' | head -1
+    elif command_exists netstat; then
+        netstat -tulnp 2>/dev/null | grep ":${port}\s" | awk '{print $NF}' | head -1
+    else
+        echo "unknown"
+    fi
+}
+
+# Check all required ports and report conflicts
+check_required_ports() {
+    local has_conflict=false
+    local conflicting_ports=()
+
+    print_info "Checking required ports..."
+
+    # Define all required ports with descriptions
+    declare -A PORTS=(
+        ["80"]="Nginx HTTP"
+        ["443"]="Nginx HTTPS"
+        ["$DEFAULT_BACKEND_PORT"]="Backend API"
+        ["27017"]="MongoDB"
+        ["$LIVEKIT_PORT"]="LiveKit API"
+        ["$LIVEKIT_RTC_PORT"]="LiveKit RTC"
+        ["$EMQX_MQTT_PORT"]="EMQX MQTT"
+        ["$EMQX_WS_PORT"]="EMQX WebSocket"
+        ["$COTURN_PORT"]="TURN Server"
+        ["$COTURN_TLS_PORT"]="TURN TLS"
+        ["$SEAWEED_MASTER_PORT"]="SeaweedFS Master"
+        ["$SEAWEED_VOLUME_PORT"]="SeaweedFS Volume"
+        ["$SEAWEED_FILER_PORT"]="SeaweedFS Filer"
+    )
+
+    for port in "${!PORTS[@]}"; do
+        local service="${PORTS[$port]}"
+        if ! port_available "$port"; then
+            local process=$(get_port_process "$port")
+            print_warn "Port $port ($service) is already in use by: $process"
+            has_conflict=true
+            conflicting_ports+=("$port")
+        else
+            print_detail "Port $port ($service): Available"
+        fi
+    done
+
+    if [ "$has_conflict" = true ]; then
+        echo ""
+        echo -e "${RED}  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+        echo -e "${RED}  PORT CONFLICTS DETECTED!${NC}"
+        echo -e "${RED}  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+        echo ""
+        echo -e "${YELLOW}  How to fix:${NC}"
+        echo -e "${WHITE}  1. Stop the conflicting services:${NC}"
+        for port in "${conflicting_ports[@]}"; do
+            local process=$(get_port_process "$port")
+            echo -e "${CYAN}     sudo fuser -k ${port}/tcp${NC}  # Kill process on port $port"
+        done
+        echo ""
+        echo -e "${WHITE}  2. Or modify the port configuration in this script${NC}"
+        echo -e "${WHITE}  3. Or use Docker deployment which isolates ports:${NC}"
+        echo -e "${CYAN}     sudo ./docker-install.sh${NC}"
+        echo ""
+
+        read -p "  Continue anyway? (may cause failures) [y/N]: " continue_choice
+        continue_choice=${continue_choice:-N}
+
+        if [[ ! "$continue_choice" =~ ^[Yy]$ ]]; then
+            print_error "Installation aborted due to port conflicts"
+            exit 1
+        fi
+        print_warn "Continuing with port conflicts - some services may fail"
+    else
+        print_success "All required ports are available"
+    fi
+}
+
 # Check if service is active
 service_active() {
     systemctl is-active --quiet "$1" 2>/dev/null
@@ -460,7 +553,7 @@ preflight_checks() {
     print_header "Pre-Flight System Checks"
 
     local checks_passed=0
-    local checks_total=6
+    local checks_total=7
 
     # Check 1: Root privileges
     print_info "Checking root privileges..."
@@ -533,6 +626,10 @@ preflight_checks() {
         print_error "No network connectivity"
         exit 1
     fi
+
+    # Check 7: Port availability
+    check_required_ports
+    ((checks_passed++))
 
     echo ""
     echo -e "${GREEN}  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"

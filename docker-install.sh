@@ -116,6 +116,84 @@ command_exists() {
     command -v "$1" >/dev/null 2>&1
 }
 
+# Check if a port is available (not in use)
+port_available() {
+    local port="$1"
+    if command_exists ss; then
+        ! ss -tuln 2>/dev/null | grep -qE ":${port}\s"
+    elif command_exists netstat; then
+        ! netstat -tuln 2>/dev/null | grep -qE ":${port}\s"
+    else
+        (echo >/dev/tcp/127.0.0.1/"$port") 2>/dev/null && return 1 || return 0
+    fi
+}
+
+# Get process using a specific port
+get_port_process() {
+    local port="$1"
+    if command_exists ss; then
+        ss -tulnp 2>/dev/null | grep ":${port}\s" | awk '{print $NF}' | head -1
+    elif command_exists netstat; then
+        netstat -tulnp 2>/dev/null | grep ":${port}\s" | awk '{print $NF}' | head -1
+    else
+        echo "unknown"
+    fi
+}
+
+# Check required ports for Docker deployment
+check_required_ports() {
+    local has_conflict=false
+    local conflicting_ports=()
+
+    print_info "Checking required ports..."
+
+    # Docker deployment uses fewer host ports (Traefik handles routing)
+    local -a PORTS=("80" "443" "3478" "5349" "7881")
+    local -a NAMES=("HTTP" "HTTPS" "TURN" "TURN-TLS" "LiveKit-RTC")
+
+    for i in "${!PORTS[@]}"; do
+        local port="${PORTS[$i]}"
+        local name="${NAMES[$i]}"
+        if ! port_available "$port"; then
+            local process=$(get_port_process "$port")
+            print_warn "Port $port ($name) is in use by: $process"
+            has_conflict=true
+            conflicting_ports+=("$port")
+        else
+            print_detail "Port $port ($name): Available"
+        fi
+    done
+
+    if [ "$has_conflict" = true ]; then
+        echo ""
+        echo -e "${RED}  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+        echo -e "${RED}  PORT CONFLICTS DETECTED!${NC}"
+        echo -e "${RED}  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+        echo ""
+        echo -e "${YELLOW}  How to fix:${NC}"
+        echo -e "${WHITE}  Stop the conflicting services:${NC}"
+        for port in "${conflicting_ports[@]}"; do
+            echo -e "${CYAN}     sudo fuser -k ${port}/tcp${NC}"
+        done
+        echo ""
+        echo -e "${WHITE}  Common conflicts:${NC}"
+        echo -e "${GRAY}    Port 80/443: Apache, Nginx, or another web server${NC}"
+        echo -e "${GRAY}    Port 3478: Another TURN server${NC}"
+        echo ""
+
+        read -p "  Continue anyway? (may cause failures) [y/N]: " continue_choice
+        continue_choice=${continue_choice:-N}
+
+        if [[ ! "$continue_choice" =~ ^[Yy]$ ]]; then
+            print_error "Installation aborted due to port conflicts"
+            exit 1
+        fi
+        print_warn "Continuing with port conflicts - some services may fail"
+    else
+        print_success "All required ports are available"
+    fi
+}
+
 generate_secret() {
     openssl rand -hex 32 2>/dev/null || cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 64 | head -n 1
 }
@@ -257,6 +335,9 @@ check_prerequisites() {
         exit 1
     fi
     print_success "All required files found"
+
+    # Check port availability
+    check_required_ports
 
     echo ""
     echo -e "${GREEN}  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
