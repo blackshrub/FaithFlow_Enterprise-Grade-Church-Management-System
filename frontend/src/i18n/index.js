@@ -34,6 +34,12 @@ i18n
     react: {
       useSuspense: false,
     },
+    detection: {
+      // Only check localStorage, don't auto-detect browser language
+      order: ['localStorage'],
+      lookupLocalStorage: 'i18nextLng',
+      caches: ['localStorage'],
+    },
   });
 
 // Store version to detect updates

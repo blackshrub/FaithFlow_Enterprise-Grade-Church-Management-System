@@ -11,8 +11,8 @@ import { Alert, AlertDescription } from '../../ui/alert';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '../../ui/dialog';
 import { Switch } from '../../ui/switch';
 import { ChevronRight, ChevronLeft, Plus, Trash2, Loader2 } from 'lucide-react';
-import axios from 'axios';
 import { toast } from 'sonner';
+import api from '../../../services/api';
 import DuplicatePhoneModal from '../DuplicatePhoneModal';
 
 const TARGET_FIELDS = [
@@ -53,28 +53,22 @@ export default function StepFieldMapping({ wizardData, updateWizardData, nextSte
     setIsValidating(true);
     
     try {
-      const API_URL = process.env.REACT_APP_BACKEND_URL || '';
-      const token = localStorage.getItem('access_token');  // FIXED: Use 'access_token' not 'token'
-      
       console.log('[DEBUG] Starting phone validation...');
-      console.log('[DEBUG] API_URL:', API_URL);
-      console.log('[DEBUG] Has token:', !!token);
       console.log('[DEBUG] Field mappings:', wizardData.fieldMappings);
-      
+
       const formData = new FormData();
       formData.append('file_content', wizardData.fileContent);
       formData.append('file_type', wizardData.fileType);
       formData.append('field_mappings', JSON.stringify(wizardData.fieldMappings));
       formData.append('default_values', JSON.stringify(wizardData.defaultValues || {}));
-      
+
       console.log('[DEBUG] Sending validation request...');
-      
-      const response = await axios.post(
-        `${API_URL}/api/import-export/validate-phone-duplicates`,
+
+      const response = await api.post(
+        '/import-export/validate-phone-duplicates',
         formData,
         {
           headers: {
-            'Authorization': `Bearer ${token}`,
             'Content-Type': 'multipart/form-data',
           },
         }
