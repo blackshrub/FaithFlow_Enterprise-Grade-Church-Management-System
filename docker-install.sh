@@ -802,11 +802,70 @@ build_and_start() {
     docker compose -f docker-compose.prod.yml pull >> "$LOG_FILE" 2>&1 || true
 
     print_info "Building custom images..."
-    echo -e "${GRAY}    Building backend (FastAPI)...${NC}"
-    docker compose -f docker-compose.prod.yml build backend >> "$LOG_FILE" 2>&1
 
-    echo -e "${GRAY}    Building frontend (React) - this takes longest...${NC}"
-    docker compose -f docker-compose.prod.yml build frontend >> "$LOG_FILE" 2>&1
+    # Build backend
+    echo -e "${GRAY}    Building backend (FastAPI)...${NC}"
+    if ! docker compose -f docker-compose.prod.yml build backend >> "$LOG_FILE" 2>&1; then
+        print_error "Backend build failed. Check log: $LOG_FILE"
+        echo -e "${YELLOW}  Last 20 lines of build log:${NC}"
+        tail -20 "$LOG_FILE"
+        exit 1
+    fi
+    print_success "Backend image built"
+
+    # Build frontend with progress indicator (can take 5-15 minutes on small VPS)
+    echo -e "${GRAY}    Building frontend (React)...${NC}"
+    echo -e "${YELLOW}    ⚠ This may take 5-15 minutes on first build. Please wait...${NC}"
+    echo ""
+
+    # Run build in background and show progress
+    docker compose -f docker-compose.prod.yml build frontend >> "$LOG_FILE" 2>&1 &
+    local build_pid=$!
+
+    local start_time=$(date +%s)
+    local spin_chars='|/-\\'
+    local i=0
+
+    # Wait for build with progress indicator (no timeout - let it complete)
+    while kill -0 "$build_pid" 2>/dev/null; do
+        local elapsed=$(($(date +%s) - start_time))
+        local mins=$((elapsed / 60))
+        local secs=$((elapsed % 60))
+        local spin="${spin_chars:i++%4:1}"
+        printf "\r    %s Building frontend... [%dm %02ds]   " "$spin" "$mins" "$secs"
+        sleep 0.5
+    done
+    printf "\r\033[K"
+
+    # Check if build succeeded
+    wait "$build_pid"
+    local build_status=$?
+
+    if [ $build_status -ne 0 ]; then
+        print_error "Frontend build failed after $(($(date +%s) - start_time)) seconds"
+        echo ""
+        echo -e "${YELLOW}  Last 30 lines of build log:${NC}"
+        echo -e "${GRAY}  ─────────────────────────────────────────────────────────────────${NC}"
+        tail -30 "$LOG_FILE" | while IFS= read -r line; do
+            if echo "$line" | grep -qiE "(error|failed|cannot)"; then
+                echo -e "${RED}    $line${NC}"
+            else
+                echo -e "${GRAY}    $line${NC}"
+            fi
+        done
+        echo -e "${GRAY}  ─────────────────────────────────────────────────────────────────${NC}"
+        echo ""
+        echo -e "${YELLOW}  Common causes:${NC}"
+        echo -e "${WHITE}    - Insufficient memory (need 2GB+ free for build)${NC}"
+        echo -e "${WHITE}    - Disk space full${NC}"
+        echo -e "${WHITE}    - Network issues downloading npm packages${NC}"
+        echo ""
+        echo -e "${CYAN}  Full log: cat $LOG_FILE${NC}"
+        exit 1
+    fi
+
+    local total_time=$(($(date +%s) - start_time))
+    print_success "Frontend image built (took $((total_time / 60))m $((total_time % 60))s)"
 
     print_success "All images built successfully"
 
