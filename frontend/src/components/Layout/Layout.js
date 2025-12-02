@@ -43,6 +43,7 @@ import { Button } from '../ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Label } from '../ui/label';
 import FaithFlowLogo from '../Branding/FaithFlowLogo';
+import { prefetchRoute } from '../../lib/prefetch';
 
 export default function Layout() {
   const { t, i18n } = useTranslation();
@@ -369,6 +370,8 @@ export default function Layout() {
                           setSidebarOpen(false);
                         }
                       }}
+                      onMouseEnter={() => !hasSubmenu && item.path && prefetchRoute(item.path)}
+                      onFocus={() => !hasSubmenu && item.path && prefetchRoute(item.path)}
                       className={`flex items-center justify-start ${sidebarCollapsed ? '' : 'space-x-3'} w-full p-3 rounded-lg transition-colors ${
                         isActive || isAnyChildActive
                           ? 'bg-blue-50 text-blue-600'
@@ -403,6 +406,8 @@ export default function Layout() {
                                   navigate(subItem.path);
                                   setSidebarOpen(false);
                                 }}
+                                onMouseEnter={() => prefetchRoute(subItem.path)}
+                                onFocus={() => prefetchRoute(subItem.path)}
                                 className={`flex items-center justify-start w-full p-2 pl-4 rounded-lg text-sm transition-colors ${
                                   isSubActive
                                     ? 'bg-blue-50 text-blue-600 font-medium'

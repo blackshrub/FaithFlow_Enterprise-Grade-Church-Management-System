@@ -1,0 +1,14 @@
+User-agent: *
+Allow: /
+
+# Disallow admin routes from indexing
+Disallow: /dashboard
+Disallow: /members
+Disallow: /settings
+Disallow: /accounting
+Disallow: /admin
+
+# Allow kiosk routes
+Allow: /kiosk
+
+Sitemap: /sitemap.xml
