@@ -62,6 +62,28 @@ class ChurchSettingsBase(BaseModel):
         description="Manual bank account list for offline giving (when online disabled)"
     )
 
+    # Explore Feature Configuration
+    explore_enabled: bool = Field(
+        default=False,
+        description="Enable Explore feature for members (devotions, quizzes, etc.)"
+    )
+    explore_features: dict = Field(
+        default_factory=lambda: {
+            "daily_devotion": True,
+            "verse_of_the_day": True,
+            "bible_figure_of_the_day": True,
+            "daily_quiz": True,
+            "bible_study": True,
+            "topical_verses": True,
+            "devotion_plans": True,
+        },
+        description="Toggle individual Explore content types"
+    )
+    explore_allow_church_content: bool = Field(
+        default=False,
+        description="Allow church to create custom Explore content"
+    )
+
 
 class ChurchSettingsCreate(ChurchSettingsBase):
     church_id: str
@@ -87,6 +109,12 @@ class ChurchSettingsUpdate(BaseModel):
     payment_provider: Optional[Literal['ipaymu', 'xendit', 'midtrans', 'stripe']] = None
     payment_provider_config: Optional[dict] = None
     payment_manual_bank_accounts: Optional[list] = None
+    # Kiosk settings (nested object with all kiosk configuration)
+    kiosk_settings: Optional[dict] = None
+    # Explore settings
+    explore_enabled: Optional[bool] = None
+    explore_features: Optional[dict] = None
+    explore_allow_church_content: Optional[bool] = None
 
 
 class ChurchSettings(ChurchSettingsBase):

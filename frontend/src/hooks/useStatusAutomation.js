@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { statusRulesAPI, statusConflictsAPI, statusHistoryAPI, settingsAPI } from '../services/api';
+import { statusRulesAPI, statusConflictsAPI, statusHistoryAPI } from '../services/api';
 import { queryKeys } from '../lib/react-query';
 import { toast } from 'sonner';
 import { useAuth } from '../context/AuthContext';
@@ -149,22 +149,3 @@ export const useMemberStatusHistory = (memberId) => {
   });
 };
 
-// ============= Reorder Member Statuses =============
-
-export const useReorderMemberStatuses = () => {
-  const queryClient = useQueryClient();
-  const { church } = useAuth();
-  
-  return useMutation({
-    mutationFn: (statusIds) => settingsAPI.reorderMemberStatuses(statusIds),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ 
-        queryKey: queryKeys.settings.memberStatuses(church?.id) 
-      });
-      toast.success('Status order updated successfully');
-    },
-    onError: (error) => {
-      toast.error(error.response?.data?.detail || 'Failed to reorder statuses');
-    },
-  });
-};

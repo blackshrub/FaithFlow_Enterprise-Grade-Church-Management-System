@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import api from '../services/api';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
@@ -18,8 +19,34 @@ import {
 } from '../components/ui/select';
 import { Separator } from '../components/ui/separator';
 import { toast } from 'sonner';
+import WebhooksTab from '../components/Settings/WebhooksTab';
+
+// Helper to detect masked API keys (e.g., "...xxxx")
+const isMaskedValue = (value) => {
+  if (!value || typeof value !== 'string') return false;
+  return value.startsWith('...');
+};
+
+// Helper to get display value for API key fields
+// Returns empty string for masked values so user can type a new key
+const getApiKeyDisplayValue = (value) => {
+  if (isMaskedValue(value)) return '';
+  return value || '';
+};
+
+// Helper to determine if API key should be sent in update
+// Only send if user entered a new value (not masked, not empty)
+const shouldSendApiKey = (formValue, originalValue) => {
+  // If form is empty and original was masked, user wants to keep existing key
+  if (!formValue && isMaskedValue(originalValue)) return false;
+  // If form has a value that's not the masked value, send it
+  if (formValue && !isMaskedValue(formValue)) return true;
+  // If form is empty and original wasn't set, send undefined
+  return false;
+};
 
 function SystemSettings() {
+  const { t } = useTranslation();
   const [showKeys, setShowKeys] = useState({});
   const queryClient = useQueryClient();
 
@@ -47,10 +74,10 @@ function SystemSettings() {
     },
   });
 
-  // Test AI connection
+  // Test AI connection (accepts api_key for testing before save)
   const testAIMutation = useMutation({
-    mutationFn: async () => {
-      const { data } = await api.post('/system/settings/test-ai-connection');
+    mutationFn: async ({ api_key, model } = {}) => {
+      const { data } = await api.post('/system/settings/test-ai-connection', { api_key, model });
       return data;
     },
     onSuccess: (data) => {
@@ -61,10 +88,10 @@ function SystemSettings() {
     },
   });
 
-  // Test Stability AI connection
+  // Test Stability AI connection (accepts api_key for testing before save)
   const testStabilityMutation = useMutation({
-    mutationFn: async () => {
-      const { data } = await api.post('/system/settings/test-stability-connection');
+    mutationFn: async ({ api_key } = {}) => {
+      const { data } = await api.post('/system/settings/test-stability-connection', { api_key });
       return data;
     },
     onSuccess: (data) => {
@@ -116,19 +143,57 @@ function SystemSettings() {
     },
   });
 
-  // Test Voice (OpenAI) connection
-  const testVoiceMutation = useMutation({
-    mutationFn: async ({ api_key }) => {
-      const { data } = await api.post('/system/settings/test-voice-connection', {
-        api_key,
-      });
+  // Test Voice connections (individual tests)
+  const testGoogleTtsMutation = useMutation({
+    mutationFn: async ({ api_key } = {}) => {
+      const { data } = await api.post('/system/settings/test-google-tts', { api_key });
       return data;
     },
     onSuccess: (data) => {
       toast.success(data.message);
     },
     onError: (error) => {
-      toast.error(error.response?.data?.detail || 'Voice API connection test failed');
+      toast.error(error.response?.data?.detail || 'Google TTS connection test failed');
+    },
+  });
+
+  const testGroqMutation = useMutation({
+    mutationFn: async ({ api_key } = {}) => {
+      const { data } = await api.post('/system/settings/test-groq', { api_key });
+      return data;
+    },
+    onSuccess: (data) => {
+      toast.success(data.message);
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.detail || 'Groq API connection test failed');
+    },
+  });
+
+  const testVoiceMutation = useMutation({
+    mutationFn: async ({ api_key } = {}) => {
+      const { data } = await api.post('/system/settings/test-voice-connection', { api_key });
+      return data;
+    },
+    onSuccess: (data) => {
+      toast.success(data.message);
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.detail || 'OpenAI Voice API connection test failed');
+    },
+  });
+
+  // Test iPaymu payment connection
+  const testPaymentMutation = useMutation({
+    mutationFn: async ({ va, api_key, env } = {}) => {
+      const { data } = await api.post('/system/settings/test-ipaymu', { va, api_key, env });
+      return data;
+    },
+    onSuccess: (data) => {
+      toast.success(data.message);
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.detail || 'iPaymu connection test failed');
     },
   });
 
@@ -180,21 +245,22 @@ function SystemSettings() {
   return (
     <div className="p-6">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold tracking-tight">System Settings</h1>
+        <h1 className="text-3xl font-bold tracking-tight">{t('integrations.title') || 'Integrations'}</h1>
         <p className="text-muted-foreground mt-1">
-          Manage application-wide configuration, API keys, and integrations
+          {t('integrations.subtitle') || 'Manage third-party integrations, API keys, and webhooks'}
         </p>
       </div>
 
       <Card>
         <Tabs defaultValue="faith-assistant">
           <CardHeader className="pb-0">
-            <TabsList className="grid w-full grid-cols-5">
-              <TabsTrigger value="faith-assistant">Faith Assistant</TabsTrigger>
-              <TabsTrigger value="voice">Voice (TTS/STT)</TabsTrigger>
-              <TabsTrigger value="ai">Explore AI</TabsTrigger>
-              <TabsTrigger value="whatsapp">WhatsApp</TabsTrigger>
-              <TabsTrigger value="payment">Payment</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-6">
+              <TabsTrigger value="faith-assistant">{t('integrations.faithAssistant') || 'Faith Assistant'}</TabsTrigger>
+              <TabsTrigger value="voice">{t('integrations.voice') || 'Voice (TTS/STT)'}</TabsTrigger>
+              <TabsTrigger value="ai">{t('integrations.exploreAI') || 'Explore AI'}</TabsTrigger>
+              <TabsTrigger value="whatsapp">{t('integrations.whatsapp') || 'WhatsApp'}</TabsTrigger>
+              <TabsTrigger value="payment">{t('integrations.payment') || 'Payment'}</TabsTrigger>
+              <TabsTrigger value="webhooks">{t('integrations.webhooks') || 'Webhooks'}</TabsTrigger>
             </TabsList>
           </CardHeader>
 
@@ -215,11 +281,15 @@ function SystemSettings() {
               <VoiceIntegrationTab
                 settings={settings?.voice_integration || {}}
                 onSave={handleSaveVoice}
-                onTest={(formData) => testVoiceMutation.mutate(formData)}
+                onTestGoogleTts={(params) => testGoogleTtsMutation.mutate(params)}
+                onTestGroq={(params) => testGroqMutation.mutate(params)}
+                onTestOpenAI={(params) => testVoiceMutation.mutate(params)}
                 showKeys={showKeys}
                 setShowKeys={setShowKeys}
                 isSaving={updateMutation.isPending}
-                isTesting={testVoiceMutation.isPending}
+                isTestingGoogleTts={testGoogleTtsMutation.isPending}
+                isTestingGroq={testGroqMutation.isPending}
+                isTestingOpenAI={testVoiceMutation.isPending}
               />
             </TabsContent>
 
@@ -227,12 +297,13 @@ function SystemSettings() {
               <AIIntegrationTab
                 settings={settings?.ai_integration || {}}
                 onSave={handleSaveAI}
-                onTestAI={() => testAIMutation.mutate()}
-                onTestStability={() => testStabilityMutation.mutate()}
+                onTestAI={(params) => testAIMutation.mutate(params)}
+                onTestStability={(params) => testStabilityMutation.mutate(params)}
                 showKeys={showKeys}
                 setShowKeys={setShowKeys}
                 isSaving={updateMutation.isPending}
-                isTesting={testAIMutation.isPending || testStabilityMutation.isPending}
+                isTestingAI={testAIMutation.isPending}
+                isTestingStability={testStabilityMutation.isPending}
               />
             </TabsContent>
 
@@ -250,10 +321,16 @@ function SystemSettings() {
               <PaymentIntegrationTab
                 settings={settings?.payment_integration || {}}
                 onSave={handleSavePayment}
+                onTest={(params) => testPaymentMutation.mutate(params)}
                 showKeys={showKeys}
                 setShowKeys={setShowKeys}
                 isSaving={updateMutation.isPending}
+                isTesting={testPaymentMutation.isPending}
               />
+            </TabsContent>
+
+            <TabsContent value="webhooks" className="mt-0">
+              <WebhooksTab />
             </TabsContent>
           </CardContent>
         </Tabs>
@@ -263,8 +340,11 @@ function SystemSettings() {
 }
 
 function FaithAssistantTab({ settings, onSave, onTest, showKeys, setShowKeys, isSaving, isTesting }) {
+  // Track if API key was already set (masked from backend)
+  const hasExistingKey = isMaskedValue(settings.api_key);
+
   const [formData, setFormData] = useState({
-    api_key: settings.api_key || '',
+    api_key: getApiKeyDisplayValue(settings.api_key),
     model: settings.model || 'claude-sonnet-4-20250514',
     enabled: settings.enabled ?? true,
     max_tokens: settings.max_tokens || 2048,
@@ -272,6 +352,20 @@ function FaithAssistantTab({ settings, onSave, onTest, showKeys, setShowKeys, is
 
   const handleChange = (field, value) => {
     setFormData({ ...formData, [field]: value });
+  };
+
+  // Custom save handler that only sends API key if changed
+  const handleSave = () => {
+    const updates = {
+      model: formData.model,
+      enabled: formData.enabled,
+      max_tokens: parseInt(formData.max_tokens, 10),
+    };
+    // Only include api_key if user entered a new value
+    if (shouldSendApiKey(formData.api_key, settings.api_key)) {
+      updates.api_key = formData.api_key;
+    }
+    onSave(updates);
   };
 
   return (
@@ -309,7 +403,7 @@ function FaithAssistantTab({ settings, onSave, onTest, showKeys, setShowKeys, is
               value={formData.api_key}
               onChange={(e) => handleChange('api_key', e.target.value)}
               type={showKeys.faithAssistant ? 'text' : 'password'}
-              placeholder="sk-ant-api03-xxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+              placeholder={hasExistingKey ? "API key is set (leave empty to keep)" : "sk-ant-api03-xxxxxxxxxxxxxxxxxxxxxxxxxxxxx"}
             />
             <Button
               type="button"
@@ -321,6 +415,9 @@ function FaithAssistantTab({ settings, onSave, onTest, showKeys, setShowKeys, is
               {showKeys.faithAssistant ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </Button>
           </div>
+          {hasExistingKey && !formData.api_key && (
+            <p className="text-sm text-green-600">✓ API key is configured. Leave empty to keep existing key, or enter new key to update.</p>
+          )}
           <p className="text-sm text-muted-foreground">
             Get from <a href="https://console.anthropic.com/" target="_blank" rel="noreferrer" className="text-primary hover:underline">https://console.anthropic.com/</a>
           </p>
@@ -368,12 +465,19 @@ function FaithAssistantTab({ settings, onSave, onTest, showKeys, setShowKeys, is
         <div className="flex items-center gap-4">
           <Button
             variant="outline"
-            onClick={() => onTest({ api_key: formData.api_key, model: formData.model })}
-            disabled={isTesting || !formData.api_key}
+            onClick={() => onTest({
+              // If user entered new key, use it; otherwise test with saved key (send undefined to use saved)
+              api_key: formData.api_key || undefined,
+              model: formData.model
+            })}
+            disabled={isTesting || (!formData.api_key && !hasExistingKey)}
           >
             {isTesting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
             Test Connection
           </Button>
+          {hasExistingKey && !formData.api_key && (
+            <span className="text-sm text-muted-foreground">Testing with saved API key</span>
+          )}
         </div>
       </div>
 
@@ -387,7 +491,7 @@ function FaithAssistantTab({ settings, onSave, onTest, showKeys, setShowKeys, is
         </p>
       </div>
 
-      <Button onClick={() => onSave(formData)} disabled={isSaving}>
+      <Button onClick={handleSave} disabled={isSaving}>
         {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
         Save Faith Assistant Settings
       </Button>
@@ -395,11 +499,16 @@ function FaithAssistantTab({ settings, onSave, onTest, showKeys, setShowKeys, is
   );
 }
 
-function VoiceIntegrationTab({ settings, onSave, onTest, showKeys, setShowKeys, isSaving, isTesting }) {
+function VoiceIntegrationTab({ settings, onSave, onTestGoogleTts, onTestGroq, onTestOpenAI, showKeys, setShowKeys, isSaving, isTestingGoogleTts, isTestingGroq, isTestingOpenAI }) {
+  // Track which API keys are already set
+  const hasGoogleTtsKey = isMaskedValue(settings.google_tts_api_key);
+  const hasOpenAIKey = isMaskedValue(settings.openai_api_key);
+  const hasGroqKey = isMaskedValue(settings.groq_api_key);
+
   const [formData, setFormData] = useState({
-    google_tts_api_key: settings.google_tts_api_key || '',
-    openai_api_key: settings.openai_api_key || '',
-    groq_api_key: settings.groq_api_key || '',
+    google_tts_api_key: getApiKeyDisplayValue(settings.google_tts_api_key),
+    openai_api_key: getApiKeyDisplayValue(settings.openai_api_key),
+    groq_api_key: getApiKeyDisplayValue(settings.groq_api_key),
     stt_provider: settings.stt_provider || 'groq',
     tts_voice: settings.tts_voice || 'id-ID-Chirp3-HD-Sulafat',
     tts_voice_en: settings.tts_voice_en || 'en-US-Chirp-HD-F',
@@ -411,6 +520,30 @@ function VoiceIntegrationTab({ settings, onSave, onTest, showKeys, setShowKeys, 
 
   const handleChange = (field, value) => {
     setFormData({ ...formData, [field]: value });
+  };
+
+  // Custom save handler that only sends API keys if changed
+  const handleSave = () => {
+    const updates = {
+      stt_provider: formData.stt_provider,
+      tts_voice: formData.tts_voice,
+      tts_voice_en: formData.tts_voice_en,
+      tts_speed: parseFloat(formData.tts_speed),
+      tts_pitch: parseFloat(formData.tts_pitch),
+      stt_model: formData.stt_model,
+      voice_enabled: formData.voice_enabled,
+    };
+    // Only include API keys if user entered new values
+    if (shouldSendApiKey(formData.google_tts_api_key, settings.google_tts_api_key)) {
+      updates.google_tts_api_key = formData.google_tts_api_key;
+    }
+    if (shouldSendApiKey(formData.openai_api_key, settings.openai_api_key)) {
+      updates.openai_api_key = formData.openai_api_key;
+    }
+    if (shouldSendApiKey(formData.groq_api_key, settings.groq_api_key)) {
+      updates.groq_api_key = formData.groq_api_key;
+    }
+    onSave(updates);
   };
 
   return (
@@ -454,7 +587,7 @@ function VoiceIntegrationTab({ settings, onSave, onTest, showKeys, setShowKeys, 
               value={formData.google_tts_api_key}
               onChange={(e) => handleChange('google_tts_api_key', e.target.value)}
               type={showKeys.googleTts ? 'text' : 'password'}
-              placeholder="AIzaSyxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+              placeholder={hasGoogleTtsKey ? "API key is set (leave empty to keep)" : "AIzaSyxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"}
             />
             <Button
               type="button"
@@ -466,9 +599,23 @@ function VoiceIntegrationTab({ settings, onSave, onTest, showKeys, setShowKeys, 
               {showKeys.googleTts ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </Button>
           </div>
-          <p className="text-sm text-muted-foreground">
-            Required for text-to-speech. Get from <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noreferrer" className="text-primary hover:underline">Google Cloud Console</a>
-          </p>
+          {hasGoogleTtsKey && !formData.google_tts_api_key && (
+            <p className="text-sm text-green-600">✓ API key is configured. Leave empty to keep existing key.</p>
+          )}
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onTestGoogleTts({ api_key: formData.google_tts_api_key || undefined })}
+              disabled={isTestingGoogleTts || (!formData.google_tts_api_key && !hasGoogleTtsKey)}
+            >
+              {isTestingGoogleTts ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : null}
+              Test TTS
+            </Button>
+            <p className="text-sm text-muted-foreground">
+              Get from <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noreferrer" className="text-primary hover:underline">Google Cloud Console</a>
+            </p>
+          </div>
         </div>
       </div>
 
@@ -492,7 +639,7 @@ function VoiceIntegrationTab({ settings, onSave, onTest, showKeys, setShowKeys, 
               value={formData.groq_api_key}
               onChange={(e) => handleChange('groq_api_key', e.target.value)}
               type={showKeys.groq ? 'text' : 'password'}
-              placeholder="gsk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+              placeholder={hasGroqKey ? "API key is set (leave empty to keep)" : "gsk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxx"}
             />
             <Button
               type="button"
@@ -504,9 +651,23 @@ function VoiceIntegrationTab({ settings, onSave, onTest, showKeys, setShowKeys, 
               {showKeys.groq ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </Button>
           </div>
-          <p className="text-sm text-muted-foreground">
-            Get free key from <a href="https://console.groq.com/keys" target="_blank" rel="noreferrer" className="text-primary hover:underline">https://console.groq.com/keys</a>
-          </p>
+          {hasGroqKey && !formData.groq_api_key && (
+            <p className="text-sm text-green-600">✓ API key is configured. Leave empty to keep existing key.</p>
+          )}
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onTestGroq({ api_key: formData.groq_api_key || undefined })}
+              disabled={isTestingGroq || (!formData.groq_api_key && !hasGroqKey)}
+            >
+              {isTestingGroq ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : null}
+              Test Groq
+            </Button>
+            <p className="text-sm text-muted-foreground">
+              Get free key from <a href="https://console.groq.com/keys" target="_blank" rel="noreferrer" className="text-primary hover:underline">https://console.groq.com/keys</a>
+            </p>
+          </div>
         </div>
 
         <div className="space-y-2">
@@ -517,7 +678,7 @@ function VoiceIntegrationTab({ settings, onSave, onTest, showKeys, setShowKeys, 
               value={formData.openai_api_key}
               onChange={(e) => handleChange('openai_api_key', e.target.value)}
               type={showKeys.openai ? 'text' : 'password'}
-              placeholder="sk-proj-xxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+              placeholder={hasOpenAIKey ? "API key is set (leave empty to keep)" : "sk-proj-xxxxxxxxxxxxxxxxxxxxxxxxxxxxx"}
             />
             <Button
               type="button"
@@ -529,9 +690,23 @@ function VoiceIntegrationTab({ settings, onSave, onTest, showKeys, setShowKeys, 
               {showKeys.openai ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </Button>
           </div>
-          <p className="text-sm text-muted-foreground">
-            Optional fallback. Get from <a href="https://platform.openai.com/api-keys" target="_blank" rel="noreferrer" className="text-primary hover:underline">https://platform.openai.com/api-keys</a>
-          </p>
+          {hasOpenAIKey && !formData.openai_api_key && (
+            <p className="text-sm text-green-600">✓ API key is configured. Leave empty to keep existing key.</p>
+          )}
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onTestOpenAI({ api_key: formData.openai_api_key || undefined })}
+              disabled={isTestingOpenAI || (!formData.openai_api_key && !hasOpenAIKey)}
+            >
+              {isTestingOpenAI ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : null}
+              Test OpenAI
+            </Button>
+            <p className="text-sm text-muted-foreground">
+              Optional fallback. Get from <a href="https://platform.openai.com/api-keys" target="_blank" rel="noreferrer" className="text-primary hover:underline">https://platform.openai.com/api-keys</a>
+            </p>
+          </div>
         </div>
 
         <div className="space-y-2">
@@ -660,7 +835,7 @@ function VoiceIntegrationTab({ settings, onSave, onTest, showKeys, setShowKeys, 
         </p>
       </div>
 
-      <Button onClick={() => onSave(formData)} disabled={isSaving}>
+      <Button onClick={handleSave} disabled={isSaving}>
         {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
         Save Voice Settings
       </Button>
@@ -668,11 +843,15 @@ function VoiceIntegrationTab({ settings, onSave, onTest, showKeys, setShowKeys, 
   );
 }
 
-function AIIntegrationTab({ settings, onSave, onTestAI, onTestStability, showKeys, setShowKeys, isSaving, isTesting }) {
+function AIIntegrationTab({ settings, onSave, onTestAI, onTestStability, showKeys, setShowKeys, isSaving, isTestingAI, isTestingStability }) {
+  // Track which API keys are already set
+  const hasAnthropicKey = isMaskedValue(settings.anthropic_api_key);
+  const hasStabilityKey = isMaskedValue(settings.stability_api_key);
+
   const [formData, setFormData] = useState({
-    anthropic_api_key: settings.anthropic_api_key || '',
+    anthropic_api_key: getApiKeyDisplayValue(settings.anthropic_api_key),
     anthropic_model: settings.anthropic_model || 'claude-sonnet-4-5-20250929',
-    stability_api_key: settings.stability_api_key || '',
+    stability_api_key: getApiKeyDisplayValue(settings.stability_api_key),
     stability_model: settings.stability_model || 'ultra',
     ai_generation_enabled: settings.ai_generation_enabled ?? false,
     monthly_budget_usd: settings.monthly_budget_usd || 50.0,
@@ -680,6 +859,24 @@ function AIIntegrationTab({ settings, onSave, onTestAI, onTestStability, showKey
 
   const handleChange = (field, value) => {
     setFormData({ ...formData, [field]: value });
+  };
+
+  // Custom save handler that only sends API keys if changed
+  const handleSave = () => {
+    const updates = {
+      anthropic_model: formData.anthropic_model,
+      stability_model: formData.stability_model,
+      ai_generation_enabled: formData.ai_generation_enabled,
+      monthly_budget_usd: parseFloat(formData.monthly_budget_usd),
+    };
+    // Only include API keys if user entered new values
+    if (shouldSendApiKey(formData.anthropic_api_key, settings.anthropic_api_key)) {
+      updates.anthropic_api_key = formData.anthropic_api_key;
+    }
+    if (shouldSendApiKey(formData.stability_api_key, settings.stability_api_key)) {
+      updates.stability_api_key = formData.stability_api_key;
+    }
+    onSave(updates);
   };
 
   return (
@@ -717,7 +914,7 @@ function AIIntegrationTab({ settings, onSave, onTestAI, onTestStability, showKey
               value={formData.anthropic_api_key}
               onChange={(e) => handleChange('anthropic_api_key', e.target.value)}
               type={showKeys.anthropic ? 'text' : 'password'}
-              placeholder="sk-ant-api03-xxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+              placeholder={hasAnthropicKey ? "API key is set (leave empty to keep)" : "sk-ant-api03-xxxxxxxxxxxxxxxxxxxxxxxxxxxxx"}
             />
             <Button
               type="button"
@@ -729,6 +926,9 @@ function AIIntegrationTab({ settings, onSave, onTestAI, onTestStability, showKey
               {showKeys.anthropic ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </Button>
           </div>
+          {hasAnthropicKey && !formData.anthropic_api_key && (
+            <p className="text-sm text-green-600">✓ API key is configured. Leave empty to keep existing key.</p>
+          )}
           <p className="text-sm text-muted-foreground">
             Get from <a href="https://console.anthropic.com/" target="_blank" rel="noreferrer" className="text-primary hover:underline">https://console.anthropic.com/</a>
           </p>
@@ -756,11 +956,18 @@ function AIIntegrationTab({ settings, onSave, onTestAI, onTestStability, showKey
             <p className="text-sm text-muted-foreground">Sonnet 4.5 recommended for best quality/cost balance</p>
           </div>
 
-          <div className="flex items-end">
-            <Button variant="outline" onClick={onTestAI} disabled={isTesting || !formData.anthropic_api_key}>
-              {isTesting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-              Test Connection
+          <div className="flex items-end gap-2">
+            <Button
+              variant="outline"
+              onClick={() => onTestAI({ api_key: formData.anthropic_api_key || undefined, model: formData.anthropic_model })}
+              disabled={isTestingAI || (!formData.anthropic_api_key && !hasAnthropicKey)}
+            >
+              {isTestingAI ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Test Claude
             </Button>
+            {hasAnthropicKey && !formData.anthropic_api_key && (
+              <span className="text-xs text-muted-foreground">Using saved key</span>
+            )}
           </div>
         </div>
       </div>
@@ -778,7 +985,7 @@ function AIIntegrationTab({ settings, onSave, onTestAI, onTestStability, showKey
               value={formData.stability_api_key}
               onChange={(e) => handleChange('stability_api_key', e.target.value)}
               type={showKeys.stability ? 'text' : 'password'}
-              placeholder="sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+              placeholder={hasStabilityKey ? "API key is set (leave empty to keep)" : "sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxx"}
             />
             <Button
               type="button"
@@ -790,6 +997,9 @@ function AIIntegrationTab({ settings, onSave, onTestAI, onTestStability, showKey
               {showKeys.stability ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </Button>
           </div>
+          {hasStabilityKey && !formData.stability_api_key && (
+            <p className="text-sm text-green-600">✓ API key is configured. Leave empty to keep existing key.</p>
+          )}
           <p className="text-sm text-muted-foreground">
             Get from <a href="https://platform.stability.ai/" target="_blank" rel="noreferrer" className="text-primary hover:underline">https://platform.stability.ai/</a>
           </p>
@@ -815,11 +1025,18 @@ function AIIntegrationTab({ settings, onSave, onTestAI, onTestStability, showKey
             <p className="text-sm text-muted-foreground">Ultra recommended for best devotional images</p>
           </div>
 
-          <div className="flex items-end">
-            <Button variant="outline" onClick={onTestStability} disabled={isTesting || !formData.stability_api_key}>
-              {isTesting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-              Test Connection
+          <div className="flex items-end gap-2">
+            <Button
+              variant="outline"
+              onClick={() => onTestStability({ api_key: formData.stability_api_key || undefined })}
+              disabled={isTestingStability || (!formData.stability_api_key && !hasStabilityKey)}
+            >
+              {isTestingStability ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Test Stability
             </Button>
+            {hasStabilityKey && !formData.stability_api_key && (
+              <span className="text-xs text-muted-foreground">Using saved key</span>
+            )}
           </div>
         </div>
       </div>
@@ -843,7 +1060,7 @@ function AIIntegrationTab({ settings, onSave, onTestAI, onTestStability, showKey
         </div>
       </div>
 
-      <Button onClick={() => onSave(formData)} disabled={isSaving}>
+      <Button onClick={handleSave} disabled={isSaving}>
         {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
         Save AI Settings
       </Button>
@@ -852,12 +1069,28 @@ function AIIntegrationTab({ settings, onSave, onTestAI, onTestStability, showKey
 }
 
 function WhatsAppIntegrationTab({ settings, onSave, showKeys, setShowKeys, isSaving }) {
+  // Track if API key is already set
+  const hasApiKey = isMaskedValue(settings.whatsapp_api_key);
+
   const [formData, setFormData] = useState({
     whatsapp_api_url: settings.whatsapp_api_url || '',
-    whatsapp_api_key: settings.whatsapp_api_key || '',
+    whatsapp_api_key: getApiKeyDisplayValue(settings.whatsapp_api_key),
     whatsapp_from_number: settings.whatsapp_from_number || '',
     whatsapp_enabled: settings.whatsapp_enabled ?? true,
   });
+
+  // Custom save handler that only sends API key if changed
+  const handleSave = () => {
+    const updates = {
+      whatsapp_api_url: formData.whatsapp_api_url || undefined,
+      whatsapp_from_number: formData.whatsapp_from_number || undefined,
+      whatsapp_enabled: formData.whatsapp_enabled,
+    };
+    if (shouldSendApiKey(formData.whatsapp_api_key, settings.whatsapp_api_key)) {
+      updates.whatsapp_api_key = formData.whatsapp_api_key;
+    }
+    onSave(updates);
+  };
 
   return (
     <div className="space-y-6">
@@ -894,6 +1127,7 @@ function WhatsAppIntegrationTab({ settings, onSave, showKeys, setShowKeys, isSav
             value={formData.whatsapp_api_key}
             onChange={(e) => setFormData({ ...formData, whatsapp_api_key: e.target.value })}
             type={showKeys.whatsapp ? 'text' : 'password'}
+            placeholder={hasApiKey ? "API key is set (leave empty to keep)" : "Enter your WhatsApp API key"}
           />
           <Button
             type="button"
@@ -905,6 +1139,9 @@ function WhatsAppIntegrationTab({ settings, onSave, showKeys, setShowKeys, isSav
             {showKeys.whatsapp ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
           </Button>
         </div>
+        {hasApiKey && !formData.whatsapp_api_key && (
+          <p className="text-sm text-green-600">✓ API key is configured. Leave empty to keep existing key.</p>
+        )}
       </div>
 
       <div className="space-y-2 max-w-xs">
@@ -918,7 +1155,7 @@ function WhatsAppIntegrationTab({ settings, onSave, showKeys, setShowKeys, isSav
         <p className="text-sm text-muted-foreground">WhatsApp sender number (include country code)</p>
       </div>
 
-      <Button onClick={() => onSave(formData)} disabled={isSaving}>
+      <Button onClick={handleSave} disabled={isSaving}>
         {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
         Save WhatsApp Settings
       </Button>
@@ -926,13 +1163,29 @@ function WhatsAppIntegrationTab({ settings, onSave, showKeys, setShowKeys, isSav
   );
 }
 
-function PaymentIntegrationTab({ settings, onSave, showKeys, setShowKeys, isSaving }) {
+function PaymentIntegrationTab({ settings, onSave, onTest, showKeys, setShowKeys, isSaving, isTesting }) {
+  // Track if API key is already set
+  const hasApiKey = isMaskedValue(settings.ipaymu_api_key);
+
   const [formData, setFormData] = useState({
     ipaymu_va: settings.ipaymu_va || '',
-    ipaymu_api_key: settings.ipaymu_api_key || '',
+    ipaymu_api_key: getApiKeyDisplayValue(settings.ipaymu_api_key),
     ipaymu_env: settings.ipaymu_env || 'sandbox',
     ipaymu_enabled: settings.ipaymu_enabled ?? true,
   });
+
+  // Custom save handler that only sends API key if changed
+  const handleSave = () => {
+    const updates = {
+      ipaymu_va: formData.ipaymu_va || undefined,
+      ipaymu_env: formData.ipaymu_env,
+      ipaymu_enabled: formData.ipaymu_enabled,
+    };
+    if (shouldSendApiKey(formData.ipaymu_api_key, settings.ipaymu_api_key)) {
+      updates.ipaymu_api_key = formData.ipaymu_api_key;
+    }
+    onSave(updates);
+  };
 
   return (
     <div className="space-y-6">
@@ -990,6 +1243,7 @@ function PaymentIntegrationTab({ settings, onSave, showKeys, setShowKeys, isSavi
             value={formData.ipaymu_api_key}
             onChange={(e) => setFormData({ ...formData, ipaymu_api_key: e.target.value })}
             type={showKeys.ipaymu ? 'text' : 'password'}
+            placeholder={hasApiKey ? "API key is set (leave empty to keep)" : "Enter your iPaymu API key"}
           />
           <Button
             type="button"
@@ -1001,9 +1255,30 @@ function PaymentIntegrationTab({ settings, onSave, showKeys, setShowKeys, isSavi
             {showKeys.ipaymu ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
           </Button>
         </div>
+        {hasApiKey && !formData.ipaymu_api_key && (
+          <p className="text-sm text-green-600">✓ API key is configured. Leave empty to keep existing key.</p>
+        )}
       </div>
 
-      <Button onClick={() => onSave(formData)} disabled={isSaving}>
+      <div className="flex items-center gap-4">
+        <Button
+          variant="outline"
+          onClick={() => onTest({
+            va: formData.ipaymu_va || undefined,
+            api_key: formData.ipaymu_api_key || undefined,
+            env: formData.ipaymu_env,
+          })}
+          disabled={isTesting || (!formData.ipaymu_va && !formData.ipaymu_api_key && !hasApiKey)}
+        >
+          {isTesting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+          Test Connection
+        </Button>
+        {hasApiKey && !formData.ipaymu_api_key && (
+          <span className="text-sm text-muted-foreground">Testing with saved credentials</span>
+        )}
+      </div>
+
+      <Button onClick={handleSave} disabled={isSaving}>
         {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
         Save Payment Settings
       </Button>

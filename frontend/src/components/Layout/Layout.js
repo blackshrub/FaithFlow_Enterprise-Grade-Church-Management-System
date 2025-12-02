@@ -277,7 +277,7 @@ export default function Layout() {
     // System Section
     { type: 'section', label: 'SYSTEM' },
     { icon: Settings, label: t('nav.settings'), path: '/settings' },
-    { icon: Database, label: 'System Settings', path: '/system-settings', superAdminOnly: true },
+    { icon: Database, label: t('nav.integrations') || 'Integrations', path: '/integrations', superAdminOnly: true },
     { icon: Upload, label: 'Import/Export', path: '/import-export' },
     { icon: Users, label: 'User Management', path: '/users/management' },
   ];

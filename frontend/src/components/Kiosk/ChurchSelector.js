@@ -64,36 +64,36 @@ const ChurchSelector = () => {
   
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
-        <div className="text-3xl text-gray-500">Loading...</div>
+      <div data-kiosk="true" className="min-h-screen w-full max-w-[100vw] overflow-x-hidden flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
+        <div className="text-xl sm:text-2xl lg:text-3xl text-gray-500">Loading...</div>
       </div>
     );
   }
-  
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex flex-col">
+    <div data-kiosk="true" className="min-h-screen w-full max-w-[100vw] overflow-x-hidden bg-gradient-to-br from-slate-50 to-slate-100 flex flex-col">
       {/* Language Toggle - Top Right */}
-      <div className="p-6 flex justify-end">
+      <div className="p-3 sm:p-4 lg:p-6 flex justify-end">
         <Button
           variant="outline"
           size="lg"
           onClick={toggleLanguage}
-          className="h-14 px-6 text-lg rounded-2xl"
+          className="h-10 sm:h-12 lg:h-14 px-4 sm:px-5 lg:px-6 text-sm sm:text-base lg:text-lg rounded-xl sm:rounded-2xl"
         >
-          <Globe className="mr-2 h-5 w-5" />
+          <Globe className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
           {i18n.language === 'en' ? 'EN' : 'ID'}
         </Button>
       </div>
-      
+
       {/* Main Content */}
-      <div className="flex-1 flex items-center justify-center p-6">
+      <div className="flex-1 flex items-center justify-center p-3 sm:p-4 lg:p-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
           className="w-full max-w-2xl"
         >
-          <div className="bg-white rounded-3xl shadow-2xl p-12 space-y-8">
+          <div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl p-6 sm:p-8 lg:p-12 space-y-6 sm:space-y-8">
             {/* Icon */}
             <motion.div
               className="flex justify-center"
@@ -101,49 +101,49 @@ const ChurchSelector = () => {
               animate={{ scale: 1 }}
               transition={{ duration: 0.5, delay: 0.1 }}
             >
-              <div className="w-32 h-32 bg-blue-100 rounded-full flex items-center justify-center">
-                <Church className="w-16 h-16 text-blue-600" />
+              <div className="w-20 h-20 sm:w-24 sm:h-24 lg:w-32 lg:h-32 bg-blue-100 rounded-full flex items-center justify-center">
+                <Church className="w-10 h-10 sm:w-12 sm:h-12 lg:w-16 lg:h-16 text-blue-600" />
               </div>
             </motion.div>
-            
+
             {/* Title */}
-            <div className="text-center space-y-3">
-              <h1 className="text-5xl font-bold text-gray-900">
+            <div className="text-center space-y-2 sm:space-y-3">
+              <h1 className="text-2xl sm:text-3xl lg:text-5xl font-bold text-gray-900">
                 {i18n.language === 'en' ? 'Welcome' : 'Selamat Datang'}
               </h1>
-              <p className="text-2xl text-gray-600">
+              <p className="text-base sm:text-lg lg:text-2xl text-gray-600">
                 {i18n.language === 'en' ? 'Please select your church' : 'Silakan pilih gereja Anda'}
               </p>
             </div>
-            
+
             {/* Church Dropdown */}
-            <div className="space-y-4">
-              <Label className="text-2xl font-medium text-gray-700">
+            <div className="space-y-3 sm:space-y-4">
+              <Label className="text-base sm:text-lg lg:text-2xl font-medium text-gray-700">
                 {i18n.language === 'en' ? 'Church' : 'Gereja'}
               </Label>
               <Select value={selectedChurch} onValueChange={setSelectedChurch}>
-                <SelectTrigger className="h-16 text-2xl rounded-xl">
+                <SelectTrigger className="h-12 sm:h-14 lg:h-16 text-base sm:text-lg lg:text-2xl rounded-xl">
                   <SelectValue placeholder={i18n.language === 'en' ? 'Select church...' : 'Pilih gereja...'} />
                 </SelectTrigger>
                 <SelectContent>
                   {churches.map(church => (
-                    <SelectItem key={church.id} value={church.id} className="text-xl py-4">
+                    <SelectItem key={church.id} value={church.id} className="text-base sm:text-lg lg:text-xl py-3 sm:py-4">
                       {church.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-            
+
             {/* Continue Button */}
             <Button
               onClick={handleContinue}
               disabled={!selectedChurch}
-              className="w-full h-16 text-xl rounded-xl"
+              className="w-full h-12 sm:h-14 lg:h-16 text-base sm:text-lg lg:text-xl rounded-xl"
               size="lg"
             >
               {i18n.language === 'en' ? 'Continue' : 'Lanjut'}
-              <ArrowRight className="ml-2 h-6 w-6" />
+              <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6" />
             </Button>
           </div>
         </motion.div>

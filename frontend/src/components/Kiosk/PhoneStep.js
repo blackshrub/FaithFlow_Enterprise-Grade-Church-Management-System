@@ -83,12 +83,12 @@ const PhoneStep = ({ onMemberFound, onMemberNotFound, onError, churchId }) => {
   
   return (
     <motion.div
-      className="bg-white rounded-3xl shadow-2xl p-12 max-w-2xl mx-auto"
+      className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl p-4 sm:p-8 lg:p-12 max-w-2xl mx-auto w-full box-border overflow-hidden"
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.3 }}
     >
-      <div className="space-y-8">
+      <div className="space-y-4 sm:space-y-6 lg:space-y-8">
         {/* Icon */}
         <motion.div
           className="flex justify-center"
@@ -96,24 +96,24 @@ const PhoneStep = ({ onMemberFound, onMemberNotFound, onError, churchId }) => {
           animate={{ scale: 1 }}
           transition={{ duration: 0.4, delay: 0.1 }}
         >
-          <div className="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center">
-            <Phone className="w-12 h-12 text-blue-600" />
+          <div className="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 bg-blue-100 rounded-full flex items-center justify-center">
+            <Phone className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 text-blue-600" />
           </div>
         </motion.div>
-        
+
         {/* Title */}
-        <div className="text-center space-y-3">
-          <h2 className="text-4xl font-bold text-gray-900">
+        <div className="text-center space-y-2 sm:space-y-3">
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900">
             {t('phone.title')}
           </h2>
-          <p className="text-xl text-gray-600">
+          <p className="text-base sm:text-lg lg:text-xl text-gray-600">
             {t('phone.description')}
           </p>
         </div>
-        
+
         {/* Phone Input */}
-        <div className="space-y-4">
-          <Label htmlFor="phone" className="text-2xl font-medium text-gray-700">
+        <div className="space-y-3 sm:space-y-4">
+          <Label htmlFor="phone" className="text-base sm:text-lg lg:text-2xl font-medium text-gray-700">
             {t('phone.label')}
           </Label>
           <Input
@@ -122,15 +122,15 @@ const PhoneStep = ({ onMemberFound, onMemberNotFound, onError, churchId }) => {
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             placeholder={t('phone.placeholder')}
-            className="h-16 text-2xl px-6 rounded-xl border-2 focus:ring-4 focus:ring-blue-200"
+            className="h-12 sm:h-14 lg:h-16 text-base sm:text-xl lg:text-2xl px-4 sm:px-5 lg:px-6 rounded-xl border-2 focus:ring-2 sm:focus:ring-4 focus:ring-blue-200"
             disabled={loading}
             autoFocus
             onKeyPress={(e) => e.key === 'Enter' && handleContinue()}
           />
-          
+
           {error && (
             <motion.p
-              className="text-lg text-red-600"
+              className="text-sm sm:text-base lg:text-lg text-red-600"
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.2 }}
@@ -139,17 +139,17 @@ const PhoneStep = ({ onMemberFound, onMemberNotFound, onError, churchId }) => {
             </motion.p>
           )}
         </div>
-        
+
         {/* Continue Button */}
         <Button
           onClick={handleContinue}
           disabled={loading || !phone}
-          className="w-full h-16 text-xl rounded-xl"
+          className="w-full h-12 sm:h-14 lg:h-16 text-base sm:text-lg lg:text-xl rounded-xl"
           size="lg"
         >
           {loading ? (
             <span className="flex items-center gap-2">
-              <span className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></span>
+              <span className="animate-spin rounded-full h-4 w-4 sm:h-5 sm:w-5 border-b-2 border-white"></span>
               {t('otp.verifying')}
             </span>
           ) : t('phone.continue')}

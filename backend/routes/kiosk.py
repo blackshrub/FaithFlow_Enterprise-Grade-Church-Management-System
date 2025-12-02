@@ -381,6 +381,26 @@ async def join_group_kiosk(
         raise HTTPException(status_code=500, detail="Failed to create join request")
 
 
+# Default profile fields for kiosk (always shown)
+DEFAULT_KIOSK_PROFILE_FIELDS = ["full_name", "phone", "date_of_birth", "address"]
+
+# All available profile fields that can be enabled
+ALL_PROFILE_FIELDS = [
+    "full_name",      # Always shown
+    "phone",          # Always shown
+    "email",
+    "date_of_birth",  # Always shown
+    "gender",
+    "marital_status",
+    "blood_type",
+    "occupation",
+    "address",        # Always shown
+    "city",
+    "state",
+    "country"
+]
+
+
 @router.get("/settings")
 async def get_public_kiosk_settings(
     church_id: str = Query(..., description="Church ID"),
@@ -388,7 +408,7 @@ async def get_public_kiosk_settings(
 ):
     """Get public kiosk settings for a church (no auth required).
 
-    Returns which kiosk services are enabled and timeout settings.
+    Returns which kiosk services are enabled, timeout settings, and profile fields.
     """
     try:
         settings = await db.church_settings.find_one(
@@ -398,6 +418,9 @@ async def get_public_kiosk_settings(
 
         if settings and settings.get("kiosk_settings"):
             kiosk_settings = settings["kiosk_settings"]
+            # Get profile fields - use configured or defaults
+            profile_fields = kiosk_settings.get("profile_fields", DEFAULT_KIOSK_PROFILE_FIELDS)
+
             # Return only public-facing settings
             return {
                 "enable_kiosk": kiosk_settings.get("enable_kiosk", True),
@@ -409,7 +432,9 @@ async def get_public_kiosk_settings(
                 "timeout_minutes": kiosk_settings.get("timeout_minutes", 2),
                 "default_language": kiosk_settings.get("default_language", "id"),
                 "home_title": kiosk_settings.get("home_title", ""),
-                "home_subtitle": kiosk_settings.get("home_subtitle", "")
+                "home_subtitle": kiosk_settings.get("home_subtitle", ""),
+                "profile_fields": profile_fields,
+                "all_profile_fields": ALL_PROFILE_FIELDS
             }
 
         # Return defaults if no settings found
@@ -423,7 +448,9 @@ async def get_public_kiosk_settings(
             "timeout_minutes": 2,
             "default_language": "id",
             "home_title": "",
-            "home_subtitle": ""
+            "home_subtitle": "",
+            "profile_fields": DEFAULT_KIOSK_PROFILE_FIELDS,
+            "all_profile_fields": ALL_PROFILE_FIELDS
         }
 
     except Exception as e:
@@ -439,8 +466,322 @@ async def get_public_kiosk_settings(
             "timeout_minutes": 2,
             "default_language": "id",
             "home_title": "",
-            "home_subtitle": ""
+            "home_subtitle": "",
+            "profile_fields": DEFAULT_KIOSK_PROFILE_FIELDS,
+            "all_profile_fields": ALL_PROFILE_FIELDS
         }
+
+
+class ProfileUpdateRequest(BaseModel):
+    """Profile update request from kiosk.
+
+    Only includes user-editable fields. System fields like member_status,
+    church_id, demographic_category, etc. are NOT editable by members.
+    """
+    # Basic info
+    full_name: Optional[str] = None
+    email: Optional[str] = None
+    phone: Optional[str] = None  # phone_whatsapp - requires OTP verification if changed
+
+    # Personal details
+    date_of_birth: Optional[str] = None
+    gender: Optional[str] = None  # 'Male' or 'Female'
+    blood_type: Optional[str] = None  # 'A', 'B', 'AB', 'O'
+    marital_status: Optional[str] = None  # 'Married', 'Not Married', 'Widower', 'Widow'
+    occupation: Optional[str] = None
+
+    # Address
+    address: Optional[str] = None
+    city: Optional[str] = None
+    state: Optional[str] = None
+    country: Optional[str] = None
+
+    # Custom fields (church-specific additional fields)
+    custom_fields: Optional[dict] = None
+
+
+class CreateMemberRequest(BaseModel):
+    """Create new member (pre-visitor) from kiosk."""
+    full_name: str
+    phone_whatsapp: str
+    email: Optional[str] = None
+    church_id: str
+    member_status: str = "Pre-Visitor"
+
+
+class PrayerRequestKiosk(BaseModel):
+    """Prayer request from kiosk."""
+    member_id: str
+    church_id: str
+    request_text: str
+    is_anonymous: bool = False
+    category: Optional[str] = None
+
+
+@router.get("/events")
+async def get_public_events_kiosk(
+    church_id: str = Query(..., description="Church ID"),
+    limit: int = Query(50, ge=1, le=100),
+    db: AsyncIOMotorDatabase = Depends(get_db)
+):
+    """Get upcoming events for kiosk (public - no auth required)."""
+    try:
+        now = datetime.utcnow()
+
+        # Query for upcoming events
+        query = {
+            "church_id": church_id,
+            "event_date": {"$gte": now}
+        }
+
+        projection = {
+            "_id": 0,
+            "id": 1,
+            "name": 1,
+            "event_date": 1,
+            "start_time": 1,
+            "end_time": 1,
+            "location": 1,
+            "description": 1,
+            "cover_image": 1,
+            "category": 1,
+            "max_capacity": 1,
+            "enable_registration": 1,
+            "registration_deadline": 1
+        }
+
+        events = await db.events.find(query, projection).sort("event_date", 1).limit(limit).to_list(length=limit)
+
+        # Add RSVP counts
+        for event in events:
+            rsvp_count = await db.events.aggregate([
+                {"$match": {"id": event["id"]}},
+                {"$project": {"rsvp_count": {"$size": {"$ifNull": ["$rsvp_list", []]}}}}
+            ]).to_list(length=1)
+            event["rsvp_count"] = rsvp_count[0]["rsvp_count"] if rsvp_count else 0
+
+        logger.info(f"Kiosk events: Found {len(events)} upcoming events for church {church_id}")
+
+        return {"data": events, "total": len(events)}
+
+    except Exception as e:
+        logger.error(f"Kiosk events error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch events")
+
+
+@router.post("/create-member")
+async def create_member_kiosk(
+    request: CreateMemberRequest,
+    db: AsyncIOMotorDatabase = Depends(get_db)
+):
+    """Create new pre-visitor member from kiosk (public - no auth required)."""
+    try:
+        # Check if phone already exists
+        existing = await db.members.find_one({
+            "church_id": request.church_id,
+            "phone_whatsapp": request.phone_whatsapp
+        })
+
+        if existing:
+            # Return existing member instead of error
+            return {
+                "success": True,
+                "message": "Member already exists",
+                "member": {
+                    "id": existing["id"],
+                    "full_name": existing["full_name"],
+                    "phone_whatsapp": existing["phone_whatsapp"]
+                }
+            }
+
+        # Create new member
+        member_id = str(uuid.uuid4())
+        member = {
+            "id": member_id,
+            "church_id": request.church_id,
+            "full_name": request.full_name,
+            "phone_whatsapp": request.phone_whatsapp,
+            "email": request.email,
+            "member_status": request.member_status,
+            "created_at": datetime.utcnow(),
+            "updated_at": datetime.utcnow(),
+            "source": "kiosk"
+        }
+
+        await db.members.insert_one(member)
+
+        logger.info(f"Kiosk member created: {member_id} ({request.full_name})")
+
+        return {
+            "success": True,
+            "message": "Member created successfully",
+            "member": {
+                "id": member_id,
+                "full_name": request.full_name,
+                "phone_whatsapp": request.phone_whatsapp
+            }
+        }
+
+    except Exception as e:
+        logger.error(f"Kiosk create member error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to create member")
+
+
+@router.post("/prayer-request")
+async def submit_prayer_request_kiosk(
+    request: PrayerRequestKiosk,
+    db: AsyncIOMotorDatabase = Depends(get_db)
+):
+    """Submit prayer request from kiosk (public - no auth required)."""
+    try:
+        # Get member info
+        member = await db.members.find_one({"id": request.member_id})
+        if not member:
+            raise HTTPException(status_code=404, detail="Member not found")
+
+        prayer_request = {
+            "id": str(uuid.uuid4()),
+            "church_id": request.church_id,
+            "member_id": request.member_id,
+            "member_name": member.get("full_name", "Anonymous") if not request.is_anonymous else "Anonymous",
+            "request_text": request.request_text,
+            "is_anonymous": request.is_anonymous,
+            "category": request.category,
+            "status": "pending",
+            "source": "kiosk",
+            "created_at": datetime.utcnow(),
+            "updated_at": datetime.utcnow()
+        }
+
+        await db.prayer_requests.insert_one(prayer_request)
+
+        logger.info(f"Kiosk prayer request: {prayer_request['id']} from member {request.member_id}")
+
+        return {
+            "success": True,
+            "message": "Prayer request submitted successfully",
+            "id": prayer_request["id"]
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Kiosk prayer request error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to submit prayer request")
+
+
+@router.patch("/update-profile/{member_id}")
+async def update_member_profile_kiosk(
+    member_id: str,
+    request: ProfileUpdateRequest,
+    db: AsyncIOMotorDatabase = Depends(get_db)
+):
+    """Update member profile from kiosk (public - no auth required).
+
+    This endpoint allows members to update their own profile via kiosk
+    after OTP verification. Only user-editable fields can be updated.
+    System fields (member_status, church_id, etc.) are NOT allowed.
+    """
+    try:
+        # Find member
+        member = await db.members.find_one({"id": member_id})
+        if not member:
+            raise HTTPException(status_code=404, detail="Member not found")
+
+        # Build update dict with only provided fields
+        update_data = {}
+
+        # Basic info
+        if request.full_name is not None:
+            update_data["full_name"] = request.full_name
+            # Auto-generate first/last name
+            name_parts = request.full_name.strip().split(maxsplit=1)
+            update_data["first_name"] = name_parts[0] if name_parts else ""
+            update_data["last_name"] = name_parts[1] if len(name_parts) > 1 else ""
+
+        if request.email is not None:
+            update_data["email"] = request.email
+
+        if request.phone is not None:
+            update_data["phone_whatsapp"] = request.phone
+
+        # Personal details
+        if request.date_of_birth is not None:
+            update_data["date_of_birth"] = request.date_of_birth
+
+        if request.gender is not None:
+            # Accept both cases - store capitalized
+            gender_val = request.gender.lower() if request.gender else ''
+            if gender_val in ['male', 'female', '']:
+                update_data["gender"] = gender_val.capitalize() if gender_val else None
+
+        if request.blood_type is not None:
+            # Accept blood types with optional Rh factor
+            valid_blood_types = ['A', 'B', 'AB', 'O', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', '']
+            if request.blood_type.upper() in [bt.upper() for bt in valid_blood_types]:
+                update_data["blood_type"] = request.blood_type if request.blood_type else None
+
+        if request.marital_status is not None:
+            # Accept various case formats - store capitalized
+            status_mapping = {
+                'single': 'Single',
+                'married': 'Married',
+                'divorced': 'Divorced',
+                'widowed': 'Widowed',
+                'not married': 'Single',
+                'widower': 'Widowed',
+                'widow': 'Widowed',
+                '': None
+            }
+            status_lower = request.marital_status.lower()
+            if status_lower in status_mapping:
+                update_data["marital_status"] = status_mapping[status_lower]
+
+        if request.occupation is not None:
+            update_data["occupation"] = request.occupation
+
+        # Address
+        if request.address is not None:
+            update_data["address"] = request.address
+
+        if request.city is not None:
+            update_data["city"] = request.city
+
+        if request.state is not None:
+            update_data["state"] = request.state
+
+        if request.country is not None:
+            update_data["country"] = request.country
+
+        # Custom fields (merge with existing)
+        if request.custom_fields is not None:
+            existing_custom = member.get("custom_fields", {})
+            existing_custom.update(request.custom_fields)
+            update_data["custom_fields"] = existing_custom
+
+        if not update_data:
+            return {"success": True, "message": "No changes to save"}
+
+        # Add updated_at timestamp
+        update_data["updated_at"] = datetime.utcnow()
+
+        # Update member
+        result = await db.members.update_one(
+            {"id": member_id},
+            {"$set": update_data}
+        )
+
+        if result.modified_count > 0:
+            logger.info(f"Kiosk profile update: Member {member_id}, Fields: {list(update_data.keys())}")
+            return {"success": True, "message": "Profile updated successfully"}
+        else:
+            return {"success": True, "message": "No changes made"}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Kiosk profile update error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to update profile")
 
 
 @router.get("/lookup-member")
@@ -450,7 +791,7 @@ async def lookup_member_by_phone(
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """Lookup member by phone (public endpoint for kiosk).
-    
+
     Tries multiple phone formats to find match.
     """
     try:

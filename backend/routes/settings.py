@@ -426,6 +426,135 @@ async def delete_demographic_preset(
     return None
 
 
+@router.post("/demographics/validate")
+async def validate_demographic_ranges(
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current_user: dict = Depends(require_admin)
+):
+    """
+    Validate demographic age ranges for overlaps and gaps.
+    Returns validation errors if any ranges overlap.
+    """
+    from utils.dependencies import get_session_church_id
+    church_id = get_session_church_id(current_user)
+
+    # Get all active demographics for this church
+    presets = await db.demographic_presets.find(
+        {"church_id": church_id, "is_active": True}
+    ).sort("min_age", 1).to_list(100)
+
+    errors = []
+    warnings = []
+
+    for i, preset in enumerate(presets):
+        # Check for invalid ranges
+        if preset.get('min_age', 0) > preset.get('max_age', 100):
+            errors.append({
+                "type": "invalid_range",
+                "preset_id": preset['id'],
+                "preset_name": preset['name'],
+                "message": f"'{preset['name']}' has invalid range: min_age ({preset['min_age']}) > max_age ({preset['max_age']})"
+            })
+
+        # Check for overlaps with other presets
+        for j, other in enumerate(presets):
+            if i >= j:
+                continue
+
+            # Check if ranges overlap
+            if preset.get('min_age', 0) <= other.get('max_age', 100) and preset.get('max_age', 100) >= other.get('min_age', 0):
+                errors.append({
+                    "type": "overlap",
+                    "preset_ids": [preset['id'], other['id']],
+                    "preset_names": [preset['name'], other['name']],
+                    "message": f"'{preset['name']}' ({preset['min_age']}-{preset['max_age']}) overlaps with '{other['name']}' ({other['min_age']}-{other['max_age']})"
+                })
+
+    # Check for gaps (warning, not error)
+    sorted_presets = sorted(presets, key=lambda x: x.get('min_age', 0))
+    for i in range(len(sorted_presets) - 1):
+        current = sorted_presets[i]
+        next_preset = sorted_presets[i + 1]
+        if current.get('max_age', 100) + 1 < next_preset.get('min_age', 0):
+            warnings.append({
+                "type": "gap",
+                "message": f"Gap between '{current['name']}' (ends at {current['max_age']}) and '{next_preset['name']}' (starts at {next_preset['min_age']})"
+            })
+
+    return {
+        "valid": len(errors) == 0,
+        "errors": errors,
+        "warnings": warnings,
+        "total_presets": len(presets)
+    }
+
+
+@router.post("/demographics/regenerate")
+async def regenerate_all_demographics(
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current_user: dict = Depends(require_admin)
+):
+    """
+    Recalculate demographic_category for all members based on current demographic presets.
+    This should be called after modifying demographic age ranges.
+    """
+    from utils.dependencies import get_session_church_id
+    from utils.demographics import auto_assign_demographic
+
+    church_id = get_session_church_id(current_user)
+
+    # First validate ranges
+    presets = await db.demographic_presets.find(
+        {"church_id": church_id, "is_active": True}
+    ).to_list(100)
+
+    # Check for overlaps
+    for i, preset in enumerate(presets):
+        for j, other in enumerate(presets):
+            if i >= j:
+                continue
+            if preset.get('min_age', 0) <= other.get('max_age', 100) and preset.get('max_age', 100) >= other.get('min_age', 0):
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Cannot regenerate: overlapping ranges between '{preset['name']}' and '{other['name']}'. Please fix overlaps first."
+                )
+
+    # Get all active members with date_of_birth
+    members = await db.members.find({
+        "church_id": church_id,
+        "deleted": {"$ne": True},
+        "date_of_birth": {"$ne": None}
+    }).to_list(None)
+
+    updated_count = 0
+    skipped_count = 0
+
+    for member in members:
+        try:
+            new_demographic = await auto_assign_demographic(member, db)
+            old_demographic = member.get('demographic_category')
+
+            if new_demographic != old_demographic:
+                await db.members.update_one(
+                    {"id": member['id']},
+                    {"$set": {"demographic_category": new_demographic}}
+                )
+                updated_count += 1
+            else:
+                skipped_count += 1
+        except Exception as e:
+            skipped_count += 1
+            continue
+
+    return {
+        "success": True,
+        "message": f"Demographics regenerated for {updated_count} members",
+        "updated_count": updated_count,
+        "skipped_count": skipped_count,
+        "total_members": len(members)
+    }
+
+
 # ============= Church Settings Routes =============
 
 # ============= Church Settings Routes with Normalization =============

@@ -6,21 +6,40 @@
 
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Monitor, Info } from 'lucide-react';
+import { Monitor, Info, User, Phone, Mail, Calendar, Heart, Droplets, Briefcase, MapPin, Building } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/card';
 import { Label } from '../../components/ui/label';
 import { Input } from '../../components/ui/input';
 import { Button } from '../../components/ui/button';
 import { Switch } from '../../components/ui/switch';
+import { Checkbox } from '../../components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
-import { useToast } from '../../hooks/use-toast';
+import { toast } from 'sonner';
 import kioskApi from '../../services/kioskApi';
 import { useMemberStatuses } from '../../hooks/useSettings';
 
+// Define all available profile fields with their metadata
+const ALL_PROFILE_FIELDS = [
+  { id: 'full_name', label: 'Full Name', icon: User, section: 'basic', required: true },
+  { id: 'phone', label: 'Phone Number', icon: Phone, section: 'basic', required: true },
+  { id: 'email', label: 'Email', icon: Mail, section: 'basic' },
+  { id: 'date_of_birth', label: 'Date of Birth', icon: Calendar, section: 'personal' },
+  { id: 'gender', label: 'Gender', icon: User, section: 'personal' },
+  { id: 'marital_status', label: 'Marital Status', icon: Heart, section: 'personal' },
+  { id: 'blood_type', label: 'Blood Type', icon: Droplets, section: 'personal' },
+  { id: 'occupation', label: 'Occupation', icon: Briefcase, section: 'personal' },
+  { id: 'address', label: 'Address', icon: MapPin, section: 'address' },
+  { id: 'city', label: 'City', icon: Building, section: 'address' },
+  { id: 'state', label: 'State/Province', icon: MapPin, section: 'address' },
+  { id: 'country', label: 'Country', icon: MapPin, section: 'address' },
+];
+
+// Default fields shown on kiosk
+const DEFAULT_PROFILE_FIELDS = ['full_name', 'phone', 'date_of_birth', 'address'];
+
 const KioskSettingsTab = () => {
   const { t } = useTranslation('kiosk');
-  const { toast } = useToast();
   const { data: memberStatuses = [] } = useMemberStatuses();
   
   const [settings, setSettings] = useState({
@@ -36,8 +55,33 @@ const KioskSettingsTab = () => {
     previsitor_status_id: '',
     timeout_minutes: 2,
     otp_digits: 4,
-    otp_resend_cooldown: 60
+    otp_resend_cooldown: 60,
+    profile_fields: DEFAULT_PROFILE_FIELDS
   });
+
+  // Toggle a profile field on/off
+  const toggleProfileField = (fieldId) => {
+    const field = ALL_PROFILE_FIELDS.find(f => f.id === fieldId);
+    // Don't allow toggling required fields off
+    if (field?.required) return;
+
+    setSettings(prev => {
+      const currentFields = prev.profile_fields || DEFAULT_PROFILE_FIELDS;
+      const isEnabled = currentFields.includes(fieldId);
+
+      if (isEnabled) {
+        return { ...prev, profile_fields: currentFields.filter(f => f !== fieldId) };
+      } else {
+        return { ...prev, profile_fields: [...currentFields, fieldId] };
+      }
+    });
+  };
+
+  // Check if a profile field is enabled
+  const isFieldEnabled = (fieldId) => {
+    const fields = settings.profile_fields || DEFAULT_PROFILE_FIELDS;
+    return fields.includes(fieldId);
+  };
   
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -63,17 +107,10 @@ const KioskSettingsTab = () => {
     setSaving(true);
     try {
       await kioskApi.updateKioskSettings(settings);
-      toast({
-        title: 'Success',
-        description: t('settings.saved_toast')
-      });
+      toast.success(t('settings.saved_toast'));
     } catch (error) {
       console.error('Save error:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to save settings',
-        variant: 'destructive'
-      });
+      toast.error('Failed to save settings');
     } finally {
       setSaving(false);
     }
@@ -269,7 +306,7 @@ const KioskSettingsTab = () => {
                 />
                 <p className="text-sm text-gray-500">Fixed at 4 digits</p>
               </div>
-              
+
               <div className="space-y-2">
                 <Label>{t('settings.otp_resend_label')}</Label>
                 <Input
@@ -282,7 +319,94 @@ const KioskSettingsTab = () => {
               </div>
             </CardContent>
           </Card>
-          
+
+          {/* Profile Fields Configuration */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Profile Update Fields</CardTitle>
+              <CardDescription>Select which fields members can edit in the kiosk profile update page</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Basic Info Section */}
+              <div>
+                <h4 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Basic Information</h4>
+                <div className="space-y-3">
+                  {ALL_PROFILE_FIELDS.filter(f => f.section === 'basic').map(field => {
+                    const Icon = field.icon;
+                    return (
+                      <div key={field.id} className="flex items-center gap-3">
+                        <Checkbox
+                          id={`field_${field.id}`}
+                          checked={isFieldEnabled(field.id)}
+                          onCheckedChange={() => toggleProfileField(field.id)}
+                          disabled={field.required}
+                        />
+                        <Label
+                          htmlFor={`field_${field.id}`}
+                          className={`flex items-center gap-2 cursor-pointer ${field.required ? 'text-gray-500' : ''}`}
+                        >
+                          <Icon className="w-4 h-4" />
+                          {field.label}
+                          {field.required && <span className="text-xs text-gray-400">(Required)</span>}
+                        </Label>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Personal Details Section */}
+              <div>
+                <h4 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3 mt-4">Personal Details</h4>
+                <div className="space-y-3">
+                  {ALL_PROFILE_FIELDS.filter(f => f.section === 'personal').map(field => {
+                    const Icon = field.icon;
+                    return (
+                      <div key={field.id} className="flex items-center gap-3">
+                        <Checkbox
+                          id={`field_${field.id}`}
+                          checked={isFieldEnabled(field.id)}
+                          onCheckedChange={() => toggleProfileField(field.id)}
+                        />
+                        <Label htmlFor={`field_${field.id}`} className="flex items-center gap-2 cursor-pointer">
+                          <Icon className="w-4 h-4" />
+                          {field.label}
+                        </Label>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Address Section */}
+              <div>
+                <h4 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3 mt-4">Address</h4>
+                <div className="space-y-3">
+                  {ALL_PROFILE_FIELDS.filter(f => f.section === 'address').map(field => {
+                    const Icon = field.icon;
+                    return (
+                      <div key={field.id} className="flex items-center gap-3">
+                        <Checkbox
+                          id={`field_${field.id}`}
+                          checked={isFieldEnabled(field.id)}
+                          onCheckedChange={() => toggleProfileField(field.id)}
+                        />
+                        <Label htmlFor={`field_${field.id}`} className="flex items-center gap-2 cursor-pointer">
+                          <Icon className="w-4 h-4" />
+                          {field.label}
+                        </Label>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <p className="text-sm text-gray-500 mt-4">
+                Full Name and Phone Number are always required for member identification.
+              </p>
+            </CardContent>
+          </Card>
+
           {/* Save Button */}
           <Button
             onClick={handleSave}

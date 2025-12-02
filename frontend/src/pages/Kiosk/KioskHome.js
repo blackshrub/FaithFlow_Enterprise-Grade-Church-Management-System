@@ -145,24 +145,24 @@ const KioskHome = () => {
   
   return (
     <KioskLayout showBack={false} showHome={false}>
-      <div className="space-y-12">
+      <div className="space-y-6 sm:space-y-8 lg:space-y-12 w-full max-w-full overflow-x-hidden px-1">
         {/* Welcome Header */}
         <motion.div
-          className="text-center space-y-4"
+          className="text-center space-y-2 sm:space-y-4"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
         >
-          <h1 className="text-5xl md:text-6xl font-bold text-gray-900">
+          <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 px-2">
             {settings?.home_title || t('home.title')}
           </h1>
-          <p className="text-2xl md:text-3xl text-gray-600">
+          <p className="text-base sm:text-xl md:text-2xl lg:text-3xl text-gray-600 px-2">
             {settings?.home_subtitle || t('home.subtitle')}
           </p>
         </motion.div>
-        
-        {/* Service Tiles */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+
+        {/* Service Tiles - Tablet landscape (2 cols), Portrait/Mobile (1 col), Desktop (3 cols) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
           {enabledServices.map((service, index) => (
             <motion.div
               key={service.id}

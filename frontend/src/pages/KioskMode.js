@@ -190,28 +190,28 @@ function KioskMode() {
   );
 
   return (
-    <div className={`h-screen w-screen overflow-hidden flex flex-col ${themes[kioskTheme]}`}>
-      {/* Top Bar */}
-      <div className="bg-white/95 backdrop-blur-sm shadow-sm px-6 py-4 flex items-center justify-between flex-shrink-0">
-        <div className="flex items-center gap-4">
+    <div data-kiosk="true" className={`h-screen w-full max-w-[100vw] overflow-x-hidden flex flex-col ${themes[kioskTheme]}`}>
+      {/* Top Bar - Mobile Responsive */}
+      <div className="bg-white/95 backdrop-blur-sm shadow-sm px-3 sm:px-4 lg:px-6 py-2 sm:py-3 lg:py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-4 flex-shrink-0">
+        <div className="flex items-center gap-2 sm:gap-4">
           <a href="/events" className="text-gray-600 hover:text-gray-900">
-            <ArrowLeft className="h-6 w-6" />
+            <ArrowLeft className="h-5 w-5 sm:h-6 sm:w-6" />
           </a>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">{t('events.kiosk.title')}</h1>
-            <p className="text-sm text-gray-600">{selectedEvent?.name || t('events.kiosk.selectEvent')}</p>
+            <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900">{t('events.kiosk.title')}</h1>
+            <p className="text-xs sm:text-sm text-gray-600 truncate max-w-[150px] sm:max-w-none">{selectedEvent?.name || t('events.kiosk.selectEvent')}</p>
           </div>
         </div>
-        
-        {/* Event Selection */}
-        <div className="flex gap-4 items-center">
-          {/* Theme Selector */}
-          <div className="flex items-center gap-2">
+
+        {/* Event Selection - Responsive wrap */}
+        <div className="flex flex-wrap gap-2 sm:gap-4 items-center w-full sm:w-auto">
+          {/* Theme Selector - Hidden on mobile */}
+          <div className="hidden md:flex items-center gap-2">
             <span className="text-sm font-medium text-gray-700">{t('events.kiosk.theme')}:</span>
             <select
               value={kioskTheme}
               onChange={(e) => handleThemeChange(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium"
+              className="px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 rounded-lg text-sm font-medium"
             >
               {Object.keys(themes).map(theme => (
                 <option key={theme} value={theme}>
@@ -228,7 +228,7 @@ function KioskMode() {
               setSelectedEvent(event);
               setSelectedSession('');
             }}
-            className="px-4 py-2 border border-gray-300 rounded-lg font-medium"
+            className="flex-1 sm:flex-none px-2 sm:px-4 py-1.5 sm:py-2 border border-gray-300 rounded-lg text-sm sm:text-base font-medium min-w-0"
           >
             <option value="">{t('events.kiosk.selectEvent')}</option>
             {events.map(event => (
@@ -242,7 +242,7 @@ function KioskMode() {
             <select
               value={selectedSession}
               onChange={(e) => setSelectedSession(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg font-medium"
+              className="flex-1 sm:flex-none px-2 sm:px-4 py-1.5 sm:py-2 border border-gray-300 rounded-lg text-sm sm:text-base font-medium min-w-0"
             >
               <option value="">{t('events.kiosk.selectSession')}</option>
               {selectedEvent.sessions?.map((session, idx) => (
@@ -255,25 +255,25 @@ function KioskMode() {
         </div>
       </div>
 
-      {/* Main Split Screen */}
-      <div className="flex-1 flex overflow-hidden">
+      {/* Main Split Screen - Stacks on mobile, side-by-side on tablet landscape+ */}
+      <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
         {/* Left: Camera Scanner */}
-        <div className="w-1/2 flex flex-col relative">
-          <div className="absolute top-4 right-4 z-10 flex gap-2">
+        <div className="h-[40vh] md:h-auto md:w-1/2 flex flex-col relative flex-shrink-0">
+          <div className="absolute top-2 sm:top-4 right-2 sm:right-4 z-10 flex gap-2">
             <Button
               onClick={toggleCamera}
               variant="secondary"
               size="sm"
-              className="bg-white/95 hover:bg-white backdrop-blur-sm"
+              className="bg-white/95 hover:bg-white backdrop-blur-sm text-xs sm:text-sm"
             >
-              <SwitchCamera className="h-4 w-4 mr-2" />
-              {t('events.kiosk.switchCamera')}
+              <SwitchCamera className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">{t('events.kiosk.switchCamera')}</span>
             </Button>
           </div>
 
           {selectedEvent ? (
-            <div className="flex-1 flex items-center justify-center p-8">
-              <div className="relative w-full max-w-2xl">
+            <div className="flex-1 flex items-center justify-center p-2 sm:p-4 lg:p-8">
+              <div className="relative w-full max-w-md lg:max-w-2xl">
                 <Webcam
                   ref={webcamRef}
                   screenshotFormat="image/jpeg"
@@ -281,8 +281,8 @@ function KioskMode() {
                   className="w-full rounded-lg shadow-2xl"
                   videoConstraints={{ facingMode }}
                 />
-                <div className="absolute inset-0 border-8 border-white/80 rounded-lg pointer-events-none animate-pulse shadow-lg" />
-                <p className="text-center text-white text-xl mt-4 font-semibold drop-shadow-lg">
+                <div className="absolute inset-0 border-4 sm:border-8 border-white/80 rounded-lg pointer-events-none animate-pulse shadow-lg" />
+                <p className="text-center text-white text-sm sm:text-lg lg:text-xl mt-2 sm:mt-4 font-semibold drop-shadow-lg">
                   {t('events.kiosk.pointCamera')}
                 </p>
               </div>
@@ -290,77 +290,77 @@ function KioskMode() {
           ) : (
             <div className="flex-1 flex items-center justify-center">
               <div className="text-center text-white">
-                <Camera className="h-24 w-24 mx-auto mb-4 opacity-70 drop-shadow-lg" />
-                <p className="text-xl font-medium drop-shadow-lg">{t('events.kiosk.selectEvent')}</p>
+                <Camera className="h-12 w-12 sm:h-16 sm:w-16 lg:h-24 lg:w-24 mx-auto mb-2 sm:mb-4 opacity-70 drop-shadow-lg" />
+                <p className="text-sm sm:text-lg lg:text-xl font-medium drop-shadow-lg">{t('events.kiosk.selectEvent')}</p>
               </div>
             </div>
           )}
         </div>
 
         {/* Right: Manual Search */}
-        <div className="w-1/2 flex flex-col">
+        <div className="flex-1 md:w-1/2 flex flex-col min-h-0">
           {/* Search Bar - Fixed at Top */}
-          <div className="p-6 border-b border-white/20 flex-shrink-0 bg-white/95 backdrop-blur-sm">
-            <div className="flex gap-3">
+          <div className="p-2 sm:p-4 lg:p-6 border-b border-white/20 flex-shrink-0 bg-white/95 backdrop-blur-sm">
+            <div className="flex gap-2 sm:gap-3">
               <div className="flex-1 relative">
-                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-6 w-6 text-gray-400" />
+                <Search className="absolute left-2 sm:left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-gray-400" />
                 <Input
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder={t('events.kiosk.searchMemberPlaceholder')}
-                  className="pl-12 h-14 text-xl border-2 focus:border-blue-500"
+                  className="pl-8 sm:pl-10 lg:pl-12 h-10 sm:h-12 lg:h-14 text-sm sm:text-base lg:text-xl border-2 focus:border-blue-500"
                 />
               </div>
               <Button
                 onClick={() => setShowQuickAdd(true)}
-                className="h-14 w-14 p-0"
+                className="h-10 w-10 sm:h-12 sm:w-12 lg:h-14 lg:w-14 p-0"
                 disabled={!selectedEvent}
                 title={t('events.kiosk.addNewVisitor')}
               >
-                <UserPlus className="h-7 w-7" />
+                <UserPlus className="h-5 w-5 sm:h-6 sm:w-6 lg:h-7 lg:w-7" />
               </Button>
             </div>
           </div>
 
           {/* Search Results */}
-          <div className="flex-1 overflow-y-auto p-6 bg-white/90 backdrop-blur-sm">
+          <div className="flex-1 overflow-y-auto p-2 sm:p-4 lg:p-6 bg-white/90 backdrop-blur-sm">
             {searchQuery.length < 2 ? (
-              <div className="text-center py-12 text-gray-500">
-                <Search className="h-16 w-16 mx-auto mb-4 text-gray-300" />
-                <p>{t('events.kiosk.manualSearch')}</p>
+              <div className="text-center py-6 sm:py-8 lg:py-12 text-gray-500">
+                <Search className="h-10 w-10 sm:h-12 sm:w-12 lg:h-16 lg:w-16 mx-auto mb-2 sm:mb-4 text-gray-300" />
+                <p className="text-sm sm:text-base">{t('events.kiosk.manualSearch')}</p>
               </div>
             ) : filteredMembers.length === 0 ? (
-              <div className="text-center py-12 text-gray-500">
-                <p className="text-lg font-medium mb-2">{t('events.kiosk.noResults')}</p>
-                <p className="text-sm">{t('events.kiosk.tryDifferentSearch')}</p>
+              <div className="text-center py-6 sm:py-8 lg:py-12 text-gray-500">
+                <p className="text-sm sm:text-base lg:text-lg font-medium mb-1 sm:mb-2">{t('events.kiosk.noResults')}</p>
+                <p className="text-xs sm:text-sm">{t('events.kiosk.tryDifferentSearch')}</p>
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-2 sm:space-y-3">
                 {filteredMembers.slice(0, 8).map(member => (
                   <button
                     key={member.id}
                     onClick={() => handleManualCheckIn(member)}
-                    className="w-full bg-white border-2 border-gray-200 rounded-lg p-4 hover:border-blue-500 hover:shadow-lg transition-all text-left"
+                    className="w-full bg-white border-2 border-gray-200 rounded-lg p-2 sm:p-3 lg:p-4 hover:border-blue-500 hover:shadow-lg transition-all text-left"
                   >
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2 sm:gap-3 lg:gap-4">
                       {(member.photo_url || member.photo_base64) ? (
                         <img
                           src={member.photo_url || member.photo_base64}
                           alt={member.full_name}
-                          className="w-16 h-16 rounded-full object-cover"
+                          className="w-10 h-10 sm:w-12 sm:h-12 lg:w-16 lg:h-16 rounded-full object-cover flex-shrink-0"
                         />
                       ) : (
-                        <div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center">
-                          <span className="text-2xl font-bold text-gray-500">
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 lg:w-16 lg:h-16 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
+                          <span className="text-base sm:text-xl lg:text-2xl font-bold text-gray-500">
                             {member.full_name?.charAt(0)}
                           </span>
                         </div>
                       )}
-                      <div className="flex-1">
-                        <p className="font-semibold text-lg text-gray-900">{member.full_name}</p>
-                        <p className="text-sm text-gray-600">{member.phone_whatsapp || t('common.na')}</p>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-sm sm:text-base lg:text-lg text-gray-900 truncate">{member.full_name}</p>
+                        <p className="text-xs sm:text-sm text-gray-600 truncate">{member.phone_whatsapp || t('common.na')}</p>
                       </div>
-                      <CheckCircle className="h-6 w-6 text-green-500" />
+                      <CheckCircle className="h-5 w-5 sm:h-6 sm:w-6 text-green-500 flex-shrink-0" />
                     </div>
                   </button>
                 ))}
@@ -370,14 +370,14 @@ function KioskMode() {
 
           {/* Recent Check-ins */}
           {recentCheckIns.length > 0 && (
-            <div className="border-t border-white/20 p-4 flex-shrink-0 bg-white/95 backdrop-blur-sm">
-              <p className="text-sm font-medium text-gray-700 mb-2">
+            <div className="border-t border-white/20 p-2 sm:p-3 lg:p-4 flex-shrink-0 bg-white/95 backdrop-blur-sm">
+              <p className="text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                 {t('events.kiosk.recentCheckIns')} ({recentCheckIns.length})
               </p>
-              <div className="flex gap-2 overflow-x-auto">
+              <div className="flex gap-1 sm:gap-2 overflow-x-auto">
                 {recentCheckIns.slice(0, 6).map((item, idx) => (
-                  <div key={idx} className="flex-shrink-0 bg-green-50 rounded-lg p-2 border border-green-200">
-                    <p className="text-xs font-medium text-green-900 truncate max-w-[120px]">
+                  <div key={idx} className="flex-shrink-0 bg-green-50 rounded-lg p-1.5 sm:p-2 border border-green-200">
+                    <p className="text-[10px] sm:text-xs font-medium text-green-900 truncate max-w-[80px] sm:max-w-[120px]">
                       {item.name}
                     </p>
                   </div>

@@ -57,9 +57,9 @@ export const kioskApi = {
     return response.data;
   },
 
-  // Create new member (Pre-Visitor)
+  // Create new member (Pre-Visitor) - PUBLIC kiosk endpoint
   createPreVisitor: async (data) => {
-    const response = await api.post('/members/', data);
+    const response = await api.post('/kiosk/create-member', data);
     return response.data;
   },
 
@@ -102,30 +102,21 @@ export const kioskApi = {
 
   // ==================== EVENT REGISTRATION ====================
 
-  getUpcomingEvents: async () => {
-    const response = await api.get('/events/', {
+  getUpcomingEvents: async (churchId) => {
+    // Use public kiosk endpoint (no auth required)
+    const response = await api.get('/kiosk/events', {
       params: {
+        church_id: churchId || localStorage.getItem('kiosk_church_id'),
         limit: 50
       }
     });
-    
-    console.log('🎯 Raw events response:', response.data);
-    
+
+    console.log('🎯 Kiosk events response:', response.data);
+
     const events = response.data?.data || [];
-    console.log('🎯 Events array:', events);
     console.log('🎯 Events count:', events.length);
-    
-    // Filter for future events only
-    const now = new Date();
-    const futureEvents = events.filter(event => {
-      if (!event.event_date) return false;
-      const eventDate = new Date(event.event_date);
-      return eventDate >= now;
-    });
-    
-    console.log('🎯 Future events count:', futureEvents.length);
-    
-    return futureEvents;
+
+    return events;
   },
 
   registerForEvent: async (event_id, member_id) => {
@@ -139,9 +130,13 @@ export const kioskApi = {
   // ==================== PRAYER REQUESTS ====================
 
   submitPrayerRequest: async (data) => {
-    const response = await api.post('/v1/prayer-requests/', {
-      ...data,
-      source: 'kiosk'
+    // Use public kiosk endpoint (no auth required)
+    const response = await api.post('/kiosk/prayer-request', {
+      member_id: data.member_id,
+      church_id: data.church_id || localStorage.getItem('kiosk_church_id'),
+      request_text: data.request_text,
+      is_anonymous: data.is_anonymous || false,
+      category: data.category
     });
     return response.data;
   },
@@ -167,9 +162,11 @@ export const kioskApi = {
 
   // ==================== GROUPS ====================
 
-  getPublicGroups: async (category = null) => {
-    const response = await api.get('/v1/groups/', {
+  getPublicGroups: async (category = null, churchId = null) => {
+    // Use public groups endpoint (no auth required)
+    const response = await api.get('/public/groups/', {
       params: {
+        church_id: churchId || localStorage.getItem('kiosk_church_id'),
         is_open_for_join: true,
         category: category || undefined,
         limit: 50
@@ -190,8 +187,8 @@ export const kioskApi = {
   // ==================== PROFILE UPDATE ====================
 
   updateMemberProfile: async (member_id, data) => {
-    // Use PATCH for partial updates
-    const response = await api.patch(`/members/${member_id}`, data);
+    // Use public kiosk endpoint (no auth required)
+    const response = await api.patch(`/kiosk/update-profile/${member_id}`, data);
     return response.data;
   },
 };

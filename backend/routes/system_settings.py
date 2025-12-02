@@ -175,8 +175,15 @@ async def update_system_settings(
     }
 
 
+class TestAIConnectionRequest(BaseModel):
+    """Request body for testing AI connection"""
+    api_key: Optional[str] = None
+    model: Optional[str] = None
+
+
 @router.post("/settings/test-ai-connection")
 async def test_ai_connection(
+    request: Optional[TestAIConnectionRequest] = None,
     current_user=Depends(require_super_admin),
     db=Depends(get_db),
 ):
@@ -184,27 +191,36 @@ async def test_ai_connection(
     Test AI API connection (Anthropic Claude)
 
     Verifies that the API key works by making a test request.
+    If api_key/model provided in request body, uses those directly (for testing before save).
+    Otherwise falls back to saved settings.
     """
-    import os
     from anthropic import Anthropic
 
-    # Get settings from DB
-    settings_doc = await db.system_settings.find_one({"id": "global_system_settings"})
+    api_key = None
+    model = "claude-3-5-sonnet-20241022"
 
-    if not settings_doc:
-        raise HTTPException(status_code=404, detail="System settings not found. Please configure AI settings first.")
+    # Priority 1: Use values from request body (for testing before save)
+    if request and request.api_key:
+        api_key = request.api_key
+        model = request.model or model
+    else:
+        # Priority 2: Get from saved settings
+        settings_doc = await db.system_settings.find_one({"id": "global_system_settings"})
 
-    settings_dict = decrypt_settings(settings_doc)
-    api_key = settings_dict.get("ai_integration", {}).get("anthropic_api_key")
+        if settings_doc:
+            settings_dict = decrypt_settings(settings_doc)
+            ai_settings = settings_dict.get("ai_integration", {})
+            api_key = ai_settings.get("anthropic_api_key")
+            model = ai_settings.get("anthropic_model", model)
 
     if not api_key:
-        raise HTTPException(status_code=400, detail="Anthropic API key not configured")
+        raise HTTPException(status_code=400, detail="Please provide an API key to test")
 
     try:
         # Test API call
         client = Anthropic(api_key=api_key)
         response = client.messages.create(
-            model=settings_dict.get("ai_integration", {}).get("anthropic_model", "claude-3-5-sonnet-20241022"),
+            model=model,
             max_tokens=50,
             messages=[
                 {"role": "user", "content": "Say 'API connection successful' in one sentence."}
@@ -225,8 +241,14 @@ async def test_ai_connection(
         )
 
 
+class TestStabilityRequest(BaseModel):
+    """Request body for testing Stability AI connection"""
+    api_key: Optional[str] = None
+
+
 @router.post("/settings/test-stability-connection")
 async def test_stability_connection(
+    request: Optional[TestStabilityRequest] = None,
     current_user=Depends(require_super_admin),
     db=Depends(get_db),
 ):
@@ -234,20 +256,26 @@ async def test_stability_connection(
     Test Stability AI API connection
 
     Verifies that the API key works by checking account info.
+    If api_key provided in request body, uses that directly (for testing before save).
+    Otherwise falls back to saved settings.
     """
     import httpx
 
-    # Get settings from DB
-    settings_doc = await db.system_settings.find_one({"id": "global_system_settings"})
+    api_key = None
 
-    if not settings_doc:
-        raise HTTPException(status_code=404, detail="System settings not found. Please configure AI settings first.")
+    # Priority 1: Use value from request body (for testing before save)
+    if request and request.api_key:
+        api_key = request.api_key
+    else:
+        # Priority 2: Get from saved settings
+        settings_doc = await db.system_settings.find_one({"id": "global_system_settings"})
 
-    settings_dict = decrypt_settings(settings_doc)
-    api_key = settings_dict.get("ai_integration", {}).get("stability_api_key")
+        if settings_doc:
+            settings_dict = decrypt_settings(settings_doc)
+            api_key = settings_dict.get("ai_integration", {}).get("stability_api_key")
 
     if not api_key:
-        raise HTTPException(status_code=400, detail="Stability AI API key not configured")
+        raise HTTPException(status_code=400, detail="Please provide an API key to test")
 
     try:
         # Test API call - get account info
@@ -257,6 +285,7 @@ async def test_stability_connection(
                 headers={
                     "Authorization": f"Bearer {api_key}",
                 },
+                timeout=10.0,
             )
 
             if response.status_code == 200:
@@ -272,6 +301,11 @@ async def test_stability_connection(
                     detail=f"Stability AI API connection failed: {response.text}",
                 )
 
+    except httpx.TimeoutException:
+        raise HTTPException(
+            status_code=400,
+            detail="Stability AI API connection timed out. Please try again.",
+        )
     except Exception as e:
         raise HTTPException(
             status_code=400,
@@ -687,4 +721,284 @@ async def create_realtime_session(
         raise HTTPException(
             status_code=500,
             detail=f"Failed to create realtime session: {str(e)}",
+        )
+
+
+class TestGoogleTTSRequest(BaseModel):
+    """Request body for testing Google TTS connection"""
+    api_key: Optional[str] = None
+
+
+@router.post("/settings/test-google-tts")
+async def test_google_tts(
+    request: Optional[TestGoogleTTSRequest] = None,
+    current_user=Depends(require_super_admin),
+    db=Depends(get_db),
+):
+    """
+    Test Google Cloud TTS API connection
+
+    Verifies that the API key works by making a test TTS request.
+    If api_key provided in request body, uses that directly (for testing before save).
+    Otherwise falls back to saved settings.
+    """
+    import httpx
+
+    api_key = None
+
+    # Priority 1: Use value from request body (for testing before save)
+    if request and request.api_key:
+        api_key = request.api_key
+    else:
+        # Priority 2: Get from saved settings
+        settings_doc = await db.system_settings.find_one({"id": "global_system_settings"})
+
+        if settings_doc:
+            settings_dict = decrypt_settings(settings_doc)
+            api_key = settings_dict.get("voice_integration", {}).get("google_tts_api_key")
+
+    if not api_key:
+        raise HTTPException(status_code=400, detail="Please provide a Google TTS API key to test")
+
+    try:
+        # Test API call - list available voices
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                f"https://texttospeech.googleapis.com/v1/voices?key={api_key}",
+                timeout=10.0,
+            )
+
+            if response.status_code == 200:
+                voices_data = response.json()
+                voice_count = len(voices_data.get("voices", []))
+                return {
+                    "status": "success",
+                    "message": f"Google TTS API connection successful ({voice_count} voices available)",
+                    "voice_count": voice_count,
+                }
+            elif response.status_code == 403:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Invalid API key or Text-to-Speech API not enabled in Google Cloud Console",
+                )
+            else:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Google TTS API connection failed: {response.text}",
+                )
+
+    except httpx.TimeoutException:
+        raise HTTPException(
+            status_code=400,
+            detail="Google TTS API connection timed out. Please try again.",
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Google TTS API connection failed: {str(e)}",
+        )
+
+
+class TestGroqRequest(BaseModel):
+    """Request body for testing Groq API connection"""
+    api_key: Optional[str] = None
+
+
+@router.post("/settings/test-groq")
+async def test_groq(
+    request: Optional[TestGroqRequest] = None,
+    current_user=Depends(require_super_admin),
+    db=Depends(get_db),
+):
+    """
+    Test Groq API connection (for Whisper STT)
+
+    Verifies that the API key works by checking available models.
+    If api_key provided in request body, uses that directly (for testing before save).
+    Otherwise falls back to saved settings.
+    """
+    import httpx
+
+    api_key = None
+
+    # Priority 1: Use value from request body (for testing before save)
+    if request and request.api_key:
+        api_key = request.api_key
+    else:
+        # Priority 2: Get from saved settings
+        settings_doc = await db.system_settings.find_one({"id": "global_system_settings"})
+
+        if settings_doc:
+            settings_dict = decrypt_settings(settings_doc)
+            api_key = settings_dict.get("voice_integration", {}).get("groq_api_key")
+
+    if not api_key:
+        raise HTTPException(status_code=400, detail="Please provide a Groq API key to test")
+
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                "https://api.groq.com/openai/v1/models",
+                headers={
+                    "Authorization": f"Bearer {api_key}",
+                },
+                timeout=10.0,
+            )
+
+            if response.status_code == 200:
+                models_data = response.json()
+                whisper_models = [m for m in models_data.get("data", []) if "whisper" in m.get("id", "").lower()]
+                return {
+                    "status": "success",
+                    "message": f"Groq API connection successful ({len(whisper_models)} Whisper models available)",
+                    "whisper_models": [m.get("id") for m in whisper_models],
+                }
+            elif response.status_code == 401:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Invalid Groq API key",
+                )
+            else:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Groq API connection failed: {response.text}",
+                )
+
+    except httpx.TimeoutException:
+        raise HTTPException(
+            status_code=400,
+            detail="Groq API connection timed out. Please try again.",
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Groq API connection failed: {str(e)}",
+        )
+
+
+class TestPaymentRequest(BaseModel):
+    """Request body for testing iPaymu connection"""
+    va: Optional[str] = None
+    api_key: Optional[str] = None
+    env: Optional[str] = "sandbox"
+
+
+@router.post("/settings/test-ipaymu")
+async def test_ipaymu(
+    request: Optional[TestPaymentRequest] = None,
+    current_user=Depends(require_super_admin),
+    db=Depends(get_db),
+):
+    """
+    Test iPaymu payment gateway connection
+
+    Verifies that the credentials work by checking account balance.
+    If credentials provided in request body, uses those directly (for testing before save).
+    Otherwise falls back to saved settings.
+    """
+    import httpx
+    import hashlib
+    import hmac
+    import json
+    from datetime import datetime
+
+    va = None
+    api_key = None
+    env = "sandbox"
+
+    # Priority 1: Use values from request body (for testing before save)
+    if request:
+        va = request.va or va
+        api_key = request.api_key or api_key
+        env = request.env or env
+
+    # Priority 2: Get from saved settings if not provided
+    if not va or not api_key:
+        settings_doc = await db.system_settings.find_one({"id": "global_system_settings"})
+
+        if settings_doc:
+            settings_dict = decrypt_settings(settings_doc)
+            payment_settings = settings_dict.get("payment_integration", {})
+            va = va or payment_settings.get("ipaymu_va")
+            api_key = api_key or payment_settings.get("ipaymu_api_key")
+            env = payment_settings.get("ipaymu_env", env)
+
+    if not va or not api_key:
+        raise HTTPException(status_code=400, detail="Please provide VA number and API key to test")
+
+    # Determine API URL based on environment
+    # Sandbox: https://sandbox.ipaymu.com/api/v2
+    # Production: https://my.ipaymu.com/api/v2
+    base_url = "https://sandbox.ipaymu.com/api/v2" if env == "sandbox" else "https://my.ipaymu.com/api/v2"
+
+    try:
+        # Build request body
+        body = {"account": va}
+
+        # Generate signature for iPaymu API using HMAC-SHA256
+        # Step 1: Convert body to compact JSON
+        body_string = json.dumps(body, separators=(",", ":"))
+
+        # Step 2: Hash the body with SHA256
+        encrypt_body = hashlib.sha256(body_string.encode()).hexdigest()
+
+        # Step 3: Create string to sign: METHOD:VA:HASH:APIKEY
+        string_to_sign = f"POST:{va}:{encrypt_body}:{api_key}"
+
+        # Step 4: Generate HMAC-SHA256 signature
+        signature = hmac.new(
+            api_key.encode("utf-8"),
+            string_to_sign.encode("utf-8"),
+            hashlib.sha256
+        ).hexdigest().lower()
+
+        # Generate timestamp in format YYYYMMDDHHmmss
+        timestamp = datetime.utcnow().strftime("%Y%m%d%H%M%S")
+
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                f"{base_url}/balance",
+                headers={
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                    "va": va,
+                    "signature": signature,
+                    "timestamp": timestamp,
+                },
+                json=body,
+                timeout=15.0,
+            )
+
+            data = response.json()
+            if data.get("Status") == 200:
+                balance_data = data.get("Data", {})
+                return {
+                    "status": "success",
+                    "message": f"iPaymu connection successful ({env} mode)",
+                    "balance": balance_data.get("MerchantBalance") or balance_data.get("Balance"),
+                    "environment": env,
+                }
+            else:
+                error_msg = data.get("Message", "Unknown error")
+                # Add more detail for debugging
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"iPaymu connection failed ({env}): {error_msg}",
+                )
+
+    except httpx.TimeoutException:
+        raise HTTPException(
+            status_code=400,
+            detail="iPaymu API connection timed out. Please try again.",
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=400,
+            detail=f"iPaymu connection failed: {str(e)}",
         )

@@ -184,81 +184,81 @@ const NewMemberRegistration = ({ phone, onComplete, onError }) => {
   
   return (
     <motion.div
-      className="bg-white rounded-3xl shadow-2xl p-12 max-w-3xl mx-auto space-y-8"
+      className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl p-4 sm:p-8 lg:p-12 max-w-3xl mx-auto space-y-4 sm:space-y-6 lg:space-y-8 w-full box-border overflow-hidden"
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
     >
-      <div className="text-center space-y-3">
-        <h2 className="text-4xl font-bold text-gray-900">
+      <div className="text-center space-y-2 sm:space-y-3">
+        <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900">
           {t('new_profile.title')}
         </h2>
-        <p className="text-xl text-gray-600">
+        <p className="text-base sm:text-lg lg:text-xl text-gray-600">
           {t('new_profile.description')}
         </p>
       </div>
-      
+
       {/* Form Fields */}
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         {/* Phone (disabled) */}
         <div>
-          <Label className="text-xl font-medium text-gray-700">
+          <Label className="text-base sm:text-lg lg:text-xl font-medium text-gray-700">
             {t('phone.label')}
           </Label>
           <Input
             value={phone}
             disabled
-            className="h-14 text-xl px-6 rounded-xl bg-gray-100"
+            className="h-10 sm:h-12 lg:h-14 text-sm sm:text-base lg:text-xl px-3 sm:px-4 lg:px-6 rounded-xl bg-gray-100"
           />
         </div>
-        
+
         {/* Full Name */}
         <div>
-          <Label className="text-xl font-medium text-gray-700">
+          <Label className="text-base sm:text-lg lg:text-xl font-medium text-gray-700">
             {t('new_profile.name_label')} *
           </Label>
           <Input
             value={formData.full_name}
             onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-            className="h-14 text-xl px-6 rounded-xl"
+            className="h-10 sm:h-12 lg:h-14 text-sm sm:text-base lg:text-xl px-3 sm:px-4 lg:px-6 rounded-xl"
             autoFocus
           />
         </div>
-        
+
         {/* Gender */}
         <div>
-          <Label className="text-xl font-medium text-gray-700">
+          <Label className="text-base sm:text-lg lg:text-xl font-medium text-gray-700">
             {t('new_profile.gender_label')} *
           </Label>
           <Select
             value={formData.gender}
             onValueChange={(value) => setFormData({ ...formData, gender: value })}
           >
-            <SelectTrigger className="h-14 text-xl rounded-xl">
+            <SelectTrigger className="h-10 sm:h-12 lg:h-14 text-sm sm:text-base lg:text-xl rounded-xl">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="Male" className="text-xl">{t('new_profile.gender_male')}</SelectItem>
-              <SelectItem value="Female" className="text-xl">{t('new_profile.gender_female')}</SelectItem>
+              <SelectItem value="Male" className="text-sm sm:text-base lg:text-xl">{t('new_profile.gender_male')}</SelectItem>
+              <SelectItem value="Female" className="text-sm sm:text-base lg:text-xl">{t('new_profile.gender_female')}</SelectItem>
             </SelectContent>
           </Select>
         </div>
-        
+
         {/* Birth Date */}
         <div>
-          <Label className="text-xl font-medium text-gray-700">
+          <Label className="text-base sm:text-lg lg:text-xl font-medium text-gray-700">
             {t('new_profile.birthdate_label')} *
           </Label>
           <Input
             type="date"
             value={formData.date_of_birth}
             onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })}
-            className="h-14 text-xl px-6 rounded-xl"
+            className="h-10 sm:h-12 lg:h-14 text-sm sm:text-base lg:text-xl px-3 sm:px-4 lg:px-6 rounded-xl"
           />
         </div>
-        
+
         {/* Photo */}
         <div>
-          <Label className="text-xl font-medium text-gray-700">
+          <Label className="text-base sm:text-lg lg:text-xl font-medium text-gray-700">
             {t('new_profile.photo_label')}
           </Label>
           {!showCamera && !formData.photo_base64 && (
@@ -266,21 +266,21 @@ const NewMemberRegistration = ({ phone, onComplete, onError }) => {
               type="button"
               variant="outline"
               onClick={() => setShowCamera(true)}
-              className="w-full h-14 text-xl rounded-xl"
+              className="w-full h-10 sm:h-12 lg:h-14 text-sm sm:text-base lg:text-xl rounded-xl"
             >
-              <Camera className="mr-2 h-6 w-6" />
+              <Camera className="mr-2 h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6" />
               {t('new_profile.photo_take')}
             </Button>
           )}
-          
+
           {showCamera && (
-            <div className="space-y-4">
-              <div className="relative rounded-2xl overflow-hidden">
+            <div className="space-y-3 sm:space-y-4">
+              <div className="relative rounded-xl sm:rounded-2xl overflow-hidden">
                 <Webcam
                   ref={webcamRef}
                   screenshotFormat="image/jpeg"
-                  className="w-full rounded-2xl"
-                  videoConstraints={{ 
+                  className="w-full rounded-xl sm:rounded-2xl"
+                  videoConstraints={{
                     facingMode: facingMode,
                     width: 1280,
                     height: 720
@@ -289,39 +289,39 @@ const NewMemberRegistration = ({ phone, onComplete, onError }) => {
                 />
                 {countdown > 0 && (
                   <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50">
-                    <div className="text-9xl font-bold text-white">
+                    <div className="text-6xl sm:text-7xl lg:text-9xl font-bold text-white">
                       {countdown}
                     </div>
                   </div>
                 )}
-                
+
                 {/* Switch Camera Button */}
                 <button
                   onClick={switchCamera}
                   disabled={countdown > 0}
-                  className="absolute top-4 right-4 bg-white/90 hover:bg-white p-3 rounded-full shadow-lg transition-all disabled:opacity-50"
+                  className="absolute top-2 sm:top-4 right-2 sm:right-4 bg-white/90 hover:bg-white p-2 sm:p-3 rounded-full shadow-lg transition-all disabled:opacity-50"
                   title="Switch Camera"
                 >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                   </svg>
                 </button>
               </div>
-              <div className="flex gap-4">
+              <div className="flex gap-2 sm:gap-4">
                 <Button
                   variant="outline"
                   onClick={() => {
                     setShowCamera(false);
                     setCountdown(0);
                   }}
-                  className="flex-1 h-14 text-xl rounded-xl"
+                  className="flex-1 h-10 sm:h-12 lg:h-14 text-sm sm:text-base lg:text-xl rounded-xl"
                   disabled={countdown > 0}
                 >
                   Cancel
                 </Button>
                 <Button
                   onClick={capturePhoto}
-                  className="flex-1 h-14 text-xl rounded-xl"
+                  className="flex-1 h-10 sm:h-12 lg:h-14 text-sm sm:text-base lg:text-xl rounded-xl"
                   disabled={countdown > 0}
                 >
                   {countdown > 0 ? 'Capturing...' : 'Capture'}
@@ -329,18 +329,18 @@ const NewMemberRegistration = ({ phone, onComplete, onError }) => {
               </div>
             </div>
           )}
-          
+
           {formData.photo_base64 && (
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               <img
                 src={formData.photo_base64}
                 alt="Preview"
-                className="w-48 h-48 rounded-full object-cover mx-auto border-4 border-blue-200"
+                className="w-32 h-32 sm:w-40 sm:h-40 lg:w-48 lg:h-48 rounded-full object-cover mx-auto border-4 border-blue-200"
               />
               <Button
                 variant="outline"
                 onClick={() => setShowCamera(true)}
-                className="w-full h-14 text-xl rounded-xl"
+                className="w-full h-10 sm:h-12 lg:h-14 text-sm sm:text-base lg:text-xl rounded-xl"
               >
                 {t('new_profile.photo_change')}
               </Button>
@@ -348,19 +348,19 @@ const NewMemberRegistration = ({ phone, onComplete, onError }) => {
           )}
         </div>
       </div>
-      
+
       {/* OTP Section - Only show when form is complete */}
       {isFormComplete && (
-        <div className="border-t pt-8 space-y-6">
-          <div className="text-center space-y-3">
-            <p className="text-xl font-medium text-gray-700">
+        <div className="border-t pt-4 sm:pt-6 lg:pt-8 space-y-4 sm:space-y-6">
+          <div className="text-center space-y-2 sm:space-y-3">
+            <p className="text-base sm:text-lg lg:text-xl font-medium text-gray-700">
               {t('new_profile.otp_info')}
             </p>
-            <p className="text-lg text-gray-600">
+            <p className="text-sm sm:text-base lg:text-lg text-gray-600">
               {t('new_profile.otp_help')}
             </p>
           </div>
-          
+
           <OTPInput
             length={4}
             value={otp}
@@ -372,7 +372,7 @@ const NewMemberRegistration = ({ phone, onComplete, onError }) => {
 
           {otpError && (
             <motion.p
-              className="text-center text-lg text-red-600"
+              className="text-center text-sm sm:text-base lg:text-lg text-red-600"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
             >
@@ -384,17 +384,17 @@ const NewMemberRegistration = ({ phone, onComplete, onError }) => {
             variant="ghost"
             onClick={handleResendOTP}
             disabled={resending || resendCooldown > 0}
-            className="w-full text-lg"
+            className="w-full text-sm sm:text-base lg:text-lg"
           >
             {resending ? 'Sending...' : resendCooldown > 0 ? `Resend OTP in ${resendCooldown}s` : 'Resend OTP'}
           </Button>
         </div>
       )}
-      
+
       {/* Helper text when form incomplete */}
       {!isFormComplete && (
-        <div className="border-t pt-8">
-          <p className="text-center text-xl text-gray-500">
+        <div className="border-t pt-4 sm:pt-6 lg:pt-8">
+          <p className="text-center text-base sm:text-lg lg:text-xl text-gray-500">
             Please fill in all required fields above to continue.
           </p>
         </div>

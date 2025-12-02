@@ -13,7 +13,7 @@ export default function GeneralSettingsTab() {
   const { toast } = useToast();
   const { data: settings, isLoading, isSuccess } = useChurchSettings();
   const updateSettings = useUpdateChurchSettings();
-  
+
   const [formData, setFormData] = useState({
     date_format: 'DD-MM-YYYY',
     time_format: '24h',
@@ -26,18 +26,10 @@ export default function GeneralSettingsTab() {
     whatsapp_api_url: '',
     whatsapp_username: '',
     whatsapp_password: '',
-    group_categories: {
-      cell_group: 'Cell Group / Small Group',
-      ministry_team: 'Ministry Team',
-      activity: 'Activity Group',
-      support_group: 'Support Group',
-    },
   });
 
   useEffect(() => {
     if (isSuccess && settings) {
-      console.log('🔥 Hydrating form with EXACT backend settings:', settings);
-
       setFormData({
         date_format: settings.date_format,
         time_format: settings.time_format,
@@ -50,38 +42,25 @@ export default function GeneralSettingsTab() {
         whatsapp_api_url: settings.whatsapp_api_url,
         whatsapp_username: settings.whatsapp_username,
         whatsapp_password: settings.whatsapp_password,
-        group_categories: settings.group_categories,
       });
     }
   }, [isSuccess, settings]);
 
   const handleSave = () => {
-    console.log('💾 Saving settings:', formData);
-    console.log('📱 WhatsApp config:', {
-      url: formData.whatsapp_api_url,
-      username: formData.whatsapp_username,
-      password: formData.whatsapp_password ? '***' : '(empty)'
-    });
     updateSettings.mutate(formData, {
-      onSuccess: (data) => {
-        console.log('✅ Settings saved, response:', data);
-        console.log('📱 WhatsApp in response:', {
-          url: data?.whatsapp_api_url,
-          username: data?.whatsapp_username,
-          password: data?.whatsapp_password ? '***' : '(empty)'
-        });
+      onSuccess: () => {
         toast({
           title: t('settings.settingsSaved') || 'Settings saved successfully',
-          variant: 'default'
+          variant: 'default',
         });
       },
       onError: (error) => {
         toast({
           title: 'Error',
           description: error.response?.data?.detail || 'Failed to save settings',
-          variant: 'destructive'
+          variant: 'destructive',
         });
-      }
+      },
     });
   };
 
@@ -230,43 +209,6 @@ export default function GeneralSettingsTab() {
             </Select>
             <p className="text-sm text-gray-500">{t('settings.defaultLanguageDesc')}</p>
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Community Categories */}
-      <Card>
-        <CardHeader>
-          <CardTitle>{t('settings.communityCategoriesTitle') || t('settings.groupCategoriesTitle') || 'Community Categories'}</CardTitle>
-          <CardDescription>
-            {t('settings.communityCategoriesDesc') || t('settings.groupCategoriesDesc') || 'Configure labels for each community category type.'}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {['cell_group', 'ministry_team', 'activity', 'support_group'].map((code) => (
-            <div key={code} className="flex items-center gap-4">
-              <div className="w-40">
-                <Label className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                  {code}
-                </Label>
-              </div>
-              <div className="flex-1">
-                <input
-                  type="text"
-                  className="w-full border rounded px-3 py-2 text-sm"
-                  value={formData.group_categories[code] || ''}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      group_categories: {
-                        ...formData.group_categories,
-                        [code]: e.target.value,
-                      },
-                    })
-                  }
-                />
-              </div>
-            </div>
-          ))}
         </CardContent>
       </Card>
 

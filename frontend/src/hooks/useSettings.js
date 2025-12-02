@@ -139,17 +139,41 @@ export const useUpdateDemographic = () => {
 export const useDeleteDemographic = () => {
   const queryClient = useQueryClient();
   const { church } = useAuth();
-  
+
   return useMutation({
     mutationFn: (demographicId) => settingsAPI.deleteDemographic(demographicId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ 
-        queryKey: queryKeys.settings.demographics(church?.id) 
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.settings.demographics(church?.id)
       });
       toast.success('Demographic preset deleted successfully');
     },
     onError: (error) => {
       toast.error(error.response?.data?.detail || 'Failed to delete demographic preset');
+    },
+  });
+};
+
+export const useValidateDemographics = () => {
+  return useMutation({
+    mutationFn: () => settingsAPI.validateDemographics(),
+    onError: (error) => {
+      toast.error(error.response?.data?.detail || 'Failed to validate demographics');
+    },
+  });
+};
+
+export const useRegenerateDemographics = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => settingsAPI.regenerateDemographics(),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['members'] });
+      toast.success(data.data?.message || 'Demographics regenerated successfully');
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.detail || 'Failed to regenerate demographics');
     },
   });
 };

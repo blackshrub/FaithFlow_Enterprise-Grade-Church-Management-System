@@ -285,7 +285,7 @@ function App() {
               {/* System Routes */}
               <Route path="users/management" element={<UserManagement />} />
               <Route path="system/crash-logs" element={<CrashLogs />} />
-              <Route path="system-settings" element={<SystemSettings />} />
+              <Route path="integrations" element={<SystemSettings />} />
 
               {/* Placeholder routes - will be implemented in next phases */}
               <Route path="donations" element={<PlaceholderPage title="Donations" />} />

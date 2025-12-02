@@ -14,29 +14,25 @@ import { Heart, Check } from 'lucide-react';
 import { motion } from 'framer-motion';
 import KioskLayout from '../../components/Kiosk/KioskLayout';
 import PhoneStep from '../../components/Kiosk/PhoneStep';
-import OTPInput from '../../components/Kiosk/OTPInput';
+import ExistingMemberOTP from '../../components/Kiosk/ExistingMemberOTP';
 import NewMemberRegistration from '../../components/Kiosk/NewMemberRegistration';
 import { Button } from '../../components/ui/button';
 import { Textarea } from '../../components/ui/textarea';
 import { Label } from '../../components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
-import MemberAvatar from '../../components/MemberAvatar';
 import kioskApi from '../../services/kioskApi';
 
 const PrayerRequestKiosk = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useTranslation('kiosk');
-  
+
   const churchId = location.state?.churchId || localStorage.getItem('kiosk_church_id');
-  
+
   const [step, setStep] = useState('phone');
   const [phone, setPhone] = useState('');
   const [member, setMember] = useState(null);
-  const [otp, setOtp] = useState('');
-  const [verifying, setVerifying] = useState(false);
-  const [otpError, setOtpError] = useState('');
-  
+
   const [prayerData, setPrayerData] = useState({
     request: '',
     category: 'other',
@@ -56,29 +52,12 @@ const PrayerRequestKiosk = () => {
     setPhone(foundPhone);
     setStep('otp_new');
   };
-  
-  const handleOtpComplete = async (code) => {
-    setOtpError('');
-    setVerifying(true);
-    
-    try {
-      const result = await kioskApi.verifyOTP(phone, code);
-      
-      if (result.success) {
-        setStep('prayer_form');
-      } else {
-        setOtpError(t('existing_profile.otp_error'));
-        setOtp('');
-      }
-    } catch (error) {
-      console.error('OTP error:', error);
-      setOtpError(t('otp.error_generic'));
-      setOtp('');
-    } finally {
-      setVerifying(false);
-    }
+
+  const handleOtpVerified = (verifiedMember) => {
+    setMember(verifiedMember);
+    setStep('prayer_form');
   };
-  
+
   const handleNewMemberComplete = (newMember) => {
     setMember(newMember);
     setStep('prayer_form');
@@ -120,14 +99,14 @@ const PrayerRequestKiosk = () => {
   if (step === 'phone') {
     return (
       <KioskLayout showBack showHome>
-        <div className="space-y-8">
-          <div className="text-center">
-            <h1 className="text-4xl font-bold text-gray-900 mb-2">
+        <div className="space-y-4 sm:space-y-6 lg:space-y-8 w-full max-w-full overflow-x-hidden">
+          <div className="text-center px-2">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-2">
               {t('prayer.title')}
             </h1>
-            <p className="text-xl text-gray-600">Step 1 of 2: {t('phone.title')}</p>
+            <p className="text-base sm:text-lg lg:text-xl text-gray-600">Step 1 of 2: {t('phone.title')}</p>
           </div>
-          
+
           <PhoneStep
             churchId={churchId}
             onMemberFound={handleMemberFound}
@@ -142,44 +121,11 @@ const PrayerRequestKiosk = () => {
   if (step === 'otp_existing') {
     return (
       <KioskLayout showBack showHome onBack={() => setStep('phone')}>
-        <motion.div
-          className="bg-white rounded-3xl shadow-2xl p-12 max-w-2xl mx-auto space-y-8"
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-        >
-          <div className="text-center space-y-6">
-            <h2 className="text-3xl font-bold">{t('existing_profile.title')}</h2>
-            
-            <div className="flex flex-col items-center gap-4 p-6 bg-blue-50 rounded-2xl">
-              <MemberAvatar
-                member={member}
-                size="xl"
-              />
-              <div>
-                <p className="text-2xl font-bold">{member?.full_name}</p>
-                <p className="text-lg text-gray-600">Status: {member?.member_status || 'Member'}</p>
-              </div>
-            </div>
-            
-            <p className="text-xl text-gray-700">{t('existing_profile.otp_info')}</p>
-          </div>
-          
-          <OTPInput
-            length={4}
-            value={otp}
-            onChange={setOtp}
-            onComplete={handleOtpComplete}
-            disabled={verifying}
-          />
-          
-          {otpError && (
-            <motion.p className="text-center text-lg text-red-600" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-              {otpError}
-            </motion.p>
-          )}
-          
-          <p className="text-center text-gray-500">{t('existing_profile.otp_resend_hint')}</p>
-        </motion.div>
+        <ExistingMemberOTP
+          member={member}
+          phone={phone}
+          onVerified={handleOtpVerified}
+        />
       </KioskLayout>
     );
   }
@@ -201,67 +147,67 @@ const PrayerRequestKiosk = () => {
     return (
       <KioskLayout showBack showHome onBack={() => navigate('/kiosk/home')}>
         <motion.div
-          className="bg-white rounded-3xl shadow-2xl p-12 max-w-3xl mx-auto space-y-8"
+          className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl p-4 sm:p-8 lg:p-12 max-w-3xl mx-auto space-y-4 sm:space-y-6 lg:space-y-8 w-full box-border overflow-hidden"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
         >
           <div className="text-center">
-            <h2 className="text-4xl font-bold text-gray-900 mb-2">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-2">
               {t('prayer.step_request')}
             </h2>
           </div>
-          
-          <div className="space-y-6">
+
+          <div className="space-y-4 sm:space-y-6">
             {/* Prayer Request */}
             <div>
-              <Label className="text-2xl font-medium text-gray-700 mb-3 block">
+              <Label className="text-base sm:text-lg lg:text-2xl font-medium text-gray-700 mb-2 sm:mb-3 block">
                 {t('prayer.request_label')}
               </Label>
               <Textarea
                 value={prayerData.request}
                 onChange={(e) => setPrayerData({ ...prayerData, request: e.target.value })}
                 placeholder={t('prayer.request_placeholder')}
-                rows={6}
-                className="text-xl p-6 rounded-xl resize-none"
+                rows={4}
+                className="text-sm sm:text-base lg:text-xl p-3 sm:p-4 lg:p-6 rounded-xl resize-none"
               />
             </div>
-            
+
             {/* Category */}
             <div>
-              <Label className="text-xl font-medium text-gray-700">
+              <Label className="text-sm sm:text-base lg:text-xl font-medium text-gray-700">
                 {t('prayer.category_label')}
               </Label>
               <Select
                 value={prayerData.category}
                 onValueChange={(value) => setPrayerData({ ...prayerData, category: value })}
               >
-                <SelectTrigger className="h-14 text-xl rounded-xl">
+                <SelectTrigger className="h-10 sm:h-12 lg:h-14 text-sm sm:text-base lg:text-xl rounded-xl">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="healing" className="text-xl">{t('prayer.category_health') || 'Healing'}</SelectItem>
-                  <SelectItem value="family" className="text-xl">{t('prayer.category_family') || 'Family'}</SelectItem>
-                  <SelectItem value="work" className="text-xl">{t('prayer.category_work') || 'Work'}</SelectItem>
-                  <SelectItem value="financial" className="text-xl">{t('prayer.category_financial') || 'Financial'}</SelectItem>
-                  <SelectItem value="spiritual" className="text-xl">{t('prayer.category_spiritual') || 'Spiritual'}</SelectItem>
-                  <SelectItem value="guidance" className="text-xl">{t('prayer.category_guidance') || 'Guidance'}</SelectItem>
-                  <SelectItem value="thanksgiving" className="text-xl">{t('prayer.category_thanksgiving') || 'Thanksgiving'}</SelectItem>
-                  <SelectItem value="other" className="text-xl">{t('prayer.category_other') || 'Other'}</SelectItem>
+                  <SelectItem value="healing" className="text-sm sm:text-base lg:text-xl">{t('prayer.category_health') || 'Healing'}</SelectItem>
+                  <SelectItem value="family" className="text-sm sm:text-base lg:text-xl">{t('prayer.category_family') || 'Family'}</SelectItem>
+                  <SelectItem value="work" className="text-sm sm:text-base lg:text-xl">{t('prayer.category_work') || 'Work'}</SelectItem>
+                  <SelectItem value="financial" className="text-sm sm:text-base lg:text-xl">{t('prayer.category_financial') || 'Financial'}</SelectItem>
+                  <SelectItem value="spiritual" className="text-sm sm:text-base lg:text-xl">{t('prayer.category_spiritual') || 'Spiritual'}</SelectItem>
+                  <SelectItem value="guidance" className="text-sm sm:text-base lg:text-xl">{t('prayer.category_guidance') || 'Guidance'}</SelectItem>
+                  <SelectItem value="thanksgiving" className="text-sm sm:text-base lg:text-xl">{t('prayer.category_thanksgiving') || 'Thanksgiving'}</SelectItem>
+                  <SelectItem value="other" className="text-sm sm:text-base lg:text-xl">{t('prayer.category_other') || 'Other'}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            
+
             {/* Follow-up */}
-            <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl">
-              <Label className="text-xl font-medium text-gray-700 flex-1">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 p-3 sm:p-4 bg-gray-50 rounded-xl">
+              <Label className="text-sm sm:text-base lg:text-xl font-medium text-gray-700 flex-1">
                 {t('prayer.followup_label')}
               </Label>
-              <div className="flex gap-3">
+              <div className="flex gap-2 sm:gap-3">
                 <Button
                   type="button"
                   variant={prayerData.needs_followup ? 'default' : 'outline'}
                   onClick={() => setPrayerData({ ...prayerData, needs_followup: true })}
-                  className="h-12 px-8 text-lg rounded-xl"
+                  className="h-10 sm:h-12 px-4 sm:px-6 lg:px-8 text-sm sm:text-base lg:text-lg rounded-xl"
                 >
                   {t('prayer.followup_yes')}
                 </Button>
@@ -269,18 +215,18 @@ const PrayerRequestKiosk = () => {
                   type="button"
                   variant={!prayerData.needs_followup ? 'default' : 'outline'}
                   onClick={() => setPrayerData({ ...prayerData, needs_followup: false })}
-                  className="h-12 px-8 text-lg rounded-xl"
+                  className="h-10 sm:h-12 px-4 sm:px-6 lg:px-8 text-sm sm:text-base lg:text-lg rounded-xl"
                 >
                   {t('prayer.followup_no')}
                 </Button>
               </div>
             </div>
           </div>
-          
+
           <Button
             onClick={handleSubmitPrayer}
             disabled={submitting || !prayerData.request.trim()}
-            className="w-full h-16 text-xl rounded-xl"
+            className="w-full h-12 sm:h-14 lg:h-16 text-base sm:text-lg lg:text-xl rounded-xl"
           >
             {submitting ? 'Sending...' : t('prayer.submit')}
           </Button>
@@ -294,7 +240,7 @@ const PrayerRequestKiosk = () => {
     return (
       <KioskLayout showBack={false} showHome={false}>
         <motion.div
-          className="bg-white rounded-3xl shadow-2xl p-12 max-w-2xl mx-auto space-y-8 text-center"
+          className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl p-4 sm:p-8 lg:p-12 max-w-2xl mx-auto space-y-4 sm:space-y-6 lg:space-y-8 text-center w-full box-border overflow-hidden"
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
         >
@@ -303,23 +249,23 @@ const PrayerRequestKiosk = () => {
             animate={{ scale: 1 }}
             transition={{ duration: 0.5, delay: 0.2 }}
           >
-            <div className="w-32 h-32 bg-green-100 rounded-full flex items-center justify-center mx-auto">
-              <Check className="w-16 h-16 text-green-600" />
+            <div className="w-20 h-20 sm:w-24 sm:h-24 lg:w-32 lg:h-32 bg-green-100 rounded-full flex items-center justify-center mx-auto">
+              <Check className="w-10 h-10 sm:w-12 sm:h-12 lg:w-16 lg:h-16 text-green-600" />
             </div>
           </motion.div>
-          
-          <div className="space-y-4">
-            <h2 className="text-5xl font-bold text-gray-900">
+
+          <div className="space-y-2 sm:space-y-3 lg:space-y-4">
+            <h2 className="text-2xl sm:text-3xl lg:text-5xl font-bold text-gray-900">
               {t('prayer.success_title')}
             </h2>
-            <p className="text-2xl text-gray-600">
+            <p className="text-base sm:text-lg lg:text-2xl text-gray-600">
               {t('prayer.success_text')}
             </p>
           </div>
-          
+
           <Button
             onClick={() => navigate('/kiosk/home')}
-            className="w-full h-16 text-xl rounded-xl"
+            className="w-full h-12 sm:h-14 lg:h-16 text-base sm:text-lg lg:text-xl rounded-xl"
           >
             {t('prayer.success_back')}
           </Button>

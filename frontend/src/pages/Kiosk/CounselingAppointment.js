@@ -17,30 +17,26 @@ import { MessageCircleHeart, Check, Calendar as CalendarIcon } from 'lucide-reac
 import { motion } from 'framer-motion';
 import KioskLayout from '../../components/Kiosk/KioskLayout';
 import PhoneStep from '../../components/Kiosk/PhoneStep';
-import OTPInput from '../../components/Kiosk/OTPInput';
+import ExistingMemberOTP from '../../components/Kiosk/ExistingMemberOTP';
 import NewMemberRegistration from '../../components/Kiosk/NewMemberRegistration';
 import { Button } from '../../components/ui/button';
 import { Textarea } from '../../components/ui/textarea';
 import { Label } from '../../components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
-import MemberAvatar from '../../components/MemberAvatar';
 import kioskApi from '../../services/kioskApi';
-import { format, parseISO, addDays, startOfDay } from 'date-fns';
+import { format, addDays, startOfDay } from 'date-fns';
 
 const CounselingKiosk = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useTranslation('kiosk');
-  
+
   const churchId = location.state?.churchId || localStorage.getItem('kiosk_church_id');
-  
+
   const [step, setStep] = useState('phone');
   const [phone, setPhone] = useState('');
   const [member, setMember] = useState(null);
-  const [otp, setOtp] = useState('');
-  const [verifying, setVerifying] = useState(false);
-  const [otpError, setOtpError] = useState('');
-  
+
   const [counselingData, setCounselingData] = useState({
     type: 'personal',
     notes: '',
@@ -101,27 +97,12 @@ const CounselingKiosk = () => {
     setPhone(foundPhone);
     setStep('otp_new');
   };
-  
-  const handleOtpComplete = async (code) => {
-    setOtpError('');
-    setVerifying(true);
-    
-    try {
-      const result = await kioskApi.verifyOTP(phone, code);
-      if (result.success) {
-        setStep('counseling_form');
-      } else {
-        setOtpError(t('existing_profile.otp_error'));
-        setOtp('');
-      }
-    } catch (error) {
-      setOtpError(t('otp.error_generic'));
-      setOtp('');
-    } finally {
-      setVerifying(false);
-    }
+
+  const handleOtpVerified = (verifiedMember) => {
+    setMember(verifiedMember);
+    setStep('counseling_form');
   };
-  
+
   const handleNewMemberComplete = (newMember) => {
     setMember(newMember);
     setStep('counseling_form');
@@ -158,10 +139,10 @@ const CounselingKiosk = () => {
   if (step === 'phone') {
     return (
       <KioskLayout showBack showHome>
-        <div className="space-y-8">
-          <div className="text-center">
-            <h1 className="text-4xl font-bold mb-2">{t('counseling.title')}</h1>
-            <p className="text-xl text-gray-600">Step 1 of 3: {t('phone.title')}</p>
+        <div className="space-y-8 w-full max-w-full overflow-x-hidden">
+          <div className="text-center px-2">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2">{t('counseling.title')}</h1>
+            <p className="text-base sm:text-lg lg:text-xl text-gray-600">Step 1 of 3: {t('phone.title')}</p>
           </div>
           <PhoneStep 
             churchId={churchId}
@@ -177,21 +158,11 @@ const CounselingKiosk = () => {
   if (step === 'otp_existing') {
     return (
       <KioskLayout showBack showHome onBack={() => setStep('phone')}>
-        <motion.div className="bg-white rounded-3xl shadow-2xl p-12 max-w-2xl mx-auto space-y-8" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-          <div className="text-center space-y-6">
-            <h2 className="text-3xl font-bold">{t('existing_profile.title')}</h2>
-            <div className="flex flex-col items-center gap-4 p-6 bg-blue-50 rounded-2xl">
-              <MemberAvatar member={member} size="xl" />
-              <div>
-                <p className="text-2xl font-bold">{member?.full_name}</p>
-                <p className="text-lg text-gray-600">Status: {member?.member_status || 'Member'}</p>
-              </div>
-            </div>
-            <p className="text-xl">{t('existing_profile.otp_info')}</p>
-          </div>
-          <OTPInput length={4} value={otp} onChange={setOtp} onComplete={handleOtpComplete} disabled={verifying} />
-          {otpError && <p className="text-center text-lg text-red-600">{otpError}</p>}
-        </motion.div>
+        <ExistingMemberOTP
+          member={member}
+          phone={phone}
+          onVerified={handleOtpVerified}
+        />
       </KioskLayout>
     );
   }
@@ -209,40 +180,40 @@ const CounselingKiosk = () => {
   if (step === 'counseling_form') {
     return (
       <KioskLayout showBack showHome onBack={() => navigate('/kiosk/home')}>
-        <motion.div className="bg-white rounded-3xl shadow-2xl p-12 max-w-3xl mx-auto space-y-8" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-          <div className="text-center">
-            <h2 className="text-4xl font-bold mb-2">{t('counseling.step_details')}</h2>
+        <motion.div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl p-4 sm:p-8 lg:p-12 max-w-3xl mx-auto w-full space-y-4 sm:space-y-6 lg:space-y-8" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+          <div className="text-center px-2">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2">{t('counseling.step_details')}</h2>
           </div>
-          
-          <div className="space-y-6">
+
+          <div className="space-y-4 sm:space-y-6">
             <div>
-              <Label className="text-2xl font-medium mb-3 block">{t('counseling.type_label')}</Label>
+              <Label className="text-base sm:text-lg lg:text-2xl font-medium mb-3 block">{t('counseling.type_label')}</Label>
               <Select value={counselingData.type} onValueChange={(value) => setCounselingData({ ...counselingData, type: value })}>
-                <SelectTrigger className="h-14 text-xl rounded-xl"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="h-10 sm:h-12 lg:h-14 text-sm sm:text-base lg:text-xl rounded-xl"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="family" className="text-xl">{t('counseling.type_family')}</SelectItem>
-                  <SelectItem value="personal" className="text-xl">{t('counseling.type_personal')}</SelectItem>
-                  <SelectItem value="marriage" className="text-xl">{t('counseling.type_marriage')}</SelectItem>
-                  <SelectItem value="other" className="text-xl">{t('counseling.type_other')}</SelectItem>
+                  <SelectItem value="family" className="text-sm sm:text-base lg:text-xl">{t('counseling.type_family')}</SelectItem>
+                  <SelectItem value="personal" className="text-sm sm:text-base lg:text-xl">{t('counseling.type_personal')}</SelectItem>
+                  <SelectItem value="marriage" className="text-sm sm:text-base lg:text-xl">{t('counseling.type_marriage')}</SelectItem>
+                  <SelectItem value="other" className="text-sm sm:text-base lg:text-xl">{t('counseling.type_other')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            
+
             <div>
-              <Label className="text-2xl font-medium mb-3 block">{t('counseling.notes_label')}</Label>
-              <Textarea value={counselingData.notes} onChange={(e) => setCounselingData({ ...counselingData, notes: e.target.value })} placeholder={t('counseling.notes_placeholder')} rows={5} className="text-xl p-6 rounded-xl" />
+              <Label className="text-base sm:text-lg lg:text-2xl font-medium mb-3 block">{t('counseling.notes_label')}</Label>
+              <Textarea value={counselingData.notes} onChange={(e) => setCounselingData({ ...counselingData, notes: e.target.value })} placeholder={t('counseling.notes_placeholder')} rows={5} className="text-sm sm:text-base lg:text-xl p-3 sm:p-4 lg:p-6 rounded-xl" />
             </div>
-            
+
             <div>
-              <Label className="text-2xl font-medium mb-3 block">{t('counseling.urgency_label')}</Label>
-              <div className="grid grid-cols-3 gap-4">
+              <Label className="text-base sm:text-lg lg:text-2xl font-medium mb-3 block">{t('counseling.urgency_label')}</Label>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 lg:gap-4">
                 {['low', 'medium', 'high'].map(level => (
                   <Button
                     key={level}
                     type="button"
                     variant={counselingData.urgency === level ? 'default' : 'outline'}
                     onClick={() => setCounselingData({ ...counselingData, urgency: level })}
-                    className="h-16 text-xl rounded-xl"
+                    className="h-12 sm:h-14 lg:h-16 text-base sm:text-lg lg:text-xl rounded-xl"
                   >
                     {t(`counseling.urgency_${level}`)}
                   </Button>
@@ -250,8 +221,8 @@ const CounselingKiosk = () => {
               </div>
             </div>
           </div>
-          
-          <Button onClick={() => setStep('select_date')} className="w-full h-16 text-xl rounded-xl">
+
+          <Button onClick={() => setStep('select_date')} className="w-full h-12 sm:h-14 lg:h-16 text-base sm:text-lg lg:text-xl rounded-xl">
             Continue
           </Button>
         </motion.div>
@@ -263,13 +234,13 @@ const CounselingKiosk = () => {
   if (step === 'select_date') {
     return (
       <KioskLayout showBack showHome onBack={() => setStep('counseling_form')}>
-        <motion.div className="bg-white rounded-3xl shadow-2xl p-12 max-w-4xl mx-auto space-y-8" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-          <div className="text-center">
-            <h2 className="text-4xl font-bold mb-2">{t('counseling.step_slot')}</h2>
-            <p className="text-xl text-gray-600">{t('counseling.date_label')}</p>
+        <motion.div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl p-4 sm:p-8 lg:p-12 max-w-4xl mx-auto w-full space-y-4 sm:space-y-6 lg:space-y-8" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+          <div className="text-center px-2">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2">{t('counseling.step_slot')}</h2>
+            <p className="text-base sm:text-lg lg:text-xl text-gray-600">{t('counseling.date_label')}</p>
           </div>
-          
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3 lg:gap-4">
             {availableDates.map((date, index) => (
               <motion.button
                 key={date.toISOString()}
@@ -277,20 +248,20 @@ const CounselingKiosk = () => {
                   setSelectedDate(date);
                   setStep('select_time');
                 }}
-                className="bg-blue-50 hover:bg-blue-100 rounded-2xl p-6 text-center transition-all"
+                className="bg-blue-50 hover:bg-blue-100 rounded-2xl p-3 sm:p-4 lg:p-6 text-center transition-all"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.05 }}
               >
-                <div className="text-xl font-bold text-gray-900">
+                <div className="text-base sm:text-lg lg:text-xl font-bold text-gray-900">
                   {format(date, 'EEE')}
                 </div>
-                <div className="text-3xl font-bold text-blue-600">
+                <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-blue-600">
                   {format(date, 'dd')}
                 </div>
-                <div className="text-lg text-gray-600">
+                <div className="text-sm sm:text-base lg:text-lg text-gray-600">
                   {format(date, 'MMM')}
                 </div>
               </motion.button>
@@ -305,22 +276,22 @@ const CounselingKiosk = () => {
   if (step === 'select_time') {
     return (
       <KioskLayout showBack showHome onBack={() => setStep('select_date')}>
-        <motion.div className="bg-white rounded-3xl shadow-2xl p-12 max-w-4xl mx-auto space-y-8" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-          <div className="text-center">
-            <h2 className="text-4xl font-bold mb-2">{t('counseling.time_label')}</h2>
-            <p className="text-xl text-gray-600">{selectedDate && format(selectedDate, 'EEEE, MMMM dd, yyyy')}</p>
+        <motion.div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl p-4 sm:p-8 lg:p-12 max-w-4xl mx-auto w-full space-y-4 sm:space-y-6 lg:space-y-8" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+          <div className="text-center px-2">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2">{t('counseling.time_label')}</h2>
+            <p className="text-base sm:text-lg lg:text-xl text-gray-600">{selectedDate && format(selectedDate, 'EEEE, MMMM dd, yyyy')}</p>
           </div>
-          
+
           {availableSlots.length === 0 ? (
-            <div className="text-center py-12">
-              <CalendarIcon className="w-20 h-20 mx-auto mb-4 text-gray-300" />
-              <p className="text-2xl text-gray-600">{t('counseling.no_slots')}</p>
-              <Button onClick={() => setStep('select_date')} className="mt-6 h-14 px-8 text-xl rounded-xl">
+            <div className="text-center py-8 sm:py-12">
+              <CalendarIcon className="w-12 h-12 sm:w-16 sm:h-16 lg:w-20 lg:h-20 mx-auto mb-4 text-gray-300" />
+              <p className="text-lg sm:text-xl lg:text-2xl text-gray-600">{t('counseling.no_slots')}</p>
+              <Button onClick={() => setStep('select_date')} className="mt-6 h-10 sm:h-12 lg:h-14 px-4 sm:px-6 lg:px-8 text-base sm:text-lg lg:text-xl rounded-xl">
                 {t('home.back')}
               </Button>
             </div>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 lg:gap-4">
               {availableSlots.slice(0, 12).map((slot, index) => (
                 <motion.button
                   key={slot.slot_id}
@@ -328,17 +299,17 @@ const CounselingKiosk = () => {
                     setSelectedSlot(slot);
                     setStep('confirm');
                   }}
-                  className="bg-green-50 hover:bg-green-100 rounded-2xl p-6 text-center transition-all"
+                  className="bg-green-50 hover:bg-green-100 rounded-2xl p-3 sm:p-4 lg:p-6 text-center transition-all"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: index * 0.05 }}
                 >
-                  <div className="text-2xl font-bold text-green-700">
+                  <div className="text-lg sm:text-xl lg:text-2xl font-bold text-green-700">
                     {slot.start_time}
                   </div>
-                  <div className="text-lg text-gray-600">
+                  <div className="text-base sm:text-lg text-gray-600">
                     {slot.counselor_name || 'Available'}
                   </div>
                 </motion.button>
@@ -354,24 +325,24 @@ const CounselingKiosk = () => {
   if (step === 'confirm') {
     return (
       <KioskLayout showBack showHome onBack={() => setStep('select_time')}>
-        <motion.div className="bg-white rounded-3xl shadow-2xl p-12 max-w-2xl mx-auto space-y-8" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-          <div className="text-center">
-            <h2 className="text-4xl font-bold mb-2">{t('counseling.confirm_title')}</h2>
-            <p className="text-xl text-gray-600">{t('counseling.confirm_text')}</p>
+        <motion.div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl p-4 sm:p-8 lg:p-12 max-w-2xl mx-auto w-full space-y-4 sm:space-y-6 lg:space-y-8" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+          <div className="text-center px-2">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2">{t('counseling.confirm_title')}</h2>
+            <p className="text-base sm:text-lg lg:text-xl text-gray-600">{t('counseling.confirm_text')}</p>
           </div>
-          
-          <div className="bg-blue-50 rounded-2xl p-6 space-y-3 text-lg">
+
+          <div className="bg-blue-50 rounded-2xl p-3 sm:p-4 lg:p-6 space-y-2 sm:space-y-3 text-sm sm:text-base lg:text-lg">
             <p><strong>Type:</strong> {t(`counseling.type_${counselingData.type}`)}</p>
             <p><strong>Date:</strong> {selectedDate && format(selectedDate, 'EEEE, MMMM dd, yyyy')}</p>
             <p><strong>Time:</strong> {selectedSlot?.start_time} - {selectedSlot?.end_time}</p>
             <p><strong>Urgency:</strong> {t(`counseling.urgency_${counselingData.urgency}`)}</p>
           </div>
-          
-          <div className="flex gap-4">
-            <Button variant="outline" onClick={() => setStep('select_time')} className="flex-1 h-16 text-xl rounded-xl">
+
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+            <Button variant="outline" onClick={() => setStep('select_time')} className="flex-1 h-12 sm:h-14 lg:h-16 text-base sm:text-lg lg:text-xl rounded-xl">
               {t('home.back')}
             </Button>
-            <Button onClick={handleSubmitCounseling} disabled={submitting} className="flex-1 h-16 text-xl rounded-xl">
+            <Button onClick={handleSubmitCounseling} disabled={submitting} className="flex-1 h-12 sm:h-14 lg:h-16 text-base sm:text-lg lg:text-xl rounded-xl">
               {submitting ? 'Processing...' : t('counseling.confirm_button')}
             </Button>
           </div>
@@ -384,19 +355,19 @@ const CounselingKiosk = () => {
   if (step === 'success') {
     return (
       <KioskLayout showBack={false} showHome={false}>
-        <motion.div className="bg-white rounded-3xl shadow-2xl p-12 max-w-2xl mx-auto space-y-8 text-center" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}>
+        <motion.div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl p-4 sm:p-8 lg:p-12 max-w-2xl mx-auto w-full space-y-4 sm:space-y-6 lg:space-y-8 text-center" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}>
           <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ duration: 0.5, delay: 0.2 }}>
-            <div className="w-32 h-32 bg-green-100 rounded-full flex items-center justify-center mx-auto">
-              <Check className="w-16 h-16 text-green-600" />
+            <div className="w-20 h-20 sm:w-24 sm:h-24 lg:w-32 lg:h-32 bg-green-100 rounded-full flex items-center justify-center mx-auto">
+              <Check className="w-10 h-10 sm:w-12 sm:h-12 lg:w-16 lg:h-16 text-green-600" />
             </div>
           </motion.div>
-          
-          <div className="space-y-4">
-            <h2 className="text-5xl font-bold">{t('counseling.success_title')}</h2>
-            <p className="text-2xl text-gray-600">{t('counseling.success_text')}</p>
+
+          <div className="space-y-3 sm:space-y-4 px-2">
+            <h2 className="text-2xl sm:text-3xl lg:text-5xl font-bold">{t('counseling.success_title')}</h2>
+            <p className="text-lg sm:text-xl lg:text-2xl text-gray-600">{t('counseling.success_text')}</p>
           </div>
-          
-          <Button onClick={() => navigate('/kiosk/home')} className="w-full h-16 text-xl rounded-xl">
+
+          <Button onClick={() => navigate('/kiosk/home')} className="w-full h-12 sm:h-14 lg:h-16 text-base sm:text-lg lg:text-xl rounded-xl">
             {t('counseling.success_back')}
           </Button>
         </motion.div>

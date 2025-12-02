@@ -94,7 +94,7 @@ const OTPInput = ({ length = 4, value = '', onChange, onComplete, disabled = fal
   };
   
   return (
-    <div className="flex gap-3 justify-center">
+    <div className="flex gap-2 sm:gap-3 justify-center flex-wrap w-full max-w-full overflow-hidden px-1">
       {otp.map((digit, index) => (
         <motion.input
           key={index}
@@ -107,7 +107,7 @@ const OTPInput = ({ length = 4, value = '', onChange, onComplete, disabled = fal
           onKeyDown={(e) => handleKeyDown(index, e)}
           onPaste={handlePaste}
           disabled={disabled}
-          className="w-16 h-16 text-3xl font-bold text-center border-2 border-gray-300 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-200 transition-all disabled:bg-gray-100 disabled:cursor-not-allowed"
+          className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 text-xl sm:text-2xl lg:text-3xl font-bold text-center border-2 border-gray-300 rounded-lg sm:rounded-xl focus:border-blue-500 focus:ring-2 sm:focus:ring-4 focus:ring-blue-200 transition-all disabled:bg-gray-100 disabled:cursor-not-allowed"
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ duration: 0.15, delay: index * 0.05 }}

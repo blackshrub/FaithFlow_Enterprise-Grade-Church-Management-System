@@ -51,98 +51,82 @@ const KioskLayout = ({ children, showBack = false, showHome = true, onBack = nul
   };
   
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex flex-col">
-      {/* Top Navigation */}
-      <div className="p-6 flex items-center justify-between">
+    <div data-kiosk="true" className="min-h-screen w-full max-w-[100vw] overflow-x-hidden bg-gradient-to-br from-slate-50 to-slate-100 flex flex-col">
+      {/* Top Navigation - Mobile responsive */}
+      <div className="p-2 sm:p-4 lg:p-6 flex flex-wrap items-center justify-between gap-2 sm:gap-4 w-full max-w-[100vw] overflow-x-hidden">
         {/* Left: Church name + Navigation buttons */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-1.5 sm:gap-3 min-w-0 flex-shrink">
           {/* Church Name */}
           {churchName && (
-            <div className="flex items-center gap-2 text-xl font-semibold text-gray-700">
-              <Church className="h-6 w-6 text-blue-600" />
-              <span>{churchName}</span>
+            <div className="flex items-center gap-1 sm:gap-2 text-sm sm:text-base lg:text-xl font-semibold text-gray-700 min-w-0">
+              <Church className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-blue-600 flex-shrink-0" />
+              <span className="truncate max-w-[80px] sm:max-w-[150px] lg:max-w-[250px]">{churchName}</span>
             </div>
           )}
-          
+
           {/* Back button */}
           {showBack && !isHome && (
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.3 }}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleBack}
+              className="h-8 sm:h-10 lg:h-12 px-2 sm:px-3 lg:px-4 text-xs sm:text-sm lg:text-base rounded-lg sm:rounded-xl flex-shrink-0"
             >
-              <Button
-                variant="outline"
-                size="lg"
-                onClick={handleBack}
-                className="h-14 px-6 text-lg rounded-2xl"
-              >
-                <ArrowLeft className="mr-2 h-5 w-5" />
-                {t('home.back')}
-              </Button>
-            </motion.div>
+              <ArrowLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4 lg:h-5 lg:w-5" />
+              <span className="hidden sm:inline ml-1">{t('home.back')}</span>
+            </Button>
           )}
-          
+
           {/* Back to Start button */}
           {showHome && !isHome && (
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.3, delay: 0.1 }}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate('/kiosk/home')}
+              className="h-8 sm:h-10 lg:h-12 px-2 sm:px-3 lg:px-4 text-xs sm:text-sm lg:text-base rounded-lg sm:rounded-xl flex-shrink-0"
             >
-              <Button
-                variant="outline"
-                size="lg"
-                onClick={() => navigate('/kiosk/home')}
-                className="h-14 px-6 text-lg rounded-2xl"
-              >
-                <Home className="mr-2 h-5 w-5" />
-                {t('home.back_to_start')}
-              </Button>
-            </motion.div>
+              <Home className="h-3.5 w-3.5 sm:h-4 sm:w-4 lg:h-5 lg:w-5" />
+              <span className="hidden md:inline ml-1">{t('home.back_to_start')}</span>
+            </Button>
           )}
         </div>
-        
+
         {/* Right: Change Church + Language */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-1.5 sm:gap-2 lg:gap-4 flex-shrink-0">
           {/* Change Church Button */}
           {showChangeChurch && churchName && (
             <Button
               variant="outline"
-              size="lg"
+              size="sm"
               onClick={handleChangeChurch}
-              className="h-14 px-6 text-lg rounded-2xl"
+              className="h-8 sm:h-10 lg:h-12 px-2 sm:px-3 lg:px-4 text-xs sm:text-sm lg:text-base rounded-lg sm:rounded-xl"
             >
-              {i18n.language === 'en' ? 'Change Church' : 'Ganti Gereja'}
+              <Church className="h-3.5 w-3.5 sm:h-4 sm:w-4 lg:h-5 lg:w-5" />
+              <span className="hidden md:inline ml-1">{i18n.language === 'en' ? 'Change' : 'Ganti'}</span>
             </Button>
           )}
-          
+
           {/* Language Toggle */}
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.3 }}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={toggleLanguage}
+            className="h-8 sm:h-10 lg:h-12 px-2 sm:px-3 lg:px-4 text-xs sm:text-sm lg:text-base rounded-lg sm:rounded-xl"
           >
-            <Button
-              variant="outline"
-              size="lg"
-              onClick={toggleLanguage}
-              className="h-14 px-6 text-lg rounded-2xl"
-            >
-              <Globe className="mr-2 h-5 w-5" />
-              {i18n.language === 'en' ? 'EN' : 'ID'}
-            </Button>
-          </motion.div>
+            <Globe className="h-3.5 w-3.5 sm:h-4 sm:w-4 lg:h-5 lg:w-5" />
+            <span className="ml-1">{i18n.language === 'en' ? 'EN' : 'ID'}</span>
+          </Button>
         </div>
       </div>
-      
+
       {/* Main Content */}
-      <div className="flex-1 flex items-center justify-center p-6">
-        <div className="w-full max-w-6xl">
+      <div className="flex-1 flex items-center justify-center p-2 sm:p-4 lg:p-6 w-full overflow-x-hidden min-w-0">
+        <div className="w-full max-w-[calc(100vw-1rem)] sm:max-w-[calc(100vw-2rem)] lg:max-w-6xl overflow-hidden min-w-0">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.35 }}
+            className="w-full min-w-0"
           >
             {children}
           </motion.div>
