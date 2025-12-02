@@ -208,6 +208,9 @@
     "categoriesDesc": "Kelola semua jenis kategori yang digunakan di aplikasi",
     "communityCategories": "Komunitas",
     "statusAutomation": "Otomasi Status",
+    "kiosk": "Kiosk",
+    "explore": "Jelajahi",
+    "aiPrompts": "Prompt AI",
     "displayPreferences": "Preferensi Tampilan",
     "displayPreferencesDesc": "Konfigurasi tampilan tanggal, waktu, dan angka",
     "dateFormat": "Format Tanggal",
@@ -305,6 +308,7 @@
     "communityCategoriesDesc": "Sesuaikan label kategori komunitas untuk gereja Anda",
     "sendCommunityNotifications": "Kirim Notifikasi Komunitas",
     "sendCommunityNotificationsDesc": "Beritahukan anggota tentang pembaruan dan pengumuman komunitas",
+    "whatsappApiNote": "Kredensial API WhatsApp dikonfigurasi di Integrasi (hanya Super Admin). Hubungi administrator Anda untuk mengatur integrasi WhatsApp.",
     "webhooks": {
       "title": "Webhook",
       "description": "Konfigurasi webhook untuk sinkronisasi data anggota dengan aplikasi eksternal",

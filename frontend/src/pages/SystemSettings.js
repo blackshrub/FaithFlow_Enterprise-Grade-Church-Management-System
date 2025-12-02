@@ -1069,25 +1069,32 @@ function AIIntegrationTab({ settings, onSave, onTestAI, onTestStability, showKey
 }
 
 function WhatsAppIntegrationTab({ settings, onSave, showKeys, setShowKeys, isSaving }) {
-  // Track if API key is already set
+  // Track if credentials are already set
   const hasApiKey = isMaskedValue(settings.whatsapp_api_key);
+  const hasPassword = isMaskedValue(settings.whatsapp_password);
 
   const [formData, setFormData] = useState({
     whatsapp_api_url: settings.whatsapp_api_url || '',
     whatsapp_api_key: getApiKeyDisplayValue(settings.whatsapp_api_key),
+    whatsapp_username: settings.whatsapp_username || '',
+    whatsapp_password: getApiKeyDisplayValue(settings.whatsapp_password),
     whatsapp_from_number: settings.whatsapp_from_number || '',
     whatsapp_enabled: settings.whatsapp_enabled ?? true,
   });
 
-  // Custom save handler that only sends API key if changed
+  // Custom save handler that only sends secrets if changed
   const handleSave = () => {
     const updates = {
       whatsapp_api_url: formData.whatsapp_api_url || undefined,
+      whatsapp_username: formData.whatsapp_username || undefined,
       whatsapp_from_number: formData.whatsapp_from_number || undefined,
       whatsapp_enabled: formData.whatsapp_enabled,
     };
     if (shouldSendApiKey(formData.whatsapp_api_key, settings.whatsapp_api_key)) {
       updates.whatsapp_api_key = formData.whatsapp_api_key;
+    }
+    if (shouldSendApiKey(formData.whatsapp_password, settings.whatsapp_password)) {
+      updates.whatsapp_password = formData.whatsapp_password;
     }
     onSave(updates);
   };
@@ -1096,7 +1103,7 @@ function WhatsAppIntegrationTab({ settings, onSave, showKeys, setShowKeys, isSav
     <div className="space-y-6">
       <Alert>
         <AlertDescription>
-          Configure WhatsApp API for OTP login and notifications
+          Configure WhatsApp API for OTP login and notifications. Supports both API Key and Basic Auth.
         </AlertDescription>
       </Alert>
 
@@ -1109,40 +1116,92 @@ function WhatsAppIntegrationTab({ settings, onSave, showKeys, setShowKeys, isSav
         <Label htmlFor="whatsapp-enabled">Enable WhatsApp Integration</Label>
       </div>
 
+      <Separator />
+
       <div className="space-y-2">
-        <Label htmlFor="whatsapp-url">WhatsApp API URL</Label>
+        <Label htmlFor="whatsapp-url">WhatsApp API URL *</Label>
         <Input
           id="whatsapp-url"
           value={formData.whatsapp_api_url}
           onChange={(e) => setFormData({ ...formData, whatsapp_api_url: e.target.value })}
           placeholder="https://your-whatsapp-api.com"
         />
+        <p className="text-sm text-muted-foreground">Base URL for your WhatsApp gateway (e.g., go-whatsapp-web-multidevice)</p>
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="whatsapp-key">API Key</Label>
-        <div className="relative">
-          <Input
-            id="whatsapp-key"
-            value={formData.whatsapp_api_key}
-            onChange={(e) => setFormData({ ...formData, whatsapp_api_key: e.target.value })}
-            type={showKeys.whatsapp ? 'text' : 'password'}
-            placeholder={hasApiKey ? "API key is set (leave empty to keep)" : "Enter your WhatsApp API key"}
-          />
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="absolute right-0 top-0 h-full px-3"
-            onClick={() => setShowKeys({ ...showKeys, whatsapp: !showKeys.whatsapp })}
-          >
-            {showKeys.whatsapp ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-          </Button>
+      <Separator />
+      <h4 className="font-medium text-sm text-muted-foreground">Authentication (choose one method)</h4>
+
+      {/* Basic Auth Section */}
+      <div className="p-4 border rounded-lg space-y-4">
+        <h5 className="font-medium">Option 1: Basic Auth (Username/Password)</h5>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="whatsapp-username">Username</Label>
+            <Input
+              id="whatsapp-username"
+              value={formData.whatsapp_username}
+              onChange={(e) => setFormData({ ...formData, whatsapp_username: e.target.value })}
+              placeholder="admin"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="whatsapp-password">Password</Label>
+            <div className="relative">
+              <Input
+                id="whatsapp-password"
+                value={formData.whatsapp_password}
+                onChange={(e) => setFormData({ ...formData, whatsapp_password: e.target.value })}
+                type={showKeys.whatsappPassword ? 'text' : 'password'}
+                placeholder={hasPassword ? "Password set (leave empty to keep)" : "Enter password"}
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="absolute right-0 top-0 h-full px-3"
+                onClick={() => setShowKeys({ ...showKeys, whatsappPassword: !showKeys.whatsappPassword })}
+              >
+                {showKeys.whatsappPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </Button>
+            </div>
+            {hasPassword && !formData.whatsapp_password && (
+              <p className="text-sm text-green-600">✓ Password is configured</p>
+            )}
+          </div>
         </div>
-        {hasApiKey && !formData.whatsapp_api_key && (
-          <p className="text-sm text-green-600">✓ API key is configured. Leave empty to keep existing key.</p>
-        )}
       </div>
+
+      {/* API Key Section */}
+      <div className="p-4 border rounded-lg space-y-4">
+        <h5 className="font-medium">Option 2: API Key (Bearer Token)</h5>
+        <div className="space-y-2">
+          <Label htmlFor="whatsapp-key">API Key</Label>
+          <div className="relative">
+            <Input
+              id="whatsapp-key"
+              value={formData.whatsapp_api_key}
+              onChange={(e) => setFormData({ ...formData, whatsapp_api_key: e.target.value })}
+              type={showKeys.whatsapp ? 'text' : 'password'}
+              placeholder={hasApiKey ? "API key is set (leave empty to keep)" : "Enter your WhatsApp API key"}
+            />
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="absolute right-0 top-0 h-full px-3"
+              onClick={() => setShowKeys({ ...showKeys, whatsapp: !showKeys.whatsapp })}
+            >
+              {showKeys.whatsapp ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </Button>
+          </div>
+          {hasApiKey && !formData.whatsapp_api_key && (
+            <p className="text-sm text-green-600">✓ API key is configured</p>
+          )}
+        </div>
+      </div>
+
+      <Separator />
 
       <div className="space-y-2 max-w-xs">
         <Label htmlFor="whatsapp-from">From Number</Label>

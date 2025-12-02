@@ -208,6 +208,9 @@
     "categoriesDesc": "Manage all category types used across the application",
     "communityCategories": "Community",
     "statusAutomation": "Status Automation",
+    "kiosk": "Kiosk",
+    "explore": "Explore",
+    "aiPrompts": "AI Prompts",
     "displayPreferences": "Display Preferences",
     "displayPreferencesDesc": "Configure how dates, times, and numbers are displayed",
     "dateFormat": "Date Format",
@@ -305,6 +308,7 @@
     "communityCategoriesDesc": "Customize community category labels for your church",
     "sendCommunityNotifications": "Send Community Notifications",
     "sendCommunityNotificationsDesc": "Notify members about community updates and announcements",
+    "whatsappApiNote": "WhatsApp API credentials are configured in Integrations (Super Admin only). Contact your administrator to set up WhatsApp integration.",
     "webhooks": {
       "title": "Webhooks",
       "description": "Configure webhooks to sync member data with external applications",

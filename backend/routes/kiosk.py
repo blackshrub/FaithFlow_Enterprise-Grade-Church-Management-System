@@ -62,70 +62,60 @@ async def send_otp(
         logger.info(f"🔐 OTP for {phone}: {code} (expires: {expires_at})")
         print(f"\n🔐 OTP for {phone}: {code}\n")
         print(f"📦 Stored in database, expires at: {expires_at}\n")
-        
-        # Get WhatsApp config from settings for THIS church
-        settings = await db.church_settings.find_one({"church_id": church_id}, {"_id": 0})
-        
-        if settings:
-            whatsapp_url = settings.get('whatsapp_api_url', '').strip()
-            whatsapp_user = settings.get('whatsapp_username', '').strip()
-            whatsapp_pass = settings.get('whatsapp_password', '').strip()
-            
-            print(f"📱 WhatsApp Config from DB (Church: {church_id}):")
-            print(f"   URL: '{whatsapp_url}'")
-            print(f"   Username: '{whatsapp_user}'")
-            print(f"   Password: {'***' if whatsapp_pass else '(empty)'}")
-            
-            # Send via WhatsApp if URL is configured
-            if whatsapp_url:
-                whatsapp_phone = phone.replace('+', '')  # Remove + for gateway
-                message = f"Your verification code is: {code}\\n\\nThis code will expire in 5 minutes."
-                
-                print(f"📨 Attempting WhatsApp send to: {whatsapp_phone}")
-                
-                # Temporarily set env vars (for whatsapp_service to use)
-                import os
-                old_url = os.environ.get('WHATSAPP_API_URL')
-                old_user = os.environ.get('WHATSAPP_USERNAME')
-                old_pass = os.environ.get('WHATSAPP_PASSWORD')
-                
-                os.environ['WHATSAPP_API_URL'] = whatsapp_url
-                os.environ['WHATSAPP_USERNAME'] = whatsapp_user
-                os.environ['WHATSAPP_PASSWORD'] = whatsapp_pass
-                
-                try:
-                    whatsapp_result = await send_whatsapp_message(
-                        whatsapp_phone, 
-                        message,
-                        api_url=whatsapp_url,
-                        api_username=whatsapp_user if whatsapp_user else None,
-                        api_password=whatsapp_pass if whatsapp_pass else None
-                    )
-                    
-                    print(f"📨 WhatsApp Result: {whatsapp_result}")
-                    
-                    if whatsapp_result.get('success'):
-                        logger.info(f"✅ WhatsApp OTP sent successfully to {phone}")
-                        print(f"✅ WhatsApp OTP delivered to {phone}")
-                    else:
-                        logger.warning(f"⚠️ WhatsApp failed: {whatsapp_result.get('message')}")
-                        print(f"⚠️ WhatsApp send failed: {whatsapp_result.get('message')}")
-                    
-                    return {
-                        "success": True,
-                        "message": "OTP sent successfully",
-                        "debug_code": code,
-                        "whatsapp_status": whatsapp_result.get('delivery_status', 'unknown'),
-                        "whatsapp_sent": whatsapp_result.get('success', False)
-                    }
-                finally:
-                    # No need to restore env vars since we're passing as parameters
-                    pass
-            else:
-                print("⚠️ WhatsApp URL not configured in settings")
+
+        # Get WhatsApp config from SYSTEM SETTINGS (global, configured in Integrations)
+        from utils.system_config import get_whatsapp_settings
+        wa_settings = await get_whatsapp_settings(db)
+
+        whatsapp_url = (wa_settings.get('whatsapp_api_url') or '').strip()
+        whatsapp_user = (wa_settings.get('whatsapp_username') or '').strip()
+        whatsapp_pass = (wa_settings.get('whatsapp_password') or '').strip()
+        whatsapp_enabled = wa_settings.get('whatsapp_enabled', True)
+
+        print(f"📱 WhatsApp Config from System Settings:")
+        print(f"   Enabled: {whatsapp_enabled}")
+        print(f"   URL: '{whatsapp_url}'")
+        print(f"   Username: '{whatsapp_user}'")
+        print(f"   Password: {'***' if whatsapp_pass else '(empty)'}")
+
+        # Send via WhatsApp if enabled and URL is configured
+        if whatsapp_enabled and whatsapp_url:
+            whatsapp_phone = phone.replace('+', '')  # Remove + for gateway
+            message = f"Your verification code is: {code}\\n\\nThis code will expire in 5 minutes."
+
+            print(f"📨 Attempting WhatsApp send to: {whatsapp_phone}")
+
+            try:
+                whatsapp_result = await send_whatsapp_message(
+                    whatsapp_phone,
+                    message,
+                    api_url=whatsapp_url,
+                    api_username=whatsapp_user if whatsapp_user else None,
+                    api_password=whatsapp_pass if whatsapp_pass else None
+                )
+
+                print(f"📨 WhatsApp Result: {whatsapp_result}")
+
+                if whatsapp_result.get('success'):
+                    logger.info(f"✅ WhatsApp OTP sent successfully to {phone}")
+                    print(f"✅ WhatsApp OTP delivered to {phone}")
+                else:
+                    logger.warning(f"⚠️ WhatsApp failed: {whatsapp_result.get('message')}")
+                    print(f"⚠️ WhatsApp send failed: {whatsapp_result.get('message')}")
+
+                return {
+                    "success": True,
+                    "message": "OTP sent successfully",
+                    "debug_code": code,
+                    "whatsapp_status": whatsapp_result.get('delivery_status', 'unknown'),
+                    "whatsapp_sent": whatsapp_result.get('success', False)
+                }
+            except Exception as wa_error:
+                logger.error(f"⚠️ WhatsApp error: {wa_error}")
+                print(f"⚠️ WhatsApp error: {wa_error}")
         else:
-            print("⚠️ No church settings found")
-        
+            print("⚠️ WhatsApp not enabled or URL not configured")
+
         return {
             "success": True,
             "message": "OTP generated (WhatsApp not configured)",

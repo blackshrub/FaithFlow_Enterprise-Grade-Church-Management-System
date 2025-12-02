@@ -61,7 +61,15 @@ class WhatsAppIntegrationSettings(BaseModel):
     )
     whatsapp_api_key: Optional[str] = Field(
         None,
-        description="WhatsApp API authentication key"
+        description="WhatsApp API authentication key (for token-based auth)"
+    )
+    whatsapp_username: Optional[str] = Field(
+        None,
+        description="WhatsApp API username (for Basic Auth)"
+    )
+    whatsapp_password: Optional[str] = Field(
+        None,
+        description="WhatsApp API password (for Basic Auth)"
     )
     whatsapp_from_number: Optional[str] = Field(
         None,

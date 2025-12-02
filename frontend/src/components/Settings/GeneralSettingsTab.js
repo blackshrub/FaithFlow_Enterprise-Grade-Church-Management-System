@@ -23,9 +23,6 @@ export default function GeneralSettingsTab() {
     enable_whatsapp_notifications: false,
     whatsapp_send_rsvp_confirmation: true,
     whatsapp_send_group_notifications: true,
-    whatsapp_api_url: '',
-    whatsapp_username: '',
-    whatsapp_password: '',
   });
 
   useEffect(() => {
@@ -39,9 +36,6 @@ export default function GeneralSettingsTab() {
         enable_whatsapp_notifications: settings.enable_whatsapp_notifications,
         whatsapp_send_rsvp_confirmation: settings.whatsapp_send_rsvp_confirmation,
         whatsapp_send_group_notifications: settings.whatsapp_send_group_notifications,
-        whatsapp_api_url: settings.whatsapp_api_url,
-        whatsapp_username: settings.whatsapp_username,
-        whatsapp_password: settings.whatsapp_password,
       });
     }
   }, [isSuccess, settings]);
@@ -221,52 +215,12 @@ export default function GeneralSettingsTab() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* WhatsApp API Configuration */}
-          <div className="space-y-4 p-4 bg-blue-50 rounded-lg">
-            <h4 className="font-semibold text-base">WhatsApp API Configuration</h4>
-            
-            <div className="space-y-2">
-              <Label htmlFor="whatsapp_api_url">WhatsApp API URL</Label>
-              <input
-                type="text"
-                id="whatsapp_api_url"
-                value={formData.whatsapp_api_url}
-                onChange={(e) => setFormData({ ...formData, whatsapp_api_url: e.target.value })}
-                placeholder="https://your-whatsapp-gateway.com"
-                className="w-full px-3 py-2 border rounded-md"
-              />
-              <p className="text-sm text-gray-500">Gateway URL for sending WhatsApp messages</p>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="whatsapp_username">WhatsApp Username</Label>
-              <input
-                type="text"
-                id="whatsapp_username"
-                value={formData.whatsapp_username}
-                onChange={(e) => setFormData({ ...formData, whatsapp_username: e.target.value })}
-                placeholder="your-username"
-                className="w-full px-3 py-2 border rounded-md"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="whatsapp_password">WhatsApp Password</Label>
-              <input
-                type="password"
-                id="whatsapp_password"
-                value={formData.whatsapp_password}
-                onChange={(e) => setFormData({ ...formData, whatsapp_password: e.target.value })}
-                placeholder="••••••••"
-                className="w-full px-3 py-2 border rounded-md"
-              />
-            </div>
-            
-            <p className="text-sm text-amber-600">
-              ⚠️ These credentials will be stored in church settings. Configure your WhatsApp gateway to enable OTP and notifications.
+          <div className="p-4 bg-blue-50 rounded-lg">
+            <p className="text-sm text-blue-700">
+              {t('settings.whatsappApiNote') || 'WhatsApp API credentials are configured in Integrations (Super Admin only). Contact your administrator to set up WhatsApp integration.'}
             </p>
           </div>
-          
+
           <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
             <div className="flex-1">
               <Label htmlFor="enable_whatsapp" className="text-base font-medium">
