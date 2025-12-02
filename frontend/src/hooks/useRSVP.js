@@ -1,9 +1,18 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { eventsAPI } from '@/services/api';
+import { useAuth } from '../context/AuthContext';
+
+// Multi-tenant cache isolation helper
+const useSessionChurchId = () => {
+  const { user } = useAuth();
+  return user?.session_church_id ?? user?.church_id;
+};
 
 export function useEventRSVPs(eventId, sessionId = null) {
+  const sessionChurchId = useSessionChurchId();
+
   return useQuery({
-    queryKey: ['rsvps', eventId, sessionId],
+    queryKey: ['rsvps', sessionChurchId, eventId, sessionId],
     queryFn: async () => {
       const response = await eventsAPI.getRSVPs(eventId);
       let rsvps = response.data.rsvps || [];
@@ -24,8 +33,10 @@ export function useEventRSVPs(eventId, sessionId = null) {
 }
 
 export function useAvailableSeats(eventId, sessionId = null) {
+  const sessionChurchId = useSessionChurchId();
+
   return useQuery({
-    queryKey: ['availableSeats', eventId, sessionId],
+    queryKey: ['availableSeats', sessionChurchId, eventId, sessionId],
     queryFn: async () => {
       const params = sessionId ? { session_id: sessionId } : {};
       const response = await eventsAPI.getAvailableSeats(eventId, params);
@@ -37,28 +48,30 @@ export function useAvailableSeats(eventId, sessionId = null) {
 
 export function useRegisterRSVP() {
   const queryClient = useQueryClient();
-  
+  const sessionChurchId = useSessionChurchId();
+
   return useMutation({
-    mutationFn: ({ eventId, memberId, sessionId, seat }) => 
+    mutationFn: ({ eventId, memberId, sessionId, seat }) =>
       eventsAPI.registerRSVP(eventId, { member_id: memberId, session_id: sessionId, seat }),
     onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['rsvps', variables.eventId] });
-      queryClient.invalidateQueries({ queryKey: ['availableSeats', variables.eventId] });
-      queryClient.invalidateQueries({ queryKey: ['events'] });
+      queryClient.invalidateQueries({ queryKey: ['rsvps', sessionChurchId, variables.eventId] });
+      queryClient.invalidateQueries({ queryKey: ['availableSeats', sessionChurchId, variables.eventId] });
+      queryClient.invalidateQueries({ queryKey: ['events', sessionChurchId] });
     },
   });
 }
 
 export function useCancelRSVP() {
   const queryClient = useQueryClient();
-  
+  const sessionChurchId = useSessionChurchId();
+
   return useMutation({
-    mutationFn: ({ eventId, memberId, sessionId }) => 
+    mutationFn: ({ eventId, memberId, sessionId }) =>
       eventsAPI.cancelRSVP(eventId, memberId, sessionId ? { session_id: sessionId } : {}),
     onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['rsvps', variables.eventId] });
-      queryClient.invalidateQueries({ queryKey: ['availableSeats', variables.eventId] });
-      queryClient.invalidateQueries({ queryKey: ['events'] });
+      queryClient.invalidateQueries({ queryKey: ['rsvps', sessionChurchId, variables.eventId] });
+      queryClient.invalidateQueries({ queryKey: ['availableSeats', sessionChurchId, variables.eventId] });
+      queryClient.invalidateQueries({ queryKey: ['events', sessionChurchId] });
     },
   });
 }

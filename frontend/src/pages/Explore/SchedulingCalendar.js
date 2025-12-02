@@ -1,6 +1,5 @@
 import React, { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
@@ -21,10 +20,20 @@ import {
   DialogTrigger,
 } from '../../components/ui/dialog';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '../../components/ui/alert-dialog';
+import {
   ArrowLeft, ChevronLeft, ChevronRight, Calendar as CalendarIcon,
   Plus, Loader2, BookOpen, MessageSquare, User, HelpCircle, Edit, Trash2
 } from 'lucide-react';
-import exploreService from '../../services/exploreService';
+import { useExploreScheduledContent, useExploreContentList, useScheduleExploreContent, useUnscheduleExploreContent } from '../../hooks/useExplore';
 import { useToast } from '../../hooks/use-toast';
 
 const contentTypeConfig = {
@@ -37,13 +46,13 @@ const contentTypeConfig = {
 export default function SchedulingCalendar() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const { toast } = useToast();
 
   const [currentDate, setCurrentDate] = useState(new Date());
   const [filterContentType, setFilterContentType] = useState('all');
   const [selectedDate, setSelectedDate] = useState(null);
   const [showScheduleDialog, setShowScheduleDialog] = useState(false);
+  const [itemToUnschedule, setItemToUnschedule] = useState(null);
 
   // Calculate month boundaries
   const year = currentDate.getFullYear();
@@ -51,72 +60,43 @@ export default function SchedulingCalendar() {
   const firstDay = new Date(year, month, 1);
   const lastDay = new Date(year, month + 1, 0);
 
-  // Fetch scheduled content for current month
-  const { data: scheduledContent, isLoading } = useQuery({
-    queryKey: ['explore', 'schedule', year, month, filterContentType],
-    queryFn: () => exploreService.getScheduledContent({
-      start_date: firstDay.toISOString().split('T')[0],
-      end_date: lastDay.toISOString().split('T')[0],
-      content_type: filterContentType === 'all' ? undefined : filterContentType,
-    }),
-    staleTime: 30000,
+  // Fetch scheduled content for current month (with multi-tenant cache isolation)
+  const { data: scheduledContent, isLoading } = useExploreScheduledContent({
+    start_date: firstDay.toISOString().split('T')[0],
+    end_date: lastDay.toISOString().split('T')[0],
+    content_type: filterContentType === 'all' ? undefined : filterContentType,
   });
 
-  // Fetch all available content for scheduling
-  const { data: availableContent } = useQuery({
-    queryKey: ['explore', 'available-content', filterContentType],
-    queryFn: async () => {
-      const types = filterContentType === 'all'
-        ? ['devotion', 'verse', 'figure', 'quiz']
-        : [filterContentType];
+  // Fetch all available content for scheduling (with multi-tenant cache isolation)
+  const { data: devotionData } = useExploreContentList('daily_devotion', { limit: 100, published: false });
+  const { data: verseData } = useExploreContentList('verse_of_the_day', { limit: 100, published: false });
+  const { data: figureData } = useExploreContentList('bible_figure', { limit: 100, published: false });
+  const { data: quizData } = useExploreContentList('daily_quiz', { limit: 100, published: false });
 
-      const results = await Promise.all(
-        types.map(type => exploreService.listContent(type, { limit: 100, published: false }))
-      );
+  const availableContent = useMemo(() => {
+    if (!showScheduleDialog) return [];
 
-      return results.flatMap((result, index) =>
-        (result.content || []).map(item => ({
-          ...item,
-          content_type: types[index]
-        }))
-      );
-    },
-    enabled: showScheduleDialog,
-  });
+    const types = filterContentType === 'all'
+      ? ['devotion', 'verse', 'figure', 'quiz']
+      : [filterContentType];
 
-  // Delete schedule mutation
-  const deleteMutation = useMutation({
-    mutationFn: ({ contentType, contentId }) =>
-      exploreService.unscheduleContent(contentType, contentId),
-    onSuccess: () => {
-      queryClient.invalidateQueries(['explore', 'schedule']);
-      toast({
-        title: 'Success',
-        description: 'Content unscheduled successfully',
-      });
-    },
-  });
+    const dataMap = {
+      devotion: devotionData,
+      verse: verseData,
+      figure: figureData,
+      quiz: quizData,
+    };
 
-  // Schedule content mutation
-  const scheduleMutation = useMutation({
-    mutationFn: ({ contentType, contentId, date }) =>
-      exploreService.scheduleContent(contentType, contentId, date),
-    onSuccess: () => {
-      queryClient.invalidateQueries(['explore', 'schedule']);
-      setShowScheduleDialog(false);
-      toast({
-        title: 'Success',
-        description: 'Content scheduled successfully',
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to schedule content',
-        variant: 'destructive',
-      });
-    },
-  });
+    return types.flatMap(type => {
+      const data = dataMap[type];
+      const items = data?.items || data?.content || data || [];
+      return items.map(item => ({ ...item, content_type: type }));
+    });
+  }, [showScheduleDialog, filterContentType, devotionData, verseData, figureData, quizData]);
+
+  // Mutations with multi-tenant cache isolation
+  const scheduleMutation = useScheduleExploreContent();
+  const unscheduleMutation = useUnscheduleExploreContent();
 
   // Group content by date
   const contentByDate = useMemo(() => {
@@ -171,14 +151,24 @@ export default function SchedulingCalendar() {
     if (!selectedDate) return;
 
     const dateStr = selectedDate.toISOString().split('T')[0];
-    scheduleMutation.mutate({ contentType, contentId, date: dateStr });
+    scheduleMutation.mutate(
+      { contentType, contentId, scheduledDate: dateStr },
+      { onSuccess: () => setShowScheduleDialog(false) }
+    );
   };
 
   const handleUnschedule = (item) => {
-    if (window.confirm('Remove this content from the schedule?')) {
-      deleteMutation.mutate({
-        contentType: item.content_type,
-        contentId: item.id
+    setItemToUnschedule(item);
+  };
+
+  const confirmUnschedule = () => {
+    if (itemToUnschedule) {
+      unscheduleMutation.mutate({
+        contentType: itemToUnschedule.content_type,
+        contentId: itemToUnschedule.id
+      }, {
+        onSuccess: () => setItemToUnschedule(null),
+        onError: () => setItemToUnschedule(null)
       });
     }
   };
@@ -198,7 +188,7 @@ export default function SchedulingCalendar() {
       <div className="flex items-center justify-between">
         <div>
           <Link
-            to="/explore"
+            to="/content-center"
             className="text-sm text-blue-600 hover:underline mb-2 inline-block"
           >
             <ArrowLeft className="h-4 w-4 inline mr-1" />
@@ -218,17 +208,17 @@ export default function SchedulingCalendar() {
         <CardContent className="pt-6">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-4">
-              <Button variant="outline" size="sm" onClick={handlePrevMonth}>
+              <Button variant="outline" size="sm" onClick={handlePrevMonth} aria-label={t('explore.actions.previous')}>
                 <ChevronLeft className="h-4 w-4" />
               </Button>
-              <h2 className="text-xl font-semibold min-w-[200px] text-center">
+              <h2 className="text-xl font-semibold min-w-[200px] text-center" aria-live="polite">
                 {monthNames[month]} {year}
               </h2>
-              <Button variant="outline" size="sm" onClick={handleNextMonth}>
+              <Button variant="outline" size="sm" onClick={handleNextMonth} aria-label={t('explore.actions.next')}>
                 <ChevronRight className="h-4 w-4" />
               </Button>
               <Button variant="outline" size="sm" onClick={handleToday}>
-                Today
+                {t('explore.scheduling.today')}
               </Button>
             </div>
 
@@ -447,6 +437,30 @@ export default function SchedulingCalendar() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Unschedule Confirmation Dialog */}
+      <AlertDialog open={!!itemToUnschedule} onOpenChange={(open) => !open && setItemToUnschedule(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('explore.scheduling.title')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('explore.confirmations.unschedule')}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={unscheduleMutation.isPending}>
+              {t('common.cancel')}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={unscheduleMutation.isPending}
+              onClick={confirmUnschedule}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {t('explore.actions.delete')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

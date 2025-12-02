@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
@@ -30,11 +29,21 @@ import {
   AccordionTrigger,
 } from '../../components/ui/accordion';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '../../components/ui/alert-dialog';
+import {
   ArrowLeft, Save, Loader2, BookOpen, MessageSquare, User, HelpCircle,
   GraduationCap, FolderTree, Tag, Calendar, Image, RotateCcw, Settings2,
   Info
 } from 'lucide-react';
-import exploreService from '../../services/exploreService';
+import { useExplorePromptConfig, useUpdateExplorePromptConfig, useResetExplorePromptConfig } from '../../hooks/useExplore';
 import { useToast } from '../../hooks/use-toast';
 
 const contentTypeConfig = {
@@ -269,59 +278,18 @@ function ContentTypePanel({ contentType, config, schema, onUpdate }) {
 
 export default function AIPromptConfig() {
   const { t } = useTranslation();
-  const queryClient = useQueryClient();
   const { toast } = useToast();
 
   const [activeType, setActiveType] = useState('daily_devotion');
   const [pendingChanges, setPendingChanges] = useState({});
+  const [resetTarget, setResetTarget] = useState(null); // null = no dialog, 'all' = reset all, 'contentType' = reset specific
 
-  // Fetch configuration
-  const { data: configData, isLoading } = useQuery({
-    queryKey: ['explore', 'prompt-config'],
-    queryFn: () => exploreService.getPromptConfig(),
-    staleTime: 60000,
-  });
+  // Fetch configuration (with multi-tenant cache isolation)
+  const { data: configData, isLoading } = useExplorePromptConfig();
 
-  // Save mutation
-  const saveMutation = useMutation({
-    mutationFn: (config) => exploreService.updatePromptConfig(config),
-    onSuccess: () => {
-      queryClient.invalidateQueries(['explore', 'prompt-config']);
-      setPendingChanges({});
-      toast({
-        title: 'Configuration Saved',
-        description: 'AI prompt configuration has been updated',
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: 'Save Failed',
-        description: error.message || 'Failed to save configuration',
-        variant: 'destructive',
-      });
-    },
-  });
-
-  // Reset mutation
-  const resetMutation = useMutation({
-    mutationFn: (contentType) => exploreService.resetPromptConfig(contentType),
-    onSuccess: (data, contentType) => {
-      queryClient.invalidateQueries(['explore', 'prompt-config']);
-      if (contentType) {
-        const newPending = { ...pendingChanges };
-        delete newPending[contentType];
-        setPendingChanges(newPending);
-      } else {
-        setPendingChanges({});
-      }
-      toast({
-        title: 'Configuration Reset',
-        description: contentType
-          ? `${contentTypeConfig[contentType]?.label} reset to defaults`
-          : 'All configurations reset to defaults',
-      });
-    },
-  });
+  // Mutations with multi-tenant cache isolation
+  const saveMutation = useUpdateExplorePromptConfig();
+  const resetMutation = useResetExplorePromptConfig();
 
   const handleConfigUpdate = (contentType, config) => {
     setPendingChanges(prev => ({
@@ -335,17 +303,30 @@ export default function AIPromptConfig() {
       ...configData?.config,
       ...pendingChanges,
     };
-    saveMutation.mutate(mergedConfig);
+    saveMutation.mutate(mergedConfig, {
+      onSuccess: () => setPendingChanges({})
+    });
   };
 
   const handleReset = (contentType) => {
-    if (window.confirm(
-      contentType
-        ? `Reset ${contentTypeConfig[contentType]?.label} configuration to defaults?`
-        : 'Reset ALL prompt configurations to defaults?'
-    )) {
-      resetMutation.mutate(contentType || null);
-    }
+    setResetTarget(contentType || 'all');
+  };
+
+  const confirmReset = () => {
+    const contentType = resetTarget === 'all' ? null : resetTarget;
+    resetMutation.mutate(contentType, {
+      onSuccess: () => {
+        if (contentType) {
+          const newPending = { ...pendingChanges };
+          delete newPending[contentType];
+          setPendingChanges(newPending);
+        } else {
+          setPendingChanges({});
+        }
+        setResetTarget(null);
+      },
+      onError: () => setResetTarget(null)
+    });
   };
 
   const hasPendingChanges = Object.keys(pendingChanges).length > 0;
@@ -491,6 +472,38 @@ export default function AIPromptConfig() {
           </TabsContent>
         ))}
       </Tabs>
+
+      {/* Reset Confirmation Dialog */}
+      <AlertDialog open={!!resetTarget} onOpenChange={(open) => !open && setResetTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {resetTarget === 'all'
+                ? 'Reset All Configurations?'
+                : `Reset ${contentTypeConfig[resetTarget]?.label || 'Configuration'}?`
+              }
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {resetTarget === 'all'
+                ? 'This will reset ALL prompt configurations to their default values. This action cannot be undone.'
+                : `This will reset the ${contentTypeConfig[resetTarget]?.label || 'selected'} configuration to its default values.`
+              }
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={resetMutation.isPending}>
+              {t('common.cancel')}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={resetMutation.isPending}
+              onClick={confirmReset}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {resetMutation.isPending ? 'Resetting...' : 'Reset'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

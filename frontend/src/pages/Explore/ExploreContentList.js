@@ -1,6 +1,5 @@
 import React, { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
@@ -14,15 +13,24 @@ import {
   TableRow,
 } from '../../components/ui/table';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '../../components/ui/alert-dialog';
+import {
   Search, Plus, Edit, Trash2, Calendar, Eye, Loader2, AlertCircle
 } from 'lucide-react';
-import exploreService from '../../services/exploreService';
+import { useExploreContentList, useDeleteExploreContent, useBulkDeleteExploreContent } from '../../hooks/useExplore';
 import { useToast } from '../../hooks/use-toast';
 
 export default function ExploreContentList() {
   const location = useLocation();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const { toast } = useToast();
   const { t } = useTranslation();
 
@@ -73,56 +81,43 @@ export default function ExploreContentList() {
 
   const [search, setSearch] = useState('');
   const [selectedItems, setSelectedItems] = useState([]);
+  const [itemToDelete, setItemToDelete] = useState(null);
+  const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
 
-  // Fetch content list
-  const { data, isLoading, error } = useQuery({
-    queryKey: ['explore', 'content', contentType, { search }],
-    queryFn: () => exploreService.listContent(contentType, { search, limit: 50 }),
-    staleTime: 30000,
-  });
+  // Fetch content list with multi-tenant cache isolation
+  const { data, isLoading, error } = useExploreContentList(contentType, { search, limit: 50 });
 
-  // Delete mutation
-  const deleteMutation = useMutation({
-    mutationFn: (id) => exploreService.deleteContent(contentType, id),
-    onSuccess: () => {
-      queryClient.invalidateQueries(['explore', 'content', contentType]);
-      toast({
-        title: 'Content deleted',
-        description: 'Content has been successfully deleted.',
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to delete content',
-        variant: 'destructive',
-      });
-    },
-  });
+  // Delete mutation with multi-tenant cache isolation
+  const deleteMutation = useDeleteExploreContent(contentType);
 
-  // Bulk delete mutation
-  const bulkDeleteMutation = useMutation({
-    mutationFn: (ids) => exploreService.bulkDeleteContent(contentType, ids),
-    onSuccess: () => {
-      queryClient.invalidateQueries(['explore', 'content', contentType]);
-      setSelectedItems([]);
-      toast({
-        title: 'Content deleted',
-        description: `${selectedItems.length} items deleted successfully.`,
-      });
-    },
-  });
+  // Bulk delete mutation with multi-tenant cache isolation
+  const bulkDeleteMutation = useBulkDeleteExploreContent(contentType);
 
   const handleDelete = (id) => {
-    if (window.confirm('Are you sure you want to delete this content?')) {
-      deleteMutation.mutate(id);
+    setItemToDelete(id);
+  };
+
+  const confirmDelete = () => {
+    if (itemToDelete) {
+      deleteMutation.mutate(itemToDelete, {
+        onSuccess: () => setItemToDelete(null),
+        onError: () => setItemToDelete(null)
+      });
     }
   };
 
   const handleBulkDelete = () => {
-    if (window.confirm(`Delete ${selectedItems.length} selected items?`)) {
-      bulkDeleteMutation.mutate(selectedItems);
-    }
+    setShowBulkDeleteDialog(true);
+  };
+
+  const confirmBulkDelete = () => {
+    bulkDeleteMutation.mutate(selectedItems, {
+      onSuccess: () => {
+        setSelectedItems([]);
+        setShowBulkDeleteDialog(false);
+      },
+      onError: () => setShowBulkDeleteDialog(false)
+    });
   };
 
   const toggleSelection = (id) => {
@@ -301,11 +296,12 @@ export default function ExploreContentList() {
                           variant="ghost"
                           size="sm"
                           onClick={() => window.open(`/public/explore/${contentType}/${item.id}`, '_blank')}
+                          aria-label={t('explore.actions.view')}
                         >
                           <Eye className="h-4 w-4" />
                         </Button>
                         <Link to={`/content-center/${urlContentType}/${item.id}/edit`}>
-                          <Button variant="ghost" size="sm">
+                          <Button variant="ghost" size="sm" aria-label={t('explore.actions.edit')}>
                             <Edit className="h-4 w-4" />
                           </Button>
                         </Link>
@@ -314,6 +310,7 @@ export default function ExploreContentList() {
                           size="sm"
                           onClick={() => handleDelete(item.id)}
                           disabled={deleteMutation.isPending}
+                          aria-label={t('explore.actions.delete')}
                         >
                           <Trash2 className="h-4 w-4 text-red-600" />
                         </Button>
@@ -331,18 +328,66 @@ export default function ExploreContentList() {
       {data?.items && data.items.length > 0 && (
         <div className="flex items-center justify-between text-sm text-gray-600">
           <div>
-            Showing {data.items.length} of {data.total || data.items.length} results
+            {t('explore.contentList.showing', { count: data.items.length, total: data.total || data.items.length })}
           </div>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" disabled>
-              Previous
+              {t('explore.actions.previous')}
             </Button>
             <Button variant="outline" size="sm" disabled>
-              Next
+              {t('explore.actions.next')}
             </Button>
           </div>
         </div>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!itemToDelete} onOpenChange={(open) => !open && setItemToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('explore.actions.delete')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('explore.confirmations.deleteContent')}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteMutation.isPending}>
+              {t('common.cancel')}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={deleteMutation.isPending}
+              onClick={confirmDelete}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {t('explore.actions.delete')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Bulk Delete Confirmation Dialog */}
+      <AlertDialog open={showBulkDeleteDialog} onOpenChange={setShowBulkDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('explore.actions.delete')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('explore.confirmations.deleteSelected', { count: selectedItems.length })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={bulkDeleteMutation.isPending}>
+              {t('common.cancel')}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={bulkDeleteMutation.isPending}
+              onClick={confirmBulkDelete}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {t('explore.actions.delete')} ({selectedItems.length})
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

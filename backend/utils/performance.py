@@ -134,55 +134,106 @@ class IndexManager:
             IndexModel([("church_id", ASCENDING), ("date", DESCENDING)]),
         ],
 
-        # Explore Content
-        "explore_daily_devotions": [
-            IndexModel([("status", ASCENDING), ("scheduled_date", ASCENDING)]),
+        # Explore Content Collections (comprehensive indexes for multi-tenant)
+        "explore_devotions": [
+            IndexModel([("church_id", ASCENDING), ("deleted", ASCENDING), ("published", ASCENDING)]),
+            IndexModel([("church_id", ASCENDING), ("scheduled_date", ASCENDING)]),
             IndexModel([("church_id", ASCENDING), ("created_at", DESCENDING)]),
+            IndexModel([("church_id", ASCENDING), ("published", ASCENDING), ("deleted", ASCENDING), ("created_at", DESCENDING)]),
+            IndexModel([("church_id", ASCENDING), ("created_by", ASCENDING)]),
         ],
 
-        "explore_verse_of_day": [
-            IndexModel([("status", ASCENDING), ("scheduled_date", ASCENDING)]),
+        "explore_verses": [
+            IndexModel([("church_id", ASCENDING), ("deleted", ASCENDING), ("published", ASCENDING)]),
+            IndexModel([("church_id", ASCENDING), ("scheduled_date", ASCENDING)]),
+            IndexModel([("church_id", ASCENDING), ("created_at", DESCENDING)]),
+            IndexModel([("church_id", ASCENDING), ("published", ASCENDING), ("deleted", ASCENDING), ("created_at", DESCENDING)]),
+            IndexModel([("church_id", ASCENDING), ("created_by", ASCENDING)]),
         ],
 
-        "explore_bible_figures": [
-            IndexModel([("status", ASCENDING)]),
-            IndexModel([("testament", ASCENDING)]),
+        "explore_figures": [
+            IndexModel([("church_id", ASCENDING), ("deleted", ASCENDING), ("published", ASCENDING)]),
+            IndexModel([("church_id", ASCENDING), ("scheduled_date", ASCENDING)]),
+            IndexModel([("church_id", ASCENDING), ("created_at", DESCENDING)]),
+            IndexModel([("church_id", ASCENDING), ("published", ASCENDING), ("deleted", ASCENDING), ("created_at", DESCENDING)]),
+            IndexModel([("church_id", ASCENDING), ("created_by", ASCENDING)]),
         ],
 
-        "explore_daily_quizzes": [
-            IndexModel([("status", ASCENDING), ("scheduled_date", ASCENDING)]),
-            IndexModel([("difficulty", ASCENDING)]),
+        "explore_quizzes": [
+            IndexModel([("church_id", ASCENDING), ("deleted", ASCENDING), ("published", ASCENDING)]),
+            IndexModel([("church_id", ASCENDING), ("scheduled_date", ASCENDING)]),
+            IndexModel([("church_id", ASCENDING), ("created_at", DESCENDING)]),
+            IndexModel([("church_id", ASCENDING), ("published", ASCENDING), ("deleted", ASCENDING), ("created_at", DESCENDING)]),
+            IndexModel([("church_id", ASCENDING), ("created_by", ASCENDING)]),
         ],
 
         "explore_bible_studies": [
-            IndexModel([("status", ASCENDING)]),
-            IndexModel([("difficulty", ASCENDING)]),
+            IndexModel([("church_id", ASCENDING), ("deleted", ASCENDING), ("published", ASCENDING)]),
+            IndexModel([("church_id", ASCENDING), ("scheduled_date", ASCENDING)]),
+            IndexModel([("church_id", ASCENDING), ("created_at", DESCENDING)]),
+            IndexModel([("church_id", ASCENDING), ("published", ASCENDING), ("deleted", ASCENDING), ("created_at", DESCENDING)]),
+            IndexModel([("church_id", ASCENDING), ("created_by", ASCENDING)]),
+        ],
+
+        "explore_devotion_plans": [
+            IndexModel([("church_id", ASCENDING), ("deleted", ASCENDING), ("published", ASCENDING)]),
+            IndexModel([("church_id", ASCENDING), ("scheduled_date", ASCENDING)]),
+            IndexModel([("church_id", ASCENDING), ("created_at", DESCENDING)]),
+            IndexModel([("church_id", ASCENDING), ("published", ASCENDING), ("deleted", ASCENDING), ("created_at", DESCENDING)]),
+            IndexModel([("church_id", ASCENDING), ("created_by", ASCENDING)]),
         ],
 
         "explore_topical_categories": [
-            IndexModel([("status", ASCENDING)]),
-            IndexModel([("slug", ASCENDING)], unique=True),
+            IndexModel([("church_id", ASCENDING), ("deleted", ASCENDING), ("published", ASCENDING)]),
+            IndexModel([("church_id", ASCENDING), ("scheduled_date", ASCENDING)]),
+            IndexModel([("church_id", ASCENDING), ("created_at", DESCENDING)]),
+            IndexModel([("church_id", ASCENDING), ("published", ASCENDING), ("deleted", ASCENDING), ("created_at", DESCENDING)]),
+            IndexModel([("church_id", ASCENDING), ("created_by", ASCENDING)]),
         ],
 
         "explore_topical_verses": [
+            IndexModel([("church_id", ASCENDING), ("deleted", ASCENDING), ("published", ASCENDING)]),
+            IndexModel([("church_id", ASCENDING), ("scheduled_date", ASCENDING)]),
+            IndexModel([("church_id", ASCENDING), ("created_at", DESCENDING)]),
+            IndexModel([("church_id", ASCENDING), ("published", ASCENDING), ("deleted", ASCENDING), ("created_at", DESCENDING)]),
+            IndexModel([("church_id", ASCENDING), ("created_by", ASCENDING)]),
             IndexModel([("category_id", ASCENDING)]),
-            IndexModel([("status", ASCENDING)]),
         ],
 
         # User Progress
         "explore_user_progress": [
-            IndexModel([("user_id", ASCENDING), ("church_id", ASCENDING)]),
-            IndexModel([("user_id", ASCENDING), ("content_type", ASCENDING)]),
+            IndexModel([("church_id", ASCENDING), ("user_id", ASCENDING), ("content_type", ASCENDING)]),
+            IndexModel([("church_id", ASCENDING), ("user_id", ASCENDING), ("last_accessed", DESCENDING)]),
+            IndexModel([("church_id", ASCENDING), ("user_id", ASCENDING), ("content_type", ASCENDING), ("content_id", ASCENDING)], unique=True),
+        ],
+
+        # Explore Analytics
+        "explore_analytics": [
+            IndexModel([("church_id", ASCENDING), ("date", DESCENDING)]),
+            IndexModel([("church_id", ASCENDING), ("content_type", ASCENDING), ("content_id", ASCENDING), ("date", DESCENDING)]),
+            IndexModel([("church_id", ASCENDING), ("content_type", ASCENDING), ("date", DESCENDING)]),
+        ],
+
+        # Content Adoption
+        "explore_adoptions": [
+            IndexModel([("church_id", ASCENDING), ("content_type", ASCENDING), ("adopted", ASCENDING)]),
+            IndexModel([("church_id", ASCENDING), ("content_type", ASCENDING), ("content_id", ASCENDING)], unique=True),
+        ],
+
+        # Church Settings for Explore
+        "explore_church_settings": [
+            IndexModel([("church_id", ASCENDING)], unique=True),
         ],
 
         # AI Generation Queue
         "ai_generation_queue": [
-            IndexModel([("church_id", ASCENDING), ("status", ASCENDING)]),
+            IndexModel([("church_id", ASCENDING), ("user_id", ASCENDING), ("created_at", DESCENDING)]),
+            IndexModel([("church_id", ASCENDING), ("status", ASCENDING), ("created_at", DESCENDING)]),
             IndexModel([("status", ASCENDING), ("created_at", ASCENDING)]),
         ],
 
         # Prompt Configurations
-        "explore_prompt_configs": [
+        "explore_prompt_config": [
             IndexModel([("church_id", ASCENDING)], unique=True),
         ],
 
@@ -220,6 +271,10 @@ class IndexManager:
         "members": [
             # Old sparse index replaced by partial index for email uniqueness
             "church_id_1_email_1",
+        ],
+        "ai_generation_queue": [
+            # Old index replaced with named version
+            "status_1_created_at_1",
         ],
     }
 

@@ -121,11 +121,11 @@ export default function GroupsListPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleteGroupMutation.isLoading}>
+            <AlertDialogCancel disabled={deleteGroupMutation.isPending}>
               {t('common.cancel')}
             </AlertDialogCancel>
             <AlertDialogAction
-              disabled={deleteGroupMutation.isLoading}
+              disabled={deleteGroupMutation.isPending}
               onClick={async () => {
                 if (!groupToDelete) return;
                 try {

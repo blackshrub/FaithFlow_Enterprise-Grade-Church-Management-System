@@ -190,7 +190,8 @@ export const kioskApi = {
   // ==================== PROFILE UPDATE ====================
 
   updateMemberProfile: async (member_id, data) => {
-    const response = await api.put(`/members/${member_id}`, data);
+    // Use PATCH for partial updates
+    const response = await api.patch(`/members/${member_id}`, data);
     return response.data;
   },
 };

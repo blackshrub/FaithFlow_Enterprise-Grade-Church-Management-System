@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
@@ -20,7 +19,7 @@ import {
 import {
   ArrowLeft, Save, Eye, Loader2, BookOpen, Tags, Sparkles
 } from 'lucide-react';
-import exploreService from '../../services/exploreService';
+import { useExploreContent, useExploreContentList, useCreateExploreContent, useUpdateExploreContent, useGenerateExploreContent } from '../../hooks/useExplore';
 import { useToast } from '../../hooks/use-toast';
 
 // Bible book list
@@ -55,7 +54,6 @@ const TRANSLATIONS = [
 export default function TopicalVerseEditor() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const { toast } = useToast();
   const { t } = useTranslation();
 
@@ -79,23 +77,24 @@ export default function TopicalVerseEditor() {
   const [activeLanguage, setActiveLanguage] = useState('en');
   const [isGenerating, setIsGenerating] = useState(false);
 
-  // Fetch all categories for selection
-  const { data: categories = [] } = useQuery({
-    queryKey: ['explore', 'content', 'topical_category'],
-    queryFn: () => exploreService.listContent('topical_category', { limit: 100, status: 'published' }),
-    select: (data) => data?.items || data || [],
-  });
+  // Fetch all categories for selection (with multi-tenant cache isolation)
+  const { data: categoriesData } = useExploreContentList('topical_category', { limit: 100, status: 'published' });
+  const categories = categoriesData?.items || categoriesData || [];
 
-  // Fetch existing verse if editing
-  const { data: verse, isLoading } = useQuery({
-    queryKey: ['explore', 'topical_verse', id],
-    queryFn: () => exploreService.getContent('topical_verse', id),
-    enabled: isEditMode,
-  });
+  // Fetch existing verse if editing (with multi-tenant cache isolation)
+  const { data: verse, isLoading } = useExploreContent('topical_verse', isEditMode ? id : null);
+
+  // Create and update mutations with multi-tenant cache isolation
+  const createMutation = useCreateExploreContent('topical_verse');
+  const updateMutation = useUpdateExploreContent('topical_verse');
+  const saveMutation = isEditMode ? updateMutation : createMutation;
+
+  // AI generation mutation
+  const generateMutation = useGenerateExploreContent();
 
   // Populate form when data loads
   useEffect(() => {
-    if (verse) {
+    if (verse && isEditMode) {
       setFormData({
         verse: verse.verse || {
           book: 'John',
@@ -110,33 +109,7 @@ export default function TopicalVerseEditor() {
         status: verse.status || 'published',
       });
     }
-  }, [verse]);
-
-  // Save mutation
-  const saveMutation = useMutation({
-    mutationFn: (data) => {
-      if (isEditMode) {
-        return exploreService.updateContent('topical_verse', id, data);
-      } else {
-        return exploreService.createContent('topical_verse', data);
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries(['explore', 'content', 'topical_verse']);
-      toast({
-        title: 'Success',
-        description: isEditMode ? 'Verse updated successfully' : 'Verse created successfully',
-      });
-      navigate('/content-center/topical/verses');
-    },
-    onError: (error) => {
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to save verse',
-        variant: 'destructive',
-      });
-    },
-  });
+  }, [verse, isEditMode]);
 
   const handleInputChange = (field, value, language = null) => {
     if (language) {
@@ -185,33 +158,36 @@ export default function TopicalVerseEditor() {
     }
 
     setIsGenerating(true);
-    try {
-      const reference = `${formData.verse.book} ${formData.verse.chapter}:${formData.verse.verse_start}${formData.verse.verse_end ? `-${formData.verse.verse_end}` : ''}`;
-      const result = await exploreService.generateContent('topical_verse', {
-        reference,
-        translation: formData.verse.translation,
-      });
+    const reference = `${formData.verse.book} ${formData.verse.chapter}:${formData.verse.verse_start}${formData.verse.verse_end ? `-${formData.verse.verse_end}` : ''}`;
 
-      if (result?.commentary) {
-        setFormData(prev => ({
-          ...prev,
-          commentary: result.commentary,
-          application: result.application || prev.application,
-        }));
+    generateMutation.mutate({
+      content_type: 'topical_verse',
+      reference,
+      translation: formData.verse.translation,
+    }, {
+      onSuccess: (result) => {
+        if (result?.commentary) {
+          setFormData(prev => ({
+            ...prev,
+            commentary: result.commentary,
+            application: result.application || prev.application,
+          }));
+          toast({
+            title: 'Generated!',
+            description: 'Commentary has been generated by AI',
+          });
+        }
+        setIsGenerating(false);
+      },
+      onError: (error) => {
         toast({
-          title: 'Generated!',
-          description: 'Commentary has been generated by AI',
+          title: 'Generation Failed',
+          description: error.message || 'Could not generate commentary',
+          variant: 'destructive',
         });
+        setIsGenerating(false);
       }
-    } catch (error) {
-      toast({
-        title: 'Generation Failed',
-        description: error.message || 'Could not generate commentary',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsGenerating(false);
-    }
+    });
   };
 
   const handleSubmit = (e) => {
@@ -236,7 +212,15 @@ export default function TopicalVerseEditor() {
       return;
     }
 
-    saveMutation.mutate(formData);
+    if (isEditMode) {
+      updateMutation.mutate({ contentId: id, data: formData }, {
+        onSuccess: () => navigate('/content-center/topical/verses')
+      });
+    } else {
+      createMutation.mutate(formData, {
+        onSuccess: () => navigate('/content-center/topical/verses')
+      });
+    }
   };
 
   if (isLoading) {

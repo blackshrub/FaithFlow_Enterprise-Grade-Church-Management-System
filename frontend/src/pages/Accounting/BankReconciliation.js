@@ -197,8 +197,8 @@ export default function BankReconciliation() {
                         <Button variant="outline" onClick={() => setShowImportDialog(false)}>
                           {t('accounting.common.cancel')}
                         </Button>
-                        <Button onClick={handleImport} disabled={importMutation.isLoading}>
-                          {importMutation.isLoading ? t('accounting.common.loading') : t('accounting.common.upload')}
+                        <Button onClick={handleImport} disabled={importMutation.isPending}>
+                          {importMutation.isPending ? t('accounting.common.loading') : t('accounting.common.upload')}
                         </Button>
                       </div>
                     </div>

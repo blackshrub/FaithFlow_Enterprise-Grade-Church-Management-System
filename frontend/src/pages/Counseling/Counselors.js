@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
+import { Switch } from '../../components/ui/switch';
+import { Label } from '../../components/ui/label';
 import {
   Table,
   TableBody,
@@ -21,7 +23,6 @@ import {
   DialogTitle,
 } from '../../components/ui/dialog';
 import { Input } from '../../components/ui/input';
-import { Label } from '../../components/ui/label';
 import { Textarea } from '../../components/ui/textarea';
 import {
   Select,
@@ -47,6 +48,7 @@ const CounselorsPage = () => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [editingCounselor, setEditingCounselor] = useState(null);
   const [deletingCounselor, setDeletingCounselor] = useState(null);
+  const [showInactive, setShowInactive] = useState(false);
   const [formData, setFormData] = useState({
     staff_user_id: '',
     display_name: '',
@@ -58,6 +60,14 @@ const CounselorsPage = () => {
   const [specialtyInput, setSpecialtyInput] = useState('');
 
   const { data: counselors = [], isLoading } = useCounselors();
+
+  // Filter counselors based on showInactive toggle
+  const filteredCounselors = useMemo(() => {
+    if (showInactive) {
+      return counselors;
+    }
+    return counselors.filter(c => c.is_active);
+  }, [counselors, showInactive]);
   const { data: staffUsers = [] } = useStaffUsers();
   const createMutation = useCreateCounselor();
   const updateMutation = useUpdateCounselor();
@@ -161,10 +171,22 @@ const CounselorsPage = () => {
           <h1 className="text-3xl font-bold">{t('counseling.counselors')}</h1>
           <p className="text-gray-500 mt-1">Manage Counselor Profiles and Availability</p>
         </div>
-        <Button onClick={() => handleOpenForm()}>
-          <Plus className="mr-2 h-4 w-4" />
-          {t('counseling.add_counselor')}
-        </Button>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <Switch
+              id="show-inactive"
+              checked={showInactive}
+              onCheckedChange={setShowInactive}
+            />
+            <Label htmlFor="show-inactive" className="text-sm text-gray-600">
+              Show Inactive
+            </Label>
+          </div>
+          <Button onClick={() => handleOpenForm()}>
+            <Plus className="mr-2 h-4 w-4" />
+            {t('counseling.add_counselor')}
+          </Button>
+        </div>
       </div>
 
       {/* Counselors Table */}
@@ -172,9 +194,9 @@ const CounselorsPage = () => {
         <CardContent className="pt-6">
           {isLoading ? (
             <div className="text-center py-8 text-gray-500">Loading...</div>
-          ) : counselors.length === 0 ? (
+          ) : filteredCounselors.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
-              {t('counseling.no_counselors')}
+              {showInactive ? t('counseling.no_counselors') : 'No active counselors. Toggle "Show Inactive" to see all.'}
             </div>
           ) : (
             <Table>
@@ -189,7 +211,7 @@ const CounselorsPage = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {counselors.map((counselor) => (
+                {filteredCounselors.map((counselor) => (
                   <TableRow key={counselor.id}>
                     <TableCell>
                       <div className="flex items-center gap-3">

@@ -3,44 +3,47 @@ import { useAuth } from '../context/AuthContext';
 import * as groupsApi from '../services/groupsApi';
 import { toast } from 'sonner';
 
-export const useGroups = (params = {}) => {
+// Multi-tenant cache isolation helper
+const useSessionChurchId = () => {
   const { user } = useAuth();
-  const churchId = user?.church_id;
+  return user?.session_church_id ?? user?.church_id;
+};
+
+export const useGroups = (params = {}) => {
+  const sessionChurchId = useSessionChurchId();
 
   return useQuery({
-    queryKey: ['groups', churchId, params],
+    queryKey: ['groups', sessionChurchId, params],
     queryFn: async () => {
       const response = await groupsApi.getGroups(params);
       return response.data;
     },
-    enabled: !!churchId,
+    enabled: !!sessionChurchId,
   });
 };
 
 export const useGroup = (id) => {
-  const { user } = useAuth();
-  const churchId = user?.church_id;
+  const sessionChurchId = useSessionChurchId();
 
   return useQuery({
-    queryKey: ['group', churchId, id],
+    queryKey: ['group', sessionChurchId, id],
     queryFn: async () => {
       const response = await groupsApi.getGroupById(id);
       return response.data;
     },
-    enabled: !!churchId && !!id,
+    enabled: !!sessionChurchId && !!id,
   });
 };
 
 export const useCreateGroup = () => {
   const queryClient = useQueryClient();
-  const { user } = useAuth();
-  const churchId = user?.church_id;
+  const sessionChurchId = useSessionChurchId();
 
   return useMutation({
     mutationFn: groupsApi.createGroup,
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ['groups', churchId],
+        queryKey: ['groups', sessionChurchId],
         refetchType: 'active'
       });
       toast.success('Group created successfully');
@@ -53,20 +56,19 @@ export const useCreateGroup = () => {
 
 export const useUpdateGroup = () => {
   const queryClient = useQueryClient();
-  const { user } = useAuth();
-  const churchId = user?.church_id;
+  const sessionChurchId = useSessionChurchId();
 
   return useMutation({
     mutationFn: ({ id, data }) => groupsApi.updateGroup(id, data),
     onSuccess: (updatedGroup, variables) => {
       // Optimistic update
       queryClient.setQueryData(
-        ['group', churchId, variables.id],
+        ['group', sessionChurchId, variables.id],
         updatedGroup
       );
 
       queryClient.invalidateQueries({
-        queryKey: ['groups', churchId],
+        queryKey: ['groups', sessionChurchId],
         refetchType: 'active'
       });
       toast.success('Group updated successfully');
@@ -79,14 +81,13 @@ export const useUpdateGroup = () => {
 
 export const useDeleteGroup = () => {
   const queryClient = useQueryClient();
-  const { user } = useAuth();
-  const churchId = user?.church_id;
+  const sessionChurchId = useSessionChurchId();
 
   return useMutation({
     mutationFn: groupsApi.deleteGroup,
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ['groups', churchId],
+        queryKey: ['groups', sessionChurchId],
         refetchType: 'active'
       });
       toast.success('Group deleted successfully');
@@ -98,30 +99,28 @@ export const useDeleteGroup = () => {
 };
 
 export const useGroupMembers = (groupId, params = {}) => {
-  const { user } = useAuth();
-  const churchId = user?.church_id;
+  const sessionChurchId = useSessionChurchId();
 
   return useQuery({
-    queryKey: ['group-members', churchId, groupId, params],
+    queryKey: ['group-members', sessionChurchId, groupId, params],
     queryFn: async () => {
       const response = await groupsApi.getGroupMembers(groupId, params);
       return response.data;
     },
-    enabled: !!churchId && !!groupId,
+    enabled: !!sessionChurchId && !!groupId,
   });
 };
 
 export const useAddGroupMember = () => {
   const queryClient = useQueryClient();
-  const { user } = useAuth();
-  const churchId = user?.church_id;
+  const sessionChurchId = useSessionChurchId();
 
   return useMutation({
     mutationFn: ({ groupId, memberId }) =>
       groupsApi.addGroupMember(groupId, memberId),
     onSuccess: (_, { groupId }) => {
       queryClient.invalidateQueries({
-        queryKey: ['group-members', churchId, groupId],
+        queryKey: ['group-members', sessionChurchId, groupId],
         refetchType: 'active'
       });
       toast.success('Member added to group successfully');
@@ -134,15 +133,14 @@ export const useAddGroupMember = () => {
 
 export const useRemoveGroupMember = () => {
   const queryClient = useQueryClient();
-  const { user } = useAuth();
-  const churchId = user?.church_id;
+  const sessionChurchId = useSessionChurchId();
 
   return useMutation({
     mutationFn: ({ groupId, memberId }) =>
       groupsApi.removeGroupMember(groupId, memberId),
     onSuccess: (_, { groupId }) => {
       queryClient.invalidateQueries({
-        queryKey: ['group-members', churchId, groupId],
+        queryKey: ['group-members', sessionChurchId, groupId],
         refetchType: 'active'
       });
       toast.success('Member removed from group successfully');
@@ -154,33 +152,31 @@ export const useRemoveGroupMember = () => {
 };
 
 export const useJoinRequests = (params = {}) => {
-  const { user } = useAuth();
-  const churchId = user?.church_id;
+  const sessionChurchId = useSessionChurchId();
 
   return useQuery({
-    queryKey: ['group-join-requests', churchId, params],
+    queryKey: ['group-join-requests', sessionChurchId, params],
     queryFn: async () => {
       const response = await groupsApi.getJoinRequests(params);
       return response.data;
     },
-    enabled: !!churchId,
+    enabled: !!sessionChurchId,
   });
 };
 
 export const useApproveJoinRequest = () => {
   const queryClient = useQueryClient();
-  const { user } = useAuth();
-  const churchId = user?.church_id;
+  const sessionChurchId = useSessionChurchId();
 
   return useMutation({
     mutationFn: groupsApi.approveJoinRequest,
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ['group-join-requests', churchId],
+        queryKey: ['group-join-requests', sessionChurchId],
         refetchType: 'active'
       });
       queryClient.invalidateQueries({
-        queryKey: ['groups', churchId],
+        queryKey: ['groups', sessionChurchId],
         refetchType: 'active'
       });
       toast.success('Join request approved successfully');
@@ -193,14 +189,13 @@ export const useApproveJoinRequest = () => {
 
 export const useRejectJoinRequest = () => {
   const queryClient = useQueryClient();
-  const { user } = useAuth();
-  const churchId = user?.church_id;
+  const sessionChurchId = useSessionChurchId();
 
   return useMutation({
     mutationFn: groupsApi.rejectJoinRequest,
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ['group-join-requests', churchId],
+        queryKey: ['group-join-requests', sessionChurchId],
         refetchType: 'active'
       });
       toast.success('Join request rejected successfully');
@@ -212,33 +207,31 @@ export const useRejectJoinRequest = () => {
 };
 
 export const useLeaveRequests = (params = {}) => {
-  const { user } = useAuth();
-  const churchId = user?.church_id;
+  const sessionChurchId = useSessionChurchId();
 
   return useQuery({
-    queryKey: ['group-leave-requests', churchId, params],
+    queryKey: ['group-leave-requests', sessionChurchId, params],
     queryFn: async () => {
       const response = await groupsApi.getLeaveRequests(params);
       return response.data;
     },
-    enabled: !!churchId,
+    enabled: !!sessionChurchId,
   });
 };
 
 export const useApproveLeaveRequest = () => {
   const queryClient = useQueryClient();
-  const { user } = useAuth();
-  const churchId = user?.church_id;
+  const sessionChurchId = useSessionChurchId();
 
   return useMutation({
     mutationFn: groupsApi.approveLeaveRequest,
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ['group-leave-requests', churchId],
+        queryKey: ['group-leave-requests', sessionChurchId],
         refetchType: 'active'
       });
       queryClient.invalidateQueries({
-        queryKey: ['groups', churchId],
+        queryKey: ['groups', sessionChurchId],
         refetchType: 'active'
       });
       toast.success('Leave request approved successfully');

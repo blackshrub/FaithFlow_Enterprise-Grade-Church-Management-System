@@ -8,35 +8,39 @@ import { useAuth } from '../context/AuthContext';
 import * as communitiesApi from '../services/communitiesApi';
 import { toast } from 'sonner';
 
+// Helper to get session church ID for cache isolation (supports super admin church switching)
+const useSessionChurchId = () => {
+  const { user } = useAuth();
+  return user?.session_church_id ?? user?.church_id;
+};
+
 // =====================================================
 // Community Queries
 // =====================================================
 
 export const useCommunities = (params = {}) => {
-  const { user } = useAuth();
-  const churchId = user?.church_id;
+  const sessionChurchId = useSessionChurchId();
 
   return useQuery({
-    queryKey: ['communities', churchId, params],
+    queryKey: ['communities', sessionChurchId, params],
     queryFn: async () => {
       const response = await communitiesApi.getCommunities(params);
       return response.data;
     },
-    enabled: !!churchId,
+    enabled: !!sessionChurchId,
   });
 };
 
 export const useCommunity = (id) => {
-  const { user } = useAuth();
-  const churchId = user?.church_id;
+  const sessionChurchId = useSessionChurchId();
 
   return useQuery({
-    queryKey: ['community', churchId, id],
+    queryKey: ['community', sessionChurchId, id],
     queryFn: async () => {
       const response = await communitiesApi.getCommunityById(id);
       return response.data;
     },
-    enabled: !!churchId && !!id,
+    enabled: !!sessionChurchId && !!id,
   });
 };
 
@@ -46,14 +50,13 @@ export const useCommunity = (id) => {
 
 export const useCreateCommunity = () => {
   const queryClient = useQueryClient();
-  const { user } = useAuth();
-  const churchId = user?.church_id;
+  const sessionChurchId = useSessionChurchId();
 
   return useMutation({
     mutationFn: communitiesApi.createCommunity,
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ['communities', churchId],
+        queryKey: ['communities', sessionChurchId],
         refetchType: 'active'
       });
       toast.success('Community created successfully');
@@ -66,20 +69,19 @@ export const useCreateCommunity = () => {
 
 export const useUpdateCommunity = () => {
   const queryClient = useQueryClient();
-  const { user } = useAuth();
-  const churchId = user?.church_id;
+  const sessionChurchId = useSessionChurchId();
 
   return useMutation({
     mutationFn: ({ id, data }) => communitiesApi.updateCommunity(id, data),
     onSuccess: (updatedCommunity, variables) => {
       // Optimistic update
       queryClient.setQueryData(
-        ['community', churchId, variables.id],
+        ['community', sessionChurchId, variables.id],
         updatedCommunity
       );
 
       queryClient.invalidateQueries({
-        queryKey: ['communities', churchId],
+        queryKey: ['communities', sessionChurchId],
         refetchType: 'active'
       });
       toast.success('Community updated successfully');
@@ -92,14 +94,13 @@ export const useUpdateCommunity = () => {
 
 export const useDeleteCommunity = () => {
   const queryClient = useQueryClient();
-  const { user } = useAuth();
-  const churchId = user?.church_id;
+  const sessionChurchId = useSessionChurchId();
 
   return useMutation({
     mutationFn: communitiesApi.deleteCommunity,
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ['communities', churchId],
+        queryKey: ['communities', sessionChurchId],
         refetchType: 'active'
       });
       toast.success('Community deleted successfully');
@@ -115,30 +116,28 @@ export const useDeleteCommunity = () => {
 // =====================================================
 
 export const useCommunityMembers = (communityId, params = {}) => {
-  const { user } = useAuth();
-  const churchId = user?.church_id;
+  const sessionChurchId = useSessionChurchId();
 
   return useQuery({
-    queryKey: ['community-members', churchId, communityId, params],
+    queryKey: ['community-members', sessionChurchId, communityId, params],
     queryFn: async () => {
       const response = await communitiesApi.getCommunityMembers(communityId, params);
       return response.data;
     },
-    enabled: !!churchId && !!communityId,
+    enabled: !!sessionChurchId && !!communityId,
   });
 };
 
 export const useAddCommunityMember = () => {
   const queryClient = useQueryClient();
-  const { user } = useAuth();
-  const churchId = user?.church_id;
+  const sessionChurchId = useSessionChurchId();
 
   return useMutation({
     mutationFn: ({ communityId, memberId, role = 'member' }) =>
       communitiesApi.addCommunityMember(communityId, memberId, role),
     onSuccess: (_, { communityId }) => {
       queryClient.invalidateQueries({
-        queryKey: ['community-members', churchId, communityId],
+        queryKey: ['community-members', sessionChurchId, communityId],
         refetchType: 'active'
       });
       toast.success('Member added to community successfully');
@@ -151,15 +150,14 @@ export const useAddCommunityMember = () => {
 
 export const useRemoveCommunityMember = () => {
   const queryClient = useQueryClient();
-  const { user } = useAuth();
-  const churchId = user?.church_id;
+  const sessionChurchId = useSessionChurchId();
 
   return useMutation({
     mutationFn: ({ communityId, memberId }) =>
       communitiesApi.removeCommunityMember(communityId, memberId),
     onSuccess: (_, { communityId }) => {
       queryClient.invalidateQueries({
-        queryKey: ['community-members', churchId, communityId],
+        queryKey: ['community-members', sessionChurchId, communityId],
         refetchType: 'active'
       });
       toast.success('Member removed from community successfully');
@@ -172,19 +170,18 @@ export const useRemoveCommunityMember = () => {
 
 export const useUpdateCommunityMemberRole = () => {
   const queryClient = useQueryClient();
-  const { user } = useAuth();
-  const churchId = user?.church_id;
+  const sessionChurchId = useSessionChurchId();
 
   return useMutation({
     mutationFn: ({ communityId, memberId, role }) =>
       communitiesApi.updateCommunityMemberRole(communityId, memberId, role),
     onSuccess: (_, { communityId }) => {
       queryClient.invalidateQueries({
-        queryKey: ['community-members', churchId, communityId],
+        queryKey: ['community-members', sessionChurchId, communityId],
         refetchType: 'active'
       });
       queryClient.invalidateQueries({
-        queryKey: ['community', churchId, communityId],
+        queryKey: ['community', sessionChurchId, communityId],
         refetchType: 'active'
       });
       toast.success('Member role updated successfully');
@@ -200,33 +197,31 @@ export const useUpdateCommunityMemberRole = () => {
 // =====================================================
 
 export const useCommunityJoinRequests = (params = {}) => {
-  const { user } = useAuth();
-  const churchId = user?.church_id;
+  const sessionChurchId = useSessionChurchId();
 
   return useQuery({
-    queryKey: ['community-join-requests', churchId, params],
+    queryKey: ['community-join-requests', sessionChurchId, params],
     queryFn: async () => {
       const response = await communitiesApi.getJoinRequests(params);
       return response.data;
     },
-    enabled: !!churchId,
+    enabled: !!sessionChurchId,
   });
 };
 
 export const useApproveCommunityJoinRequest = () => {
   const queryClient = useQueryClient();
-  const { user } = useAuth();
-  const churchId = user?.church_id;
+  const sessionChurchId = useSessionChurchId();
 
   return useMutation({
     mutationFn: communitiesApi.approveJoinRequest,
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ['community-join-requests', churchId],
+        queryKey: ['community-join-requests', sessionChurchId],
         refetchType: 'active'
       });
       queryClient.invalidateQueries({
-        queryKey: ['communities', churchId],
+        queryKey: ['communities', sessionChurchId],
         refetchType: 'active'
       });
       toast.success('Join request approved successfully');
@@ -239,14 +234,13 @@ export const useApproveCommunityJoinRequest = () => {
 
 export const useRejectCommunityJoinRequest = () => {
   const queryClient = useQueryClient();
-  const { user } = useAuth();
-  const churchId = user?.church_id;
+  const sessionChurchId = useSessionChurchId();
 
   return useMutation({
     mutationFn: communitiesApi.rejectJoinRequest,
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ['community-join-requests', churchId],
+        queryKey: ['community-join-requests', sessionChurchId],
         refetchType: 'active'
       });
       toast.success('Join request rejected successfully');
@@ -262,33 +256,31 @@ export const useRejectCommunityJoinRequest = () => {
 // =====================================================
 
 export const useCommunityLeaveRequests = (params = {}) => {
-  const { user } = useAuth();
-  const churchId = user?.church_id;
+  const sessionChurchId = useSessionChurchId();
 
   return useQuery({
-    queryKey: ['community-leave-requests', churchId, params],
+    queryKey: ['community-leave-requests', sessionChurchId, params],
     queryFn: async () => {
       const response = await communitiesApi.getLeaveRequests(params);
       return response.data;
     },
-    enabled: !!churchId,
+    enabled: !!sessionChurchId,
   });
 };
 
 export const useApproveCommunityLeaveRequest = () => {
   const queryClient = useQueryClient();
-  const { user } = useAuth();
-  const churchId = user?.church_id;
+  const sessionChurchId = useSessionChurchId();
 
   return useMutation({
     mutationFn: communitiesApi.approveLeaveRequest,
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ['community-leave-requests', churchId],
+        queryKey: ['community-leave-requests', sessionChurchId],
         refetchType: 'active'
       });
       queryClient.invalidateQueries({
-        queryKey: ['communities', churchId],
+        queryKey: ['communities', sessionChurchId],
         refetchType: 'active'
       });
       toast.success('Leave request approved successfully');

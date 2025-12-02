@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
@@ -13,9 +12,9 @@ import {
 } from '../../components/ui/select';
 import {
   ArrowLeft, TrendingUp, Users, Eye, CheckCircle, Award, Calendar,
-  Loader2, BarChart3, BookOpen, MessageSquare, User as UserIcon, HelpCircle
+  Loader2, BarChart3, BookOpen, MessageSquare, User as UserIcon, HelpCircle, AlertCircle
 } from 'lucide-react';
-import exploreService from '../../services/exploreService';
+import { useExploreAnalytics, useExploreTopContent } from '../../hooks/useExplore';
 
 const contentTypeConfig = {
   devotion: { label: 'Devotions', icon: BookOpen, color: 'text-blue-600', bgColor: 'bg-blue-50' },
@@ -29,21 +28,15 @@ export default function AnalyticsDashboard() {
   const [timeRange, setTimeRange] = useState('30');
   const [contentType, setContentType] = useState('all');
 
-  // Fetch analytics data
-  const { data: analytics, isLoading } = useQuery({
-    queryKey: ['explore', 'analytics', timeRange, contentType],
-    queryFn: () => exploreService.getAnalytics({
-      days: parseInt(timeRange),
-      content_type: contentType === 'all' ? undefined : contentType,
-    }),
-    staleTime: 60000,
+  // Fetch analytics data with proper tenant isolation via hooks
+  const { data: analytics, isLoading, error: analyticsError } = useExploreAnalytics({
+    days: parseInt(timeRange),
+    content_type: contentType === 'all' ? undefined : contentType,
   });
 
-  // Fetch top performing content
-  const { data: topContent } = useQuery({
-    queryKey: ['explore', 'top-content', timeRange],
-    queryFn: () => exploreService.getTopContent({ days: parseInt(timeRange) }),
-    staleTime: 60000,
+  // Fetch top performing content with proper tenant isolation
+  const { data: topContent, error: topContentError } = useExploreTopContent({
+    period: `${timeRange}d`,
   });
 
   const statCards = [
@@ -113,11 +106,11 @@ export default function AnalyticsDashboard() {
       <div className="flex items-center justify-between">
         <div>
           <Link
-            to="/explore"
+            to="/content-center"
             className="text-sm text-blue-600 hover:underline mb-2 inline-block"
           >
             <ArrowLeft className="h-4 w-4 inline mr-1" />
-            Back to Dashboard
+            Back to Content Center
           </Link>
           <h1 className="text-3xl font-bold text-gray-900">
             Explore Analytics
@@ -171,6 +164,18 @@ export default function AnalyticsDashboard() {
         <div className="flex items-center justify-center py-12">
           <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
         </div>
+      ) : analyticsError ? (
+        <Card className="border-red-200 bg-red-50">
+          <CardContent className="py-8">
+            <div className="flex flex-col items-center justify-center text-red-600">
+              <AlertCircle className="h-12 w-12 mb-3" />
+              <p className="font-medium">Failed to load analytics</p>
+              <p className="text-sm text-red-500 mt-1">
+                {analyticsError.response?.data?.detail || analyticsError.message || 'Please try again later'}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
       ) : (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

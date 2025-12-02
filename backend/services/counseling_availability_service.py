@@ -249,7 +249,7 @@ class CounselingAvailabilityService:
             else:
                 query["date"] = {"$lte": date_to}
         
-        slots = await self.db.counseling_time_slots.find(query).sort([
+        slots = await self.db.counseling_time_slots.find(query, {"_id": 0}).sort([
             ("date", 1),
             ("start_time", 1)
         ]).to_list(1000)

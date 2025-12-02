@@ -20,7 +20,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../../components/ui/select';
-import { useArticles, useDeleteArticle, useDuplicateArticle } from '../../hooks/useArticles';
+import { useArticles, useDeleteArticle, useDuplicateArticle, useUpdateArticle } from '../../hooks/useArticles';
+import { useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '../../context/AuthContext';
 import ArticleStatusBadge from '../../components/Articles/ArticleStatusBadge';
 import ScheduleStatusBadge from '../../components/Articles/ScheduleStatusBadge';
 import ReadingTimeDisplay from '../../components/Articles/ReadingTimeDisplay';
@@ -296,7 +298,11 @@ export default function ArticlesList() {
         open={showQuickEdit}
         onOpenChange={setShowQuickEdit}
         article={editingArticle}
-        onSuccess={() => window.location.reload()}
+        onSuccess={() => {
+          // Proper cache invalidation instead of page reload
+          setShowQuickEdit(false);
+          setEditingArticle(null);
+        }}
       />
     </div>
   );

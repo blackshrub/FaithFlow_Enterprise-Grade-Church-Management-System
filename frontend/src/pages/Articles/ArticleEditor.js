@@ -313,7 +313,7 @@ export default function ArticleEditor() {
           </Card>
 
           {isEdit && existingArticle && (
-            <SchedulingPanel article={existingArticle} onSuccess={() => window.location.reload()} />
+            <SchedulingPanel article={existingArticle} />
           )}
         </div>
       </div>

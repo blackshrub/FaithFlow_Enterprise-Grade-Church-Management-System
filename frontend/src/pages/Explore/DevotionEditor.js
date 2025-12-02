@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
@@ -19,13 +18,12 @@ import { Switch } from '../../components/ui/switch';
 import {
   ArrowLeft, Save, Calendar, Eye, Loader2, Upload, X, AlertCircle
 } from 'lucide-react';
-import exploreService from '../../services/exploreService';
+import { useExploreContent, useCreateExploreContent, useUpdateExploreContent } from '../../hooks/useExplore';
 import { useToast } from '../../hooks/use-toast';
 
 export default function DevotionEditor() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const { toast } = useToast();
   const { t } = useTranslation();
 
@@ -48,52 +46,31 @@ export default function DevotionEditor() {
   const [currentReflectionQuestion, setCurrentReflectionQuestion] = useState({ en: '', id: '' });
   const [activeLanguage, setActiveLanguage] = useState('en');
 
-  // Fetch existing devotion if editing
-  const { data: devotion, isLoading } = useQuery({
-    queryKey: ['explore', 'devotion', id],
-    queryFn: () => exploreService.getContent('devotion', id),
-    enabled: isEditMode,
-    onSuccess: (data) => {
-      setFormData({
-        title: data.title || { en: '', id: '' },
-        content: data.content || { en: '', id: '' },
-        prayer: data.prayer || { en: '', id: '' },
-        reflection_questions: data.reflection_questions || { en: [], id: [] },
-        bible_reference: data.bible_reference || '',
-        verse_text: data.verse_text || '',
-        image_url: data.image_url || '',
-        author: data.author || '',
-        published: data.published || false,
-        scheduled_date: data.scheduled_date || '',
-      });
-    },
-  });
+  // Fetch existing devotion if editing (with multi-tenant cache isolation)
+  const { data: devotion, isLoading } = useExploreContent('daily_devotion', isEditMode ? id : null);
 
-  // Save mutation
-  const saveMutation = useMutation({
-    mutationFn: (data) => {
-      if (isEditMode) {
-        return exploreService.updateContent('devotion', id, data);
-      } else {
-        return exploreService.createContent('devotion', data);
-      }
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries(['explore', 'content', 'devotion']);
-      toast({
-        title: 'Success',
-        description: isEditMode ? 'Devotion updated successfully' : 'Devotion created successfully',
+  // Create and update mutations with multi-tenant cache isolation
+  const createMutation = useCreateExploreContent('daily_devotion');
+  const updateMutation = useUpdateExploreContent('daily_devotion');
+  const saveMutation = isEditMode ? updateMutation : createMutation;
+
+  // Populate form when devotion data is loaded
+  useEffect(() => {
+    if (devotion && isEditMode) {
+      setFormData({
+        title: devotion.title || { en: '', id: '' },
+        content: devotion.content || { en: '', id: '' },
+        prayer: devotion.prayer || { en: '', id: '' },
+        reflection_questions: devotion.reflection_questions || { en: [], id: [] },
+        bible_reference: devotion.bible_reference || '',
+        verse_text: devotion.verse_text || '',
+        image_url: devotion.image_url || '',
+        author: devotion.author || '',
+        published: devotion.published || false,
+        scheduled_date: devotion.scheduled_date || '',
       });
-      navigate('/content-center/devotion');
-    },
-    onError: (error) => {
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to save devotion',
-        variant: 'destructive',
-      });
-    },
-  });
+    }
+  }, [devotion, isEditMode]);
 
   const handleInputChange = (field, value, language = null) => {
     if (language) {
@@ -157,7 +134,15 @@ export default function DevotionEditor() {
       return;
     }
 
-    saveMutation.mutate(formData);
+    if (isEditMode) {
+      updateMutation.mutate({ contentId: id, data: formData }, {
+        onSuccess: () => navigate('/content-center/devotion')
+      });
+    } else {
+      createMutation.mutate(formData, {
+        onSuccess: () => navigate('/content-center/devotion')
+      });
+    }
   };
 
   const handleSaveAndSchedule = () => {

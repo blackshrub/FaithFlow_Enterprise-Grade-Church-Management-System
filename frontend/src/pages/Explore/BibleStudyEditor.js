@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
@@ -17,15 +16,24 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { Switch } from '../../components/ui/switch';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '../../components/ui/alert-dialog';
+import {
   ArrowLeft, Save, Eye, Loader2, Plus, Trash2, GripVertical, ChevronUp, ChevronDown, BookOpen
 } from 'lucide-react';
-import exploreService from '../../services/exploreService';
+import { useExploreContent, useCreateExploreContent, useUpdateExploreContent } from '../../hooks/useExplore';
 import { useToast } from '../../hooks/use-toast';
 
 export default function BibleStudyEditor() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const { toast } = useToast();
   const { t } = useTranslation();
 
@@ -59,6 +67,7 @@ export default function BibleStudyEditor() {
 
   const [activeLanguage, setActiveLanguage] = useState('en');
   const [expandedLesson, setExpandedLesson] = useState(null);
+  const [lessonToDelete, setLessonToDelete] = useState(null);
 
   // Categories list
   const categoryOptions = [
@@ -72,12 +81,12 @@ export default function BibleStudyEditor() {
     { value: 'spiritual_growth', label: 'Spiritual Growth' },
   ];
 
-  // Fetch existing study if editing
-  const { data: study, isLoading } = useQuery({
-    queryKey: ['explore', 'bible_study', id],
-    queryFn: () => exploreService.getContent('bible_study', id),
-    enabled: isEditMode,
-  });
+  // Fetch existing study if editing (with multi-tenant cache isolation)
+  const { data: study, isLoading } = useExploreContent('bible_study', isEditMode ? id : null);
+
+  // Create and update mutations with multi-tenant cache isolation
+  const createMutation = useCreateExploreContent('bible_study');
+  const updateMutation = useUpdateExploreContent('bible_study');
 
   // Hydrate form when data loads
   useEffect(() => {
@@ -109,38 +118,15 @@ export default function BibleStudyEditor() {
     }
   }, [study]);
 
-  // Save mutation
-  const saveMutation = useMutation({
-    mutationFn: (data) => {
-      // Calculate lesson count and total duration
-      const processedData = {
-        ...data,
-        lesson_count: data.lessons.length,
-        estimated_duration_minutes: data.lessons.reduce((sum, lesson) => sum + (lesson.duration_minutes || 10), 0),
-      };
-
-      if (isEditMode) {
-        return exploreService.updateContent('bible_study', id, processedData);
-      } else {
-        return exploreService.createContent('bible_study', processedData);
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries(['explore', 'content', 'bible_study']);
-      toast({
-        title: 'Success',
-        description: isEditMode ? 'Bible Study updated successfully' : 'Bible Study created successfully',
-      });
-      navigate('/content-center/bible-study');
-    },
-    onError: (error) => {
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to save Bible Study',
-        variant: 'destructive',
-      });
-    },
+  // Helper to process data before saving
+  const processFormData = (data) => ({
+    ...data,
+    lesson_count: data.lessons.length,
+    estimated_duration_minutes: data.lessons.reduce((sum, lesson) => sum + (lesson.duration_minutes || 10), 0),
   });
+
+  // For backwards compatibility with existing code that uses saveMutation.isPending
+  const saveMutation = isEditMode ? updateMutation : createMutation;
 
   const handleInputChange = (field, value, language = null) => {
     if (language) {
@@ -213,12 +199,17 @@ export default function BibleStudyEditor() {
   };
 
   const removeLesson = (index) => {
-    if (window.confirm('Are you sure you want to delete this lesson?')) {
+    setLessonToDelete(index);
+  };
+
+  const confirmDeleteLesson = () => {
+    if (lessonToDelete !== null) {
       setFormData(prev => ({
         ...prev,
-        lessons: prev.lessons.filter((_, i) => i !== index).map((lesson, i) => ({ ...lesson, order: i }))
+        lessons: prev.lessons.filter((_, i) => i !== lessonToDelete).map((lesson, i) => ({ ...lesson, order: i }))
       }));
       setExpandedLesson(null);
+      setLessonToDelete(null);
     }
   };
 
@@ -271,7 +262,16 @@ export default function BibleStudyEditor() {
       return;
     }
 
-    saveMutation.mutate(formData);
+    const processedData = processFormData(formData);
+    if (isEditMode) {
+      updateMutation.mutate({ contentId: id, data: processedData }, {
+        onSuccess: () => navigate('/content-center/bible-study')
+      });
+    } else {
+      createMutation.mutate(processedData, {
+        onSuccess: () => navigate('/content-center/bible-study')
+      });
+    }
   };
 
   if (isLoading) {
@@ -773,6 +773,29 @@ export default function BibleStudyEditor() {
           </Button>
         </div>
       </form>
+
+      {/* Delete Lesson Confirmation Dialog */}
+      <AlertDialog open={lessonToDelete !== null} onOpenChange={(open) => !open && setLessonToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('explore.actions.delete')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('explore.confirmations.deleteContent')}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>
+              {t('common.cancel')}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeleteLesson}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {t('explore.actions.delete')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

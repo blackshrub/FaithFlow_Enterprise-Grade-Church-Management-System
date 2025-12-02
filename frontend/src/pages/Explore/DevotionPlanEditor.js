@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
@@ -21,7 +20,7 @@ import {
   ArrowLeft, Save, Loader2, Calendar, GripVertical, Plus, Trash2,
   BookOpen, Image, Clock, X, Search, Check
 } from 'lucide-react';
-import exploreService from '../../services/exploreService';
+import { useExploreContent, useExploreContentList, useCreateExploreContent, useUpdateExploreContent } from '../../hooks/useExplore';
 import { useToast } from '../../hooks/use-toast';
 
 // Difficulty levels
@@ -53,7 +52,6 @@ const CATEGORY_OPTIONS = [
 export default function DevotionPlanEditor() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const { toast } = useToast();
   const { t } = useTranslation();
 
@@ -76,23 +74,21 @@ export default function DevotionPlanEditor() {
   const [searchQuery, setSearchQuery] = useState('');
   const [customDuration, setCustomDuration] = useState(false);
 
-  // Fetch all devotions for the day picker
-  const { data: availableDevotions = [] } = useQuery({
-    queryKey: ['explore', 'content', 'daily_devotion', 'all'],
-    queryFn: () => exploreService.listContent('daily_devotion', { limit: 200 }),
-    select: (data) => data?.items || data || [],
-  });
+  // Fetch all devotions for the day picker (with multi-tenant cache isolation)
+  const { data: devotionsData } = useExploreContentList('daily_devotion', { limit: 200 });
+  const availableDevotions = devotionsData?.items || devotionsData || [];
 
-  // Fetch existing plan if editing
-  const { data: plan, isLoading } = useQuery({
-    queryKey: ['explore', 'devotion_plan', id],
-    queryFn: () => exploreService.getContent('devotion_plan', id),
-    enabled: isEditMode,
-  });
+  // Fetch existing plan if editing (with multi-tenant cache isolation)
+  const { data: plan, isLoading } = useExploreContent('devotion_plan', isEditMode ? id : null);
+
+  // Create and update mutations with multi-tenant cache isolation
+  const createMutation = useCreateExploreContent('devotion_plan');
+  const updateMutation = useUpdateExploreContent('devotion_plan');
+  const saveMutation = isEditMode ? updateMutation : createMutation;
 
   // Populate form when data loads
   useEffect(() => {
-    if (plan) {
+    if (plan && isEditMode) {
       setFormData({
         title: plan.title || { en: '', id: '' },
         description: plan.description || { en: '', id: '' },
@@ -109,33 +105,7 @@ export default function DevotionPlanEditor() {
         setCustomDuration(true);
       }
     }
-  }, [plan]);
-
-  // Save mutation
-  const saveMutation = useMutation({
-    mutationFn: (data) => {
-      if (isEditMode) {
-        return exploreService.updateContent('devotion_plan', id, data);
-      } else {
-        return exploreService.createContent('devotion_plan', data);
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries(['explore', 'content', 'devotion_plan']);
-      toast({
-        title: 'Success',
-        description: isEditMode ? 'Devotion plan updated successfully' : 'Devotion plan created successfully',
-      });
-      navigate('/content-center/devotion-plan');
-    },
-    onError: (error) => {
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to save devotion plan',
-        variant: 'destructive',
-      });
-    },
-  });
+  }, [plan, isEditMode]);
 
   const handleInputChange = (field, value, language = null) => {
     if (language) {
@@ -227,7 +197,15 @@ export default function DevotionPlanEditor() {
       return;
     }
 
-    saveMutation.mutate(formData);
+    if (isEditMode) {
+      updateMutation.mutate({ contentId: id, data: formData }, {
+        onSuccess: () => navigate('/content-center/devotion-plan')
+      });
+    } else {
+      createMutation.mutate(formData, {
+        onSuccess: () => navigate('/content-center/devotion-plan')
+      });
+    }
   };
 
   // Filter devotions for picker

@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
@@ -25,13 +24,12 @@ import {
   ArrowLeft, Save, Loader2, Settings as SettingsIcon, Globe, Bell,
   Users, Sparkles, Calendar, Shield, Info
 } from 'lucide-react';
-import exploreService from '../../services/exploreService';
+import { useExploreChurchSettings, useUpdateExploreChurchSettings, useExplorePlatformSettings, useUpdateExplorePlatformSettings } from '../../hooks/useExplore';
 import { useToast } from '../../hooks/use-toast';
 import { useAuth } from '../../context/AuthContext';
 
 export default function ChurchSettings() {
   const { t } = useTranslation();
-  const queryClient = useQueryClient();
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -79,14 +77,17 @@ export default function ChurchSettings() {
     custom_welcome_message: '',
   });
 
-  // Fetch church settings
-  const { data: settings, isLoading } = useQuery({
-    queryKey: ['explore', 'church-settings'],
-    queryFn: () => isSuperAdmin
-      ? exploreService.getPlatformSettings()
-      : exploreService.getChurchSettings(),
-    staleTime: 60000,
-  });
+  // Fetch settings based on user role (with multi-tenant cache isolation)
+  const { data: churchSettings, isLoading: churchLoading } = useExploreChurchSettings();
+  const { data: platformSettings, isLoading: platformLoading } = useExplorePlatformSettings();
+
+  const settings = isSuperAdmin ? platformSettings : churchSettings;
+  const isLoading = isSuperAdmin ? platformLoading : churchLoading;
+
+  // Mutations with multi-tenant cache isolation
+  const churchSaveMutation = useUpdateExploreChurchSettings();
+  const platformSaveMutation = useUpdateExplorePlatformSettings();
+  const saveMutation = isSuperAdmin ? platformSaveMutation : churchSaveMutation;
 
   // Update form when settings load
   useEffect(() => {
@@ -97,27 +98,6 @@ export default function ChurchSettings() {
       }));
     }
   }, [settings]);
-
-  // Save settings mutation
-  const saveMutation = useMutation({
-    mutationFn: (data) => isSuperAdmin
-      ? exploreService.updatePlatformSettings(data)
-      : exploreService.updateChurchSettings(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries(['explore', 'church-settings']);
-      toast({
-        title: 'Settings Saved',
-        description: 'Explore settings have been updated successfully',
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: 'Save Failed',
-        description: error.message || 'Failed to save settings',
-        variant: 'destructive',
-      });
-    },
-  });
 
   const handleChange = (field, value) => {
     setFormData(prev => ({
@@ -155,7 +135,7 @@ export default function ChurchSettings() {
       <div className="flex items-center justify-between">
         <div>
           <Link
-            to="/explore"
+            to="/content-center"
             className="text-sm text-blue-600 hover:underline mb-2 inline-block"
           >
             <ArrowLeft className="h-4 w-4 inline mr-1" />

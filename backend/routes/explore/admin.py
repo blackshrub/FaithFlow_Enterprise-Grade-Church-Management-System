@@ -46,6 +46,92 @@ from models.explore import (
 router = APIRouter()
 
 
+# ==================== DASHBOARD STATS ====================
+
+
+@router.get("/stats")
+async def get_dashboard_stats(
+    current_user=Depends(require_super_admin),
+    db=Depends(get_db),
+):
+    """Get dashboard statistics for Content Center"""
+    from utils.tenant_utils import get_session_church_id_from_user
+
+    session_church_id = get_session_church_id_from_user(current_user)
+
+    # Build base query for church context
+    if session_church_id == "global":
+        # Super admin viewing global - show all global content
+        base_query = {"scope": "global", "deleted": False}
+    else:
+        # Super admin switched to specific church - show church + global content
+        base_query = {
+            "$or": [
+                {"church_id": session_church_id, "deleted": False},
+                {"scope": "global", "deleted": False}
+            ]
+        }
+
+    # Count by content type
+    devotions = await db.daily_devotions.count_documents(base_query)
+    verses = await db.verses_of_the_day.count_documents(base_query)
+    figures = await db.bible_figures.count_documents(base_query)
+    quizzes = await db.daily_quizzes.count_documents(base_query)
+    studies = await db.bible_studies.count_documents(base_query)
+    categories = await db.topical_categories.count_documents(base_query)
+    topical_verses = await db.topical_verses.count_documents(base_query)
+    plans = await db.devotion_plans.count_documents(base_query)
+
+    # Count published vs draft
+    published_query = {**base_query, "status": "published"}
+    draft_query = {**base_query, "status": {"$in": ["draft", None]}}
+
+    published_count = 0
+    draft_count = 0
+    for coll in [db.daily_devotions, db.verses_of_the_day, db.bible_figures,
+                 db.daily_quizzes, db.bible_studies]:
+        published_count += await coll.count_documents(published_query)
+        draft_count += await coll.count_documents(draft_query)
+
+    # Count scheduled content
+    today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    scheduled_query = {
+        **base_query,
+        "scheduled_date": {"$gte": today.isoformat()[:10]}
+    }
+    scheduled_count = 0
+    for coll in [db.daily_devotions, db.verses_of_the_day, db.bible_figures, db.daily_quizzes]:
+        scheduled_count += await coll.count_documents(scheduled_query)
+
+    # AI generation jobs in progress
+    ai_jobs_pending = await db.ai_generation_jobs.count_documents({
+        "status": {"$in": ["pending", "generating"]},
+        "deleted": {"$ne": True}
+    })
+
+    return {
+        "content_counts": {
+            "devotions": devotions,
+            "verses": verses,
+            "figures": figures,
+            "quizzes": quizzes,
+            "studies": studies,
+            "categories": categories,
+            "topical_verses": topical_verses,
+            "plans": plans,
+            "total": devotions + verses + figures + quizzes + studies + categories + topical_verses + plans
+        },
+        "status_counts": {
+            "published": published_count,
+            "draft": draft_count,
+            "scheduled": scheduled_count,
+        },
+        "ai_generation": {
+            "pending_jobs": ai_jobs_pending,
+        }
+    }
+
+
 # ==================== PLATFORM SETTINGS ====================
 
 
@@ -107,11 +193,25 @@ async def create_content(
     db=Depends(get_db),
 ):
     """Create new content"""
+    from utils.tenant_utils import get_session_church_id_from_user
+
+    session_church_id = get_session_church_id_from_user(current_user)
+
     # Add metadata
     content["id"] = f"{content_type}_{datetime.now().timestamp()}"
     content["created_by"] = current_user["id"]
     content["created_at"] = datetime.now()
     content["deleted"] = False
+
+    # Set scope and church_id based on session context
+    if session_church_id == "global":
+        # Super admin creating global content
+        content["scope"] = content.get("scope", "global")
+        content["church_id"] = content.get("church_id", "global")
+    else:
+        # Super admin switched to a specific church - create church content
+        content["scope"] = "church"
+        content["church_id"] = session_church_id
 
     # Get collection
     collection = _get_collection(db, content_type)
@@ -132,17 +232,42 @@ async def list_content(
     scope: Optional[str] = Query(None),
     church_id: Optional[str] = Query(None),
 ):
-    """List content with filters"""
+    """List content with filters and tenant isolation"""
+    from utils.tenant_utils import get_session_church_id_from_user
+
+    session_church_id = get_session_church_id_from_user(current_user)
     collection = _get_collection(db, content_type)
 
-    # Build query
+    # Build base query with tenant filtering
     query: Dict[str, Any] = {"deleted": False}
+
+    # Apply tenant context
+    if session_church_id == "global":
+        # Super admin viewing global - can see all content
+        # Allow further filtering by scope/church_id if provided
+        if scope:
+            query["scope"] = scope
+        if church_id:
+            query["church_id"] = church_id
+    else:
+        # Super admin switched to specific church - see church content + global content
+        if scope == "church":
+            # Only church content
+            query["church_id"] = session_church_id
+            query["scope"] = "church"
+        elif scope == "global":
+            # Only global content
+            query["scope"] = "global"
+        else:
+            # Both church and global content
+            query["$or"] = [
+                {"church_id": session_church_id},
+                {"scope": "global"}
+            ]
+
+    # Additional filters
     if status:
         query["status"] = status
-    if scope:
-        query["scope"] = scope
-    if church_id:
-        query["church_id"] = church_id
 
     # Get items
     cursor = collection.find(query).skip(skip).limit(limit).sort("created_at", -1)
@@ -171,9 +296,28 @@ async def get_content(
     current_user=Depends(require_super_admin),
     db=Depends(get_db),
 ):
-    """Get specific content by ID"""
+    """Get specific content by ID with tenant filtering"""
+    from utils.tenant_utils import get_session_church_id_from_user
+
+    session_church_id = get_session_church_id_from_user(current_user)
     collection = _get_collection(db, content_type)
-    content = await collection.find_one({"id": content_id, "deleted": False})
+
+    # Build query with tenant filtering
+    if session_church_id == "global":
+        # Super admin can access any content
+        query = {"id": content_id, "deleted": False}
+    else:
+        # Super admin switched to church - can access church content or global content
+        query = {
+            "id": content_id,
+            "deleted": False,
+            "$or": [
+                {"church_id": session_church_id},
+                {"scope": "global"}
+            ]
+        }
+
+    content = await collection.find_one(query)
 
     if not content:
         raise HTTPException(status_code=404, detail="Content not found")
@@ -190,20 +334,37 @@ async def update_content(
     current_user=Depends(require_super_admin),
     db=Depends(get_db),
 ):
-    """Update content"""
+    """Update content with tenant filtering"""
+    from utils.tenant_utils import get_session_church_id_from_user
+
+    session_church_id = get_session_church_id_from_user(current_user)
     collection = _get_collection(db, content_type)
+
+    # Build query with tenant filtering
+    if session_church_id == "global":
+        # Super admin can update any content
+        query = {"id": content_id, "deleted": False}
+    else:
+        # Super admin switched to church - can only update church content (not global)
+        query = {
+            "id": content_id,
+            "deleted": False,
+            "church_id": session_church_id,
+        }
 
     # Add metadata
     updates["updated_by"] = current_user["id"]
     updates["updated_at"] = datetime.now()
 
-    result = await collection.update_one(
-        {"id": content_id, "deleted": False},
-        {"$set": updates},
-    )
+    # Don't allow changing church_id or scope when not in global context
+    if session_church_id != "global":
+        updates.pop("church_id", None)
+        updates.pop("scope", None)
+
+    result = await collection.update_one(query, {"$set": updates})
 
     if result.matched_count == 0:
-        raise HTTPException(status_code=404, detail="Content not found")
+        raise HTTPException(status_code=404, detail="Content not found or not authorized to edit")
 
     # Return updated content
     content = await collection.find_one({"id": content_id})
@@ -218,11 +379,26 @@ async def delete_content(
     current_user=Depends(require_super_admin),
     db=Depends(get_db),
 ):
-    """Soft delete content"""
+    """Soft delete content with tenant filtering"""
+    from utils.tenant_utils import get_session_church_id_from_user
+
+    session_church_id = get_session_church_id_from_user(current_user)
     collection = _get_collection(db, content_type)
 
+    # Build query with tenant filtering
+    if session_church_id == "global":
+        # Super admin can delete any content
+        query = {"id": content_id, "deleted": False}
+    else:
+        # Super admin switched to church - can only delete church content (not global)
+        query = {
+            "id": content_id,
+            "deleted": False,
+            "church_id": session_church_id,
+        }
+
     result = await collection.update_one(
-        {"id": content_id, "deleted": False},
+        query,
         {
             "$set": {
                 "deleted": True,
@@ -233,9 +409,55 @@ async def delete_content(
     )
 
     if result.matched_count == 0:
-        raise HTTPException(status_code=404, detail="Content not found")
+        raise HTTPException(status_code=404, detail="Content not found or not authorized to delete")
 
     return {"status": "success", "message": "Content deleted"}
+
+
+@router.post("/content/{content_type}/bulk-delete")
+async def bulk_delete_content(
+    content_type: ContentType,
+    content_ids: List[str] = Body(..., embed=True),
+    current_user=Depends(require_super_admin),
+    db=Depends(get_db),
+):
+    """Bulk soft delete multiple content items with tenant filtering"""
+    from utils.tenant_utils import get_session_church_id_from_user
+
+    session_church_id = get_session_church_id_from_user(current_user)
+    collection = _get_collection(db, content_type)
+
+    if not content_ids:
+        raise HTTPException(status_code=400, detail="No content IDs provided")
+
+    # Build query with tenant filtering
+    if session_church_id == "global":
+        # Super admin can delete any content
+        query = {"id": {"$in": content_ids}, "deleted": False}
+    else:
+        # Super admin switched to church - can only delete church content (not global)
+        query = {
+            "id": {"$in": content_ids},
+            "deleted": False,
+            "church_id": session_church_id,
+        }
+
+    result = await collection.update_many(
+        query,
+        {
+            "$set": {
+                "deleted": True,
+                "deleted_at": datetime.now(),
+                "updated_by": current_user["id"],
+            }
+        },
+    )
+
+    return {
+        "status": "success",
+        "message": f"Deleted {result.modified_count} items",
+        "deleted_count": result.modified_count,
+    }
 
 
 @router.post("/content/{content_type}/{content_id}/publish")
@@ -331,6 +553,96 @@ async def publish_scheduled_content(
         raise HTTPException(status_code=404, detail="Schedule entry not found")
 
     return {"status": "success", "message": "Content published"}
+
+
+@router.get("/scheduled-content")
+async def get_scheduled_content(
+    start_date: str = Query(...),
+    end_date: str = Query(...),
+    content_type: Optional[str] = Query(None),
+    current_user=Depends(require_super_admin),
+    db=Depends(get_db),
+):
+    """Get all content scheduled for a date range"""
+    from utils.tenant_utils import get_session_church_id_from_user
+
+    session_church_id = get_session_church_id_from_user(current_user)
+
+    # Map short content types to full names
+    type_map = {
+        "devotion": "daily_devotion",
+        "verse": "verse_of_the_day",
+        "figure": "bible_figure",
+        "quiz": "daily_quiz",
+    }
+
+    content_types_to_query = []
+    if content_type and content_type in type_map:
+        content_types_to_query = [type_map[content_type]]
+    elif content_type:
+        content_types_to_query = [content_type]
+    else:
+        content_types_to_query = ["daily_devotion", "verse_of_the_day", "bible_figure", "daily_quiz"]
+
+    results = []
+
+    for ctype in content_types_to_query:
+        collection = _get_collection(db, ctype)
+        if not collection:
+            continue
+
+        # Build query for scheduled content in date range
+        query = {
+            "deleted": False,
+            "scheduled_date": {"$gte": start_date, "$lte": end_date}
+        }
+
+        # Apply tenant filtering
+        if session_church_id != "global":
+            query["$or"] = [
+                {"church_id": session_church_id},
+                {"scope": "global"}
+            ]
+
+        cursor = collection.find(query).sort("scheduled_date", 1)
+        items = await cursor.to_list(length=500)
+
+        for item in items:
+            item.pop("_id", None)
+            item["content_type"] = ctype.replace("_of_the_day", "").replace("daily_", "").replace("bible_", "")
+            results.append(item)
+
+    # Sort by scheduled_date
+    results.sort(key=lambda x: x.get("scheduled_date", ""))
+
+    return {"content": results, "total": len(results)}
+
+
+@router.delete("/content/{content_type}/{content_id}/schedule")
+async def unschedule_content(
+    content_type: ContentType,
+    content_id: str,
+    current_user=Depends(require_super_admin),
+    db=Depends(get_db),
+):
+    """Remove scheduled date from content"""
+    collection = _get_collection(db, content_type)
+
+    result = await collection.update_one(
+        {"id": content_id, "deleted": False},
+        {
+            "$unset": {"scheduled_date": ""},
+            "$set": {
+                "updated_by": current_user["id"],
+                "updated_at": datetime.now(),
+            }
+        },
+    )
+
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Content not found")
+
+    return {"status": "success", "message": "Content unscheduled"}
 
 
 # ==================== AI CONFIGURATION ====================
@@ -697,29 +1009,44 @@ async def get_analytics_overview(
     current_user=Depends(require_super_admin),
     db=Depends(get_db),
 ):
-    """Get platform-wide analytics"""
-    # Total content counts
-    devotions_count = await db.daily_devotions.count_documents(
-        {"scope": "global", "deleted": False}
-    )
-    studies_count = await db.bible_studies.count_documents(
-        {"scope": "global", "deleted": False}
-    )
-    quizzes_count = await db.daily_quizzes.count_documents(
-        {"scope": "global", "deleted": False}
-    )
+    """Get analytics with tenant filtering"""
+    from utils.tenant_utils import get_session_church_id_from_user
 
-    # Total churches using Explore
-    churches_count = await db.church_explore_settings.count_documents(
-        {"explore_enabled": True, "deleted": False}
-    )
+    session_church_id = get_session_church_id_from_user(current_user)
+
+    # Build base query for content counts
+    if session_church_id == "global":
+        content_query = {"scope": "global", "deleted": False}
+        user_query = {"deleted": False}
+    else:
+        # Church context - show church content + global content
+        content_query = {
+            "$or": [
+                {"church_id": session_church_id, "deleted": False},
+                {"scope": "global", "deleted": False}
+            ]
+        }
+        user_query = {"church_id": session_church_id, "deleted": False}
+
+    # Total content counts
+    devotions_count = await db.daily_devotions.count_documents(content_query)
+    studies_count = await db.bible_studies.count_documents(content_query)
+    quizzes_count = await db.daily_quizzes.count_documents(content_query)
+
+    # Total churches using Explore (only relevant for global context)
+    if session_church_id == "global":
+        churches_count = await db.church_explore_settings.count_documents(
+            {"explore_enabled": True, "deleted": False}
+        )
+    else:
+        churches_count = 1  # Current church
 
     # Total active users (users with progress)
-    users_count = await db.user_explore_progress.count_documents({"deleted": False})
+    users_count = await db.user_explore_progress.count_documents(user_query)
 
     # Average streak
     pipeline = [
-        {"$match": {"deleted": False}},
+        {"$match": user_query},
         {"$group": {"_id": None, "avg_streak": {"$avg": "$streak.current_streak"}}},
     ]
     result = await db.user_explore_progress.aggregate(pipeline).to_list(length=1)
@@ -742,9 +1069,20 @@ async def get_church_analytics(
     current_user=Depends(require_super_admin),
     db=Depends(get_db),
 ):
-    """Get per-church analytics"""
+    """Get per-church analytics with tenant filtering"""
+    from utils.tenant_utils import get_session_church_id_from_user
+
+    session_church_id = get_session_church_id_from_user(current_user)
+
+    # Build match query based on tenant context
+    if session_church_id == "global":
+        match_query = {"explore_enabled": True, "deleted": False}
+    else:
+        # Church context - only show current church
+        match_query = {"church_id": session_church_id, "explore_enabled": True, "deleted": False}
+
     pipeline = [
-        {"$match": {"explore_enabled": True, "deleted": False}},
+        {"$match": match_query},
         {
             "$lookup": {
                 "from": "user_explore_progress",
@@ -755,6 +1093,7 @@ async def get_church_analytics(
         },
         {
             "$project": {
+                "_id": 0,
                 "church_id": 1,
                 "user_count": {"$size": "$users"},
                 "avg_streak": {"$avg": "$users.streak.current_streak"},
@@ -765,6 +1104,100 @@ async def get_church_analytics(
     churches = await db.church_explore_settings.aggregate(pipeline).to_list(length=None)
 
     return {"churches": churches}
+
+
+@router.get("/analytics/top-content")
+async def get_top_content(
+    current_user=Depends(require_super_admin),
+    db=Depends(get_db),
+    content_type: Optional[str] = Query(None),
+    limit: int = Query(10, ge=1, le=50),
+    period: str = Query("30d", description="Time period: 7d, 30d, 90d, all"),
+):
+    """Get top performing content by engagement metrics"""
+    from utils.tenant_utils import get_session_church_id_from_user
+    from datetime import timedelta
+
+    session_church_id = get_session_church_id_from_user(current_user)
+
+    # Calculate date filter based on period
+    period_days = {"7d": 7, "30d": 30, "90d": 90, "all": 0}
+    days = period_days.get(period, 30)
+
+    date_filter = {}
+    if days > 0:
+        date_filter = {"created_at": {"$gte": datetime.now() - timedelta(days=days)}}
+
+    # Build base query
+    if session_church_id == "global":
+        base_query = {"scope": "global", "deleted": False, **date_filter}
+    else:
+        base_query = {
+            "$or": [
+                {"church_id": session_church_id, "deleted": False},
+                {"scope": "global", "deleted": False}
+            ],
+            **date_filter
+        }
+
+    top_content = []
+
+    # Content types to query
+    content_types_map = {
+        "devotion": ("daily_devotions", "daily_devotion"),
+        "verse": ("verses_of_the_day", "verse_of_the_day"),
+        "figure": ("bible_figures", "bible_figure"),
+        "quiz": ("daily_quizzes", "daily_quiz"),
+        "study": ("bible_studies", "bible_study"),
+    }
+
+    if content_type and content_type in content_types_map:
+        types_to_query = {content_type: content_types_map[content_type]}
+    else:
+        types_to_query = content_types_map
+
+    for type_key, (collection_name, type_value) in types_to_query.items():
+        collection = db[collection_name]
+
+        # Get content sorted by view_count or created_at as fallback
+        pipeline = [
+            {"$match": base_query},
+            {"$addFields": {
+                "engagement_score": {
+                    "$add": [
+                        {"$ifNull": ["$view_count", 0]},
+                        {"$multiply": [{"$ifNull": ["$share_count", 0]}, 2]},
+                        {"$multiply": [{"$ifNull": ["$completion_count", 0]}, 3]},
+                    ]
+                }
+            }},
+            {"$sort": {"engagement_score": -1, "created_at": -1}},
+            {"$limit": limit},
+            {"$project": {
+                "_id": 0,
+                "id": 1,
+                "title": {"$ifNull": ["$title", {"$ifNull": ["$verse_reference", "$name"]}]},
+                "content_type": {"$literal": type_value},
+                "view_count": {"$ifNull": ["$view_count", 0]},
+                "share_count": {"$ifNull": ["$share_count", 0]},
+                "completion_count": {"$ifNull": ["$completion_count", 0]},
+                "engagement_score": 1,
+                "created_at": 1,
+                "status": 1,
+            }}
+        ]
+
+        items = await collection.aggregate(pipeline).to_list(length=limit)
+        top_content.extend(items)
+
+    # Sort combined results by engagement score
+    top_content.sort(key=lambda x: x.get("engagement_score", 0), reverse=True)
+
+    return {
+        "content": top_content[:limit],
+        "total": len(top_content),
+        "period": period,
+    }
 
 
 # ==================== HELPERS ====================

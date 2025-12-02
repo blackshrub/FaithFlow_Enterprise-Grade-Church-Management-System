@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
@@ -28,11 +27,28 @@ import {
   DialogTitle,
 } from '../../components/ui/dialog';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '../../components/ui/alert-dialog';
+import {
   ArrowLeft, Sparkles, Loader2, BookOpen, MessageSquare, User, HelpCircle,
   RefreshCw, Check, X, Edit, Eye, ChevronDown, ChevronUp, GraduationCap,
   FolderTree, Tag, Calendar, Image
 } from 'lucide-react';
-import exploreService from '../../services/exploreService';
+import {
+  useExploreAIConfig,
+  useExploreGenerationQueue,
+  useGenerateExploreContent,
+  useAcceptGeneratedContent,
+  useRejectGeneratedContent,
+  useRegenerateExploreContent
+} from '../../hooks/useExplore';
 import { useToast } from '../../hooks/use-toast';
 
 const contentTypeConfig = {
@@ -61,7 +77,6 @@ const statusConfig = {
 export default function AIGenerationHub() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const { toast } = useToast();
 
   const [contentType, setContentType] = useState('devotion');
@@ -71,104 +86,30 @@ export default function AIGenerationHub() {
   const [showPreview, setShowPreview] = useState(false);
   const [previewData, setPreviewData] = useState(null);
   const [expandedJob, setExpandedJob] = useState(null);
+  const [jobToReject, setJobToReject] = useState(null);
+  const [jobToRegenerate, setJobToRegenerate] = useState(null);
 
-  // Fetch generation queue
-  const { data: generationQueue, isLoading: queueLoading } = useQuery({
-    queryKey: ['explore', 'ai-generation-queue'],
-    queryFn: () => exploreService.getGenerationQueue(),
-    refetchInterval: 5000, // Poll every 5 seconds for status updates
-    staleTime: 0,
-  });
+  // Fetch generation queue (with multi-tenant cache isolation)
+  const { data: generationQueue, isLoading: queueLoading } = useExploreGenerationQueue();
 
-  // Fetch AI configuration
-  const { data: aiConfig } = useQuery({
-    queryKey: ['explore', 'ai-config'],
-    queryFn: () => exploreService.getAIConfig(),
-    staleTime: 300000, // 5 minutes
-  });
+  // Fetch AI configuration (with multi-tenant cache isolation)
+  const { data: aiConfig } = useExploreAIConfig();
 
-  // Generate content mutation
-  const generateMutation = useMutation({
-    mutationFn: (params) => exploreService.generateContent({
-      content_type: params.contentType,
-      model: params.model,
-      custom_prompt: params.customPrompt || undefined,
-      generate_both_languages: params.generateBothLanguages,
-    }),
-    onSuccess: (data) => {
-      queryClient.invalidateQueries(['explore', 'ai-generation-queue']);
-      toast({
-        title: 'Generation Started',
-        description: 'Your content is being generated. This may take a few moments.',
-      });
-      setCustomPrompt('');
-    },
-    onError: (error) => {
-      toast({
-        title: 'Generation Failed',
-        description: error.message || 'Failed to start content generation',
-        variant: 'destructive',
-      });
-    },
-  });
-
-  // Accept generated content mutation
-  const acceptMutation = useMutation({
-    mutationFn: ({ jobId, edits }) => exploreService.acceptGeneratedContent(jobId, edits),
-    onSuccess: (data) => {
-      queryClient.invalidateQueries(['explore', 'ai-generation-queue']);
-      queryClient.invalidateQueries(['explore', 'content', data.content_type]);
-      setShowPreview(false);
-      setPreviewData(null);
-      toast({
-        title: 'Content Saved',
-        description: 'Generated content has been saved successfully',
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: 'Save Failed',
-        description: error.message || 'Failed to save generated content',
-        variant: 'destructive',
-      });
-    },
-  });
-
-  // Reject generated content mutation
-  const rejectMutation = useMutation({
-    mutationFn: (jobId) => exploreService.rejectGeneratedContent(jobId),
-    onSuccess: () => {
-      queryClient.invalidateQueries(['explore', 'ai-generation-queue']);
-      setShowPreview(false);
-      setPreviewData(null);
-      toast({
-        title: 'Content Rejected',
-        description: 'Generated content has been discarded',
-      });
-    },
-  });
-
-  // Regenerate content mutation
-  const regenerateMutation = useMutation({
-    mutationFn: (jobId) => exploreService.regenerateContent(jobId),
-    onSuccess: () => {
-      queryClient.invalidateQueries(['explore', 'ai-generation-queue']);
-      setShowPreview(false);
-      setPreviewData(null);
-      toast({
-        title: 'Regeneration Started',
-        description: 'Content is being regenerated with the same parameters',
-      });
-    },
-  });
+  // Mutations with multi-tenant cache isolation
+  const generateMutation = useGenerateExploreContent();
+  const acceptMutation = useAcceptGeneratedContent();
+  const rejectMutation = useRejectGeneratedContent();
+  const regenerateMutation = useRegenerateExploreContent();
 
   const handleGenerate = () => {
     const config = contentTypeConfig[contentType];
     generateMutation.mutate({
-      contentType: config?.apiType || contentType,
+      content_type: config?.apiType || contentType,
       model,
-      customPrompt,
-      generateBothLanguages,
+      custom_prompt: customPrompt || undefined,
+      generate_both_languages: generateBothLanguages,
+    }, {
+      onSuccess: () => setCustomPrompt('')
     });
   };
 
@@ -178,18 +119,45 @@ export default function AIGenerationHub() {
   };
 
   const handleAccept = (jobId, edits = null) => {
-    acceptMutation.mutate({ jobId, edits });
+    acceptMutation.mutate({ jobId, edits }, {
+      onSuccess: () => {
+        setShowPreview(false);
+        setPreviewData(null);
+      }
+    });
   };
 
   const handleReject = (jobId) => {
-    if (window.confirm('Are you sure you want to discard this generated content?')) {
-      rejectMutation.mutate(jobId);
+    setJobToReject(jobId);
+  };
+
+  const confirmReject = () => {
+    if (jobToReject) {
+      rejectMutation.mutate(jobToReject, {
+        onSuccess: () => {
+          setShowPreview(false);
+          setPreviewData(null);
+          setJobToReject(null);
+        },
+        onError: () => setJobToReject(null)
+      });
     }
   };
 
   const handleRegenerate = (jobId) => {
-    if (window.confirm('Regenerate this content with the same parameters?')) {
-      regenerateMutation.mutate(jobId);
+    setJobToRegenerate(jobId);
+  };
+
+  const confirmRegenerate = () => {
+    if (jobToRegenerate) {
+      regenerateMutation.mutate(jobToRegenerate, {
+        onSuccess: () => {
+          setShowPreview(false);
+          setPreviewData(null);
+          setJobToRegenerate(null);
+        },
+        onError: () => setJobToRegenerate(null)
+      });
     }
   };
 
@@ -197,7 +165,19 @@ export default function AIGenerationHub() {
     // Navigate to appropriate editor with pre-filled data
     const job = generationQueue?.jobs?.find(j => j.id === jobId);
     if (job) {
-      navigate(`/explore/content/${job.content_type}/new?aiData=${encodeURIComponent(JSON.stringify(job.generated_content))}`);
+      // Convert API content type to route slug
+      const apiTypeToSlug = {
+        'daily_devotion': 'devotion',
+        'verse_of_the_day': 'verse',
+        'bible_figure': 'figure',
+        'daily_quiz': 'quiz',
+        'bible_study': 'bible-study',
+        'devotion_plan': 'devotion-plan',
+        'topical_category': 'topical/category',
+        'topical_verse': 'topical/verses',
+      };
+      const routeSlug = apiTypeToSlug[job.content_type] || job.content_type;
+      navigate(`/content-center/${routeSlug}/new?aiData=${encodeURIComponent(JSON.stringify(job.generated_content))}`);
     }
   };
 
@@ -217,7 +197,7 @@ export default function AIGenerationHub() {
       <div className="flex items-center justify-between">
         <div>
           <Link
-            to="/explore"
+            to="/content-center"
             className="text-sm text-blue-600 hover:underline mb-2 inline-block"
           >
             <ArrowLeft className="h-4 w-4 inline mr-1" />
@@ -697,6 +677,53 @@ export default function AIGenerationHub() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Reject Confirmation Dialog */}
+      <AlertDialog open={!!jobToReject} onOpenChange={(open) => !open && setJobToReject(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('explore.ai.reject')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('explore.confirmations.discardGenerated')}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={rejectMutation.isPending}>
+              {t('common.cancel')}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={rejectMutation.isPending}
+              onClick={confirmReject}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {t('explore.ai.reject')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Regenerate Confirmation Dialog */}
+      <AlertDialog open={!!jobToRegenerate} onOpenChange={(open) => !open && setJobToRegenerate(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('explore.ai.regenerate')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('explore.confirmations.regenerate')}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={regenerateMutation.isPending}>
+              {t('common.cancel')}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={regenerateMutation.isPending}
+              onClick={confirmRegenerate}
+            >
+              {t('explore.ai.regenerate')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

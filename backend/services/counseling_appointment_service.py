@@ -380,8 +380,8 @@ class CounselingAppointmentService:
         if not appointment:
             raise ValueError("APPOINTMENT_NOT_FOUND")
         
-        if appointment["status"] not in ["approved", "pending"]:
-            raise ValueError("APPOINTMENT_CANNOT_BE_COMPLETED")
+        if appointment["status"] != "approved":
+            raise ValueError("APPOINTMENT_MUST_BE_APPROVED_FIRST")
         
         # Update appointment
         await self.db.counseling_appointments.update_one(

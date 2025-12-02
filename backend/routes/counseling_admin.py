@@ -23,11 +23,13 @@ from models.counseling_appointment import (
     AppointmentUpdate,
     AppointmentApprove,
     AppointmentReject,
+    AppointmentCancel,
     AppointmentComplete
 )
 from services.counseling_availability_service import CounselingAvailabilityService
 from services.counseling_appointment_service import CounselingAppointmentService
 from utils.dependencies import get_current_user
+from utils.tenant_utils import get_session_church_id_from_user
 
 logger = logging.getLogger(__name__)
 
@@ -49,7 +51,7 @@ async def list_counselors(
 ):
     """List all counselors for the church."""
     try:
-        church_id = current_user.get("church_id")
+        church_id = get_session_church_id_from_user(current_user)
         
         counselors = await db.counselors.find(
             {"church_id": church_id},
@@ -86,7 +88,7 @@ async def create_counselor(
 ):
     """Create a new counselor."""
     try:
-        church_id = current_user.get("church_id")
+        church_id = get_session_church_id_from_user(current_user)
         
         # Verify staff user exists and belongs to this church
         staff_user = await db.users.find_one({
@@ -145,7 +147,7 @@ async def update_counselor(
 ):
     """Update a counselor."""
     try:
-        church_id = current_user.get("church_id")
+        church_id = get_session_church_id_from_user(current_user)
         
         # Verify counselor exists
         counselor = await db.counselors.find_one({
@@ -188,7 +190,7 @@ async def delete_counselor(
 ):
     """Soft delete counselor (set is_active=False)."""
     try:
-        church_id = current_user.get("church_id")
+        church_id = get_session_church_id_from_user(current_user)
         
         result = await db.counselors.update_one(
             {"id": counselor_id, "church_id": church_id},
@@ -220,7 +222,7 @@ async def list_recurring_rules(
 ):
     """List all recurring availability rules."""
     try:
-        church_id = current_user.get("church_id")
+        church_id = get_session_church_id_from_user(current_user)
         query = {"church_id": church_id}
         
         if counselor_id:
@@ -258,7 +260,7 @@ async def create_recurring_rule(
 ):
     """Create a new recurring availability rule."""
     try:
-        church_id = current_user.get("church_id")
+        church_id = get_session_church_id_from_user(current_user)
         
         # Verify counselor exists
         counselor = await db.counselors.find_one({
@@ -315,7 +317,7 @@ async def update_recurring_rule(
 ):
     """Update a recurring rule."""
     try:
-        church_id = current_user.get("church_id")
+        church_id = get_session_church_id_from_user(current_user)
         
         rule = await db.counseling_recurring_rules.find_one({
             "id": rule_id,
@@ -366,25 +368,35 @@ async def delete_recurring_rule(
     current_user: dict = Depends(get_current_user),
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
-    """Delete a recurring rule."""
+    """Delete a recurring rule and clean up associated future open slots."""
     try:
-        church_id = current_user.get("church_id")
-        
+        church_id = get_session_church_id_from_user(current_user)
+
         rule = await db.counseling_recurring_rules.find_one({
             "id": rule_id,
             "church_id": church_id
         })
-        
+
         if not rule:
             raise HTTPException(status_code=404, detail="RULE_NOT_FOUND")
-        
+
         await db.counseling_recurring_rules.delete_one({"id": rule_id})
-        
-        # Note: Existing slots remain but won't be regenerated
-        
+
+        # Clean up orphaned future open slots from this rule
+        # Only delete future slots that are still open (not booked/reserved)
+        today_str = date.today().isoformat()
+        cleanup_result = await db.counseling_time_slots.delete_many({
+            "church_id": church_id,
+            "counselor_id": rule["counselor_id"],
+            "source": "recurring",
+            "status": "open",
+            "date": {"$gte": today_str}
+        })
+
         return {
             "success": True,
-            "message": "Rule deleted successfully"
+            "message": "Rule deleted successfully",
+            "slots_cleaned": cleanup_result.deleted_count
         }
     
     except HTTPException:
@@ -406,7 +418,7 @@ async def list_overrides(
 ):
     """List date-specific overrides."""
     try:
-        church_id = current_user.get("church_id")
+        church_id = get_session_church_id_from_user(current_user)
         query = {"church_id": church_id}
         
         if counselor_id:
@@ -451,7 +463,7 @@ async def create_override(
 ):
     """Create a date-specific override."""
     try:
-        church_id = current_user.get("church_id")
+        church_id = get_session_church_id_from_user(current_user)
         staff_id = current_user.get("id")
         
         # Verify counselor
@@ -507,7 +519,7 @@ async def update_override(
 ):
     """Update an override."""
     try:
-        church_id = current_user.get("church_id")
+        church_id = get_session_church_id_from_user(current_user)
         
         override = await db.counseling_overrides.find_one({
             "id": override_id,
@@ -558,7 +570,7 @@ async def delete_override(
 ):
     """Delete an override."""
     try:
-        church_id = current_user.get("church_id")
+        church_id = get_session_church_id_from_user(current_user)
         
         override = await db.counseling_overrides.find_one({
             "id": override_id,
@@ -605,7 +617,7 @@ async def list_slots(
 ):
     """List time slots (for calendar view)."""
     try:
-        church_id = current_user.get("church_id")
+        church_id = get_session_church_id_from_user(current_user)
         
         availability_service = CounselingAvailabilityService(db)
         
@@ -667,7 +679,7 @@ async def list_appointments(
 ):
     """List all appointments with filters."""
     try:
-        church_id = current_user.get("church_id")
+        church_id = get_session_church_id_from_user(current_user)
         query = {"church_id": church_id}
         
         if status:
@@ -730,7 +742,7 @@ async def get_appointment(
 ):
     """Get detailed appointment info."""
     try:
-        church_id = current_user.get("church_id")
+        church_id = get_session_church_id_from_user(current_user)
         
         appointment = await db.counseling_appointments.find_one(
             {"id": appointment_id, "church_id": church_id},
@@ -775,7 +787,7 @@ async def create_appointment_by_staff(
 ):
     """Create appointment on behalf of member (staff-initiated)."""
     try:
-        church_id = current_user.get("church_id")
+        church_id = get_session_church_id_from_user(current_user)
         staff_id = current_user.get("id")
         
         # Verify member exists
@@ -822,7 +834,7 @@ async def update_appointment(
 ):
     """Update appointment details."""
     try:
-        church_id = current_user.get("church_id")
+        church_id = get_session_church_id_from_user(current_user)
         
         appointment = await db.counseling_appointments.find_one({
             "id": appointment_id,
@@ -864,7 +876,7 @@ async def approve_appointment(
 ):
     """Approve a pending appointment."""
     try:
-        church_id = current_user.get("church_id")
+        church_id = get_session_church_id_from_user(current_user)
         staff_id = current_user.get("id")
         
         appointment_service = CounselingAppointmentService(db)
@@ -898,7 +910,7 @@ async def reject_appointment(
 ):
     """Reject a pending appointment."""
     try:
-        church_id = current_user.get("church_id")
+        church_id = get_session_church_id_from_user(current_user)
         staff_id = current_user.get("id")
         
         appointment_service = CounselingAppointmentService(db)
@@ -926,22 +938,22 @@ async def reject_appointment(
 @router.post("/appointments/{appointment_id}/cancel")
 async def cancel_appointment(
     appointment_id: str,
-    reason: Optional[str] = Query(None),
+    request: AppointmentCancel,
     current_user: dict = Depends(get_current_user),
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """Cancel an appointment."""
     try:
-        church_id = current_user.get("church_id")
+        church_id = get_session_church_id_from_user(current_user)
         staff_id = current_user.get("id")
-        
+
         appointment_service = CounselingAppointmentService(db)
-        
+
         appointment = await appointment_service.cancel_appointment(
             church_id=church_id,
             appointment_id=appointment_id,
             canceled_by=staff_id,
-            reason=reason
+            reason=request.reason
         )
         
         return {
@@ -966,7 +978,7 @@ async def complete_appointment(
 ):
     """Mark appointment as completed."""
     try:
-        church_id = current_user.get("church_id")
+        church_id = get_session_church_id_from_user(current_user)
         staff_id = current_user.get("id")
         
         appointment_service = CounselingAppointmentService(db)

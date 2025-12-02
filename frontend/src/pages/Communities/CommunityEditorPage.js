@@ -81,7 +81,7 @@ export default function CommunityEditorPage() {
             initialData={community}
             onSubmit={handleSubmit}
             onCancel={() => navigate('/communities')}
-            isSaving={createMutation.isLoading || updateMutation.isLoading}
+            isSaving={createMutation.isPending || updateMutation.isPending}
           />
         </div>
         <div className="lg:col-span-1 space-y-4">

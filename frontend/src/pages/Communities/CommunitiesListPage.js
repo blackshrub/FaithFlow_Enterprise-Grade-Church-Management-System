@@ -137,11 +137,11 @@ export default function CommunitiesListPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleteCommunityMutation.isLoading}>
+            <AlertDialogCancel disabled={deleteCommunityMutation.isPending}>
               {t('common.cancel')}
             </AlertDialogCancel>
             <AlertDialogAction
-              disabled={deleteCommunityMutation.isLoading}
+              disabled={deleteCommunityMutation.isPending}
               onClick={async () => {
                 if (!communityToDelete) return;
                 try {

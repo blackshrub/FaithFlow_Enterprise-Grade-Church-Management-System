@@ -7,7 +7,8 @@ Endpoints:
 - GET /api/public/counseling/appointments/my - Get member's appointments
 """
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Header
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from typing import Optional, List
 from datetime import date, timedelta
@@ -16,10 +17,14 @@ import logging
 from models.counseling_appointment import AppointmentCreate
 from services.counseling_availability_service import CounselingAvailabilityService
 from services.counseling_appointment_service import CounselingAppointmentService
+from utils.security import decode_access_token
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/public/counseling", tags=["Counseling (Public)"])
+
+# Security scheme for member JWT tokens
+security = HTTPBearer()
 
 
 def get_db():
@@ -29,28 +34,56 @@ def get_db():
 
 
 async def get_member_from_token(
-    # TODO: Implement member JWT validation when mobile app is built
-    # For now, this is a placeholder that will be replaced
-    authorization: Optional[str] = None
+    credentials: HTTPAuthorizationCredentials = Depends(security)
 ) -> dict:
     """
-    Placeholder for member authentication.
-    
-    When mobile app is built, this will:
-    1. Validate member JWT token
-    2. Extract member_id and church_id
-    3. Return member info
-    
-    For now, returns mock data for API design.
+    Validate member JWT token and extract member info.
+
+    Members authenticate via OTP and receive a JWT with:
+    - sub: member_id
+    - session_church_id: church_id
+    - role: "member"
+    - type: "member"
     """
-    # TODO: Replace with actual JWT validation
-    # from utils.dependencies import verify_member_token
-    # return verify_member_token(authorization)
-    
-    return {
-        "member_id": "placeholder-member-id",
-        "church_id": "placeholder-church-id"
-    }
+    try:
+        token = credentials.credentials
+        payload = decode_access_token(token)
+
+        if not payload:
+            raise HTTPException(
+                status_code=401,
+                detail="Invalid or expired token"
+            )
+
+        # Verify this is a member token
+        if payload.get("type") != "member" or payload.get("role") != "member":
+            raise HTTPException(
+                status_code=403,
+                detail="This endpoint requires member authentication"
+            )
+
+        member_id = payload.get("sub")
+        church_id = payload.get("session_church_id")
+
+        if not member_id or not church_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Invalid token payload"
+            )
+
+        return {
+            "member_id": member_id,
+            "church_id": church_id
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Token validation error: {e}")
+        raise HTTPException(
+            status_code=401,
+            detail="Authentication failed"
+        )
 
 
 @router.get("/counselors")

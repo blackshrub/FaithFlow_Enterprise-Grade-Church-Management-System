@@ -280,8 +280,8 @@ export default function BudgetForm() {
         <Button variant="outline" onClick={() => navigate('/accounting/budgets')}>
           {t('accounting.common.cancel')}
         </Button>
-        <Button onClick={handleSaveDraft} disabled={createMutation.isLoading}>
-          {createMutation.isLoading ? t('accounting.common.loading') : t('accounting.journal.saveAsDraft')}
+        <Button onClick={handleSaveDraft} disabled={createMutation.isPending}>
+          {createMutation.isPending ? t('accounting.common.loading') : t('accounting.journal.saveAsDraft')}
         </Button>
       </div>
     </div>

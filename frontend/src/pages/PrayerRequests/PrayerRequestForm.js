@@ -291,7 +291,7 @@ export default function PrayerRequestForm() {
               <Button type="button" variant="outline" onClick={() => navigate('/prayer-requests')}>
                 {t('common.cancel')}
               </Button>
-              <Button type="submit" disabled={createMutation.isLoading || updateMutation.isLoading}>
+              <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending}>
                 <Save className="w-4 h-4 mr-2" />
                 {isEdit ? t('common.update') : t('common.save')}
               </Button>

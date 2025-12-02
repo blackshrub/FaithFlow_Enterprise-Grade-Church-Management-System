@@ -44,13 +44,16 @@ async def get_church_settings(
             "church_id": church_id,
             "explore_enabled": True,
             "features": {
-                "daily_devotion": {"enabled": True, "order": 1},
-                "verse_of_the_day": {"enabled": True, "order": 2},
-                "bible_figure_of_the_day": {"enabled": True, "order": 3},
-                "daily_quiz": {"enabled": True, "order": 4},
-                "bible_study": {"enabled": True, "order": 5},
-                "topical_exploration": {"enabled": True, "order": 6},
-                "shareable_images": {"enabled": True, "order": 7},
+                "daily_devotion": {"enabled": True, "sort_order": 1, "visible": True},
+                "verse_of_the_day": {"enabled": True, "sort_order": 2, "visible": True},
+                "bible_figure": {"enabled": True, "sort_order": 3, "visible": True},
+                "daily_quiz": {"enabled": True, "sort_order": 4, "visible": True},
+                "bible_study": {"enabled": True, "sort_order": 5, "visible": True},
+                "topical_verses": {"enabled": True, "sort_order": 6, "visible": True},
+                "devotion_plans": {"enabled": True, "sort_order": 7, "visible": True},
+                "shareable_images": {"enabled": True, "sort_order": 8, "visible": True},
+                "streak_tracking": {"enabled": True, "sort_order": 9, "visible": True},
+                "progress_tracking": {"enabled": True, "sort_order": 10, "visible": True},
             },
             "preferred_bible_translation": "NIV",
             "content_language": "en",
@@ -522,6 +525,115 @@ async def delete_church_content(
     )
 
     return {"status": "success", "message": "Content deleted"}
+
+
+# ==================== CONTENT ADOPTION ====================
+
+
+@router.get("/adoption")
+async def get_adoption_status(
+    current_user=Depends(require_admin),
+    church_id: str = Depends(get_session_church_id),
+    db=Depends(get_db),
+):
+    """Get church's content adoption status for platform content"""
+    # Get all adopted content for this church
+    adoptions = await db.church_content_adoptions.find(
+        {"church_id": church_id, "deleted": {"$ne": True}}
+    ).to_list(length=None)
+
+    # Clean up _id and organize by content type
+    adoption_map = {}
+    for adoption in adoptions:
+        adoption.pop("_id", None)
+        content_type = adoption.get("content_type")
+        if content_type not in adoption_map:
+            adoption_map[content_type] = []
+        adoption_map[content_type].append({
+            "content_id": adoption.get("content_id"),
+            "adopted": adoption.get("adopted", True),
+            "adopted_at": adoption.get("adopted_at"),
+        })
+
+    return {
+        "church_id": church_id,
+        "adoptions": adoption_map,
+        "total_adopted": sum(
+            len([a for a in items if a.get("adopted")])
+            for items in adoption_map.values()
+        ),
+    }
+
+
+@router.post("/adoption")
+async def update_content_adoption(
+    content_type: str = Body(..., embed=True),
+    content_id: str = Body(..., embed=True),
+    adopted: bool = Body(True, embed=True),
+    current_user=Depends(require_admin),
+    church_id: str = Depends(get_session_church_id),
+    db=Depends(get_db),
+):
+    """Adopt or unadopt platform content for this church"""
+    # Verify content exists and is global
+    collection = _get_collection(db, content_type)
+    if not collection:
+        raise HTTPException(status_code=400, detail=f"Unknown content type: {content_type}")
+
+    content = await collection.find_one({
+        "id": content_id,
+        "scope": "global",
+        "deleted": False
+    })
+
+    if not content:
+        raise HTTPException(
+            status_code=404,
+            detail="Content not found or not available for adoption"
+        )
+
+    # Check if adoption record exists
+    existing = await db.church_content_adoptions.find_one({
+        "church_id": church_id,
+        "content_type": content_type,
+        "content_id": content_id,
+        "deleted": {"$ne": True}
+    })
+
+    now = datetime.now()
+
+    if existing:
+        # Update existing record
+        await db.church_content_adoptions.update_one(
+            {"_id": existing["_id"]},
+            {
+                "$set": {
+                    "adopted": adopted,
+                    "updated_at": now,
+                    "updated_by": current_user["id"],
+                }
+            }
+        )
+    else:
+        # Create new adoption record
+        await db.church_content_adoptions.insert_one({
+            "church_id": church_id,
+            "content_type": content_type,
+            "content_id": content_id,
+            "adopted": adopted,
+            "adopted_at": now if adopted else None,
+            "created_at": now,
+            "created_by": current_user["id"],
+            "deleted": False,
+        })
+
+    return {
+        "status": "success",
+        "message": f"Content {'adopted' if adopted else 'unadopted'} successfully",
+        "content_type": content_type,
+        "content_id": content_id,
+        "adopted": adopted,
+    }
 
 
 # ==================== ANALYTICS ====================

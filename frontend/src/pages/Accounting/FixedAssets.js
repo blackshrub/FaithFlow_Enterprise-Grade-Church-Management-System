@@ -121,8 +121,8 @@ export default function FixedAssets() {
                   <Button variant="outline" onClick={() => setShowDepreciationDialog(false)}>
                     {t('accounting.common.cancel')}
                   </Button>
-                  <Button onClick={handleRunDepreciation} disabled={runDepreciationMutation.isLoading}>
-                    {runDepreciationMutation.isLoading ? t('accounting.common.loading') : t('accounting.fixedAsset.runDepreciation')}
+                  <Button onClick={handleRunDepreciation} disabled={runDepreciationMutation.isPending}>
+                    {runDepreciationMutation.isPending ? t('accounting.common.loading') : t('accounting.fixedAsset.runDepreciation')}
                   </Button>
                 </div>
               </div>

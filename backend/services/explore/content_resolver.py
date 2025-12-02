@@ -268,17 +268,19 @@ class ContentResolver:
         }
 
         # Scope: global + church-specific (if enabled)
-        scopes = ["global"]
+        scope_filter = None
         if settings.get("allow_church_content"):
-            scopes.append("church")
-            query["$or"] = [
-                {"scope": "global"},
-                {"scope": "church", "church_id": church_id},
-            ]
+            scope_filter = {
+                "$or": [
+                    {"scope": "global"},
+                    {"scope": "church", "church_id": church_id},
+                ]
+            }
         else:
             query["scope"] = "global"
 
         # Apply additional filters
+        search_filter = None
         if filters:
             if "categories" in filters:
                 query["categories"] = {"$in": filters["categories"]}
@@ -289,12 +291,22 @@ class ContentResolver:
             if "search" in filters:
                 # Simple text search (can be enhanced with MongoDB text index)
                 search_term = filters["search"]
-                query["$or"] = [
-                    {"title.en": {"$regex": search_term, "$options": "i"}},
-                    {"title.id": {"$regex": search_term, "$options": "i"}},
-                    {"description.en": {"$regex": search_term, "$options": "i"}},
-                    {"description.id": {"$regex": search_term, "$options": "i"}},
-                ]
+                search_filter = {
+                    "$or": [
+                        {"title.en": {"$regex": search_term, "$options": "i"}},
+                        {"title.id": {"$regex": search_term, "$options": "i"}},
+                        {"description.en": {"$regex": search_term, "$options": "i"}},
+                        {"description.id": {"$regex": search_term, "$options": "i"}},
+                    ]
+                }
+
+        # Combine scope and search filters properly using $and
+        if scope_filter and search_filter:
+            query["$and"] = [scope_filter, search_filter]
+        elif scope_filter:
+            query["$or"] = scope_filter["$or"]
+        elif search_filter:
+            query["$or"] = search_filter["$or"]
 
         return query
 
@@ -313,7 +325,10 @@ class ContentResolver:
             "practice_quiz": self.db.practice_quizzes,
             "shareable_image": self.db.shareable_images,
         }
-        return collection_map.get(content_type)
+        collection = collection_map.get(content_type)
+        if collection is None:
+            raise ValueError(f"Unknown content type: {content_type}")
+        return collection
 
     def _can_access_content(self, content: Dict[str, Any], church_id: str) -> bool:
         """Check if church can access content"""

@@ -195,11 +195,11 @@ export default function YearEndClosing() {
 
                 <Button 
                   onClick={handleRunClosing} 
-                  disabled={!retainedEarningsAccountId || runClosingMutation.isLoading}
+                  disabled={!retainedEarningsAccountId || runClosingMutation.isPending}
                   className="w-full bg-red-600 hover:bg-red-700"
                   size="lg"
                 >
-                  {runClosingMutation.isLoading 
+                  {runClosingMutation.isPending 
                     ? t('accounting.common.loading') 
                     : t('accounting.yearEnd.runClosing')}
                 </Button>

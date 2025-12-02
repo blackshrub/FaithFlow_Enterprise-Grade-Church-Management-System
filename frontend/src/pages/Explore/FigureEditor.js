@@ -1,6 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
@@ -19,13 +18,12 @@ import { Switch } from '../../components/ui/switch';
 import {
   ArrowLeft, Save, Eye, Loader2, X, Plus
 } from 'lucide-react';
-import exploreService from '../../services/exploreService';
+import { useExploreContent, useCreateExploreContent, useUpdateExploreContent } from '../../hooks/useExplore';
 import { useToast } from '../../hooks/use-toast';
 
 export default function FigureEditor() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const { toast } = useToast();
   const { t } = useTranslation();
 
@@ -51,53 +49,32 @@ export default function FigureEditor() {
   const [newLifeLesson, setNewLifeLesson] = useState({ en: '', id: '' });
   const [newScripture, setNewScripture] = useState('');
 
-  // Fetch existing figure if editing
-  const { data: figure, isLoading } = useQuery({
-    queryKey: ['explore', 'figure', id],
-    queryFn: () => exploreService.getContent('figure', id),
-    enabled: isEditMode,
-    onSuccess: (data) => {
-      setFormData({
-        name: data.name || { en: '', id: '' },
-        title: data.title || { en: '', id: '' },
-        testament: data.testament || 'old_testament',
-        summary: data.summary || { en: '', id: '' },
-        biography: data.biography || { en: '', id: '' },
-        timeline: data.timeline || [],
-        life_lessons: data.life_lessons || { en: [], id: [] },
-        related_scriptures: data.related_scriptures || [],
-        image_url: data.image_url || '',
-        published: data.published || false,
-        scheduled_date: data.scheduled_date || '',
-      });
-    },
-  });
+  // Fetch existing figure if editing (with multi-tenant cache isolation)
+  const { data: figure, isLoading } = useExploreContent('bible_figure', isEditMode ? id : null);
 
-  // Save mutation
-  const saveMutation = useMutation({
-    mutationFn: (data) => {
-      if (isEditMode) {
-        return exploreService.updateContent('figure', id, data);
-      } else {
-        return exploreService.createContent('figure', data);
-      }
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries(['explore', 'content', 'figure']);
-      toast({
-        title: 'Success',
-        description: isEditMode ? 'Bible figure updated successfully' : 'Bible figure created successfully',
+  // Create and update mutations with multi-tenant cache isolation
+  const createMutation = useCreateExploreContent('bible_figure');
+  const updateMutation = useUpdateExploreContent('bible_figure');
+  const saveMutation = isEditMode ? updateMutation : createMutation;
+
+  // Populate form when figure data is loaded
+  useEffect(() => {
+    if (figure && isEditMode) {
+      setFormData({
+        name: figure.name || { en: '', id: '' },
+        title: figure.title || { en: '', id: '' },
+        testament: figure.testament || 'old_testament',
+        summary: figure.summary || { en: '', id: '' },
+        biography: figure.biography || { en: '', id: '' },
+        timeline: figure.timeline || [],
+        life_lessons: figure.life_lessons || { en: [], id: [] },
+        related_scriptures: figure.related_scriptures || [],
+        image_url: figure.image_url || '',
+        published: figure.published || false,
+        scheduled_date: figure.scheduled_date || '',
       });
-      navigate('/content-center/figure');
-    },
-    onError: (error) => {
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to save Bible figure',
-        variant: 'destructive',
-      });
-    },
-  });
+    }
+  }, [figure, isEditMode]);
 
   const handleInputChange = (field, value, language = null) => {
     if (language) {
@@ -195,7 +172,15 @@ export default function FigureEditor() {
       return;
     }
 
-    saveMutation.mutate(formData);
+    if (isEditMode) {
+      updateMutation.mutate({ contentId: id, data: formData }, {
+        onSuccess: () => navigate('/content-center/figure')
+      });
+    } else {
+      createMutation.mutate(formData, {
+        onSuccess: () => navigate('/content-center/figure')
+      });
+    }
   };
 
   if (isLoading) {

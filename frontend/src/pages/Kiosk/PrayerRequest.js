@@ -239,11 +239,13 @@ const PrayerRequestKiosk = () => {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="health" className="text-xl">{t('prayer.category_health') || 'Health'}</SelectItem>
+                  <SelectItem value="healing" className="text-xl">{t('prayer.category_health') || 'Healing'}</SelectItem>
                   <SelectItem value="family" className="text-xl">{t('prayer.category_family') || 'Family'}</SelectItem>
                   <SelectItem value="work" className="text-xl">{t('prayer.category_work') || 'Work'}</SelectItem>
                   <SelectItem value="financial" className="text-xl">{t('prayer.category_financial') || 'Financial'}</SelectItem>
+                  <SelectItem value="spiritual" className="text-xl">{t('prayer.category_spiritual') || 'Spiritual'}</SelectItem>
                   <SelectItem value="guidance" className="text-xl">{t('prayer.category_guidance') || 'Guidance'}</SelectItem>
+                  <SelectItem value="thanksgiving" className="text-xl">{t('prayer.category_thanksgiving') || 'Thanksgiving'}</SelectItem>
                   <SelectItem value="other" className="text-xl">{t('prayer.category_other') || 'Other'}</SelectItem>
                 </SelectContent>
               </Select>

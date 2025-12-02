@@ -49,8 +49,8 @@ export default function QuickEntry() {
       const response = await givingMutation.mutateAsync(givingData);
       toast({
         title: t('accounting.common.success'),
-        description: t('accounting.quickEntry.givingSuccess', { 
-          journalNumber: response.data.journal_number 
+        description: t('accounting.quickEntry.givingSuccess', {
+          journalNumber: response.journal_number
         })
       });
       
@@ -81,8 +81,8 @@ export default function QuickEntry() {
       const response = await expenseMutation.mutateAsync(expenseData);
       toast({
         title: t('accounting.common.success'),
-        description: t('accounting.quickEntry.expenseSuccess', { 
-          journalNumber: response.data.journal_number 
+        description: t('accounting.quickEntry.expenseSuccess', {
+          journalNumber: response.journal_number
         })
       });
       
@@ -213,8 +213,8 @@ export default function QuickEntry() {
                 </div>
 
                 <div className="pt-4">
-                  <Button type="submit" className="w-full" disabled={givingMutation.isLoading}>
-                    {givingMutation.isLoading ? t('accounting.common.loading') : t('accounting.quickEntry.saveGiving')}
+                  <Button type="submit" className="w-full" disabled={givingMutation.isPending}>
+                    {givingMutation.isPending ? t('accounting.common.loading') : t('accounting.quickEntry.saveGiving')}
                   </Button>
                 </div>
               </form>
@@ -296,8 +296,8 @@ export default function QuickEntry() {
                 </div>
 
                 <div className="pt-4">
-                  <Button type="submit" className="w-full" disabled={expenseMutation.isLoading}>
-                    {expenseMutation.isLoading ? t('accounting.common.loading') : t('accounting.quickEntry.saveExpense')}
+                  <Button type="submit" className="w-full" disabled={expenseMutation.isPending}>
+                    {expenseMutation.isPending ? t('accounting.common.loading') : t('accounting.quickEntry.saveExpense')}
                   </Button>
                 </div>
               </form>

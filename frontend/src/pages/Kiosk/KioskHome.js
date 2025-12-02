@@ -47,7 +47,9 @@ const KioskHome = () => {
   
   const loadSettings = async () => {
     try {
-      const data = await kioskApi.getKioskSettings();
+      // Use public endpoint - kiosk doesn't have auth
+      const storedChurchId = localStorage.getItem('kiosk_church_id');
+      const data = await kioskApi.getPublicKioskSettings(storedChurchId);
       setSettings(data);
       
       // Set default language if configured

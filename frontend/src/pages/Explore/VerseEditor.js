@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
@@ -12,13 +11,12 @@ import { Switch } from '../../components/ui/switch';
 import {
   ArrowLeft, Save, Calendar, Eye, Loader2
 } from 'lucide-react';
-import exploreService from '../../services/exploreService';
+import { useExploreContent, useCreateExploreContent, useUpdateExploreContent } from '../../hooks/useExplore';
 import { useToast } from '../../hooks/use-toast';
 
 export default function VerseEditor() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const { toast } = useToast();
   const { t } = useTranslation();
 
@@ -38,50 +36,29 @@ export default function VerseEditor() {
 
   const [activeLanguage, setActiveLanguage] = useState('en');
 
-  // Fetch existing verse if editing
-  const { data: verse, isLoading } = useQuery({
-    queryKey: ['explore', 'verse', id],
-    queryFn: () => exploreService.getContent('verse', id),
-    enabled: isEditMode,
-    onSuccess: (data) => {
-      setFormData({
-        reference: data.reference || '',
-        text: data.text || { en: '', id: '' },
-        commentary: data.commentary || { en: '', id: '' },
-        application: data.application || { en: '', id: '' },
-        theme: data.theme || { en: '', id: '' },
-        image_url: data.image_url || '',
-        published: data.published || false,
-        scheduled_date: data.scheduled_date || '',
-      });
-    },
-  });
+  // Fetch existing verse if editing (with multi-tenant cache isolation)
+  const { data: verse, isLoading } = useExploreContent('verse_of_the_day', isEditMode ? id : null);
 
-  // Save mutation
-  const saveMutation = useMutation({
-    mutationFn: (data) => {
-      if (isEditMode) {
-        return exploreService.updateContent('verse', id, data);
-      } else {
-        return exploreService.createContent('verse', data);
-      }
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries(['explore', 'content', 'verse']);
-      toast({
-        title: 'Success',
-        description: isEditMode ? 'Verse updated successfully' : 'Verse created successfully',
+  // Create and update mutations with multi-tenant cache isolation
+  const createMutation = useCreateExploreContent('verse_of_the_day');
+  const updateMutation = useUpdateExploreContent('verse_of_the_day');
+  const saveMutation = isEditMode ? updateMutation : createMutation;
+
+  // Populate form when verse data is loaded
+  useEffect(() => {
+    if (verse && isEditMode) {
+      setFormData({
+        reference: verse.reference || '',
+        text: verse.text || { en: '', id: '' },
+        commentary: verse.commentary || { en: '', id: '' },
+        application: verse.application || { en: '', id: '' },
+        theme: verse.theme || { en: '', id: '' },
+        image_url: verse.image_url || '',
+        published: verse.published || false,
+        scheduled_date: verse.scheduled_date || '',
       });
-      navigate('/content-center/verse');
-    },
-    onError: (error) => {
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to save verse',
-        variant: 'destructive',
-      });
-    },
-  });
+    }
+  }, [verse, isEditMode]);
 
   const handleInputChange = (field, value, language = null) => {
     if (language) {
@@ -122,7 +99,15 @@ export default function VerseEditor() {
       return;
     }
 
-    saveMutation.mutate(formData);
+    if (isEditMode) {
+      updateMutation.mutate({ contentId: id, data: formData }, {
+        onSuccess: () => navigate('/content-center/verse')
+      });
+    } else {
+      createMutation.mutate(formData, {
+        onSuccess: () => navigate('/content-center/verse')
+      });
+    }
   };
 
   if (isLoading) {

@@ -223,9 +223,9 @@ const COAModal = ({ open, onOpenChange, account = null, onSuccess }) => {
             </Button>
             <Button 
               type="submit" 
-              disabled={createMutation.isLoading || updateMutation.isLoading}
+              disabled={createMutation.isPending || updateMutation.isPending}
             >
-              {createMutation.isLoading || updateMutation.isLoading 
+              {createMutation.isPending || updateMutation.isPending 
                 ? t('accounting.common.loading') 
                 : t('accounting.common.save')}
             </Button>

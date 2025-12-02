@@ -1,6 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
@@ -19,7 +18,7 @@ import { Switch } from '../../components/ui/switch';
 import {
   ArrowLeft, Save, Eye, Loader2, X, Plus, ChevronDown, ChevronUp
 } from 'lucide-react';
-import exploreService from '../../services/exploreService';
+import { useExploreContent, useCreateExploreContent, useUpdateExploreContent } from '../../hooks/useExplore';
 import { useToast } from '../../hooks/use-toast';
 
 const emptyQuestion = {
@@ -32,7 +31,6 @@ const emptyQuestion = {
 export default function QuizEditor() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const { toast } = useToast();
   const { t } = useTranslation();
 
@@ -55,52 +53,31 @@ export default function QuizEditor() {
   const [activeLanguage, setActiveLanguage] = useState('en');
   const [expandedQuestion, setExpandedQuestion] = useState(null);
 
-  // Fetch existing quiz if editing
-  const { data: quiz, isLoading } = useQuery({
-    queryKey: ['explore', 'quiz', id],
-    queryFn: () => exploreService.getContent('quiz', id),
-    enabled: isEditMode,
-    onSuccess: (data) => {
-      setFormData({
-        title: data.title || { en: '', id: '' },
-        description: data.description || { en: '', id: '' },
-        difficulty: data.difficulty || 'medium',
-        category: data.category || { en: '', id: '' },
-        questions: data.questions || [],
-        time_limit_seconds: data.time_limit_seconds || 300,
-        pass_percentage: data.pass_percentage || 70,
-        image_url: data.image_url || '',
-        published: data.published || false,
-        scheduled_date: data.scheduled_date || '',
-      });
-    },
-  });
+  // Fetch existing quiz if editing (with multi-tenant cache isolation)
+  const { data: quiz, isLoading } = useExploreContent('daily_quiz', isEditMode ? id : null);
 
-  // Save mutation
-  const saveMutation = useMutation({
-    mutationFn: (data) => {
-      if (isEditMode) {
-        return exploreService.updateContent('quiz', id, data);
-      } else {
-        return exploreService.createContent('quiz', data);
-      }
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries(['explore', 'content', 'quiz']);
-      toast({
-        title: 'Success',
-        description: isEditMode ? 'Quiz updated successfully' : 'Quiz created successfully',
+  // Create and update mutations with multi-tenant cache isolation
+  const createMutation = useCreateExploreContent('daily_quiz');
+  const updateMutation = useUpdateExploreContent('daily_quiz');
+  const saveMutation = isEditMode ? updateMutation : createMutation;
+
+  // Populate form when quiz data is loaded
+  useEffect(() => {
+    if (quiz && isEditMode) {
+      setFormData({
+        title: quiz.title || { en: '', id: '' },
+        description: quiz.description || { en: '', id: '' },
+        difficulty: quiz.difficulty || 'medium',
+        category: quiz.category || { en: '', id: '' },
+        questions: quiz.questions || [],
+        time_limit_seconds: quiz.time_limit_seconds || 300,
+        pass_percentage: quiz.pass_percentage || 70,
+        image_url: quiz.image_url || '',
+        published: quiz.published || false,
+        scheduled_date: quiz.scheduled_date || '',
       });
-      navigate('/content-center/quiz');
-    },
-    onError: (error) => {
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to save quiz',
-        variant: 'destructive',
-      });
-    },
-  });
+    }
+  }, [quiz, isEditMode]);
 
   const handleInputChange = (field, value, language = null) => {
     if (language) {
@@ -203,7 +180,15 @@ export default function QuizEditor() {
       }
     }
 
-    saveMutation.mutate(formData);
+    if (isEditMode) {
+      updateMutation.mutate({ contentId: id, data: formData }, {
+        onSuccess: () => navigate('/content-center/quiz')
+      });
+    } else {
+      createMutation.mutate(formData, {
+        onSuccess: () => navigate('/content-center/quiz')
+      });
+    }
   };
 
   if (isLoading) {

@@ -114,8 +114,8 @@ const QuickEditModal = ({ open, onOpenChange, article, onSuccess }) => {
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               {t('common.cancel')}
             </Button>
-            <Button type="submit" disabled={updateMutation.isLoading}>
-              {updateMutation.isLoading ? t('common.loading') : t('articles.quickEdit.save')}
+            <Button type="submit" disabled={updateMutation.isPending}>
+              {updateMutation.isPending ? t('common.loading') : t('articles.quickEdit.save')}
             </Button>
           </div>
         </form>

@@ -99,7 +99,7 @@ const SchedulingPanel = ({ article, onSuccess }) => {
               variant="outline"
               size="sm"
               onClick={handleUnschedule}
-              disabled={unscheduleMutation.isLoading}
+              disabled={unscheduleMutation.isPending}
             >
               {t('articles.scheduling.unscheduleArticle')}
             </Button>
@@ -124,7 +124,7 @@ const SchedulingPanel = ({ article, onSuccess }) => {
             <Button
               size="sm"
               onClick={handleSchedule}
-              disabled={!canSchedule || !scheduledDate || scheduleMutation.isLoading}
+              disabled={!canSchedule || !scheduledDate || scheduleMutation.isPending}
               className="w-full"
             >
               <Clock className="w-4 h-4 mr-2" />

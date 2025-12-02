@@ -80,7 +80,7 @@ const TagSelector = ({ value = [], onChange, label }) => {
         onChange={(e) => setInputValue(e.target.value)}
         onKeyDown={handleKeyDown}
         placeholder={t('articles.tagsManagement.inlineCreate')}
-        disabled={isLoading || createTagMutation.isLoading}
+        disabled={isLoading || createTagMutation.isPending}
       />
       <p className="text-xs text-gray-500">{t('articles.tagsManagement.inlineCreate')}</p>
     </div>

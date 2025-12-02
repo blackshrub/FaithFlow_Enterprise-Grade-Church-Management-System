@@ -67,7 +67,7 @@ export default function GroupEditorPage() {
             initialData={group}
             onSubmit={handleSubmit}
             onCancel={() => navigate('/groups')}
-            isSaving={createMutation.isLoading || updateMutation.isLoading}
+            isSaving={createMutation.isPending || updateMutation.isPending}
           />
         </div>
         <div className="lg:col-span-1 space-y-4">

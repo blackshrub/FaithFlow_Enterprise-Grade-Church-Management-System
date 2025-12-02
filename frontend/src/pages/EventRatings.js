@@ -12,6 +12,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
+import { useAuth } from '../context/AuthContext';
 import {
   Star,
   Trash2,
@@ -60,12 +61,14 @@ import { eventsAPI } from '../services/api';
 export default function EventRatings() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const sessionChurchId = user?.session_church_id ?? user?.church_id;
   const [selectedEvent, setSelectedEvent] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
 
   // Fetch events for filter dropdown
   const { data: events = [] } = useQuery({
-    queryKey: ['events'],
+    queryKey: ['events', sessionChurchId],
     queryFn: async () => {
       const response = await eventsAPI.list();
       return response.data;
@@ -74,7 +77,7 @@ export default function EventRatings() {
 
   // Fetch ratings
   const { data: ratings = [], isLoading, error } = useQuery({
-    queryKey: ['ratings', selectedEvent],
+    queryKey: ['ratings', sessionChurchId, selectedEvent],
     queryFn: () => {
       const params = selectedEvent !== 'all' ? { event_id: selectedEvent } : {};
       return ratingReviewService.getRatings(params);
@@ -83,7 +86,7 @@ export default function EventRatings() {
 
   // Fetch statistics for all events
   const { data: allStats = [] } = useQuery({
-    queryKey: ['ratings-stats-all'],
+    queryKey: ['ratings-stats-all', sessionChurchId],
     queryFn: () => ratingReviewService.getAllEventsStats(),
   });
 
@@ -91,8 +94,8 @@ export default function EventRatings() {
   const deleteMutation = useMutation({
     mutationFn: (ratingId) => ratingReviewService.deleteRating(ratingId),
     onSuccess: () => {
-      queryClient.invalidateQueries(['ratings']);
-      queryClient.invalidateQueries(['ratings-stats-all']);
+      queryClient.invalidateQueries({ queryKey: ['ratings', sessionChurchId] });
+      queryClient.invalidateQueries({ queryKey: ['ratings-stats-all', sessionChurchId] });
       toast.success('Rating deleted successfully');
     },
     onError: (error) => {

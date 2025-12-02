@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
@@ -19,7 +18,7 @@ import {
 import {
   ArrowLeft, Save, Eye, Loader2, Palette, FolderTree, Hash
 } from 'lucide-react';
-import exploreService from '../../services/exploreService';
+import { useExploreContent, useExploreContentList, useCreateExploreContent, useUpdateExploreContent } from '../../hooks/useExplore';
 import { useToast } from '../../hooks/use-toast';
 
 // Available icons for categories
@@ -63,7 +62,6 @@ const PRESET_COLORS = [
 export default function TopicalCategoryEditor() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const { toast } = useToast();
   const { t } = useTranslation();
 
@@ -82,23 +80,21 @@ export default function TopicalCategoryEditor() {
 
   const [activeLanguage, setActiveLanguage] = useState('en');
 
-  // Fetch all categories for parent selection
-  const { data: categories = [] } = useQuery({
-    queryKey: ['explore', 'content', 'topical_category'],
-    queryFn: () => exploreService.listContent('topical_category', { limit: 100 }),
-    select: (data) => data?.items || data || [],
-  });
+  // Fetch all categories for parent selection (with multi-tenant cache isolation)
+  const { data: categoriesData } = useExploreContentList('topical_category', { limit: 100 });
+  const categories = categoriesData?.items || categoriesData || [];
 
-  // Fetch existing category if editing
-  const { data: category, isLoading } = useQuery({
-    queryKey: ['explore', 'topical_category', id],
-    queryFn: () => exploreService.getContent('topical_category', id),
-    enabled: isEditMode,
-  });
+  // Fetch existing category if editing (with multi-tenant cache isolation)
+  const { data: category, isLoading } = useExploreContent('topical_category', isEditMode ? id : null);
+
+  // Create and update mutations with multi-tenant cache isolation
+  const createMutation = useCreateExploreContent('topical_category');
+  const updateMutation = useUpdateExploreContent('topical_category');
+  const saveMutation = isEditMode ? updateMutation : createMutation;
 
   // Populate form when data loads
   useEffect(() => {
-    if (category) {
+    if (category && isEditMode) {
       setFormData({
         name: category.name || { en: '', id: '' },
         description: category.description || { en: '', id: '' },
@@ -109,33 +105,7 @@ export default function TopicalCategoryEditor() {
         status: category.status || 'published',
       });
     }
-  }, [category]);
-
-  // Save mutation
-  const saveMutation = useMutation({
-    mutationFn: (data) => {
-      if (isEditMode) {
-        return exploreService.updateContent('topical_category', id, data);
-      } else {
-        return exploreService.createContent('topical_category', data);
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries(['explore', 'content', 'topical_category']);
-      toast({
-        title: 'Success',
-        description: isEditMode ? 'Category updated successfully' : 'Category created successfully',
-      });
-      navigate('/content-center/topical');
-    },
-    onError: (error) => {
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to save category',
-        variant: 'destructive',
-      });
-    },
-  });
+  }, [category, isEditMode]);
 
   const handleInputChange = (field, value, language = null) => {
     if (language) {
@@ -176,7 +146,15 @@ export default function TopicalCategoryEditor() {
       return;
     }
 
-    saveMutation.mutate(formData);
+    if (isEditMode) {
+      updateMutation.mutate({ contentId: id, data: formData }, {
+        onSuccess: () => navigate('/content-center/topical')
+      });
+    } else {
+      createMutation.mutate(formData, {
+        onSuccess: () => navigate('/content-center/topical')
+      });
+    }
   };
 
   if (isLoading) {

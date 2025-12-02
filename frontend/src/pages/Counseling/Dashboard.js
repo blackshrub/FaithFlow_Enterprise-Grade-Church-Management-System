@@ -4,13 +4,15 @@ import { Calendar, Clock, Users, AlertCircle, Plus } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
-import { useAppointments } from '../../hooks/useCounseling';
-import { format, parseISO, isAfter, startOfDay } from 'date-fns';
+import { useAppointments, useApproveAppointment, useRejectAppointment } from '../../hooks/useCounseling';
+import { useToast } from '../../hooks/use-toast';
+import { format, parseISO, startOfDay } from 'date-fns';
 import MemberAvatar from '../../components/MemberAvatar';
 import CreateAppointmentModal from '../../components/Counseling/CreateAppointmentModal';
 
 const CounselingDashboard = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const today = startOfDay(new Date()).toISOString().split('T')[0];
   const nextWeek = new Date();
@@ -27,6 +29,40 @@ const CounselingDashboard = () => {
   const { data: pendingAppointments = [] } = useAppointments({
     status: 'pending'
   });
+
+  // Mutations for approve/reject
+  const approveMutation = useApproveAppointment();
+  const rejectMutation = useRejectAppointment();
+
+  const handleQuickApprove = async (e, appointmentId) => {
+    e.stopPropagation();
+    try {
+      await approveMutation.mutateAsync({ id: appointmentId, admin_notes: '' });
+      toast({ title: 'Appointment approved successfully' });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: error.response?.data?.detail || 'Failed to approve',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const handleQuickReject = async (e, appointmentId) => {
+    e.stopPropagation();
+    const reason = window.prompt('Please provide a reason for rejection:');
+    if (!reason) return;
+    try {
+      await rejectMutation.mutateAsync({ id: appointmentId, reason });
+      toast({ title: 'Appointment rejected' });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: error.response?.data?.detail || 'Failed to reject',
+        variant: 'destructive'
+      });
+    }
+  };
 
   // Calculate stats
   const stats = {
@@ -206,11 +242,21 @@ const CounselingDashboard = () => {
                     </div>
                   </div>
                   <div className="flex gap-2">
-                    <Button size="sm" variant="outline">
-                      Approve
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={(e) => handleQuickApprove(e, appointment.id)}
+                      disabled={approveMutation.isPending}
+                    >
+                      {approveMutation.isPending ? 'Approving...' : 'Approve'}
                     </Button>
-                    <Button size="sm" variant="ghost">
-                      Reject
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={(e) => handleQuickReject(e, appointment.id)}
+                      disabled={rejectMutation.isPending}
+                    >
+                      {rejectMutation.isPending ? 'Rejecting...' : 'Reject'}
                     </Button>
                   </div>
                 </div>

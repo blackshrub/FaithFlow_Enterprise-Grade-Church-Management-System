@@ -273,8 +273,8 @@ export default function FixedAssetForm() {
           <Button type="button" variant="outline" onClick={() => navigate('/accounting/assets')}>
             {t('accounting.common.cancel')}
           </Button>
-          <Button type="submit" disabled={createMutation.isLoading}>
-            {createMutation.isLoading ? t('accounting.common.loading') : t('accounting.common.save')}
+          <Button type="submit" disabled={createMutation.isPending}>
+            {createMutation.isPending ? t('accounting.common.loading') : t('accounting.common.save')}
           </Button>
         </div>
       </form>

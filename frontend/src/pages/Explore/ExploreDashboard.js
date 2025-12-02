@@ -1,6 +1,5 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
@@ -8,17 +7,13 @@ import {
   BookOpen, Calendar, Users, TrendingUp, Award, Sparkles,
   FileText, MessageSquare, User, HelpCircle, Plus, Loader2
 } from 'lucide-react';
-import exploreService from '../../services/exploreService';
+import { useExploreDashboardStats } from '../../hooks/useExplore';
 
 export default function ExploreDashboard() {
   const { t } = useTranslation();
 
-  // Fetch dashboard stats
-  const { data: stats, isLoading } = useQuery({
-    queryKey: ['explore', 'dashboard-stats'],
-    queryFn: () => exploreService.getDashboardStats(),
-    staleTime: 60000, // 1 minute
-  });
+  // Fetch dashboard stats with multi-tenant cache isolation
+  const { data: stats, isLoading } = useExploreDashboardStats();
 
   const statCards = [
     {

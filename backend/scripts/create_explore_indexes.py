@@ -30,7 +30,11 @@ async def create_indexes():
         "explore_devotions",
         "explore_verses",
         "explore_figures",
-        "explore_quizzes"
+        "explore_quizzes",
+        "explore_bible_studies",
+        "explore_devotion_plans",
+        "explore_topical_categories",
+        "explore_topical_verses"
     ]
 
     for collection_name in content_collections:
@@ -158,6 +162,19 @@ async def create_indexes():
     )
     print("  ✓ Created: church_id (unique)")
 
+    # ==================== PROMPT CONFIG ====================
+
+    print(f"\n📁 explore_prompt_config")
+    prompt_config_collection = db.explore_prompt_config
+
+    # Index for church prompt config (should be unique per church)
+    await prompt_config_collection.create_index(
+        [("church_id", 1)],
+        name="church_idx",
+        unique=True
+    )
+    print("  ✓ Created: church_id (unique)")
+
     # ==================== AI GENERATION QUEUE ====================
 
     print(f"\n📁 ai_generation_queue")
@@ -219,10 +236,15 @@ async def drop_indexes():
         "explore_verses",
         "explore_figures",
         "explore_quizzes",
+        "explore_bible_studies",
+        "explore_devotion_plans",
+        "explore_topical_categories",
+        "explore_topical_verses",
         "explore_user_progress",
         "explore_analytics",
         "explore_adoptions",
         "explore_church_settings",
+        "explore_prompt_config",
         "ai_generation_queue"
     ]
 
@@ -260,10 +282,15 @@ async def list_indexes():
         "explore_verses",
         "explore_figures",
         "explore_quizzes",
+        "explore_bible_studies",
+        "explore_devotion_plans",
+        "explore_topical_categories",
+        "explore_topical_verses",
         "explore_user_progress",
         "explore_analytics",
         "explore_adoptions",
         "explore_church_settings",
+        "explore_prompt_config",
         "ai_generation_queue"
     ]
 

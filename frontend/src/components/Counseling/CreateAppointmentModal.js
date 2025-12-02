@@ -27,25 +27,27 @@ import {
   SelectValue,
 } from '../../components/ui/select';
 import { useToast } from '../../hooks/use-toast';
-import { useSearchMembers } from '../../hooks/useCounseling';
 import { useCreateAppointment } from '../../hooks/useCounseling';
 import MemberAvatar from '../MemberAvatar';
 import api from '../../services/api';
 import { format, addDays, startOfDay } from 'date-fns';
+import { Loader2 } from 'lucide-react';
 
 const CreateAppointmentModal = ({ open, onClose }) => {
   const { t } = useTranslation();
   const { toast } = useToast();
-  
+
   const [step, setStep] = useState(1); // 1: Member, 2: Date/Slot, 3: Details
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState([]);
+  const [searchLoading, setSearchLoading] = useState(false);
   const [selectedMember, setSelectedMember] = useState(null);
   const [selectedDate, setSelectedDate] = useState(null);
   const [availableSlots, setAvailableSlots] = useState([]);
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [loadingSlots, setLoadingSlots] = useState(false);
-  
+  const [formErrors, setFormErrors] = useState({});
+
   const [formData, setFormData] = useState({
     type: 'counseling',
     urgency: 'normal',
@@ -91,7 +93,8 @@ const CreateAppointmentModal = ({ open, onClose }) => {
   
   const handleSearchMembers = async () => {
     if (!searchTerm.trim()) return;
-    
+
+    setSearchLoading(true);
     try {
       const response = await api.get('/members/', {
         params: { search: searchTerm, limit: 10 }
@@ -99,7 +102,26 @@ const CreateAppointmentModal = ({ open, onClose }) => {
       setSearchResults(response.data?.data || []);
     } catch (error) {
       console.error('Search failed:', error);
+      toast({
+        title: 'Search failed',
+        description: 'Unable to search members. Please try again.',
+        variant: 'destructive'
+      });
+    } finally {
+      setSearchLoading(false);
     }
+  };
+
+  const validateForm = () => {
+    const errors = {};
+    if (!formData.topic.trim()) {
+      errors.topic = 'Topic is required';
+    }
+    if (!formData.description.trim()) {
+      errors.description = 'Description is required';
+    }
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
   };
   
   const handleSelectMember = (member) => {
@@ -118,18 +140,27 @@ const CreateAppointmentModal = ({ open, onClose }) => {
   
   const handleSubmit = async () => {
     if (!selectedMember || !selectedSlot) return;
-    
+
+    if (!validateForm()) {
+      toast({
+        title: 'Validation Error',
+        description: 'Please fill in all required fields',
+        variant: 'destructive'
+      });
+      return;
+    }
+
     try {
       await createMutation.mutateAsync({
         member_id: selectedMember.id,
         slot_id: selectedSlot.id,
         ...formData
       });
-      
+
       toast({
         title: t('counseling.success_appointment_created')
       });
-      
+
       handleClose();
     } catch (error) {
       toast({
@@ -144,9 +175,11 @@ const CreateAppointmentModal = ({ open, onClose }) => {
     setStep(1);
     setSearchTerm('');
     setSearchResults([]);
+    setSearchLoading(false);
     setSelectedMember(null);
     setSelectedDate(null);
     setSelectedSlot(null);
+    setFormErrors({});
     setFormData({
       type: 'counseling',
       urgency: 'normal',
@@ -192,9 +225,13 @@ const CreateAppointmentModal = ({ open, onClose }) => {
                   onKeyPress={(e) => e.key === 'Enter' && handleSearchMembers()}
                   className="flex-1"
                 />
-                <Button onClick={handleSearchMembers}>
-                  <Search className="h-4 w-4 mr-2" />
-                  Search
+                <Button onClick={handleSearchMembers} disabled={searchLoading}>
+                  {searchLoading ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Search className="h-4 w-4 mr-2" />
+                  )}
+                  {searchLoading ? 'Searching...' : 'Search'}
                 </Button>
               </div>
               
@@ -381,19 +418,33 @@ const CreateAppointmentModal = ({ open, onClose }) => {
                   <Label>{t('counseling.topic')} *</Label>
                   <Input
                     value={formData.topic}
-                    onChange={(e) => setFormData({ ...formData, topic: e.target.value })}
+                    onChange={(e) => {
+                      setFormData({ ...formData, topic: e.target.value });
+                      if (formErrors.topic) setFormErrors({ ...formErrors, topic: null });
+                    }}
                     placeholder="e.g., Marriage difficulties"
+                    className={formErrors.topic ? 'border-red-500' : ''}
                   />
+                  {formErrors.topic && (
+                    <p className="text-sm text-red-500 mt-1">{formErrors.topic}</p>
+                  )}
                 </div>
-                
+
                 <div>
                   <Label>{t('counseling.description')} *</Label>
                   <Textarea
                     value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    onChange={(e) => {
+                      setFormData({ ...formData, description: e.target.value });
+                      if (formErrors.description) setFormErrors({ ...formErrors, description: null });
+                    }}
                     placeholder="Detailed description of the situation..."
                     rows={4}
+                    className={formErrors.description ? 'border-red-500' : ''}
                   />
+                  {formErrors.description && (
+                    <p className="text-sm text-red-500 mt-1">{formErrors.description}</p>
+                  )}
                 </div>
                 
                 <div>

@@ -134,6 +134,11 @@ class AppointmentReject(BaseModel):
     reason: str = Field(..., min_length=1, max_length=1000)
 
 
+class AppointmentCancel(BaseModel):
+    """Request model for canceling an appointment."""
+    reason: Optional[str] = Field(None, max_length=1000)
+
+
 class AppointmentComplete(BaseModel):
     """Request model for completing an appointment."""
     outcome_notes: str = Field(..., min_length=1, max_length=2000)
