@@ -314,118 +314,6 @@ async def list_demographic_presets(
     return await get_cached_demographics(church_id, fetch_demographics)
 
 
-@router.get("/demographics/{preset_id}", response_model=DemographicPreset)
-async def get_demographic_preset(
-    preset_id: str,
-    db: AsyncIOMotorDatabase = Depends(get_db),
-    current_user: dict = Depends(require_admin)
-):
-    """Get demographic preset by ID"""
-    
-    preset = await db.demographic_presets.find_one({"id": preset_id}, {"_id": 0})
-    if not preset:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Demographic preset not found"
-        )
-    
-    # Check access - super admin can access any church
-    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') != preset.get('church_id'):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Access denied"
-        )
-
-    # Convert ISO strings
-    if isinstance(preset.get('created_at'), str):
-        preset['created_at'] = datetime.fromisoformat(preset['created_at'])
-    if isinstance(preset.get('updated_at'), str):
-        preset['updated_at'] = datetime.fromisoformat(preset['updated_at'])
-    
-    return preset
-
-
-@router.patch("/demographics/{preset_id}", response_model=DemographicPreset)
-async def update_demographic_preset(
-    preset_id: str,
-    preset_data: DemographicPresetUpdate,
-    db: AsyncIOMotorDatabase = Depends(get_db),
-    current_user: dict = Depends(require_admin)
-):
-    """Update demographic preset"""
-    
-    preset = await db.demographic_presets.find_one({"id": preset_id})
-    if not preset:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Demographic preset not found"
-        )
-    
-    # Check access - super admin can access any church
-    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') != preset.get('church_id'):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Access denied"
-        )
-
-    # Update only provided fields
-    update_data = preset_data.model_dump(exclude_unset=True)
-    
-    # Validate age range if both are provided
-    if 'min_age' in update_data or 'max_age' in update_data:
-        min_age = update_data.get('min_age', preset.get('min_age'))
-        max_age = update_data.get('max_age', preset.get('max_age'))
-        if min_age > max_age:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Minimum age cannot be greater than maximum age"
-            )
-    
-    if update_data:
-        update_data['updated_at'] = datetime.now().isoformat()
-        await db.demographic_presets.update_one(
-            {"id": preset_id},
-            {"$set": update_data}
-        )
-    
-    # Get updated preset
-    updated_preset = await db.demographic_presets.find_one({"id": preset_id}, {"_id": 0})
-    
-    # Convert ISO strings
-    if isinstance(updated_preset.get('created_at'), str):
-        updated_preset['created_at'] = datetime.fromisoformat(updated_preset['created_at'])
-    if isinstance(updated_preset.get('updated_at'), str):
-        updated_preset['updated_at'] = datetime.fromisoformat(updated_preset['updated_at'])
-    
-    return updated_preset
-
-
-@router.delete("/demographics/{preset_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_demographic_preset(
-    preset_id: str,
-    db: AsyncIOMotorDatabase = Depends(get_db),
-    current_user: dict = Depends(require_admin)
-):
-    """Delete demographic preset"""
-    
-    preset = await db.demographic_presets.find_one({"id": preset_id})
-    if not preset:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Demographic preset not found"
-        )
-    
-    # Check access - super admin can access any church
-    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') != preset.get('church_id'):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Access denied"
-        )
-
-    await db.demographic_presets.delete_one({"id": preset_id})
-    return None
-
-
 @router.post("/demographics/validate")
 async def validate_demographic_ranges(
     db: AsyncIOMotorDatabase = Depends(get_db),
@@ -553,6 +441,118 @@ async def regenerate_all_demographics(
         "skipped_count": skipped_count,
         "total_members": len(members)
     }
+
+
+@router.get("/demographics/{preset_id}", response_model=DemographicPreset)
+async def get_demographic_preset(
+    preset_id: str,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current_user: dict = Depends(require_admin)
+):
+    """Get demographic preset by ID"""
+    
+    preset = await db.demographic_presets.find_one({"id": preset_id}, {"_id": 0})
+    if not preset:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Demographic preset not found"
+        )
+    
+    # Check access - super admin can access any church
+    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') != preset.get('church_id'):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied"
+        )
+
+    # Convert ISO strings
+    if isinstance(preset.get('created_at'), str):
+        preset['created_at'] = datetime.fromisoformat(preset['created_at'])
+    if isinstance(preset.get('updated_at'), str):
+        preset['updated_at'] = datetime.fromisoformat(preset['updated_at'])
+    
+    return preset
+
+
+@router.patch("/demographics/{preset_id}", response_model=DemographicPreset)
+async def update_demographic_preset(
+    preset_id: str,
+    preset_data: DemographicPresetUpdate,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current_user: dict = Depends(require_admin)
+):
+    """Update demographic preset"""
+    
+    preset = await db.demographic_presets.find_one({"id": preset_id})
+    if not preset:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Demographic preset not found"
+        )
+    
+    # Check access - super admin can access any church
+    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') != preset.get('church_id'):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied"
+        )
+
+    # Update only provided fields
+    update_data = preset_data.model_dump(exclude_unset=True)
+    
+    # Validate age range if both are provided
+    if 'min_age' in update_data or 'max_age' in update_data:
+        min_age = update_data.get('min_age', preset.get('min_age'))
+        max_age = update_data.get('max_age', preset.get('max_age'))
+        if min_age > max_age:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Minimum age cannot be greater than maximum age"
+            )
+    
+    if update_data:
+        update_data['updated_at'] = datetime.now().isoformat()
+        await db.demographic_presets.update_one(
+            {"id": preset_id},
+            {"$set": update_data}
+        )
+    
+    # Get updated preset
+    updated_preset = await db.demographic_presets.find_one({"id": preset_id}, {"_id": 0})
+    
+    # Convert ISO strings
+    if isinstance(updated_preset.get('created_at'), str):
+        updated_preset['created_at'] = datetime.fromisoformat(updated_preset['created_at'])
+    if isinstance(updated_preset.get('updated_at'), str):
+        updated_preset['updated_at'] = datetime.fromisoformat(updated_preset['updated_at'])
+    
+    return updated_preset
+
+
+@router.delete("/demographics/{preset_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_demographic_preset(
+    preset_id: str,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current_user: dict = Depends(require_admin)
+):
+    """Delete demographic preset"""
+    
+    preset = await db.demographic_presets.find_one({"id": preset_id})
+    if not preset:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Demographic preset not found"
+        )
+    
+    # Check access - super admin can access any church
+    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') != preset.get('church_id'):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied"
+        )
+
+    await db.demographic_presets.delete_one({"id": preset_id})
+    return None
 
 
 # ============= Church Settings Routes =============
