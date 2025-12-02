@@ -23,15 +23,17 @@ export default function Settings() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className={`grid w-full max-w-4xl ${isSuperAdmin ? 'grid-cols-7' : 'grid-cols-6'}`}>
-          <TabsTrigger value="general">{t('settings.general')}</TabsTrigger>
-          <TabsTrigger value="categories">{t('settings.categories') || 'Categories'}</TabsTrigger>
-          <TabsTrigger value="automation">{t('settings.statusAutomation') || 'Status Automation'}</TabsTrigger>
-          <TabsTrigger value="demographics">{t('settings.demographics')}</TabsTrigger>
-          <TabsTrigger value="kiosk">{t('settings.kiosk') || 'Kiosk'}</TabsTrigger>
-          <TabsTrigger value="explore">{t('settings.explore') || 'Explore'}</TabsTrigger>
-          {isSuperAdmin && <TabsTrigger value="ai-prompts">{t('settings.aiPrompts') || 'AI Prompts'}</TabsTrigger>}
-        </TabsList>
+        <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
+          <TabsList className="inline-flex w-max md:w-full md:grid md:max-w-4xl md:grid-cols-6 lg:grid-cols-7 gap-1">
+            <TabsTrigger value="general" className="whitespace-nowrap">{t('settings.general')}</TabsTrigger>
+            <TabsTrigger value="categories" className="whitespace-nowrap">{t('settings.categories') || 'Categories'}</TabsTrigger>
+            <TabsTrigger value="automation" className="whitespace-nowrap">{t('settings.statusAutomation') || 'Automation'}</TabsTrigger>
+            <TabsTrigger value="demographics" className="whitespace-nowrap">{t('settings.demographics')}</TabsTrigger>
+            <TabsTrigger value="kiosk" className="whitespace-nowrap">{t('settings.kiosk') || 'Kiosk'}</TabsTrigger>
+            <TabsTrigger value="explore" className="whitespace-nowrap">{t('settings.explore') || 'Explore'}</TabsTrigger>
+            {isSuperAdmin && <TabsTrigger value="ai-prompts" className="whitespace-nowrap">{t('settings.aiPrompts') || 'AI Prompts'}</TabsTrigger>}
+          </TabsList>
+        </div>
 
         <TabsContent value="general" className="mt-6">
           <GeneralSettingsTab />

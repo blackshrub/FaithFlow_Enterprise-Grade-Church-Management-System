@@ -812,20 +812,22 @@ export default function CategoriesTab() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full max-w-md grid-cols-3">
-          <TabsTrigger value="member-statuses" className="flex items-center gap-1">
-            <Users className="h-4 w-4" />
-            {t('settings.memberStatuses') || 'Member Statuses'}
-          </TabsTrigger>
-          <TabsTrigger value="community" className="flex items-center gap-1">
-            <Tag className="h-4 w-4" />
-            {t('settings.communityCategories') || 'Community'}
-          </TabsTrigger>
-          <TabsTrigger value="events" className="flex items-center gap-1">
-            <Calendar className="h-4 w-4" />
-            {t('settings.eventCategories') || 'Events'}
-          </TabsTrigger>
-        </TabsList>
+        <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
+          <TabsList className="inline-flex w-max md:w-full md:max-w-md md:grid md:grid-cols-3 gap-1">
+            <TabsTrigger value="member-statuses" className="flex items-center gap-1 whitespace-nowrap">
+              <Users className="h-4 w-4 hidden sm:block" />
+              {t('settings.memberStatuses') || 'Statuses'}
+            </TabsTrigger>
+            <TabsTrigger value="community" className="flex items-center gap-1 whitespace-nowrap">
+              <Tag className="h-4 w-4 hidden sm:block" />
+              {t('settings.communityCategories') || 'Community'}
+            </TabsTrigger>
+            <TabsTrigger value="events" className="flex items-center gap-1 whitespace-nowrap">
+              <Calendar className="h-4 w-4 hidden sm:block" />
+              {t('settings.eventCategories') || 'Events'}
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value="member-statuses" className="mt-6">
           <MemberStatusesSection />

@@ -254,14 +254,16 @@ function SystemSettings() {
       <Card>
         <Tabs defaultValue="faith-assistant">
           <CardHeader className="pb-0">
-            <TabsList className="grid w-full grid-cols-6">
-              <TabsTrigger value="faith-assistant">{t('integrations.faithAssistant') || 'Faith Assistant'}</TabsTrigger>
-              <TabsTrigger value="voice">{t('integrations.voice') || 'Voice (TTS/STT)'}</TabsTrigger>
-              <TabsTrigger value="ai">{t('integrations.exploreAI') || 'Explore AI'}</TabsTrigger>
-              <TabsTrigger value="whatsapp">{t('integrations.whatsapp') || 'WhatsApp'}</TabsTrigger>
-              <TabsTrigger value="payment">{t('integrations.payment') || 'Payment'}</TabsTrigger>
-              <TabsTrigger value="webhooks">{t('integrations.webhooks') || 'Webhooks'}</TabsTrigger>
-            </TabsList>
+            <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
+              <TabsList className="inline-flex w-max md:w-full md:grid md:grid-cols-6 gap-1">
+                <TabsTrigger value="faith-assistant" className="whitespace-nowrap">{t('integrations.faithAssistant') || 'Faith Assistant'}</TabsTrigger>
+                <TabsTrigger value="voice" className="whitespace-nowrap">{t('integrations.voice') || 'Voice'}</TabsTrigger>
+                <TabsTrigger value="ai" className="whitespace-nowrap">{t('integrations.exploreAI') || 'Explore AI'}</TabsTrigger>
+                <TabsTrigger value="whatsapp" className="whitespace-nowrap">{t('integrations.whatsapp') || 'WhatsApp'}</TabsTrigger>
+                <TabsTrigger value="payment" className="whitespace-nowrap">{t('integrations.payment') || 'Payment'}</TabsTrigger>
+                <TabsTrigger value="webhooks" className="whitespace-nowrap">{t('integrations.webhooks') || 'Webhooks'}</TabsTrigger>
+              </TabsList>
+            </div>
           </CardHeader>
 
           <CardContent className="pt-6">
