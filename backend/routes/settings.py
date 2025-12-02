@@ -90,6 +90,30 @@ async def list_member_statuses(
     return await get_cached_statuses(church_id, fetch_statuses)
 
 
+# NOTE: /reorder MUST come before /{status_id} to avoid route conflict
+@router.post("/member-statuses/reorder", status_code=status.HTTP_200_OK)
+async def reorder_member_statuses(
+    status_ids: List[str],
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current_user: dict = Depends(require_admin)
+):
+    """Reorder member statuses by providing ordered list of IDs"""
+
+    church_id = get_session_church_id(current_user)
+
+    # Update display_order for each status
+    for index, status_id in enumerate(status_ids):
+        await db.member_statuses.update_one(
+            {"id": status_id, "church_id": church_id},
+            {"$set": {"display_order": index + 1}}
+        )
+
+    # Invalidate cache so next GET returns updated order
+    await invalidate_church_cache(church_id)
+
+    return {"message": "Statuses reordered successfully"}
+
+
 @router.get("/member-statuses/{status_id}", response_model=MemberStatus)
 async def get_member_status(
     status_id: str,
@@ -216,26 +240,6 @@ async def delete_member_status(
 
     await db.member_statuses.delete_one({"id": status_id})
     return None
-
-
-@router.post("/member-statuses/reorder", status_code=status.HTTP_200_OK)
-async def reorder_member_statuses(
-    status_ids: List[str],
-    db: AsyncIOMotorDatabase = Depends(get_db),
-    current_user: dict = Depends(require_admin)
-):
-    """Reorder member statuses by providing ordered list of IDs"""
-    
-    church_id = get_session_church_id(current_user)
-    
-    # Update display_order for each status
-    for index, status_id in enumerate(status_ids):
-        await db.member_statuses.update_one(
-            {"id": status_id, "church_id": church_id},
-            {"$set": {"display_order": index + 1}}
-        )
-    
-    return {"message": "Statuses reordered successfully"}
 
 
 # ============= Demographic Preset Routes =============

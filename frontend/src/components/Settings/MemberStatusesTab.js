@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import {
@@ -33,8 +33,12 @@ export default function MemberStatusesTab() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState(null);
   const [formData, setFormData] = useState(initialFormData);
-  const [draggedItem, setDraggedItem] = useState(null);
+
+  // Drag and drop state
+  const [draggedIndex, setDraggedIndex] = useState(null);
+  const [dragOverIndex, setDragOverIndex] = useState(null);
   const [localStatuses, setLocalStatuses] = useState(null);
+  const dragNode = useRef(null);
 
   const { data: statuses = [], isLoading, error } = useMemberStatuses();
   const createStatus = useCreateMemberStatus();
@@ -42,7 +46,7 @@ export default function MemberStatusesTab() {
   const deleteStatus = useDeleteMemberStatus();
   const reorderStatuses = useReorderMemberStatuses();
 
-  // Use local statuses for drag preview, fall back to server data
+  // Use local statuses during drag, otherwise use server data
   const displayStatuses = localStatuses || statuses;
 
   const handleCreateStatus = async (e) => {
@@ -83,7 +87,7 @@ export default function MemberStatusesTab() {
     setFormData({
       name: status.name || '',
       description: status.description || '',
-      order: status.order || 0,
+      order: status.display_order || status.order || 0,
       is_active: status.is_active ?? true,
       is_default_for_new: status.is_default_for_new ?? false,
     });
@@ -95,49 +99,83 @@ export default function MemberStatusesTab() {
     setSelectedStatus(null);
   };
 
-  // Drag and drop handlers
-  const handleDragStart = useCallback((e, status, index) => {
-    setDraggedItem({ status, index });
+  // Drag handlers
+  const handleDragStart = (e, index) => {
+    dragNode.current = e.target;
+    setDraggedIndex(index);
+
+    // Set drag image
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', index.toString());
-    // Add drag styling
-    e.currentTarget.style.opacity = '0.5';
-  }, []);
 
-  const handleDragEnd = useCallback((e) => {
-    e.currentTarget.style.opacity = '1';
-    setDraggedItem(null);
-  }, []);
+    // Delay adding dragging class for better UX
+    setTimeout(() => {
+      if (dragNode.current) {
+        dragNode.current.classList.add('opacity-50');
+      }
+    }, 0);
+  };
 
-  const handleDragOver = useCallback((e) => {
+  const handleDragEnter = (e, index) => {
+    e.preventDefault();
+    if (draggedIndex === null || draggedIndex === index) return;
+    setDragOverIndex(index);
+  };
+
+  const handleDragOver = (e) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
-  }, []);
+  };
 
-  const handleDrop = useCallback((e, targetIndex) => {
+  const handleDragLeave = (e) => {
+    // Only clear if leaving the item completely
+    if (!e.currentTarget.contains(e.relatedTarget)) {
+      // Keep dragOverIndex for visual feedback
+    }
+  };
+
+  const handleDrop = (e, targetIndex) => {
     e.preventDefault();
-    if (!draggedItem || draggedItem.index === targetIndex) return;
 
+    if (draggedIndex === null || draggedIndex === targetIndex) {
+      resetDragState();
+      return;
+    }
+
+    // Reorder the list
     const newStatuses = [...(localStatuses || statuses)];
-    const [removed] = newStatuses.splice(draggedItem.index, 1);
-    newStatuses.splice(targetIndex, 0, removed);
+    const [draggedItem] = newStatuses.splice(draggedIndex, 1);
+    newStatuses.splice(targetIndex, 0, draggedItem);
 
-    // Update local state for immediate feedback
+    // Update local state immediately for visual feedback
     setLocalStatuses(newStatuses);
 
-    // Send reorder request to backend
+    // Send to backend
     const statusIds = newStatuses.map(s => s.id);
     reorderStatuses.mutate(statusIds, {
       onSuccess: () => {
-        setLocalStatuses(null); // Clear local state, use server data
+        setLocalStatuses(null); // Use server data
       },
       onError: () => {
-        setLocalStatuses(null); // Revert to server data on error
+        setLocalStatuses(null); // Revert to server data
       }
     });
 
-    setDraggedItem(null);
-  }, [draggedItem, statuses, localStatuses, reorderStatuses]);
+    resetDragState();
+  };
+
+  const handleDragEnd = () => {
+    if (dragNode.current) {
+      dragNode.current.classList.remove('opacity-50');
+    }
+    resetDragState();
+  };
+
+  const resetDragState = () => {
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+    dragNode.current = null;
+  };
 
   return (
     <div className="space-y-6">
@@ -176,15 +214,6 @@ export default function MemberStatusesTab() {
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   rows={3}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="status-order">{t('settings.order')}</Label>
-                <Input
-                  id="status-order"
-                  type="number"
-                  value={formData.order}
-                  onChange={(e) => setFormData({ ...formData, order: parseInt(e.target.value) || 0 })}
                 />
               </div>
               <div className="flex items-center space-x-2">
@@ -256,20 +285,30 @@ export default function MemberStatusesTab() {
               <p>{t('settings.noStatuses')}</p>
             </div>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-1">
               {displayStatuses.map((status, index) => (
                 <div
                   key={status.id}
                   draggable
-                  onDragStart={(e) => handleDragStart(e, status, index)}
-                  onDragEnd={handleDragEnd}
+                  onDragStart={(e) => handleDragStart(e, index)}
+                  onDragEnter={(e) => handleDragEnter(e, index)}
                   onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
                   onDrop={(e) => handleDrop(e, index)}
-                  className={`flex items-center gap-4 p-3 border rounded-lg bg-white hover:bg-gray-50 transition-colors cursor-move ${
-                    draggedItem?.index === index ? 'opacity-50' : ''
-                  }`}
+                  onDragEnd={handleDragEnd}
+                  className={`
+                    flex items-center gap-4 p-3 border rounded-lg bg-white
+                    transition-all duration-150 cursor-grab active:cursor-grabbing
+                    ${draggedIndex === index ? 'opacity-50 scale-[0.98]' : ''}
+                    ${dragOverIndex === index && draggedIndex !== index
+                      ? 'border-blue-500 border-2 bg-blue-50'
+                      : 'hover:bg-gray-50 border-gray-200'}
+                  `}
                 >
-                  <GripVertical className="h-5 w-5 text-gray-400 flex-shrink-0" />
+                  <div className="flex items-center gap-2 text-gray-400">
+                    <GripVertical className="h-5 w-5 flex-shrink-0" />
+                    <span className="text-xs font-mono w-6">#{index + 1}</span>
+                  </div>
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
@@ -284,7 +323,6 @@ export default function MemberStatusesTab() {
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-400">#{status.order}</span>
                     {status.is_active ? (
                       <Badge variant="default" className="bg-green-600">Active</Badge>
                     ) : (
@@ -320,6 +358,13 @@ export default function MemberStatusesTab() {
               ))}
             </div>
           )}
+
+          {reorderStatuses.isPending && (
+            <div className="mt-4 text-center text-sm text-gray-500">
+              <Loader2 className="h-4 w-4 animate-spin inline mr-2" />
+              Saving order...
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -349,15 +394,6 @@ export default function MemberStatusesTab() {
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 rows={3}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-status-order">{t('settings.order')}</Label>
-              <Input
-                id="edit-status-order"
-                type="number"
-                value={formData.order}
-                onChange={(e) => setFormData({ ...formData, order: parseInt(e.target.value) || 0 })}
               />
             </div>
             <div className="flex items-center space-x-2">

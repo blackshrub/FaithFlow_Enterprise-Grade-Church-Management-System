@@ -41,48 +41,22 @@ export default defineConfig({
     target: 'es2020',
     rollupOptions: {
       output: {
-        // Better chunk splitting for caching
-        manualChunks: (id) => {
-          // React core
-          if (id.includes('node_modules/react/') || id.includes('node_modules/react-dom/')) {
-            return 'react';
-          }
-          // Router
-          if (id.includes('node_modules/react-router')) {
-            return 'router';
-          }
-          // Radix UI components
-          if (id.includes('node_modules/@radix-ui/')) {
-            return 'radix';
-          }
-          // TanStack Query
-          if (id.includes('node_modules/@tanstack/')) {
-            return 'query';
-          }
-          // Date utilities
-          if (id.includes('node_modules/date-fns/')) {
-            return 'date-fns';
-          }
-          // Form libraries
-          if (id.includes('node_modules/react-hook-form/') || id.includes('node_modules/zod/')) {
-            return 'forms';
-          }
-          // Rich text editor
-          if (id.includes('node_modules/@tiptap/')) {
-            return 'editor';
-          }
+        // Chunk splitting - keep vendor libs together to avoid React duplication issues
+        manualChunks: {
+          // Core React - must be in single chunk to avoid hooks errors
+          'vendor-react': ['react', 'react-dom', 'react-router-dom', 'scheduler'],
+          // UI libraries that depend on React
+          'vendor-ui': ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', '@radix-ui/react-select', '@radix-ui/react-tabs', '@radix-ui/react-tooltip', '@radix-ui/react-popover', '@radix-ui/react-switch', '@radix-ui/react-checkbox', '@radix-ui/react-label', '@radix-ui/react-slot'],
+          // Data fetching
+          'vendor-data': ['@tanstack/react-query', 'axios'],
           // i18n
-          if (id.includes('node_modules/i18next') || id.includes('node_modules/react-i18next')) {
-            return 'i18n';
-          }
-          // Framer Motion
-          if (id.includes('node_modules/framer-motion/')) {
-            return 'motion';
-          }
-          // Other large dependencies
-          if (id.includes('node_modules/axios/')) {
-            return 'axios';
-          }
+          'vendor-i18n': ['i18next', 'react-i18next'],
+          // Forms
+          'vendor-forms': ['react-hook-form', 'zod', '@hookform/resolvers'],
+          // Date utilities
+          'vendor-date': ['date-fns'],
+          // Animation
+          'vendor-motion': ['framer-motion'],
         },
       },
     },
