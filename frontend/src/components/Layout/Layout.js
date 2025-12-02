@@ -72,7 +72,7 @@ export default function Layout() {
   // Auto-expand submenu if child route is active
   useEffect(() => {
     const path = location.pathname;
-    if (path.includes('/events') || path.includes('/seat-layouts') || path.includes('/kiosk')) {
+    if (path.includes('/events') || path.includes('/seat-layouts')) {
       setExpandedMenus(prev => ({ ...prev, events: true }));
     }
     if (path.includes('/counseling')) {
@@ -131,9 +131,12 @@ export default function Layout() {
         { label: 'Events List', path: '/events' },
         { label: 'Ratings & Reviews', path: '/events/ratings' },
         { label: 'Seat Layouts', path: '/seat-layouts' },
-        { label: 'Kiosk Mode', path: '/kiosk' },
       ]
     },
+
+    // Kiosk Section
+    { type: 'section', label: 'KIOSK' },
+    { icon: Monitor, label: 'Kiosk Mode', path: '/kiosk' },
     
     // Spiritual Care Section
     { type: 'section', label: 'SPIRITUAL CARE' },
