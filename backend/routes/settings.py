@@ -180,40 +180,40 @@ async def delete_member_status(
     current_user: dict = Depends(require_admin)
 ):
     """Delete member status"""
-    
-    status = await db.member_statuses.find_one({"id": status_id})
-    if not status:
+
+    member_status = await db.member_statuses.find_one({"id": status_id})
+    if not member_status:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Member status not found"
         )
-    
+
     # Check access - super admin can access any church
-    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') != status.get('church_id'):
+    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') != member_status.get('church_id'):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Access denied"
         )
 
     # Check if system status
-    if status.get('is_system'):
+    if member_status.get('is_system'):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Cannot delete system status"
         )
-    
+
     # Check if used in any rules as target
     rules_using_status = await db.member_status_rules.count_documents({
-        "church_id": status.get('church_id'),
+        "church_id": member_status.get('church_id'),
         "action_status_id": status_id
     })
-    
+
     if rules_using_status > 0:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Cannot delete status: {rules_using_status} rule(s) are using this status as target"
         )
-    
+
     await db.member_statuses.delete_one({"id": status_id})
     return None
 

@@ -55,17 +55,35 @@ export const useUpdateMemberStatus = () => {
 export const useDeleteMemberStatus = () => {
   const queryClient = useQueryClient();
   const { church } = useAuth();
-  
+
   return useMutation({
     mutationFn: (statusId) => settingsAPI.deleteMemberStatus(statusId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ 
-        queryKey: queryKeys.settings.memberStatuses(church?.id) 
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.settings.memberStatuses(church?.id)
       });
       toast.success('Member status deleted successfully');
     },
     onError: (error) => {
       toast.error(error.response?.data?.detail || 'Failed to delete member status');
+    },
+  });
+};
+
+export const useReorderMemberStatuses = () => {
+  const queryClient = useQueryClient();
+  const { church } = useAuth();
+
+  return useMutation({
+    mutationFn: (statusIds) => settingsAPI.reorderMemberStatuses(statusIds),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.settings.memberStatuses(church?.id)
+      });
+      toast.success('Status order updated successfully');
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.detail || 'Failed to reorder statuses');
     },
   });
 };

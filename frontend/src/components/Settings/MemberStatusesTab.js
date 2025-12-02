@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import {
@@ -6,16 +6,16 @@ import {
   useCreateMemberStatus,
   useUpdateMemberStatus,
   useDeleteMemberStatus,
+  useReorderMemberStatuses,
 } from '../../hooks/useSettings';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { Badge } from '../ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '../ui/dialog';
-import { Plus, Edit, Trash2, Loader2, Settings } from 'lucide-react';
+import { Plus, Edit, Trash2, Loader2, Settings, GripVertical } from 'lucide-react';
 import { Switch } from '../ui/switch';
 
 const initialFormData = {
@@ -33,11 +33,17 @@ export default function MemberStatusesTab() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState(null);
   const [formData, setFormData] = useState(initialFormData);
+  const [draggedItem, setDraggedItem] = useState(null);
+  const [localStatuses, setLocalStatuses] = useState(null);
 
   const { data: statuses = [], isLoading, error } = useMemberStatuses();
   const createStatus = useCreateMemberStatus();
   const updateStatus = useUpdateMemberStatus();
   const deleteStatus = useDeleteMemberStatus();
+  const reorderStatuses = useReorderMemberStatuses();
+
+  // Use local statuses for drag preview, fall back to server data
+  const displayStatuses = localStatuses || statuses;
 
   const handleCreateStatus = async (e) => {
     e.preventDefault();
@@ -89,11 +95,56 @@ export default function MemberStatusesTab() {
     setSelectedStatus(null);
   };
 
+  // Drag and drop handlers
+  const handleDragStart = useCallback((e, status, index) => {
+    setDraggedItem({ status, index });
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', index.toString());
+    // Add drag styling
+    e.currentTarget.style.opacity = '0.5';
+  }, []);
+
+  const handleDragEnd = useCallback((e) => {
+    e.currentTarget.style.opacity = '1';
+    setDraggedItem(null);
+  }, []);
+
+  const handleDragOver = useCallback((e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  }, []);
+
+  const handleDrop = useCallback((e, targetIndex) => {
+    e.preventDefault();
+    if (!draggedItem || draggedItem.index === targetIndex) return;
+
+    const newStatuses = [...(localStatuses || statuses)];
+    const [removed] = newStatuses.splice(draggedItem.index, 1);
+    newStatuses.splice(targetIndex, 0, removed);
+
+    // Update local state for immediate feedback
+    setLocalStatuses(newStatuses);
+
+    // Send reorder request to backend
+    const statusIds = newStatuses.map(s => s.id);
+    reorderStatuses.mutate(statusIds, {
+      onSuccess: () => {
+        setLocalStatuses(null); // Clear local state, use server data
+      },
+      onError: () => {
+        setLocalStatuses(null); // Revert to server data on error
+      }
+    });
+
+    setDraggedItem(null);
+  }, [draggedItem, statuses, localStatuses, reorderStatuses]);
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-xl font-semibold">{t('settings.memberStatuses')}</h2>
+          <p className="text-sm text-gray-500 mt-1">{t('settings.dragToReorder', 'Drag rows to reorder')}</p>
         </div>
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogTrigger asChild>
@@ -158,9 +209,9 @@ export default function MemberStatusesTab() {
                 </div>
               </div>
               <DialogFooter>
-                <Button 
-                  type="button" 
-                  variant="outline" 
+                <Button
+                  type="button"
+                  variant="outline"
                   onClick={() => setIsCreateDialogOpen(false)}
                   disabled={createStatus.isPending}
                 >
@@ -199,68 +250,75 @@ export default function MemberStatusesTab() {
             <div className="text-center py-8 text-red-500">
               <p>{t('settings.loadError')}</p>
             </div>
-          ) : statuses.length === 0 ? (
+          ) : displayStatuses.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               <Settings className="h-12 w-12 mx-auto mb-4 text-gray-400" />
               <p>{t('settings.noStatuses')}</p>
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{t('settings.statusName')}</TableHead>
-                  <TableHead>{t('settings.statusDescription')}</TableHead>
-                  <TableHead>{t('settings.order')}</TableHead>
-                  <TableHead>{t('settings.isActive')}</TableHead>
-                  <TableHead>{t('settings.default')}</TableHead>
-                  <TableHead className="text-right">{t('members.actions')}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {statuses.map((status) => (
-                  <TableRow key={status.id}>
-                    <TableCell className="font-medium">{status.name}</TableCell>
-                    <TableCell className="text-sm text-gray-600">
-                      {status.description || t('common.na')}
-                    </TableCell>
-                    <TableCell>{status.order}</TableCell>
-                    <TableCell>
-                      {status.is_active ? (
-                        <Badge variant="default">Active</Badge>
-                      ) : (
-                        <Badge variant="secondary">Inactive</Badge>
+            <div className="space-y-2">
+              {displayStatuses.map((status, index) => (
+                <div
+                  key={status.id}
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, status, index)}
+                  onDragEnd={handleDragEnd}
+                  onDragOver={handleDragOver}
+                  onDrop={(e) => handleDrop(e, index)}
+                  className={`flex items-center gap-4 p-3 border rounded-lg bg-white hover:bg-gray-50 transition-colors cursor-move ${
+                    draggedItem?.index === index ? 'opacity-50' : ''
+                  }`}
+                >
+                  <GripVertical className="h-5 w-5 text-gray-400 flex-shrink-0" />
+
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">{status.name}</span>
+                      {status.is_default_for_new && (
+                        <Badge variant="default" className="bg-blue-600 text-xs">Default</Badge>
                       )}
-                    </TableCell>
-                    <TableCell>
-                      {status.is_default_for_new ? (
-                        <Badge variant="default" className="bg-blue-600">Default</Badge>
-                      ) : (
-                        <span className="text-gray-400">-</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => openEditDialog(status)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => handleDeleteStatus(status.id)}
-                          disabled={deleteStatus.isPending}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                    </div>
+                    {status.description && (
+                      <p className="text-sm text-gray-500 truncate">{status.description}</p>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-400">#{status.order}</span>
+                    {status.is_active ? (
+                      <Badge variant="default" className="bg-green-600">Active</Badge>
+                    ) : (
+                      <Badge variant="secondary">Inactive</Badge>
+                    )}
+                  </div>
+
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openEditDialog(status);
+                      }}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteStatus(status.id);
+                      }}
+                      disabled={deleteStatus.isPending || status.is_system}
+                      title={status.is_system ? t('settings.cannotDeleteSystemStatus') : ''}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
           )}
         </CardContent>
       </Card>
@@ -324,9 +382,9 @@ export default function MemberStatusesTab() {
               </div>
             </div>
             <DialogFooter>
-              <Button 
-                type="button" 
-                variant="outline" 
+              <Button
+                type="button"
+                variant="outline"
                 onClick={() => setIsEditDialogOpen(false)}
                 disabled={updateStatus.isPending}
               >
