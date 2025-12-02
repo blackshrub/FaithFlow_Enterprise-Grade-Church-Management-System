@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import { useWebhooks, useCreateWebhook, useUpdateWebhook, useDeleteWebhook, useTestWebhook } from '../../hooks/useWebhooks';
 import { useAPIKeys, useCreateAPIKey, useDeleteAPIKey, useRegenerateAPIKey } from '../../hooks/useAPIKeys';
+import api from '../../services/api';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
@@ -201,9 +202,10 @@ export default function WebhooksTab() {
     setFormData({ ...formData, secret_key: key });
   };
 
-  // Get API base URL for external apps
+  // Get API base URL for external apps (uses the same logic as api.js)
   const getAPIBaseURL = () => {
-    return import.meta.env?.VITE_BACKEND_URL || window.location.origin;
+    // Use the baseURL from the axios instance (already handles subdomain detection)
+    return api.defaults.baseURL || window.location.origin;
   };
 
   const copyToClipboard = (text) => {
@@ -224,13 +226,13 @@ export default function WebhooksTab() {
             <Label className="text-xs text-gray-600">{t('settings.webhooks.apiBaseUrl')}</Label>
             <div className="flex items-center gap-2 mt-1">
               <code className="flex-1 px-3 py-2 bg-white border rounded font-mono text-sm">
-                {getAPIBaseURL()}/api
+                {getAPIBaseURL()}
               </code>
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => copyToClipboard(`${getAPIBaseURL()}/api`)}
+                onClick={() => copyToClipboard(getAPIBaseURL())}
               >
                 {t('common.copy')}
               </Button>
@@ -358,13 +360,13 @@ export default function WebhooksTab() {
             <Label className="text-xs text-gray-600">{t('settings.webhooks.authEndpoint')}</Label>
             <div className="flex items-center gap-2 mt-1">
               <code className="flex-1 px-3 py-2 bg-white border rounded font-mono text-sm">
-                POST {getAPIBaseURL()}/api/auth/login
+                POST {getAPIBaseURL()}/auth/login
               </code>
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => copyToClipboard(`${getAPIBaseURL()}/api/auth/login`)}
+                onClick={() => copyToClipboard(`${getAPIBaseURL()}/auth/login`)}
               >
                 {t('common.copy')}
               </Button>
@@ -374,13 +376,13 @@ export default function WebhooksTab() {
             <Label className="text-xs text-gray-600">{t('settings.webhooks.membersEndpoint')}</Label>
             <div className="flex items-center gap-2 mt-1">
               <code className="flex-1 px-3 py-2 bg-white border rounded font-mono text-sm">
-                GET {getAPIBaseURL()}/api/members/
+                GET {getAPIBaseURL()}/members/
               </code>
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => copyToClipboard(`${getAPIBaseURL()}/api/members/`)}
+                onClick={() => copyToClipboard(`${getAPIBaseURL()}/members/`)}
               >
                 {t('common.copy')}
               </Button>
@@ -393,7 +395,7 @@ export default function WebhooksTab() {
               <strong>{t('settings.webhooks.exampleUsage')}</strong>
               <pre className="mt-2 p-2 bg-gray-800 text-gray-100 rounded overflow-x-auto text-xs">
 {`// Step 1: Generate API Key above, then authenticate
-POST ${getAPIBaseURL()}/api/auth/login
+POST ${getAPIBaseURL()}/auth/login
 Body: {
   "email": "api_abc123_church",  // Use generated username
   "password": "ffa_xyz789..."     // Use generated API key
@@ -401,7 +403,7 @@ Body: {
 Response: { "access_token": "eyJ..." }
 
 // Step 2: Fetch Members
-GET ${getAPIBaseURL()}/api/members/?limit=100
+GET ${getAPIBaseURL()}/members/?limit=100
 Header: Authorization: Bearer YOUR_TOKEN`}
               </pre>
               <p className="mt-2">
