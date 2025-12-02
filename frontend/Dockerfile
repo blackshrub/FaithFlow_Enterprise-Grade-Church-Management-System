@@ -48,8 +48,9 @@ ENV VITE_API_URL=${VITE_API_URL} \
 # Build production bundle with Vite (cached deps make this fast)
 RUN yarn build
 
-# Stage 2: Production with Nginx
-FROM nginx:alpine AS production
+# Stage 2: Production with Nginx + Brotli
+# Using fholzer/nginx-brotli for pre-built brotli module support
+FROM fholzer/nginx-brotli:latest AS production
 
 LABEL maintainer="FaithFlow Team"
 LABEL description="FaithFlow Frontend - React SPA"

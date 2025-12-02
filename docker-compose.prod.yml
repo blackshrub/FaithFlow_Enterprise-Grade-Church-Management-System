@@ -59,7 +59,7 @@ services:
   # - Security headers
   # ===========================================================================
   traefik:
-    image: traefik:latest
+    image: traefik:v3.2
     container_name: faithflow-traefik
     restart: unless-stopped
     environment:
@@ -79,6 +79,9 @@ services:
       # Entry points (where traffic comes in)
       - "--entrypoints.web.address=:80"
       - "--entrypoints.websecure.address=:443"
+      # HTTP/3 (QUIC) - Enable on websecure entrypoint
+      - "--entrypoints.websecure.http3"
+      - "--entrypoints.websecure.http3.advertisedPort=443"
       # Automatic HTTPS redirect
       - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
       - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
@@ -90,8 +93,9 @@ services:
       - "--log.level=INFO"
       - "--accesslog=true"
     ports:
-      - "80:80"      # HTTP (redirects to HTTPS)
-      - "443:443"    # HTTPS
+      - "80:80"        # HTTP (redirects to HTTPS)
+      - "443:443/tcp"  # HTTPS (HTTP/1.1, HTTP/2)
+      - "443:443/udp"  # HTTP/3 (QUIC)
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - traefik_letsencrypt:/letsencrypt
