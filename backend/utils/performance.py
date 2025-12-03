@@ -595,6 +595,106 @@ class QueryOptimizer:
 # RESPONSE OPTIMIZATION
 # ============================================================================
 
+# MongoDB projection dictionaries for list queries
+# Use these to reduce data transfer when full documents aren't needed
+
+class Projections:
+    """
+    MongoDB projection dictionaries for optimized list queries.
+
+    Usage:
+        from utils.performance import Projections
+
+        # For member lists (excludes large fields like photo_base64, documents)
+        members = await db.members.find(query, Projections.MEMBER_LIST).to_list(100)
+
+        # For event lists (excludes description, seat_layout)
+        events = await db.events.find(query, Projections.EVENT_LIST).to_list(100)
+    """
+
+    # Member list - excludes large fields (photo_base64, documents, custom_fields)
+    MEMBER_LIST = {
+        "_id": 0,
+        "id": 1,
+        "church_id": 1,
+        "full_name": 1,
+        "first_name": 1,
+        "last_name": 1,
+        "email": 1,
+        "phone_whatsapp": 1,
+        "gender": 1,
+        "date_of_birth": 1,
+        "member_status": 1,
+        "membership_status": 1,
+        "demographic_category": 1,
+        "is_active": 1,
+        "created_at": 1,
+        "updated_at": 1,
+        "photo_url": 1,           # Use URL instead of base64
+        "photo_thumbnail_url": 1,
+        "personal_id_code": 1,
+    }
+
+    # Member card - minimal fields for cards/avatars
+    MEMBER_CARD = {
+        "_id": 0,
+        "id": 1,
+        "full_name": 1,
+        "photo_url": 1,
+        "photo_thumbnail_url": 1,
+        "member_status": 1,
+    }
+
+    # Event list - excludes description, seat_layout, full RSVP list
+    EVENT_LIST = {
+        "_id": 0,
+        "id": 1,
+        "church_id": 1,
+        "title": 1,
+        "start_date": 1,
+        "end_date": 1,
+        "location": 1,
+        "cover_image": 1,
+        "event_category_id": 1,
+        "is_active": 1,
+        "created_at": 1,
+        "rsvp_count": 1,
+        "capacity": 1,
+    }
+
+    # Article list - excludes full content
+    ARTICLE_LIST = {
+        "_id": 0,
+        "id": 1,
+        "church_id": 1,
+        "title": 1,
+        "slug": 1,
+        "excerpt": 1,
+        "cover_image": 1,
+        "category": 1,
+        "status": 1,
+        "published_at": 1,
+        "created_at": 1,
+        "author_id": 1,
+        "view_count": 1,
+    }
+
+    # Community/Group list - excludes member list
+    COMMUNITY_LIST = {
+        "_id": 0,
+        "id": 1,
+        "church_id": 1,
+        "name": 1,
+        "description": 1,
+        "cover_image": 1,
+        "category_id": 1,
+        "leader_id": 1,
+        "member_count": 1,
+        "is_active": 1,
+        "created_at": 1,
+    }
+
+
 class ResponseOptimizer:
     """Helpers for optimizing API responses."""
 

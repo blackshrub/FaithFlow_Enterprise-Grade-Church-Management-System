@@ -1,0 +1,73 @@
+# =============================================================================
+# Backend Docker Ignore - Exclude dev/test files from production image
+# =============================================================================
+
+# Test files
+*_test.py
+tests/
+__tests__/
+*.test.py
+*.spec.py
+pytest.ini
+.coveragerc
+.coverage
+htmlcov/
+
+# Development dependencies file (not needed in production)
+requirements-dev.txt
+
+# Documentation
+*.md
+docs/
+DOCS/
+
+# IDE and Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Python cache (will be regenerated)
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.mypy_cache/
+.pytest_cache/
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Logs and temp files
+*.log
+logs/
+*.tmp
+*.temp
+*.backup
+
+# Environment files (provided by platform)
+.env
+.env.local
+.env.*.local
+
+# Scripts not needed at runtime
+create_dummy_data.py
+create_default_super_admin.py
+add_default_pins.py
+
+# Old TTS artifacts (TTS removed)
+speakers.pth
+models/tts_indonesian/
+
+# Docker files (not needed inside container)
+Dockerfile
+docker/
+docker-compose*.yml
+
+# Misc
+.DS_Store
+Thumbs.db

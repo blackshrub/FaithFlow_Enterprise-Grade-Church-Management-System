@@ -348,3 +348,341 @@ async def set_cached_demographics(church_id: str, demographics: list) -> bool:
 async def invalidate_demographics(church_id: str) -> bool:
     """Invalidate demographics cache."""
     return await redis_cache.delete("demographics", church_id)
+
+
+# =============================================================================
+# Redis Pipeline Operations - Batch multiple operations for performance
+# =============================================================================
+
+class RedisPipeline:
+    """
+    Redis pipeline helper for batching multiple operations.
+
+    Pipelines reduce network round-trips by sending multiple commands
+    at once, significantly improving performance for bulk operations.
+
+    Example:
+        async with RedisPipeline() as pipe:
+            await pipe.cache_set("ns", "key1", value1, ttl=300)
+            await pipe.cache_set("ns", "key2", value2, ttl=300)
+            await pipe.cache_delete("ns", "old_key")
+            results = await pipe.execute()
+    """
+
+    def __init__(self):
+        self._pipeline = None
+        self._operations = []
+
+    async def __aenter__(self):
+        redis = await get_redis()
+        self._pipeline = redis.pipeline()
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        self._pipeline = None
+        self._operations = []
+        return False
+
+    def _make_key(self, namespace: str, key: str) -> str:
+        """Create cache key."""
+        return redis_key("cache", namespace, key)
+
+    async def cache_get(self, namespace: str, key: str) -> 'RedisPipeline':
+        """Queue a GET operation."""
+        full_key = self._make_key(namespace, key)
+        self._pipeline.get(full_key)
+        self._operations.append(("get", namespace, key))
+        return self
+
+    async def cache_set(
+        self,
+        namespace: str,
+        key: str,
+        value: Any,
+        ttl: int = TTL.HOUR_1,
+    ) -> 'RedisPipeline':
+        """Queue a SET operation."""
+        full_key = self._make_key(namespace, key)
+        data = redis_encode(value)
+        self._pipeline.set(full_key, data, ex=ttl)
+        self._operations.append(("set", namespace, key))
+        return self
+
+    async def cache_delete(self, namespace: str, key: str) -> 'RedisPipeline':
+        """Queue a DELETE operation."""
+        full_key = self._make_key(namespace, key)
+        self._pipeline.delete(full_key)
+        self._operations.append(("delete", namespace, key))
+        return self
+
+    async def execute(self) -> list:
+        """
+        Execute all queued operations and return results.
+
+        Returns:
+            list: Results in order of operations queued.
+                  GET operations return deserialized values or None.
+                  SET operations return True/False.
+                  DELETE operations return count of deleted keys.
+        """
+        if not self._pipeline:
+            return []
+
+        try:
+            raw_results = await self._pipeline.execute()
+
+            # Process results based on operation type
+            results = []
+            for i, (op_type, _, _) in enumerate(self._operations):
+                if i >= len(raw_results):
+                    results.append(None)
+                    continue
+
+                raw = raw_results[i]
+
+                if op_type == "get":
+                    # Deserialize GET results
+                    if raw is not None:
+                        try:
+                            results.append(redis_decode(raw))
+                        except Exception:
+                            results.append(None)
+                    else:
+                        results.append(None)
+                elif op_type == "set":
+                    results.append(raw is not None)
+                else:
+                    results.append(raw)
+
+            return results
+
+        except Exception as e:
+            logger.error(f"Pipeline execute failed: {e}")
+            return [None] * len(self._operations)
+
+
+async def mget(
+    namespace: str,
+    keys: list[str],
+) -> dict[str, Any]:
+    """
+    Get multiple cached values in a single round-trip.
+
+    Uses Redis MGET for efficient bulk retrieval.
+
+    Args:
+        namespace: Cache namespace
+        keys: List of cache keys
+
+    Returns:
+        dict: Mapping of key -> value (None for missing keys)
+
+    Example:
+        values = await mget("church_settings", ["church1", "church2", "church3"])
+        # Returns: {"church1": {...}, "church2": {...}, "church3": None}
+    """
+    if not keys:
+        return {}
+
+    try:
+        redis = await get_redis()
+
+        # Build full keys
+        full_keys = [redis_key("cache", namespace, k) for k in keys]
+
+        # MGET all at once
+        raw_values = await redis.mget(full_keys)
+
+        # Map back to original keys and deserialize
+        result = {}
+        for i, key in enumerate(keys):
+            raw = raw_values[i] if i < len(raw_values) else None
+            if raw is not None:
+                try:
+                    result[key] = redis_decode(raw)
+                except Exception:
+                    result[key] = None
+            else:
+                result[key] = None
+
+        return result
+
+    except Exception as e:
+        logger.error(f"mget failed: {e}")
+        return {k: None for k in keys}
+
+
+async def mset(
+    namespace: str,
+    items: dict[str, Any],
+    ttl: int = TTL.HOUR_1,
+) -> bool:
+    """
+    Set multiple cached values in a single round-trip.
+
+    Uses Redis pipeline for efficient bulk setting with TTL.
+
+    Args:
+        namespace: Cache namespace
+        items: Dict of key -> value pairs to cache
+        ttl: Time-to-live in seconds (applies to all)
+
+    Returns:
+        bool: True if all set successfully
+
+    Example:
+        success = await mset("church_settings", {
+            "church1": settings1,
+            "church2": settings2,
+        }, ttl=600)
+    """
+    if not items:
+        return True
+
+    try:
+        redis = await get_redis()
+        pipe = redis.pipeline()
+
+        # Queue all SET operations with TTL
+        for key, value in items.items():
+            full_key = redis_key("cache", namespace, key)
+            data = redis_encode(value)
+            pipe.set(full_key, data, ex=ttl)
+
+        # Execute all at once
+        results = await pipe.execute()
+
+        return all(r is not None for r in results)
+
+    except Exception as e:
+        logger.error(f"mset failed: {e}")
+        return False
+
+
+async def mdelete(
+    namespace: str,
+    keys: list[str],
+) -> int:
+    """
+    Delete multiple cached values in a single round-trip.
+
+    Args:
+        namespace: Cache namespace
+        keys: List of cache keys to delete
+
+    Returns:
+        int: Number of keys actually deleted
+
+    Example:
+        deleted = await mdelete("church_settings", ["church1", "church2"])
+    """
+    if not keys:
+        return 0
+
+    try:
+        redis = await get_redis()
+
+        # Build full keys
+        full_keys = [redis_key("cache", namespace, k) for k in keys]
+
+        # Delete all at once
+        return await redis.delete(*full_keys)
+
+    except Exception as e:
+        logger.error(f"mdelete failed: {e}")
+        return 0
+
+
+async def pipeline_get_many(
+    requests: list[tuple[str, str]],
+) -> list[Any]:
+    """
+    Get multiple values across different namespaces in one round-trip.
+
+    Args:
+        requests: List of (namespace, key) tuples
+
+    Returns:
+        list: Values in same order as requests (None for missing)
+
+    Example:
+        results = await pipeline_get_many([
+            ("church_settings", "church1"),
+            ("member_statuses", "church1"),
+            ("demographics", "church1"),
+        ])
+        settings, statuses, demographics = results
+    """
+    if not requests:
+        return []
+
+    try:
+        redis = await get_redis()
+        pipe = redis.pipeline()
+
+        # Queue all GETs
+        for namespace, key in requests:
+            full_key = redis_key("cache", namespace, key)
+            pipe.get(full_key)
+
+        # Execute
+        raw_results = await pipe.execute()
+
+        # Deserialize
+        results = []
+        for raw in raw_results:
+            if raw is not None:
+                try:
+                    results.append(redis_decode(raw))
+                except Exception:
+                    results.append(None)
+            else:
+                results.append(None)
+
+        return results
+
+    except Exception as e:
+        logger.error(f"pipeline_get_many failed: {e}")
+        return [None] * len(requests)
+
+
+async def pipeline_set_many(
+    items: list[tuple[str, str, Any, int]],
+) -> bool:
+    """
+    Set multiple values across different namespaces in one round-trip.
+
+    Args:
+        items: List of (namespace, key, value, ttl) tuples
+
+    Returns:
+        bool: True if all set successfully
+
+    Example:
+        success = await pipeline_set_many([
+            ("church_settings", "church1", settings, 600),
+            ("member_statuses", "church1", statuses, 1800),
+            ("demographics", "church1", demographics, 1800),
+        ])
+    """
+    if not items:
+        return True
+
+    try:
+        redis = await get_redis()
+        pipe = redis.pipeline()
+
+        # Queue all SETs
+        for namespace, key, value, ttl in items:
+            full_key = redis_key("cache", namespace, key)
+            data = redis_encode(value)
+            pipe.set(full_key, data, ex=ttl)
+
+        # Execute
+        results = await pipe.execute()
+
+        return all(r is not None for r in results)
+
+    except Exception as e:
+        logger.error(f"pipeline_set_many failed: {e}")
+        return False

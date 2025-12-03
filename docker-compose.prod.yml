@@ -92,6 +92,9 @@ services:
       # Logging
       - "--log.level=INFO"
       - "--accesslog=true"
+      # Enable file provider for dynamic config
+      - "--providers.file.directory=/etc/traefik/dynamic"
+      - "--providers.file.watch=true"
     ports:
       - "80:80"        # HTTP (redirects to HTTPS)
       - "443:443/tcp"  # HTTPS (HTTP/1.1, HTTP/2)
@@ -100,6 +103,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - traefik_letsencrypt:/letsencrypt
       - traefik_logs:/var/log/traefik
+      - ./docker/traefik:/etc/traefik/dynamic:ro
     labels:
       # Enable Traefik dashboard at traefik.yourdomain.com
       - "traefik.enable=true"
@@ -261,10 +265,14 @@ services:
       - "traefik.http.middlewares.backend-headers.headers.accesscontrolallowheaders=Content-Type,Authorization"
       - "traefik.http.middlewares.backend-headers.headers.accesscontrolalloworiginlist=https://${DOMAIN},https://app.${DOMAIN}"
       - "traefik.http.middlewares.backend-headers.headers.accesscontrolmaxage=86400"
-      - "traefik.http.routers.backend.middlewares=backend-headers"
       # Rate limiting (100 requests/second average, 50 burst)
       - "traefik.http.middlewares.backend-ratelimit.ratelimit.average=100"
       - "traefik.http.middlewares.backend-ratelimit.ratelimit.burst=50"
+      # Compression (Brotli + Gzip - Traefik v3 auto-selects best algorithm)
+      - "traefik.http.middlewares.backend-compress.compress=true"
+      - "traefik.http.middlewares.backend-compress.compress.minresponsebodybytes=1024"
+      # Apply all middlewares
+      - "traefik.http.routers.backend.middlewares=backend-headers,backend-compress,backend-ratelimit"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://127.0.0.1:8000/health"]
       interval: 30s
@@ -309,13 +317,17 @@ services:
       - "traefik.http.middlewares.www-redirect.redirectregex.regex=^https://www\\.(.*)"
       - "traefik.http.middlewares.www-redirect.redirectregex.replacement=https://$${1}"
       - "traefik.http.middlewares.www-redirect.redirectregex.permanent=true"
-      - "traefik.http.routers.frontend.middlewares=www-redirect"
       # Security headers
       - "traefik.http.middlewares.frontend-headers.headers.framedeny=true"
       - "traefik.http.middlewares.frontend-headers.headers.contenttypenosniff=true"
       - "traefik.http.middlewares.frontend-headers.headers.browserxssfilter=true"
-      # Compression
+      - "traefik.http.middlewares.frontend-headers.headers.stsSeconds=31536000"
+      - "traefik.http.middlewares.frontend-headers.headers.stsIncludeSubdomains=true"
+      # Compression (Brotli + Gzip - Traefik v3 auto-selects best algorithm)
       - "traefik.http.middlewares.frontend-compress.compress=true"
+      - "traefik.http.middlewares.frontend-compress.compress.minresponsebodybytes=1024"
+      # Apply all middlewares
+      - "traefik.http.routers.frontend.middlewares=www-redirect,frontend-headers,frontend-compress"
     healthcheck:
       test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://127.0.0.1:80/health || exit 1"]
       interval: 30s

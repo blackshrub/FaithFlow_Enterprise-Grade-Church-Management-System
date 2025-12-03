@@ -16,7 +16,16 @@ from .summary_store import SummaryStore, summary_store
 from .intent_cache import IntentCache, intent_cache
 from .settings_store import SettingsStore, settings_store
 from .rate_limit import RateLimiter, rate_limiter
-from .cache import RedisCache, redis_cache
+from .cache import (
+    RedisCache,
+    redis_cache,
+    RedisPipeline,
+    mget,
+    mset,
+    mdelete,
+    pipeline_get_many,
+    pipeline_set_many,
+)
 from .locks import DistributedLock, distributed_lock
 from .auth import AuthRedis, auth_redis
 from .presence import PresenceService, presence_service
@@ -64,6 +73,12 @@ __all__ = [
     # Caching
     "RedisCache",
     "redis_cache",
+    "RedisPipeline",
+    "mget",
+    "mset",
+    "mdelete",
+    "pipeline_get_many",
+    "pipeline_set_many",
     # Locks
     "DistributedLock",
     "distributed_lock",

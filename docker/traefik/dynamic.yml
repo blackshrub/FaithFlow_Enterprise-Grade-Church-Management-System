@@ -1,0 +1,60 @@
+# =============================================================================
+# Traefik Dynamic Configuration
+# =============================================================================
+# This file contains dynamic middleware and router configurations
+# that complement the Docker labels in docker-compose.prod.yml
+#
+# HTTP/3 (QUIC) + Brotli Compression are enabled for optimal performance:
+# - HTTP/3: Enabled via static config (--entrypoints.websecure.http3)
+# - Brotli: Auto-selected by compress middleware when client supports it
+#
+# Compression priority: br (Brotli) > gzip > deflate > identity
+# =============================================================================
+
+http:
+  middlewares:
+    # Global security headers (can be referenced by any service)
+    global-security-headers:
+      headers:
+        # HSTS - Force HTTPS for 1 year
+        stsSeconds: 31536000
+        stsIncludeSubdomains: true
+        stsPreload: true
+        # Content Security
+        contentTypeNosniff: true
+        browserXssFilter: true
+        frameDeny: true
+        # Referrer Policy
+        referrerPolicy: "strict-origin-when-cross-origin"
+        # Permissions Policy
+        permissionsPolicy: "camera=(), microphone=(), geolocation=()"
+
+    # Optimized compression middleware
+    # Traefik v3 automatically selects Brotli when client supports it
+    global-compress:
+      compress:
+        # Only compress responses larger than 1KB
+        minResponseBodyBytes: 1024
+        # Exclude already compressed content
+        excludedContentTypes:
+          - "text/event-stream"
+          - "image/jpeg"
+          - "image/png"
+          - "image/gif"
+          - "image/webp"
+          - "video/*"
+          - "audio/*"
+
+    # API-specific rate limiting (stricter than default)
+    api-rate-limit:
+      rateLimit:
+        average: 100
+        burst: 50
+        period: 1s
+
+    # Public endpoint rate limiting (more permissive)
+    public-rate-limit:
+      rateLimit:
+        average: 200
+        burst: 100
+        period: 1s
