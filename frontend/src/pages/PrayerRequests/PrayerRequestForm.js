@@ -169,8 +169,10 @@ export default function PrayerRequestForm() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <Label>{t('prayerRequests.requestTitle')} *</Label>
+                  <Label htmlFor="prayer-title">{t('prayerRequests.requestTitle')} *</Label>
                   <Input
+                    id="prayer-title"
+                    name="prayer-title"
                     value={formData.title}
                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                     placeholder={t('prayerRequests.requestTitle')}
@@ -179,8 +181,10 @@ export default function PrayerRequestForm() {
                 </div>
 
                 <div>
-                  <Label>{t('prayerRequests.description')} *</Label>
+                  <Label htmlFor="prayer-description">{t('prayerRequests.description')} *</Label>
                   <Textarea
+                    id="prayer-description"
+                    name="prayer-description"
                     value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                     placeholder={t('prayerRequests.description')}
@@ -191,8 +195,10 @@ export default function PrayerRequestForm() {
 
                 {isEdit && (
                   <div>
-                    <Label>{t('prayerRequests.internalNotes')}</Label>
+                    <Label htmlFor="prayer-internal-notes">{t('prayerRequests.internalNotes')}</Label>
                     <Textarea
+                      id="prayer-internal-notes"
+                      name="prayer-internal-notes"
                       value={formData.internal_notes}
                       onChange={(e) => setFormData({ ...formData, internal_notes: e.target.value })}
                       placeholder={t('prayerRequests.internalNotes')}
@@ -217,8 +223,10 @@ export default function PrayerRequestForm() {
 
                   {formData.needs_follow_up && (
                     <div>
-                      <Label>{t('prayerRequests.followUpNotes')}</Label>
+                      <Label htmlFor="prayer-followup-notes">{t('prayerRequests.followUpNotes')}</Label>
                       <Textarea
+                        id="prayer-followup-notes"
+                        name="prayer-followup-notes"
                         value={formData.follow_up_notes}
                         onChange={(e) => setFormData({ ...formData, follow_up_notes: e.target.value })}
                         placeholder={t('prayerRequests.followUpNotesPlaceholder')}
@@ -252,9 +260,9 @@ export default function PrayerRequestForm() {
                 </div>
 
                 <div>
-                  <Label>{t('prayerRequests.category')} *</Label>
-                  <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
-                    <SelectTrigger>
+                  <Label htmlFor="prayer-category">{t('prayerRequests.category')} *</Label>
+                  <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })} name="prayer-category">
+                    <SelectTrigger id="prayer-category">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -272,9 +280,9 @@ export default function PrayerRequestForm() {
 
                 {isEdit && (
                   <div>
-                    <Label>{t('prayerRequests.status')}</Label>
-                    <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value })}>
-                      <SelectTrigger>
+                    <Label htmlFor="prayer-status">{t('prayerRequests.status')}</Label>
+                    <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value })} name="prayer-status">
+                      <SelectTrigger id="prayer-status">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>

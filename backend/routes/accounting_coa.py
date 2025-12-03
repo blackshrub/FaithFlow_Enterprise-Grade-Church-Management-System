@@ -102,7 +102,7 @@ async def create_coa(
     user_id = current_user.get("id")
     
     # Override church_id from token
-    coa_dict = coa_data.model_dump()
+    coa_dict = coa_data.model_dump(mode='json')
     coa_dict["church_id"] = church_id
     
     # Check code uniqueness per church
@@ -174,7 +174,7 @@ async def update_coa(
     # Check if account is used in journals
     is_used = await accounting_service.check_coa_usage(db, account_id, church_id)
     
-    update_dict = coa_data.model_dump(exclude_unset=True)
+    update_dict = coa_data.model_dump(mode='json', exclude_unset=True)
     
     if is_used:
         # Check if trying to update protected fields

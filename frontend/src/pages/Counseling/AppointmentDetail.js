@@ -376,8 +376,10 @@ const AppointmentDetailPage = () => {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-2">
-            <Label>{t('counseling.admin_notes')} (Optional)</Label>
+            <Label htmlFor="approve-admin-notes">{t('counseling.admin_notes')} (Optional)</Label>
             <Textarea
+              id="approve-admin-notes"
+              name="approve-admin-notes"
               value={adminNotes}
               onChange={(e) => setAdminNotes(e.target.value)}
               placeholder="Add any notes or instructions..."
@@ -403,8 +405,10 @@ const AppointmentDetailPage = () => {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-2">
-            <Label>{t('counseling.reason')} *</Label>
+            <Label htmlFor="reject-reason">{t('counseling.reason')} *</Label>
             <Textarea
+              id="reject-reason"
+              name="reject-reason"
               value={rejectReason}
               onChange={(e) => setRejectReason(e.target.value)}
               placeholder="Please provide a reason for rejection..."
@@ -431,8 +435,10 @@ const AppointmentDetailPage = () => {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-2">
-            <Label>{t('counseling.reason')} (Optional)</Label>
+            <Label htmlFor="cancel-reason">{t('counseling.reason')} (Optional)</Label>
             <Textarea
+              id="cancel-reason"
+              name="cancel-reason"
               value={cancelReason}
               onChange={(e) => setCancelReason(e.target.value)}
               placeholder="Reason for cancellation..."
@@ -458,8 +464,10 @@ const AppointmentDetailPage = () => {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-2">
-            <Label>{t('counseling.outcome_notes')} *</Label>
+            <Label htmlFor="complete-outcome-notes">{t('counseling.outcome_notes')} *</Label>
             <Textarea
+              id="complete-outcome-notes"
+              name="complete-outcome-notes"
               value={outcomeNotes}
               onChange={(e) => setOutcomeNotes(e.target.value)}
               placeholder="Summary of the session and outcomes..."

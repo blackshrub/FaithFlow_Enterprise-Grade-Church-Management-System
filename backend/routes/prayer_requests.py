@@ -112,7 +112,7 @@ async def create_prayer_request(
     church_id = get_session_church_id(current_user)
     user_id = current_user.get("id")
     
-    prayer_dict = prayer_data.model_dump()
+    prayer_dict = prayer_data.model_dump(mode='json')
     prayer_dict["church_id"] = church_id
     prayer_dict["created_by"] = user_id
     prayer_dict["id"] = str(uuid.uuid4())
@@ -148,7 +148,7 @@ async def update_prayer_request(
     # Debug logging
     import logging
     logger = logging.getLogger(__name__)
-    logger.info(f"Prayer request update payload: {prayer_data.model_dump(exclude_unset=True)}")
+    logger.info(f"Prayer request update payload: {prayer_data.model_dump(mode='json', exclude_unset=True)}")
     
     existing = await db.prayer_requests.find_one(
         {"id": request_id, "church_id": church_id}
@@ -160,7 +160,7 @@ async def update_prayer_request(
             detail={"error_code": "NOT_FOUND", "message": "Prayer request not found"}
         )
     
-    update_dict = prayer_data.model_dump(exclude_unset=True)
+    update_dict = prayer_data.model_dump(mode='json', exclude_unset=True)
     if not update_dict:
         return existing
     

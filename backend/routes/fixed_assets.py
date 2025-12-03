@@ -65,7 +65,7 @@ async def create_asset(
     church_id = get_session_church_id(current_user)
     user_id = current_user.get("id")
     
-    asset_dict = asset_data.model_dump()
+    asset_dict = asset_data.model_dump(mode='json')
     asset_dict["church_id"] = church_id
     
     # Check code uniqueness
@@ -122,7 +122,7 @@ async def update_asset(
             detail={"error_code": "NOT_FOUND", "message": "Asset not found"}
         )
     
-    update_dict = asset_data.model_dump(exclude_unset=True)
+    update_dict = asset_data.model_dump(mode='json', exclude_unset=True)
     if not update_dict:
         return existing
     

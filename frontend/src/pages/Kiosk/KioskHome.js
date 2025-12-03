@@ -1,95 +1,75 @@
 /**
  * Kiosk Home Page
- * 
+ *
  * Main entry point with 6 service tiles
+ * Uses TanStack Query for data fetching
  */
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { 
-  Calendar, 
-  Heart, 
-  MessageCircleHeart, 
-  Users, 
-  UserCog, 
-  ClipboardCheck 
+import {
+  Calendar,
+  Heart,
+  MessageCircleHeart,
+  Users,
+  UserCog,
+  ClipboardCheck
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import KioskLayout from '../../components/Kiosk/KioskLayout';
 import ServiceTile from '../../components/Kiosk/ServiceTile';
-import kioskApi from '../../services/kioskApi';
-import api from '../../services/api';
+import { useKioskSettings, useKioskChurch } from '../../hooks/useKiosk';
 
 const KioskHome = () => {
   const navigate = useNavigate();
   const { t, i18n } = useTranslation('kiosk');
-  const [settings, setSettings] = useState(null);
-  const [churchId, setChurchId] = useState(null);
-  const [churchName, setChurchName] = useState('');
-  const [loading, setLoading] = useState(true);
-  
+
+  // Get church context from localStorage
+  const { churchId, churchName, isValid } = useKioskChurch();
+
+  // Fetch kiosk settings using TanStack Query
+  const {
+    data: settings,
+    isLoading,
+    isError
+  } = useKioskSettings(churchId, {
+    enabled: isValid,
+  });
+
+  // Redirect if no church selected
   useEffect(() => {
-    // Check if church is selected
-    const storedChurchId = localStorage.getItem('kiosk_church_id');
-    const storedChurchName = localStorage.getItem('kiosk_church_name');
-    
-    if (!storedChurchId) {
-      // No church selected, redirect to church selector
+    if (!isValid) {
       navigate('/kiosk', { replace: true });
-      return;
     }
-    
-    setChurchId(storedChurchId);
-    setChurchName(storedChurchName || '');
-    loadSettings();
-  }, []);
-  
-  const loadSettings = async () => {
-    try {
-      // Use public endpoint - kiosk doesn't have auth
-      const storedChurchId = localStorage.getItem('kiosk_church_id');
-      const data = await kioskApi.getPublicKioskSettings(storedChurchId);
-      setSettings(data);
-      
-      // Set default language if configured
-      if (data?.default_language && !localStorage.getItem('kiosk_language_set')) {
-        i18n.changeLanguage(data.default_language);
-      }
-    } catch (error) {
-      console.error('Failed to load kiosk settings:', error);
-      // Default to all enabled
-      setSettings({
-        enable_event_registration: true,
-        enable_prayer: true,
-        enable_counseling: true,
-        enable_groups: true,
-        enable_profile_update: true
-      });
-    } finally {
-      setLoading(false);
+  }, [isValid, navigate]);
+
+  // Set default language when settings are loaded
+  useEffect(() => {
+    if (settings?.default_language && !localStorage.getItem('kiosk_language_set')) {
+      i18n.changeLanguage(settings.default_language);
     }
-  };
-  
+  }, [settings?.default_language, i18n]);
+
   const handleChangeChurch = () => {
     // Clear church selection
     localStorage.removeItem('kiosk_church_id');
     localStorage.removeItem('kiosk_church_name');
     localStorage.removeItem('kiosk_church_data');
     localStorage.removeItem('kiosk_language_set');
-    
+
     // Redirect to church selector
     navigate('/kiosk', { replace: true });
   };
-  
-  if (loading) {
+
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="text-2xl text-gray-500">Loading...</div>
       </div>
     );
   }
-  
+
   const services = [
     {
       id: 'event_registration',
@@ -140,9 +120,9 @@ const KioskHome = () => {
       enabled: true // Always available
     },
   ];
-  
+
   const enabledServices = services.filter(s => s.enabled);
-  
+
   return (
     <KioskLayout showBack={false} showHome={false}>
       <div className="space-y-6 sm:space-y-8 lg:space-y-12 w-full max-w-full overflow-x-hidden px-1">

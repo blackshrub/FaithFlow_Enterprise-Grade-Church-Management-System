@@ -60,8 +60,8 @@ async def create_status(
             detail="Member status with this name already exists"
         )
     
-    member_status = MemberStatus(**status_data.model_dump())
-    status_doc = member_status.model_dump()
+    member_status = MemberStatus(**status_data.model_dump(mode='json'))
+    status_doc = member_status.model_dump(mode='json')
     status_doc['created_at'] = status_doc['created_at'].isoformat()
     status_doc['updated_at'] = status_doc['updated_at'].isoformat()
     
@@ -98,7 +98,7 @@ async def update_status(
             detail="Cannot change name of system status"
         )
     
-    update_data = status_data.model_dump(exclude_unset=True)
+    update_data = status_data.model_dump(mode='json', exclude_unset=True)
     if update_data:
         update_data['updated_at'] = datetime.now().isoformat()
         
@@ -211,7 +211,7 @@ async def create_rule(
             detail="Target status must be different from current status"
         )
     
-    rule = MemberStatusRule(**rule_data.model_dump())
+    rule = MemberStatusRule(**rule_data.model_dump(mode='json'))
     
     # Generate human-readable
     statuses_map = {}
@@ -219,7 +219,7 @@ async def create_rule(
     for s in all_statuses:
         statuses_map[s.get('id')] = s.get('name')
     
-    rule_dict = rule.model_dump()
+    rule_dict = rule.model_dump(mode='json')
     human_readable = RuleEngineService.translate_rule_to_human(rule_dict, statuses_map)
     rule_dict['human_readable'] = human_readable
     rule_dict['created_at'] = rule_dict['created_at'].isoformat()
@@ -245,7 +245,7 @@ async def update_rule(
     if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') != rule.get('church_id'):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
     
-    update_data = rule_data.model_dump(exclude_unset=True)
+    update_data = rule_data.model_dump(mode='json', exclude_unset=True)
     
     if update_data:
         update_data['updated_at'] = datetime.now().isoformat()

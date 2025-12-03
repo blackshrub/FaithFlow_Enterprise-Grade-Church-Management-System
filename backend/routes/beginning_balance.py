@@ -68,7 +68,7 @@ async def create_beginning_balance(
     church_id = get_session_church_id(current_user)
     user_id = current_user.get("id")
     
-    balance_dict = balance_data.model_dump()
+    balance_dict = balance_data.model_dump(mode='json')
     balance_dict["church_id"] = church_id
     balance_dict["created_by"] = user_id
     
@@ -76,7 +76,7 @@ async def create_beginning_balance(
     from models.beginning_balance import BeginningBalance
     balance_obj = BeginningBalance(**balance_dict)
     balance_obj.calculate_totals()
-    balance_dict = balance_obj.model_dump()
+    balance_dict = balance_obj.model_dump(mode='json')
     
     balance_dict["id"] = str(uuid.uuid4())
     balance_dict["created_at"] = datetime.utcnow()

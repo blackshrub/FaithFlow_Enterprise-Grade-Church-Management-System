@@ -118,7 +118,7 @@ async def create_counselor(
         counselor = {
             "id": str(uuid.uuid4()),
             "church_id": church_id,
-            **request.model_dump(),
+            **request.model_dump(mode='json'),
             "created_at": datetime.utcnow(),
             "updated_at": datetime.utcnow()
         }
@@ -160,7 +160,7 @@ async def update_counselor(
         
         # Build update data
         update_data = {
-            k: v for k, v in request.model_dump(exclude_unset=True).items()
+            k: v for k, v in request.model_dump(mode='json', exclude_unset=True).items()
             if v is not None
         }
         update_data["updated_at"] = datetime.utcnow()
@@ -275,7 +275,7 @@ async def create_recurring_rule(
         rule = {
             "id": str(uuid.uuid4()),
             "church_id": church_id,
-            **request.model_dump(),
+            **request.model_dump(mode='json'),
             "is_active": True,
             "created_at": datetime.utcnow(),
             "updated_at": datetime.utcnow()
@@ -328,7 +328,7 @@ async def update_recurring_rule(
             raise HTTPException(status_code=404, detail="RULE_NOT_FOUND")
         
         update_data = {
-            k: v for k, v in request.model_dump(exclude_unset=True).items()
+            k: v for k, v in request.model_dump(mode='json', exclude_unset=True).items()
             if v is not None
         }
         update_data["updated_at"] = datetime.utcnow()
@@ -480,7 +480,7 @@ async def create_override(
             "id": str(uuid.uuid4()),
             "church_id": church_id,
             "created_by": staff_id,
-            **request.model_dump(),
+            **request.model_dump(mode='json'),
             "created_at": datetime.utcnow(),
             "updated_at": datetime.utcnow()
         }
@@ -530,7 +530,7 @@ async def update_override(
             raise HTTPException(status_code=404, detail="OVERRIDE_NOT_FOUND")
         
         update_data = {
-            k: v for k, v in request.model_dump(exclude_unset=True).items()
+            k: v for k, v in request.model_dump(mode='json', exclude_unset=True).items()
             if v is not None
         }
         update_data["updated_at"] = datetime.utcnow()
@@ -806,7 +806,7 @@ async def create_appointment_by_staff(
             staff_id=staff_id,
             member_id=request.member_id,
             slot_id=request.slot_id,
-            form_data=request.model_dump()
+            form_data=request.model_dump(mode='json')
         )
         
         return {
@@ -845,7 +845,7 @@ async def update_appointment(
             raise HTTPException(status_code=404, detail="APPOINTMENT_NOT_FOUND")
         
         update_data = {
-            k: v for k, v in request.model_dump(exclude_unset=True).items()
+            k: v for k, v in request.model_dump(mode='json', exclude_unset=True).items()
             if v is not None
         }
         update_data["updated_at"] = datetime.utcnow()

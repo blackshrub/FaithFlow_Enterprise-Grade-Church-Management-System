@@ -56,8 +56,8 @@ async def create_webhook(
         )
     
     # Create webhook
-    webhook = WebhookConfig(**webhook_data.model_dump())
-    webhook_doc = webhook.model_dump()
+    webhook = WebhookConfig(**webhook_data.model_dump(mode='json'))
+    webhook_doc = webhook.model_dump(mode='json')
     webhook_doc['created_at'] = webhook_doc['created_at'].isoformat()
     webhook_doc['updated_at'] = webhook_doc['updated_at'].isoformat()
     
@@ -122,7 +122,7 @@ async def update_webhook(
         )
     
     # Update only provided fields
-    update_data = webhook_data.model_dump(exclude_unset=True)
+    update_data = webhook_data.model_dump(mode='json', exclude_unset=True)
     
     if update_data:
         update_data['updated_at'] = datetime.now().isoformat()

@@ -74,8 +74,10 @@ const QuickEditModal = ({ open, onOpenChange, article, onSuccess }) => {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label>{t('articles.articleTitle')} *</Label>
+            <Label htmlFor="quick-edit-title">{t('articles.articleTitle')} *</Label>
             <Input
+              id="quick-edit-title"
+              name="quick-edit-title"
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
               required
@@ -83,17 +85,19 @@ const QuickEditModal = ({ open, onOpenChange, article, onSuccess }) => {
           </div>
 
           <div>
-            <Label>{t('articles.slug')}</Label>
+            <Label htmlFor="quick-edit-slug">{t('articles.slug')}</Label>
             <Input
+              id="quick-edit-slug"
+              name="quick-edit-slug"
               value={formData.slug}
               onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
             />
           </div>
 
           <div>
-            <Label>{t('articles.status')}</Label>
-            <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value })}>
-              <SelectTrigger>
+            <Label htmlFor="quick-edit-status">{t('articles.status')}</Label>
+            <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value })} name="quick-edit-status">
+              <SelectTrigger id="quick-edit-status">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>

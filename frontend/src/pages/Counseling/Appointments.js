@@ -103,12 +103,13 @@ const AppointmentsListPage = () => {
         <CardContent className="pt-6">
           <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
             <div className="space-y-2">
-              <Label>{t('counseling.status')}</Label>
+              <Label htmlFor="appointments-status">{t('counseling.status')}</Label>
               <Select
                 value={filters.status}
                 onValueChange={(value) => setFilters({ ...filters, status: value })}
+                name="appointments-status"
               >
-                <SelectTrigger>
+                <SelectTrigger id="appointments-status">
                   <SelectValue placeholder="All Status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -123,12 +124,13 @@ const AppointmentsListPage = () => {
             </div>
 
             <div className="space-y-2">
-              <Label>{t('counseling.counselor')}</Label>
+              <Label htmlFor="appointments-counselor">{t('counseling.counselor')}</Label>
               <Select
                 value={filters.counselor_id}
                 onValueChange={(value) => setFilters({ ...filters, counselor_id: value })}
+                name="appointments-counselor"
               >
-                <SelectTrigger>
+                <SelectTrigger id="appointments-counselor">
                   <SelectValue placeholder="All Counselors" />
                 </SelectTrigger>
                 <SelectContent>
@@ -141,12 +143,13 @@ const AppointmentsListPage = () => {
             </div>
 
             <div className="space-y-2">
-              <Label>{t('counseling.urgency')}</Label>
+              <Label htmlFor="appointments-urgency">{t('counseling.urgency')}</Label>
               <Select
                 value={filters.urgency}
                 onValueChange={(value) => setFilters({ ...filters, urgency: value })}
+                name="appointments-urgency"
               >
-                <SelectTrigger>
+                <SelectTrigger id="appointments-urgency">
                   <SelectValue placeholder="All Urgency" />
                 </SelectTrigger>
                 <SelectContent>
@@ -160,8 +163,10 @@ const AppointmentsListPage = () => {
             </div>
 
             <div className="space-y-2">
-              <Label>Date From</Label>
+              <Label htmlFor="appointments-date-from">Date From</Label>
               <Input
+                id="appointments-date-from"
+                name="appointments-date-from"
                 type="date"
                 value={filters.date_from}
                 onChange={(e) => setFilters({ ...filters, date_from: e.target.value })}
@@ -169,8 +174,10 @@ const AppointmentsListPage = () => {
             </div>
 
             <div className="space-y-2">
-              <Label>Date To</Label>
+              <Label htmlFor="appointments-date-to">Date To</Label>
               <Input
+                id="appointments-date-to"
+                name="appointments-date-to"
                 type="date"
                 value={filters.date_to}
                 onChange={(e) => setFilters({ ...filters, date_to: e.target.value })}

@@ -89,7 +89,7 @@ async def create_journal(
     church_id = get_session_church_id(current_user)
     user_id = current_user.get("id")
     
-    journal_dict = journal_data.model_dump()
+    journal_dict = journal_data.model_dump(mode='json')
     journal_dict["church_id"] = church_id
     journal_dict["created_by"] = user_id
     journal_dict["status"] = "draft"  # Default to draft
@@ -115,7 +115,7 @@ async def create_journal(
     from models.journal import Journal
     journal_obj = Journal(**journal_dict)
     journal_obj.calculate_totals()
-    journal_dict = journal_obj.model_dump()
+    journal_dict = journal_obj.model_dump(mode='json')
     
     journal_dict["id"] = str(uuid.uuid4())
     journal_dict["created_at"] = datetime.utcnow()
@@ -189,7 +189,7 @@ async def update_journal(
             message="Cannot edit journal in locked period"
         )
     
-    update_dict = journal_data.model_dump(exclude_unset=True)
+    update_dict = journal_data.model_dump(mode='json', exclude_unset=True)
     if not update_dict:
         return existing
     

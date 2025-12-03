@@ -73,14 +73,17 @@ export default function CommunitiesListPage() {
       <div className="flex flex-col md:flex-row gap-4 md:items-center">
         <div className="flex-1">
           <Input
+            id="communities-search"
+            name="communities-search"
+            aria-label={tWithFallback('communities.filters.searchPlaceholder') || t('groups.filters.searchPlaceholder')}
             placeholder={tWithFallback('communities.filters.searchPlaceholder') || t('groups.filters.searchPlaceholder')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
         <div className="flex gap-2">
-          <Select value={category} onValueChange={setCategory}>
-            <SelectTrigger className="w-[180px]">
+          <Select value={category} onValueChange={setCategory} name="communities-category">
+            <SelectTrigger className="w-[180px]" id="communities-category" aria-label={tWithFallback('communities.filters.categoryPlaceholder') || t('groups.filters.categoryPlaceholder')}>
               <SelectValue placeholder={tWithFallback('communities.filters.categoryPlaceholder') || t('groups.filters.categoryPlaceholder')} />
             </SelectTrigger>
             <SelectContent>
@@ -100,8 +103,8 @@ export default function CommunitiesListPage() {
             </SelectContent>
           </Select>
 
-          <Select value={openFilter} onValueChange={setOpenFilter}>
-            <SelectTrigger className="w-[180px]">
+          <Select value={openFilter} onValueChange={setOpenFilter} name="communities-open-status">
+            <SelectTrigger className="w-[180px]" id="communities-open-status" aria-label={tWithFallback('communities.filters.openStatusPlaceholder') || t('groups.filters.openStatusPlaceholder')}>
               <SelectValue placeholder={tWithFallback('communities.filters.openStatusPlaceholder') || t('groups.filters.openStatusPlaceholder')} />
             </SelectTrigger>
             <SelectContent>

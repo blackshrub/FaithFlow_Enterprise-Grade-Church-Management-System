@@ -50,7 +50,7 @@ async def report_crash(
     # Generate crash log entry
     crash_log = CrashLog(
         id=f"crash_{uuid.uuid4()}",
-        **crash_data.model_dump(),
+        **crash_data.model_dump(mode='json'),
         timestamp=datetime.utcnow(),
         reported_at=datetime.utcnow(),
         ip_address=request.client.host if request.client else None,
@@ -58,7 +58,7 @@ async def report_crash(
     )
 
     # Store in database
-    await db.crash_logs.insert_one(crash_log.model_dump())
+    await db.crash_logs.insert_one(crash_log.model_dump(mode='json'))
 
     return {"id": crash_log.id, "status": "reported"}
 
@@ -291,7 +291,7 @@ async def update_crash_log(
             detail="Crash log not found"
         )
 
-    update_fields = update_data.model_dump(exclude_unset=True)
+    update_fields = update_data.model_dump(mode='json', exclude_unset=True)
 
     # Track resolution
     if update_data.status == "resolved":

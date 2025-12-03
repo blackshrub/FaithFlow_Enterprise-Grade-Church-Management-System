@@ -155,7 +155,7 @@ async def create_group(
     church_id = get_session_church_id(current_user)
     user_id = current_user.get("id")
 
-    group_dict = group_data.model_dump()
+    group_dict = group_data.model_dump(mode='json')
 
     # If leader_member_id provided, resolve leader name & contact from members collection
     leader_member_id = group_dict.get("leader_member_id")
@@ -214,7 +214,7 @@ async def update_group(
             detail={"error_code": "NOT_FOUND", "message": "Group not found"},
         )
 
-    update_dict = group_data.model_dump(exclude_unset=True)
+    update_dict = group_data.model_dump(mode='json', exclude_unset=True)
     if not update_dict:
         return existing
 

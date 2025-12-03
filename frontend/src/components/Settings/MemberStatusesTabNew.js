@@ -166,6 +166,7 @@ export default function MemberStatusesTabNew() {
 
   const handleCreateStatus = async (e) => {
     e.preventDefault();
+    if (!church?.id) return;
     createStatus.mutate(
       { ...formData, church_id: church.id },
       {

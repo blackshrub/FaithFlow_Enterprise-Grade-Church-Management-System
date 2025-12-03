@@ -308,7 +308,7 @@ async def mobile_create_subgroup(
         updated_at=now
     )
 
-    await db.community_subgroups.insert_one(subgroup.model_dump())
+    await db.community_subgroups.insert_one(subgroup.model_dump(mode='json'))
 
     # Auto-join creator to sub-group
     sg_membership = SubgroupMembership(
@@ -320,12 +320,12 @@ async def mobile_create_subgroup(
         role="admin",
         joined_at=now
     )
-    await db.subgroup_memberships.insert_one(sg_membership.model_dump())
+    await db.subgroup_memberships.insert_one(sg_membership.model_dump(mode='json'))
 
     logger.info(f"Sub-group created: {subgroup.id} in community {community_id} by member {member_id}")
 
     return {
-        "subgroup": subgroup.model_dump(),
+        "subgroup": subgroup.model_dump(mode='json'),
         "message": "Sub-group created successfully"
     }
 
@@ -388,7 +388,7 @@ async def mobile_update_subgroup(
         )
 
     # Build update
-    update_data = data.model_dump(exclude_unset=True)
+    update_data = data.model_dump(mode='json', exclude_unset=True)
     if not update_data:
         raise HTTPException(status_code=400, detail="No fields to update")
 
@@ -524,7 +524,7 @@ async def mobile_join_subgroup(
         role="member",
         joined_at=now
     )
-    await db.subgroup_memberships.insert_one(sg_membership.model_dump())
+    await db.subgroup_memberships.insert_one(sg_membership.model_dump(mode='json'))
 
     # Increment member count
     await db.community_subgroups.update_one(
@@ -756,7 +756,7 @@ async def admin_create_subgroup(
         updated_at=now
     )
 
-    await db.community_subgroups.insert_one(subgroup.model_dump())
+    await db.community_subgroups.insert_one(subgroup.model_dump(mode='json'))
 
     # Auto-add creator as member if specified
     if created_by_member_id:
@@ -769,9 +769,9 @@ async def admin_create_subgroup(
             role="admin",
             joined_at=now
         )
-        await db.subgroup_memberships.insert_one(sg_membership.model_dump())
+        await db.subgroup_memberships.insert_one(sg_membership.model_dump(mode='json'))
 
-    return subgroup.model_dump()
+    return subgroup.model_dump(mode='json')
 
 
 # ============================================================================
@@ -820,7 +820,7 @@ async def admin_update_subgroup(
     if not subgroup:
         raise HTTPException(status_code=404, detail="Sub-group not found")
 
-    update_data = data.model_dump(exclude_unset=True)
+    update_data = data.model_dump(mode='json', exclude_unset=True)
     if not update_data:
         raise HTTPException(status_code=400, detail="No fields to update")
 

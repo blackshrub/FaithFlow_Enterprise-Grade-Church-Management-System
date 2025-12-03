@@ -74,9 +74,20 @@ export default function ExploreContentList() {
     return urlToApiContentType[urlType] || urlType.replace(/-/g, '_');
   }, [location.pathname]);
 
-  // URL-friendly content type (with hyphens for routes)
+  // URL-friendly content type (for routes)
+  // Maps API content types to their URL paths for navigation
   const urlContentType = useMemo(() => {
-    return contentType.replace(/_/g, '-');
+    const contentTypeToUrl = {
+      'daily_devotion': 'devotion',
+      'verse_of_the_day': 'verse',
+      'bible_figure': 'figure',
+      'daily_quiz': 'quiz',
+      'bible_study': 'bible-study',
+      'devotion_plan': 'devotion-plan',
+      'topical_verse': 'topical/verses',
+      'topical_category': 'topical',
+    };
+    return contentTypeToUrl[contentType] || contentType.replace(/_/g, '-');
   }, [contentType]);
 
   const [search, setSearch] = useState('');

@@ -142,7 +142,7 @@ async def create_article(
     church_id = get_session_church_id(current_user)
     user_id = current_user.get("id")
     
-    article_dict = article_data.model_dump()
+    article_dict = article_data.model_dump(mode='json')
     article_dict["church_id"] = church_id
     article_dict["created_by"] = user_id
     
@@ -200,7 +200,7 @@ async def update_article(
             detail={"error_code": "NOT_FOUND", "message": "Article not found"}
         )
     
-    update_dict = article_data.model_dump(exclude_unset=True)
+    update_dict = article_data.model_dump(mode='json', exclude_unset=True)
     if not update_dict:
         return existing
     

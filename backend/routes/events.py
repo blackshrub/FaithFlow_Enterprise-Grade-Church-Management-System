@@ -47,8 +47,8 @@ async def create_event(
     if event_data.enable_seat_selection and not event_data.seat_layout_id:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Seat selection requires a seat layout")
     
-    event = Event(**event_data.model_dump())
-    event_doc = event.model_dump()
+    event = Event(**event_data.model_dump(mode='json'))
+    event_doc = event.model_dump(mode='json')
     event_doc['created_at'] = event_doc['created_at'].isoformat()
     event_doc['updated_at'] = event_doc['updated_at'].isoformat()
     
@@ -152,7 +152,7 @@ async def update_event(
     if not event:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
     
-    update_data = event_data.model_dump(exclude_unset=True)
+    update_data = event_data.model_dump(mode='json', exclude_unset=True)
     if update_data:
         update_data['updated_at'] = datetime.now().isoformat()
         

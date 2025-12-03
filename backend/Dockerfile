@@ -59,12 +59,13 @@ ENV PYTHONUNBUFFERED=1 \
 # Switch to non-root user
 USER appuser
 
-# Health check
+# Health check (use 127.0.0.1 to avoid IPv6 issues)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:${PORT}/health || exit 1
+    CMD curl -f http://127.0.0.1:8000/health || exit 1
 
 # Expose port
 EXPOSE ${PORT}
 
 # Run with Granian (Rust-based ASGI server - 2-3x faster than uvicorn)
-CMD ["granian", "--interface", "asgi", "--host", "0.0.0.0", "--port", "8000", "--workers", "4", "--http", "2", "server:app"]
+# --http auto: Support both HTTP/1.1 and HTTP/2 (needed for healthchecks)
+CMD ["granian", "--interface", "asgi", "--host", "0.0.0.0", "--port", "8000", "--workers", "4", "--http", "auto", "server:app"]

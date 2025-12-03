@@ -51,6 +51,7 @@ export default function WebhooksTab() {
   const regenerateAPIKey = useRegenerateAPIKey();
 
   const handleCreateAPIKey = async () => {
+    if (!church?.id) return;
     const result = await createAPIKey.mutateAsync({
       name: 'External App Integration',
       church_id: church.id
@@ -80,6 +81,7 @@ export default function WebhooksTab() {
 
   const handleCreateWebhook = async (e) => {
     e.preventDefault();
+    if (!church?.id) return;
     createWebhook.mutate(
       { ...formData, church_id: church.id },
       {
@@ -436,6 +438,7 @@ Header: Authorization: Bearer YOUR_TOKEN`}
                 <Label htmlFor="webhook-name">{t('settings.webhooks.name')} *</Label>
                 <Input
                   id="webhook-name"
+                  name="webhook_name"
                   placeholder="External App Production"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -446,6 +449,7 @@ Header: Authorization: Bearer YOUR_TOKEN`}
                 <Label htmlFor="webhook-url">{t('settings.webhooks.url')} *</Label>
                 <Input
                   id="webhook-url"
+                  name="webhook_url"
                   type="url"
                   placeholder="https://external-app.com/api/webhooks/members"
                   value={formData.webhook_url}
@@ -458,6 +462,7 @@ Header: Authorization: Bearer YOUR_TOKEN`}
                 <div className="flex gap-2">
                   <Input
                     id="webhook-secret"
+                    name="webhook_secret"
                     value={formData.secret_key}
                     onChange={(e) => setFormData({ ...formData, secret_key: e.target.value })}
                     required
@@ -476,6 +481,7 @@ Header: Authorization: Bearer YOUR_TOKEN`}
                     <input
                       type="checkbox"
                       id="event-created"
+                      name="event_created"
                       checked={formData.events.includes('member.created')}
                       onChange={() => toggleEvent('member.created')}
                       className="h-4 w-4"
@@ -488,6 +494,7 @@ Header: Authorization: Bearer YOUR_TOKEN`}
                     <input
                       type="checkbox"
                       id="event-updated"
+                      name="event_updated"
                       checked={formData.events.includes('member.updated')}
                       onChange={() => toggleEvent('member.updated')}
                       className="h-4 w-4"
@@ -500,6 +507,7 @@ Header: Authorization: Bearer YOUR_TOKEN`}
                     <input
                       type="checkbox"
                       id="event-deleted"
+                      name="event_deleted"
                       checked={formData.events.includes('member.deleted')}
                       onChange={() => toggleEvent('member.deleted')}
                       className="h-4 w-4"
@@ -515,6 +523,7 @@ Header: Authorization: Bearer YOUR_TOKEN`}
                   <Label htmlFor="retry-count">{t('settings.webhooks.retryCount')}</Label>
                   <Input
                     id="retry-count"
+                    name="retry_count"
                     type="number"
                     min={0}
                     max={10}
@@ -526,6 +535,7 @@ Header: Authorization: Bearer YOUR_TOKEN`}
                   <Label htmlFor="timeout">{t('settings.webhooks.timeout')}</Label>
                   <Input
                     id="timeout"
+                    name="timeout_seconds"
                     type="number"
                     min={5}
                     max={120}
@@ -690,16 +700,20 @@ Header: Authorization: Bearer YOUR_TOKEN`}
           <form onSubmit={handleUpdateWebhook} className="space-y-4">
             {/* Same form fields as create */}
             <div className="space-y-2">
-              <Label>{t('settings.webhooks.name')} *</Label>
+              <Label htmlFor="edit-webhook-name">{t('settings.webhooks.name')} *</Label>
               <Input
+                id="edit-webhook-name"
+                name="edit_webhook_name"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 required
               />
             </div>
             <div className="space-y-2">
-              <Label>{t('settings.webhooks.url')} *</Label>
+              <Label htmlFor="edit-webhook-url">{t('settings.webhooks.url')} *</Label>
               <Input
+                id="edit-webhook-url"
+                name="edit_webhook_url"
                 type="url"
                 value={formData.webhook_url}
                 onChange={(e) => setFormData({ ...formData, webhook_url: e.target.value })}
@@ -707,9 +721,11 @@ Header: Authorization: Bearer YOUR_TOKEN`}
               />
             </div>
             <div className="space-y-2">
-              <Label>{t('settings.webhooks.secretKey')} *</Label>
+              <Label htmlFor="edit-webhook-secret">{t('settings.webhooks.secretKey')} *</Label>
               <div className="flex gap-2">
                 <Input
+                  id="edit-webhook-secret"
+                  name="edit_webhook_secret"
                   value={formData.secret_key}
                   onChange={(e) => setFormData({ ...formData, secret_key: e.target.value })}
                   required

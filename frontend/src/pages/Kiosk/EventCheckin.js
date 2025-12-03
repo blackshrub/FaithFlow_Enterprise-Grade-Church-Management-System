@@ -8,9 +8,11 @@
  * 4. Check-in confirmation
  *
  * NO INACTIVITY TIMEOUT for this page
+ *
+ * Uses TanStack Query for data fetching
  */
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ClipboardCheck, QrCode, Search, UserCheck, Camera as CameraIcon, Check, ArrowLeft } from 'lucide-react';
@@ -20,8 +22,9 @@ import OTPInput from '../../components/Kiosk/OTPInput';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import MemberAvatar from '../../components/MemberAvatar';
-import kioskApi from '../../services/kioskApi';
+import { useKioskEvents, useVerifyPIN, useKioskChurch } from '../../hooks/useKiosk';
 import api from '../../services/api';
+import kioskApi from '../../services/kioskApi';
 import QrScanner from 'qr-scanner';
 
 const EventCheckinKiosk = () => {
@@ -30,16 +33,14 @@ const EventCheckinKiosk = () => {
   const videoRef = useRef(null);
   const qrScannerRef = useRef(null);
 
-  // Get church_id from localStorage (set during church selection)
-  const churchId = localStorage.getItem('kiosk_church_id');
+  // Get church context
+  const { churchId } = useKioskChurch();
 
   const [step, setStep] = useState('pin'); // pin, select_event, scan_or_search, success
   const [pin, setPin] = useState('');
-  const [verifying, setVerifying] = useState(false);
   const [pinError, setPinError] = useState('');
   const [staff, setStaff] = useState(null);
 
-  const [events, setEvents] = useState([]);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [mode, setMode] = useState('scan'); // scan or search
   const [searchTerm, setSearchTerm] = useState('');
@@ -49,6 +50,17 @@ const EventCheckinKiosk = () => {
   const [lastCheckedIn, setLastCheckedIn] = useState(null);
   const [checkinError, setCheckinError] = useState('');
   const [recentCheckins, setRecentCheckins] = useState([]);
+
+  // Fetch events using TanStack Query
+  const {
+    data: events = [],
+    isLoading: eventsLoading,
+  } = useKioskEvents(churchId, {
+    enabled: step === 'select_event' && !!churchId,
+  });
+
+  // PIN verification mutation
+  const pinMutation = useVerifyPIN();
 
   // Check-in API call
   const performCheckin = useCallback(async (memberId, memberName, qrCode = null) => {
@@ -139,29 +151,11 @@ const EventCheckinKiosk = () => {
     }
   };
 
-  useEffect(() => {
-    if (step === 'select_event') {
-      loadEvents();
-    }
-  }, [step]);
-
-  const loadEvents = async () => {
-    try {
-      const data = await kioskApi.getUpcomingEvents();
-      const eventList = Array.isArray(data) ? data : (data?.data || []);
-      setEvents(eventList);
-    } catch (error) {
-      console.error('Failed to load events:', error);
-      setEvents([]);
-    }
-  };
-
   const handlePinComplete = async (code) => {
     setPinError('');
-    setVerifying(true);
 
     try {
-      const result = await kioskApi.verifyPIN(churchId, code);
+      const result = await pinMutation.mutateAsync({ churchId, pin: code });
 
       if (result.success) {
         setStaff(result.user);
@@ -174,8 +168,6 @@ const EventCheckinKiosk = () => {
       console.error('PIN error:', error);
       setPinError(t('pin.error'));
       setPin('');
-    } finally {
-      setVerifying(false);
     }
   };
 
@@ -221,7 +213,7 @@ const EventCheckinKiosk = () => {
               value={pin}
               onChange={setPin}
               onComplete={handlePinComplete}
-              disabled={verifying}
+              disabled={pinMutation.isPending}
             />
 
             {pinError && (
@@ -245,7 +237,11 @@ const EventCheckinKiosk = () => {
             <p className="text-base sm:text-lg lg:text-xl text-gray-600">Logged in as: {staff?.full_name}</p>
           </div>
 
-          {events.length === 0 ? (
+          {eventsLoading ? (
+            <div className="bg-white rounded-2xl sm:rounded-3xl p-6 sm:p-8 lg:p-12 text-center">
+              <div className="text-lg sm:text-xl lg:text-2xl text-gray-600">Loading events...</div>
+            </div>
+          ) : events.length === 0 ? (
             <div className="bg-white rounded-2xl sm:rounded-3xl p-6 sm:p-8 lg:p-12 text-center">
               <p className="text-lg sm:text-xl lg:text-2xl text-gray-600">{t('event_registration.no_events')}</p>
             </div>

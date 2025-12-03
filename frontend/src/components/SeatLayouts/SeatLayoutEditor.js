@@ -64,6 +64,7 @@ function SeatLayoutEditor({ layout, onClose }) {
       if (isEdit) {
         return seatLayoutsAPI.update(layout.id, data);
       } else {
+        if (!church?.id) throw new Error('Church context not available');
         return seatLayoutsAPI.create({ ...data, church_id: church.id });
       }
     },
@@ -146,6 +147,7 @@ function SeatLayoutEditor({ layout, onClose }) {
                 <Label htmlFor="name">{t('events.seatLayout.layoutName')} *</Label>
                 <Input
                   id="name"
+                  name="layout_name"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   placeholder={t('events.seatLayout.layoutNamePlaceholder')}
@@ -157,6 +159,7 @@ function SeatLayoutEditor({ layout, onClose }) {
                 <Label htmlFor="description">{t('events.seatLayout.description')}</Label>
                 <Input
                   id="description"
+                  name="layout_description"
                   value={formData.description}
                   onChange={(e) =>
                     setFormData({ ...formData, description: e.target.value })
@@ -169,6 +172,7 @@ function SeatLayoutEditor({ layout, onClose }) {
                 <Label htmlFor="rows">{t('events.seatLayout.rows')} *</Label>
                 <Input
                   id="rows"
+                  name="layout_rows"
                   type="number"
                   min="1"
                   max="50"
@@ -185,6 +189,7 @@ function SeatLayoutEditor({ layout, onClose }) {
                 <Label htmlFor="columns">{t('events.seatLayout.columns')} *</Label>
                 <Input
                   id="columns"
+                  name="layout_columns"
                   type="number"
                   min="1"
                   max="100"

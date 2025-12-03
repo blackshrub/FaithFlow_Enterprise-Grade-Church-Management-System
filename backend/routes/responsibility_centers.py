@@ -69,7 +69,7 @@ async def create_responsibility_center(
     church_id = get_session_church_id(current_user)
     user_id = current_user.get("id")
     
-    center_dict = center_data.model_dump()
+    center_dict = center_data.model_dump(mode='json')
     center_dict["church_id"] = church_id
     
     # Check code uniqueness
@@ -128,7 +128,7 @@ async def update_responsibility_center(
             detail={"error_code": "NOT_FOUND", "message": "Responsibility center not found"}
         )
     
-    update_dict = center_data.model_dump(exclude_unset=True)
+    update_dict = center_data.model_dump(mode='json', exclude_unset=True)
     if not update_dict:
         return existing
     

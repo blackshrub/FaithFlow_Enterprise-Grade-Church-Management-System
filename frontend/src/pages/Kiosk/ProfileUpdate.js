@@ -4,9 +4,11 @@
  * Allows members to update their profile via kiosk.
  * Phone number changes require OTP verification of the new number.
  * Fields displayed are configurable per church via kiosk settings.
+ *
+ * Uses TanStack Query for data fetching
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { UserCog, Check, Phone, AlertCircle, User, MapPin, Briefcase, Heart, Droplets, Mail, Calendar, Building } from 'lucide-react';
@@ -19,49 +21,43 @@ import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
+import { useKioskSettings, useUpdateMemberProfile, useSendOTP, useVerifyOTP, useKioskChurch } from '../../hooks/useKiosk';
 import kioskApi from '../../services/kioskApi';
 
 const ProfileUpdateKiosk = () => {
   const location = useLocation();
-  const churchId = location.state?.churchId || localStorage.getItem('kiosk_church_id');
   const navigate = useNavigate();
   const { t } = useTranslation('kiosk');
+
+  // Get church context
+  const { churchId: storedChurchId } = useKioskChurch();
+  const churchId = location.state?.churchId || storedChurchId;
 
   const [step, setStep] = useState('phone');
   const [phone, setPhone] = useState(''); // Original verified phone
   const [member, setMember] = useState(null);
   const [formData, setFormData] = useState({});
-  const [submitting, setSubmitting] = useState(false);
-
-  // Profile fields enabled for this church (fetched from settings)
-  const [enabledFields, setEnabledFields] = useState(['full_name', 'phone', 'date_of_birth', 'address']);
 
   // Phone change verification state
   const [newPhone, setNewPhone] = useState(''); // New phone to verify
   const [newPhoneOtp, setNewPhoneOtp] = useState('');
-  const [verifyingNewPhone, setVerifyingNewPhone] = useState(false);
   const [newPhoneError, setNewPhoneError] = useState('');
-  const [sendingNewPhoneOtp, setSendingNewPhoneOtp] = useState(false);
   const [newPhoneResendCooldown, setNewPhoneResendCooldown] = useState(0);
 
-  // Fetch kiosk settings to get enabled profile fields
-  useEffect(() => {
-    const fetchSettings = async () => {
-      try {
-        const settings = await kioskApi.getPublicKioskSettings(churchId);
-        if (settings?.profile_fields && settings.profile_fields.length > 0) {
-          setEnabledFields(settings.profile_fields);
-        }
-      } catch (error) {
-        console.error('Failed to fetch kiosk settings:', error);
-        // Keep defaults if fetch fails
-      }
-    };
+  // Fetch kiosk settings using TanStack Query
+  const { data: settings } = useKioskSettings(churchId, {
+    enabled: !!churchId,
+  });
 
-    if (churchId) {
-      fetchSettings();
-    }
-  }, [churchId]);
+  // Profile fields enabled for this church (derived from settings)
+  const enabledFields = settings?.profile_fields?.length > 0
+    ? settings.profile_fields
+    : ['full_name', 'phone', 'date_of_birth', 'address'];
+
+  // Mutations
+  const updateProfileMutation = useUpdateMemberProfile();
+  const sendOTPMutation = useSendOTP();
+  const verifyOTPMutation = useVerifyOTP();
 
   // Check if a field is enabled
   const isFieldEnabled = (fieldName) => enabledFields.includes(fieldName);
@@ -129,7 +125,6 @@ const ProfileUpdateKiosk = () => {
       return;
     }
 
-    setSendingNewPhoneOtp(true);
     setNewPhoneError('');
 
     try {
@@ -137,11 +132,10 @@ const ProfileUpdateKiosk = () => {
       const existingMember = await kioskApi.lookupMemberByPhone(phoneToVerify, churchId);
       if (existingMember && existingMember.id !== member.id) {
         setNewPhoneError(t('profile_update.phone_already_registered') || 'This phone number is already registered to another member');
-        setSendingNewPhoneOtp(false);
         return;
       }
 
-      await kioskApi.sendOTP(phoneToVerify, churchId);
+      await sendOTPMutation.mutateAsync({ phone: phoneToVerify, churchId });
       setNewPhone(phoneToVerify);
       setStep('verify_new_phone');
 
@@ -159,18 +153,15 @@ const ProfileUpdateKiosk = () => {
     } catch (error) {
       console.error('Failed to send OTP to new phone:', error);
       setNewPhoneError(t('otp.send_error') || 'Failed to send OTP. Please try again.');
-    } finally {
-      setSendingNewPhoneOtp(false);
     }
   };
 
   // Verify OTP for new phone number
   const handleVerifyNewPhoneOtp = async (code) => {
-    setVerifyingNewPhone(true);
     setNewPhoneError('');
 
     try {
-      const result = await kioskApi.verifyOTP(newPhone, code);
+      const result = await verifyOTPMutation.mutateAsync({ phone: newPhone, code });
       if (result.success) {
         // OTP verified, now save the profile with new phone
         await saveProfile({ ...formData, phone: newPhone });
@@ -182,18 +173,15 @@ const ProfileUpdateKiosk = () => {
       console.error('OTP verification error:', error);
       setNewPhoneError(t('otp.error_generic') || 'Verification failed. Please try again.');
       setNewPhoneOtp('');
-    } finally {
-      setVerifyingNewPhone(false);
     }
   };
 
   // Resend OTP to new phone
   const handleResendNewPhoneOtp = async () => {
-    setSendingNewPhoneOtp(true);
     setNewPhoneError('');
 
     try {
-      await kioskApi.sendOTP(newPhone, churchId);
+      await sendOTPMutation.mutateAsync({ phone: newPhone, churchId });
 
       // Reset cooldown
       setNewPhoneResendCooldown(60);
@@ -209,22 +197,17 @@ const ProfileUpdateKiosk = () => {
     } catch (error) {
       console.error('Failed to resend OTP:', error);
       setNewPhoneError(t('otp.resend_error') || 'Failed to resend OTP');
-    } finally {
-      setSendingNewPhoneOtp(false);
     }
   };
 
   // Save profile (called directly or after phone OTP verification)
   const saveProfile = async (dataToSave) => {
-    setSubmitting(true);
     try {
-      await kioskApi.updateMemberProfile(member.id, dataToSave);
+      await updateProfileMutation.mutateAsync({ memberId: member.id, data: dataToSave });
       setStep('success');
     } catch (error) {
       console.error('Update error:', error);
       alert(t('errors.generic') || 'An error occurred. Please try again.');
-    } finally {
-      setSubmitting(false);
     }
   };
 
@@ -564,10 +547,10 @@ const ProfileUpdateKiosk = () => {
 
           <Button
             onClick={handleSave}
-            disabled={submitting || sendingNewPhoneOtp}
+            disabled={updateProfileMutation.isPending || sendOTPMutation.isPending}
             className="w-full h-12 sm:h-14 lg:h-16 text-base sm:text-lg lg:text-xl rounded-xl"
           >
-            {submitting || sendingNewPhoneOtp
+            {updateProfileMutation.isPending || sendOTPMutation.isPending
               ? (phoneChanged ? (t('profile_update.sending_otp') || 'Sending OTP...') : (t('profile_update.saving') || 'Saving...'))
               : (phoneChanged ? (t('profile_update.verify_and_save') || 'Verify & Save') : t('profile_update.save_button'))
             }
@@ -614,7 +597,7 @@ const ProfileUpdateKiosk = () => {
               value={newPhoneOtp}
               onChange={setNewPhoneOtp}
               onComplete={handleVerifyNewPhoneOtp}
-              disabled={verifyingNewPhone || submitting}
+              disabled={verifyOTPMutation.isPending || updateProfileMutation.isPending}
             />
 
             {newPhoneError && (
@@ -627,9 +610,9 @@ const ProfileUpdateKiosk = () => {
               </motion.p>
             )}
 
-            {(verifyingNewPhone || submitting) && (
+            {(verifyOTPMutation.isPending || updateProfileMutation.isPending) && (
               <p className="text-center text-sm sm:text-base text-gray-500">
-                {verifyingNewPhone
+                {verifyOTPMutation.isPending
                   ? (t('profile_update.verifying') || 'Verifying...')
                   : (t('profile_update.saving') || 'Saving...')
                 }
@@ -643,10 +626,10 @@ const ProfileUpdateKiosk = () => {
             <Button
               variant="ghost"
               onClick={handleResendNewPhoneOtp}
-              disabled={sendingNewPhoneOtp || newPhoneResendCooldown > 0}
+              disabled={sendOTPMutation.isPending || newPhoneResendCooldown > 0}
               className="w-full text-sm sm:text-base lg:text-lg"
             >
-              {sendingNewPhoneOtp
+              {sendOTPMutation.isPending
                 ? (t('otp.sending') || 'Sending...')
                 : newPhoneResendCooldown > 0
                   ? `${t('otp.resend') || 'Resend OTP'} (${newPhoneResendCooldown}s)`

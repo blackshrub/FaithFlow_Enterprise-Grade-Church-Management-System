@@ -1,14 +1,16 @@
 /**
  * Event Registration Kiosk Page
- * 
+ *
  * Flow:
  * 1. Phone + OTP
  * 2. Select event
  * 3. Confirm
  * 4. Success
+ *
+ * Uses TanStack Query for data fetching
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Calendar, Check } from 'lucide-react';
@@ -18,7 +20,7 @@ import PhoneStep from '../../components/Kiosk/PhoneStep';
 import ExistingMemberOTP from '../../components/Kiosk/ExistingMemberOTP';
 import NewMemberRegistration from '../../components/Kiosk/NewMemberRegistration';
 import { Button } from '../../components/ui/button';
-import kioskApi from '../../services/kioskApi';
+import { useKioskEvents, useRegisterForEvent, useKioskChurch } from '../../hooks/useKiosk';
 import { format, parseISO } from 'date-fns';
 
 const EventRegistrationKiosk = () => {
@@ -26,58 +28,41 @@ const EventRegistrationKiosk = () => {
   const location = useLocation();
   const { t } = useTranslation('kiosk');
 
-  const churchId = location.state?.churchId || localStorage.getItem('kiosk_church_id');
+  // Get church context
+  const { churchId: storedChurchId } = useKioskChurch();
+  const churchId = location.state?.churchId || storedChurchId;
 
+  // Step state
   const [step, setStep] = useState('phone'); // phone, otp_existing, otp_new, select_event, confirm, success
   const [phone, setPhone] = useState('');
   const [member, setMember] = useState(null);
-  const [events, setEvents] = useState([]);
   const [selectedEvent, setSelectedEvent] = useState(null);
-  const [submitting, setSubmitting] = useState(false);
-  const [renderError, setRenderError] = useState(null);
-  
-  // Catch rendering errors
-  useEffect(() => {
-    console.log('📍 Current step:', step);
-    console.log('📍 Member:', member?.full_name);
-    console.log('📍 Phone:', phone);
-  }, [step, member, phone]);
-  
-  useEffect(() => {
-    if (step === 'select_event') {
-      loadEvents();
-    }
-  }, [step]);
-  
-  const loadEvents = async () => {
-    try {
-      const data = await kioskApi.getUpcomingEvents();
-      console.log('📅 Events API response:', data);
-      
-      // Handle both array and object response
-      const eventList = Array.isArray(data) ? data : (data?.data || []);
-      console.log('📅 Events to display:', eventList.length);
-      
-      setEvents(eventList);
-    } catch (error) {
-      console.error('Failed to load events:', error);
-      setEvents([]);
-    }
-  };
-  
+
+  // Fetch events using TanStack Query
+  const {
+    data: events = [],
+    isLoading: eventsLoading,
+    isError: eventsError
+  } = useKioskEvents(churchId, {
+    enabled: step === 'select_event' && !!churchId,
+  });
+
+  // Registration mutation
+  const registerMutation = useRegisterForEvent();
+
   const handleMemberFound = (foundMember, foundPhone) => {
     console.log('✅ handleMemberFound called:', foundMember?.full_name);
     setMember(foundMember);
     setPhone(foundPhone);
     setStep('otp_existing');
   };
-  
+
   const handleMemberNotFound = (foundPhone) => {
     console.log('⚠️ handleMemberNotFound called:', foundPhone);
     setPhone(foundPhone);
     setStep('otp_new');
   };
-  
+
   const handleOtpVerified = (verifiedMember) => {
     setMember(verifiedMember);
     setStep('select_event');
@@ -85,24 +70,23 @@ const EventRegistrationKiosk = () => {
 
   const handleConfirmRegistration = async () => {
     if (!selectedEvent || !member) return;
-    
-    setSubmitting(true);
-    
+
     try {
-      await kioskApi.registerForEvent(selectedEvent.id, member.id);
+      await registerMutation.mutateAsync({
+        eventId: selectedEvent.id,
+        memberId: member.id
+      });
       setStep('success');
     } catch (error) {
       console.error('Registration error:', error);
       alert(t('errors.generic'));
-    } finally {
-      setSubmitting(false);
     }
   };
-  
+
   const handleBackToStart = () => {
     navigate('/kiosk/home');
   };
-  
+
   // STEP: Phone Number
   if (step === 'phone') {
     return (
@@ -128,12 +112,9 @@ const EventRegistrationKiosk = () => {
       </KioskLayout>
     );
   }
-  
+
   // STEP: New Member Registration (otp_new)
   if (step === 'otp_new') {
-    console.log('🎨 Rendering new member registration');
-    console.log('📞 Phone for new member:', phone);
-
     return (
       <KioskLayout showBack showHome onBack={() => setStep('phone')}>
         <div className="space-y-4 sm:space-y-6 lg:space-y-8 w-full max-w-full overflow-x-hidden">
@@ -157,6 +138,8 @@ const EventRegistrationKiosk = () => {
       </KioskLayout>
     );
   }
+
+  // STEP: Existing Member OTP
   if (step === 'otp_existing') {
     return (
       <KioskLayout showBack showHome onBack={() => setStep('phone')}>
@@ -169,7 +152,7 @@ const EventRegistrationKiosk = () => {
       </KioskLayout>
     );
   }
-  
+
   // STEP: Select Event
   if (step === 'select_event') {
     return (
@@ -184,7 +167,11 @@ const EventRegistrationKiosk = () => {
             </p>
           </div>
 
-          {events.length === 0 ? (
+          {eventsLoading ? (
+            <div className="bg-white rounded-2xl sm:rounded-3xl shadow-lg p-6 sm:p-8 lg:p-12 text-center">
+              <div className="text-lg sm:text-xl lg:text-2xl text-gray-600">Loading events...</div>
+            </div>
+          ) : events.length === 0 ? (
             <div className="bg-white rounded-2xl sm:rounded-3xl shadow-lg p-6 sm:p-8 lg:p-12 text-center">
               <Calendar className="w-12 h-12 sm:w-16 sm:h-16 lg:w-20 lg:h-20 mx-auto mb-3 sm:mb-4 text-gray-300" />
               <p className="text-lg sm:text-xl lg:text-2xl text-gray-600">
@@ -223,7 +210,7 @@ const EventRegistrationKiosk = () => {
       </KioskLayout>
     );
   }
-  
+
   // STEP: Confirm
   if (step === 'confirm') {
     return (
@@ -263,17 +250,17 @@ const EventRegistrationKiosk = () => {
             </Button>
             <Button
               onClick={handleConfirmRegistration}
-              disabled={submitting}
+              disabled={registerMutation.isPending}
               className="flex-1 h-12 sm:h-14 lg:h-16 text-base sm:text-lg lg:text-xl rounded-xl"
             >
-              {submitting ? 'Processing...' : t('event_registration.confirm_button')}
+              {registerMutation.isPending ? 'Processing...' : t('event_registration.confirm_button')}
             </Button>
           </div>
         </motion.div>
       </KioskLayout>
     );
   }
-  
+
   // STEP: Success
   if (step === 'success') {
     return (
@@ -317,7 +304,7 @@ const EventRegistrationKiosk = () => {
       </KioskLayout>
     );
   }
-  
+
   return null;
 };
 

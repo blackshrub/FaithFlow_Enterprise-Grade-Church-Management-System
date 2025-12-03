@@ -79,8 +79,8 @@ async def create_import_template(
     if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') != template_data.church_id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
     
-    template = ImportTemplate(**template_data.model_dump())
-    template_doc = template.model_dump()
+    template = ImportTemplate(**template_data.model_dump(mode='json'))
+    template_doc = template.model_dump(mode='json')
     template_doc['created_at'] = template_doc['created_at'].isoformat()
     template_doc['updated_at'] = template_doc['updated_at'].isoformat()
     
@@ -533,7 +533,7 @@ async def import_members(
                 
                 # Create member
                 member = Member(**member_data)
-                member_doc = member.model_dump()
+                member_doc = member.model_dump(mode='json')
                 
                 # Generate personal QR code for member
                 from services.qr_service import generate_member_id_code, generate_member_qr_data
@@ -571,8 +571,8 @@ async def import_members(
             imported_by=current_user.get('id')
         )
         
-        log = ImportLog(**import_log.model_dump())
-        log_doc = log.model_dump()
+        log = ImportLog(**import_log.model_dump(mode='json'))
+        log_doc = log.model_dump(mode='json')
         log_doc['created_at'] = log_doc['created_at'].isoformat()
         log_doc['updated_at'] = log_doc['updated_at'].isoformat()
         await db.import_logs.insert_one(log_doc)

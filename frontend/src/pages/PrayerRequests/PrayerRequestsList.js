@@ -86,6 +86,9 @@ export default function PrayerRequestsList() {
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
+                id="prayer-requests-search"
+                name="prayer-requests-search"
+                aria-label={t('common.search')}
                 placeholder={t('common.search')}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
@@ -93,8 +96,8 @@ export default function PrayerRequestsList() {
               />
             </div>
 
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger>
+            <Select value={statusFilter} onValueChange={setStatusFilter} name="prayer-status-filter">
+              <SelectTrigger id="prayer-status-filter" aria-label={t('prayerRequests.filters.filterByStatus')}>
                 <SelectValue placeholder={t('prayerRequests.filters.filterByStatus')} />
               </SelectTrigger>
               <SelectContent>
@@ -104,8 +107,8 @@ export default function PrayerRequestsList() {
               </SelectContent>
             </Select>
 
-            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-              <SelectTrigger>
+            <Select value={categoryFilter} onValueChange={setCategoryFilter} name="prayer-category-filter">
+              <SelectTrigger id="prayer-category-filter" aria-label={t('prayerRequests.filters.filterByCategory')}>
                 <SelectValue placeholder={t('prayerRequests.filters.filterByCategory')} />
               </SelectTrigger>
               <SelectContent>

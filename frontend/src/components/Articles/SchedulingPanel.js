@@ -107,8 +107,10 @@ const SchedulingPanel = ({ article, onSuccess }) => {
         ) : (
           <div className="space-y-3">
             <div>
-              <Label>{t('articles.scheduling.scheduledPublishDate')}</Label>
+              <Label htmlFor="scheduled-publish-date">{t('articles.scheduling.scheduledPublishDate')}</Label>
               <Input
+                id="scheduled-publish-date"
+                name="scheduled-publish-date"
                 type="datetime-local"
                 value={scheduledDate}
                 onChange={(e) => setScheduledDate(e.target.value)}

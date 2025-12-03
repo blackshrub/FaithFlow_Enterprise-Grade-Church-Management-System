@@ -9,6 +9,9 @@ import time
 from pathlib import Path
 from typing import Callable
 
+# Custom ORJSONResponse for ~10x faster JSON serialization
+from utils.responses import ORJSONResponse
+
 # Import routes
 from routes import (
     auth, churches, members, settings, import_export, photo_document_sim,
@@ -74,13 +77,15 @@ client = AsyncIOMotorClient(
 db = client[os.environ['DB_NAME']]
 
 # Create the main app without a prefix
+# Using ORJSONResponse for ~10x faster JSON serialization with datetime/ObjectId support
 app = FastAPI(
     title="Church Management API",
     description="Enterprise Church Management System API",
     version="2.0.0",
     docs_url=f"{API_PREFIX}/docs" if API_PREFIX else "/docs",
     redoc_url=f"{API_PREFIX}/redoc" if API_PREFIX else "/redoc",
-    openapi_url=f"{API_PREFIX}/openapi.json" if API_PREFIX else "/openapi.json"
+    openapi_url=f"{API_PREFIX}/openapi.json" if API_PREFIX else "/openapi.json",
+    default_response_class=ORJSONResponse
 )
 
 # Create a router with configurable prefix
@@ -258,9 +263,28 @@ logger = logging.getLogger(__name__)
 # Initialize APScheduler for article publishing
 from scheduler import setup_scheduler, start_scheduler, shutdown_scheduler
 
+# Redis initialization
+redis_enabled = os.environ.get('REDIS_ENABLED', 'true').lower() == 'true'
+
 @app.on_event("startup")
 async def startup_event():
     """Initialize scheduler and services on startup."""
+    # Initialize Redis connection (if enabled)
+    if redis_enabled:
+        try:
+            from config.redis import init_redis, health_check
+            await init_redis()
+            redis_health = await health_check()
+            logger.info(f"✓ Redis connected (v{redis_health.get('version', 'unknown')})")
+
+            # Start pub/sub subscriber for distributed cache invalidation
+            from services.redis import pubsub_service, register_default_handlers
+            register_default_handlers()
+            await pubsub_service.start_subscriber()
+            logger.info("✓ Redis pub/sub subscriber started")
+        except Exception as e:
+            logger.warning(f"⚠ Redis connection failed: {e} - falling back to in-memory")
+
     # Log API configuration
     if API_PREFIX:
         logger.info(f"✓ API running in PATH mode: {API_PREFIX}/* (e.g., domain.com{API_PREFIX}/auth/login)")
@@ -302,6 +326,21 @@ async def startup_event():
 
 @app.on_event("shutdown")
 async def shutdown_db_client():
+    """Cleanup on shutdown."""
     shutdown_scheduler()
+
+    # Close Redis connection
+    if redis_enabled:
+        try:
+            # Stop pub/sub subscriber first
+            from services.redis import pubsub_service
+            await pubsub_service.stop_subscriber()
+
+            from config.redis import close_redis
+            await close_redis()
+            logger.info("✓ Redis connection closed")
+        except Exception as e:
+            logger.warning(f"⚠ Redis close error: {e}")
+
     client.close()
     logger.info("✓ Scheduler and database connections closed")

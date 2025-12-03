@@ -83,6 +83,7 @@ export default function DemographicsTab() {
       return;
     }
 
+    if (!church?.id) return;
     createDemographic.mutate(
       { ...formData, church_id: church.id },
       {

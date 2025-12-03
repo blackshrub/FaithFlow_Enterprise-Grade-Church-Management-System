@@ -34,7 +34,7 @@ async def create_template(
     church_id = get_session_church_id(current_user)
     user_id = current_user.get("id")
     
-    template_dict = template_data.model_dump()
+    template_dict = template_data.model_dump(mode='json')
     template_dict["church_id"] = church_id
     template_dict["created_by"] = user_id
     template_dict["id"] = str(uuid.uuid4())

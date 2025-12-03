@@ -42,6 +42,7 @@ export default function EventCategoriesTab() {
 
   const handleCreateCategory = async (e) => {
     e.preventDefault();
+    if (!church?.id) return;
     createCategory.mutate(
       { ...formData, church_id: church.id },
       {
@@ -138,6 +139,7 @@ export default function EventCategoriesTab() {
                   <Label htmlFor="category-name">{t('settings.categoryName')}</Label>
                   <Input
                     id="category-name"
+                    name="category_name"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     required
@@ -147,6 +149,7 @@ export default function EventCategoriesTab() {
                   <Label htmlFor="category-description">{t('settings.categoryDescription')}</Label>
                   <Textarea
                     id="category-description"
+                    name="category_description"
                     value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                     rows={2}
@@ -156,6 +159,7 @@ export default function EventCategoriesTab() {
                   <Label htmlFor="category-color">{t('settings.categoryColor')}</Label>
                   <Input
                     id="category-color"
+                    name="category_color"
                     type="color"
                     value={formData.color}
                     onChange={(e) => setFormData({ ...formData, color: e.target.value })}
@@ -165,6 +169,7 @@ export default function EventCategoriesTab() {
                   <Label htmlFor="category-order">{t('settings.order')}</Label>
                   <Input
                     id="category-order"
+                    name="category_order"
                     type="number"
                     value={formData.order}
                     onChange={(e) => setFormData({ ...formData, order: parseInt(e.target.value) || 0 })}
@@ -290,6 +295,7 @@ export default function EventCategoriesTab() {
                 <Label htmlFor="edit-category-name">{t('settings.categoryName')}</Label>
                 <Input
                   id="edit-category-name"
+                  name="edit_category_name"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   required
@@ -300,6 +306,7 @@ export default function EventCategoriesTab() {
                 <Label htmlFor="edit-category-description">{t('settings.categoryDescription')}</Label>
                 <Textarea
                   id="edit-category-description"
+                  name="edit_category_description"
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   rows={2}
@@ -309,6 +316,7 @@ export default function EventCategoriesTab() {
                 <Label htmlFor="edit-category-color">{t('settings.categoryColor')}</Label>
                 <Input
                   id="edit-category-color"
+                  name="edit_category_color"
                   type="color"
                   value={formData.color}
                   onChange={(e) => setFormData({ ...formData, color: e.target.value })}
@@ -318,6 +326,7 @@ export default function EventCategoriesTab() {
                 <Label htmlFor="edit-category-order">{t('settings.order')}</Label>
                 <Input
                   id="edit-category-order"
+                  name="edit_category_order"
                   type="number"
                   value={formData.order}
                   onChange={(e) => setFormData({ ...formData, order: parseInt(e.target.value) || 0 })}

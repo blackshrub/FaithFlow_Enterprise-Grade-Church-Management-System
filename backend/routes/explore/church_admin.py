@@ -128,7 +128,7 @@ async def get_prompt_configuration(
         # Return default configuration
         default_config = ExplorePromptConfiguration(church_id=church_id)
         return {
-            "config": default_config.model_dump(),
+            "config": default_config.model_dump(mode='json'),
             "schema": get_config_schema_with_placeholders(),
             "is_default": True,
         }
@@ -274,7 +274,7 @@ async def reset_prompt_configuration(
             {"church_id": church_id, "deleted": {"$ne": True}},
             {
                 "$set": {
-                    content_type: default_type_config.model_dump(),
+                    content_type: default_type_config.model_dump(mode='json'),
                     "updated_by": current_user["id"],
                     "updated_at": datetime.now(),
                 }
@@ -577,7 +577,7 @@ async def update_content_adoption(
     """Adopt or unadopt platform content for this church"""
     # Verify content exists and is global
     collection = _get_collection(db, content_type)
-    if not collection:
+    if collection is None:
         raise HTTPException(status_code=400, detail=f"Unknown content type: {content_type}")
 
     content = await collection.find_one({

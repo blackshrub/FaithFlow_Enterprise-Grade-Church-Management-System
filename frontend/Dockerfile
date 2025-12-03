@@ -62,16 +62,18 @@ RUN rm -rf /etc/nginx/conf.d/*
 # Copy custom nginx config
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Copy built assets from builder
+# Copy built assets from builder and fix permissions for all static files
 COPY --from=builder /app/build /usr/share/nginx/html
+RUN find /usr/share/nginx/html -type f -exec chmod 644 {} \; && \
+    find /usr/share/nginx/html -type d -exec chmod 755 {} \;
 
 # Add script for runtime environment variable injection
 COPY docker-entrypoint.sh /docker-entrypoint.sh
 RUN chmod +x /docker-entrypoint.sh
 
-# Health check
+# Health check (use 127.0.0.1 to avoid IPv6 issues)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:80/health || exit 1
+    CMD wget --no-verbose --tries=1 --spider http://127.0.0.1:80/health || exit 1
 
 # Expose port
 EXPOSE 80

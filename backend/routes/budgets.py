@@ -69,7 +69,7 @@ async def create_budget(
     church_id = get_session_church_id(current_user)
     user_id = current_user.get("id")
     
-    budget_dict = budget_data.model_dump()
+    budget_dict = budget_data.model_dump(mode='json')
     budget_dict["church_id"] = church_id
     budget_dict["status"] = "draft"  # Default to draft
     budget_dict["id"] = str(uuid.uuid4())
@@ -123,7 +123,7 @@ async def update_budget(
             status_code=status.HTTP_403_FORBIDDEN
         )
     
-    update_dict = budget_data.model_dump(exclude_unset=True)
+    update_dict = budget_data.model_dump(mode='json', exclude_unset=True)
     if not update_dict:
         return existing
     
@@ -232,7 +232,7 @@ async def distribute_monthly(
     # Update database
     lines = []
     for line in budget_obj.lines:
-        line_dict = line.model_dump()
+        line_dict = line.model_dump(mode='json')
         line_dict["annual_amount"] = float(line_dict["annual_amount"])
         line_dict["monthly_amounts"] = {k: float(v) for k, v in line_dict["monthly_amounts"].items()}
         lines.append(line_dict)

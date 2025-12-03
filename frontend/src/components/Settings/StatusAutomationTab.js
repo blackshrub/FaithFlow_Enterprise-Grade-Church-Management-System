@@ -246,8 +246,11 @@ export default function StatusAutomationTab() {
   });
 
   // ============= Data Hooks =============
-  const { data: statuses = [] } = useMemberStatuses();
-  const { data: rules = [], isLoading: rulesLoading, error: rulesError } = useStatusRules();
+  const { data: statusesRaw = [] } = useMemberStatuses();
+  const { data: rulesRaw = [], isLoading: rulesLoading, error: rulesError } = useStatusRules();
+  // Filter out any null/undefined items or items without id
+  const statuses = (statusesRaw || []).filter(s => s && s.id);
+  const rules = (rulesRaw || []).filter(r => r && r.id);
   const createRule = useCreateStatusRule();
   const updateRule = useUpdateStatusRule();
   const deleteRule = useDeleteStatusRule();
@@ -289,6 +292,7 @@ export default function StatusAutomationTab() {
 
   // ============= Rules Handlers =============
   const handlePreviewExistingRule = (rule) => {
+    if (!church?.id) return;
     const ruleData = {
       rule_type: rule.rule_type,
       current_status_id: rule.current_status_id,
@@ -308,6 +312,7 @@ export default function StatusAutomationTab() {
 
   const handleCreateRule = async (e) => {
     e.preventDefault();
+    if (!church?.id) return;
     createRule.mutate(
       { ...formData, church_id: church.id },
       {
@@ -325,6 +330,7 @@ export default function StatusAutomationTab() {
       toast.error('Please add conditions and select target status');
       return;
     }
+    if (!church?.id) return;
 
     simulateRule.mutate(
       { ...formData, church_id: church.id },
@@ -338,6 +344,7 @@ export default function StatusAutomationTab() {
 
   const handleUpdateRule = async (e) => {
     e.preventDefault();
+    if (!selectedRule?.id) return;
     updateRule.mutate(
       { id: selectedRule.id, data: formData },
       {
@@ -531,7 +538,7 @@ export default function StatusAutomationTab() {
                 Preview (showing first {Math.min(10, simulationResults.matched_members.length)}):
               </p>
               <div className="space-y-1 max-h-40 overflow-y-auto">
-                {simulationResults.matched_members.slice(0, 10).map((member) => (
+                {(simulationResults.matched_members || []).filter(m => m && m.id).slice(0, 10).map((member) => (
                   <div key={member.id} className="text-xs bg-white rounded p-2">
                     <span className="font-medium">{member.full_name}</span>
                     {member.current_status && (
@@ -850,7 +857,7 @@ export default function StatusAutomationTab() {
               </div>
               {simulationResults.matched_members?.length > 0 ? (
                 <div className="space-y-2 max-h-80 overflow-y-auto">
-                  {simulationResults.matched_members.map((member) => (
+                  {(simulationResults.matched_members || []).filter(m => m && m.id).map((member) => (
                     <div key={member.id} className="p-3 bg-gray-50 rounded-lg">
                       <span className="font-medium">{member.full_name}</span>
                       {member.current_status && (

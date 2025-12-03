@@ -1,8 +1,10 @@
 /**
  * Join Group Kiosk Page
+ *
+ * Uses TanStack Query for data fetching
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Users, Check } from 'lucide-react';
@@ -14,36 +16,34 @@ import NewMemberRegistration from '../../components/Kiosk/NewMemberRegistration'
 import { Button } from '../../components/ui/button';
 import { Textarea } from '../../components/ui/textarea';
 import { Label } from '../../components/ui/label';
-import kioskApi from '../../services/kioskApi';
+import { useKioskGroups, useJoinGroup, useKioskChurch } from '../../hooks/useKiosk';
 
 const JoinGroupKiosk = () => {
   const location = useLocation();
-  const churchId = location.state?.churchId || localStorage.getItem('kiosk_church_id');
   const navigate = useNavigate();
   const { t } = useTranslation('kiosk');
+
+  // Get church context
+  const { churchId: storedChurchId } = useKioskChurch();
+  const churchId = location.state?.churchId || storedChurchId;
 
   const [step, setStep] = useState('phone');
   const [phone, setPhone] = useState('');
   const [member, setMember] = useState(null);
-  const [groups, setGroups] = useState([]);
   const [selectedGroup, setSelectedGroup] = useState(null);
   const [message, setMessage] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-  
-  useEffect(() => {
-    if (step === 'select_group') {
-      loadGroups();
-    }
-  }, [step]);
-  
-  const loadGroups = async () => {
-    try {
-      const data = await kioskApi.getPublicGroups();
-      setGroups(data);
-    } catch (error) {
-      console.error('Failed to load groups:', error);
-    }
-  };
+
+  // Fetch groups using TanStack Query
+  const {
+    data: groups = [],
+    isLoading: groupsLoading,
+    isError: groupsError
+  } = useKioskGroups(churchId, null, {
+    enabled: step === 'select_group' && !!churchId,
+  });
+
+  // Join group mutation
+  const joinGroupMutation = useJoinGroup();
   
   const handleMemberFound = (foundMember, foundPhone) => {
     setMember(foundMember);
@@ -67,16 +67,18 @@ const JoinGroupKiosk = () => {
   };
   
   const handleJoinGroup = async () => {
-    if (!selectedGroup) return;
-    setSubmitting(true);
+    if (!selectedGroup || !member) return;
+
     try {
-      await kioskApi.createGroupJoinRequest(selectedGroup.id, member.id, message);
+      await joinGroupMutation.mutateAsync({
+        groupId: selectedGroup.id,
+        memberId: member.id,
+        message
+      });
       setStep('success');
     } catch (error) {
       console.error('Join group error:', error);
       alert(t('errors.generic'));
-    } finally {
-      setSubmitting(false);
     }
   };
   
@@ -122,7 +124,11 @@ const JoinGroupKiosk = () => {
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2">{t('groups.step_list')}</h2>
           </div>
 
-          {groups.length === 0 ? (
+          {groupsLoading ? (
+            <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-8 lg:p-12 text-center">
+              <div className="text-lg sm:text-xl lg:text-2xl text-gray-600">Loading groups...</div>
+            </div>
+          ) : groups.length === 0 ? (
             <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-8 lg:p-12 text-center">
               <Users className="w-12 h-12 sm:w-16 sm:h-16 lg:w-20 lg:h-20 mx-auto mb-4 text-gray-300" />
               <p className="text-lg sm:text-xl lg:text-2xl text-gray-600">{t('groups.no_groups')}</p>
@@ -173,8 +179,8 @@ const JoinGroupKiosk = () => {
             <Textarea value={message} onChange={(e) => setMessage(e.target.value)} placeholder={t('groups.message_placeholder')} rows={4} className="text-sm sm:text-base lg:text-xl p-3 sm:p-4 lg:p-6 rounded-xl" />
           </div>
 
-          <Button onClick={handleJoinGroup} disabled={submitting} className="w-full h-12 sm:h-14 lg:h-16 text-base sm:text-lg lg:text-xl rounded-xl">
-            {submitting ? 'Sending...' : t('groups.join_button')}
+          <Button onClick={handleJoinGroup} disabled={joinGroupMutation.isPending} className="w-full h-12 sm:h-14 lg:h-16 text-base sm:text-lg lg:text-xl rounded-xl">
+            {joinGroupMutation.isPending ? 'Sending...' : t('groups.join_button')}
           </Button>
         </motion.div>
       </KioskLayout>

@@ -28,8 +28,8 @@ async def create_church(
     current_user: dict = Depends(require_super_admin)
 ):
     """Create a new church (super admin only)"""
-    church = Church(**church_data.model_dump())
-    church_doc = church.model_dump()
+    church = Church(**church_data.model_dump(mode='json'))
+    church_doc = church.model_dump(mode='json')
     church_doc['created_at'] = church_doc['created_at'].isoformat()
     church_doc['updated_at'] = church_doc['updated_at'].isoformat()
     
@@ -116,7 +116,7 @@ async def update_church(
         )
     
     # Update only provided fields
-    update_data = church_data.model_dump(exclude_unset=True)
+    update_data = church_data.model_dump(mode='json', exclude_unset=True)
     if update_data:
         update_data['updated_at'] = datetime.now().isoformat()
         

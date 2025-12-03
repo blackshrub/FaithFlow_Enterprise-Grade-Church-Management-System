@@ -63,16 +63,18 @@ const renderField = (fieldName, fieldSchema, value, onChange, placeholder) => {
   const fieldType = fieldSchema.type;
   const options = fieldSchema.enum || fieldSchema.options;
   const description = fieldSchema.description;
+  const fieldId = `prompt-field-${fieldName}`;
 
   // Boolean field
   if (fieldType === 'boolean') {
     return (
       <div className="flex items-center justify-between py-2">
         <div>
-          <Label className="font-medium">{formatFieldName(fieldName)}</Label>
+          <Label htmlFor={fieldId} className="font-medium">{formatFieldName(fieldName)}</Label>
           {description && <p className="text-xs text-gray-500 mt-0.5">{description}</p>}
         </div>
         <Switch
+          id={fieldId}
           checked={value ?? fieldSchema.default ?? false}
           onCheckedChange={onChange}
         />
@@ -84,10 +86,10 @@ const renderField = (fieldName, fieldSchema, value, onChange, placeholder) => {
   if (options) {
     return (
       <div className="space-y-1">
-        <Label className="font-medium">{formatFieldName(fieldName)}</Label>
+        <Label htmlFor={fieldId} className="font-medium">{formatFieldName(fieldName)}</Label>
         {description && <p className="text-xs text-gray-500">{description}</p>}
-        <Select value={value ?? fieldSchema.default} onValueChange={onChange}>
-          <SelectTrigger>
+        <Select value={value ?? fieldSchema.default} onValueChange={onChange} name={fieldId}>
+          <SelectTrigger id={fieldId}>
             <SelectValue placeholder={placeholder || `Select ${formatFieldName(fieldName)}`} />
           </SelectTrigger>
           <SelectContent>
@@ -112,12 +114,13 @@ const renderField = (fieldName, fieldSchema, value, onChange, placeholder) => {
       <div className="space-y-2">
         <div className="flex justify-between">
           <div>
-            <Label className="font-medium">{formatFieldName(fieldName)}</Label>
+            <Label htmlFor={fieldId} className="font-medium">{formatFieldName(fieldName)}</Label>
             {description && <p className="text-xs text-gray-500">{description}</p>}
           </div>
           <span className="text-sm font-medium text-gray-700">{currentValue}</span>
         </div>
         <Slider
+          id={fieldId}
           value={[currentValue]}
           onValueChange={(vals) => onChange(vals[0])}
           min={min}
@@ -133,9 +136,11 @@ const renderField = (fieldName, fieldSchema, value, onChange, placeholder) => {
   if (fieldType === 'integer') {
     return (
       <div className="space-y-1">
-        <Label className="font-medium">{formatFieldName(fieldName)}</Label>
+        <Label htmlFor={fieldId} className="font-medium">{formatFieldName(fieldName)}</Label>
         {description && <p className="text-xs text-gray-500">{description}</p>}
         <Input
+          id={fieldId}
+          name={fieldId}
           type="number"
           value={value ?? fieldSchema.default ?? 0}
           onChange={(e) => onChange(parseInt(e.target.value) || 0)}
@@ -150,9 +155,11 @@ const renderField = (fieldName, fieldSchema, value, onChange, placeholder) => {
   if (placeholder && placeholder.length > 50) {
     return (
       <div className="space-y-1">
-        <Label className="font-medium">{formatFieldName(fieldName)}</Label>
+        <Label htmlFor={fieldId} className="font-medium">{formatFieldName(fieldName)}</Label>
         {description && <p className="text-xs text-gray-500">{description}</p>}
         <Textarea
+          id={fieldId}
+          name={fieldId}
           value={value ?? ''}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
@@ -165,9 +172,11 @@ const renderField = (fieldName, fieldSchema, value, onChange, placeholder) => {
   // Default string input
   return (
     <div className="space-y-1">
-      <Label className="font-medium">{formatFieldName(fieldName)}</Label>
+      <Label htmlFor={fieldId} className="font-medium">{formatFieldName(fieldName)}</Label>
       {description && <p className="text-xs text-gray-500">{description}</p>}
       <Input
+        id={fieldId}
+        name={fieldId}
         value={value ?? fieldSchema.default ?? ''}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder || `Enter ${formatFieldName(fieldName).toLowerCase()}`}

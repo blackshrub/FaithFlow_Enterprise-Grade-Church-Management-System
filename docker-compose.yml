@@ -35,6 +35,27 @@ services:
       - faithflow-network
 
   # ===========================================================================
+  # Redis - Cache, Sessions, Rate Limiting
+  # ===========================================================================
+  redis:
+    image: redis:7.4-alpine
+    container_name: faithflow-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - faithflow-network
+
+  # ===========================================================================
   # Backend API (FastAPI)
   # ===========================================================================
   backend:
@@ -46,9 +67,12 @@ services:
     depends_on:
       mongodb:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     environment:
       - MONGO_URL=mongodb://mongodb:27017
       - DB_NAME=faithflow
+      - REDIS_URL=redis://redis:6379
       - JWT_SECRET=${JWT_SECRET:-change-this-in-production}
       - JWT_ALGORITHM=HS256
       - CORS_ORIGINS=http://localhost:3000,http://localhost,http://app.localhost
@@ -107,6 +131,8 @@ volumes:
   mongodb_data:
     driver: local
   mongodb_config:
+    driver: local
+  redis_data:
     driver: local
   backend_uploads:
     driver: local

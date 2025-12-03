@@ -212,7 +212,7 @@ async def create_appointment(
             church_id=member["church_id"],
             member_id=member["member_id"],
             slot_id=request.slot_id,
-            form_data=request.model_dump()
+            form_data=request.model_dump(mode='json')
         )
         
         return {

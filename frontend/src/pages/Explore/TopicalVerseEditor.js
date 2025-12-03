@@ -278,12 +278,13 @@ export default function TopicalVerseEditor() {
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="col-span-2">
-                <Label>Book</Label>
+                <Label htmlFor="verse-book">Book</Label>
                 <Select
                   value={formData.verse.book}
                   onValueChange={(value) => handleVerseChange('book', value)}
+                  name="verse-book"
                 >
-                  <SelectTrigger>
+                  <SelectTrigger id="verse-book">
                     <SelectValue placeholder="Select book" />
                   </SelectTrigger>
                   <SelectContent>
@@ -297,8 +298,10 @@ export default function TopicalVerseEditor() {
               </div>
 
               <div>
-                <Label>Chapter</Label>
+                <Label htmlFor="verse-chapter">Chapter</Label>
                 <Input
+                  id="verse-chapter"
+                  name="verse-chapter"
                   type="number"
                   min={1}
                   value={formData.verse.chapter}
@@ -307,8 +310,10 @@ export default function TopicalVerseEditor() {
               </div>
 
               <div>
-                <Label>Verse Start</Label>
+                <Label htmlFor="verse-start">Verse Start</Label>
                 <Input
+                  id="verse-start"
+                  name="verse-start"
                   type="number"
                   min={1}
                   value={formData.verse.verse_start}
@@ -319,8 +324,10 @@ export default function TopicalVerseEditor() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label>Verse End (optional)</Label>
+                <Label htmlFor="verse-end">Verse End (optional)</Label>
                 <Input
+                  id="verse-end"
+                  name="verse-end"
                   type="number"
                   min={formData.verse.verse_start}
                   value={formData.verse.verse_end || ''}
@@ -330,12 +337,13 @@ export default function TopicalVerseEditor() {
               </div>
 
               <div>
-                <Label>Translation</Label>
+                <Label htmlFor="verse-translation">Translation</Label>
                 <Select
                   value={formData.verse.translation}
                   onValueChange={(value) => handleVerseChange('translation', value)}
+                  name="verse-translation"
                 >
-                  <SelectTrigger>
+                  <SelectTrigger id="verse-translation">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>

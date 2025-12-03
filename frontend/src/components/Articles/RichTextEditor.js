@@ -69,7 +69,11 @@ const MenuBar = ({ editor }) => {
 const RichTextEditor = ({ value, onChange, placeholder }) => {
   const editor = useEditor({
     extensions: [
-      StarterKit,
+      StarterKit.configure({
+        // Disable Link from StarterKit to avoid duplicate extension warning
+        // We configure Link separately below with custom options
+        link: false,
+      }),
       Link.configure({
         openOnClick: false,
       }),

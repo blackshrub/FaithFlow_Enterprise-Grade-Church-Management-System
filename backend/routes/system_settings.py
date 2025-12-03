@@ -99,7 +99,7 @@ async def get_system_settings(
     if not settings_doc:
         # Return default settings
         default_settings = SystemSettings()
-        settings_dict = default_settings.model_dump()
+        settings_dict = default_settings.model_dump(mode='json')
     else:
         settings_doc.pop("_id", None)
         settings_dict = settings_doc
@@ -134,10 +134,10 @@ async def update_system_settings(
     else:
         # Create default settings
         default_settings = SystemSettings()
-        settings_dict = default_settings.model_dump()
+        settings_dict = default_settings.model_dump(mode='json')
 
     # Update with new values (only non-None fields)
-    update_dict = updates.model_dump(exclude_none=True)
+    update_dict = updates.model_dump(mode='json', exclude_none=True)
 
     # Merge updates into existing settings
     for key, value in update_dict.items():

@@ -368,7 +368,7 @@ class ScheduleService:
         }
 
         collection = collection_map.get(content_type)
-        if not collection:
+        if collection is None:
             return None
 
         # Determine scope

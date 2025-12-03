@@ -31,8 +31,8 @@ async def create_seat_layout(
                 seat_map[seat_id] = "available"
         layout_data.seat_map = seat_map
     
-    layout = SeatLayout(**layout_data.model_dump())
-    layout_doc = layout.model_dump()
+    layout = SeatLayout(**layout_data.model_dump(mode='json'))
+    layout_doc = layout.model_dump(mode='json')
     layout_doc['created_at'] = layout_doc['created_at'].isoformat()
     layout_doc['updated_at'] = layout_doc['updated_at'].isoformat()
     
@@ -101,7 +101,7 @@ async def update_seat_layout(
     if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') != layout.get('church_id'):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
     
-    update_data = layout_data.model_dump(exclude_unset=True)
+    update_data = layout_data.model_dump(mode='json', exclude_unset=True)
     if update_data:
         update_data['updated_at'] = datetime.now().isoformat()
         await db.seat_layouts.update_one({"id": layout_id}, {"$set": update_data})

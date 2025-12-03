@@ -41,7 +41,7 @@ async def create_bank_account(
     church_id = get_session_church_id(current_user)
     user_id = current_user.get("id")
     
-    account_dict = account_data.model_dump()
+    account_dict = account_data.model_dump(mode='json')
     account_dict["church_id"] = church_id
     account_dict["id"] = str(uuid.uuid4())
     account_dict["created_at"] = datetime.utcnow()

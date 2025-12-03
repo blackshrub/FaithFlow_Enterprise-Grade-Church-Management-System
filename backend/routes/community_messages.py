@@ -285,13 +285,13 @@ async def send_message(
             )
 
     # Store in MongoDB
-    await db.community_messages.insert_one(message.model_dump())
+    await db.community_messages.insert_one(message.model_dump(mode='json'))
 
     # Publish to MQTT
     mqtt_published = await mqtt.publish_message(
         church_id=church_id,
         community_id=community_id,
-        message=message.model_dump(),
+        message=message.model_dump(mode='json'),
         channel_type=channel_type,
         subgroup_id=subgroup_id
     )
@@ -537,13 +537,13 @@ async def mobile_send_message(
             )
 
     # Store in MongoDB
-    await db.community_messages.insert_one(message.model_dump())
+    await db.community_messages.insert_one(message.model_dump(mode='json'))
 
     # Publish to MQTT
     mqtt_published = await mqtt.publish_message(
         church_id=church_id,
         community_id=community_id,
-        message=message.model_dump(),
+        message=message.model_dump(mode='json'),
         channel_type=channel_type,
         subgroup_id=subgroup_id
     )
@@ -955,13 +955,13 @@ async def mobile_create_poll(
     )
 
     # Store in MongoDB
-    await db.community_messages.insert_one(message.model_dump())
+    await db.community_messages.insert_one(message.model_dump(mode='json'))
 
     # Publish to MQTT
     mqtt_published = await mqtt.publish_message(
         church_id=church_id,
         community_id=community_id,
-        message=message.model_dump(),
+        message=message.model_dump(mode='json'),
         channel_type=channel_type,
         subgroup_id=subgroup_id
     )
@@ -1272,13 +1272,13 @@ async def mobile_forward_message(
         )
 
         # Store in MongoDB
-        await db.community_messages.insert_one(forwarded.model_dump())
+        await db.community_messages.insert_one(forwarded.model_dump(mode='json'))
 
         # Publish to MQTT
         await mqtt.publish_message(
             church_id=church_id,
             community_id=target_community_id,
-            message=forwarded.model_dump(),
+            message=forwarded.model_dump(mode='json'),
             channel_type="general"
         )
 

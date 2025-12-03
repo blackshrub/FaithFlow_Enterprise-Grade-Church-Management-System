@@ -80,7 +80,7 @@ async def create_comment(
             detail={"error_code": "NOT_FOUND", "message": "Article not found"}
         )
     
-    comment_dict = comment_data.model_dump()
+    comment_dict = comment_data.model_dump(mode='json')
     comment_dict["church_id"] = church_id
     comment_dict["article_id"] = article_id
     comment_dict["id"] = str(uuid.uuid4())
@@ -120,7 +120,7 @@ async def update_comment(
             detail={"error_code": "NOT_FOUND", "message": "Comment not found"}
         )
     
-    update_dict = comment_data.model_dump(exclude_unset=True)
+    update_dict = comment_data.model_dump(mode='json', exclude_unset=True)
     if not update_dict:
         return existing
     

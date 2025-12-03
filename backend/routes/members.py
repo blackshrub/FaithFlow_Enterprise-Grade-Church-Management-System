@@ -72,7 +72,7 @@ async def quick_add_member(
     member_dict['last_name'] = parts[1] if len(parts) > 1 else ''
     
     member = Member(**member_dict)
-    member_doc = member.model_dump()
+    member_doc = member.model_dump(mode='json')
     
     # Generate personal QR code
     member_code = generate_member_id_code()
@@ -114,7 +114,7 @@ async def create_member(
         )
     
     # Create member object
-    member_dict = member_data.model_dump()
+    member_dict = member_data.model_dump(mode='json')
     
     # Combine first_name and last_name into full_name if not provided
     if not member_dict.get('full_name') and (member_dict.get('first_name') or member_dict.get('last_name')):
@@ -157,7 +157,7 @@ async def create_member(
             member_dict['member_status'] = "Visitor"  # Fallback if no default set
     
     member = Member(**member_dict)
-    member_doc = member.model_dump()
+    member_doc = member.model_dump(mode='json')
     
     # Generate personal QR code for member
     member_code = generate_member_id_code()
@@ -390,7 +390,7 @@ async def update_member(
         )
     
     # Update only provided fields
-    update_data = member_data.model_dump(exclude_unset=True)
+    update_data = member_data.model_dump(mode='json', exclude_unset=True)
     if update_data:
         update_data['updated_at'] = datetime.now().isoformat()
         

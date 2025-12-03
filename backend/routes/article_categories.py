@@ -67,7 +67,7 @@ async def create_category(
     church_id = get_session_church_id(current_user)
     user_id = current_user.get("id")
     
-    category_dict = category_data.model_dump()
+    category_dict = category_data.model_dump(mode='json')
     category_dict["church_id"] = church_id
     
     # Generate slug if not provided
@@ -116,7 +116,7 @@ async def update_category(
             detail={"error_code": "NOT_FOUND", "message": "Category not found"}
         )
     
-    update_dict = category_data.model_dump(exclude_unset=True)
+    update_dict = category_data.model_dump(mode='json', exclude_unset=True)
     if not update_dict:
         return existing
     

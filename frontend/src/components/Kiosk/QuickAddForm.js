@@ -71,6 +71,7 @@ function QuickAddForm({ eventId, sessionId, onSuccess, onClose }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (!church?.id) return;
     addMemberMutation.mutate({
       church_id: church.id,
       ...formData,
@@ -171,8 +172,10 @@ function QuickAddForm({ eventId, sessionId, onSuccess, onClose }) {
           {/* Form Fields */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div className="col-span-1 sm:col-span-2">
-              <Label className="text-sm sm:text-base">{t('events.kiosk.quickAddForm.fullName')} *</Label>
+              <Label htmlFor="full_name" className="text-sm sm:text-base">{t('events.kiosk.quickAddForm.fullName')} *</Label>
               <Input
+                id="full_name"
+                name="full_name"
                 value={formData.full_name}
                 onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
                 placeholder={t('events.kiosk.quickAddForm.fullNamePlaceholder')}
@@ -182,8 +185,10 @@ function QuickAddForm({ eventId, sessionId, onSuccess, onClose }) {
             </div>
 
             <div className="col-span-1 sm:col-span-2">
-              <Label className="text-sm sm:text-base">{t('events.kiosk.quickAddForm.phone')}</Label>
+              <Label htmlFor="phone_whatsapp" className="text-sm sm:text-base">{t('events.kiosk.quickAddForm.phone')}</Label>
               <Input
+                id="phone_whatsapp"
+                name="phone_whatsapp"
                 value={formData.phone_whatsapp}
                 onChange={(e) => setFormData({ ...formData, phone_whatsapp: e.target.value })}
                 placeholder={t('events.kiosk.quickAddForm.phonePlaceholder')}
@@ -192,8 +197,10 @@ function QuickAddForm({ eventId, sessionId, onSuccess, onClose }) {
             </div>
 
             <div>
-              <Label className="text-sm sm:text-base">{t('events.kiosk.quickAddForm.gender')} *</Label>
+              <Label htmlFor="gender" className="text-sm sm:text-base">{t('events.kiosk.quickAddForm.gender')} *</Label>
               <select
+                id="gender"
+                name="gender"
                 value={formData.gender}
                 onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
                 className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-md h-10 sm:h-12 text-base sm:text-lg"
@@ -206,8 +213,10 @@ function QuickAddForm({ eventId, sessionId, onSuccess, onClose }) {
             </div>
 
             <div>
-              <Label className="text-sm sm:text-base">{t('events.kiosk.quickAddForm.dateOfBirth')}</Label>
+              <Label htmlFor="date_of_birth" className="text-sm sm:text-base">{t('events.kiosk.quickAddForm.dateOfBirth')}</Label>
               <Input
+                id="date_of_birth"
+                name="date_of_birth"
                 type="date"
                 value={formData.date_of_birth}
                 onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })}

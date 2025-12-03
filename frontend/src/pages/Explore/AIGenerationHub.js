@@ -243,11 +243,11 @@ export default function AIGenerationHub() {
             <CardContent className="space-y-4">
               {/* Content Type */}
               <div>
-                <label className="text-sm font-medium text-gray-700 mb-2 block">
+                <Label htmlFor="ai-content-type" className="text-sm font-medium text-gray-700 mb-2 block">
                   Content Type
-                </label>
-                <Select value={contentType} onValueChange={setContentType}>
-                  <SelectTrigger>
+                </Label>
+                <Select value={contentType} onValueChange={setContentType} name="ai-content-type">
+                  <SelectTrigger id="ai-content-type">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -268,11 +268,11 @@ export default function AIGenerationHub() {
 
               {/* AI Model */}
               <div>
-                <label className="text-sm font-medium text-gray-700 mb-2 block">
+                <Label htmlFor="ai-model" className="text-sm font-medium text-gray-700 mb-2 block">
                   AI Model
-                </label>
-                <Select value={model} onValueChange={setModel}>
-                  <SelectTrigger>
+                </Label>
+                <Select value={model} onValueChange={setModel} name="ai-model">
+                  <SelectTrigger id="ai-model">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -288,28 +288,32 @@ export default function AIGenerationHub() {
 
               {/* Language Options */}
               <div>
-                <label className="text-sm font-medium text-gray-700 mb-2 block">
+                <Label className="text-sm font-medium text-gray-700 mb-2 block">
                   Languages
-                </label>
+                </Label>
                 <div className="flex items-center gap-2">
                   <input
                     type="checkbox"
+                    id="ai-generate-both-languages"
+                    name="ai-generate-both-languages"
                     checked={generateBothLanguages}
                     onChange={(e) => setGenerateBothLanguages(e.target.checked)}
                     className="rounded border-gray-300"
                   />
-                  <span className="text-sm text-gray-700">
+                  <label htmlFor="ai-generate-both-languages" className="text-sm text-gray-700">
                     Generate both English and Indonesian
-                  </span>
+                  </label>
                 </div>
               </div>
 
               {/* Custom Prompt */}
               <div>
-                <label className="text-sm font-medium text-gray-700 mb-2 block">
+                <Label htmlFor="ai-custom-prompt" className="text-sm font-medium text-gray-700 mb-2 block">
                   Custom Instructions (Optional)
-                </label>
+                </Label>
                 <Textarea
+                  id="ai-custom-prompt"
+                  name="ai-custom-prompt"
                   placeholder={getDefaultPrompt(contentType)}
                   value={customPrompt}
                   onChange={(e) => setCustomPrompt(e.target.value)}

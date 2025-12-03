@@ -228,8 +228,10 @@ export default function ArticleEditor() {
           <Card>
             <CardContent className="p-6 space-y-4">
               <div>
-                <Label>{t('articles.articleTitle')} *</Label>
+                <Label htmlFor="article-title">{t('articles.articleTitle')} *</Label>
                 <Input
+                  id="article-title"
+                  name="article-title"
                   value={formData.title}
                   onChange={(e) => {
                     const newTitle = e.target.value;
@@ -245,8 +247,10 @@ export default function ArticleEditor() {
               </div>
 
               <div>
-                <Label>{t('articles.slug')}</Label>
+                <Label htmlFor="article-slug">{t('articles.slug')}</Label>
                 <Input
+                  id="article-slug"
+                  name="article-slug"
                   value={formData.slug}
                   onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
                   placeholder="article-slug"
@@ -255,7 +259,7 @@ export default function ArticleEditor() {
               </div>
 
               <div>
-                <Label>{t('articles.content')} *</Label>
+                <Label id="article-content-label">{t('articles.content')} *</Label>
                 <RichTextEditor
                   value={formData.content}
                   onChange={(content) => setFormData({ ...formData, content })}
@@ -268,8 +272,10 @@ export default function ArticleEditor() {
               </div>
 
               <div>
-                <Label>{t('articles.excerpt')}</Label>
+                <Label htmlFor="article-excerpt">{t('articles.excerpt')}</Label>
                 <Textarea
+                  id="article-excerpt"
+                  name="article-excerpt"
                   value={formData.excerpt}
                   onChange={(e) => setFormData({ ...formData, excerpt: e.target.value })}
                   placeholder="Short excerpt..."

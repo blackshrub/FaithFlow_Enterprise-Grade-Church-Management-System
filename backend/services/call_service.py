@@ -205,7 +205,7 @@ class CallService:
         )
 
         # Store in MongoDB
-        await self.calls_collection.insert_one(call_log.model_dump())
+        await self.calls_collection.insert_one(call_log.model_dump(mode='json'))
 
         # Get community info if applicable
         community_name = None

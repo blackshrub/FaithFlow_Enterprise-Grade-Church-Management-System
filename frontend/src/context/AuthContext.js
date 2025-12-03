@@ -28,9 +28,11 @@ export const AuthProvider = ({ children }) => {
         };
 
         setUser(rebuiltUser);
-        setChurch({ id: rebuiltUser.session_church_id }); // single source of truth
+        // Only set church if session_church_id is valid (not null/undefined)
+        // This prevents church.id errors when accessing before auth is complete
+        setChurch(rebuiltUser.session_church_id ? { id: rebuiltUser.session_church_id } : null);
 
-        loadChurchSettings();
+        loadChurchSettings(rebuiltUser.session_church_id);
       } catch (err) {
         console.error("JWT parse error:", err);
         logout();
@@ -39,7 +41,13 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   }, []);
 
-  const loadChurchSettings = async () => {
+  const loadChurchSettings = useCallback(async (churchId) => {
+    // Don't load settings if no church context
+    if (!churchId) {
+      console.log('No church context, skipping church settings load');
+      return;
+    }
+
     try {
       const response = await settingsAPI.getChurchSettings();
       const settings = response.data;
@@ -51,7 +59,7 @@ export const AuthProvider = ({ children }) => {
       // Default to English if settings can't be loaded
       i18n.changeLanguage('en');
     }
-  };
+  }, [i18n]);
 
   const login = async (email, password, church_id = null) => {
     try {
@@ -74,10 +82,11 @@ export const AuthProvider = ({ children }) => {
       };
 
       setUser(rebuiltUser);
-      setChurch({ id: rebuiltUser.session_church_id });
-      
+      // Only set church if session_church_id is valid
+      setChurch(rebuiltUser.session_church_id ? { id: rebuiltUser.session_church_id } : null);
+
       // Load church settings to apply default language
-      await loadChurchSettings();
+      await loadChurchSettings(rebuiltUser.session_church_id);
 
       return { success: true, user: rebuiltUser };
     } catch (err) {

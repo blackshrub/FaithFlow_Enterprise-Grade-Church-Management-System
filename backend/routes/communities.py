@@ -286,7 +286,7 @@ async def create_community(
     church_id = get_session_church_id(current_user)
     user_id = current_user.get("id")
 
-    community_dict = community_data.model_dump()
+    community_dict = community_data.model_dump(mode='json')
 
     # Handle leader resolution
     leader_member_id = community_dict.get("leader_member_id")
@@ -311,7 +311,7 @@ async def create_community(
 
     # Ensure settings is a dict
     if "settings" in community_dict and hasattr(community_dict["settings"], "model_dump"):
-        community_dict["settings"] = community_dict["settings"].model_dump()
+        community_dict["settings"] = community_dict["settings"].model_dump(mode='json')
 
     community_dict["id"] = str(uuid.uuid4())
     community_dict["church_id"] = church_id
@@ -353,7 +353,7 @@ async def update_community(
             detail={"error_code": "NOT_FOUND", "message": "Community not found"},
         )
 
-    update_dict = community_data.model_dump(exclude_unset=True)
+    update_dict = community_data.model_dump(mode='json', exclude_unset=True)
     if not update_dict:
         return existing
 
@@ -404,7 +404,7 @@ async def update_community(
 
     # Handle settings update
     if "settings" in update_dict and hasattr(update_dict["settings"], "model_dump"):
-        update_dict["settings"] = update_dict["settings"].model_dump()
+        update_dict["settings"] = update_dict["settings"].model_dump(mode='json')
 
     update_dict["updated_at"] = datetime.utcnow()
 

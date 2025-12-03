@@ -588,7 +588,7 @@ async def get_scheduled_content(
 
     for ctype in content_types_to_query:
         collection = _get_collection(db, ctype)
-        if not collection:
+        if collection is None:
             continue
 
         # Build query for scheduled content in date range
@@ -1268,7 +1268,7 @@ async def upload_content_image(
         - thumbnail_url: URL to the thumbnail
     """
     collection = _get_collection(db, content_type)
-    if not collection:
+    if collection is None:
         raise HTTPException(
             status_code=400,
             detail={"error_code": "INVALID_CONTENT_TYPE", "message": f"Unknown content type: {content_type}"}

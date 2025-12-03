@@ -37,11 +37,11 @@ class AuthService:
                 return None
             
             # Create user object
-            user_dict = user_data.model_dump()
+            user_dict = user_data.model_dump(mode='json')
             hashed_password = hash_password(user_dict.pop('password'))
             
             user = User(**user_dict)
-            user_doc = user.model_dump()
+            user_doc = user.model_dump(mode='json')
             user_doc['hashed_password'] = hashed_password
             user_doc['created_at'] = user_doc['created_at'].isoformat()
             user_doc['updated_at'] = user_doc['updated_at'].isoformat()

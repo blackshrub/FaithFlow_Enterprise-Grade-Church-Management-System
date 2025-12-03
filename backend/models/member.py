@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, ConfigDict, EmailStr
+from pydantic import BaseModel, Field, ConfigDict, EmailStr, field_validator
 from typing import Optional, Literal, List, Dict, Any
 from datetime import datetime, date, timezone
 import uuid
@@ -48,6 +48,14 @@ class MemberBase(BaseModel):
     personal_id_code: Optional[str] = None  # Unique 6-digit code for member
     preferred_language: Optional[Literal['en', 'id']] = None  # Member's preferred language for communications
 
+    @field_validator('email', mode='before')
+    @classmethod
+    def empty_string_to_none(cls, v):
+        """Convert empty strings to None for email field"""
+        if v == '' or v is None:
+            return None
+        return v
+
 
 class MemberCreate(MemberBase):
     church_id: str
@@ -87,6 +95,14 @@ class MemberUpdate(BaseModel):
     personal_document_base64: Optional[str] = None  # DEPRECATED
     documents: Optional[List[Dict[str, Any]]] = None
     custom_fields: Optional[Dict[str, Any]] = None
+
+    @field_validator('email', mode='before')
+    @classmethod
+    def empty_string_to_none(cls, v):
+        """Convert empty strings to None for email field"""
+        if v == '' or v is None:
+            return None
+        return v
 
 
 class Member(MemberBase):

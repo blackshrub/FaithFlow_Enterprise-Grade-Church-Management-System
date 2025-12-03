@@ -42,8 +42,8 @@ async def create_member_status(
             detail="Member status with this name already exists"
         )
     
-    member_status = MemberStatus(**status_data.model_dump())
-    status_doc = member_status.model_dump()
+    member_status = MemberStatus(**status_data.model_dump(mode='json'))
+    status_doc = member_status.model_dump(mode='json')
     status_doc['created_at'] = status_doc['created_at'].isoformat()
     status_doc['updated_at'] = status_doc['updated_at'].isoformat()
     
@@ -169,7 +169,7 @@ async def update_member_status(
         )
 
     # Update only provided fields
-    update_data = status_data.model_dump(exclude_unset=True)
+    update_data = status_data.model_dump(mode='json', exclude_unset=True)
     if update_data:
         update_data['updated_at'] = datetime.now().isoformat()
         
@@ -277,8 +277,8 @@ async def create_demographic_preset(
             detail="Demographic preset with this name already exists"
         )
     
-    demographic = DemographicPreset(**preset_data.model_dump())
-    preset_doc = demographic.model_dump()
+    demographic = DemographicPreset(**preset_data.model_dump(mode='json'))
+    preset_doc = demographic.model_dump(mode='json')
     preset_doc['created_at'] = preset_doc['created_at'].isoformat()
     preset_doc['updated_at'] = preset_doc['updated_at'].isoformat()
     
@@ -498,7 +498,7 @@ async def update_demographic_preset(
         )
 
     # Update only provided fields
-    update_data = preset_data.model_dump(exclude_unset=True)
+    update_data = preset_data.model_dump(mode='json', exclude_unset=True)
     
     # Validate age range if both are provided
     if 'min_age' in update_data or 'max_age' in update_data:
@@ -743,8 +743,8 @@ async def create_church_settings(
             detail="Church settings already exist. Use update endpoint instead."
         )
     
-    church_settings = ChurchSettings(**settings_data.model_dump())
-    settings_doc = church_settings.model_dump()
+    church_settings = ChurchSettings(**settings_data.model_dump(mode='json'))
+    settings_doc = church_settings.model_dump(mode='json')
     settings_doc['created_at'] = settings_doc['created_at'].isoformat()
     settings_doc['updated_at'] = settings_doc['updated_at'].isoformat()
     
@@ -793,7 +793,7 @@ async def update_church_settings(
     await _ensure_settings_for_church(db, session_church_id)
 
     # Get update data (exclude unset to only update provided fields)
-    update_data = settings_data.model_dump(exclude_unset=True)
+    update_data = settings_data.model_dump(mode='json', exclude_unset=True)
 
     # Remove identity fields
     for key in ["id", "church_id", "created_at"]:
@@ -874,8 +874,8 @@ async def create_event_category(
     if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') != category_data.church_id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
     
-    category = EventCategory(**category_data.model_dump())
-    cat_doc = category.model_dump()
+    category = EventCategory(**category_data.model_dump(mode='json'))
+    cat_doc = category.model_dump(mode='json')
     cat_doc['created_at'] = cat_doc['created_at'].isoformat()
     cat_doc['updated_at'] = cat_doc['updated_at'].isoformat()
     
@@ -899,7 +899,7 @@ async def update_event_category(
     if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') != category.get('church_id'):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
 
-    update_data = category_data.model_dump(exclude_unset=True)
+    update_data = category_data.model_dump(mode='json', exclude_unset=True)
     if update_data:
         update_data['updated_at'] = datetime.now().isoformat()
         await db.event_categories.update_one({"id": category_id}, {"$set": update_data})

@@ -1,10 +1,12 @@
 /**
  * Prayer Request Kiosk Page
- * 
+ *
  * Flow:
  * 1. Phone + OTP
  * 2. Prayer request form
  * 3. Success
+ *
+ * Uses TanStack Query for mutations
  */
 
 import React, { useState } from 'react';
@@ -20,14 +22,19 @@ import { Button } from '../../components/ui/button';
 import { Textarea } from '../../components/ui/textarea';
 import { Label } from '../../components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
-import kioskApi from '../../services/kioskApi';
+import { useSubmitPrayerRequest, useKioskChurch } from '../../hooks/useKiosk';
 
 const PrayerRequestKiosk = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useTranslation('kiosk');
 
-  const churchId = location.state?.churchId || localStorage.getItem('kiosk_church_id');
+  // Get church context
+  const { churchId: storedChurchId } = useKioskChurch();
+  const churchId = location.state?.churchId || storedChurchId;
+
+  // Prayer request mutation
+  const prayerMutation = useSubmitPrayerRequest();
 
   const [step, setStep] = useState('phone');
   const [phone, setPhone] = useState('');
@@ -38,7 +45,6 @@ const PrayerRequestKiosk = () => {
     category: 'other',
     needs_followup: true
   });
-  const [submitting, setSubmitting] = useState(false);
   
   const handleMemberFound = (foundMember, foundPhone) => {
     console.log('✅ PrayerRequest - Member found:', foundMember?.full_name);
@@ -64,10 +70,8 @@ const PrayerRequestKiosk = () => {
   };
   
   const handleSubmitPrayer = async () => {
-    if (!prayerData.request.trim()) return;
-    
-    setSubmitting(true);
-    
+    if (!prayerData.request.trim() || !member) return;
+
     const payload = {
       member_id: member.id,
       requester_name: member.full_name,
@@ -78,20 +82,17 @@ const PrayerRequestKiosk = () => {
       status: 'new',
       needs_follow_up: prayerData.needs_followup
     };
-    
+
     console.log('🙏 Prayer request payload:', payload);
-    
+
     try {
-      const result = await kioskApi.submitPrayerRequest(payload);
+      const result = await prayerMutation.mutateAsync(payload);
       console.log('🙏 Prayer request result:', result);
-      
       setStep('success');
     } catch (error) {
       console.error('❌ Prayer submission error:', error);
       console.error('❌ Error response:', error.response?.data);
       alert(t('errors.generic'));
-    } finally {
-      setSubmitting(false);
     }
   };
   
@@ -225,10 +226,10 @@ const PrayerRequestKiosk = () => {
 
           <Button
             onClick={handleSubmitPrayer}
-            disabled={submitting || !prayerData.request.trim()}
+            disabled={prayerMutation.isPending || !prayerData.request.trim()}
             className="w-full h-12 sm:h-14 lg:h-16 text-base sm:text-lg lg:text-xl rounded-xl"
           >
-            {submitting ? 'Sending...' : t('prayer.submit')}
+            {prayerMutation.isPending ? 'Sending...' : t('prayer.submit')}
           </Button>
         </motion.div>
       </KioskLayout>

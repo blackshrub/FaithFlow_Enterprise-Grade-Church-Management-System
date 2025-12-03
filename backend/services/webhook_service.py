@@ -195,7 +195,7 @@ class WebhookService:
             next_retry_at=datetime.now(timezone.utc)  # Retry immediately
         )
         
-        queue_doc = queue_item.model_dump()
+        queue_doc = queue_item.model_dump(mode='json')
         queue_doc["created_at"] = queue_doc["created_at"].isoformat()
         queue_doc["next_retry_at"] = queue_doc["next_retry_at"].isoformat()
         
@@ -233,7 +233,7 @@ class WebhookService:
             delivery_time_ms=delivery_time_ms
         )
         
-        log_doc = log_entry.model_dump()
+        log_doc = log_entry.model_dump(mode='json')
         log_doc["created_at"] = log_doc["created_at"].isoformat()
         if log_doc.get("delivered_at"):
             log_doc["delivered_at"] = log_doc["delivered_at"].isoformat()

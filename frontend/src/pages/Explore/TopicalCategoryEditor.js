@@ -219,6 +219,7 @@ export default function TopicalCategoryEditor() {
                   <Label htmlFor="name-en">Name (English) *</Label>
                   <Input
                     id="name-en"
+                    name="name-en"
                     value={formData.name.en}
                     onChange={(e) => handleInputChange('name', e.target.value, 'en')}
                     placeholder="e.g., Faith & Trust, Love & Relationships"
@@ -232,6 +233,7 @@ export default function TopicalCategoryEditor() {
                   <Label htmlFor="name-id">Nama (Indonesian)</Label>
                   <Input
                     id="name-id"
+                    name="name-id"
                     value={formData.name.id}
                     onChange={(e) => handleInputChange('name', e.target.value, 'id')}
                     placeholder="misal: Iman & Kepercayaan, Kasih & Hubungan"
@@ -260,6 +262,7 @@ export default function TopicalCategoryEditor() {
                   <Label htmlFor="description-en">Description (English) *</Label>
                   <Textarea
                     id="description-en"
+                    name="description-en"
                     value={formData.description.en}
                     onChange={(e) => handleInputChange('description', e.target.value, 'en')}
                     placeholder="Describe what types of verses and topics are included in this category"
@@ -274,6 +277,7 @@ export default function TopicalCategoryEditor() {
                   <Label htmlFor="description-id">Deskripsi (Indonesian)</Label>
                   <Textarea
                     id="description-id"
+                    name="description-id"
                     value={formData.description.id}
                     onChange={(e) => handleInputChange('description', e.target.value, 'id')}
                     placeholder="Jelaskan jenis ayat dan topik yang termasuk dalam kategori ini"
@@ -297,12 +301,13 @@ export default function TopicalCategoryEditor() {
           <CardContent className="space-y-6">
             {/* Icon Selection */}
             <div>
-              <Label>Icon</Label>
+              <Label htmlFor="category-icon">Icon</Label>
               <Select
                 value={formData.icon}
                 onValueChange={(value) => handleInputChange('icon', value)}
+                name="category-icon"
               >
-                <SelectTrigger className="w-full">
+                <SelectTrigger id="category-icon" className="w-full">
                   <SelectValue placeholder="Select an icon" />
                 </SelectTrigger>
                 <SelectContent>
@@ -344,6 +349,8 @@ export default function TopicalCategoryEditor() {
                   className="w-16 h-10 p-1 cursor-pointer"
                 />
                 <Input
+                  id="color-hex"
+                  name="color-hex"
                   value={formData.color}
                   onChange={(e) => handleInputChange('color', e.target.value)}
                   placeholder="#3B82F6"
@@ -382,12 +389,13 @@ export default function TopicalCategoryEditor() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <Label>Parent Category</Label>
+              <Label htmlFor="parent-category">Parent Category</Label>
               <Select
                 value={formData.parent_category_id || 'none'}
                 onValueChange={(value) => handleInputChange('parent_category_id', value === 'none' ? null : value)}
+                name="parent-category"
               >
-                <SelectTrigger className="w-full">
+                <SelectTrigger id="parent-category" className="w-full">
                   <SelectValue placeholder="Select parent category (optional)" />
                 </SelectTrigger>
                 <SelectContent>
@@ -408,6 +416,7 @@ export default function TopicalCategoryEditor() {
               <Label htmlFor="sort-order">Sort Order</Label>
               <Input
                 id="sort-order"
+                name="sort-order"
                 type="number"
                 value={formData.sort_order}
                 onChange={(e) => handleInputChange('sort_order', parseInt(e.target.value) || 0)}

@@ -155,6 +155,9 @@ export default function CommunityMembersPage() {
 
             <div className="flex gap-2">
               <Input
+                id="community-member-search"
+                name="community-member-search"
+                aria-label="Search members by name or phone"
                 ref={searchInputRef}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}

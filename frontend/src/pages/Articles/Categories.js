@@ -102,12 +102,12 @@ export default function Categories() {
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <Label>{t('articles.categoriesManagement.categoryName')} *</Label>
-              <Input value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required />
+              <Label htmlFor="category-name">{t('articles.categoriesManagement.categoryName')} *</Label>
+              <Input id="category-name" name="category-name" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required />
             </div>
             <div>
-              <Label>{t('articles.categoriesManagement.categoryDescription')}</Label>
-              <Textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} rows={3} />
+              <Label htmlFor="category-description">{t('articles.categoriesManagement.categoryDescription')}</Label>
+              <Textarea id="category-description" name="category-description" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} rows={3} />
             </div>
             <div className="flex justify-end space-x-2">
               <Button type="button" variant="outline" onClick={() => setShowModal(false)}>{t('common.cancel')}</Button>

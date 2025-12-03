@@ -7,6 +7,7 @@ from typing import Optional
 from datetime import datetime, timedelta
 import uuid
 import random
+import json
 import logging
 
 from utils.dependencies import get_db
@@ -16,7 +17,24 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/kiosk", tags=["Kiosk"])
 
-# Note: OTP storage moved to database for persistence across restarts and multiple instances
+# OTP storage uses Redis for efficient TTL-based expiry and O(1) lookups
+OTP_TTL_SECONDS = 300  # 5 minutes
+OTP_MAX_ATTEMPTS = 5
+
+
+async def _get_redis():
+    """Get Redis connection for OTP storage."""
+    try:
+        from config.redis import get_redis
+        return await get_redis()
+    except Exception as e:
+        logger.warning(f"Redis unavailable for OTP: {e}")
+        return None
+
+
+def _otp_key(phone: str) -> str:
+    """Generate Redis key for OTP."""
+    return f"faithflow:otp:{phone}"
 
 class OTPSendRequest(BaseModel):
     phone: str
@@ -42,26 +60,30 @@ async def send_otp(
         # Generate 4-digit OTP
         code = str(random.randint(1000, 9999))
 
-        # Store OTP in database for persistence (survives restarts and works with multiple instances)
-        expires_at = datetime.utcnow() + timedelta(minutes=5)
-        await db.otp_codes.update_one(
-            {"phone": phone},
-            {
-                "$set": {
-                    "phone": phone,
-                    "code": code,
-                    "expires_at": expires_at,
-                    "attempts": 0,
-                    "created_at": datetime.utcnow()
-                }
-            },
-            upsert=True
-        )
+        # Store OTP in Redis with TTL (auto-expires, O(1) lookup)
+        redis = await _get_redis()
+        otp_data = {
+            "code": code,
+            "attempts": 0,
+            "created_at": datetime.utcnow().isoformat()
+        }
 
-        # Log OTP for testing
-        logger.info(f"🔐 OTP for {phone}: {code} (expires: {expires_at})")
-        print(f"\n🔐 OTP for {phone}: {code}\n")
-        print(f"📦 Stored in database, expires at: {expires_at}\n")
+        if redis:
+            otp_key = _otp_key(phone)
+            await redis.set(otp_key, json.dumps(otp_data), ex=OTP_TTL_SECONDS)
+            logger.info(f"🔐 OTP for {phone}: {code} (Redis, expires in {OTP_TTL_SECONDS}s)")
+            print(f"\n🔐 OTP for {phone}: {code}\n")
+            print(f"📦 Stored in Redis, TTL: {OTP_TTL_SECONDS}s\n")
+        else:
+            # Fallback to MongoDB if Redis unavailable
+            expires_at = datetime.utcnow() + timedelta(seconds=OTP_TTL_SECONDS)
+            await db.otp_codes.update_one(
+                {"phone": phone},
+                {"$set": {"phone": phone, "code": code, "expires_at": expires_at, "attempts": 0, "created_at": datetime.utcnow()}},
+                upsert=True
+            )
+            logger.info(f"🔐 OTP for {phone}: {code} (MongoDB fallback)")
+            print(f"\n🔐 OTP for {phone}: {code} (MongoDB fallback)\n")
 
         # Get WhatsApp config from SYSTEM SETTINGS (global, configured in Integrations)
         from utils.system_config import get_whatsapp_settings
@@ -149,23 +171,41 @@ async def verify_otp(
 
         print(f"🔍 Verifying OTP for phone: {phone}, code: {code}")
 
-        # Find OTP in database
-        otp_doc = await db.otp_codes.find_one({"phone": phone})
+        # Try Redis first
+        redis = await _get_redis()
+        otp_doc = None
+
+        if redis:
+            otp_key = _otp_key(phone)
+            otp_data = await redis.get(otp_key)
+
+            if otp_data:
+                otp_doc = json.loads(otp_data)
+                otp_doc["_source"] = "redis"
+                print(f"📦 Found OTP in Redis for {phone}")
+            else:
+                print(f"❌ No OTP found in Redis for {phone}")
+
+        # Fallback to MongoDB if not in Redis
+        if not otp_doc:
+            mongo_doc = await db.otp_codes.find_one({"phone": phone})
+            if mongo_doc:
+                otp_doc = {
+                    "code": mongo_doc["code"],
+                    "attempts": mongo_doc["attempts"],
+                    "expires_at": mongo_doc["expires_at"],
+                    "_source": "mongodb"
+                }
+                print(f"📦 Found OTP in MongoDB fallback for {phone}")
 
         if not otp_doc:
-            # Debug: show all phones in database
-            all_otps = await db.otp_codes.find({}, {"phone": 1, "created_at": 1}).to_list(length=10)
-            print(f"❌ No OTP found for {phone}")
-            print(f"📦 Database has OTPs for: {[doc['phone'] for doc in all_otps]}")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail={"error_code": "OTP_NOT_FOUND", "message": "No OTP found. Please request a new code."}
             )
 
-        print(f"📦 Found OTP in database for {phone}")
-
-        # Check expiry
-        if datetime.utcnow() > otp_doc['expires_at']:
+        # Check expiry (only for MongoDB, Redis handles TTL automatically)
+        if otp_doc.get("_source") == "mongodb" and datetime.utcnow() > otp_doc['expires_at']:
             print(f"❌ OTP expired for {phone}")
             await db.otp_codes.delete_one({"phone": phone})
             raise HTTPException(
@@ -174,8 +214,11 @@ async def verify_otp(
             )
 
         # Check attempts
-        if otp_doc['attempts'] >= 5:
+        if otp_doc['attempts'] >= OTP_MAX_ATTEMPTS:
             print(f"❌ Too many attempts for {phone}")
+            # Delete from both Redis and MongoDB
+            if redis:
+                await redis.delete(_otp_key(phone))
             await db.otp_codes.delete_one({"phone": phone})
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -185,15 +228,23 @@ async def verify_otp(
         # Verify code
         if otp_doc['code'] != code:
             # Increment attempts
-            await db.otp_codes.update_one(
-                {"phone": phone},
-                {"$inc": {"attempts": 1}}
-            )
-            print(f"❌ Wrong code for {phone}. Expected: {otp_doc['code']}, Got: {code}, Attempts: {otp_doc['attempts'] + 1}")
+            otp_doc['attempts'] += 1
+            if redis and otp_doc.get("_source") == "redis":
+                # Get remaining TTL and update
+                otp_key = _otp_key(phone)
+                ttl = await redis.ttl(otp_key)
+                if ttl > 0:
+                    await redis.set(otp_key, json.dumps({"code": otp_doc["code"], "attempts": otp_doc["attempts"]}), ex=ttl)
+            else:
+                await db.otp_codes.update_one({"phone": phone}, {"$inc": {"attempts": 1}})
+
+            print(f"❌ Wrong code for {phone}. Expected: {otp_doc['code']}, Got: {code}, Attempts: {otp_doc['attempts']}")
             return {"success": False, "message": "Invalid OTP"}
 
-        # Success - remove OTP from database
-        await db.otp_codes.delete_one({"phone": phone})
+        # Success - remove OTP
+        if redis:
+            await redis.delete(_otp_key(phone))
+        await db.otp_codes.delete_one({"phone": phone})  # Clean up MongoDB too
         print(f"✅ OTP verified successfully for {phone}")
 
         return {"success": True, "message": "OTP verified"}

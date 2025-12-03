@@ -140,6 +140,9 @@ export default function ArticlesList() {
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
+                id="articles-search"
+                name="articles-search"
+                aria-label={t('common.search')}
                 placeholder={t('common.search')}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
@@ -147,8 +150,8 @@ export default function ArticlesList() {
               />
             </div>
 
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger>
+            <Select value={statusFilter} onValueChange={setStatusFilter} name="articles-status-filter">
+              <SelectTrigger id="articles-status-filter" aria-label={t('articles.status')}>
                 <SelectValue placeholder={t('articles.status')} />
               </SelectTrigger>
               <SelectContent>
@@ -159,8 +162,8 @@ export default function ArticlesList() {
               </SelectContent>
             </Select>
 
-            <Select value={scheduleFilter} onValueChange={setScheduleFilter}>
-              <SelectTrigger>
+            <Select value={scheduleFilter} onValueChange={setScheduleFilter} name="articles-schedule-filter">
+              <SelectTrigger id="articles-schedule-filter" aria-label={t('articles.scheduling.scheduleStatus')}>
                 <SelectValue placeholder={t('articles.scheduling.scheduleStatus')} />
               </SelectTrigger>
               <SelectContent>

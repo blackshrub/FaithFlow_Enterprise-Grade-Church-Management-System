@@ -142,7 +142,9 @@ function MemberStatusesSection() {
   const [selectedStatus, setSelectedStatus] = useState(null);
   const [formData, setFormData] = useState(initialStatusFormData);
 
-  const { data: statuses = [], isLoading, error } = useMemberStatuses();
+  const { data: statusesRaw = [], isLoading, error } = useMemberStatuses();
+  // Filter out any null/undefined items or items without id
+  const statuses = (statusesRaw || []).filter(s => s && s.id);
   const createStatus = useCreateMemberStatus();
   const updateStatus = useUpdateMemberStatus();
   const deleteStatus = useDeleteMemberStatus();
@@ -157,6 +159,7 @@ function MemberStatusesSection() {
 
   const handleDragEnd = (event) => {
     const { active, over } = event;
+    if (!over || active.id === over.id) return;
     if (active.id !== over.id) {
       const oldIndex = statuses.findIndex((s) => s.id === active.id);
       const newIndex = statuses.findIndex((s) => s.id === over.id);
@@ -168,6 +171,7 @@ function MemberStatusesSection() {
 
   const handleCreateStatus = async (e) => {
     e.preventDefault();
+    if (!church?.id) return;
     createStatus.mutate(
       { ...formData, church_id: church.id },
       {
@@ -181,6 +185,7 @@ function MemberStatusesSection() {
 
   const handleUpdateStatus = async (e) => {
     e.preventDefault();
+    if (!selectedStatus?.id) return;
     updateStatus.mutate(
       { id: selectedStatus.id, data: formData },
       {
@@ -238,6 +243,7 @@ function MemberStatusesSection() {
                 <Label htmlFor="status-name">{t('settings.statusName') || 'Name'} *</Label>
                 <Input
                   id="status-name"
+                  name="status_name"
                   placeholder="e.g., Full Member"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -248,6 +254,7 @@ function MemberStatusesSection() {
                 <Label htmlFor="status-description">{t('settings.statusDescription') || 'Description'}</Label>
                 <Textarea
                   id="status-description"
+                  name="status_description"
                   placeholder="Describe this status"
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -259,6 +266,7 @@ function MemberStatusesSection() {
                 <div className="flex gap-2">
                   <Input
                     id="status-color"
+                    name="status_color"
                     type="text"
                     placeholder="#3B82F6"
                     value={formData.color}
@@ -266,6 +274,8 @@ function MemberStatusesSection() {
                     className="flex-1"
                   />
                   <Input
+                    id="status-color-picker"
+                    name="status_color_picker"
                     type="color"
                     value={formData.color}
                     onChange={(e) => setFormData({ ...formData, color: e.target.value })}
@@ -373,6 +383,7 @@ function MemberStatusesSection() {
               <Label htmlFor="edit-status-name">{t('settings.statusName') || 'Name'} *</Label>
               <Input
                 id="edit-status-name"
+                name="edit_status_name"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 disabled={selectedStatus?.is_system}
@@ -383,6 +394,7 @@ function MemberStatusesSection() {
               <Label htmlFor="edit-status-description">{t('settings.statusDescription') || 'Description'}</Label>
               <Textarea
                 id="edit-status-description"
+                name="edit_status_description"
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 rows={3}
@@ -393,12 +405,13 @@ function MemberStatusesSection() {
               <div className="flex gap-2">
                 <Input
                   id="edit-status-color"
+                  name="edit_status_color"
                   type="text"
                   value={formData.color}
                   onChange={(e) => setFormData({ ...formData, color: e.target.value })}
                   className="flex-1"
                 />
-                <Input type="color" value={formData.color} onChange={(e) => setFormData({ ...formData, color: e.target.value })} className="w-16 h-10 cursor-pointer" />
+                <Input id="edit-status-color-picker" name="edit_status_color_picker" type="color" value={formData.color} onChange={(e) => setFormData({ ...formData, color: e.target.value })} className="w-16 h-10 cursor-pointer" />
               </div>
               <div className="flex items-center gap-2 mt-2">
                 <Badge style={{ backgroundColor: formData.color, color: '#fff' }}>Preview</Badge>
@@ -561,13 +574,16 @@ function EventCategoriesSection() {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [formData, setFormData] = useState(initialEventCategoryFormData);
 
-  const { data: categories = [], isLoading, error } = useEventCategories();
+  const { data: categoriesRaw = [], isLoading, error } = useEventCategories();
+  // Filter out any null/undefined items or items without id
+  const categories = (categoriesRaw || []).filter(c => c && c.id);
   const createCategory = useCreateEventCategory();
   const updateCategory = useUpdateEventCategory();
   const deleteCategory = useDeleteEventCategory();
 
   const handleCreateCategory = async (e) => {
     e.preventDefault();
+    if (!church?.id) return;
     createCategory.mutate(
       { ...formData, church_id: church.id },
       {
@@ -581,6 +597,7 @@ function EventCategoriesSection() {
 
   const handleUpdateCategory = async (e) => {
     e.preventDefault();
+    if (!selectedCategory?.id) return;
     updateCategory.mutate(
       { id: selectedCategory.id, data: formData },
       {

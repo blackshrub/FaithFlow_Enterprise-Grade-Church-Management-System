@@ -34,7 +34,7 @@ const initialFormData = {
 
 export default function Members() {
   const { t } = useTranslation();
-  const { church } = useAuth();
+  const { church, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -68,7 +68,7 @@ export default function Members() {
   }, [filters, showIncompleteOnly]);
 
   // React Query hooks - with pagination, server-side search, and filters
-  const { data: members = [], isLoading, error } = useMembers({ 
+  const { data: membersRaw = [], isLoading, error } = useMembers({
     is_active: true,
     incomplete_data: showIncompleteOnly || undefined,
     skip: (currentPage - 1) * membersPerPage,
@@ -79,9 +79,15 @@ export default function Members() {
     member_status: filters.member_status || undefined,
     demographic_category: filters.demographic_category || undefined
   });
+  // Filter out any null/undefined items or items without id
+  const members = (membersRaw || []).filter(m => m && m.id);
   const { data: stats } = useMemberStats();
-  const { data: statuses = [] } = useMemberStatuses();
-  const { data: demographics = [] } = useDemographics();
+  const { data: statusesRaw = [] } = useMemberStatuses();
+  const { data: demographicsRaw = [] } = useDemographics();
+
+  // Filter out any null/undefined items AND items without id to prevent render errors
+  const statuses = (statusesRaw || []).filter(s => s && s.id);
+  const demographics = (demographicsRaw || []).filter(d => d && d.id);
   const createMember = useCreateMember();
   const updateMember = useUpdateMember();
   const deleteMember = useDeleteMember();
@@ -96,6 +102,19 @@ export default function Members() {
     () => filters.gender || filters.marital_status || filters.member_status || filters.demographic_category,
     [filters]
   );
+
+  // Early return while auth is loading or church context not ready
+  // Note: church can be {id: null} when session_church_id is missing, so check church?.id
+  if (authLoading || !church?.id) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-500">{t('common.loading') || 'Loading...'}</p>
+        </div>
+      </div>
+    );
+  }
 
   const clearFilters = () => {
     setFilters({
@@ -143,6 +162,11 @@ export default function Members() {
     }
 
     console.log('[DEBUG] Creating member with data:', cleanData);
+
+    if (!church?.id) {
+      console.error('[ERROR] No church context available');
+      return;
+    }
 
     createMember.mutate(
       { ...cleanData, church_id: church.id },
@@ -321,10 +345,13 @@ export default function Members() {
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                 <Input
+                  id="member-search"
+                  name="member-search"
                   placeholder={t('members.searchPlaceholder')}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-10 w-80"
+                  autoComplete="off"
                 />
               </div>
             </div>

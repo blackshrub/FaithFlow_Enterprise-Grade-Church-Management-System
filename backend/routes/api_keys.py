@@ -61,13 +61,13 @@ async def create_api_key(
     
     # Create API key object
     api_key_obj = APIKey(
-        **api_key_data.model_dump(),
+        **api_key_data.model_dump(mode='json'),
         api_username=api_username,
         api_key=api_key_plain,  # Store plain for initial display (will be hidden after)
         api_key_hash=api_key_hash
     )
     
-    api_key_doc = api_key_obj.model_dump()
+    api_key_doc = api_key_obj.model_dump(mode='json')
     api_key_doc['created_at'] = api_key_doc['created_at'].isoformat()
     api_key_doc['updated_at'] = api_key_doc['updated_at'].isoformat()
     
@@ -75,7 +75,7 @@ async def create_api_key(
     
     # Return with plain API key (only shown once)
     return {
-        **api_key_obj.model_dump(exclude={'api_key_hash'}),
+        **api_key_obj.model_dump(mode='json', exclude={'api_key_hash'}),
         "message": "API key created. Save the API key securely - it won't be shown again."
     }
 
@@ -105,7 +105,7 @@ async def update_api_key(
         )
     
     # Update only provided fields
-    update_data = api_key_data.model_dump(exclude_unset=True)
+    update_data = api_key_data.model_dump(mode='json', exclude_unset=True)
     
     if update_data:
         update_data['updated_at'] = datetime.now().isoformat()

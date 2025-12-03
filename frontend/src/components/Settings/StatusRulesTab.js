@@ -245,6 +245,7 @@ export default function StatusRulesTab() {
   ]; // Simplified for now
 
   const handlePreviewExistingRule = (rule) => {
+    if (!church?.id) return;
     // Simulate existing rule
     const ruleData = {
       rule_type: rule.rule_type,
@@ -265,6 +266,7 @@ export default function StatusRulesTab() {
 
   const handleCreateRule = async (e) => {
     e.preventDefault();
+    if (!church?.id) return;
     createRule.mutate(
       { ...formData, church_id: church.id },
       {
@@ -282,6 +284,7 @@ export default function StatusRulesTab() {
       toast.error('Please add conditions and select target status');
       return;
     }
+    if (!church?.id) return;
 
     simulateRule.mutate(
       { ...formData, church_id: church.id },

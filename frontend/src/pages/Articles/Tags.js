@@ -101,8 +101,8 @@ export default function Tags() {
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <Label>{t('articles.tagsManagement.tagName')} *</Label>
-              <Input value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required />
+              <Label htmlFor="tag-name">{t('articles.tagsManagement.tagName')} *</Label>
+              <Input id="tag-name" name="tag-name" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required />
             </div>
             <div className="flex justify-end space-x-2">
               <Button type="button" variant="outline" onClick={() => setShowModal(false)}>{t('common.cancel')}</Button>

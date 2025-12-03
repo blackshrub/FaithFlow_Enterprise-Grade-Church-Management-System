@@ -51,6 +51,7 @@ export default function MemberStatusesTab() {
 
   const handleCreateStatus = async (e) => {
     e.preventDefault();
+    if (!church?.id) return;
     createStatus.mutate(
       { ...formData, church_id: church.id },
       {
@@ -200,6 +201,7 @@ export default function MemberStatusesTab() {
                 <Label htmlFor="status-name">{t('settings.statusName')} *</Label>
                 <Input
                   id="status-name"
+                  name="status_name"
                   placeholder={t('settings.statusPlaceholder')}
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -210,6 +212,7 @@ export default function MemberStatusesTab() {
                 <Label htmlFor="status-description">{t('settings.statusDescription')}</Label>
                 <Textarea
                   id="status-description"
+                  name="status_description"
                   placeholder={t('settings.descriptionPlaceholder')}
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -380,6 +383,7 @@ export default function MemberStatusesTab() {
               <Label htmlFor="edit-status-name">{t('settings.statusName')} *</Label>
               <Input
                 id="edit-status-name"
+                name="edit_status_name"
                 placeholder={t('settings.statusPlaceholder')}
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -390,6 +394,7 @@ export default function MemberStatusesTab() {
               <Label htmlFor="edit-status-description">{t('settings.statusDescription')}</Label>
               <Textarea
                 id="edit-status-description"
+                name="edit_status_description"
                 placeholder={t('settings.descriptionPlaceholder')}
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}

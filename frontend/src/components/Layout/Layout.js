@@ -251,7 +251,7 @@ export default function Layout() {
       submenu: [
         { label: 'Categories', path: '/content-center/topical' },
         { label: 'All Verses', path: '/content-center/topical/verses' },
-        { label: 'Create New', path: '/content-center/topical/new' },
+        { label: 'Add New Verse', path: '/content-center/topical/verses/new' },
       ]
     },
     

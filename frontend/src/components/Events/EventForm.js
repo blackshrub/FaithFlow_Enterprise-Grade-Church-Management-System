@@ -136,6 +136,10 @@ function EventForm({ event, onClose }) {
         await updateMutation.mutateAsync({ id: event.id, data: eventData });
         toast.success(t('events.event.updateSuccess'));
       } else {
+        if (!church?.id) {
+          toast.error('Church context not available');
+          return;
+        }
         await createMutation.mutateAsync({ ...eventData, church_id: church.id });
         toast.success(t('events.event.createSuccess'));
       }
@@ -174,6 +178,8 @@ function EventForm({ event, onClose }) {
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="radio"
+                    id="event_type_single"
+                    name="event_type"
                     value="single"
                     checked={formData.event_type === 'single'}
                     onChange={(e) => handleChange('event_type', e.target.value)}
@@ -184,6 +190,8 @@ function EventForm({ event, onClose }) {
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="radio"
+                    id="event_type_series"
+                    name="event_type"
                     value="series"
                     checked={formData.event_type === 'series'}
                     onChange={(e) => handleChange('event_type', e.target.value)}
@@ -211,6 +219,7 @@ function EventForm({ event, onClose }) {
                 <Label htmlFor="category">{t('settings.eventCategory')} *</Label>
                 <select
                   id="category"
+                  name="event_category_id"
                   value={formData.event_category_id}
                   onChange={(e) => handleChange('event_category_id', e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md"
@@ -303,6 +312,7 @@ function EventForm({ event, onClose }) {
                 <input
                   type="checkbox"
                   id="requires_rsvp"
+                  name="requires_rsvp"
                   checked={formData.requires_rsvp}
                   onChange={(e) => handleChange('requires_rsvp', e.target.checked)}
                   className="w-4 h-4"
@@ -319,6 +329,7 @@ function EventForm({ event, onClose }) {
                     <input
                       type="checkbox"
                       id="enable_seat_selection"
+                      name="enable_seat_selection"
                       checked={formData.enable_seat_selection}
                       onChange={(e) => handleChange('enable_seat_selection', e.target.checked)}
                       className="w-4 h-4"
@@ -336,6 +347,7 @@ function EventForm({ event, onClose }) {
                       </Label>
                       <select
                         id="seat_layout_id"
+                        name="seat_layout_id"
                         value={formData.seat_layout_id}
                         onChange={(e) => handleChange('seat_layout_id', e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md"
@@ -465,6 +477,8 @@ function EventForm({ event, onClose }) {
                   <span className="text-sm text-gray-500">{t('events.event.uploadPhoto')}</span>
                   <input
                     type="file"
+                    id="event_photo"
+                    name="event_photo"
                     accept="image/*"
                     onChange={handlePhotoUpload}
                     className="hidden"

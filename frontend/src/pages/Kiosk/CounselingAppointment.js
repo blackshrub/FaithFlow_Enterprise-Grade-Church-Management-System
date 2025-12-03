@@ -1,6 +1,6 @@
 /**
  * Counseling Appointment Kiosk Page
- * 
+ *
  * Flow:
  * 1. Phone + OTP
  * 2. Pre-counseling form (type, notes, urgency)
@@ -8,9 +8,11 @@
  * 4. Select time slot
  * 5. Confirm
  * 6. Success
+ *
+ * Uses TanStack Query for data fetching
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { MessageCircleHeart, Check, Calendar as CalendarIcon } from 'lucide-react';
@@ -23,7 +25,7 @@ import { Button } from '../../components/ui/button';
 import { Textarea } from '../../components/ui/textarea';
 import { Label } from '../../components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
-import kioskApi from '../../services/kioskApi';
+import { useKioskCounselorSlots, useCreateCounselingRequest, useKioskChurch } from '../../hooks/useKiosk';
 import { format, addDays, startOfDay } from 'date-fns';
 
 const CounselingKiosk = () => {
@@ -31,7 +33,9 @@ const CounselingKiosk = () => {
   const location = useLocation();
   const { t } = useTranslation('kiosk');
 
-  const churchId = location.state?.churchId || localStorage.getItem('kiosk_church_id');
+  // Get church context
+  const { churchId: storedChurchId } = useKioskChurch();
+  const churchId = location.state?.churchId || storedChurchId;
 
   const [step, setStep] = useState('phone');
   const [phone, setPhone] = useState('');
@@ -42,50 +46,37 @@ const CounselingKiosk = () => {
     notes: '',
     urgency: 'medium'
   });
-  
-  const [availableDates, setAvailableDates] = useState([]);
+
   const [selectedDate, setSelectedDate] = useState(null);
-  const [availableSlots, setAvailableSlots] = useState([]);
   const [selectedSlot, setSelectedSlot] = useState(null);
-  const [submitting, setSubmitting] = useState(false);
-  
-  useEffect(() => {
-    if (step === 'select_date') {
-      loadAvailableDates();
-    }
-  }, [step]);
-  
-  useEffect(() => {
-    if (selectedDate) {
-      loadSlotsForDate(selectedDate);
-    }
-  }, [selectedDate]);
-  
-  const loadAvailableDates = async () => {
-    // Generate next 14 days
+
+  // Generate next 14 days (memoized)
+  const availableDates = useMemo(() => {
     const dates = [];
     for (let i = 1; i <= 14; i++) {
       dates.push(addDays(startOfDay(new Date()), i));
     }
-    setAvailableDates(dates);
-  };
-  
-  const loadSlotsForDate = async (date) => {
-    try {
-      const dateStr = format(date, 'yyyy-MM-dd');
-      const slots = await kioskApi.getAvailableSlots(null, dateStr, dateStr);
-      
-      // Flatten and extract slots
-      const allSlots = slots.flatMap(day => 
-        day.slots || []
-      ).filter(slot => slot);
-      
-      setAvailableSlots(allSlots);
-    } catch (error) {
-      console.error('Failed to load slots:', error);
-      setAvailableSlots([]);
-    }
-  };
+    return dates;
+  }, []);
+
+  // Format selected date for API
+  const selectedDateStr = selectedDate ? format(selectedDate, 'yyyy-MM-dd') : null;
+
+  // Fetch slots using TanStack Query
+  const {
+    data: slotsData = [],
+    isLoading: slotsLoading,
+  } = useKioskCounselorSlots(null, selectedDateStr, selectedDateStr, {
+    enabled: step === 'select_time' && !!selectedDateStr,
+  });
+
+  // Process slots data
+  const availableSlots = useMemo(() => {
+    return slotsData.flatMap(day => day.slots || []).filter(slot => slot);
+  }, [slotsData]);
+
+  // Counseling request mutation
+  const counselingMutation = useCreateCounselingRequest();
   
   const handleMemberFound = (foundMember, foundPhone) => {
     setMember(foundMember);
@@ -110,28 +101,24 @@ const CounselingKiosk = () => {
   
   const handleSubmitCounseling = async () => {
     if (!selectedSlot) return;
-    
-    setSubmitting(true);
-    
+
     try {
-      await kioskApi.createCounselingRequest({
+      await counselingMutation.mutateAsync({
         slot_id: selectedSlot.slot_id,
         type: 'counseling',
-        urgency: counselingData.urgency === 'low' ? 'low' : 
+        urgency: counselingData.urgency === 'low' ? 'low' :
                  counselingData.urgency === 'high' ? 'high' : 'normal',
-        topic: counselingData.type === 'family' ? 'Family' : 
-               counselingData.type === 'marriage' ? 'Marriage' : 
+        topic: counselingData.type === 'family' ? 'Family' :
+               counselingData.type === 'marriage' ? 'Marriage' :
                counselingData.type === 'personal' ? 'Personal' : 'Other',
         description: counselingData.notes || `Requesting ${counselingData.type} counseling`,
         preferred_channel: 'in_person'
       });
-      
+
       setStep('success');
     } catch (error) {
       console.error('Counseling submission error:', error);
       alert(t('errors.generic'));
-    } finally {
-      setSubmitting(false);
     }
   };
   
@@ -282,7 +269,11 @@ const CounselingKiosk = () => {
             <p className="text-base sm:text-lg lg:text-xl text-gray-600">{selectedDate && format(selectedDate, 'EEEE, MMMM dd, yyyy')}</p>
           </div>
 
-          {availableSlots.length === 0 ? (
+          {slotsLoading ? (
+            <div className="text-center py-8 sm:py-12">
+              <div className="text-lg sm:text-xl lg:text-2xl text-gray-600">Loading available times...</div>
+            </div>
+          ) : availableSlots.length === 0 ? (
             <div className="text-center py-8 sm:py-12">
               <CalendarIcon className="w-12 h-12 sm:w-16 sm:h-16 lg:w-20 lg:h-20 mx-auto mb-4 text-gray-300" />
               <p className="text-lg sm:text-xl lg:text-2xl text-gray-600">{t('counseling.no_slots')}</p>
@@ -342,8 +333,8 @@ const CounselingKiosk = () => {
             <Button variant="outline" onClick={() => setStep('select_time')} className="flex-1 h-12 sm:h-14 lg:h-16 text-base sm:text-lg lg:text-xl rounded-xl">
               {t('home.back')}
             </Button>
-            <Button onClick={handleSubmitCounseling} disabled={submitting} className="flex-1 h-12 sm:h-14 lg:h-16 text-base sm:text-lg lg:text-xl rounded-xl">
-              {submitting ? 'Processing...' : t('counseling.confirm_button')}
+            <Button onClick={handleSubmitCounseling} disabled={counselingMutation.isPending} className="flex-1 h-12 sm:h-14 lg:h-16 text-base sm:text-lg lg:text-xl rounded-xl">
+              {counselingMutation.isPending ? 'Processing...' : t('counseling.confirm_button')}
             </Button>
           </div>
         </motion.div>
