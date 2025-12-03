@@ -2,7 +2,42 @@
 
 This document tracks the optimizations implemented and provides patterns for completing remaining work.
 
-## ✅ Completed Optimizations (11/15)
+## ✅ Completed Optimizations (17/21)
+
+### Phase 0: Infrastructure Performance (6/6 Complete) - NEW!
+
+1. ✅ **HTTP/3 (QUIC) Protocol** - Next-gen transport layer
+   - File: `docker-compose.prod.yml`, `docker/traefik/dynamic.yml`
+   - Impact: 0-RTT connections, faster page loads, especially on mobile
+
+2. ✅ **Brotli Compression** - Better than gzip
+   - File: `docker/traefik/dynamic.yml`
+   - Impact: 20-30% smaller responses than gzip
+   - Config: Min 1KB, excludes already-compressed media
+
+3. ✅ **Rust-based ASGI Server (Granian)**
+   - File: `backend/Dockerfile`, `docker-compose.prod.yml`
+   - Impact: 2-3x faster than Uvicorn
+
+4. ✅ **msgspec JSON Serialization**
+   - File: `backend/utils/serialization.py`
+   - Impact: 10-20% faster than orjson for encoding, 2x for decoding
+   - Features: BSON type handling, Pydantic support
+
+5. ✅ **Docker Image Optimization**
+   - Files: `backend/Dockerfile`, `backend/.dockerignore`, `backend/requirements*.txt`
+   - Impact: 897MB → 586MB (-35%, 311MB saved)
+   - Changes: Split prod/dev deps, BuildKit cache mounts, PYTHONOPTIMIZE=2
+
+6. ✅ **Redis Pipeline Operations**
+   - File: `backend/services/redis/cache.py`
+   - Functions: `mget()`, `mset()`, `mdelete()`, `pipeline_get_many()`, `pipeline_set_many()`
+   - Impact: Single round-trip for bulk operations
+
+7. ✅ **MongoDB Query Projections**
+   - File: `backend/utils/performance.py`
+   - Projections: MEMBER_LIST, MEMBER_CARD, EVENT_LIST, ARTICLE_LIST, COMMUNITY_LIST
+   - Impact: Only fetch needed fields, reduced data transfer
 
 ### Phase 1: Database Performance (4/4 Complete)
 1. ✅ **Database Indexes** - Added 8 critical compound indexes
@@ -90,10 +125,10 @@ This document tracks the optimizations implemented and provides patterns for com
           ]
       ```
 
-15. ⏳ **Caching Layer** - For settings and statuses
-    - Use in-memory dict cache with TTL
-    - Cache `church_settings`, `member_statuses`, `demographics`
-    - Add to `backend/utils/cache.py`
+15. ✅ **Caching Layer** - Redis-based distributed caching
+    - File: `backend/services/redis/cache.py`
+    - Features: `church_settings`, `member_statuses`, `demographics` cached
+    - Includes: `@cached` decorator, pipeline operations, pub/sub invalidation
 
 ## 🔄 Pattern: Apply React Query Optimization to Other Hooks
 

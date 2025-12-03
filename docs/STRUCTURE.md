@@ -56,10 +56,20 @@ faithflow/
 │   │   ├── dependencies.py  # FastAPI dependencies
 │   │   ├── security.py      # Password hashing
 │   │   ├── helpers.py       # Common utilities
-│   │   ├── error_codes.py   # ⭐ NEW - Error constants
-│   │   ├── error_response.py # ⭐ NEW - Error handling
-│   │   ├── db_transaction.py # ⭐ NEW - MongoDB transactions
-│   │   ├── tenant_utils.py  # ⭐ NEW - Multi-tenant utilities
+│   │   ├── error_codes.py   # Error constants
+│   │   ├── error_response.py # Error handling
+│   │   ├── db_transaction.py # MongoDB transactions
+│   │   ├── tenant_utils.py  # Multi-tenant utilities
+│   │   ├── serialization.py # ⭐ msgspec JSON (faster than orjson)
+│   │   ├── performance.py   # ⭐ Query projections & optimizers
+│   │   ├── responses.py     # FastAPI response classes
+│   │   └── ...
+│   ├── services/redis/      # ⭐ Redis services
+│   │   ├── cache.py         # Distributed caching + pipelines
+│   │   ├── auth.py          # JWT & session caching
+│   │   ├── rate_limit.py    # API rate limiting
+│   │   ├── pubsub.py        # Cache invalidation pub/sub
+│   │   ├── queues.py        # Background job queues
 │   │   └── ...
 │   ├── middleware/          # ⭐ NEW - Middleware
 │   │   └── tenant_middleware.py  # Multi-tenant enforcement
@@ -81,7 +91,10 @@ faithflow/
 │   │   ├── seed_coa.py                  # ⭐ Indonesian COA seeder
 │   │   └── ...
 │   ├── server.py            # Main FastAPI app
-│   ├── requirements.txt     # Python dependencies
+│   ├── Dockerfile           # ⭐ Optimized multi-stage build (586MB)
+│   ├── .dockerignore        # ⭐ Exclude test/dev files from image
+│   ├── requirements.txt     # Production dependencies only
+│   ├── requirements-dev.txt # ⭐ Dev/test dependencies (pytest, black, etc.)
 │   └── .env                 # Environment variables (not in git)
 ├── frontend/                # React frontend
 │   ├── public/              # Static assets
@@ -127,6 +140,11 @@ faithflow/
 │   ├── DEPLOYMENT_DEBIAN.md # Deployment guide
 │   ├── STRUCTURE.md         # This file
 │   └── ...
+├── docker/                  # ⭐ Docker configuration
+│   └── traefik/
+│       └── dynamic.yml      # ⭐ HTTP/3, Brotli, rate limiting config
+├── docker-compose.yml       # Development Docker Compose
+├── docker-compose.prod.yml  # ⭐ Production with Traefik
 ├── .gitignore               # Git ignore rules
 ├── .gitattributes           # Git LFS config
 └── README.md                # Project overview
@@ -145,9 +163,28 @@ faithflow/
 - MongoDB connection
 
 **`requirements.txt`**
-- All Python dependencies
+- Production Python dependencies
 - Pinned versions for stability
-- Includes: FastAPI, Motor, QR libraries
+- Includes: FastAPI, Motor, Granian, msgspec
+
+**`requirements-dev.txt`**
+- Development/test dependencies
+- Includes: pytest, black, flake8, mypy
+
+**`utils/serialization.py`** ⭐
+- msgspec-based JSON serialization (10-20% faster than orjson)
+- Handles all BSON/MongoDB types
+- Used by FastAPI responses and Redis caching
+
+**`utils/performance.py`** ⭐
+- MongoDB query projections for optimal data transfer
+- Pre-defined projections: MEMBER_LIST, EVENT_LIST, etc.
+
+**`services/redis/`** ⭐
+- Distributed caching with Redis
+- Pipeline operations for bulk queries
+- Rate limiting, session management
+- Pub/sub cache invalidation
 
 **`models/`**
 - Pydantic models for validation

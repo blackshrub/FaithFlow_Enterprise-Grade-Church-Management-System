@@ -118,6 +118,18 @@ FaithFlow is a complete church management system that helps you:
 | **Dark Mode** | Full dark mode support in mobile app |
 | **Biometric Auth** | Face ID / Fingerprint unlock |
 
+### Performance Optimizations
+
+| Feature | Description |
+|---------|-------------|
+| **HTTP/3 (QUIC)** | Next-gen protocol with faster connections, 0-RTT |
+| **Brotli Compression** | 20-30% better compression than gzip |
+| **Rust-based ASGI** | Granian server (2-3x faster than Uvicorn) |
+| **msgspec JSON** | 10-20% faster than orjson for serialization |
+| **Redis Pipelines** | Batch operations for reduced latency |
+| **Query Projections** | Only fetch needed fields from MongoDB |
+| **Optimized Docker** | Backend image ~586MB (35% smaller) |
+
 ---
 
 ## System Requirements
@@ -621,8 +633,8 @@ A: Yes, built with React Native/Expo for both platforms.
                                         ▼
 ┌───────────────────────────────────────────────────────────────────────────────┐
 │                          TRAEFIK (Reverse Proxy)                               │
-│                    Handles SSL, routing, load balancing                        │
-│                              Ports: 80, 443                                    │
+│          SSL termination, HTTP/3 (QUIC), Brotli compression, routing          │
+│                              Ports: 80, 443/udp                                │
 │   yourdomain.com │ api.* │ livekit.* │ files.*                                │
 └────┬─────────────────┬───────────────┬───────────────┬───────────────┬────────┘
      │                 │               │               │               │
@@ -651,7 +663,7 @@ A: Yes, built with React Native/Expo for both platforms.
 
 | Service | Purpose | Access |
 |---------|---------|--------|
-| **Traefik** | SSL termination, routing | Internal |
+| **Traefik** | SSL, HTTP/3, Brotli compression, routing | Internal |
 | **Frontend** | Web application UI | https://yourdomain.com |
 | **Backend** | REST API, business logic | https://api.yourdomain.com |
 | **MongoDB** | Database | Internal only |
