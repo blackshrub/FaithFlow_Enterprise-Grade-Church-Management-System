@@ -18,6 +18,15 @@
     "back_to_start": "Kembali ke Awal",
     "back": "Kembali"
   },
+  "button": {
+    "cancel": "Batal",
+    "capture": "Ambil",
+    "capturing": "Mengambil...",
+    "confirm": "Konfirmasi",
+    "submit": "Kirim",
+    "continue": "Lanjut",
+    "retry": "Coba Lagi"
+  },
   "language": {
     "choose_language": "Bahasa",
     "english": "English",
@@ -64,7 +73,8 @@
     "photo_change": "Foto Ulang",
     "otp_info": "Kami telah mengirim kode 4-digit ke WhatsApp Anda.",
     "otp_help": "Mohon ketik kode di sini. Jika butuh bantuan, mohon tanya petugas kami.",
-    "submit_error": "Kami tidak dapat membuat profil Anda saat ini. Mohon minta bantuan petugas."
+    "submit_error": "Kami tidak dapat membuat profil Anda saat ini. Mohon minta bantuan petugas.",
+    "form_incomplete": "Mohon isi semua kolom yang diperlukan di atas untuk melanjutkan."
   },
   "otp": {
     "label": "Kode 4-digit",
@@ -74,8 +84,10 @@
     "expired": "Kode sudah kedaluwarsa. Mohon minta bantuan petugas.",
     "too_many_attempts": "Terlalu banyak percobaan. Mohon minta bantuan petugas.",
     "resend": "Kirim Ulang OTP",
+    "resend_in": "Kirim ulang dalam {{seconds}}d",
     "send_error": "Gagal mengirim OTP. Silakan coba lagi.",
-    "resend_error": "Gagal mengirim ulang OTP. Silakan coba lagi."
+    "resend_error": "Gagal mengirim ulang OTP. Silakan coba lagi.",
+    "expires_in": "Kode berlaku {{time}}"
   },
   "event_registration": {
     "title": "Pendaftaran Acara",
@@ -89,6 +101,31 @@
     "success_text": "Anda terdaftar untuk:",
     "success_back": "Kembali ke Awal"
   },
+  "event_checkin": {
+    "title": "Check-In Acara",
+    "select_event": "Pilih Acara",
+    "no_events": "Tidak ada acara tersedia hari ini",
+    "loading_events": "Memuat acara...",
+    "checkin_method": "Metode Check-In",
+    "scan_qr": "Scan QR",
+    "search": "Cari",
+    "start_scanning": "Mulai Scan",
+    "stop_scanning": "Hentikan Scan",
+    "camera_hint": "Arahkan kamera ke kode QR",
+    "search_placeholder": "Masukkan nama atau telepon",
+    "search_button": "Cari",
+    "searching": "Mencari...",
+    "no_results": "Tidak ada anggota ditemukan",
+    "already_checked_in": "Sudah check-in",
+    "check_in": "Check In",
+    "checking_in": "Proses check-in...",
+    "success_title": "Check-In Berhasil!",
+    "success_text": "telah berhasil check-in.",
+    "check_another": "Check In Lainnya",
+    "error_invalid_qr": "Kode QR tidak valid",
+    "error_not_registered": "Anggota tidak terdaftar untuk acara ini",
+    "error_generic": "Check-in gagal. Silakan coba lagi."
+  },
   "prayer": {
     "title": "Permintaan Doa",
     "step_request": "Langkah 2 dari 2: Permintaan Anda",
@@ -100,6 +137,8 @@
     "category_work": "Pekerjaan",
     "category_financial": "Keuangan",
     "category_guidance": "Bimbingan",
+    "category_spiritual": "Rohani",
+    "category_thanksgiving": "Ucapan Syukur",
     "category_other": "Lainnya",
     "followup_label": "Bolehkah kami menghubungi Anda untuk tindak lanjut?",
     "followup_yes": "Ya",
@@ -201,14 +240,30 @@
     "verify_new_phone_title": "Verifikasi Nomor Telepon Baru",
     "verify_new_phone_subtitle": "Masukkan OTP yang dikirim ke nomor baru Anda",
     "change_number": "Gunakan Nomor Lain",
+    "review_changes": "Tinjau Perubahan",
+    "confirm_title": "Konfirmasi Perubahan Anda",
+    "confirm_subtitle": "Mohon periksa perubahan di bawah ini sebelum menyimpan",
+    "confirm_save": "Konfirmasi & Simpan",
+    "go_back": "Kembali",
+    "no_changes": "Tidak ada perubahan untuk disimpan",
+    "empty_value": "(kosong)",
+    "phone_verification_required": "Verifikasi Telepon Diperlukan",
+    "phone_verification_note": "Anda akan menerima OTP di nomor telepon baru untuk memverifikasi perubahan.",
     "success_title": "Terima kasih",
     "success_text": "Data Anda sudah diperbarui.",
     "success_back": "Kembali ke Awal"
   },
   "timeout": {
-    "title": "Sesi berakhir",
-    "text": "Tidak ada aktivitas terdeteksi. Kami kembali ke awal agar orang berikutnya dapat menggunakan layar ini.",
-    "button": "Kembali ke Awal"
+    "title": "Apakah Anda masih di sini?",
+    "text": "Anda akan dikembalikan ke layar awal karena tidak ada aktivitas.",
+    "button": "Kembali ke Awal",
+    "stay": "Tetap di Sini"
+  },
+  "camera": {
+    "permission_denied": "Akses kamera ditolak. Mohon izinkan akses kamera atau minta bantuan petugas.",
+    "not_found": "Tidak ada kamera di perangkat ini.",
+    "error": "Terjadi kesalahan kamera. Mohon coba lagi atau minta bantuan petugas.",
+    "switch": "Ganti Kamera"
   },
   "settings": {
     "title": "Kiosk & Akses Publik",

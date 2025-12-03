@@ -32,6 +32,7 @@ const JoinGroupKiosk = () => {
   const [member, setMember] = useState(null);
   const [selectedGroup, setSelectedGroup] = useState(null);
   const [message, setMessage] = useState('');
+  const [otpExpiresIn, setOtpExpiresIn] = useState(300);
 
   // Fetch groups using TanStack Query
   const {
@@ -45,14 +46,16 @@ const JoinGroupKiosk = () => {
   // Join group mutation
   const joinGroupMutation = useJoinGroup();
   
-  const handleMemberFound = (foundMember, foundPhone) => {
+  const handleMemberFound = (foundMember, foundPhone, expiresIn) => {
     setMember(foundMember);
     setPhone(foundPhone);
+    setOtpExpiresIn(expiresIn || 300);
     setStep('otp_existing');
   };
-  
-  const handleMemberNotFound = (foundPhone) => {
+
+  const handleMemberNotFound = (foundPhone, expiresIn) => {
     setPhone(foundPhone);
+    setOtpExpiresIn(expiresIn || 300);
     setStep('otp_new');
   };
 
@@ -102,16 +105,21 @@ const JoinGroupKiosk = () => {
         <ExistingMemberOTP
           member={member}
           phone={phone}
+          initialExpiresIn={otpExpiresIn}
           onVerified={handleOtpVerified}
         />
       </KioskLayout>
     );
   }
-  
+
   if (step === 'otp_new') {
     return (
       <KioskLayout showBack showHome onBack={() => setStep('phone')}>
-        <NewMemberRegistration phone={phone} onComplete={handleNewMemberComplete} />
+        <NewMemberRegistration
+          phone={phone}
+          initialExpiresIn={otpExpiresIn}
+          onComplete={handleNewMemberComplete}
+        />
       </KioskLayout>
     );
   }
@@ -164,7 +172,7 @@ const JoinGroupKiosk = () => {
   if (step === 'confirm') {
     return (
       <KioskLayout showBack showHome onBack={() => setStep('select_group')}>
-        <motion.div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl p-4 sm:p-8 lg:p-12 max-w-2xl mx-auto w-full space-y-4 sm:space-y-6 lg:space-y-8 box-border overflow-hidden" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+        <motion.div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl p-4 sm:p-8 lg:p-12 max-w-2xl mx-auto w-full space-y-4 sm:space-y-6 lg:space-y-8 box-border mb-6" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
           <div className="text-center px-2">
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-4">Join {selectedGroup?.name}?</h2>
           </div>
@@ -190,7 +198,7 @@ const JoinGroupKiosk = () => {
   if (step === 'success') {
     return (
       <KioskLayout showBack={false} showHome={false}>
-        <motion.div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl p-4 sm:p-8 lg:p-12 max-w-2xl mx-auto w-full space-y-4 sm:space-y-6 lg:space-y-8 text-center box-border overflow-hidden" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}>
+        <motion.div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl p-4 sm:p-8 lg:p-12 max-w-2xl mx-auto w-full space-y-4 sm:space-y-6 lg:space-y-8 text-center box-border mb-6" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}>
           <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ duration: 0.5, delay: 0.2 }}>
             <div className="w-20 h-20 sm:w-24 sm:h-24 lg:w-32 lg:h-32 bg-green-100 rounded-full flex items-center justify-center mx-auto">
               <Check className="w-10 h-10 sm:w-12 sm:h-12 lg:w-16 lg:h-16 text-green-600" />

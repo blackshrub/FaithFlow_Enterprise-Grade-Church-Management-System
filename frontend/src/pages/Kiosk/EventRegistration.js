@@ -37,6 +37,7 @@ const EventRegistrationKiosk = () => {
   const [phone, setPhone] = useState('');
   const [member, setMember] = useState(null);
   const [selectedEvent, setSelectedEvent] = useState(null);
+  const [otpExpiresIn, setOtpExpiresIn] = useState(300); // 5 minutes default
 
   // Fetch events using TanStack Query
   const {
@@ -50,16 +51,16 @@ const EventRegistrationKiosk = () => {
   // Registration mutation
   const registerMutation = useRegisterForEvent();
 
-  const handleMemberFound = (foundMember, foundPhone) => {
-    console.log('✅ handleMemberFound called:', foundMember?.full_name);
+  const handleMemberFound = (foundMember, foundPhone, expiresIn) => {
     setMember(foundMember);
     setPhone(foundPhone);
+    setOtpExpiresIn(expiresIn || 300);
     setStep('otp_existing');
   };
 
-  const handleMemberNotFound = (foundPhone) => {
-    console.log('⚠️ handleMemberNotFound called:', foundPhone);
+  const handleMemberNotFound = (foundPhone, expiresIn) => {
     setPhone(foundPhone);
+    setOtpExpiresIn(expiresIn || 300);
     setStep('otp_new');
   };
 
@@ -119,19 +120,19 @@ const EventRegistrationKiosk = () => {
       <KioskLayout showBack showHome onBack={() => setStep('phone')}>
         <div className="space-y-4 sm:space-y-6 lg:space-y-8 w-full max-w-full overflow-x-hidden">
           <div className="text-center px-2">
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2">New Member Registration</h1>
-            <p className="text-base sm:text-lg lg:text-xl text-gray-600">Please fill in your details</p>
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2">{t('new_profile.title')}</h1>
+            <p className="text-base sm:text-lg lg:text-xl text-gray-600">{t('new_profile.description')}</p>
           </div>
 
           <NewMemberRegistration
             phone={phone}
+            initialExpiresIn={otpExpiresIn}
             onComplete={(newMember) => {
-              console.log('✅ New member created:', newMember);
               setMember(newMember);
               setStep('select_event');
             }}
             onError={(error) => {
-              console.error('❌ New member error:', error);
+              // Error handled in component
             }}
           />
         </div>
@@ -146,6 +147,7 @@ const EventRegistrationKiosk = () => {
         <ExistingMemberOTP
           member={member}
           phone={phone}
+          initialExpiresIn={otpExpiresIn}
           onVerified={handleOtpVerified}
           subtitle={t('existing_profile.description')}
         />
@@ -216,7 +218,7 @@ const EventRegistrationKiosk = () => {
     return (
       <KioskLayout showBack showHome onBack={() => setStep('select_event')}>
         <motion.div
-          className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl p-4 sm:p-8 lg:p-12 max-w-2xl mx-auto space-y-4 sm:space-y-6 lg:space-y-8 w-full box-border overflow-hidden"
+          className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl p-4 sm:p-8 lg:p-12 max-w-2xl mx-auto space-y-4 sm:space-y-6 lg:space-y-8 w-full box-border mb-6"
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
         >
@@ -266,7 +268,7 @@ const EventRegistrationKiosk = () => {
     return (
       <KioskLayout showBack={false} showHome={false}>
         <motion.div
-          className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl p-4 sm:p-8 lg:p-12 max-w-2xl mx-auto space-y-4 sm:space-y-6 lg:space-y-8 text-center w-full box-border overflow-hidden"
+          className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl p-4 sm:p-8 lg:p-12 max-w-2xl mx-auto space-y-4 sm:space-y-6 lg:space-y-8 text-center w-full box-border mb-6"
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.4 }}

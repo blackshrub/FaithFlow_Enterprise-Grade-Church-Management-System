@@ -40,6 +40,7 @@ const CounselingKiosk = () => {
   const [step, setStep] = useState('phone');
   const [phone, setPhone] = useState('');
   const [member, setMember] = useState(null);
+  const [otpExpiresIn, setOtpExpiresIn] = useState(300);
 
   const [counselingData, setCounselingData] = useState({
     type: 'personal',
@@ -78,14 +79,16 @@ const CounselingKiosk = () => {
   // Counseling request mutation
   const counselingMutation = useCreateCounselingRequest();
   
-  const handleMemberFound = (foundMember, foundPhone) => {
+  const handleMemberFound = (foundMember, foundPhone, expiresIn) => {
     setMember(foundMember);
     setPhone(foundPhone);
+    setOtpExpiresIn(expiresIn || 300);
     setStep('otp_existing');
   };
-  
-  const handleMemberNotFound = (foundPhone) => {
+
+  const handleMemberNotFound = (foundPhone, expiresIn) => {
     setPhone(foundPhone);
+    setOtpExpiresIn(expiresIn || 300);
     setStep('otp_new');
   };
 
@@ -148,17 +151,22 @@ const CounselingKiosk = () => {
         <ExistingMemberOTP
           member={member}
           phone={phone}
+          initialExpiresIn={otpExpiresIn}
           onVerified={handleOtpVerified}
         />
       </KioskLayout>
     );
   }
-  
+
   // STEP: New Member
   if (step === 'otp_new') {
     return (
       <KioskLayout showBack showHome onBack={() => setStep('phone')}>
-        <NewMemberRegistration phone={phone} onComplete={handleNewMemberComplete} />
+        <NewMemberRegistration
+          phone={phone}
+          initialExpiresIn={otpExpiresIn}
+          onComplete={handleNewMemberComplete}
+        />
       </KioskLayout>
     );
   }

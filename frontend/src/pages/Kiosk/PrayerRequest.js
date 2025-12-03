@@ -9,7 +9,7 @@
  * Uses TanStack Query for mutations
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Heart, Check } from 'lucide-react';
@@ -23,6 +23,8 @@ import { Textarea } from '../../components/ui/textarea';
 import { Label } from '../../components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 import { useSubmitPrayerRequest, useKioskChurch } from '../../hooks/useKiosk';
+
+const STORAGE_KEY = 'kiosk_prayer_form';
 
 const PrayerRequestKiosk = () => {
   const navigate = useNavigate();
@@ -39,23 +41,45 @@ const PrayerRequestKiosk = () => {
   const [step, setStep] = useState('phone');
   const [phone, setPhone] = useState('');
   const [member, setMember] = useState(null);
+  const [otpExpiresIn, setOtpExpiresIn] = useState(300);
 
-  const [prayerData, setPrayerData] = useState({
-    request: '',
-    category: 'other',
-    needs_followup: true
+  // Initialize prayer data with persisted values if available
+  const [prayerData, setPrayerData] = useState(() => {
+    try {
+      const saved = sessionStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return {
+          request: parsed.request || '',
+          category: parsed.category || 'other',
+          needs_followup: parsed.needs_followup ?? true
+        };
+      }
+    } catch (e) {
+      // Ignore parse errors
+    }
+    return {
+      request: '',
+      category: 'other',
+      needs_followup: true
+    };
   });
-  
-  const handleMemberFound = (foundMember, foundPhone) => {
-    console.log('✅ PrayerRequest - Member found:', foundMember?.full_name);
+
+  // Persist prayer data on change
+  useEffect(() => {
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(prayerData));
+  }, [prayerData]);
+
+  const handleMemberFound = (foundMember, foundPhone, expiresIn) => {
     setMember(foundMember);
     setPhone(foundPhone);
+    setOtpExpiresIn(expiresIn || 300);
     setStep('otp_existing');
   };
-  
-  const handleMemberNotFound = (foundPhone) => {
-    console.log('⚠️ PrayerRequest - Member not found:', foundPhone);
+
+  const handleMemberNotFound = (foundPhone, expiresIn) => {
     setPhone(foundPhone);
+    setOtpExpiresIn(expiresIn || 300);
     setStep('otp_new');
   };
 
@@ -83,11 +107,11 @@ const PrayerRequestKiosk = () => {
       needs_follow_up: prayerData.needs_followup
     };
 
-    console.log('🙏 Prayer request payload:', payload);
 
     try {
       const result = await prayerMutation.mutateAsync(payload);
-      console.log('🙏 Prayer request result:', result);
+      // Clear persisted form data on success
+      sessionStorage.removeItem(STORAGE_KEY);
       setStep('success');
     } catch (error) {
       console.error('❌ Prayer submission error:', error);
@@ -125,6 +149,7 @@ const PrayerRequestKiosk = () => {
         <ExistingMemberOTP
           member={member}
           phone={phone}
+          initialExpiresIn={otpExpiresIn}
           onVerified={handleOtpVerified}
         />
       </KioskLayout>
@@ -137,6 +162,7 @@ const PrayerRequestKiosk = () => {
       <KioskLayout showBack showHome onBack={() => setStep('phone')}>
         <NewMemberRegistration
           phone={phone}
+          initialExpiresIn={otpExpiresIn}
           onComplete={handleNewMemberComplete}
         />
       </KioskLayout>
@@ -148,7 +174,7 @@ const PrayerRequestKiosk = () => {
     return (
       <KioskLayout showBack showHome onBack={() => navigate('/kiosk/home')}>
         <motion.div
-          className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl p-4 sm:p-8 lg:p-12 max-w-3xl mx-auto space-y-4 sm:space-y-6 lg:space-y-8 w-full box-border overflow-hidden"
+          className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl p-4 sm:p-8 lg:p-12 max-w-3xl mx-auto space-y-4 sm:space-y-6 lg:space-y-8 w-full box-border mb-6"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
         >
@@ -241,7 +267,7 @@ const PrayerRequestKiosk = () => {
     return (
       <KioskLayout showBack={false} showHome={false}>
         <motion.div
-          className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl p-4 sm:p-8 lg:p-12 max-w-2xl mx-auto space-y-4 sm:space-y-6 lg:space-y-8 text-center w-full box-border overflow-hidden"
+          className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl p-4 sm:p-8 lg:p-12 max-w-2xl mx-auto space-y-4 sm:space-y-6 lg:space-y-8 text-center w-full box-border mb-6"
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
         >

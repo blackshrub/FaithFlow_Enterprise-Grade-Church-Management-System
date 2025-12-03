@@ -1,12 +1,16 @@
 /**
  * New Member Registration Component
- * 
+ *
  * For people not found in system - creates Pre-Visitor profile
+ * Features:
+ * - Camera permission error handling
+ * - Full i18n support
+ * - Accessible error messages
  */
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Camera, User } from 'lucide-react';
+import { Camera, User, AlertCircle, Clock } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -15,30 +19,107 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import OTPInput from './OTPInput';
 import Webcam from 'react-webcam';
 
-const NewMemberRegistration = ({ phone, onComplete, onError }) => {
+const STORAGE_KEY = 'kiosk_new_member_form';
+
+const NewMemberRegistration = ({ phone, onComplete, onError, initialExpiresIn = 300 }) => {
   const { t } = useTranslation('kiosk');
   const webcamRef = useRef(null);
 
   // Get church_id from kiosk session
   const churchId = localStorage.getItem('kiosk_church_id');
 
-  const [formData, setFormData] = useState({
-    full_name: '',
-    gender: '',
-    date_of_birth: '',
-    phone_whatsapp: phone,
-    photo_base64: null
+  // Initialize form data with persisted values if available
+  const [formData, setFormData] = useState(() => {
+    try {
+      const saved = sessionStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        // Only restore if phone matches (same session)
+        if (parsed.phone_whatsapp === phone) {
+          return {
+            full_name: parsed.full_name || '',
+            gender: parsed.gender || '',
+            date_of_birth: parsed.date_of_birth || '',
+            phone_whatsapp: phone,
+            photo_base64: null // Don't persist photo (too large)
+          };
+        }
+      }
+    } catch (e) {
+      // Ignore parse errors
+    }
+    return {
+      full_name: '',
+      gender: '',
+      date_of_birth: '',
+      phone_whatsapp: phone,
+      photo_base64: null
+    };
   });
+
+  // Persist form data on change (excluding photo)
+  useEffect(() => {
+    const dataToSave = {
+      full_name: formData.full_name,
+      gender: formData.gender,
+      date_of_birth: formData.date_of_birth,
+      phone_whatsapp: formData.phone_whatsapp
+    };
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
+  }, [formData.full_name, formData.gender, formData.date_of_birth, formData.phone_whatsapp]);
 
   const [otp, setOtp] = useState('');
   const [verifying, setVerifying] = useState(false);
   const [otpError, setOtpError] = useState('');
   const [showCamera, setShowCamera] = useState(false);
+  const [cameraError, setCameraError] = useState(null);
   const [countdown, setCountdown] = useState(0);
   const [facingMode, setFacingMode] = useState('user'); // 'user' for front, 'environment' for back
   const [resending, setResending] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
   const [otpVerified, setOtpVerified] = useState(false); // Prevent duplicate OTP verification
+  const [otpExpiresIn, setOtpExpiresIn] = useState(initialExpiresIn);
+
+  // Format time as MM:SS
+  const formatTime = useCallback((seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  }, []);
+
+  // OTP expiration countdown
+  useEffect(() => {
+    if (otpExpiresIn <= 0) return;
+
+    const timer = setInterval(() => {
+      setOtpExpiresIn(prev => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [otpExpiresIn]);
+
+  // Handle camera errors
+  const handleCameraError = useCallback((error) => {
+    if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+      setCameraError(t('camera.permission_denied'));
+    } else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
+      setCameraError(t('camera.not_found'));
+    } else {
+      setCameraError(t('camera.error'));
+    }
+    setShowCamera(false);
+  }, [t]);
+
+  const openCamera = () => {
+    setCameraError(null);
+    setShowCamera(true);
+  };
 
   // Check if form is complete (required fields filled)
   const isFormComplete = formData.full_name.trim() &&
@@ -101,7 +182,10 @@ const NewMemberRegistration = ({ phone, onComplete, onError }) => {
       const churchId = localStorage.getItem('kiosk_church_id');
 
       const result = await kioskApi.sendOTP(phone, churchId);
-      console.log('🔄 OTP resent:', result.debug_code);
+
+      // Reset OTP expiration timer
+      const newExpiresIn = result?.expires_in_seconds || 300;
+      setOtpExpiresIn(newExpiresIn);
 
       // Start 60-second cooldown
       setResendCooldown(60);
@@ -116,8 +200,7 @@ const NewMemberRegistration = ({ phone, onComplete, onError }) => {
       }, 1000);
 
     } catch (error) {
-      console.error('Failed to resend OTP:', error);
-      setOtpError('Failed to resend OTP. Please try again.');
+      setOtpError(t('otp.resend_error'));
     } finally {
       setResending(false);
     }
@@ -126,7 +209,6 @@ const NewMemberRegistration = ({ phone, onComplete, onError }) => {
   const handleOtpComplete = async (code) => {
     // Prevent duplicate verification
     if (verifying || otpVerified) {
-      console.log('⚠️ Already verifying or verified, skipping duplicate call');
       return;
     }
 
@@ -137,7 +219,6 @@ const NewMemberRegistration = ({ phone, onComplete, onError }) => {
       // Import kioskApi here to avoid circular deps
       const { default: kioskApi } = await import('../../services/kioskApi');
 
-      console.log('🔍 Verifying OTP:', code);
 
       // Verify OTP first
       const otpResult = await kioskApi.verifyOTP(phone, code);
@@ -149,7 +230,6 @@ const NewMemberRegistration = ({ phone, onComplete, onError }) => {
         return;
       }
 
-      console.log('✅ OTP verified, creating member...');
       setOtpVerified(true); // Mark as verified to prevent re-verification
 
       // Create member - backend expects specific fields
@@ -164,10 +244,12 @@ const NewMemberRegistration = ({ phone, onComplete, onError }) => {
         // Backend will auto-assign status based on is_default_for_new flag
       };
 
-      console.log('📝 Member data:', memberData);
 
       const newMember = await kioskApi.createPreVisitor(memberData);
-      console.log('✅ Member created:', newMember);
+
+      // Clear persisted form data on success
+      sessionStorage.removeItem(STORAGE_KEY);
+
       onComplete(newMember);
 
     } catch (error) {
@@ -184,7 +266,7 @@ const NewMemberRegistration = ({ phone, onComplete, onError }) => {
   
   return (
     <motion.div
-      className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl p-4 sm:p-8 lg:p-12 max-w-3xl mx-auto space-y-4 sm:space-y-6 lg:space-y-8 w-full box-border overflow-hidden"
+      className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl p-4 sm:p-8 lg:p-12 max-w-3xl mx-auto space-y-4 sm:space-y-6 lg:space-y-8 w-full box-border mb-6"
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
     >
@@ -261,14 +343,28 @@ const NewMemberRegistration = ({ phone, onComplete, onError }) => {
           <Label className="text-base sm:text-lg lg:text-xl font-medium text-gray-700">
             {t('new_profile.photo_label')}
           </Label>
+
+          {/* Camera Error Message */}
+          {cameraError && (
+            <motion.div
+              role="alert"
+              className="flex items-center gap-2 p-3 mb-3 bg-red-50 border border-red-200 rounded-xl text-red-700"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              <AlertCircle className="h-5 w-5 flex-shrink-0" />
+              <span className="text-sm sm:text-base">{cameraError}</span>
+            </motion.div>
+          )}
+
           {!showCamera && !formData.photo_base64 && (
             <Button
               type="button"
               variant="outline"
-              onClick={() => setShowCamera(true)}
-              className="w-full h-10 sm:h-12 lg:h-14 text-sm sm:text-base lg:text-xl rounded-xl"
+              onClick={openCamera}
+              className="w-full h-12 sm:h-14 lg:h-16 text-sm sm:text-base lg:text-xl rounded-xl"
             >
-              <Camera className="mr-2 h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6" />
+              <Camera className="mr-2 h-5 w-5 sm:h-6 sm:w-6 lg:h-7 lg:w-7" />
               {t('new_profile.photo_take')}
             </Button>
           )}
@@ -286,6 +382,7 @@ const NewMemberRegistration = ({ phone, onComplete, onError }) => {
                     height: 720
                   }}
                   style={{ transform: facingMode === 'user' ? 'scaleX(-1)' : 'none' }}
+                  onUserMediaError={handleCameraError}
                 />
                 {countdown > 0 && (
                   <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50">
@@ -299,10 +396,11 @@ const NewMemberRegistration = ({ phone, onComplete, onError }) => {
                 <button
                   onClick={switchCamera}
                   disabled={countdown > 0}
-                  className="absolute top-2 sm:top-4 right-2 sm:right-4 bg-white/90 hover:bg-white p-2 sm:p-3 rounded-full shadow-lg transition-all disabled:opacity-50"
-                  title="Switch Camera"
+                  className="absolute top-2 sm:top-4 right-2 sm:right-4 bg-white/90 hover:bg-white p-3 sm:p-4 rounded-full shadow-lg transition-all disabled:opacity-50"
+                  title={t('camera.switch')}
+                  aria-label={t('camera.switch')}
                 >
-                  <svg className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 sm:w-6 sm:h-6 lg:w-7 lg:h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                   </svg>
                 </button>
@@ -314,17 +412,17 @@ const NewMemberRegistration = ({ phone, onComplete, onError }) => {
                     setShowCamera(false);
                     setCountdown(0);
                   }}
-                  className="flex-1 h-10 sm:h-12 lg:h-14 text-sm sm:text-base lg:text-xl rounded-xl"
+                  className="flex-1 h-12 sm:h-14 lg:h-16 text-sm sm:text-base lg:text-xl rounded-xl"
                   disabled={countdown > 0}
                 >
-                  Cancel
+                  {t('button.cancel')}
                 </Button>
                 <Button
                   onClick={capturePhoto}
-                  className="flex-1 h-10 sm:h-12 lg:h-14 text-sm sm:text-base lg:text-xl rounded-xl"
+                  className="flex-1 h-12 sm:h-14 lg:h-16 text-sm sm:text-base lg:text-xl rounded-xl"
                   disabled={countdown > 0}
                 >
-                  {countdown > 0 ? 'Capturing...' : 'Capture'}
+                  {countdown > 0 ? t('button.capturing') : t('button.capture')}
                 </Button>
               </div>
             </div>
@@ -359,6 +457,21 @@ const NewMemberRegistration = ({ phone, onComplete, onError }) => {
             <p className="text-sm sm:text-base lg:text-lg text-gray-600">
               {t('new_profile.otp_help')}
             </p>
+
+            {/* OTP Expiration Countdown */}
+            {otpExpiresIn > 0 ? (
+              <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm sm:text-base ${
+                otpExpiresIn <= 60 ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'
+              }`}>
+                <Clock className="h-4 w-4 sm:h-5 sm:w-5" />
+                <span>{t('otp.expires_in', { time: formatTime(otpExpiresIn) })}</span>
+              </div>
+            ) : (
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-red-100 text-red-700 text-sm sm:text-base">
+                <Clock className="h-4 w-4 sm:h-5 sm:w-5" />
+                <span>{t('otp.expired')}</span>
+              </div>
+            )}
           </div>
 
           <OTPInput
@@ -366,12 +479,14 @@ const NewMemberRegistration = ({ phone, onComplete, onError }) => {
             value={otp}
             onChange={setOtp}
             onComplete={handleOtpComplete}
-            disabled={verifying}
+            disabled={verifying || otpExpiresIn === 0}
             autoFocus={false}
           />
 
           {otpError && (
             <motion.p
+              role="alert"
+              aria-live="assertive"
               className="text-center text-sm sm:text-base lg:text-lg text-red-600"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -384,9 +499,14 @@ const NewMemberRegistration = ({ phone, onComplete, onError }) => {
             variant="ghost"
             onClick={handleResendOTP}
             disabled={resending || resendCooldown > 0}
-            className="w-full text-sm sm:text-base lg:text-lg"
+            className="w-full h-12 sm:h-14 text-sm sm:text-base lg:text-lg"
           >
-            {resending ? 'Sending...' : resendCooldown > 0 ? `Resend OTP in ${resendCooldown}s` : 'Resend OTP'}
+            {resending
+              ? t('otp.sending')
+              : resendCooldown > 0
+                ? t('otp.resend_in', { seconds: resendCooldown })
+                : t('otp.resend')
+            }
           </Button>
         </div>
       )}
@@ -395,7 +515,7 @@ const NewMemberRegistration = ({ phone, onComplete, onError }) => {
       {!isFormComplete && (
         <div className="border-t pt-4 sm:pt-6 lg:pt-8">
           <p className="text-center text-base sm:text-lg lg:text-xl text-gray-500">
-            Please fill in all required fields above to continue.
+            {t('new_profile.form_incomplete')}
           </p>
         </div>
       )}

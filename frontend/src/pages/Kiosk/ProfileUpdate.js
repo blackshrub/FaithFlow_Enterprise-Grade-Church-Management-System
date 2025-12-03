@@ -37,6 +37,8 @@ const ProfileUpdateKiosk = () => {
   const [phone, setPhone] = useState(''); // Original verified phone
   const [member, setMember] = useState(null);
   const [formData, setFormData] = useState({});
+  const [originalFormData, setOriginalFormData] = useState({}); // For tracking changes
+  const [otpExpiresIn, setOtpExpiresIn] = useState(300);
 
   // Phone change verification state
   const [newPhone, setNewPhone] = useState(''); // New phone to verify
@@ -62,9 +64,10 @@ const ProfileUpdateKiosk = () => {
   // Check if a field is enabled
   const isFieldEnabled = (fieldName) => enabledFields.includes(fieldName);
 
-  const handleMemberFound = (foundMember, foundPhone) => {
+  const handleMemberFound = (foundMember, foundPhone, expiresIn) => {
     setMember(foundMember);
     setPhone(foundPhone);
+    setOtpExpiresIn(expiresIn || 300);
     setStep('otp_existing');
   };
 
@@ -91,7 +94,7 @@ const ProfileUpdateKiosk = () => {
     } else {
       // Populate all user-editable fields from member document
       // Note: phone_whatsapp is the actual field name in DB
-      setFormData({
+      const initialData = {
         full_name: verifiedMember.full_name || '',
         email: verifiedMember.email || '',
         phone: verifiedMember.phone_whatsapp || phone,
@@ -104,9 +107,41 @@ const ProfileUpdateKiosk = () => {
         city: verifiedMember.city || '',
         state: verifiedMember.state || '',
         country: verifiedMember.country || '',
-      });
+      };
+      setFormData(initialData);
+      setOriginalFormData(initialData); // Store original for comparison
       setStep('edit_form');
     }
+  };
+
+  // Get list of changed fields for confirmation dialog
+  const getChangedFields = () => {
+    const changes = [];
+    Object.keys(formData).forEach(key => {
+      const originalVal = originalFormData[key] || '';
+      const newVal = formData[key] || '';
+      if (originalVal !== newVal && isFieldEnabled(key)) {
+        const config = fieldConfig[key];
+        if (config) {
+          changes.push({
+            field: key,
+            label: config.label,
+            oldValue: originalVal || t('profile_update.empty_value') || '(empty)',
+            newValue: newVal || t('profile_update.empty_value') || '(empty)',
+          });
+        }
+      }
+    });
+    return changes;
+  };
+
+  // Check if any fields have been changed
+  const hasChanges = () => {
+    return Object.keys(formData).some(key => {
+      const originalVal = originalFormData[key] || '';
+      const newVal = formData[key] || '';
+      return originalVal !== newVal && isFieldEnabled(key);
+    });
   };
 
   // Normalize phone number for comparison (remove spaces, dashes, etc.)
@@ -209,6 +244,16 @@ const ProfileUpdateKiosk = () => {
       console.error('Update error:', error);
       alert(t('errors.generic') || 'An error occurred. Please try again.');
     }
+  };
+
+  // Show confirmation dialog before saving
+  const handleShowConfirmation = () => {
+    if (!hasChanges()) {
+      // No changes made, show message
+      alert(t('profile_update.no_changes') || 'No changes to save');
+      return;
+    }
+    setStep('confirm_changes');
   };
 
   const handleSave = async () => {
@@ -426,6 +471,7 @@ const ProfileUpdateKiosk = () => {
         <ExistingMemberOTP
           member={member}
           phone={phone}
+          initialExpiresIn={otpExpiresIn}
           onVerified={handleOtpVerified}
         />
       </KioskLayout>
@@ -435,7 +481,7 @@ const ProfileUpdateKiosk = () => {
   if (step === 'not_found') {
     return (
       <KioskLayout showBack showHome onBack={() => setStep('phone')}>
-        <motion.div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl p-4 sm:p-8 lg:p-12 max-w-2xl mx-auto w-full space-y-4 sm:space-y-6 lg:space-y-8 text-center box-border overflow-hidden" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+        <motion.div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl p-4 sm:p-8 lg:p-12 max-w-2xl mx-auto w-full space-y-4 sm:space-y-6 lg:space-y-8 text-center box-border mb-6" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
           <div className="w-20 h-20 sm:w-24 sm:h-24 lg:w-32 lg:h-32 bg-blue-100 rounded-full flex items-center justify-center mx-auto">
             <UserCog className="w-10 h-10 sm:w-12 sm:h-12 lg:w-16 lg:h-16 text-blue-600" />
           </div>
@@ -480,7 +526,7 @@ const ProfileUpdateKiosk = () => {
   if (step === 'not_allowed') {
     return (
       <KioskLayout showBack={false} showHome={false}>
-        <motion.div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl p-4 sm:p-8 lg:p-12 max-w-2xl mx-auto w-full space-y-4 sm:space-y-6 lg:space-y-8 text-center box-border overflow-hidden" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+        <motion.div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl p-4 sm:p-8 lg:p-12 max-w-2xl mx-auto w-full space-y-4 sm:space-y-6 lg:space-y-8 text-center box-border mb-6" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
           <div className="w-20 h-20 sm:w-24 sm:h-24 lg:w-32 lg:h-32 bg-amber-100 rounded-full flex items-center justify-center mx-auto">
             <UserCog className="w-10 h-10 sm:w-12 sm:h-12 lg:w-16 lg:h-16 text-amber-600" />
           </div>
@@ -499,7 +545,7 @@ const ProfileUpdateKiosk = () => {
 
     return (
       <KioskLayout showBack showHome onBack={() => navigate('/kiosk/home')}>
-        <motion.div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl p-4 sm:p-8 lg:p-12 max-w-3xl mx-auto w-full space-y-4 sm:space-y-6 lg:space-y-8 box-border overflow-hidden" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+        <motion.div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl p-4 sm:p-8 lg:p-12 max-w-3xl mx-auto w-full space-y-4 sm:space-y-6 lg:space-y-8 box-border mb-6" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
           <div className="text-center px-2">
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2">{t('profile_update.step_edit')}</h2>
           </div>
@@ -546,15 +592,101 @@ const ProfileUpdateKiosk = () => {
           </div>
 
           <Button
-            onClick={handleSave}
+            onClick={handleShowConfirmation}
             disabled={updateProfileMutation.isPending || sendOTPMutation.isPending}
             className="w-full h-12 sm:h-14 lg:h-16 text-base sm:text-lg lg:text-xl rounded-xl"
           >
-            {updateProfileMutation.isPending || sendOTPMutation.isPending
-              ? (phoneChanged ? (t('profile_update.sending_otp') || 'Sending OTP...') : (t('profile_update.saving') || 'Saving...'))
-              : (phoneChanged ? (t('profile_update.verify_and_save') || 'Verify & Save') : t('profile_update.save_button'))
-            }
+            {t('profile_update.review_changes') || 'Review Changes'}
           </Button>
+        </motion.div>
+      </KioskLayout>
+    );
+  }
+
+  // Step: Confirm changes before saving
+  if (step === 'confirm_changes') {
+    const changes = getChangedFields();
+    const phoneChanged = hasPhoneChanged();
+
+    return (
+      <KioskLayout showBack showHome onBack={() => setStep('edit_form')}>
+        <motion.div
+          className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl p-4 sm:p-8 lg:p-12 max-w-2xl mx-auto w-full space-y-4 sm:space-y-6 lg:space-y-8 box-border mb-6"
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+        >
+          {/* Header */}
+          <div className="text-center space-y-3 sm:space-y-4">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 bg-amber-100 rounded-full flex items-center justify-center mx-auto">
+              <AlertCircle className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 text-amber-600" />
+            </div>
+            <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">
+              {t('profile_update.confirm_title') || 'Confirm Your Changes'}
+            </h2>
+            <p className="text-base sm:text-lg lg:text-xl text-gray-600">
+              {t('profile_update.confirm_subtitle') || 'Please review the changes below before saving'}
+            </p>
+          </div>
+
+          {/* Changes List */}
+          <div className="space-y-3 sm:space-y-4">
+            {changes.map((change, index) => (
+              <motion.div
+                key={change.field}
+                className="bg-gray-50 rounded-xl p-3 sm:p-4 lg:p-5 border border-gray-200"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: index * 0.1 }}
+              >
+                <p className="text-sm sm:text-base lg:text-lg font-semibold text-gray-700 mb-2">
+                  {change.label}
+                </p>
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 text-sm sm:text-base lg:text-lg">
+                  <span className="text-red-600 line-through">{change.oldValue}</span>
+                  <span className="text-gray-400 hidden sm:inline">→</span>
+                  <span className="text-green-600 font-medium">{change.newValue}</span>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+
+          {/* Phone change warning */}
+          {phoneChanged && (
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 sm:p-4 lg:p-5">
+              <div className="flex items-start gap-3">
+                <Phone className="w-5 h-5 sm:w-6 sm:h-6 text-amber-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm sm:text-base lg:text-lg font-semibold text-amber-800">
+                    {t('profile_update.phone_verification_required') || 'Phone Verification Required'}
+                  </p>
+                  <p className="text-xs sm:text-sm lg:text-base text-amber-700 mt-1">
+                    {t('profile_update.phone_verification_note') || 'You will receive an OTP on your new phone number to verify the change.'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Action buttons */}
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+            <Button
+              variant="outline"
+              onClick={() => setStep('edit_form')}
+              className="flex-1 h-12 sm:h-14 lg:h-16 text-base sm:text-lg lg:text-xl rounded-xl"
+            >
+              {t('profile_update.go_back') || 'Go Back'}
+            </Button>
+            <Button
+              onClick={handleSave}
+              disabled={updateProfileMutation.isPending || sendOTPMutation.isPending}
+              className="flex-1 h-12 sm:h-14 lg:h-16 text-base sm:text-lg lg:text-xl rounded-xl"
+            >
+              {updateProfileMutation.isPending || sendOTPMutation.isPending
+                ? (phoneChanged ? (t('profile_update.sending_otp') || 'Sending OTP...') : (t('profile_update.saving') || 'Saving...'))
+                : (phoneChanged ? (t('profile_update.verify_and_save') || 'Verify & Save') : (t('profile_update.confirm_save') || 'Confirm & Save'))
+              }
+            </Button>
+          </div>
         </motion.div>
       </KioskLayout>
     );
@@ -569,7 +701,7 @@ const ProfileUpdateKiosk = () => {
         setNewPhoneError('');
       }}>
         <motion.div
-          className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl p-4 sm:p-8 lg:p-12 max-w-2xl mx-auto space-y-4 sm:space-y-6 lg:space-y-8 w-full box-border overflow-hidden"
+          className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl p-4 sm:p-8 lg:p-12 max-w-2xl mx-auto space-y-4 sm:space-y-6 lg:space-y-8 w-full box-border mb-6"
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
         >
@@ -658,7 +790,7 @@ const ProfileUpdateKiosk = () => {
   if (step === 'success') {
     return (
       <KioskLayout showBack={false} showHome={false}>
-        <motion.div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl p-4 sm:p-8 lg:p-12 max-w-2xl mx-auto w-full space-y-4 sm:space-y-6 lg:space-y-8 text-center box-border overflow-hidden" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}>
+        <motion.div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl p-4 sm:p-8 lg:p-12 max-w-2xl mx-auto w-full space-y-4 sm:space-y-6 lg:space-y-8 text-center box-border mb-6" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}>
           <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ duration: 0.5, delay: 0.2 }}>
             <div className="w-20 h-20 sm:w-24 sm:h-24 lg:w-32 lg:h-32 bg-green-100 rounded-full flex items-center justify-center mx-auto">
               <Check className="w-10 h-10 sm:w-12 sm:h-12 lg:w-16 lg:h-16 text-green-600" />

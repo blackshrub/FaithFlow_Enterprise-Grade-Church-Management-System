@@ -9,7 +9,6 @@ import { useTranslation } from 'react-i18next';
 import { Phone } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Button } from '../ui/button';
-import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import kioskApi from '../../services/kioskApi';
 
@@ -44,32 +43,25 @@ const PhoneStep = ({ onMemberFound, onMemberNotFound, onError, churchId }) => {
       normalizedPhone = '+' + normalizedPhone;
     }
     
-    console.log('Original phone:', phone);
-    console.log('Normalized phone:', normalizedPhone);
     
     setLoading(true);
     
     try {
       const member = await kioskApi.lookupMemberByPhone(normalizedPhone, churchId);
       
-      console.log('👤 Member lookup result:', member);
       
       if (member) {
         // Existing member - send OTP automatically
-        console.log('✅ Member found, sending OTP...');
         const otpResult = await kioskApi.sendOTP(normalizedPhone, churchId);
-        console.log('📨 OTP send result:', otpResult);
-        console.log('🔐 OTP CODE (for testing):', otpResult.debug_code);
-        
-        onMemberFound(member, normalizedPhone);
+        const expiresIn = otpResult?.expires_in_seconds || 300; // Default 5 minutes
+
+        onMemberFound(member, normalizedPhone, expiresIn);
       } else {
         // New member - send OTP automatically
-        console.log('⚠️ Member not found, creating new, sending OTP...');
         const otpResult = await kioskApi.sendOTP(normalizedPhone, churchId);
-        console.log('📨 OTP send result:', otpResult);
-        console.log('🔐 OTP CODE (for testing):', otpResult.debug_code);
-        
-        onMemberNotFound(normalizedPhone);
+        const expiresIn = otpResult?.expires_in_seconds || 300; // Default 5 minutes
+
+        onMemberNotFound(normalizedPhone, expiresIn);
       }
     } catch (err) {
       console.error('❌ Phone lookup error:', err);
@@ -83,7 +75,7 @@ const PhoneStep = ({ onMemberFound, onMemberNotFound, onError, churchId }) => {
   
   return (
     <motion.div
-      className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl p-4 sm:p-8 lg:p-12 max-w-2xl mx-auto w-full box-border overflow-hidden"
+      className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl p-4 sm:p-8 lg:p-12 max-w-2xl mx-auto w-full box-border mb-6"
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.3 }}
@@ -111,21 +103,35 @@ const PhoneStep = ({ onMemberFound, onMemberNotFound, onError, churchId }) => {
           </p>
         </div>
 
-        {/* Phone Input */}
+        {/* Phone Input - Numbers only */}
         <div className="space-y-3 sm:space-y-4">
-          <Label htmlFor="phone" className="text-base sm:text-lg lg:text-2xl font-medium text-gray-700">
+          <Label htmlFor="phone" className="text-base sm:text-xl lg:text-2xl font-medium text-gray-700">
             {t('phone.label')}
           </Label>
-          <Input
+          <input
             id="phone"
             type="tel"
+            inputMode="numeric"
+            pattern="[0-9]*"
+            data-kiosk-phone="true"
+            aria-label={t('phone.label')}
             value={phone}
-            onChange={(e) => setPhone(e.target.value)}
+            onChange={(e) => {
+              // Strictly allow only numbers
+              const numericValue = e.target.value.replace(/[^0-9]/g, '');
+              setPhone(numericValue);
+            }}
             placeholder={t('phone.placeholder')}
-            className="h-12 sm:h-14 lg:h-16 text-base sm:text-xl lg:text-2xl px-4 sm:px-5 lg:px-6 rounded-xl border-2 focus:ring-2 sm:focus:ring-4 focus:ring-blue-200"
+            className="w-full h-16 sm:h-20 lg:h-24 px-4 sm:px-6 lg:px-8 rounded-xl border-2 border-gray-300 focus:border-blue-500 focus:ring-2 sm:focus:ring-4 focus:ring-blue-200 focus:outline-none font-medium tracking-wider disabled:bg-gray-100 disabled:cursor-not-allowed"
             disabled={loading}
             autoFocus
-            onKeyPress={(e) => e.key === 'Enter' && handleContinue()}
+            onKeyPress={(e) => {
+              // Block non-numeric keys
+              if (!/[0-9]/.test(e.key) && e.key !== 'Enter') {
+                e.preventDefault();
+              }
+              if (e.key === 'Enter') handleContinue();
+            }}
           />
 
           {error && (

@@ -18,6 +18,15 @@
     "back_to_start": "Back to Start",
     "back": "Back"
   },
+  "button": {
+    "cancel": "Cancel",
+    "capture": "Capture",
+    "capturing": "Capturing...",
+    "confirm": "Confirm",
+    "submit": "Submit",
+    "continue": "Continue",
+    "retry": "Try Again"
+  },
   "language": {
     "choose_language": "Language",
     "english": "English",
@@ -64,7 +73,8 @@
     "photo_change": "Retake Photo",
     "otp_info": "We have sent a 4-digit code to your WhatsApp.",
     "otp_help": "Please type the code here. If you need help, please ask our staff.",
-    "submit_error": "We cannot create your profile right now. Please ask our staff."
+    "submit_error": "We cannot create your profile right now. Please ask our staff.",
+    "form_incomplete": "Please fill in all required fields above to continue."
   },
   "otp": {
     "label": "4-digit code",
@@ -74,8 +84,10 @@
     "expired": "The code has expired. Please ask our staff for help.",
     "too_many_attempts": "Too many wrong tries. Please ask our staff.",
     "resend": "Resend OTP",
+    "resend_in": "Resend OTP in {{seconds}}s",
     "send_error": "Failed to send OTP. Please try again.",
-    "resend_error": "Failed to resend OTP. Please try again."
+    "resend_error": "Failed to resend OTP. Please try again.",
+    "expires_in": "Code expires in {{time}}"
   },
   "event_registration": {
     "title": "Event Registration",
@@ -89,6 +101,31 @@
     "success_text": "You are registered for:",
     "success_back": "Back to Start"
   },
+  "event_checkin": {
+    "title": "Event Check-In",
+    "select_event": "Select Event",
+    "no_events": "No events available today",
+    "loading_events": "Loading events...",
+    "checkin_method": "Check-In Method",
+    "scan_qr": "Scan QR",
+    "search": "Search",
+    "start_scanning": "Start Scanning",
+    "stop_scanning": "Stop Scanning",
+    "camera_hint": "Point camera at QR code",
+    "search_placeholder": "Enter name or phone",
+    "search_button": "Search",
+    "searching": "Searching...",
+    "no_results": "No members found",
+    "already_checked_in": "Already checked in",
+    "check_in": "Check In",
+    "checking_in": "Checking in...",
+    "success_title": "Check-In Complete!",
+    "success_text": "has been checked in successfully.",
+    "check_another": "Check In Another",
+    "error_invalid_qr": "Invalid QR code",
+    "error_not_registered": "Member not registered for this event",
+    "error_generic": "Check-in failed. Please try again."
+  },
   "prayer": {
     "title": "Prayer Request",
     "step_request": "Step 2 of 2: Your request",
@@ -100,6 +137,8 @@
     "category_work": "Work",
     "category_financial": "Financial",
     "category_guidance": "Guidance",
+    "category_spiritual": "Spiritual",
+    "category_thanksgiving": "Thanksgiving",
     "category_other": "Other",
     "followup_label": "May we contact you to follow up?",
     "followup_yes": "Yes",
@@ -201,14 +240,30 @@
     "verify_new_phone_title": "Verify New Phone Number",
     "verify_new_phone_subtitle": "Enter the OTP sent to your new number",
     "change_number": "Use Different Number",
+    "review_changes": "Review Changes",
+    "confirm_title": "Confirm Your Changes",
+    "confirm_subtitle": "Please review the changes below before saving",
+    "confirm_save": "Confirm & Save",
+    "go_back": "Go Back",
+    "no_changes": "No changes to save",
+    "empty_value": "(empty)",
+    "phone_verification_required": "Phone Verification Required",
+    "phone_verification_note": "You will receive an OTP on your new phone number to verify the change.",
     "success_title": "Thank you",
     "success_text": "Your data has been updated.",
     "success_back": "Back to Start"
   },
   "timeout": {
-    "title": "Session ended",
-    "text": "No activity was detected. We returned to the start so the next person can use this screen.",
-    "button": "Back to Start"
+    "title": "Are you still there?",
+    "text": "You will be returned to the start screen due to inactivity.",
+    "button": "Back to Start",
+    "stay": "Stay Here"
+  },
+  "camera": {
+    "permission_denied": "Camera access was denied. Please allow camera access or ask our staff.",
+    "not_found": "No camera found on this device.",
+    "error": "Camera error. Please try again or ask our staff.",
+    "switch": "Switch Camera"
   },
   "settings": {
     "title": "Kiosk & Public Access",
