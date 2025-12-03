@@ -14,15 +14,19 @@ Architecture:
 - Separate queues for different priority levels
 - Dead letter queue for failed jobs
 - Job status tracking with TTL
+
+Uses msgspec for ~20% faster serialization compared to orjson.
 """
 
 import asyncio
-import json
 import uuid
 import logging
 from typing import Optional, Dict, Any, List, Callable, Awaitable
 from dataclasses import dataclass, field, asdict
 from datetime import datetime, timedelta
+
+# Use centralized msgspec-based serialization
+from utils.serialization import json_dumps_str, json_loads
 from enum import Enum
 
 from config.redis import get_redis
@@ -222,7 +226,7 @@ class JobQueue:
 
             # Store job data
             job_key = self._job_key(job.id)
-            await redis.set(job_key, json.dumps(job.to_dict()), ex=TTL.DAY_1)
+            await redis.set(job_key, json_dumps_str(job.to_dict()), ex=TTL.DAY_1)
 
             if delay_seconds > 0:
                 # Add to scheduled queue
@@ -336,7 +340,7 @@ class JobQueue:
 
             data = await redis.get(job_key)
             if data:
-                return Job.from_dict(json.loads(data))
+                return Job.from_dict(json_loads(data))
             return None
 
         except Exception as e:
@@ -349,7 +353,7 @@ class JobQueue:
             redis = await get_redis()
             job_key = self._job_key(job.id)
 
-            await redis.set(job_key, json.dumps(job.to_dict()), ex=TTL.DAY_1)
+            await redis.set(job_key, json_dumps_str(job.to_dict()), ex=TTL.DAY_1)
             return True
 
         except Exception as e:

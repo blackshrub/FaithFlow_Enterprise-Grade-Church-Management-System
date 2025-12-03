@@ -3,9 +3,10 @@ Redis Cache Layer
 
 Replaces in-memory caching with distributed Redis caching.
 Provides decorator-based caching and cache invalidation.
+
+Uses msgspec for ~20% faster serialization compared to orjson.
 """
 
-import json
 import hashlib
 import logging
 import functools
@@ -15,6 +16,9 @@ from datetime import datetime
 from config.redis import get_redis
 from .utils import redis_key, TTL
 
+# Use centralized msgspec-based serialization
+from utils.serialization import redis_encode, redis_decode
+
 logger = logging.getLogger(__name__)
 
 
@@ -23,7 +27,7 @@ class RedisCache:
     Redis-backed distributed cache.
 
     Provides caching functionality that works across multiple
-    backend instances with automatic serialization.
+    backend instances with automatic serialization using msgspec.
     """
 
     def __init__(self):
@@ -35,28 +39,12 @@ class RedisCache:
         return redis_key("cache", namespace, *parts)
 
     def _serialize(self, value: Any) -> str:
-        """Serialize value for Redis storage."""
-        if isinstance(value, (str, int, float, bool)):
-            return json.dumps({"_type": "primitive", "value": value})
-        elif isinstance(value, datetime):
-            return json.dumps({"_type": "datetime", "value": value.isoformat()})
-        else:
-            return json.dumps({"_type": "json", "value": value}, default=str)
+        """Serialize value for Redis storage using msgspec."""
+        return redis_encode(value)
 
     def _deserialize(self, data: str) -> Any:
-        """Deserialize value from Redis."""
-        try:
-            parsed = json.loads(data)
-            if isinstance(parsed, dict) and "_type" in parsed:
-                if parsed["_type"] == "primitive":
-                    return parsed["value"]
-                elif parsed["_type"] == "datetime":
-                    return datetime.fromisoformat(parsed["value"])
-                else:
-                    return parsed["value"]
-            return parsed
-        except json.JSONDecodeError:
-            return data
+        """Deserialize value from Redis using msgspec."""
+        return redis_decode(data)
 
     async def get(
         self,

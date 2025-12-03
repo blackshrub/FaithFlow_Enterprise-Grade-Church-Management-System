@@ -6,9 +6,10 @@ Summaries are generated periodically to compress conversation history
 and reduce token usage with Claude API.
 
 TTL: 24 hours
+
+Uses msgspec for ~20% faster serialization compared to orjson.
 """
 
-import json
 import logging
 from typing import Optional, Dict, Any, List
 from dataclasses import dataclass, asdict, field
@@ -16,6 +17,9 @@ from datetime import datetime
 
 from config.redis import get_redis
 from .utils import redis_key, TTL
+
+# Use centralized msgspec-based serialization
+from utils.serialization import json_dumps_str, json_loads
 
 logger = logging.getLogger(__name__)
 
@@ -127,7 +131,7 @@ class SummaryStore:
             if data is None:
                 return None
 
-            summary_dict = json.loads(data)
+            summary_dict = json_loads(data)
             return ConversationSummary.from_dict(summary_dict)
 
         except Exception as e:
@@ -174,7 +178,7 @@ class SummaryStore:
             key = self._make_key(church_id, user_id)
 
             summary.updated_at = datetime.utcnow().isoformat()
-            data = json.dumps(summary.to_dict())
+            data = json_dumps_str(summary.to_dict())
 
             await redis.set(key, data, ex=self.ttl)
 

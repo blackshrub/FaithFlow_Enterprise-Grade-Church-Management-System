@@ -11,10 +11,11 @@ Usage:
 
     # Subscribe in startup (runs in background)
     await pubsub.start_subscriber()
+
+Uses msgspec for ~20% faster serialization compared to orjson.
 """
 
 import asyncio
-import json
 import logging
 from typing import Optional, Callable, Dict, Any, List
 from dataclasses import dataclass
@@ -23,6 +24,9 @@ from enum import Enum
 
 from config.redis import get_redis
 from .utils import redis_key
+
+# Use centralized msgspec-based serialization
+from utils.serialization import json_dumps_str, json_loads
 
 logger = logging.getLogger(__name__)
 
@@ -151,7 +155,7 @@ class PubSubService:
                 source=self._instance_id,
             )
 
-            payload = json.dumps(message.to_dict())
+            payload = json_dumps_str(message.to_dict())
             count = await redis.publish(self.CHANNEL, payload)
 
             logger.debug(
@@ -229,7 +233,7 @@ class PubSubService:
     async def _handle_message(self, message_data: str) -> None:
         """Process incoming invalidation message."""
         try:
-            data = json.loads(message_data)
+            data = json_loads(message_data)
             message = InvalidationMessage.from_dict(data)
 
             # Skip our own messages (already handled locally)

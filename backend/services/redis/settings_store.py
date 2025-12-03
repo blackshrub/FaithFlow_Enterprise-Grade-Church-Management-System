@@ -8,9 +8,10 @@ Stores user preferences for AI interactions:
 - Language preference
 
 TTL: 7 days (user preferences persist longer)
+
+Uses msgspec for ~20% faster serialization compared to orjson.
 """
 
-import json
 import logging
 from typing import Optional, Dict, Any, Literal
 from dataclasses import dataclass, asdict, field
@@ -18,6 +19,9 @@ from datetime import datetime
 
 from config.redis import get_redis
 from .utils import redis_key, TTL
+
+# Use centralized msgspec-based serialization
+from utils.serialization import json_dumps_str, json_loads
 
 logger = logging.getLogger(__name__)
 
@@ -145,7 +149,7 @@ class SettingsStore:
             key = self._make_key(church_id, user_id)
 
             settings.updated_at = datetime.utcnow().isoformat()
-            data = json.dumps(settings.to_dict())
+            data = json_dumps_str(settings.to_dict())
 
             await redis.set(key, data, ex=self.ttl)
 
@@ -180,7 +184,7 @@ class SettingsStore:
             if data is None:
                 return None
 
-            settings_dict = json.loads(data)
+            settings_dict = json_loads(data)
             return UserAISettings.from_dict(settings_dict)
 
         except Exception as e:
