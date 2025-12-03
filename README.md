@@ -668,6 +668,8 @@ A: Yes, built with React Native/Expo for both platforms.
 | **Frontend (Web)** | React, TanStack Query, shadcn/ui, Tailwind CSS |
 | **Frontend (Mobile)** | React Native, Expo, NativeWind, Gluestack UI |
 | **Backend** | FastAPI, Python 3.11, Motor (async MongoDB) |
+| **ASGI Server** | Granian (Rust-based, 2-3x faster than Uvicorn) |
+| **JSON Serialization** | orjson (10x faster than stdlib json) |
 | **Database** | MongoDB 7.0 |
 | **Caching** | Redis 7.4 |
 | **Real-time** | EMQX (MQTT), WebSocket |
@@ -699,9 +701,12 @@ Built with these amazing open-source projects:
 | Technology | Purpose |
 |------------|---------|
 | [FastAPI](https://fastapi.tiangolo.com/) | Backend API framework |
+| [Granian](https://github.com/emmett-framework/granian) | Rust-based ASGI server (2-3x faster than Uvicorn) |
+| [orjson](https://github.com/ijl/orjson) | Fast JSON serialization (10x faster than stdlib) |
 | [React](https://react.dev/) | Frontend web framework |
 | [React Native](https://reactnative.dev/) + [Expo](https://expo.dev/) | Mobile app framework |
 | [MongoDB](https://www.mongodb.com/) | Database |
+| [Redis](https://redis.io/) | In-memory caching |
 | [LiveKit](https://livekit.io/) | Voice/Video WebRTC SFU |
 | [EMQX](https://www.emqx.io/) | MQTT message broker |
 | [coTURN](https://github.com/coturn/coturn) | TURN/STUN server |
