@@ -7,12 +7,13 @@
 3. [Kiosk Mode](#kiosk-mode)
 4. [Devotion CMS](#devotion-cms)
 5. [Bible Integration](#bible-integration)
-6. [Member Management](#member-management)
-7. [Import/Export System](#importexport-system)
-8. [Accounting Module](#accounting-module)
-9. [Prayer Requests](#prayer-requests)
-10. [Settings & Configuration](#settings--configuration)
-11. [Group Management](#group-management)
+6. [Content Center (Explore Module)](#content-center-explore-module)
+7. [Member Management](#member-management)
+8. [Import/Export System](#importexport-system)
+9. [Accounting Module](#accounting-module)
+10. [Prayer Requests](#prayer-requests)
+11. [Settings & Configuration](#settings--configuration)
+12. [Group Management](#group-management)
 
 ---
 
@@ -257,7 +258,7 @@ Professional check-in system optimized for landscape tablets at church entrances
 ## Devotion CMS
 
 ### Overview
-Daily devotion management system with Bible integration and professional Indonesian text-to-speech.
+Daily devotion management system with Bible integration.
 
 ### Features
 
@@ -297,51 +298,28 @@ Daily devotion management system with Bible integration and professional Indones
 - Preview before adding
 - Add multiple verses per devotion
 
-**3. Text-to-Speech (Wibowo Voice)**
-
-**Technology:**
-- Coqui TTS with Indonesian model
-- Wibowo voice (male, professional, audiobook-quality)
-- 329MB model (included in repo)
-
-**Pronunciation Normalization:**
-- Unicode script ɡ fix (for 'g' sounds)
-- 'b' → 'p' at word end (jawab → jawap)
-- 'b' → 'p' before consonants (sebabnya → sebapnya)
-- 'd' → 't' at word end (murid → murit)
-- 'd' → 't' before consonants (maksudnya → maksutnya)
-
-**Features:**
-- Generate audio before saving (preview)
-- Generate after saving
-- Audio player with controls
-- WAV format (base64)
-- 60-90 second generation time
-- Falls back to gTTS if Coqui fails
-
-**4. Version History**
+**3. Version History**
 - Auto-saves on every edit
 - View all previous versions
 - Restore any version
 - Tracks editor and timestamp
 
-**5. Bulk Operations**
+**4. Bulk Operations**
 - Select multiple devotions (checkboxes)
 - Bulk publish
 - Bulk unpublish (revert to draft)
 - Bulk delete
 - Select all function
 
-**6. Schedule Publishing**
+**5. Schedule Publishing**
 - Set future publish date/time
 - Auto-publishes on scheduled date
 - Timezone from church settings
 
-**7. Duplicate Devotion**
+**6. Duplicate Devotion**
 - One-click copy
 - Creates new draft
 - Preserves all content
-- Resets audio (generate new)
 
 ### Mobile API
 
@@ -351,7 +329,6 @@ Daily devotion management system with Bible integration and professional Indones
 - Complete data in single response:
   - Title, content, cover image
   - Bible verses with text
-  - TTS audio URL
   - No additional API calls needed
 
 ---
@@ -399,6 +376,126 @@ Daily devotion management system with Bible integration and professional Indones
 - Handles any book name (English, Indonesian, Chinese)
 - Falls back to book_number if name not found
 - Example: `/api/bible/TB/Genesis/1/1` works (finds Kejadian)
+
+---
+
+## Content Center (Explore Module)
+
+### Overview
+Comprehensive spiritual content hub for the mobile app featuring daily devotions, verse of the day, Bible figures, quizzes, topical studies, and Bible study plans. Designed to engage members in daily spiritual growth.
+
+### Features
+
+**1. Verse of the Day**
+- Daily curated Bible verse
+- Reflection content with deep insights
+- Prayer points and practical applications
+- Theme categorization
+- Bilingual support (English/Indonesian)
+- Admin can customize verse selection
+
+**2. Bible Figures**
+- Biographical study of key Biblical characters
+- Complete timeline with major life events and dates
+- Full biography content (1,000-2,000+ words)
+- Life lessons extracted from their stories
+- Related scripture references
+- Old/New Testament categorization
+- Bilingual content
+
+**3. Daily Quizzes**
+- Interactive Bible knowledge quizzes
+- Multiple choice questions with explanations
+- Scripture references for each answer
+- Difficulty levels (Easy, Medium, Hard)
+- Time limits and pass percentages
+- Score tracking and leaderboards
+- Categories: Life of Jesus, Old Testament, New Testament, etc.
+
+**4. Topical Categories**
+- Organized Bible verses by life topics
+- Categories include:
+  - Faith & Trust
+  - Peace & Anxiety
+  - Love & Relationships
+  - Strength & Courage
+  - Wisdom & Guidance
+  - Hope & Encouragement
+- Verse count per category
+- Custom icons and colors
+- Searchable and filterable
+
+**5. Bible Study Plans**
+- Multi-day structured Bible study programs
+- Examples: Armor of God (7 days), Beatitudes (8 days), Names of God (10 days)
+- Daily lessons with:
+  - Scripture readings
+  - Commentary and insights
+  - Reflection questions
+  - Prayer prompts
+- Progress tracking per user
+- Duration and difficulty indicators
+
+**6. Daily Devotions**
+- Rich text devotional content
+- Cover images
+- Bible verse integration
+- Scheduled publishing
+- Admin CMS for content management
+- See [Devotion CMS](#devotion-cms) for admin features
+
+### Mobile App Integration
+
+**Content Discovery:**
+- Beautiful card-based UI for browsing content
+- "For You" personalized recommendations
+- Search across all content types
+- Favorites and bookmarks
+- Reading history
+
+**Progress Tracking:**
+- Bible study plan completion
+- Quiz scores and achievements
+- Devotion reading streaks
+- Verse memorization progress
+
+**Offline Support:**
+- Download content for offline reading
+- Sync progress when back online
+
+### Admin Features
+
+**Content Management:**
+- Create and edit all content types
+- Schedule content publication
+- Bulk operations (publish, unpublish, delete)
+- Content analytics (views, engagement)
+- Multi-language content editor
+
+**AI-Assisted Content Generation:**
+- Generate devotion content with AI
+- Create quiz questions from passages
+- Suggest verse categorizations
+- Translate content between languages
+
+### API Endpoints
+
+**Public/Mobile API:**
+- `GET /public/explore/verse-of-day` - Today's featured verse
+- `GET /public/explore/devotions/today` - Today's devotion
+- `GET /public/explore/bible-figures` - List of Bible figures
+- `GET /public/explore/bible-figures/{id}` - Figure details
+- `GET /public/explore/quizzes` - Available quizzes
+- `GET /public/explore/quizzes/{id}` - Quiz questions
+- `GET /public/explore/topics` - Topical categories
+- `GET /public/explore/topics/{id}/verses` - Verses in category
+- `GET /public/explore/bible-studies` - Available study plans
+- `GET /public/explore/bible-studies/{id}` - Study plan details
+
+**Admin API:**
+- Full CRUD for all content types
+- Publishing and scheduling controls
+- Analytics and reporting
 
 ---
 
@@ -1887,19 +1984,14 @@ results = await db.collection.find(query)
      - Chapter 23, verses 1-6
      - Click Fetch → Text appears
      - Add to devotion
-4. Click "Generate Audio"
-5. Wait 60-90s → Wibowo voice audio ready
-6. Preview audio
-7. Save as Draft or Publish
+4. Save as Draft or Publish
 
 **Mobile App Fetches:**
 - Call `/api/devotions/today`
 - Get complete devotion:
   - Title, content, image
   - Bible verses with text
-  - Audio URL
 - Display to members
-- Play audio
 
 ---
 
@@ -1914,9 +2006,8 @@ results = await db.collection.find(query)
 - Choose welcoming theme for kiosk
 
 **Devotions:**
-- Write in Indonesian for best TTS quality
-- Keep sentences natural
-- Preview audio before publishing
+- Write clear, well-formatted content
+- Use Bible verse picker for accuracy
 - Schedule for automatic publishing
 
 **Members:**

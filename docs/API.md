@@ -293,35 +293,6 @@ Create devotion.
 }
 ```
 
-### POST /api/devotions/generate-audio-preview
-
-Generate TTS audio from text (before saving).
-
-**Query Parameters:**
-- `text`: Content to convert to speech
-
-**Response:**
-```json
-{
-  "success": true,
-  "audio_url": "data:audio/wav;base64,..."
-}
-```
-
-**Note:** Takes 60-90 seconds, uses Wibowo voice
-
-### POST /api/devotions/{id}/generate-audio
-
-Generate TTS audio for saved devotion.
-
-**Response:**
-```json
-{
-  "success": true,
-  "audio_url": "data:audio/wav;base64,..."
-}
-```
-
 ### POST /api/devotions/bulk-action
 
 Bulk operations.
@@ -2193,7 +2164,6 @@ Example: `/api/members/?skip=0&limit=50`
 **Recommended for production:**
 - Add rate limiting middleware
 - Suggested: 100 requests/minute per IP
-- TTS endpoints: 5 requests/hour (resource intensive)
 
 ---
 

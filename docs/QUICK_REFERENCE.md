@@ -141,20 +141,6 @@ python3 scripts/import_tb_chs.py
 python3 scripts/import_english_bibles.py
 ```
 
-### TTS Not Working
-```bash
-# Check model files
-ls -lh /opt/faithflow/backend/models/tts_indonesian/
-
-# Should see:
-# checkpoint.pth (330MB)
-# config.json
-# speakers.pth
-
-# Also check:
-ls -lh /opt/faithflow/backend/speakers.pth
-```
-
 ### Frontend Build Failed
 ```bash
 cd /opt/faithflow/frontend

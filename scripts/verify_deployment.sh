@@ -72,15 +72,6 @@ else
     echo "  Fix: cd /opt/faithflow && git lfs pull"
 fi
 
-TTS_SIZE=$(stat -f%z /opt/faithflow/backend/models/tts_indonesian/checkpoint.pth 2>/dev/null || stat -c%s /opt/faithflow/backend/models/tts_indonesian/checkpoint.pth 2>/dev/null || echo 0)
-TTS_SIZE_MB=$((TTS_SIZE / 1024 / 1024))
-if [ "$TTS_SIZE_MB" -gt 300 ]; then
-    success "TTS model present ($TTS_SIZE_MB MB)"
-else
-    error "TTS model missing or incomplete ($TTS_SIZE_MB MB)"
-    echo "  Fix: cd /opt/faithflow && git lfs pull"
-fi
-
 # 4. Check Python environment
 echo -e "\n4. Checking Python Environment..."
 if [ -d "/opt/faithflow/backend/venv" ]; then
@@ -94,13 +85,7 @@ if [ -d "/opt/faithflow/backend/venv" ]; then
         error "FastAPI not installed"
         echo "  Fix: pip install -r requirements.txt"
     fi
-    
-    if python3 -c "import TTS" 2>/dev/null; then
-        success "Coqui TTS installed"
-    else
-        warning "Coqui TTS not installed (will use gTTS fallback)"
-    fi
-    
+
     deactivate
 else
     error "Python venv not found"
@@ -188,6 +173,6 @@ echo "Next steps:"
 echo "1. Open https://yourdomain.com in browser"
 echo "2. Login with admin credentials"
 echo "3. Test creating a devotion"
-echo "4. Test generating TTS audio"
-echo "5. Test kiosk mode"
+echo "4. Test kiosk mode"
+echo "5. Test creating members and events"
 echo ""

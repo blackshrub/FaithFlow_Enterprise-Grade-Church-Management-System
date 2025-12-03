@@ -302,6 +302,7 @@ NAME                        STATUS
 faithflow-backend           Up (healthy)
 faithflow-frontend          Up (healthy)
 faithflow-mongodb           Up (healthy)
+faithflow-redis             Up (healthy)
 faithflow-livekit           Up (healthy)
 faithflow-coturn            Up (healthy)
 faithflow-emqx              Up (healthy)
@@ -633,12 +634,17 @@ A: Yes, built with React Native/Expo for both platforms.
 └──────────┘    └────┬─────┘    └────┬─────┘    └────┬─────┘    └──────────┘
                      │               │               │
                      ▼               ▼               ▼
-               ┌──────────┐    ┌──────────┐    ┌──────────────────────────┐
-               │ MONGODB  │    │  COTURN  │    │      SEAWEEDFS           │
-               │ Database │    │(TURN/NAT)│    │ Master (9333)            │
-               │Port:27017│    │Port: 3478│    │ Volume (8080)            │
-               └──────────┘    └──────────┘    │ Filer  (8888)            │
-                                               └──────────────────────────┘
+          ┌──────────┬──────────┐    │         ┌──────────────────────────┐
+          │ MONGODB  │  REDIS   │    │         │      SEAWEEDFS           │
+          │ Database │  Cache   │    │         │ Master (9333)            │
+          │Port:27017│Port: 6379│    │         │ Volume (8080)            │
+          └──────────┴──────────┘    │         │ Filer  (8888)            │
+                                     ▼         └──────────────────────────┘
+                              ┌──────────┐
+                              │  COTURN  │
+                              │(TURN/NAT)│
+                              │Port: 3478│
+                              └──────────┘
 ```
 
 ### Service Roles
@@ -649,6 +655,7 @@ A: Yes, built with React Native/Expo for both platforms.
 | **Frontend** | Web application UI | https://yourdomain.com |
 | **Backend** | REST API, business logic | https://api.yourdomain.com |
 | **MongoDB** | Database | Internal only |
+| **Redis** | Caching, session storage | Internal only |
 | **LiveKit** | Voice/video WebRTC SFU | https://livekit.yourdomain.com |
 | **coTURN** | NAT traversal for calls | UDP 3478, 5349 |
 | **EMQX** | Real-time messaging | wss://yourdomain.com/mqtt |
@@ -662,6 +669,7 @@ A: Yes, built with React Native/Expo for both platforms.
 | **Frontend (Mobile)** | React Native, Expo, NativeWind, Gluestack UI |
 | **Backend** | FastAPI, Python 3.11, Motor (async MongoDB) |
 | **Database** | MongoDB 7.0 |
+| **Caching** | Redis 7.4 |
 | **Real-time** | EMQX (MQTT), WebSocket |
 | **Voice/Video** | LiveKit (WebRTC SFU), coTURN |
 | **File Storage** | SeaweedFS |

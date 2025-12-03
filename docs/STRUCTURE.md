@@ -44,7 +44,7 @@ faithflow/
 │   │   ├── group_leave_requests.py     # ⭐ Groups - Leave workflows
 │   │   └── ...
 │   ├── services/            # Business logic
-│   │   ├── tts_service.py, qr_service.py, auth_service.py
+│   │   ├── qr_service.py, auth_service.py
 │   │   ├── accounting_service.py       # ⭐ Accounting utilities
 │   │   ├── fiscal_period_service.py    # ⭐ Fiscal period management
 │   │   ├── year_end_closing_service.py # ⭐ Year-end logic
@@ -71,11 +71,6 @@ faithflow/
 │   │       ├── nkjv.json          # NKJV (4.6MB)
 │   │       ├── nlt.json           # NLT (4.7MB)
 │   │       └── esv.json           # ESV (4.6MB)
-│   ├── models/              # ML models
-│   │   └── tts_indonesian/  # Coqui TTS (Wibowo)
-│   │       ├── checkpoint.pth     # Model weights (330MB)
-│   │       ├── config.json        # Model config
-│   │       └── speakers.pth       # Speaker embeddings
 │   ├── scripts/             # Utility scripts
 │   │   ├── init_db.py       # Database initialization
 │   │   ├── import_tb_chs.py # Import TB & Chinese
@@ -152,7 +147,7 @@ faithflow/
 **`requirements.txt`**
 - All Python dependencies
 - Pinned versions for stability
-- Includes: FastAPI, Motor, TTS, QR libraries
+- Includes: FastAPI, Motor, QR libraries
 
 **`models/`**
 - Pydantic models for validation
@@ -167,21 +162,13 @@ faithflow/
 **`services/`**
 - Business logic separated from routes
 - Reusable service functions
-- TTS, QR, WhatsApp integrations
+- QR, WhatsApp integrations
 
 **`data/bible/`**
 - **Critical:** 6 Bible JSON files (35MB total)
 - **Must be in Git LFS**
 - Required for devotion verse picker
 - Imported to MongoDB on first run
-
-**`models/tts_indonesian/`**
-- **Critical:** Coqui TTS model files (330MB)
-- **Must be in Git LFS**
-- checkpoint.pth: Model weights
-- config.json: Model configuration
-- speakers.pth: Speaker embeddings
-- Required for Wibowo voice TTS
 
 ### Frontend
 
@@ -262,18 +249,9 @@ MongoDB (Port 27017)
    ↓ Frontend calls /api/bible/{version}/{book}/{chapter}/{verse}
    ↓ Backend queries MongoDB bible_verses
    ↓ Returns verse text
-3. Clicks "Generate Audio"
-   ↓ Frontend calls /api/devotions/generate-audio-preview
-   ↓ Backend:
-      - Preprocesses text (g→k, d→t fixes)
-      - Converts to phonemes (g2p-id)
-      - Loads Coqui TTS model
-      - Generates audio with Wibowo
-      - Returns base64 WAV
-4. Audio player appears immediately
-5. Admin saves devotion
+3. Admin saves devotion
    ↓ POST /api/devotions/
-   ↓ Stored in MongoDB with audio URL
+   ↓ Stored in MongoDB
 ```
 
 ---
@@ -289,11 +267,6 @@ MongoDB (Port 27017)
 - `/backend/data/bible/nkjv.json`
 - `/backend/data/bible/nlt.json`
 - `/backend/data/bible/esv.json`
-
-**TTS Models (330MB):**
-- `/backend/models/tts_indonesian/checkpoint.pth`
-- `/backend/models/tts_indonesian/config.json`
-- `/backend/models/tts_indonesian/speakers.pth`
 
 **Configuration Examples:**
 - `/backend/.env.example`
@@ -322,15 +295,12 @@ MongoDB (Port 27017)
 ### Why LFS?
 
 - Bible JSON files: 35MB total
-- TTS models: 330MB
 - Too large for regular Git
 
 ### LFS Configuration
 
 **`.gitattributes`:**
 ```
-*.pth filter=lfs diff=lfs merge=lfs -text
-*.pt filter=lfs diff=lfs merge=lfs -text
 backend/data/bible/*.json filter=lfs diff=lfs merge=lfs -text
 ```
 
@@ -339,7 +309,6 @@ backend/data/bible/*.json filter=lfs diff=lfs merge=lfs -text
 **Initial commit:**
 ```bash
 git lfs install
-git lfs track "*.pth"
 git lfs track "backend/data/bible/*.json"
 git add .gitattributes
 git add .
@@ -438,13 +407,6 @@ git lfs pull  # Ensure all large files downloaded
 - Refetch on focus
 - Better than Redux for this use case
 
-### Why Coqui TTS?
-- Open source
-- Local/offline
-- High quality
-- Customizable (Wibowo voice)
-- No API costs
-
 ### Why Local Bible?
 - No external API dependency
 - Fast lookups
@@ -463,14 +425,8 @@ git lfs pull  # Ensure all large files downloaded
 - **Events:** Unlimited
 - **Devotions:** Unlimited
 - **Bible queries:** Fast (indexed)
-- **TTS:** CPU-bound (60-90s per generation)
 
 ### Optimization Options
-
-**If TTS is slow:**
-- Use queue system (Celery)
-- Generate in background
-- Cache generated audio
 
 **If database is slow:**
 - Add more indexes

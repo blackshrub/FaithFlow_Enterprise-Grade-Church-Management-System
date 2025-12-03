@@ -8,7 +8,7 @@
 
 ### Git LFS Files Not Downloaded
 
-**Symptom:** Bible JSON or TTS model files are tiny (few KB instead of MB)
+**Symptom:** Bible JSON files are tiny (few KB instead of MB)
 
 **Solution:**
 ```bash
@@ -18,9 +18,6 @@ git lfs pull
 # Verify:
 ls -lh backend/data/bible/*.json
 # Should show files in MB, not KB
-
-ls -lh backend/models/tts_indonesian/checkpoint.pth
-# Should show ~330MB
 ```
 
 ### Python Dependencies Fail to Install
@@ -148,67 +145,6 @@ python3 scripts/import_tb_chs.py
 python3 scripts/import_english_bibles.py
 ```
 
-### TTS Audio Generation Fails
-
-**Symptom:** "Audio generation failed" or times out
-
-**Check TTS model files:**
-```bash
-ls -lh /opt/faithflow/backend/models/tts_indonesian/
-# Should see:
-# checkpoint.pth (330MB)
-# config.json (9KB)
-# speakers.pth (2KB)
-
-# Also check:
-ls -lh /opt/faithflow/backend/speakers.pth
-# Should exist (speakers.pth copy)
-```
-
-**If files missing:**
-```bash
-cd /opt/faithflow
-git lfs pull
-
-# Copy speakers.pth
-cp backend/models/tts_indonesian/speakers.pth backend/speakers.pth
-```
-
-**Check Python dependencies:**
-```bash
-source venv/bin/activate
-pip list | grep -E "TTS|scipy|numpy|g2p-id"
-
-# Should show:
-# TTS           0.22.0
-# scipy         1.16.x
-# numpy         1.26.4
-# g2p-id        0.0.4
-```
-
-**Test TTS manually:**
-```bash
-cd /opt/faithflow/backend
-source venv/bin/activate
-python3 << EOF
-from services.tts_service import generate_tts_audio
-try:
-    audio = generate_tts_audio("Test audio", "id")
-    print(f"Success! Audio length: {len(audio)} chars")
-except Exception as e:
-    print(f"Error: {e}")
-EOF
-```
-
-**Check timeout:**
-- Frontend timeout: 120s (configured)
-- Long content takes 60-90s
-- Very long content may need more time
-
-**Fallback to gTTS:**
-- System automatically falls back
-- Check logs: `grep -i "fallback\|gtts" /var/log/faithflow/backend-error.log`
-
 ### WhatsApp Not Sending
 
 **Check settings:**
@@ -293,11 +229,6 @@ sudo systemctl restart faithflow-backend
 ```
 
 ### High Memory Usage
-
-**TTS model in memory:**
-- Coqui TTS keeps model loaded
-- ~1-2GB RAM when active
-- Normal behavior
 
 **If system runs out of memory:**
 ```bash
@@ -398,7 +329,7 @@ sudo systemctl reload nginx
 
 ### 504 Gateway Timeout
 
-**TTS generation timeout:**
+**Long-running request timeout:**
 ```bash
 sudo nano /etc/nginx/sites-available/faithflow
 
@@ -527,7 +458,6 @@ cp /opt/faithflow/backups/env_backup /opt/faithflow/backend/.env
 **Check:**
 - GitHub Issues
 - Stack Overflow (tag: fastapi, react, mongodb)
-- Coqui TTS GitHub (for TTS issues)
 
 ---
 

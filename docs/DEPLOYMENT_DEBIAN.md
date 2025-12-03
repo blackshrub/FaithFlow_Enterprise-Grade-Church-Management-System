@@ -117,12 +117,6 @@ sudo apt install -y git-lfs
 git lfs install
 ```
 
-### Install FFmpeg (for TTS)
-
-```bash
-sudo apt install -y ffmpeg
-```
-
 ### Install Nginx
 
 ```bash
@@ -225,7 +219,7 @@ cd /opt/faithflow
 ```bash
 git clone https://github.com/YOUR-ORG/faithflow.git .
 
-# Pull Git LFS files (Bible data + TTS models)
+# Pull Git LFS files (Bible data)
 git lfs pull
 ```
 
@@ -234,11 +228,6 @@ git lfs pull
 ```bash
 # Check Bible files (should be ~35MB total)
 ls -lh backend/data/bible/*.json
-
-# Check TTS model (should be ~330MB)
-ls -lh backend/models/tts_indonesian/checkpoint.pth
-ls -lh backend/models/tts_indonesian/config.json
-ls -lh backend/models/tts_indonesian/speakers.pth
 
 # If files are missing or small, Git LFS didn't pull:
 git lfs install
@@ -270,7 +259,6 @@ pip install -r requirements.txt
 # - python-jose, passlib (authentication)
 # - python-multipart (file uploads)
 # - qrcode, pillow (QR code generation)
-# - TTS, g2p-id (Indonesian TTS)
 # - apscheduler (background jobs for accounting & articles)
 # - python-slugify (URL slug generation)
 # - bleach (HTML sanitization)
@@ -448,7 +436,7 @@ server {
         proxy_set_header X-Forwarded-Proto $scheme;
         proxy_cache_bypass $http_upgrade;
         
-        # Increase timeout for TTS generation (120 seconds)
+        # Increase timeout for long-running requests (120 seconds)
         proxy_read_timeout 120s;
         proxy_connect_timeout 120s;
         proxy_send_timeout 120s;
@@ -756,9 +744,7 @@ curl https://yourdomain.com/api/devotions/
 3. Add verse (select TB, Kejadian 1:1)
 4. Fetch verse → Text should appear
 5. Write content
-6. Click "Generate Audio"
-7. Wait 60-90s → Audio player appears
-8. Play audio → Wibowo voice should be clear
+6. Save and verify devotion appears in list
 
 **Kiosk:**
 1. Navigate to Events → Kiosk Mode
@@ -818,9 +804,6 @@ cp /opt/faithflow/backend/.env /opt/faithflow/backups/env_backup
 
 # Bible data (if modified)
 tar -czf /opt/faithflow/backups/bible_data.tar.gz /opt/faithflow/backend/data/bible/
-
-# TTS models (if modified)
-tar -czf /opt/faithflow/backups/tts_models.tar.gz /opt/faithflow/backend/models/tts_indonesian/
 ```
 
 ### Restore from Backup
@@ -831,7 +814,6 @@ mongorestore --uri="YOUR_MONGO_URL" --drop /path/to/backup/folder/
 
 # Restore files
 tar -xzf bible_data.tar.gz -C /
-tar -xzf tts_models.tar.gz -C /
 ```
 
 ---
@@ -915,7 +897,6 @@ du -sh /opt/faithflow
 du -sh /var/lib/mongodb
 
 # Bible data: ~35MB
-# TTS models: ~330MB
 # MongoDB data: Varies (grows with usage)
 ```
 
@@ -1005,21 +986,6 @@ journalctl -u faithflow-backend -n 100
 2. Should be: 186,592
 3. If not, re-run import scripts
 
-### TTS Generation Fails
-
-**Check:**
-1. TTS model files exist:
-   ```bash
-   ls -lh /opt/faithflow/backend/models/tts_indonesian/
-   # Should see: checkpoint.pth (330MB), config.json, speakers.pth
-   ```
-2. Python dependencies:
-   ```bash
-   pip list | grep -E "TTS|g2p-id|scipy|numpy"
-   ```
-3. Falls back to gTTS automatically
-4. Check backend logs for TTS errors
-
 ### Frontend Shows Blank Page
 
 **Check:**
@@ -1041,8 +1007,8 @@ journalctl -u faithflow-backend -n 100
 
 ### Recommended
 
-- **CPU:** 4 cores (for TTS generation)
-- **RAM:** 8GB (TTS model in memory)
+- **CPU:** 4 cores
+- **RAM:** 8GB
 - **Disk:** 50GB (for growth)
 - **Network:** 100 Mbps
 
@@ -1050,9 +1016,8 @@ journalctl -u faithflow-backend -n 100
 
 - Application code: ~500MB
 - Bible data: ~35MB
-- TTS models: ~330MB
 - Node modules: ~500MB
-- Python packages: ~2GB
+- Python packages: ~1GB
 - MongoDB data: Varies (starts small, grows)
 - Logs: ~100MB/month
 
@@ -1080,7 +1045,7 @@ journalctl -u faithflow-backend -n 100
 ☐ Login works
 ☐ Can create church/members/events
 ☐ Bible verse fetch works
-☐ TTS audio generates (test short devotion)
+☐ Devotions can be created and published
 ☐ Kiosk mode accessible
 ☐ QR codes generate and scan
 ☐ WhatsApp configured (if using)
