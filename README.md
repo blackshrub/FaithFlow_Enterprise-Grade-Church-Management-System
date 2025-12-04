@@ -26,8 +26,11 @@ FaithFlow isn't just another church management system. It's an **enterprise-grad
 | Feature | FaithFlow | Others |
 |---------|:---------:|:------:|
 | **AI Prayer Intelligence** - Automatic theme extraction, guided prayers, 14-day follow-ups | ✅ | ❌ |
-| **AI Contextual Companion** - Scripture-based spiritual guidance with conversation memory | ✅ | ❌ |
+| **Faith Assistant (AI Chat)** - Voice-enabled spiritual companion with TTS/STT | ✅ | ❌ |
+| **Voice AI** - Google Cloud TTS (read aloud) + Groq Whisper STT (voice input) | ✅ | ❌ |
+| **AI Image Generation** - Stability AI for devotion images and content visuals | ✅ | ❌ |
 | **News-Aware Content** - Auto-generates contextual devotions from national news/disasters | ✅ | ❌ |
+| **Mobile Giving/Donations** - Multi-gateway payment (iPaymu, Xendit, Midtrans, Stripe) | ✅ | Limited |
 | **WhatsApp-Style Communities** - Full messaging with threads, polls, voice notes | ✅ | ❌ |
 | **Voice/Video Calling** - HD WebRTC calls built-in (like WhatsApp) | ✅ | ❌ |
 | **Complete Bible Integration** - 6 translations, 186K+ verses, all local | ✅ | Limited |
@@ -72,16 +75,26 @@ The world's first AI-powered prayer management system:
 | **14-Day Follow-ups** | Automated follow-up system to check on prayer requesters |
 | **Analytics Dashboard** | Visual insights into prayer patterns, themes, and response rates |
 
-#### Contextual Companion (AI Chat)
-A faith-based AI assistant that understands spiritual context:
+#### Faith Assistant (Pendamping Iman)
+A Claude-powered spiritual companion with full voice capabilities:
 
 | Feature | Description |
 |---------|-------------|
-| **Scripture-Grounded** | Every response backed by relevant Bible verses |
+| **Scripture-Grounded Responses** | Every answer backed by relevant Bible verses |
+| **Voice Input (STT)** | Speak your questions using Groq Whisper (300-500ms latency) |
+| **Voice Output (TTS)** | Listen to responses with Google Cloud WaveNet voices |
 | **Conversation Memory** | Remembers context within sessions for natural dialogue |
-| **Context Awareness** | Adapts responses based on where user is (Bible study, devotion, prayer) |
-| **Bilingual Support** | Seamless English and Indonesian responses |
-| **Personalized Starters** | Context-aware conversation suggestions |
+| **Context Awareness** | Adapts based on where user is (Bible study, devotion, prayer) |
+| **Bilingual Support** | Seamless English and Indonesian (auto-detection) |
+| **Empathetic UX** | Thoughtful typing indicators, smooth animations |
+| **Streaming Responses** | Text appears progressively (like ChatGPT) |
+| **Copy & Share** | Copy messages with one tap |
+
+**Voice Features:**
+- **Adaptive Silence Detection** - Knows when you've finished speaking
+- **Bible Verse Pronunciation** - Converts "John 3:16" to "John chapter three verse sixteen"
+- **Markdown Stripping** - Clean audio without reading asterisks or hashes
+- **Session Audio Cache** - Instant replay without re-fetching
 
 #### News Context System
 Automatic content generation based on current events:
@@ -93,6 +106,114 @@ Automatic content generation based on current events:
 | **Contextual Content** | Auto-generates relevant devotions and verses |
 | **Disaster Alerts** | Special handling for earthquake, flood, volcano warnings |
 | **Admin Dashboard** | Monitor and review AI-generated content before publishing |
+
+#### AI Image Generation
+Professional imagery for spiritual content using Stability AI:
+
+| Feature | Description |
+|---------|-------------|
+| **Devotion Images** | Generate beautiful header images for daily devotions |
+| **Bible Figure Portraits** | AI-generated historical portraits |
+| **Content Thumbnails** | Automatic thumbnails for quizzes and studies |
+| **Style Consistency** | Consistent visual style across all generated images |
+| **Multiple Formats** | Square, landscape, portrait formats |
+
+---
+
+### Voice AI System
+
+FaithFlow includes enterprise-grade voice capabilities:
+
+#### Text-to-Speech (Google Cloud TTS)
+
+| Feature | Description |
+|---------|-------------|
+| **WaveNet Voices** | Neural network-based, most natural sounding |
+| **Bilingual** | Indonesian (id-ID-Wavenet-D) + English voices |
+| **Adjustable Speed** | 0.25x to 4.0x speaking rate |
+| **Pitch Control** | -20 to +20 semitones adjustment |
+| **Smart Caching** | Session cache for instant replay |
+| **Background Audio** | Continues playing while browsing |
+
+**Used In:**
+- Faith Assistant responses
+- Daily devotion read-aloud
+- Verse of the Day audio
+- Bible figure biographies
+- Quiz question narration
+
+#### Speech-to-Text (Groq Whisper)
+
+| Feature | Description |
+|---------|-------------|
+| **Ultra-Fast** | 300-500ms latency (10x faster than OpenAI) |
+| **Adaptive Silence** | Automatic end-of-speech detection |
+| **Noise Calibration** | Auto-calibrates to ambient noise |
+| **Domain Hints** | Church vocabulary for better accuracy |
+| **Bilingual** | Supports English and Indonesian |
+
+**Technical Details:**
+- Uses `whisper-large-v3-turbo` model
+- M4A audio format (64kbps, mono, 22050Hz)
+- Max recording: 60 seconds
+- Automatic cleanup of temp files
+
+---
+
+### Mobile Giving & Donations
+
+A complete digital giving system in the mobile app:
+
+#### Giving Flow
+
+| Step | Features |
+|------|----------|
+| **1. Choose Type** | Tithe, Weekly Offering, Mission, or Custom purpose |
+| **2. Enter Amount** | Quick amounts (50K-2.5M) or custom input |
+| **3. Select Payment** | Multiple payment methods based on church config |
+| **4. Review & Submit** | Anonymous option, notes, confirmation |
+
+#### Payment Gateway Integration
+
+| Provider | Payment Methods | Status |
+|----------|-----------------|--------|
+| **iPaymu** | VA, QRIS, GoPay, OVO, Dana, Credit Card | ✅ Implemented |
+| **Xendit** | VA, QRIS, E-wallets, Credit Card | 🔜 Planned |
+| **Midtrans** | VA, QRIS, GoPay, ShopeePay | 🔜 Planned |
+| **Stripe** | Credit Card, Apple Pay, Google Pay | 🔜 Planned |
+
+#### Multi-Tenant Payment Config
+
+Each church can configure their own payment gateway:
+
+```json
+{
+  "payment_online_enabled": true,
+  "payment_provider": "ipaymu",
+  "payment_provider_config": {
+    "va_number": "1179002264684497",
+    "api_key": "YOUR-IPAYMU-API-KEY"
+  },
+  "payment_manual_bank_accounts": [
+    {
+      "bank_name": "BCA",
+      "account_number": "1234567890",
+      "account_holder": "Church Name"
+    }
+  ]
+}
+```
+
+#### Giving Features
+
+| Feature | Description |
+|---------|-------------|
+| **Transaction History** | View all past donations with status |
+| **Status Tracking** | Pending, Success, Failed states |
+| **Giving Summary** | Total given, transaction count |
+| **Bank Transfer Fallback** | Manual transfer when online disabled |
+| **Webhook Processing** | Automatic status updates from gateway |
+| **WhatsApp Receipts** | Confirmation sent via WhatsApp (planned) |
 
 ---
 
@@ -121,24 +242,37 @@ A complete spiritual content management system:
 
 <div align="center">
 
-| Home | Bible | Explore | Events |
-|:----:|:-----:|:-------:|:------:|
-| Personalized dashboard | 6 translations | Daily content | RSVP & tickets |
-| Quick actions | Highlights & notes | AI companion | QR check-in |
-| Announcements | Audio playback | Quizzes | Calendar sync |
+| Home | Bible | Give | Explore | Events | Profile |
+|:----:|:-----:|:----:|:-------:|:------:|:-------:|
+| Dashboard | 6 translations | Digital donations | Daily devotions | RSVP & tickets | Settings |
+| Quick actions | Highlights | Payment gateway | Faith Assistant | QR check-in | Preferences |
+| Announcements | Notes | Transaction history | Quizzes | Calendar | Account |
 
 </div>
 
+**6 Main Tabs:**
+1. **Home** - Personalized dashboard, quick actions, church announcements
+2. **Bible** - 6 translations, highlights, notes, bookmarks, audio playback
+3. **Give** - Digital donations with multiple payment methods (see Giving section)
+4. **Explore** - Daily devotions, VOTD, Bible figures, quizzes, Faith Assistant
+5. **Events** - RSVP, QR tickets, seat selection, check-in
+6. **Profile** - Settings, preferences, account management
+
 **Premium Motion Animations:**
-- Native-feeling transitions using Reanimated
-- Shared Axis animations for navigation
-- Staggered list animations
-- Haptic feedback throughout
-- 60fps smooth scrolling
+- Native-feeling transitions using Reanimated v3
+- Shared Axis animations for seamless navigation
+- Staggered list animations with `withPremiumMotion` HOC
+- Haptic feedback throughout the app
+- 60fps smooth scrolling guaranteed
+
+**Voice Features:**
+- **Voice Input** - Speak to Faith Assistant using Groq Whisper STT
+- **Voice Output** - Listen to devotions, verses, AI responses (Google TTS)
+- **Voice Settings** - Adjust speed, pitch, voice selection
 
 **Additional Features:**
 - Biometric authentication (Face ID / Fingerprint)
-- Offline Bible reading
+- Offline Bible reading (all 186K verses stored locally)
 - Dark mode support
 - Push notifications
 - Multi-language (EN/ID)
@@ -320,7 +454,7 @@ Enterprise-grade church finance management:
 | Layer | Technology | Purpose |
 |-------|------------|---------|
 | **Frontend (Web)** | React 18, TanStack Query, shadcn/ui, Tailwind | Admin dashboard |
-| **Frontend (Mobile)** | React Native, Expo, NativeWind, Gluestack UI | iOS/Android app |
+| **Frontend (Mobile)** | React Native, Expo, NativeWind, Gluestack UI, Reanimated | iOS/Android app |
 | **Backend** | FastAPI, Python 3.11, Motor (async MongoDB) | REST API |
 | **ASGI Server** | Granian (Rust-based) | 2-3x faster than Uvicorn |
 | **JSON Serialization** | msgspec | 10-20% faster than orjson |
@@ -328,7 +462,11 @@ Enterprise-grade church finance management:
 | **Cache** | Redis 7.4 | Session, rate limiting, queues |
 | **Real-time** | EMQX (MQTT), WebSocket | Live updates |
 | **Voice/Video** | LiveKit (WebRTC SFU), coTURN | HD calling |
-| **AI** | Anthropic Claude | Prayer intelligence, content |
+| **AI Chat** | Anthropic Claude | Faith Assistant, content generation |
+| **Text-to-Speech** | Google Cloud TTS (WaveNet) | Voice output in mobile app |
+| **Speech-to-Text** | Groq Whisper API | Voice input (300-500ms latency) |
+| **Image Generation** | Stability AI | Devotion images, thumbnails |
+| **Payment Gateway** | iPaymu (+ Xendit, Midtrans, Stripe) | Mobile giving/donations |
 | **File Storage** | SeaweedFS | Distributed media storage |
 | **Proxy** | Traefik | SSL, HTTP/3, Brotli, routing |
 
@@ -479,12 +617,15 @@ sudo ./update.sh
 | `JWT_SECRET` | 64+ character random string | (auto-generated) |
 | `MONGO_URL` | MongoDB connection string | `mongodb://localhost:27017` |
 
-### AI Features (Optional but Recommended)
+### AI & Voice Features (Recommended)
 
 | Variable | Description | Get It |
 |----------|-------------|--------|
-| `ANTHROPIC_API_KEY` | Claude AI for prayer intelligence | [console.anthropic.com](https://console.anthropic.com) |
-| `STABILITY_API_KEY` | AI image generation | [stability.ai](https://stability.ai) |
+| `ANTHROPIC_API_KEY` | Claude AI for Faith Assistant, Prayer Intelligence, Content Generation | [console.anthropic.com](https://console.anthropic.com) |
+| `STABILITY_API_KEY` | Stability AI for devotion images and thumbnails | [stability.ai](https://stability.ai) |
+| `GOOGLE_TTS_API_KEY` | Google Cloud TTS for voice output (WaveNet) | [console.cloud.google.com](https://console.cloud.google.com) |
+| `GROQ_API_KEY` | Groq Whisper for ultra-fast speech-to-text | [console.groq.com](https://console.groq.com) |
+| `OPENAI_API_KEY` | OpenAI Whisper (fallback for STT) | [platform.openai.com](https://platform.openai.com) |
 
 ### File Storage
 
@@ -493,6 +634,17 @@ sudo ./update.sh
 | `SEAWEEDFS_MASTER_URL` | SeaweedFS master | `http://seaweedfs-master:9333` |
 | `SEAWEEDFS_FILER_URL` | SeaweedFS filer | `http://seaweedfs-filer:8888` |
 | `SEAWEEDFS_PUBLIC_URL` | Public file access | `https://files.yourdomain.com` |
+
+### Payment Gateway (Per-Church Configuration)
+
+Payment configuration is stored per-church in `church_settings`. Each church can have different payment providers:
+
+| Setting | Description | Example |
+|---------|-------------|---------|
+| `payment_online_enabled` | Enable digital payments | `true` |
+| `payment_provider` | Active provider | `ipaymu`, `xendit`, `midtrans` |
+| `payment_provider_config` | Provider credentials | `{"va_number": "...", "api_key": "..."}` |
+| `payment_manual_bank_accounts` | Bank accounts for manual transfer | `[{"bank_name": "BCA", ...}]` |
 
 ---
 
@@ -617,7 +769,9 @@ A: Yes. Each church has complete data isolation. All API requests are scoped by 
 
 ## Credits
 
-Built with these amazing open-source projects:
+Built with these amazing technologies:
+
+### Core Infrastructure
 
 | Technology | Purpose |
 |------------|---------|
@@ -633,7 +787,24 @@ Built with these amazing open-source projects:
 | [coTURN](https://github.com/coturn/coturn) | TURN/STUN server |
 | [SeaweedFS](https://seaweedfs.com/) | File storage |
 | [Traefik](https://traefik.io/) | Reverse proxy |
-| [Anthropic Claude](https://anthropic.com/) | AI features |
+
+### AI & Voice Services
+
+| Service | Purpose |
+|---------|---------|
+| [Anthropic Claude](https://anthropic.com/) | Faith Assistant, Prayer Intelligence, Content Generation |
+| [Google Cloud TTS](https://cloud.google.com/text-to-speech) | WaveNet voice synthesis for read-aloud features |
+| [Groq](https://groq.com/) | Ultra-fast Whisper STT (300-500ms latency) |
+| [Stability AI](https://stability.ai/) | Image generation for devotions and content |
+
+### Payment Gateways
+
+| Provider | Market |
+|----------|--------|
+| [iPaymu](https://ipaymu.com/) | Indonesia (VA, QRIS, E-wallets) |
+| [Xendit](https://xendit.co/) | Southeast Asia (planned) |
+| [Midtrans](https://midtrans.com/) | Indonesia (planned) |
+| [Stripe](https://stripe.com/) | International (planned) |
 
 ---
 
