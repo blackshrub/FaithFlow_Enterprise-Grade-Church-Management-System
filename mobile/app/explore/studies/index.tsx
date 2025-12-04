@@ -14,7 +14,7 @@
  */
 
 import React, { useState } from 'react';
-import { ScrollView, View, Text, Pressable, TextInput, ImageBackground } from 'react-native';
+import { ScrollView, View, Text, Pressable, TextInput, Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -37,6 +37,9 @@ import { BibleStudyListSkeleton } from '@/components/explore/LoadingSkeleton';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
+
+// Animated Image for shared element transitions (Reanimated 4+)
+const AnimatedImage = Animated.createAnimatedComponent(Image);
 
 type SortOption = 'newest' | 'popular' | 'alphabetical';
 type FilterCategory = 'all' | 'old_testament' | 'new_testament' | 'topical';
@@ -365,13 +368,17 @@ function StudyCard({ study, progress, onPress, contentLanguage, index }: StudyCa
           className="overflow-hidden active:scale-[0.98] active:opacity-95"
           style={{ borderRadius: 16 }}
         >
-          {/* Cover Image */}
-          <View className="h-[160px]">
+          {/* Cover Image with shared element transition */}
+          <View className="h-[160px] relative">
           {study.cover_image_url ? (
-            <ImageBackground
-              source={{ uri: study.cover_image_url }}
-              className="w-full h-full"
-            >
+            <>
+              {/* Background Image with shared element transition */}
+              <AnimatedImage
+                source={{ uri: study.cover_image_url }}
+                className="absolute inset-0 w-full h-full"
+                resizeMode="cover"
+                sharedTransitionTag={`study-${study.id}-image`}
+              />
               {/* Gradient overlay - absolute to cover entire image */}
               <LinearGradient
                 colors={['rgba(0,0,0,0.3)', 'rgba(0,0,0,0.15)', 'rgba(0,0,0,0.75)']}
@@ -396,7 +403,7 @@ function StudyCard({ study, progress, onPress, contentLanguage, index }: StudyCa
                   </View>
                 </View>
               </View>
-            </ImageBackground>
+            </>
           ) : (
             <View
               className="flex-1 items-center justify-center"
@@ -422,13 +429,14 @@ function StudyCard({ study, progress, onPress, contentLanguage, index }: StudyCa
 
         {/* Content Section */}
         <View className="p-3 gap-1.5">
-          <Text
+          <Animated.Text
             className="text-[17px] font-bold leading-[22px]"
             style={{ color: ExploreColors.neutral[900] }}
             numberOfLines={2}
+            sharedTransitionTag={`study-${study.id}-title`}
           >
             {title}
-          </Text>
+          </Animated.Text>
           {subtitle && (
             <Text
               className="text-[13px] font-medium"

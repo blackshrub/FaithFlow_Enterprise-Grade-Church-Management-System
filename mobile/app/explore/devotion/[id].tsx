@@ -16,7 +16,6 @@ import {
   View,
   Text,
   Image,
-  ImageBackground,
   Pressable,
   Dimensions,
   Share,
@@ -412,32 +411,38 @@ function DevotionPlanView({ plan, contentLanguage, onBack }: DevotionPlanViewPro
       </View>
 
       <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 24 }} showsVerticalScrollIndicator={false}>
-        <Animated.View entering={FadeIn.duration(400)}>
-          <ImageBackground
+        <Animated.View entering={FadeIn.duration(400)} className="relative w-full h-[220px]">
+          {/* Background Image with shared element transition */}
+          <AnimatedImage
             source={{ uri: plan.cover_image_url || 'https://images.unsplash.com/photo-1504052434569-70ad5836ab65?w=800' }}
-            className="w-full h-[220px]"
-          >
-            <LinearGradient colors={['transparent', 'rgba(0,0,0,0.8)']} className="flex-1 p-3 justify-end">
-              <View className="absolute top-3 right-3 flex-row items-center gap-1.5 bg-black/60 px-2 py-1.5 rounded-lg">
-                <Calendar size={16} color="#FFFFFF" />
-                <Text className="text-white text-sm font-semibold">
-                  {plan.duration_days} {contentLanguage === 'en' ? 'Days' : 'Hari'}
-                </Text>
+            className="absolute inset-0 w-full h-full"
+            resizeMode="cover"
+            sharedTransitionTag={`devotion-${plan.id}-image`}
+          />
+          <LinearGradient colors={['transparent', 'rgba(0,0,0,0.8)']} className="flex-1 p-3 justify-end">
+            <View className="absolute top-3 right-3 flex-row items-center gap-1.5 bg-black/60 px-2 py-1.5 rounded-lg">
+              <Calendar size={16} color="#FFFFFF" />
+              <Text className="text-white text-sm font-semibold">
+                {plan.duration_days} {contentLanguage === 'en' ? 'Days' : 'Hari'}
+              </Text>
+            </View>
+            {isCompleted && (
+              <View className="absolute top-3 left-3 flex-row items-center gap-1.5 px-2 py-1.5 rounded-lg" style={{ backgroundColor: ExploreColors.success[500] }}>
+                <CheckCircle2 size={16} color="#FFFFFF" fill="#FFFFFF" />
+                <Text className="text-white text-[13px] font-bold">{contentLanguage === 'en' ? 'Completed' : 'Selesai'}</Text>
               </View>
-              {isCompleted && (
-                <View className="absolute top-3 left-3 flex-row items-center gap-1.5 px-2 py-1.5 rounded-lg" style={{ backgroundColor: ExploreColors.success[500] }}>
-                  <CheckCircle2 size={16} color="#FFFFFF" fill="#FFFFFF" />
-                  <Text className="text-white text-[13px] font-bold">{contentLanguage === 'en' ? 'Completed' : 'Selesai'}</Text>
-                </View>
-              )}
-            </LinearGradient>
-          </ImageBackground>
+            )}
+          </LinearGradient>
         </Animated.View>
 
         <Animated.View entering={FadeInDown.duration(500).delay(200)} className="px-5 pt-6">
-          <Text className="text-[36px] font-extrabold mb-1" style={{ color: ExploreColors.neutral[900], lineHeight: 44, letterSpacing: -0.5 }}>
+          <Animated.Text
+            className="text-[36px] font-extrabold mb-1"
+            style={{ color: ExploreColors.neutral[900], lineHeight: 44, letterSpacing: -0.5 }}
+            sharedTransitionTag={`devotion-${plan.id}-title`}
+          >
             {title}
-          </Text>
+          </Animated.Text>
           {subtitle && <Text className="text-base italic mb-3" style={{ color: ExploreColors.neutral[600] }}>{subtitle}</Text>}
           <Text className="text-base mb-4" style={{ color: ExploreColors.neutral[700], lineHeight: 26 }}>{description}</Text>
 
