@@ -64,6 +64,7 @@
     "expo-secure-store": "~15.0.7",
     "expo-sharing": "~14.0.7",
     "expo-status-bar": "~3.0.8",
+    "expo-updates": "^29.0.13",
     "expo-video": "~3.0.14",
     "fuse.js": "^7.1.0",
     "i18next": "^25.6.3",

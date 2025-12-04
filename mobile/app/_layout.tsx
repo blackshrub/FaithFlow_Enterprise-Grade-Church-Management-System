@@ -39,6 +39,7 @@ import { BiometricLockScreen } from '@/components/auth/BiometricLockScreen';
 import { useBiometricLock } from '@/hooks/useBiometricLock';
 import { BibleNoteEditorHost } from '@/components/bible/BibleNoteEditorHost';
 import { useVoiceSettingsStore } from '@/stores/voiceSettings';
+import * as Updates from 'expo-updates';
 // Note: We do NOT use CallKit because iOS requires VoIP PushKit for CallKit (we use standard FCM)
 // The in-app IncomingCallOverlay provides a WhatsApp-style UI instead
 
@@ -71,6 +72,34 @@ export default function RootLayout() {
   // Flush any queued crash reports when app starts
   useEffect(() => {
     flushCrashQueue();
+  }, []);
+
+  /**
+   * IMMEDIATE OTA UPDATES
+   * Check for updates on app launch and apply immediately if available.
+   * This provides instant updates without requiring app restart.
+   */
+  useEffect(() => {
+    async function checkForUpdates() {
+      // Skip in development mode
+      if (__DEV__) return;
+
+      try {
+        const update = await Updates.checkForUpdateAsync();
+        if (update.isAvailable) {
+          console.log('[Updates] New update available, downloading...');
+          await Updates.fetchUpdateAsync();
+          console.log('[Updates] Update downloaded, reloading app...');
+          // Reload the app to apply the update immediately
+          await Updates.reloadAsync();
+        }
+      } catch (error) {
+        // Don't crash app if update check fails
+        console.log('[Updates] Error checking for updates:', error);
+      }
+    }
+
+    checkForUpdates();
   }, []);
 
   // DISABLED: Call feature temporarily disabled

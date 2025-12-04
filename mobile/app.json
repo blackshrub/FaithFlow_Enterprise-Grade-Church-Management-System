@@ -24,7 +24,11 @@
         "NSCameraUsageDescription": "Allow FaithFlow to access your camera for video calls and profile photos",
         "NSPhotoLibraryUsageDescription": "Allow FaithFlow to access your photos for profile pictures",
         "NSMicrophoneUsageDescription": "Allow FaithFlow to access your microphone for voice and video calls",
-                "UIBackgroundModes": [
+        "UIBackgroundModes": [
+          "audio",
+          "voip",
+          "fetch",
+          "remote-notification",
           "audio",
           "voip",
           "fetch",
@@ -58,8 +62,26 @@
         "BLUETOOTH",
         "BLUETOOTH_CONNECT",
         "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "CAMERA",
+        "RECORD_AUDIO",
+        "MODIFY_AUDIO_SETTINGS",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "VIBRATE",
+        "WAKE_LOCK",
+        "FOREGROUND_SERVICE",
+        "FOREGROUND_SERVICE_PHONE_CALL",
+        "USE_FULL_SCREEN_INTENT",
+        "CALL_PHONE",
+        "MANAGE_OWN_CALLS",
+        "READ_PHONE_STATE",
+        "BLUETOOTH",
+        "BLUETOOTH_CONNECT",
+        "android.permission.RECORD_AUDIO",
         "android.permission.MODIFY_AUDIO_SETTINGS"
-      ]
+      ],
+      "runtimeVersion": "1.0.0"
     },
     "web": {
       "favicon": "./assets/favicon.png",
@@ -96,6 +118,9 @@
         "projectId": "78f7dcb7-b3c5-42d6-8a9c-062e4028a811"
       }
     },
-    "owner": "tesargusmawan"
+    "owner": "tesargusmawan",
+    "updates": {
+      "url": "https://u.expo.dev/78f7dcb7-b3c5-42d6-8a9c-062e4028a811"
+    }
   }
 }

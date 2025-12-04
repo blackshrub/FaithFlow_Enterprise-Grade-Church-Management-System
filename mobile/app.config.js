@@ -20,6 +20,11 @@ export default ({ config }) => {
       ...config.extra,
       apiUrl,
       apiPrefix,
+      // API keys injected via EAS Secrets at build time
+      anthropicApiKey: process.env.ANTHROPIC_API_KEY || null,
+      googleTtsApiKey: process.env.GOOGLE_TTS_API_KEY || null,
+      groqApiKey: process.env.GROQ_API_KEY || null,
+      openaiApiKey: process.env.OPENAI_API_KEY || null,
       router: {
         origin: false,
       },

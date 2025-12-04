@@ -37,6 +37,10 @@ yarn-error.*
 .env.local
 .env.production
 
+# Secrets (API keys)
+# Set via EAS Dashboard: expo.dev > Project > Secrets
+constants/secrets.ts.local
+
 # Metro
 .metro-health-check*
 
