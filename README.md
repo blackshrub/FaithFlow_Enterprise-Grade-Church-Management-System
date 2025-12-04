@@ -10,7 +10,7 @@
 
 [![License](https://img.shields.io/badge/License-Proprietary-blue.svg)]()
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?logo=fastapi)]()
-[![React](https://img.shields.io/badge/React-18.3-61DAFB?logo=react)]()
+[![React](https://img.shields.io/badge/React-19.1-61DAFB?logo=react)]()
 [![MongoDB](https://img.shields.io/badge/MongoDB-7.0-47A248?logo=mongodb)]()
 
 [Quick Start](#quick-start) • [Features](#features) • [Installation](#installation) • [Documentation](#documentation)
