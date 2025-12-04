@@ -2601,3 +2601,166 @@ async def get_growth_indicators(
         "journey_enrollments": journey_enrollments,
         "journey_completions": journey_completions,
     }
+
+
+# ==================== NEWS CONTEXT ADMIN ====================
+
+
+@router.get("/news-contexts")
+async def list_news_contexts(
+    limit: int = Query(30, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+    processed: Optional[bool] = Query(None),
+    current_user=Depends(require_admin),
+    db=Depends(get_db),
+):
+    """List news contexts for admin review"""
+    query = {}
+
+    if processed is not None:
+        query["processed"] = processed
+
+    total = await db.news_contexts.count_documents(query)
+    cursor = db.news_contexts.find(query, {"_id": 0}).sort("created_at", -1).skip(offset).limit(limit)
+    contexts = await cursor.to_list(length=limit)
+
+    return {
+        "success": True,
+        "data": {
+            "contexts": contexts,
+            "pagination": {
+                "total": total,
+                "limit": limit,
+                "offset": offset,
+                "has_more": (offset + limit) < total
+            }
+        }
+    }
+
+
+@router.get("/news-contexts/{context_id}")
+async def get_news_context(
+    context_id: str,
+    current_user=Depends(require_admin),
+    db=Depends(get_db),
+):
+    """Get single news context with full details"""
+    context = await db.news_contexts.find_one({"id": context_id}, {"_id": 0})
+
+    if not context:
+        raise HTTPException(status_code=404, detail="News context not found")
+
+    return {"success": True, "data": context}
+
+
+@router.patch("/news-contexts/{context_id}/review")
+async def mark_news_context_reviewed(
+    context_id: str,
+    current_user=Depends(require_admin),
+    db=Depends(get_db),
+):
+    """Mark a news context as reviewed by admin"""
+    result = await db.news_contexts.update_one(
+        {"id": context_id},
+        {
+            "$set": {
+                "admin_reviewed": True,
+                "reviewed_at": datetime.now(),
+                "reviewed_by": str(current_user.get("id", current_user.get("_id"))),
+            }
+        }
+    )
+
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="News context not found")
+
+    return {"success": True, "message": "News context marked as reviewed"}
+
+
+@router.post("/news-contexts/trigger")
+async def trigger_news_context_fetch(
+    current_user=Depends(require_super_admin),
+    db=Depends(get_db),
+):
+    """Manually trigger news context fetch (super admin only)"""
+    from services.explore.news_context_service import NewsContextService
+
+    try:
+        news_service = NewsContextService(db)
+        context = await news_service.create_daily_context()
+
+        return {
+            "success": True,
+            "message": "News context fetch triggered",
+            "data": {
+                "significant_events_count": len(context.significant_events) if context else 0,
+                "disaster_alerts_count": len(context.disaster_alerts) if context else 0,
+            }
+        }
+    except Exception as e:
+        logger.error(f"Failed to trigger news context fetch: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/news-contexts/stats/summary")
+async def get_news_context_stats(
+    days: int = Query(30, ge=7, le=365),
+    current_user=Depends(require_admin),
+    db=Depends(get_db),
+):
+    """Get news context statistics"""
+    from datetime import timedelta
+
+    start_date = datetime.now() - timedelta(days=days)
+
+    # Total contexts
+    total_contexts = await db.news_contexts.count_documents({
+        "created_at": {"$gte": start_date}
+    })
+
+    # Processed vs unprocessed
+    processed_count = await db.news_contexts.count_documents({
+        "created_at": {"$gte": start_date},
+        "processed": True
+    })
+
+    # Events by category
+    category_pipeline = [
+        {"$match": {"created_at": {"$gte": start_date}}},
+        {"$unwind": "$significant_events"},
+        {"$group": {"_id": "$significant_events.category", "count": {"$sum": 1}}},
+        {"$sort": {"count": -1}}
+    ]
+    category_results = await db.news_contexts.aggregate(category_pipeline).to_list(20)
+    events_by_category = {r["_id"]: r["count"] for r in category_results if r["_id"]}
+
+    # Disaster alerts count
+    alerts_pipeline = [
+        {"$match": {"created_at": {"$gte": start_date}, "disaster_alerts.0": {"$exists": True}}},
+        {"$project": {"alerts_count": {"$size": "$disaster_alerts"}}},
+        {"$group": {"_id": None, "total": {"$sum": "$alerts_count"}}}
+    ]
+    alerts_result = await db.news_contexts.aggregate(alerts_pipeline).to_list(1)
+    total_alerts = alerts_result[0]["total"] if alerts_result else 0
+
+    # Content generated
+    content_pipeline = [
+        {"$match": {"created_at": {"$gte": start_date}, "contextual_content_ids.0": {"$exists": True}}},
+        {"$project": {"content_count": {"$size": "$contextual_content_ids"}}},
+        {"$group": {"_id": None, "total": {"$sum": "$content_count"}}}
+    ]
+    content_result = await db.news_contexts.aggregate(content_pipeline).to_list(1)
+    total_content_generated = content_result[0]["total"] if content_result else 0
+
+    return {
+        "success": True,
+        "data": {
+            "period_days": days,
+            "total_contexts": total_contexts,
+            "processed": processed_count,
+            "unprocessed": total_contexts - processed_count,
+            "events_by_category": events_by_category,
+            "total_disaster_alerts": total_alerts,
+            "total_content_generated": total_content_generated,
+        }
+    }

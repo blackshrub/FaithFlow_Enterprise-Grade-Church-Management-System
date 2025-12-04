@@ -1,8 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from motor.motor_asyncio import AsyncIOMotorDatabase
-from typing import Optional
-from datetime import datetime
+from typing import Optional, List
+from datetime import datetime, timedelta
 import uuid
+from collections import Counter
 
 from models.prayer_request import PrayerRequestBase, PrayerRequestUpdate
 from utils.dependencies import get_db, get_current_user
@@ -214,11 +215,178 @@ async def delete_prayer_request(
         )
     
     await db.prayer_requests.delete_one({"id": request_id})
-    
+
     await audit_service.log_action(
         db=db, church_id=church_id, user_id=user_id,
         action_type="delete", module="prayer_request",
         description=f"Deleted prayer request: {prayer_request['title']}"
     )
-    
+
     return None
+
+
+# ==================== PRAYER ANALYTICS ====================
+
+@router.get("/analytics/summary")
+async def get_prayer_analytics_summary(
+    days: int = Query(30, ge=7, le=365),
+    current_user: dict = Depends(get_current_user),
+    db: AsyncIOMotorDatabase = Depends(get_db)
+):
+    """Get prayer request analytics summary."""
+    church_id = get_session_church_id(current_user)
+
+    start_date = datetime.utcnow() - timedelta(days=days)
+
+    # Total prayer requests
+    total_requests = await db.prayer_requests.count_documents({
+        "church_id": church_id,
+        "created_at": {"$gte": start_date}
+    })
+
+    # By status
+    status_pipeline = [
+        {"$match": {"church_id": church_id, "created_at": {"$gte": start_date}}},
+        {"$group": {"_id": "$status", "count": {"$sum": 1}}}
+    ]
+    status_results = await db.prayer_requests.aggregate(status_pipeline).to_list(100)
+    by_status = {r["_id"]: r["count"] for r in status_results}
+
+    # By category
+    category_pipeline = [
+        {"$match": {"church_id": church_id, "created_at": {"$gte": start_date}}},
+        {"$group": {"_id": "$category", "count": {"$sum": 1}}},
+        {"$sort": {"count": -1}}
+    ]
+    category_results = await db.prayer_requests.aggregate(category_pipeline).to_list(100)
+    by_category = [{"category": r["_id"], "count": r["count"]} for r in category_results]
+
+    # Prayer themes analysis (from prayer_analyses collection)
+    themes_pipeline = [
+        {"$match": {"church_id": church_id, "analyzed_at": {"$gte": start_date}}},
+        {"$project": {"themes_keys": {"$objectToArray": "$themes"}}},
+        {"$unwind": "$themes_keys"},
+        {"$group": {"_id": "$themes_keys.k", "count": {"$sum": 1}, "avg_confidence": {"$avg": "$themes_keys.v"}}},
+        {"$sort": {"count": -1}},
+        {"$limit": 10}
+    ]
+    try:
+        themes_results = await db.prayer_analyses.aggregate(themes_pipeline).to_list(10)
+        top_themes = [{"theme": r["_id"], "count": r["count"], "avg_confidence": round(r["avg_confidence"], 2)} for r in themes_results]
+    except Exception:
+        top_themes = []
+
+    # Urgency levels
+    urgency_pipeline = [
+        {"$match": {"church_id": church_id, "analyzed_at": {"$gte": start_date}}},
+        {"$group": {"_id": "$urgency", "count": {"$sum": 1}}}
+    ]
+    try:
+        urgency_results = await db.prayer_analyses.aggregate(urgency_pipeline).to_list(10)
+        by_urgency = {r["_id"]: r["count"] for r in urgency_results}
+    except Exception:
+        by_urgency = {}
+
+    # Daily trend
+    trend_pipeline = [
+        {"$match": {"church_id": church_id, "created_at": {"$gte": start_date}}},
+        {"$group": {
+            "_id": {"$dateToString": {"format": "%Y-%m-%d", "date": "$created_at"}},
+            "count": {"$sum": 1}
+        }},
+        {"$sort": {"_id": 1}}
+    ]
+    trend_results = await db.prayer_requests.aggregate(trend_pipeline).to_list(365)
+    daily_trend = [{"date": r["_id"], "count": r["count"]} for r in trend_results]
+
+    # Follow-up stats
+    followup_stats = {
+        "total_scheduled": 0,
+        "sent": 0,
+        "responded": 0,
+        "response_sentiments": {}
+    }
+    try:
+        followup_pipeline = [
+            {"$match": {"church_id": church_id, "created_at": {"$gte": start_date}, "deleted": False}},
+            {"$group": {
+                "_id": None,
+                "total": {"$sum": 1},
+                "sent": {"$sum": {"$cond": ["$follow_up_sent", 1, 0]}},
+                "responded": {"$sum": {"$cond": ["$user_responded", 1, 0]}}
+            }}
+        ]
+        followup_result = await db.prayer_followups.aggregate(followup_pipeline).to_list(1)
+        if followup_result:
+            followup_stats["total_scheduled"] = followup_result[0].get("total", 0)
+            followup_stats["sent"] = followup_result[0].get("sent", 0)
+            followup_stats["responded"] = followup_result[0].get("responded", 0)
+
+        # Response sentiments
+        sentiment_pipeline = [
+            {"$match": {"church_id": church_id, "user_responded": True, "response_sentiment": {"$ne": None}}},
+            {"$group": {"_id": "$response_sentiment", "count": {"$sum": 1}}}
+        ]
+        sentiment_results = await db.prayer_followups.aggregate(sentiment_pipeline).to_list(10)
+        followup_stats["response_sentiments"] = {r["_id"]: r["count"] for r in sentiment_results}
+    except Exception:
+        pass
+
+    return {
+        "period_days": days,
+        "total_requests": total_requests,
+        "by_status": by_status,
+        "by_category": by_category,
+        "top_themes": top_themes,
+        "by_urgency": by_urgency,
+        "daily_trend": daily_trend,
+        "followup_stats": followup_stats
+    }
+
+
+@router.get("/analytics/follow-ups")
+async def get_prayer_followups(
+    status: Optional[str] = Query(None, description="Filter by: pending, sent, responded"),
+    limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0),
+    current_user: dict = Depends(get_current_user),
+    db: AsyncIOMotorDatabase = Depends(get_db)
+):
+    """Get prayer follow-ups list."""
+    church_id = get_session_church_id(current_user)
+
+    query = {"church_id": church_id, "deleted": False}
+
+    if status == "pending":
+        query["follow_up_sent"] = False
+        query["follow_up_due_at"] = {"$lte": datetime.utcnow()}
+    elif status == "sent":
+        query["follow_up_sent"] = True
+        query["user_responded"] = False
+    elif status == "responded":
+        query["user_responded"] = True
+
+    try:
+        total = await db.prayer_followups.count_documents(query)
+        followups = await db.prayer_followups.find(query, {"_id": 0}).sort("follow_up_due_at", -1).skip(offset).limit(limit).to_list(limit)
+
+        # Enrich with member info
+        for f in followups:
+            if f.get("user_id"):
+                member = await db.members.find_one(
+                    {"id": f["user_id"]},
+                    {"_id": 0, "full_name": 1, "whatsapp": 1}
+                )
+                f["member"] = member
+
+        return {
+            "data": followups,
+            "pagination": {
+                "total": total,
+                "limit": limit,
+                "offset": offset,
+                "has_more": (offset + limit) < total
+            }
+        }
+    except Exception as e:
+        return {"data": [], "pagination": {"total": 0, "limit": limit, "offset": offset, "has_more": False}, "error": str(e)}

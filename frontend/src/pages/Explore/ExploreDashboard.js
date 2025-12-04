@@ -6,7 +6,7 @@ import { Button } from '../../components/ui/button';
 import {
   BookOpen, Calendar, Users, TrendingUp, Award, Sparkles,
   FileText, MessageSquare, User, HelpCircle, Plus, Loader2,
-  ClipboardCheck
+  ClipboardCheck, Newspaper
 } from 'lucide-react';
 import { useExploreDashboardStats } from '../../hooks/useExplore';
 
@@ -142,9 +142,9 @@ export default function ExploreDashboard() {
       variant: 'default',
     },
     {
-      label: 'Create Devotion',
-      link: '/content-center/devotion/new',
-      icon: Plus,
+      label: 'News Context',
+      link: '/content-center/news-context',
+      icon: Newspaper,
       variant: 'outline',
     },
     {

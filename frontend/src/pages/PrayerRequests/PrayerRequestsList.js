@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, Heart, AlertCircle } from 'lucide-react';
+import { Plus, Search, Heart, AlertCircle, BarChart3 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
@@ -74,10 +74,16 @@ export default function PrayerRequestsList() {
           <h1 className="text-3xl font-bold">{t('prayerRequests.title')}</h1>
           <p className="text-gray-600">{t('prayerRequests.subtitle')}</p>
         </div>
-        <Button onClick={() => navigate('/prayer-requests/new')}>
-          <Plus className="w-4 h-4 mr-2" />
-          {t('prayerRequests.createRequest')}
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => navigate('/prayer-requests/analytics')}>
+            <BarChart3 className="w-4 h-4 mr-2" />
+            {t('prayerRequests.analytics', 'Analytics')}
+          </Button>
+          <Button onClick={() => navigate('/prayer-requests/new')}>
+            <Plus className="w-4 h-4 mr-2" />
+            {t('prayerRequests.createRequest')}
+          </Button>
+        </div>
       </div>
 
       <Card>

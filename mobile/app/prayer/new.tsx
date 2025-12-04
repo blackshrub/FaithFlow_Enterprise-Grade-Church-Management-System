@@ -51,9 +51,9 @@ import { Spinner } from '@/components/ui/spinner';
 import { useAuthStore } from '@/stores/auth';
 import { colors, borderRadius, spacing, shadows } from '@/constants/theme';
 import { showSuccessToast, showErrorToast } from '@/components/ui/Toast';
-import { api } from '@/services/api';
 import { QUERY_KEYS } from '@/constants/api';
-import type { PrayerCategory, CreatePrayerRequest } from '@/types/prayer';
+import { prayerApi, type PrayerSubmission } from '@/services/api/prayer';
+import type { PrayerCategory } from '@/types/prayer';
 
 export default function CreatePrayerRequestScreen() {
   const { t } = useTranslation();
@@ -140,18 +140,30 @@ export default function CreatePrayerRequestScreen() {
     },
   ];
 
-  // Create prayer mutation
+  // Create prayer mutation using Prayer Intelligence API
   const createMutation = useMutation({
-    mutationFn: async (data: CreatePrayerRequest) => {
-      const response = await api.post('/api/prayer-requests', data);
-      return response.data;
+    mutationFn: async (data: PrayerSubmission) => {
+      return prayerApi.submitPrayer(data);
     },
-    onSuccess: () => {
+    onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.PRAYER_REQUESTS });
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.MY_PRAYER_REQUESTS });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      showSuccessToast(t('prayer.create.success'), t('prayer.create.successDesc'));
-      router.back();
+
+      // Navigate to resources screen with Prayer Intelligence analysis
+      if (response.resources) {
+        router.replace({
+          pathname: '/prayer/resources',
+          params: {
+            prayerId: response.id,
+            resources: JSON.stringify(response.resources),
+          },
+        });
+      } else {
+        // Fallback if no resources (Prayer Intelligence disabled)
+        showSuccessToast(t('prayer.create.success'), t('prayer.create.successDesc'));
+        router.back();
+      }
     },
     onError: (error: any) => {
       console.error('Failed to create prayer request:', error);
@@ -187,9 +199,11 @@ export default function CreatePrayerRequestScreen() {
       return;
     }
 
+    // Combine title and description for Prayer Intelligence analysis
+    const requestText = `${title.trim()}\n\n${description.trim()}`;
+
     createMutation.mutate({
-      title: title.trim(),
-      description: description.trim(),
+      request_text: requestText,
       category,
       is_anonymous: isAnonymous,
     });

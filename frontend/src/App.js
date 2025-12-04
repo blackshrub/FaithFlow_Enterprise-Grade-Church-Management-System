@@ -76,6 +76,7 @@ const CommentsModeration = lazy(() => import("./pages/Articles/CommentsModeratio
 // Prayer Requests pages
 const PrayerRequestsList = lazy(() => import("./pages/PrayerRequests/PrayerRequestsList"));
 const PrayerRequestForm = lazy(() => import("./pages/PrayerRequests/PrayerRequestForm"));
+const PrayerAnalytics = lazy(() => import("./pages/PrayerRequests/PrayerAnalytics"));
 
 // Explore pages
 const ExploreDashboard = lazy(() => import("./pages/Explore/ExploreDashboard"));
@@ -84,6 +85,7 @@ const SchedulingCalendar = lazy(() => import("./pages/Explore/SchedulingCalendar
 const AnalyticsDashboard = lazy(() => import("./pages/Explore/AnalyticsDashboard"));
 const AIGenerationHub = lazy(() => import("./pages/Explore/AIGenerationHub"));
 const AIPromptConfig = lazy(() => import("./pages/Explore/AIPromptConfig"));
+const NewsContextDashboard = lazy(() => import("./pages/Explore/NewsContextDashboard"));
 const ChurchSettings = lazy(() => import("./pages/Explore/ChurchSettings"));
 const DevotionEditor = lazy(() => import("./pages/Explore/DevotionEditor"));
 const VerseEditor = lazy(() => import("./pages/Explore/VerseEditor"));
@@ -215,6 +217,7 @@ function App() {
               {/* Prayer Requests Routes */}
               <Route path="prayer-requests" element={<PrayerRequestsList />} />
               <Route path="prayer-requests/new" element={<PrayerRequestForm />} />
+              <Route path="prayer-requests/analytics" element={<PrayerAnalytics />} />
               <Route path="prayer-requests/:id" element={<PrayerRequestForm />} />
 
               {/* Groups Routes (legacy - keeping for backward compatibility) */}
@@ -246,6 +249,7 @@ function App() {
               <Route path="content-center/ai" element={<AIGenerationHub />} />
               <Route path="content-center/ai/prompts" element={<AIPromptConfig />} />
               <Route path="content-center/review-queue" element={<ReviewQueue />} />
+              <Route path="content-center/news-context" element={<NewsContextDashboard />} />
               <Route path="content-center/settings" element={<ChurchSettings />} />
 
               {/* Daily Devotion */}

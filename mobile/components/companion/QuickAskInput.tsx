@@ -11,7 +11,7 @@
  * Styling: NativeWind-first with inline style for shadows/dynamic values
  */
 
-import React, { memo, useState, useRef } from 'react';
+import React, { memo, useState, useRef, useEffect } from 'react';
 import {
   View,
   TextInput,
@@ -22,6 +22,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
+import { useQuery } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
 import Animated, { FadeIn, FadeInUp } from 'react-native-reanimated';
 import { Send, Sparkles, MessageCircle, ChevronRight } from 'lucide-react-native';
@@ -99,91 +100,36 @@ interface QuickAskInputProps {
   language?: 'en' | 'id';
 }
 
-// Default suggestions based on context type
-const getDefaultSuggestions = (
-  context: CompanionContext,
-  language: 'en' | 'id'
-): SuggestedQuestion[] => {
-  const suggestions: Record<CompanionContext, { en: SuggestedQuestion[]; id: SuggestedQuestion[] }> = {
-    devotion_reflection: {
-      en: [
-        { label: 'Explain the verse', prompt: 'Can you explain what this verse means in depth?' },
-        { label: 'Apply to my life', prompt: 'How can I apply this teaching to my daily life?' },
-        { label: 'Related passages', prompt: 'What other Bible passages relate to this theme?' },
-      ],
-      id: [
-        { label: 'Jelaskan ayat ini', prompt: 'Bisakah kamu menjelaskan makna ayat ini secara mendalam?' },
-        { label: 'Terapkan dalam hidup', prompt: 'Bagaimana saya bisa menerapkan ajaran ini dalam kehidupan sehari-hari?' },
-        { label: 'Ayat terkait', prompt: 'Ayat Alkitab apa saja yang berkaitan dengan tema ini?' },
-      ],
-    },
-    bible_study_lesson: {
-      en: [
-        { label: 'Clarify a concept', prompt: 'Can you help me understand this concept better?' },
-        { label: 'Discussion question', prompt: 'What are some good discussion questions for this lesson?' },
-        { label: 'Practical application', prompt: 'How can I practically apply what I learned today?' },
-      ],
-      id: [
-        { label: 'Jelaskan konsep', prompt: 'Bisakah kamu membantu saya memahami konsep ini lebih baik?' },
-        { label: 'Pertanyaan diskusi', prompt: 'Apa saja pertanyaan diskusi yang bagus untuk pelajaran ini?' },
-        { label: 'Aplikasi praktis', prompt: 'Bagaimana cara praktis menerapkan apa yang saya pelajari hari ini?' },
-      ],
-    },
-    journey_day: {
-      en: [
-        { label: 'Understand better', prompt: 'Help me understand today\'s lesson better' },
-        { label: 'Share my struggle', prompt: 'I\'m struggling with this - can we talk?' },
-        { label: 'Prayer guidance', prompt: 'Can you guide me in prayer about this?' },
-      ],
-      id: [
-        { label: 'Pahami lebih baik', prompt: 'Bantu saya memahami pelajaran hari ini lebih baik' },
-        { label: 'Bagikan pergumulan', prompt: 'Saya bergumul dengan ini - bisakah kita berbicara?' },
-        { label: 'Panduan doa', prompt: 'Bisakah kamu memandu saya berdoa tentang ini?' },
-      ],
-    },
-    verse_meditation: {
-      en: [
-        { label: 'Deeper meaning', prompt: 'What is the deeper meaning of this verse?' },
-        { label: 'Historical context', prompt: 'What was the historical context when this was written?' },
-        { label: 'Personal reflection', prompt: 'Help me reflect on how this verse speaks to me personally' },
-      ],
-      id: [
-        { label: 'Makna lebih dalam', prompt: 'Apa makna lebih dalam dari ayat ini?' },
-        { label: 'Konteks sejarah', prompt: 'Bagaimana konteks sejarah ketika ayat ini ditulis?' },
-        { label: 'Refleksi pribadi', prompt: 'Bantu saya merenungkan bagaimana ayat ini berbicara kepada saya secara pribadi' },
-      ],
-    },
-    quiz_explanation: {
-      en: [
-        { label: 'Explain answer', prompt: 'Can you explain why this is the correct answer?' },
-        { label: 'Learn more', prompt: 'I want to learn more about this topic' },
-        { label: 'Related stories', prompt: 'What other Bible stories relate to this?' },
-      ],
-      id: [
-        { label: 'Jelaskan jawaban', prompt: 'Bisakah kamu menjelaskan mengapa ini jawaban yang benar?' },
-        { label: 'Pelajari lebih', prompt: 'Saya ingin belajar lebih banyak tentang topik ini' },
-        { label: 'Cerita terkait', prompt: 'Cerita Alkitab apa saja yang berkaitan dengan ini?' },
-      ],
-    },
-    // Default fallbacks
-    default: {
-      en: [
-        { label: 'Ask a question', prompt: 'I have a question about this' },
-        { label: 'Explain more', prompt: 'Can you explain this more?' },
-      ],
-      id: [
-        { label: 'Ajukan pertanyaan', prompt: 'Saya punya pertanyaan tentang ini' },
-        { label: 'Jelaskan lebih', prompt: 'Bisakah kamu menjelaskan ini lebih lanjut?' },
-      ],
-    },
-    fromVerse: { en: [], id: [] },
-    fromDevotion: { en: [], id: [] },
-    morning: { en: [], id: [] },
-    evening: { en: [], id: [] },
-  };
-
-  return suggestions[context]?.[language] || suggestions.default[language];
+// Fallback suggestions (used only when API fails)
+const FALLBACK_SUGGESTIONS: Record<string, { en: SuggestedQuestion[]; id: SuggestedQuestion[] }> = {
+  devotion_reflection: {
+    en: [
+      { label: 'Explain', prompt: 'Can you explain this further?' },
+      { label: 'Apply', prompt: 'How can I apply this?' },
+    ],
+    id: [
+      { label: 'Jelaskan', prompt: 'Bisakah kamu menjelaskan lebih lanjut?' },
+      { label: 'Terapkan', prompt: 'Bagaimana saya menerapkan ini?' },
+    ],
+  },
+  default: {
+    en: [
+      { label: 'Ask', prompt: 'I have a question' },
+    ],
+    id: [
+      { label: 'Tanya', prompt: 'Saya punya pertanyaan' },
+    ],
+  },
 };
+
+// Supported context types for backend starters
+const SUPPORTED_CONTEXT_TYPES: ContextType[] = [
+  'devotion_reflection',
+  'bible_study_lesson',
+  'journey_day',
+  'verse_meditation',
+  'quiz_explanation',
+];
 
 function QuickAskInputComponent({
   context,
@@ -193,7 +139,7 @@ function QuickAskInputComponent({
   weekNumber,
   dayNumber,
   placeholder,
-  suggestions,
+  suggestions: propSuggestions,
   title,
   showHeader = true,
   language = 'en',
@@ -209,8 +155,45 @@ function QuickAskInputComponent({
   const addMessage = useCompanionStore((s) => s.addMessage);
 
   const currentLang = (i18n.language || language) as 'en' | 'id';
-  const defaultSuggestions = getDefaultSuggestions(context, currentLang);
-  const displaySuggestions = suggestions || defaultSuggestions;
+
+  // Check if context type supports backend starters
+  const supportsBackendStarters = SUPPORTED_CONTEXT_TYPES.includes(context as ContextType);
+
+  // Fetch conversation starters from backend
+  const { data: backendStarters } = useQuery({
+    queryKey: ['companion-starters', context, currentLang],
+    queryFn: async () => {
+      if (!supportsBackendStarters) return null;
+      return contextualCompanionApi.getStarters(context as ContextType, currentLang);
+    },
+    enabled: supportsBackendStarters && !propSuggestions,
+    staleTime: 1000 * 60 * 30, // Cache for 30 minutes
+    gcTime: 1000 * 60 * 60, // Keep in cache for 1 hour
+    retry: 1,
+  });
+
+  // Transform backend starters to SuggestedQuestion format
+  const displaySuggestions = (() => {
+    // If explicit suggestions provided, use them
+    if (propSuggestions) return propSuggestions;
+
+    // If backend starters available, convert to SuggestedQuestion format
+    if (backendStarters && backendStarters.length > 0) {
+      return backendStarters.map((starter) => {
+        // Create short label from first few words of starter
+        const words = starter.split(' ').slice(0, 3);
+        const label = words.join(' ') + (words.length < starter.split(' ').length ? '...' : '');
+        return {
+          label: label.length > 20 ? label.substring(0, 17) + '...' : label,
+          prompt: starter,
+        };
+      });
+    }
+
+    // Fallback to hardcoded suggestions
+    const fallback = FALLBACK_SUGGESTIONS[context] || FALLBACK_SUGGESTIONS.default;
+    return fallback[currentLang] || fallback.en;
+  })();
 
   const defaultPlaceholder = currentLang === 'en'
     ? 'Ask Faith Assistant about this...'
