@@ -14,7 +14,6 @@ import {
   View,
   Text,
   Image,
-  ImageBackground,
   Pressable,
   TextInput,
 } from 'react-native';
@@ -45,6 +44,9 @@ import {
 import { EmptyState } from '@/components/explore/EmptyState';
 import { ExploreHomeSkeleton } from '@/components/explore/LoadingSkeleton';
 import Animated, { FadeInDown, SlideInRight } from 'react-native-reanimated';
+
+// Animated Image for shared element transitions (Reanimated 4+)
+const AnimatedImage = Animated.createAnimatedComponent(Image);
 
 export default function DevotionPlansLibraryScreen() {
   const router = useRouter();
@@ -271,16 +273,19 @@ function PlanCard({
           pressed && { opacity: 0.95, transform: [{ scale: 0.98 }] },
         ]}
       >
-        {/* Cover Image with Gradient Overlay */}
-        <ImageBackground
-          source={{
-            uri:
-              plan.cover_image_url ||
-              'https://images.unsplash.com/photo-1504052434569-70ad5836ab65?w=800',
-          }}
-          style={{ height: 180 }}
-          imageStyle={{ borderTopLeftRadius: 16, borderTopRightRadius: 16 }}
-        >
+        {/* Cover Image with Gradient Overlay and Shared Element Transition */}
+        <View style={{ height: 180, borderTopLeftRadius: 16, borderTopRightRadius: 16, overflow: 'hidden' }}>
+          {/* Background Image with shared element transition */}
+          <AnimatedImage
+            source={{
+              uri:
+                plan.cover_image_url ||
+                'https://images.unsplash.com/photo-1504052434569-70ad5836ab65?w=800',
+            }}
+            style={{ position: 'absolute', width: '100%', height: '100%' }}
+            resizeMode="cover"
+            sharedTransitionTag={`devotion-${plan.id}-image`}
+          />
           <LinearGradient
             colors={['transparent', 'rgba(0,0,0,0.8)']}
             className="flex-1 justify-between"
@@ -334,9 +339,9 @@ function PlanCard({
               )}
             </View>
 
-            {/* Title on Image */}
+            {/* Title on Image with shared element transition */}
             <View className="mt-auto">
-              <Text
+              <Animated.Text
                 numberOfLines={2}
                 style={{
                   ...ExploreTypography.h3,
@@ -345,9 +350,10 @@ function PlanCard({
                   textShadowOffset: { width: 0, height: 1 },
                   textShadowRadius: 4,
                 }}
+                sharedTransitionTag={`devotion-${plan.id}-title`}
               >
                 {title}
-              </Text>
+              </Animated.Text>
               {subtitle && (
                 <Text
                   numberOfLines={1}
@@ -365,7 +371,7 @@ function PlanCard({
               )}
             </View>
           </LinearGradient>
-        </ImageBackground>
+        </View>
 
         {/* Card Content */}
         <View style={{ padding: ExploreSpacing.lg, gap: ExploreSpacing.md }}>

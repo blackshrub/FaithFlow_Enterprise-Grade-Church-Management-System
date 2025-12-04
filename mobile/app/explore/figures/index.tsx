@@ -29,6 +29,9 @@ import { EmptyState } from '@/components/explore/EmptyState';
 import { BibleFigureListSkeleton } from '@/components/explore/LoadingSkeleton';
 import Animated, { FadeInDown, SlideInRight } from 'react-native-reanimated';
 
+// Animated Image for shared element transitions (Reanimated 4+)
+const AnimatedImage = Animated.createAnimatedComponent(Image);
+
 type ViewMode = 'grid' | 'list';
 type FilterTestament = 'all' | 'old' | 'new';
 
@@ -332,10 +335,11 @@ function FigureGridCard({ figure, onPress, contentLanguage, index }: FigureCardP
     <Animated.View entering={FadeInDown.duration(400).delay(index * 30)} style={{ width: '48%' }}>
       <ExploreCard onPress={onPress} style={{ padding: 0, overflow: 'hidden' }}>
         {figure.image_url ? (
-          <Image
+          <AnimatedImage
             source={{ uri: figure.image_url }}
             style={{ width: '100%', height: 160 }}
             resizeMode="cover"
+            sharedTransitionTag={`figure-${figure.id}-image`}
           />
         ) : (
           <View
@@ -350,7 +354,7 @@ function FigureGridCard({ figure, onPress, contentLanguage, index }: FigureCardP
           </View>
         )}
         <View style={{ padding: ExploreSpacing.md }}>
-          <Text
+          <Animated.Text
             numberOfLines={1}
             style={{
               ...ExploreTypography.h4,
@@ -358,9 +362,10 @@ function FigureGridCard({ figure, onPress, contentLanguage, index }: FigureCardP
               fontSize: 16,
               marginBottom: 2,
             }}
+            sharedTransitionTag={`figure-${figure.id}-name`}
           >
             {name}
-          </Text>
+          </Animated.Text>
           {title && (
             <Text
               numberOfLines={1}
@@ -386,10 +391,11 @@ function FigureListCard({ figure, onPress, contentLanguage, index }: FigureCardP
       <ExploreCard onPress={onPress} style={{ padding: ExploreSpacing.md }}>
         <View className="flex-row" style={{ gap: ExploreSpacing.md }}>
           {figure.image_url ? (
-            <Image
+            <AnimatedImage
               source={{ uri: figure.image_url }}
               style={{ width: 80, height: 80, borderRadius: 40 }}
               resizeMode="cover"
+              sharedTransitionTag={`figure-${figure.id}-image`}
             />
           ) : (
             <View
@@ -405,9 +411,12 @@ function FigureListCard({ figure, onPress, contentLanguage, index }: FigureCardP
             </View>
           )}
           <View className="flex-1" style={{ gap: 4 }}>
-            <Text style={{ ...ExploreTypography.h4, color: ExploreColors.neutral[900] }}>
+            <Animated.Text
+              style={{ ...ExploreTypography.h4, color: ExploreColors.neutral[900] }}
+              sharedTransitionTag={`figure-${figure.id}-name`}
+            >
               {name}
-            </Text>
+            </Animated.Text>
             {title && (
               <Text
                 className="italic"
