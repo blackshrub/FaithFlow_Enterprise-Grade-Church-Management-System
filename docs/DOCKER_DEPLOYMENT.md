@@ -380,14 +380,78 @@ If you have an existing bare-metal installation:
 
 ## Environment Variables Reference
 
-| Variable | Required | Description | Example |
-|----------|----------|-------------|---------|
-| `DOMAIN` | Yes | Your domain name | `faithflow.church` |
-| `ACME_EMAIL` | Yes | Email for Let's Encrypt | `admin@church.org` |
-| `JWT_SECRET` | Yes | JWT signing key (64+ chars) | `random-string-here` |
-| `ANTHROPIC_API_KEY` | No | Claude AI API key | `sk-ant-...` |
-| `STABILITY_API_KEY` | No | Stability AI key | `sk-...` |
-| `TRAEFIK_DASHBOARD_AUTH` | No | Dashboard basic auth | `admin:$apr1$...` |
+### Required Variables
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `DOMAIN` | Your domain name | `faithflow.church` |
+| `ACME_EMAIL` | Email for Let's Encrypt | `admin@church.org` |
+| `JWT_SECRET` | JWT signing key (64+ chars) | (auto-generated) |
+| `MONGO_URL` | MongoDB connection string | `mongodb://mongodb:27017/faithflow` |
+| `REDIS_URL` | Redis connection string | `redis://redis:6379` |
+
+### AI Features (Highly Recommended)
+
+| Variable | Description | Get It |
+|----------|-------------|--------|
+| `ANTHROPIC_API_KEY` | Claude AI for Prayer Intelligence, Contextual Companion, Content Generation | [console.anthropic.com](https://console.anthropic.com) |
+| `STABILITY_API_KEY` | AI image generation for content | [stability.ai](https://stability.ai) |
+
+**AI-Powered Features that require `ANTHROPIC_API_KEY`:**
+- Prayer Intelligence (theme extraction, guided prayers)
+- Contextual Companion (AI chat)
+- Content generation (devotions, quizzes)
+- News context analysis
+
+### File Storage (SeaweedFS)
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `SEAWEEDFS_MASTER_URL` | SeaweedFS master server | `http://seaweedfs-master:9333` |
+| `SEAWEEDFS_FILER_URL` | SeaweedFS filer server | `http://seaweedfs-filer:8888` |
+| `SEAWEEDFS_PUBLIC_URL` | Public URL for file access | `https://files.yourdomain.com` |
+
+### Voice/Video (LiveKit)
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `LIVEKIT_API_KEY` | LiveKit API key | (auto-generated) |
+| `LIVEKIT_API_SECRET` | LiveKit API secret | (auto-generated) |
+| `LIVEKIT_URL` | LiveKit server URL | `wss://livekit.yourdomain.com` |
+
+### Real-time Messaging (EMQX)
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `MQTT_BROKER_URL` | EMQX broker URL | `mqtt://emqx:1883` |
+| `MQTT_WS_URL` | WebSocket URL for mobile | `wss://yourdomain.com/mqtt` |
+
+### Admin Dashboard
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `TRAEFIK_DASHBOARD_AUTH` | Basic auth for Traefik | `admin:$apr1$...` |
+
+---
+
+## Feature Availability by Configuration
+
+| Feature | Without AI Key | With AI Key |
+|---------|:-------------:|:-----------:|
+| Member Management | ✅ | ✅ |
+| Event Management | ✅ | ✅ |
+| Prayer Requests (Basic) | ✅ | ✅ |
+| **Prayer Intelligence** | ❌ | ✅ |
+| **Contextual Companion** | ❌ | ✅ |
+| **AI Content Generation** | ❌ | ✅ |
+| **News Context Analysis** | ❌ | ✅ |
+| Bible (6 translations) | ✅ | ✅ |
+| Content Center | ✅ | ✅ + AI |
+| Voice/Video Calls | ✅ | ✅ |
+| WhatsApp Communities | ✅ | ✅ |
+| Accounting | ✅ | ✅ |
+
+---
 
 ## Support
 

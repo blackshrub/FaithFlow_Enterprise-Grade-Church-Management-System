@@ -154,6 +154,40 @@ Please save this QR code for check-in.
 - Attendance: Checked-in vs total RSVP
 - Visual progress bars with color coding
 
+### Event Rating System
+
+Collect post-event feedback to improve future events:
+
+**Rating Features:**
+- 1-5 star rating scale
+- Optional written feedback
+- Anonymous or attributed ratings
+- Triggered after event ends
+- Push notification reminders
+
+**Analytics Dashboard** (`/events/ratings`):
+- Average rating per event
+- Rating distribution (1-5 stars)
+- Feedback comments with sentiment
+- Comparison across events
+- Export ratings data
+
+**Mobile Integration:**
+- In-app rating prompt after event
+- Simple 5-star interface
+- Optional comment field
+- Skip option for privacy
+
+**API Endpoints:**
+```
+POST /api/events/{id}/ratings
+    { "rating": 5, "feedback": "Great event!", "anonymous": false }
+GET /api/events/{id}/ratings
+    - List all ratings for event
+GET /api/events/{id}/ratings/summary
+    - Average rating and distribution
+```
+
 ---
 
 ## Kiosk Mode
@@ -1406,7 +1440,7 @@ Complete WordPress-style content management system with rich text editing, sched
 ## Prayer Requests Module
 
 ### Overview
-Pastoral care management system for tracking and managing congregation prayer requests with follow-up coordination.
+Pastoral care management system for tracking and managing congregation prayer requests with follow-up coordination. Now enhanced with **AI-powered Prayer Intelligence** for automatic theme extraction, guided prayers, and 14-day follow-up automation.
 
 > Technical API reference: see `docs/API.md` → **Prayer Requests (v1)** section.
 
@@ -1417,7 +1451,7 @@ Pastoral care management system for tracking and managing congregation prayer re
 - Profile photo display in search
 - Auto-fill requester info from member data
 - Title and detailed description
-- 8 prayer categories (Healing, Family, Work, Financial, Spiritual, Guidance, Thanksgiving, Other)
+- 11 prayer categories (Healing, Health, Family, Work, Financial, Provision, Spiritual, Guidance, Thanksgiving, Comfort, Salvation, Other)
 - Status tracking (New/Prayed with timestamp)
 
 **Pastoral Follow-up:**
@@ -1429,7 +1463,7 @@ Pastoral care management system for tracking and managing congregation prayer re
 **Staff Features:**
 - Assignment to staff members
 - Internal notes (staff-only)
-- Source tracking (Admin Input/Mobile App/Imported)
+- Source tracking (Admin Input/Mobile App/Kiosk/Imported)
 - Filter by status, category, assigned staff
 - Search by requester, title, description
 
@@ -1456,8 +1490,258 @@ Pastoral care management system for tracking and managing congregation prayer re
 
 ---
 
-**CMS Articles Status:** ✅ **Complete** (Backend + Frontend)  
+## Prayer Intelligence (AI-Powered)
+
+### Overview
+The world's first AI-powered prayer management system. When members submit prayer requests, the system automatically analyzes them using Claude AI to extract themes, detect urgency, suggest relevant scriptures, and schedule follow-ups.
+
+### AI Features
+
+**1. Automatic Theme Extraction**
+When a prayer is submitted, AI analyzes the text and extracts:
+- Primary themes (e.g., "healing", "guidance", "family")
+- Secondary themes for complex prayers
+- Confidence scores for each theme
+- Theme persistence for analytics
+
+**2. Urgency Detection**
+AI identifies high-priority prayers:
+- **High Urgency:** Crisis situations, health emergencies, immediate needs
+- **Medium Urgency:** Ongoing concerns, relationship issues
+- **Low Urgency:** General prayers, thanksgiving, guidance
+
+**3. Guided Prayer Generation**
+For each prayer request, AI generates:
+- Personalized prayer suggestions based on content
+- Scripture-based prayers addressing specific themes
+- Comfort words and pastoral guidance
+- Available in English and Indonesian
+
+**4. Scripture Matching**
+AI recommends relevant Bible verses:
+- Matched to detected themes
+- Full verse text included (from local Bible database)
+- Multiple translations available
+- Categorized by relevance
+
+**5. 14-Day Follow-up System**
+Automated pastoral care:
+- Automatically schedules follow-up 14 days after submission
+- WhatsApp message templates for check-ins
+- Status tracking (Pending/Sent/Responded)
+- Response recording
+- Escalation for non-responses
+
+### Analytics Dashboard
+
+**Prayer Analytics Page** (`/prayer-requests/analytics`):
+- Total requests over time (7/30/90 days/1 year)
+- Requests by status (New/Prayed)
+- Requests by category distribution
+- Top AI-detected themes with frequency
+- Urgency level breakdown
+- 14-day follow-up tracking section
+- Follow-ups list with status filters
+
+**API Endpoints:**
+```
+GET /api/prayer-requests/analytics/summary
+    ?days=30 - Summary statistics
+GET /api/prayer-requests/analytics/follow-ups
+    ?status=pending|sent|responded - Follow-up list
+```
+
+### Mobile Integration
+
+**Prayer Submission Flow:**
+1. Member submits prayer via mobile app
+2. Backend calls Prayer Intelligence API
+3. AI returns: themes, urgency, guided_prayer, verses, follow_up_date
+4. Member sees "Prayer Resources" screen with:
+   - AI-generated guided prayer
+   - Matched scripture verses
+   - Comfort message
+   - Option to save/share
+
+**Prayer Resources Screen:**
+- Beautiful card-based display
+- Expandable sections for each resource type
+- Share functionality
+- Save to favorites
+- Audio playback (TTS) option
+
+---
+
+## Contextual Companion (AI Chat)
+
+### Overview
+A faith-based AI chat assistant that provides scripture-grounded spiritual guidance. Unlike generic chatbots, the Contextual Companion understands spiritual context and maintains conversation memory within sessions.
+
+### Features
+
+**1. Scripture-Grounded Responses**
+- Every response includes relevant Bible verses
+- Verses from local 186K+ verse database
+- Multiple translations supported
+- Context-appropriate scripture selection
+
+**2. Conversation Memory**
+- Remembers previous messages in session
+- Builds on earlier context naturally
+- Coherent multi-turn conversations
+- Session-based memory (resets per session)
+
+**3. Context Awareness**
+Adapts responses based on where the user is:
+- **Bible Study Mode:** Deep scriptural analysis, cross-references
+- **Devotion Mode:** Reflective, application-focused
+- **Prayer Mode:** Pastoral, comforting, intercession guidance
+- **General Mode:** Versatile spiritual guidance
+
+**4. Personalized Starters**
+Context-aware conversation suggestions:
+- Backend API returns relevant starters
+- Updates based on current context
+- 30-minute cache for performance
+- Fallback to curated suggestions
+
+**5. Bilingual Support**
+- Seamless English and Indonesian responses
+- Auto-detects language preference
+- Consistent quality in both languages
+
+### Mobile Integration
+
+**QuickAskInput Component:**
+- Floating input at bottom of screens
+- Suggestion chips for quick questions
+- Voice input option
+- Smooth keyboard handling
+
+**Chat Interface:**
+- Message bubbles with markdown support
+- Scripture verses highlighted
+- Loading indicators
+- Haptic feedback
+
+### API Endpoints
+
+```
+POST /api/contextual-companion/chat
+    {
+      "message": "What does the Bible say about anxiety?",
+      "context": "devotion",
+      "language": "en",
+      "conversation_history": [...]
+    }
+
+GET /api/contextual-companion/starters
+    ?context=bible_study&lang=en
+```
+
+---
+
+## News Context System
+
+### Overview
+Automatic content generation based on current national events. The system monitors Indonesian news sources and BMKG disaster alerts, identifies significant events, and generates contextual devotions and verses to help the congregation process current events through a spiritual lens.
+
+### Features
+
+**1. RSS Monitoring**
+Fetches news twice daily (6:30 AM & 2:00 PM) from:
+- **Kompas** - National news
+- **Detik** - Breaking news
+- **CNN Indonesia** - Current affairs
+- **BMKG** - Earthquake, weather, tsunami alerts
+
+**2. Event Detection**
+Keyword-based categorization:
+- **Disaster:** Earthquake, flood, tsunami, volcano, landslide
+- **Crisis:** Accident, tragedy, emergency
+- **Celebration:** National holidays, religious celebrations
+- **National:** Elections, policy changes, significant events
+- **General:** Other noteworthy news
+
+**3. Significance Analysis**
+AI evaluates each event for:
+- Spiritual relevance
+- Congregation impact
+- Urgency level
+- Content generation potential
+
+**4. Contextual Content Generation**
+For significant events, AI generates:
+- Devotional content addressing the event
+- Relevant Bible verses for comfort/guidance
+- Prayer points for the congregation
+- Pastoral response suggestions
+
+**5. Disaster Alert Handling**
+Special processing for BMKG alerts:
+- Immediate flagging of major earthquakes (M 5.0+)
+- Tsunami warnings prioritized
+- Location-based relevance (for Indonesian churches)
+- Pre-drafted prayer responses
+
+### Admin Dashboard
+
+**News Context Monitor** (`/content-center/news-context`):
+
+**Stats Overview:**
+- Total contexts captured
+- Processed contexts
+- Disaster alerts count
+- Content generated count
+
+**Events by Category:**
+- Visual category breakdown
+- Category badges with counts
+
+**Contexts List:**
+- Date and time of capture
+- Events count with category badges
+- Disaster alerts indicator
+- Generated content count
+- Processing status (Pending/Processed)
+- Admin review status
+
+**Manual Controls:**
+- "Fetch Now" button (Super Admin only)
+- Mark as reviewed
+- Filter by processed/unprocessed
+
+**How It Works Section:**
+1. RSS Monitoring - Fetches from news sources
+2. AI Analysis - Categorizes and evaluates significance
+3. Content Generation - Creates contextual devotions
+
+### API Endpoints
+
+```
+GET /api/explore/admin/news-contexts
+    ?processed=true|false - List contexts
+
+GET /api/explore/admin/news-contexts/{id}
+    - Single context details
+
+PATCH /api/explore/admin/news-contexts/{id}/review
+    - Mark as admin reviewed
+
+POST /api/explore/admin/news-contexts/trigger
+    - Manual fetch (Super Admin only)
+
+GET /api/explore/admin/news-contexts/stats/summary
+    ?days=30 - Statistics summary
+```
+
+---
+
+**CMS Articles Status:** ✅ **Complete** (Backend + Frontend)
 **Prayer Requests Status:** ✅ **Complete** (Backend + Frontend)
+**Prayer Intelligence Status:** ✅ **Complete** (Backend + Mobile)
+**Contextual Companion Status:** ✅ **Complete** (Backend + Mobile)
+**News Context Status:** ✅ **Complete** (Backend + Frontend Admin)
 
 ---
 
