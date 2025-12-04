@@ -13,6 +13,7 @@ from services.seaweedfs_service import (
     SeaweedFSError,
     StorageCategory
 )
+from utils.performance import Projections
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/events", tags=["Events"])
@@ -93,7 +94,8 @@ async def list_events(
     if is_active is not None:
         query['is_active'] = is_active
     
-    events = await db.events.find(query, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    # Use projection to exclude heavy fields (description, seat_layout, RSVP list)
+    events = await db.events.find(query, Projections.EVENT_LIST).sort("created_at", -1).to_list(1000)
     
     for event in events:
         if isinstance(event.get('created_at'), str):

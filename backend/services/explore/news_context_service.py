@@ -428,13 +428,85 @@ class NewsContextService:
         needs_notification = len(high_sig_events) > 0 or len(context.disaster_alerts) > 0
 
         if needs_notification:
-            # TODO: Send actual notification (email, webhook, etc.)
-            # For now, just mark as notified
+            # Send notification to super admins about high-significance events
+            try:
+                # Get all super admins to notify
+                super_admins = await self.db.users.find({
+                    "role": "super_admin",
+                    "is_active": True
+                }).to_list(50)
+
+                # Build notification message
+                event_summaries = []
+                for event in high_sig_events[:5]:  # Top 5 events
+                    event_summaries.append(
+                        f"• {event.get('title', 'Unknown')} "
+                        f"(Significance: {event.get('significance_score', 0):.0f}%)"
+                    )
+
+                disaster_summaries = []
+                for alert in context.disaster_alerts[:3]:  # Top 3 alerts
+                    disaster_summaries.append(
+                        f"• {alert.get('type', 'Alert')}: {alert.get('description', 'No details')}"
+                    )
+
+                notification_data = {
+                    "type": "news_context_alert",
+                    "title": "Konten Kontekstual Perlu Direview",
+                    "message": f"Ditemukan {len(high_sig_events)} berita signifikan dan {len(context.disaster_alerts)} peringatan bencana yang mungkin memerlukan konten spiritual khusus.",
+                    "events": event_summaries,
+                    "disasters": disaster_summaries,
+                    "context_id": context.id,
+                    "created_at": datetime.now().isoformat(),
+                }
+
+                # Store notification in database for admin dashboard
+                await self.db.admin_notifications.insert_one({
+                    "id": f"news_context_{context.id}",
+                    "church_id": "global",  # System-wide notification
+                    "type": "news_context_alert",
+                    "title": notification_data["title"],
+                    "message": notification_data["message"],
+                    "data": notification_data,
+                    "read": False,
+                    "created_at": datetime.now(),
+                })
+
+                # Try to send WhatsApp to super admins with phone numbers
+                from services.whatsapp_service import send_whatsapp_message
+
+                for admin in super_admins:
+                    phone = admin.get("phone") or admin.get("phone_whatsapp")
+                    if phone:
+                        try:
+                            wa_message = f"""
+*🔔 FaithFlow - Peringatan Konten Kontekstual*
+
+{notification_data['message']}
+
+*Berita Signifikan:*
+{chr(10).join(event_summaries[:3]) if event_summaries else 'Tidak ada'}
+
+*Peringatan Bencana:*
+{chr(10).join(disaster_summaries) if disaster_summaries else 'Tidak ada'}
+
+Silakan login ke Content Center untuk review dan buat konten spiritual yang sesuai.
+""".strip()
+                            await send_whatsapp_message(phone, wa_message)
+                        except Exception as wa_error:
+                            logger.warning(f"Failed to send WhatsApp to admin: {wa_error}")
+
+                logger.info(f"Admin notification sent for {len(high_sig_events)} significant events")
+
+            except Exception as notify_error:
+                logger.error(f"Failed to send admin notification: {notify_error}")
+                # Continue even if notification fails
+
+            # Mark as notified
             await self.context_collection.update_one(
                 {"id": context.id},
                 {"$set": {"admin_notified": True, "updated_at": datetime.now()}}
             )
-            logger.info(f"Admin notification triggered for {len(high_sig_events)} events")
             return True
 
         return False

@@ -68,11 +68,13 @@ load_dotenv(ROOT_DIR / '.env')
 API_PREFIX = os.environ.get('API_PREFIX', '/api')
 
 # MongoDB connection with optimized connection pooling
+# Reduced pool size: 50 max per worker (4 workers = 200 total) is sufficient for most loads
+# This reduces memory overhead while maintaining good throughput
 mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(
     mongo_url,
-    maxPoolSize=100,           # Maximum connections in pool
-    minPoolSize=10,            # Minimum connections to maintain
+    maxPoolSize=50,            # Maximum connections in pool (reduced from 100)
+    minPoolSize=5,             # Minimum connections to maintain (reduced from 10)
     maxIdleTimeMS=45000,       # Close idle connections after 45s
     waitQueueTimeoutMS=5000,   # Timeout waiting for connection
     serverSelectionTimeoutMS=5000,  # Timeout for server selection
@@ -292,6 +294,82 @@ async def add_process_time_header(request: Request, call_next: Callable):
     if process_time > 2.0:
         logger.warning(f"Slow request: {request.method} {request.url.path} took {process_time:.2f}s")
 
+    return response
+
+
+# Cache-Control headers middleware
+@app.middleware("http")
+async def add_cache_control_headers(request: Request, call_next: Callable):
+    """
+    Add appropriate Cache-Control headers to API responses.
+
+    Strategy:
+    - GET /api/settings/*, /api/categories/*: public, max-age=3600 (1 hour) - static data
+    - GET /api/members/*, /api/events/*: private, max-age=300 (5 min) - user data
+    - POST, PATCH, DELETE: no-store - mutations should never be cached
+    - Health endpoints: no-cache
+    """
+    response = await call_next(request)
+
+    path = request.url.path
+    method = request.method
+
+    # Skip non-API paths
+    if not path.startswith("/api") and not path.startswith("/public"):
+        return response
+
+    # Never cache mutations
+    if method in ("POST", "PATCH", "PUT", "DELETE"):
+        response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate"
+        return response
+
+    # Only cache GET requests
+    if method != "GET":
+        return response
+
+    # Static/semi-static data - longer cache
+    static_paths = (
+        "/settings/church",
+        "/settings/member-statuses",
+        "/settings/demographics",
+        "/categories",
+        "/bible",
+        "/explore/categories",
+    )
+    if any(static_path in path for static_path in static_paths):
+        response.headers["Cache-Control"] = "public, max-age=3600, stale-while-revalidate=86400"
+        return response
+
+    # User-specific data - shorter cache, private
+    user_paths = (
+        "/members",
+        "/events",
+        "/groups",
+        "/communities",
+        "/donations",
+        "/giving",
+    )
+    if any(user_path in path for user_path in user_paths):
+        response.headers["Cache-Control"] = "private, max-age=300, stale-while-revalidate=600"
+        return response
+
+    # Real-time data - minimal or no cache
+    realtime_paths = (
+        "/notifications",
+        "/messages",
+        "/call",
+    )
+    if any(rt_path in path for rt_path in realtime_paths):
+        response.headers["Cache-Control"] = "private, max-age=30"
+        return response
+
+    # Health endpoints - no cache
+    if "/health" in path:
+        response.headers["Cache-Control"] = "no-cache"
+        return response
+
+    # Default: moderate cache for other GET endpoints
+    response.headers["Cache-Control"] = "private, max-age=60"
     return response
 
 # Configure logging

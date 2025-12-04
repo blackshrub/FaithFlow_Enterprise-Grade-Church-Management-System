@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
+import { visualizer } from 'rollup-plugin-visualizer';
 import path from 'path';
 
 // https://vitejs.dev/config/
@@ -188,6 +189,17 @@ export default defineConfig({
     // Target modern browsers only (smaller bundle)
     target: 'es2020',
     rollupOptions: {
+      plugins: [
+        // Bundle analyzer - generates stats.html in build folder
+        // Only in production build, not dev
+        visualizer({
+          filename: 'build/stats.html',
+          open: false, // Don't auto-open browser
+          gzipSize: true,
+          brotliSize: true,
+          template: 'treemap', // Options: treemap, sunburst, network
+        }),
+      ],
       output: {
         // Chunk splitting - keep vendor libs together to avoid React duplication issues
         manualChunks: {

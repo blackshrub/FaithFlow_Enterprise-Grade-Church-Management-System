@@ -14,7 +14,7 @@ import logging
 import secrets
 import re
 
-from utils.dependencies import get_db, create_access_token
+from utils.dependencies import get_db, create_access_token, get_current_user
 from services.whatsapp_service import send_whatsapp_message
 
 logger = logging.getLogger(__name__)
@@ -323,7 +323,7 @@ async def verify_member_otp(
 
 @router.post("/refresh-token", response_model=MemberAuthResponse)
 async def refresh_member_token(
-    current_user: dict = Depends(get_db),  # Should be get_current_user
+    current_user: dict = Depends(get_current_user),
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """
@@ -331,11 +331,10 @@ async def refresh_member_token(
 
     Used by mobile app to refresh token before expiry.
     """
-    # TODO: Import get_current_user properly
     # This endpoint allows members to refresh their token
     # without going through OTP again
 
-    member_id = current_user.get("sub")
+    member_id = current_user.get("id")  # Fixed: get_current_user returns "id" not "sub"
     church_id = current_user.get("session_church_id")
 
     # Get fresh member data

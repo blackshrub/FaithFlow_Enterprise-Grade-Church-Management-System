@@ -52,6 +52,10 @@ class IndexManager:
             IndexModel([("church_id", ASCENDING), ("created_at", DESCENDING)]),
             IndexModel([("church_id", ASCENDING), ("membership_status", ASCENDING)]),
             IndexModel([("church_id", ASCENDING), ("deleted", ASCENDING)]),
+            # Compound index for soft-delete queries with status filtering
+            IndexModel([("church_id", ASCENDING), ("deleted", ASCENDING), ("status", ASCENDING), ("created_at", DESCENDING)]),
+            # Compound index for member activity lookups
+            IndexModel([("church_id", ASCENDING), ("member_id", ASCENDING), ("created_at", DESCENDING)]),
             # Text search index
             IndexModel([("first_name", "text"), ("last_name", "text"), ("email", "text")]),
         ],

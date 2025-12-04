@@ -29,6 +29,7 @@ from models.giving import (
 from utils.dependencies import get_db, get_current_user, get_session_church_id
 from utils.system_config import get_payment_settings
 from services.payments import get_payment_provider, PaymentMethod
+from services.whatsapp_service import send_whatsapp_message
 
 logger = logging.getLogger(__name__)
 
@@ -722,11 +723,164 @@ async def payment_webhook(
 
         logger.info(f"Transaction {reference_id} updated to status: {payment_status}")
 
-        # TODO: Send WhatsApp notification to member
-        # TODO: Record in accounting journal if success
+        # Send WhatsApp notification to member on successful payment
+        if payment_status.value == "success":
+            try:
+                await _send_giving_confirmation_whatsapp(
+                    db=db,
+                    transaction=transaction,
+                    amount=amount,
+                    church_id=church_id
+                )
+            except Exception as e:
+                logger.error(f"Failed to send WhatsApp notification: {e}")
+                # Don't fail webhook - notification is non-critical
+
+            # Record in accounting journal
+            try:
+                await _record_giving_in_accounting(
+                    db=db,
+                    transaction=transaction,
+                    amount=amount,
+                    church_id=church_id
+                )
+            except Exception as e:
+                logger.error(f"Failed to record in accounting: {e}")
+                # Don't fail webhook - accounting is non-critical
+                # Admin can manually reconcile
 
         return {"status": "success", "message": "Webhook processed"}
 
     except Exception as e:
         logger.error(f"{provider_name} webhook error: {e}")
         return {"status": "error", "message": str(e)}
+
+
+# ===========================
+# HELPER FUNCTIONS
+# ===========================
+
+async def _send_giving_confirmation_whatsapp(
+    db: AsyncIOMotorDatabase,
+    transaction: dict,
+    amount: float,
+    church_id: str
+) -> None:
+    """
+    Send WhatsApp confirmation message to member after successful giving.
+    """
+    member_phone = transaction.get("member_phone")
+    if not member_phone:
+        logger.warning(f"No phone number for transaction {transaction['id']}")
+        return
+
+    # Get church name
+    church = await db.churches.find_one({"id": church_id})
+    church_name = church.get("name", "Gereja Anda") if church else "Gereja Anda"
+
+    # Format amount with Indonesian formatting
+    amount_formatted = f"Rp {int(amount):,}".replace(",", ".")
+
+    # Build confirmation message (Indonesian)
+    message = f"""
+✅ *{church_name} - Konfirmasi Persembahan*
+
+Shalom {transaction.get('member_name', 'Saudara/i')}! 🙏
+
+Persembahan Anda telah berhasil diterima:
+
+📋 *Detail Persembahan:*
+• Dana: {transaction.get('fund_name', 'Persembahan')}
+• Jumlah: {amount_formatted}
+• Metode: {transaction.get('payment_method', 'Online').upper()}
+• ID Transaksi: {transaction.get('id', '')[:8]}...
+
+Terima kasih atas kemurahan hati Anda. Tuhan memberkati!
+
+_"Setiap orang hendaklah memberikan menurut kerelaan hatinya, jangan dengan sedih hati atau karena paksaan, sebab Allah mengasihi orang yang memberi dengan sukacita."_ - 2 Korintus 9:7
+
+---
+{church_name}
+""".strip()
+
+    try:
+        await send_whatsapp_message(phone_number=member_phone, message=message)
+        logger.info(f"WhatsApp confirmation sent for transaction {transaction['id']}")
+    except Exception as e:
+        logger.error(f"Failed to send WhatsApp for {transaction['id']}: {e}")
+        raise
+
+
+async def _record_giving_in_accounting(
+    db: AsyncIOMotorDatabase,
+    transaction: dict,
+    amount: float,
+    church_id: str
+) -> None:
+    """
+    Record successful giving transaction in the accounting journal.
+
+    Creates a simple journal entry:
+    - Debit: Bank/Cash account (asset increases)
+    - Credit: Giving Income account (revenue increases)
+    """
+    import uuid as uuid_module
+    from datetime import date as date_type
+
+    # Get church accounting settings
+    settings = await db.church_settings.find_one({"church_id": church_id})
+    if not settings:
+        logger.warning(f"No church settings for {church_id}, skipping accounting")
+        return
+
+    # Get or use default account codes
+    # These should be configured in church settings or use standard codes
+    bank_account_code = settings.get("giving_bank_account_code", "1101")  # Default: Bank account
+    income_account_code = settings.get("giving_income_account_code", "4101")  # Default: Giving Income
+
+    # Create journal entry
+    journal_id = str(uuid_module.uuid4())
+    today = date_type.today()
+
+    # Generate journal number (simple format for giving)
+    journal_number = f"GV-{today.strftime('%Y%m%d')}-{transaction['id'][:6].upper()}"
+
+    journal_entry = {
+        "id": journal_id,
+        "church_id": church_id,
+        "journal_number": journal_number,
+        "date": today.isoformat(),
+        "description": f"Persembahan online - {transaction.get('fund_name', 'General')} - {transaction.get('member_name', 'Anonymous')}",
+        "journal_type": "revenue",
+        "status": "posted",  # Auto-post giving entries
+        "lines": [
+            {
+                "account_code": bank_account_code,
+                "account_name": "Bank",
+                "description": f"Penerimaan via {transaction.get('payment_method', 'Online').upper()}",
+                "debit": float(amount),
+                "credit": 0.0,
+            },
+            {
+                "account_code": income_account_code,
+                "account_name": "Pendapatan Persembahan",
+                "description": transaction.get('fund_name', 'Persembahan'),
+                "debit": 0.0,
+                "credit": float(amount),
+            }
+        ],
+        "total_debit": float(amount),
+        "total_credit": float(amount),
+        "reference_type": "giving",
+        "reference_id": transaction.get("id"),
+        "created_by": "system",
+        "created_at": datetime.utcnow(),
+        "updated_at": datetime.utcnow(),
+    }
+
+    try:
+        await db.journals.insert_one(journal_entry)
+        logger.info(f"Accounting journal created for giving {transaction['id']}: {journal_number}")
+    except Exception as e:
+        logger.error(f"Failed to create accounting journal: {e}")
+        raise

@@ -86,4 +86,6 @@ EXPOSE ${PORT}
 
 # Run with Granian (Rust-based ASGI server - 2-3x faster than uvicorn)
 # --http auto: Support both HTTP/1.1 and HTTP/2 (needed for healthchecks)
-CMD ["granian", "--interface", "asgi", "--host", "0.0.0.0", "--port", "8000", "--workers", "4", "--http", "auto", "server:app"]
+# --workers auto: Automatically detect CPU cores for optimal worker count
+# --backpressure 256: Queue size before rejecting new connections
+CMD ["granian", "--interface", "asgi", "--host", "0.0.0.0", "--port", "8000", "--workers", "auto", "--http", "auto", "--backpressure", "256", "server:app"]
