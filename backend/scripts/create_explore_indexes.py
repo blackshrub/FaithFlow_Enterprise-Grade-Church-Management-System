@@ -209,6 +209,149 @@ async def create_indexes():
     )
     print("  ✓ Created: created_at (TTL - 30 days)")
 
+    # ==================== USER SPIRITUAL PROFILES ====================
+
+    print(f"\n📁 user_spiritual_profiles")
+    profile_collection = db.user_spiritual_profiles
+
+    # Compound index for user profile queries
+    await profile_collection.create_index(
+        [("church_id", 1), ("user_id", 1), ("deleted", 1)],
+        name="church_user_deleted_idx"
+    )
+    print("  ✓ Created: church_id + user_id + deleted")
+
+    # Index for onboarding status queries
+    await profile_collection.create_index(
+        [("church_id", 1), ("onboarding_completed", 1)],
+        name="church_onboarded_idx"
+    )
+    print("  ✓ Created: church_id + onboarding_completed")
+
+    # Index for life situation filtering
+    await profile_collection.create_index(
+        [("church_id", 1), ("life_situation", 1), ("deleted", 1)],
+        name="church_situation_idx"
+    )
+    print("  ✓ Created: church_id + life_situation + deleted")
+
+    # Unique index for user profile (one profile per user per church)
+    await profile_collection.create_index(
+        [("church_id", 1), ("user_id", 1)],
+        name="church_user_unique_idx",
+        unique=True
+    )
+    print("  ✓ Created: church_id + user_id (unique)")
+
+    # ==================== PRAYER INTELLIGENCE ====================
+
+    print(f"\n📁 prayer_analyses")
+    prayer_analyses_collection = db.prayer_analyses
+
+    # Index for prayer analysis queries
+    await prayer_analyses_collection.create_index(
+        [("church_id", 1), ("prayer_request_id", 1)],
+        name="church_prayer_idx"
+    )
+    print("  ✓ Created: church_id + prayer_request_id")
+
+    # Index for theme-based queries
+    await prayer_analyses_collection.create_index(
+        [("prayer_request_id", 1)],
+        name="prayer_request_idx",
+        unique=True
+    )
+    print("  ✓ Created: prayer_request_id (unique)")
+
+    print(f"\n📁 prayer_followups")
+    prayer_followups_collection = db.prayer_followups
+
+    # Index for due follow-up queries (used by scheduler)
+    await prayer_followups_collection.create_index(
+        [("follow_up_due_at", 1), ("follow_up_sent", 1), ("deleted", 1)],
+        name="followup_due_sent_idx"
+    )
+    print("  ✓ Created: follow_up_due_at + follow_up_sent + deleted")
+
+    # Index for user's follow-ups
+    await prayer_followups_collection.create_index(
+        [("church_id", 1), ("user_id", 1), ("deleted", 1)],
+        name="church_user_followup_idx"
+    )
+    print("  ✓ Created: church_id + user_id + deleted")
+
+    # Index for prayer request follow-ups
+    await prayer_followups_collection.create_index(
+        [("prayer_request_id", 1)],
+        name="prayer_request_followup_idx"
+    )
+    print("  ✓ Created: prayer_request_id")
+
+    # ==================== NEWS CONTEXT ====================
+
+    print(f"\n📁 news_contexts")
+    news_context_collection = db.news_contexts
+
+    # Index for date-based queries
+    await news_context_collection.create_index(
+        [("date", -1)],
+        name="date_idx"
+    )
+    print("  ✓ Created: date")
+
+    # TTL index to auto-delete old contexts after 30 days
+    await news_context_collection.create_index(
+        [("created_at", 1)],
+        name="ttl_idx",
+        expireAfterSeconds=2592000  # 30 days
+    )
+    print("  ✓ Created: created_at (TTL - 30 days)")
+
+    # ==================== JOURNEYS ====================
+
+    print(f"\n📁 user_journey_enrollments")
+    journey_enrollments_collection = db.user_journey_enrollments
+
+    # Index for user's journey queries
+    await journey_enrollments_collection.create_index(
+        [("church_id", 1), ("user_id", 1), ("deleted", 1)],
+        name="church_user_deleted_idx"
+    )
+    print("  ✓ Created: church_id + user_id + deleted")
+
+    # Index for active journeys
+    await journey_enrollments_collection.create_index(
+        [("church_id", 1), ("user_id", 1), ("status", 1)],
+        name="church_user_status_idx"
+    )
+    print("  ✓ Created: church_id + user_id + status")
+
+    # Index for journey-specific queries
+    await journey_enrollments_collection.create_index(
+        [("church_id", 1), ("journey_slug", 1), ("status", 1)],
+        name="church_journey_status_idx"
+    )
+    print("  ✓ Created: church_id + journey_slug + status")
+
+    # ==================== SERMONS ====================
+
+    print(f"\n📁 explore_sermons")
+    sermons_collection = db.explore_sermons
+
+    # Index for church sermon queries
+    await sermons_collection.create_index(
+        [("church_id", 1), ("deleted", 1), ("sermon_date", -1)],
+        name="church_deleted_date_idx"
+    )
+    print("  ✓ Created: church_id + deleted + sermon_date")
+
+    # Index for date range queries
+    await sermons_collection.create_index(
+        [("church_id", 1), ("sermon_date", 1), ("integration_mode", 1)],
+        name="church_date_integration_idx"
+    )
+    print("  ✓ Created: church_id + sermon_date + integration_mode")
+
     # ==================== SUMMARY ====================
 
     print("\n" + "=" * 60)

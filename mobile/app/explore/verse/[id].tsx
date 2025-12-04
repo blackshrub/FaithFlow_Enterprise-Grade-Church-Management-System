@@ -30,6 +30,7 @@ import { VerseOfTheDaySkeleton } from '@/components/explore/LoadingSkeleton';
 import { MarkdownText } from '@/components/explore/MarkdownText';
 import { AudioPlayButton } from '@/components/explore/AudioPlayButton';
 import { QuickAskInput } from '@/components/companion/QuickAskInput';
+import { profileApi } from '@/services/api/explore';
 import Animated, { SlideInRight } from 'react-native-reanimated';
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
@@ -57,6 +58,21 @@ export default function VerseOfTheDayScreen() {
       setHasTrackedStart(true);
     }
   }, [id, hasTrackedStart, isCompleted]);
+
+  // Track content view for profile personalization
+  useEffect(() => {
+    if (id && verse) {
+      profileApi.trackContentView(
+        id as string,
+        'verse',
+        verse.themes || [],
+        verse.verse ? {
+          book: verse.verse.book,
+          chapter: verse.verse.chapter,
+        } : undefined
+      ).catch(err => console.warn('[Verse] Failed to track view:', err));
+    }
+  }, [id, verse]);
 
   const handleComplete = () => {
     if (id && !isCompleted) {

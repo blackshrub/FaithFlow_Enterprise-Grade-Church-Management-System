@@ -766,6 +766,58 @@ CRITICAL: Never explicitly mention denominational identities (Catholic, Protesta
 Write content that feels authentic to ALL selected traditions by focusing on common ground.
 """
 
+    async def _get_sermon_theme_guidance(self, church_id: str) -> str:
+        """
+        Get sermon theme guidance for content that echoes this week's sermon.
+
+        This creates thematic coherence between Sunday sermon and daily content.
+        Uses the sermon integration service to get content guidance.
+
+        Returns empty string for global content or if no sermon scheduled.
+        """
+        if church_id == "global":
+            # Global content doesn't have sermon themes
+            return ""
+
+        try:
+            from services.explore.sermon_integration_service import get_sermon_integration_service
+            from datetime import date
+
+            sermon_service = get_sermon_integration_service(self.db)
+            guidance = await sermon_service.get_content_guidance_for_day(
+                church_id=church_id,
+                target_date=date.today()
+            )
+
+            if not guidance:
+                return ""
+
+            # Build guidance string for AI
+            theme = guidance.get("theme", "")
+            focus = guidance.get("focus", "")
+            content_angle = guidance.get("content_angle", "")
+            suggested_scriptures = guidance.get("suggested_scriptures", [])
+
+            if not theme:
+                return ""
+
+            scripture_refs = [f"{s.get('book')} {s.get('chapter')}:{s.get('verses')}" for s in suggested_scriptures[:3]]
+            scripture_str = ", ".join(scripture_refs) if scripture_refs else ""
+
+            return f"""
+SERMON THEME INTEGRATION (subtle thematic echo):
+This week's sermon theme: {theme}
+Today's content focus: {focus}
+Content angle to weave in: {content_angle}
+{f"Relevant scriptures to consider: {scripture_str}" if scripture_str else ""}
+
+IMPORTANT: Echo this theme subtly - don't explicitly say "this week's sermon" or "following up on Sunday."
+The goal is thematic coherence that reinforces learning without feeling repetitive.
+"""
+        except Exception as e:
+            logger.warning(f"Failed to get sermon theme guidance: {e}")
+            return ""
+
     async def generate_content_autonomously(
         self,
         content_type: str,
@@ -799,6 +851,9 @@ Write content that feels authentic to ALL selected traditions by focusing on com
         # Get tradition-specific style guidance (handles single or multiple traditions)
         tradition_guidance = self.get_tradition_prompt_guidance(traditions)
 
+        # Get sermon theme guidance for church-specific content
+        sermon_guidance = await self._get_sermon_theme_guidance(church_id)
+
         # Select what to generate based on content type
         # All content types include tradition guidance for implicit style consistency
         if content_type == "bible_figure":
@@ -826,6 +881,7 @@ Books where mentioned: {', '.join(figure['books'])}
                 "custom_prompt": f"""Category: {topic_info['category']}. Create a fresh, inspiring devotion on: {topic_info['topic']}
 
 {tradition_guidance}
+{sermon_guidance}
 """,
             }
 
@@ -849,6 +905,7 @@ Books where mentioned: {', '.join(figure['books'])}
                 "custom_prompt": f"""Select a meaningful, encouraging verse that speaks to daily life struggles and hopes.
 
 {tradition_guidance}
+{sermon_guidance}
 """,
             }
 

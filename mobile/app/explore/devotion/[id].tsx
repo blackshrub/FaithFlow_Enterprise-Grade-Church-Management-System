@@ -52,6 +52,7 @@ import { DailyDevotionSkeleton } from '@/components/explore/LoadingSkeleton';
 import { MarkdownText } from '@/components/explore/MarkdownText';
 import { AudioPlayButton } from '@/components/explore/AudioPlayButton';
 import { QuickAskInput } from '@/components/companion/QuickAskInput';
+import { profileApi } from '@/services/api/explore';
 import Animated, { FadeIn, FadeInDown, FadeInRight, SlideInRight } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 
@@ -140,6 +141,21 @@ function DailyDevotionView({ devotion, contentLanguage, onBack }: DailyDevotionV
     : '';
 
   const ttsText = [title, verseText, content.substring(0, 500)].filter(Boolean).join('. ');
+
+  // Track content view when mounted
+  useEffect(() => {
+    if (devotion.id) {
+      profileApi.trackContentView(
+        devotion.id,
+        'devotion',
+        devotion.topics || [],
+        devotion.main_verse ? {
+          book: devotion.main_verse.book,
+          chapter: devotion.main_verse.chapter,
+        } : undefined
+      ).catch(err => console.warn('[Devotion] Failed to track view:', err));
+    }
+  }, [devotion.id]);
 
   const handleShare = async () => {
     try {

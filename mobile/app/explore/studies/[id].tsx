@@ -52,6 +52,7 @@ import {
 import { BibleStudySkeleton } from '@/components/explore/LoadingSkeleton';
 import { MarkdownText } from '@/components/explore/MarkdownText';
 import { QuickAskInput } from '@/components/companion/QuickAskInput';
+import { profileApi } from '@/services/api/explore';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 
@@ -105,6 +106,17 @@ export default function BibleStudyReaderScreen() {
       setHasTrackedStart(true);
     }
   }, [id, currentLesson, currentLessonIndex, hasTrackedStart, viewMode]);
+
+  // Track content view for profile personalization
+  useEffect(() => {
+    if (id && study) {
+      profileApi.trackContentView(
+        id as string,
+        'bible_study',
+        study.topics || study.categories || [],
+      ).catch(err => console.warn('[BibleStudy] Failed to track view:', err));
+    }
+  }, [id, study]);
 
   const handleStartCourse = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);

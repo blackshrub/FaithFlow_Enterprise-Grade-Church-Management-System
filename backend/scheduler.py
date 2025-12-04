@@ -463,7 +463,78 @@ def setup_scheduler(db: AsyncIOMotorDatabase):
         replace_existing=True
     )
 
-    logger.info("APScheduler configured with article publishing, webhook processing, status automation, trash cleanup, counseling slot generation, call cleanup, autonomous Explore content generation, and prayer follow-ups")
+    # Add job: News Context monitoring and contextual content generation
+    async def process_news_context():
+        """
+        Monitor news feeds and generate contextual content for significant events.
+
+        Runs twice daily (6 AM and 2 PM) to:
+        - Fetch news from RSS feeds (Kompas, Detik, CNN Indonesia)
+        - Check BMKG earthquake alerts
+        - Score significance of events
+        - Generate contextual devotions/verses for high-impact events
+        - Notify admins for review
+        """
+        try:
+            from services.explore.news_context_service import NewsContextService
+
+            logger.info("Processing news context for contextual content")
+
+            news_service = NewsContextService(db)
+            context = await news_service.create_daily_context()
+
+            if not context.significant_events:
+                logger.info("No significant news events found")
+                return
+
+            logger.info(f"Found {len(context.significant_events)} significant events")
+
+            # Check for high-significance events that need contextual content
+            for event in context.significant_events:
+                if event.get("significance_score", 0) >= 0.7:
+                    logger.info(f"High-significance event: {event.get('title', 'Unknown')}")
+                    # TODO: Generate contextual devotion and add to review queue
+                    # For now, just log and store the context
+
+            # Store today's context for admin review
+            await db.news_contexts.update_one(
+                {"date": datetime.now(timezone.utc).strftime("%Y-%m-%d")},
+                {"$set": {
+                    "date": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
+                    "events": context.significant_events,
+                    "disaster_alerts": context.disaster_alerts,
+                    "created_at": datetime.now(timezone.utc),
+                }},
+                upsert=True
+            )
+
+            # Check for disaster alerts that need immediate attention
+            if context.disaster_alerts:
+                logger.warning(f"DISASTER ALERTS: {len(context.disaster_alerts)} active alerts")
+                # TODO: Send admin notification for urgent contextual content
+
+            logger.info("News context processing complete")
+
+        except Exception as e:
+            logger.error(f"Error in news context job: {e}")
+
+    scheduler.add_job(
+        func=lambda: process_news_context(),
+        trigger=CronTrigger(hour=6, minute=30),  # Daily at 6:30 AM
+        id='process_news_context_morning',
+        name='News Context Processing (Morning)',
+        replace_existing=True
+    )
+
+    scheduler.add_job(
+        func=lambda: process_news_context(),
+        trigger=CronTrigger(hour=14, minute=0),  # Daily at 2:00 PM
+        id='process_news_context_afternoon',
+        name='News Context Processing (Afternoon)',
+        replace_existing=True
+    )
+
+    logger.info("APScheduler configured with article publishing, webhook processing, status automation, trash cleanup, counseling slot generation, call cleanup, autonomous Explore content generation, prayer follow-ups, and news context monitoring")
     
     return scheduler
 
