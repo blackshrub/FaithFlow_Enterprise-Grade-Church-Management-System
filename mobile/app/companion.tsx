@@ -670,6 +670,7 @@ function CompanionScreen() {
   const { t, i18n } = useTranslation();
   const scrollViewRef = useRef<ScrollView>(null);
   const inputRef = useRef<TextInput>(null);
+  const hasAutoRespondedRef = useRef(false);
 
   const [inputText, setInputText] = useState('');
   const [inputHeight, setInputHeight] = useState(36);
@@ -704,6 +705,54 @@ function CompanionScreen() {
 
   const greeting = COMPANION_GREETINGS[language]?.[entryContext] || COMPANION_GREETINGS[language]?.default || COMPANION_GREETINGS.en.default;
   const starters = CONVERSATION_STARTERS[language] || CONVERSATION_STARTERS.en;
+
+  // Auto-respond to pending user message (from QuickAskInput navigation)
+  useEffect(() => {
+    // Check if there's a pending user message that needs an AI response
+    if (
+      messages.length > 0 &&
+      messages[messages.length - 1].role === 'user' &&
+      !isLoading &&
+      !isStreaming &&
+      !hasAutoRespondedRef.current
+    ) {
+      // Mark as auto-responded to prevent infinite loops
+      hasAutoRespondedRef.current = true;
+
+      const lastUserMessage = messages[messages.length - 1].content;
+
+      // Build API messages with greeting context
+      const apiMessages = messages.length === 1
+        ? [{ role: 'assistant' as const, content: greeting }, { role: 'user' as const, content: lastUserMessage }]
+        : messages.map((m) => ({ role: m.role, content: m.content }));
+
+      // Trigger AI response
+      setLoading(true);
+      const assistantMessageId = addMessage({ role: 'assistant', content: '' });
+      startStreaming(assistantMessageId);
+
+      sendCompanionMessageStream(
+        { messages: apiMessages, context: entryContext, context_data: contextData },
+        {
+          onToken: (_token, fullText) => updateMessage(assistantMessageId, fullText),
+          onComplete: () => stopStreaming(),
+          onError: (error) => {
+            console.error('Stream error:', error);
+            const errorMessage = language === 'id' ? 'Maaf, terjadi kesalahan. Silakan coba lagi.' : 'Sorry, an error occurred. Please try again.';
+            updateMessage(assistantMessageId, errorMessage);
+            stopStreaming();
+          },
+        }
+      );
+    }
+  }, [messages, isLoading, isStreaming, greeting, entryContext, contextData, language, addMessage, updateMessage, startStreaming, stopStreaming, setLoading]);
+
+  // Reset auto-respond flag when chat is cleared
+  useEffect(() => {
+    if (messages.length === 0) {
+      hasAutoRespondedRef.current = false;
+    }
+  }, [messages.length]);
 
   const starterCards = useMemo(() => [
     {
