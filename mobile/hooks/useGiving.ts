@@ -10,6 +10,7 @@
  * Demo mode: Uses mock data with instant loading (no delays)
  */
 
+import { useOptimistic, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/services/api';
 import { QUERY_KEYS, CACHE_TIMES } from '@/constants/api';
@@ -110,7 +111,10 @@ export function usePaymentConfig() {
 }
 
 /**
- * Submit giving transaction
+ * Submit giving transaction with optimistic updates
+ *
+ * React 19 Pattern: Combines React Query optimistic updates with
+ * useOptimistic for instant UI feedback while API processes payment
  */
 export function useCreateGiving() {
   const queryClient = useQueryClient();
@@ -121,12 +125,82 @@ export function useCreateGiving() {
       return response.data;
     },
 
-    onSuccess: () => {
-      // Invalidate giving history to show new transaction
+    // Optimistic update: Add pending transaction to history cache immediately
+    onMutate: async (newGiving) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: QUERY_KEYS.GIVING_HISTORY });
+      await queryClient.cancelQueries({ queryKey: QUERY_KEYS.GIVING_SUMMARY });
+
+      // Snapshot previous values for rollback
+      const previousHistory = queryClient.getQueryData<GivingHistoryItem[]>(QUERY_KEYS.GIVING_HISTORY);
+      const previousSummary = queryClient.getQueryData<GivingSummary>(QUERY_KEYS.GIVING_SUMMARY);
+
+      // Create optimistic transaction
+      const optimisticTransaction: GivingHistoryItem = {
+        _id: `optimistic_${Date.now()}`,
+        church_id: 'pending',
+        member_id: 'pending',
+        fund_id: newGiving.fund_id,
+        fund_name: getFundNameFromId(newGiving.fund_id),
+        amount: newGiving.amount,
+        payment_method: newGiving.payment_method,
+        payment_status: 'pending',
+        status: 'pending',
+        is_anonymous: newGiving.is_anonymous ?? false,
+        notes: newGiving.notes,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+
+      // Optimistically update history
+      queryClient.setQueryData<GivingHistoryItem[]>(
+        QUERY_KEYS.GIVING_HISTORY,
+        (old) => old ? [optimisticTransaction, ...old] : [optimisticTransaction]
+      );
+
+      // Optimistically update summary
+      if (previousSummary) {
+        queryClient.setQueryData<GivingSummary>(QUERY_KEYS.GIVING_SUMMARY, {
+          ...previousSummary,
+          total_given: previousSummary.total_given + newGiving.amount,
+          total_transactions: previousSummary.total_transactions + 1,
+        });
+      }
+
+      // Return context for rollback
+      return { previousHistory, previousSummary };
+    },
+
+    // Rollback on error
+    onError: (_error, _newGiving, context) => {
+      if (context?.previousHistory) {
+        queryClient.setQueryData(QUERY_KEYS.GIVING_HISTORY, context.previousHistory);
+      }
+      if (context?.previousSummary) {
+        queryClient.setQueryData(QUERY_KEYS.GIVING_SUMMARY, context.previousSummary);
+      }
+    },
+
+    // Refetch after success or error to ensure consistency
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.GIVING_HISTORY });
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.GIVING_SUMMARY });
     },
   });
+}
+
+// Helper to get fund name from ID for optimistic display
+function getFundNameFromId(fundId: string): string {
+  const fundNames: Record<string, string> = {
+    tithe: 'Tithe',
+    weekly: 'Weekly Offering',
+    mission: 'Mission',
+    other: 'Other',
+    fund_tithe: 'Tithe',
+    fund_building: 'Building Fund',
+    fund_missions: 'Missions',
+  };
+  return fundNames[fundId] || fundId;
 }
 
 /**
@@ -210,4 +284,83 @@ export function useCheckPaymentStatus() {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.GIVING_SUMMARY });
     },
   });
+}
+
+// ============================================================================
+// REACT 19: useOptimistic Hook for Instant UI Feedback
+// ============================================================================
+
+export interface OptimisticGivingState {
+  pendingTransaction: GivingHistoryItem | null;
+  isSubmitting: boolean;
+}
+
+/**
+ * React 19 useOptimistic hook for giving transactions
+ *
+ * Provides instant UI feedback while payment is processing.
+ * Shows optimistic "pending" state immediately on submit.
+ *
+ * Usage in component:
+ * ```tsx
+ * const { optimisticState, addOptimisticGiving, clearOptimistic } = useOptimisticGiving();
+ *
+ * const handleSubmit = () => {
+ *   addOptimisticGiving({ amount: 100000, fund_id: 'tithe', ... });
+ *   createGiving({ ... });
+ * };
+ * ```
+ */
+export function useOptimisticGiving() {
+  const initialState: OptimisticGivingState = {
+    pendingTransaction: null,
+    isSubmitting: false,
+  };
+
+  const [optimisticState, setOptimisticState] = useOptimistic(
+    initialState,
+    (currentState, newTransaction: Partial<CreateGivingRequest> | null) => {
+      if (newTransaction === null) {
+        return { pendingTransaction: null, isSubmitting: false };
+      }
+
+      return {
+        pendingTransaction: {
+          _id: `optimistic_${Date.now()}`,
+          church_id: 'pending',
+          member_id: 'pending',
+          fund_id: newTransaction.fund_id || '',
+          fund_name: getFundNameFromId(newTransaction.fund_id || ''),
+          amount: newTransaction.amount || 0,
+          payment_method: newTransaction.payment_method || 'bank_transfer',
+          payment_status: 'pending' as const,
+          status: 'pending' as const,
+          is_anonymous: newTransaction.is_anonymous ?? false,
+          notes: newTransaction.notes,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+        isSubmitting: true,
+      };
+    }
+  );
+
+  const addOptimisticGiving = useCallback(
+    (transaction: Partial<CreateGivingRequest>) => {
+      setOptimisticState(transaction);
+    },
+    [setOptimisticState]
+  );
+
+  const clearOptimistic = useCallback(() => {
+    setOptimisticState(null);
+  }, [setOptimisticState]);
+
+  return {
+    optimisticState,
+    addOptimisticGiving,
+    clearOptimistic,
+    pendingTransaction: optimisticState.pendingTransaction,
+    isOptimisticSubmitting: optimisticState.isSubmitting,
+  };
 }

@@ -18,7 +18,7 @@
  * Styling: NativeWind-first with inline style for dynamic values
  */
 
-import React, { memo, useRef, useState, forwardRef, useImperativeHandle, useCallback, useEffect } from 'react';
+import React, { memo, useRef, useState, useImperativeHandle, useCallback, useEffect, type Ref } from 'react';
 import { View, Text, TextInput, Platform, Pressable, Keyboard, KeyboardEvent } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -104,6 +104,8 @@ export interface ChatInputBarProps {
   isSending?: boolean;
   isVoiceDisabled?: boolean;
   maxLength?: number;
+  /** React 19: ref as regular prop (no forwardRef needed) */
+  ref?: Ref<ChatInputBarRef>;
 }
 
 export interface ChatInputBarRef {
@@ -304,28 +306,25 @@ const ReplyPreview = memo(({ senderName, preview, onClose }: ReplyPreviewProps) 
 ReplyPreview.displayName = 'ReplyPreview';
 
 // =============================================================================
-// MAIN CHAT INPUT BAR COMPONENT
+// MAIN CHAT INPUT BAR COMPONENT (React 19: ref as prop, no forwardRef needed)
 // =============================================================================
 
 export const ChatInputBar = memo(
-  forwardRef<ChatInputBarRef, ChatInputBarProps>(
-    (
-      {
-        value,
-        onChangeText,
-        onSend,
-        onTyping,
-        onAttachmentPress,
-        onGifPress,
-        onVoiceSend,
-        replyingTo,
-        onClearReply,
-        isSending = false,
-        isVoiceDisabled = false,
-        maxLength = 4000,
-      },
-      ref
-    ) => {
+  ({
+    value,
+    onChangeText,
+    onSend,
+    onTyping,
+    onAttachmentPress,
+    onGifPress,
+    onVoiceSend,
+    replyingTo,
+    onClearReply,
+    isSending = false,
+    isVoiceDisabled = false,
+    maxLength = 4000,
+    ref, // React 19: ref as regular prop
+  }: ChatInputBarProps) => {
       const { t } = useTranslation();
       const insets = useSafeAreaInsets();
       const inputRef = useRef<TextInput>(null);
@@ -572,8 +571,7 @@ export const ChatInputBar = memo(
           <View style={{ height: keyboardVisible ? 0 : Math.max(insets.bottom, 5) }} />
         </View>
       );
-    }
-  )
+  }
 );
 
 ChatInputBar.displayName = 'ChatInputBar';

@@ -413,6 +413,7 @@ function ExploreScreen() {
                 router.push(`/explore/devotion/${homeData.daily_devotion?.id}`);
               }}
               completed={homeData.daily_devotion.completed}
+              sharedTransitionTag={`devotion-${homeData.daily_devotion?.id}`}
             />
           </Animated.View>
         )}
@@ -455,6 +456,7 @@ function ExploreScreen() {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 router.push(`/explore/figure/${homeData.bible_figure?.id}`);
               }}
+              sharedTransitionTag={`figure-${homeData.bible_figure?.id}`}
             />
           </Animated.View>
         )}

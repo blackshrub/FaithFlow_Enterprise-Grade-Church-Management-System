@@ -14,7 +14,7 @@
  * - Item separator support
  */
 
-import React, { useCallback, useMemo, memo, forwardRef, Ref } from 'react';
+import React, { useCallback, useMemo, memo, type Ref } from 'react';
 import {
   View,
   RefreshControl,
@@ -135,6 +135,11 @@ interface OptimizedListProps<T> {
    * Inverted list (for chat)
    */
   inverted?: boolean;
+
+  /**
+   * React 19: ref as regular prop (no forwardRef needed)
+   */
+  ref?: Ref<FlashList<T>>;
 }
 
 // ============================================================================
@@ -162,13 +167,10 @@ const LoadingComponent = memo(() => (
 LoadingComponent.displayName = 'LoadingComponent';
 
 // ============================================================================
-// MAIN COMPONENT
+// MAIN COMPONENT (React 19: ref as prop, no forwardRef needed)
 // ============================================================================
 
-function OptimizedListInner<T>(
-  props: OptimizedListProps<T>,
-  ref: Ref<typeof FlashList<T>>
-) {
+function OptimizedListComponent<T>(props: OptimizedListProps<T>) {
   const {
     data,
     renderItem,
@@ -191,6 +193,7 @@ function OptimizedListInner<T>(
     numColumns,
     horizontal,
     inverted,
+    ref, // React 19: ref as regular prop
   } = props;
 
   // Create stable keyExtractor
@@ -260,9 +263,9 @@ function OptimizedListInner<T>(
   );
 }
 
-// Forward ref with proper typing using a type assertion
-export const OptimizedList = forwardRef(OptimizedListInner) as <T>(
-  props: OptimizedListProps<T> & { ref?: Ref<typeof FlashList<T>> }
+// React 19: No forwardRef needed - ref is a regular prop
+export const OptimizedList = OptimizedListComponent as <T>(
+  props: OptimizedListProps<T>
 ) => React.ReactElement | null;
 
 export default OptimizedList;

@@ -56,6 +56,9 @@ import { profileApi } from '@/services/api/explore';
 import Animated, { FadeIn, FadeInDown, FadeInRight, SlideInRight } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 
+// Animated Image for shared element transitions (Reanimated 4+)
+const AnimatedImage = Animated.createAnimatedComponent(Image);
+
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export default function DevotionDetailScreen() {
@@ -180,41 +183,50 @@ function DailyDevotionView({ devotion, contentLanguage, onBack }: DailyDevotionV
 
       <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 24 }} showsVerticalScrollIndicator={false}>
         {devotion.image_url && (
-          <Animated.View entering={SlideInRight.duration(250)}>
-            <ImageBackground source={{ uri: devotion.image_url }} className="w-full h-[220px]">
-              <LinearGradient colors={['transparent', 'rgba(0,0,0,0.7)']} className="flex-1 p-3 justify-end">
-                {devotion.reading_time_minutes && (
-                  <View className="absolute top-3 right-3 flex-row items-center gap-1.5 bg-black/60 px-2 py-1.5 rounded-lg">
-                    <Clock size={14} color="#FFFFFF" />
-                    <Text className="text-white text-sm font-semibold">
-                      {devotion.reading_time_minutes} {contentLanguage === 'en' ? 'min read' : 'menit baca'}
-                    </Text>
-                  </View>
-                )}
-                {ttsText && devotion.id && (
-                  <View className="absolute bottom-3 right-3">
-                    <AudioPlayButton
-                      text={ttsText}
-                      variant="icon"
-                      size={56}
-                      color="#FFFFFF"
-                      backgroundColor="rgba(0, 0, 0, 0.6)"
-                      cacheConfig={{ contentType: 'devotion', contentId: devotion.id }}
-                      autoPreload
-                    />
-                  </View>
-                )}
-              </LinearGradient>
-            </ImageBackground>
+          <Animated.View entering={SlideInRight.duration(250)} className="relative w-full h-[220px]">
+            {/* Background Image with shared element transition */}
+            <AnimatedImage
+              source={{ uri: devotion.image_url }}
+              className="absolute inset-0 w-full h-full"
+              resizeMode="cover"
+              sharedTransitionTag={`devotion-${devotion.id}-image`}
+            />
+            <LinearGradient colors={['transparent', 'rgba(0,0,0,0.7)']} className="flex-1 p-3 justify-end">
+              {devotion.reading_time_minutes && (
+                <View className="absolute top-3 right-3 flex-row items-center gap-1.5 bg-black/60 px-2 py-1.5 rounded-lg">
+                  <Clock size={14} color="#FFFFFF" />
+                  <Text className="text-white text-sm font-semibold">
+                    {devotion.reading_time_minutes} {contentLanguage === 'en' ? 'min read' : 'menit baca'}
+                  </Text>
+                </View>
+              )}
+              {ttsText && devotion.id && (
+                <View className="absolute bottom-3 right-3">
+                  <AudioPlayButton
+                    text={ttsText}
+                    variant="icon"
+                    size={56}
+                    color="#FFFFFF"
+                    backgroundColor="rgba(0, 0, 0, 0.6)"
+                    cacheConfig={{ contentType: 'devotion', contentId: devotion.id }}
+                    autoPreload
+                  />
+                </View>
+              )}
+            </LinearGradient>
           </Animated.View>
         )}
 
         <Animated.View entering={SlideInRight.duration(250).delay(30)} className="px-5 pt-6">
-          {/* Title with Audio Button */}
+          {/* Title with Audio Button and shared element transition */}
           <View className="flex-row items-start justify-between mb-1">
-            <Text className="text-[32px] font-extrabold flex-1 mr-3" style={{ color: ExploreColors.neutral[900], lineHeight: 40, letterSpacing: -0.5 }}>
+            <Animated.Text
+              className="text-[32px] font-extrabold flex-1 mr-3"
+              style={{ color: ExploreColors.neutral[900], lineHeight: 40, letterSpacing: -0.5 }}
+              sharedTransitionTag={`devotion-${devotion.id}-title`}
+            >
               {title}
-            </Text>
+            </Animated.Text>
             {ttsText && devotion.id && (
               <AudioPlayButton
                 text={ttsText}

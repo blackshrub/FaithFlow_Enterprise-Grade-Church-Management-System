@@ -10,7 +10,7 @@
  */
 
 import React, { memo } from 'react';
-import { View, ImageBackground, Pressable } from 'react-native';
+import { View, Image, Pressable } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ExploreColors, ExploreShadows } from '@/constants/explore/designSystem';
 import type { DailyDevotion } from '@/types/explore';
@@ -19,6 +19,9 @@ import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-na
 import { AudioPlayButton } from './AudioPlayButton';
 import { Text } from '@/components/ui/text';
 
+// Animated Image for shared element transitions (Reanimated 4+)
+const AnimatedImage = Animated.createAnimatedComponent(Image);
+
 const CARD_HEIGHT = 220;
 
 interface DailyDevotionCardProps {
@@ -26,6 +29,8 @@ interface DailyDevotionCardProps {
   language: 'en' | 'id';
   onPress: () => void;
   completed?: boolean;
+  /** Enable shared element transition with this tag prefix */
+  sharedTransitionTag?: string;
 }
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -38,6 +43,7 @@ export const DailyDevotionCard = memo(function DailyDevotionCard({
   language,
   onPress,
   completed = false,
+  sharedTransitionTag,
 }: DailyDevotionCardProps) {
   const scale = useSharedValue(1);
 
@@ -69,85 +75,90 @@ export const DailyDevotionCard = memo(function DailyDevotionCard({
     scale.value = withSpring(1, { damping: 15, stiffness: 300 });
   };
 
+  // Shared element transition tags (Reanimated 4+)
+  const imageTag = sharedTransitionTag ? `${sharedTransitionTag}-image` : undefined;
+  const titleTag = sharedTransitionTag ? `${sharedTransitionTag}-title` : undefined;
+
   return (
     <AnimatedPressable
       onPress={onPress}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
       className="rounded-2xl overflow-hidden"
-      style={[{ ...ExploreShadows.level2 }, animatedStyle]}
+      style={[{ ...ExploreShadows.level2, height: CARD_HEIGHT }, animatedStyle]}
       testID="daily-devotion-card"
     >
-      <ImageBackground
+      {/* Background Image with shared element transition */}
+      <AnimatedImage
         source={{ uri: imageUrl }}
-        className="w-full justify-end"
-        style={{ height: CARD_HEIGHT }}
-        imageStyle={{ borderRadius: 16 }}
+        className="absolute inset-0 w-full h-full rounded-2xl"
         resizeMode="cover"
-      >
-        {/* Gradient Overlay */}
-        <LinearGradient
-          colors={['transparent', 'rgba(0,0,0,0.3)', 'rgba(0,0,0,0.85)']}
-          locations={[0, 0.4, 1]}
-          className="absolute inset-0 rounded-2xl"
-        />
+        sharedTransitionTag={imageTag}
+      />
 
-        {/* Completed Badge */}
-        {completed && (
-          <View className="absolute top-3 right-3 flex-row items-center gap-1 bg-black/50 px-2.5 py-1.5 rounded-[20px]">
-            <CheckCircle size={14} color="#FFFFFF" fill={ExploreColors.success[500]} />
-            <Text className="text-xs font-semibold text-white">Completed</Text>
-          </View>
-        )}
+      {/* Gradient Overlay */}
+      <LinearGradient
+        colors={['transparent', 'rgba(0,0,0,0.3)', 'rgba(0,0,0,0.85)']}
+        locations={[0, 0.4, 1]}
+        className="absolute inset-0 rounded-2xl"
+      />
 
-        {/* Content Overlay */}
-        <View className="p-5 gap-1.5">
-          {/* Title */}
-          <Text
-            className="text-[22px] font-bold text-white leading-7"
-            style={{
-              textShadowColor: 'rgba(0,0,0,0.3)',
-              textShadowOffset: { width: 0, height: 1 },
-              textShadowRadius: 3,
-            }}
-            numberOfLines={2}
-          >
-            {title}
-          </Text>
-
-          {/* Meta Row */}
-          <View className="flex-row items-center gap-4 mt-1">
-            {devotion.reading_time_minutes != null && (
-              <View className="flex-row items-center gap-1">
-                <Clock size={14} color="rgba(255,255,255,0.8)" />
-                <Text className="text-[13px] font-medium text-white/80">
-                  {devotion.reading_time_minutes} min
-                </Text>
-              </View>
-            )}
-
-            {verseRef && (
-              <View className="flex-row items-center gap-1">
-                <BookOpen size={14} color="rgba(255,255,255,0.8)" />
-                <Text className="text-[13px] font-medium text-white/80">{verseRef}</Text>
-              </View>
-            )}
-
-            {/* Audio Play Button */}
-            {ttsText && (
-              <View className="ml-auto">
-                <AudioPlayButton
-                  text={ttsText}
-                  variant="icon"
-                  size={32}
-                  color="#FFFFFF"
-                  backgroundColor="rgba(255,255,255,0.2)"
-                />
-              </View>
-            )}
-          </View>
+      {/* Completed Badge */}
+      {completed && (
+        <View className="absolute top-3 right-3 flex-row items-center gap-1 bg-black/50 px-2.5 py-1.5 rounded-[20px]">
+          <CheckCircle size={14} color="#FFFFFF" fill={ExploreColors.success[500]} />
+          <Text className="text-xs font-semibold text-white">Completed</Text>
         </View>
-      </ImageBackground>
+      )}
+
+      {/* Content Overlay */}
+      <View className="flex-1 justify-end p-5 gap-1.5">
+        {/* Title with shared element transition */}
+        <Animated.Text
+          className="text-[22px] font-bold text-white leading-7"
+          style={{
+            textShadowColor: 'rgba(0,0,0,0.3)',
+            textShadowOffset: { width: 0, height: 1 },
+            textShadowRadius: 3,
+          }}
+          numberOfLines={2}
+          sharedTransitionTag={titleTag}
+        >
+          {title}
+        </Animated.Text>
+
+        {/* Meta Row */}
+        <View className="flex-row items-center gap-4 mt-1">
+          {devotion.reading_time_minutes != null && (
+            <View className="flex-row items-center gap-1">
+              <Clock size={14} color="rgba(255,255,255,0.8)" />
+              <Text className="text-[13px] font-medium text-white/80">
+                {devotion.reading_time_minutes} min
+              </Text>
+            </View>
+          )}
+
+          {verseRef && (
+            <View className="flex-row items-center gap-1">
+              <BookOpen size={14} color="rgba(255,255,255,0.8)" />
+              <Text className="text-[13px] font-medium text-white/80">{verseRef}</Text>
+            </View>
+          )}
+
+          {/* Audio Play Button */}
+          {ttsText && (
+            <View className="ml-auto">
+              <AudioPlayButton
+                text={ttsText}
+                variant="icon"
+                size={32}
+                color="#FFFFFF"
+                backgroundColor="rgba(255,255,255,0.2)"
+              />
+            </View>
+          )}
+        </View>
+      </View>
     </AnimatedPressable>
   );
 });

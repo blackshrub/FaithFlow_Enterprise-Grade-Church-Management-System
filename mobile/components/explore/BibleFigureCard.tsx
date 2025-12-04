@@ -10,13 +10,16 @@
  */
 
 import React, { memo } from 'react';
-import { View, ImageBackground, Pressable } from 'react-native';
+import { View, ImageBackground, Pressable, Image } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ExploreColors, ExploreShadows } from '@/constants/explore/designSystem';
 import type { BibleFigureOfTheDay } from '@/types/explore';
 import { User, BookOpen, ChevronRight } from 'lucide-react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { Text } from '@/components/ui/text';
+
+// Animated Image for shared element transitions (Reanimated 4+)
+const AnimatedImage = Animated.createAnimatedComponent(Image);
 
 const CARD_HEIGHT = 200;
 
@@ -25,6 +28,8 @@ interface BibleFigureCardProps {
   language: 'en' | 'id';
   onPress: () => void;
   variant?: 'compact' | 'full';
+  /** Enable shared element transition with this tag prefix */
+  sharedTransitionTag?: string;
 }
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -37,6 +42,7 @@ export const BibleFigureCard = memo(function BibleFigureCard({
   language,
   onPress,
   variant = 'full',
+  sharedTransitionTag,
 }: BibleFigureCardProps) {
   const scale = useSharedValue(1);
 
@@ -113,70 +119,75 @@ export const BibleFigureCard = memo(function BibleFigureCard({
   }
 
   // Full variant with image
+  // Uses Reanimated 4's sharedTransitionTag for smooth hero transitions
+  const imageTag = sharedTransitionTag ? `${sharedTransitionTag}-image` : undefined;
+  const nameTag = sharedTransitionTag ? `${sharedTransitionTag}-name` : undefined;
+
   return (
     <AnimatedPressable
       onPress={onPress}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
       className="rounded-2xl overflow-hidden"
-      style={[{ ...ExploreShadows.level2 }, animatedStyle]}
+      style={[{ ...ExploreShadows.level2, height: CARD_HEIGHT }, animatedStyle]}
       testID="bible-figure-card"
     >
-      <ImageBackground
+      {/* Background Image with shared element transition */}
+      <AnimatedImage
         source={{ uri: imageUrl }}
-        className="w-full justify-end"
-        style={{ height: CARD_HEIGHT }}
-        imageStyle={{ borderRadius: 16 }}
+        className="absolute inset-0 w-full h-full rounded-2xl"
         resizeMode="cover"
-      >
-        {/* Gradient Overlay */}
-        <LinearGradient
-          colors={['rgba(0,0,0,0.1)', 'rgba(0,0,0,0.4)', 'rgba(0,0,0,0.9)']}
-          locations={[0, 0.5, 1]}
-          className="absolute inset-0 rounded-2xl"
-        />
+        sharedTransitionTag={imageTag}
+      />
 
-        {/* Content Overlay */}
-        <View className="p-5 gap-2">
-          {/* Name & Title */}
-          <View>
-            <Text
-              className="text-2xl font-extrabold text-white"
-              style={{
-                textShadowColor: 'rgba(0,0,0,0.3)',
-                textShadowOffset: { width: 0, height: 1 },
-                textShadowRadius: 3,
-              }}
-            >
-              {name}
-            </Text>
-            {title && (
-              <Text
-                className="text-sm font-semibold mt-0.5"
-                style={{ color: ExploreColors.secondary[300] }}
-              >
-                {title}
-              </Text>
-            )}
-          </View>
+      {/* Gradient Overlay */}
+      <LinearGradient
+        colors={['rgba(0,0,0,0.1)', 'rgba(0,0,0,0.4)', 'rgba(0,0,0,0.9)']}
+        locations={[0, 0.5, 1]}
+        className="absolute inset-0 rounded-2xl"
+      />
 
-          {/* Summary */}
-          <Text
-            className="text-sm font-normal text-white/85 leading-5"
-            numberOfLines={2}
+      {/* Content Overlay */}
+      <View className="flex-1 justify-end p-5 gap-2">
+        {/* Name & Title */}
+        <View>
+          <Animated.Text
+            className="text-2xl font-extrabold text-white"
+            style={{
+              textShadowColor: 'rgba(0,0,0,0.3)',
+              textShadowOffset: { width: 0, height: 1 },
+              textShadowRadius: 3,
+            }}
+            sharedTransitionTag={nameTag}
           >
-            {summary}
-          </Text>
-
-          {/* Read More Hint */}
-          <View className="flex-row items-center gap-1.5 mt-1">
-            <BookOpen size={14} color="rgba(255,255,255,0.8)" />
-            <Text className="text-xs font-medium text-white/70">
-              {language === 'en' ? 'Tap to read full story' : 'Ketuk untuk baca cerita lengkap'}
+            {name}
+          </Animated.Text>
+          {title && (
+            <Text
+              className="text-sm font-semibold mt-0.5"
+              style={{ color: ExploreColors.secondary[300] }}
+            >
+              {title}
             </Text>
-          </View>
+          )}
         </View>
-      </ImageBackground>
+
+        {/* Summary */}
+        <Text
+          className="text-sm font-normal text-white/85 leading-5"
+          numberOfLines={2}
+        >
+          {summary}
+        </Text>
+
+        {/* Read More Hint */}
+        <View className="flex-row items-center gap-1.5 mt-1">
+          <BookOpen size={14} color="rgba(255,255,255,0.8)" />
+          <Text className="text-xs font-medium text-white/70">
+            {language === 'en' ? 'Tap to read full story' : 'Ketuk untuk baca cerita lengkap'}
+          </Text>
+        </View>
+      </View>
     </AnimatedPressable>
   );
 });

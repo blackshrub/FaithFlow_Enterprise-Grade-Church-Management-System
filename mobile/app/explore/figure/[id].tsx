@@ -32,6 +32,9 @@ import { AudioPlayButton } from '@/components/explore/AudioPlayButton';
 import Animated, { SlideInRight } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 
+// Animated Image for shared element transitions (Reanimated 4+)
+const AnimatedImage = Animated.createAnimatedComponent(Image);
+
 export default function BibleFigureScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
@@ -139,10 +142,11 @@ export default function BibleFigureScreen() {
         showsVerticalScrollIndicator={false}
       >
         <Animated.View entering={SlideInRight.duration(250)}>
-          {/* Hero Image with Name Overlay */}
+          {/* Hero Image with Name Overlay - Shared Element Transition */}
           {figure.image_url && (
             <View className="relative w-full h-[320px]">
-              <Image
+              {/* Shared Element: Image transitions from card */}
+              <AnimatedImage
                 source={{ uri: figure.image_url }}
                 className="w-full h-full"
                 resizeMode="cover"
@@ -152,17 +156,20 @@ export default function BibleFigureScreen() {
                     : `Gambar potret ${name}`
                 }
                 accessibilityIgnoresInvertColors={true}
+                sharedTransitionTag={`figure-${id}-image`}
               />
               <View
                 className="absolute bottom-0 left-0 right-0 p-6 pt-8"
                 style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)' }}
               >
-                <Text
+                {/* Shared Element: Name transitions from card */}
+                <Animated.Text
                   className="text-[32px] leading-[40px] font-bold text-white mb-1"
                   accessibilityRole="header"
+                  sharedTransitionTag={`figure-${id}-name`}
                 >
                   {name}
-                </Text>
+                </Animated.Text>
                 {title && (
                   <Text
                     className="text-lg font-semibold italic"

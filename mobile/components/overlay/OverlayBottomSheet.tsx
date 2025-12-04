@@ -14,7 +14,7 @@
  * Styling: Inline styles required for gorhom/bottom-sheet styling props
  */
 
-import React, { useCallback, useMemo, forwardRef, useImperativeHandle, useRef } from 'react';
+import React, { useCallback, useMemo, useImperativeHandle, useRef, type Ref } from 'react';
 import { View, ViewStyle } from 'react-native';
 import BottomSheet, {
   BottomSheetBackdrop,
@@ -54,6 +54,8 @@ export interface OverlayBottomSheetProps {
   backdropOpacity?: number;
   /** Backdrop press behavior (default: 'close') */
   backdropPressBehavior?: 'none' | 'close' | 'collapse';
+  /** React 19: ref as regular prop (no forwardRef needed) */
+  ref?: Ref<OverlayBottomSheetRef>;
 }
 
 export interface OverlayBottomSheetRef {
@@ -64,28 +66,23 @@ export interface OverlayBottomSheetRef {
 }
 
 // ==========================================================================
-// COMPONENT
+// COMPONENT (React 19: ref as prop, no forwardRef needed)
 // ==========================================================================
 
-export const OverlayBottomSheet = forwardRef<
-  OverlayBottomSheetRef,
-  OverlayBottomSheetProps
->(function OverlayBottomSheet(
-  {
-    visible,
-    onDismiss,
-    snapPoints: customSnapPoints,
-    children,
-    scrollable = false,
-    enablePanDownToClose = true,
-    enableDynamicSizing = false,
-    handleComponent,
-    showBackdrop = true,
-    backdropOpacity = 0.5,
-    backdropPressBehavior = 'close',
-  },
-  ref
-) {
+export function OverlayBottomSheet({
+  visible,
+  onDismiss,
+  snapPoints: customSnapPoints,
+  children,
+  scrollable = false,
+  enablePanDownToClose = true,
+  enableDynamicSizing = false,
+  handleComponent,
+  showBackdrop = true,
+  backdropOpacity = 0.5,
+  backdropPressBehavior = 'close',
+  ref, // React 19: ref as regular prop
+}: OverlayBottomSheetProps) {
   const bottomSheetRef = useRef<BottomSheet>(null);
 
   // Default snap points
@@ -170,6 +167,6 @@ export const OverlayBottomSheet = forwardRef<
       </ContentWrapper>
     </BottomSheet>
   );
-});
+}
 
 export default OverlayBottomSheet;
