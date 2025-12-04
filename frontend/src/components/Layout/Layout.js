@@ -107,6 +107,12 @@ export default function Layout() {
     if (path.includes('/content-center')) {
       setExpandedMenus(prev => ({ ...prev, contentCenter: true }));
     }
+    if (path.includes('/content-center/journey')) {
+      setExpandedMenus(prev => ({ ...prev, journey: true }));
+    }
+    if (path.includes('/content-center/sermons')) {
+      setExpandedMenus(prev => ({ ...prev, sermon: true }));
+    }
     if (path.includes('/accounting')) {
       setExpandedMenus(prev => ({ ...prev, finance: true }));
     }
@@ -254,7 +260,33 @@ export default function Layout() {
         { label: 'Add New Verse', path: '/content-center/topical/verses/new' },
       ]
     },
-    
+
+    // Life Stage Journeys
+    { type: 'section', label: 'SPIRITUAL JOURNEYS' },
+    {
+      icon: BookOpen,
+      label: 'Life Stage Journeys',
+      key: 'journey',
+      submenu: [
+        { label: 'All Journeys', path: '/content-center/journey' },
+        { label: 'Create New', path: '/content-center/journey/new' },
+      ]
+    },
+    {
+      icon: MessageCircleHeart,
+      label: 'Sermon Integration',
+      key: 'sermon',
+      submenu: [
+        { label: 'All Sermons', path: '/content-center/sermons' },
+        { label: 'Add Sermon', path: '/content-center/sermons/new' },
+      ]
+    },
+    {
+      icon: BarChart3,
+      label: 'Profile Analytics',
+      path: '/content-center/profiles',
+    },
+
     // Management Section
     { type: 'section', label: 'MANAGEMENT' },
     {
@@ -494,18 +526,26 @@ export default function Layout() {
                 <span className="text-gray-600">{church?.name}</span>
               </div>
               
-              {/* User Info */}
-              <div className="flex items-center gap-3 px-3 py-1.5 bg-gray-50 rounded-lg">
+              {/* User Info - Clickable to go to Profile */}
+              <button
+                onClick={() => navigate('/profile')}
+                className="flex items-center gap-3 px-3 py-1.5 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+                title={t('nav.profile') || 'My Profile'}
+              >
                 <div className="text-right">
                   <div className="text-sm font-semibold text-gray-900">{user?.full_name}</div>
                   <div className="text-xs text-gray-500">{user?.role?.replace('_', ' ').toUpperCase()}</div>
                 </div>
                 <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
                   <span className="text-sm font-semibold text-blue-600">
-                    {user?.full_name?.charAt(0).toUpperCase()}
+                    {user?.full_name ? (
+                      user.full_name.split(/\s+/).length > 1
+                        ? user.full_name.split(/\s+/)[0].charAt(0).toUpperCase() + user.full_name.split(/\s+/).slice(-1)[0].charAt(0).toUpperCase()
+                        : user.full_name.charAt(0).toUpperCase()
+                    ) : '?'}
                   </span>
                 </div>
-              </div>
+              </button>
             </div>
           </div>
         </header>

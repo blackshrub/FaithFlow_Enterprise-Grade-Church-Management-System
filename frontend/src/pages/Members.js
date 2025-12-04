@@ -1,8 +1,9 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useMembers, useMemberStats, useCreateMember, useUpdateMember, useDeleteMember } from '../hooks/useMembers';
+import { useDeferredSearch } from '../hooks/useDeferredSearch';
 import { useMemberStatuses, useDemographics } from '../hooks/useSettings';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -36,8 +37,10 @@ export default function Members() {
   const { t } = useTranslation();
   const { church, loading: authLoading } = useAuth();
   const navigate = useNavigate();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
+
+  // React 19 deferred search - smooth UX without manual debounce
+  const { searchValue: searchQuery, setSearchValue: setSearchQuery, deferredValue: deferredSearch, isSearchPending } = useDeferredSearch();
+
   const [showIncompleteOnly, setShowIncompleteOnly] = useState(false);
   const [filters, setFilters] = useState({
     gender: '',
@@ -53,14 +56,10 @@ export default function Members() {
   const [currentPage, setCurrentPage] = useState(1);
   const membersPerPage = 50;
 
-  // Debounce search to avoid too many API calls
-  React.useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearch(searchQuery);
-      setCurrentPage(1); // Reset to page 1 when searching
-    }, 500);
-    return () => clearTimeout(timer);
-  }, [searchQuery]);
+  // Reset to page 1 when search changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [deferredSearch]);
 
   // Reset to page 1 when filters change
   React.useEffect(() => {
@@ -73,7 +72,7 @@ export default function Members() {
     incomplete_data: showIncompleteOnly || undefined,
     skip: (currentPage - 1) * membersPerPage,
     limit: membersPerPage,
-    search: debouncedSearch || undefined,
+    search: deferredSearch || undefined,
     gender: filters.gender || undefined,
     marital_status: filters.marital_status || undefined,
     member_status: filters.member_status || undefined,
@@ -161,8 +160,6 @@ export default function Members() {
       cleanData.marital_status = maritalMap[cleanData.marital_status] || cleanData.marital_status;
     }
 
-    console.log('[DEBUG] Creating member with data:', cleanData);
-
     if (!church?.id) {
       console.error('[ERROR] No church context available');
       return;
@@ -208,8 +205,6 @@ export default function Members() {
       cleanData.marital_status = maritalMap[cleanData.marital_status] || cleanData.marital_status;
     }
 
-    console.log('[DEBUG] Sending update with data:', cleanData);
-
     updateMember.mutate(
       { id: selectedMember.id, data: cleanData },
       {
@@ -249,9 +244,6 @@ export default function Members() {
       personal_document_base64: member.personal_document_base64 || '',
       notes: member.notes || ''
     };
-    console.log('[DEBUG] Opening edit dialog for member:', member.full_name);
-    console.log('[DEBUG] Member status from DB:', member.member_status);
-    console.log('[DEBUG] Form data member_status:', formValues.member_status);
     setFormData(formValues);
     setIsEditDialogOpen(true);
   };
@@ -343,7 +335,11 @@ export default function Members() {
             </div>
             <div className="flex items-center gap-2">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                {isSearchPending ? (
+                  <Loader2 className="absolute left-3 top-1/2 transform -translate-y-1/2 text-blue-500 h-4 w-4 animate-spin" />
+                ) : (
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                )}
                 <Input
                   id="member-search"
                   name="member-search"

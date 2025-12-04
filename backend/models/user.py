@@ -29,6 +29,17 @@ class UserUpdate(BaseModel):
     is_active: Optional[bool] = None
     password: Optional[str] = Field(None, min_length=6)
     kiosk_pin: Optional[str] = Field(None, min_length=6, max_length=6, pattern="^[0-9]{6}$")
+    phone: Optional[str] = Field(None, max_length=20)
+
+
+class ProfileUpdate(BaseModel):
+    """Model for user self-service profile updates"""
+    full_name: Optional[str] = Field(None, min_length=1, max_length=200)
+    email: Optional[EmailStr] = None
+    phone: Optional[str] = Field(None, max_length=20)
+    kiosk_pin: Optional[str] = Field(None, min_length=6, max_length=6, pattern="^[0-9]{6}$")
+    current_password: Optional[str] = Field(None, min_length=6, description="Required when changing password")
+    new_password: Optional[str] = Field(None, min_length=6)
 
 
 class User(UserBase):
@@ -42,12 +53,14 @@ class User(UserBase):
 
 class UserResponse(BaseModel):
     model_config = ConfigDict(extra="ignore")
-    
+
     id: str
     email: str
     full_name: str
     role: str
     church_id: Optional[str] = None  # None for super_admin
     is_active: bool
+    phone: Optional[str] = None
+    kiosk_pin: Optional[str] = None
     created_at: datetime
     updated_at: datetime

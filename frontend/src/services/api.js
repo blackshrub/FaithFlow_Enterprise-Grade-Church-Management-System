@@ -153,6 +153,7 @@ export const authAPI = {
   register: (userData) => api.post('/auth/register', userData),
   getCurrentUser: () => api.get('/auth/me'),
   listUsers: () => api.get('/auth/users'),
+  updateProfile: (profileData) => api.patch('/auth/profile', profileData),
 };
 
 // Churches API

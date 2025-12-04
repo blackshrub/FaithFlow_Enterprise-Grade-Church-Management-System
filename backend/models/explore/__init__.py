@@ -83,6 +83,34 @@ from .prompt_config import (
     get_config_schema_with_placeholders,
 )
 
+# User Spiritual Profile models
+from .user_profile import (
+    OnboardingQuestion,
+    OnboardingResponse,
+    ContentEngagement,
+    TopicInterest,
+    BibleExploration,
+    LearningPattern,
+    QuizPerformance,
+    LifeSituation,
+    SpiritualGrowthIndicators,
+    UserSpiritualProfile,
+    ProfileComputationResult,
+    DEFAULT_ONBOARDING_QUESTIONS,
+)
+
+# Life Stage Journey models
+from .journey import (
+    JourneyDayContent,
+    JourneyWeek,
+    JourneyDefinition,
+    JourneyDayProgress,
+    JourneyWeekProgress,
+    UserJourneyEnrollment,
+    JourneyRecommendation,
+    JOURNEY_TEMPLATES,
+)
+
 __all__ = [
     # Enums
     "ContentScope",
@@ -146,4 +174,26 @@ __all__ = [
     "ShareableImageConfig",
     "ExplorePromptConfiguration",
     "get_config_schema_with_placeholders",
+    # User Spiritual Profile
+    "OnboardingQuestion",
+    "OnboardingResponse",
+    "ContentEngagement",
+    "TopicInterest",
+    "BibleExploration",
+    "LearningPattern",
+    "QuizPerformance",
+    "LifeSituation",
+    "SpiritualGrowthIndicators",
+    "UserSpiritualProfile",
+    "ProfileComputationResult",
+    "DEFAULT_ONBOARDING_QUESTIONS",
+    # Life Stage Journeys
+    "JourneyDayContent",
+    "JourneyWeek",
+    "JourneyDefinition",
+    "JourneyDayProgress",
+    "JourneyWeekProgress",
+    "UserJourneyEnrollment",
+    "JourneyRecommendation",
+    "JOURNEY_TEMPLATES",
 ]

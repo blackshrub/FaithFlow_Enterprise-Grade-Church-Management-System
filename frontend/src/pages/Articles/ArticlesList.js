@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useTransition } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search } from 'lucide-react';
+import { Plus, Search, Loader2 } from 'lucide-react';
+import { useDeferredSearch } from '../../hooks/useDeferredSearch';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
@@ -34,7 +35,12 @@ export default function ArticlesList() {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  const [search, setSearch] = useState('');
+  // React 19 deferred search
+  const { searchValue: search, setSearchValue: setSearch, deferredValue: deferredSearch, isSearchPending } = useDeferredSearch();
+
+  // React 19 useTransition for bulk operations (keeps UI responsive)
+  const [isBulkPending, startBulkTransition] = useTransition();
+
   const [statusFilter, setStatusFilter] = useState('all');
   const [scheduleFilter, setScheduleFilter] = useState('all');
   const [pagination, setPagination] = useState({ limit: 50, offset: 0 });
@@ -52,7 +58,7 @@ export default function ArticlesList() {
   });
 
   const { data: articlesData, isLoading } = useArticles({
-    search,
+    search: deferredSearch,
     status: statusFilter === 'all' ? undefined : statusFilter,
     schedule_status: scheduleFilter === 'all' ? undefined : scheduleFilter,
     ...pagination
@@ -83,15 +89,17 @@ export default function ArticlesList() {
     if (selectedArticles.length === 0) return;
     if (!window.confirm(`Delete ${selectedArticles.length} articles?`)) return;
 
-    try {
-      for (const id of selectedArticles) {
-        await deleteMutation.mutateAsync(id);
+    // Use React 19 startTransition to keep UI responsive during bulk operations
+    startBulkTransition(async () => {
+      try {
+        const deletePromises = selectedArticles.map(id => deleteMutation.mutateAsync(id));
+        await Promise.all(deletePromises);
+        toast({ title: t('common.success'), description: `${selectedArticles.length} articles deleted` });
+        setSelectedArticles([]);
+      } catch (error) {
+        toast({ variant: "destructive", title: t('common.error'), description: error.message });
       }
-      toast({ title: t('common.success'), description: `${selectedArticles.length} articles deleted` });
-      setSelectedArticles([]);
-    } catch (error) {
-      toast({ variant: "destructive", title: t('common.error'), description: error.message });
-    }
+    });
   };
 
   const handleDuplicate = async (articleId) => {
@@ -138,7 +146,11 @@ export default function ArticlesList() {
         <CardContent className="p-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              {isSearchPending ? (
+                <Loader2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-blue-500 animate-spin" />
+              ) : (
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              )}
               <Input
                 id="articles-search"
                 name="articles-search"

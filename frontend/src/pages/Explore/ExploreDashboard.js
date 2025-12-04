@@ -5,7 +5,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../..
 import { Button } from '../../components/ui/button';
 import {
   BookOpen, Calendar, Users, TrendingUp, Award, Sparkles,
-  FileText, MessageSquare, User, HelpCircle, Plus, Loader2
+  FileText, MessageSquare, User, HelpCircle, Plus, Loader2,
+  ClipboardCheck
 } from 'lucide-react';
 import { useExploreDashboardStats } from '../../hooks/useExplore';
 
@@ -70,6 +71,15 @@ export default function ExploreDashboard() {
       bgColor: 'bg-pink-50',
       link: '/content-center/ai',
     },
+    {
+      title: 'Pending Review',
+      value: stats?.pending_review || 0,
+      icon: ClipboardCheck,
+      description: 'AI content to review',
+      color: 'text-amber-600',
+      bgColor: 'bg-amber-50',
+      link: '/content-center/review-queue',
+    },
   ];
 
   const contentTypes = [
@@ -126,10 +136,16 @@ export default function ExploreDashboard() {
 
   const quickActions = [
     {
+      label: 'Review Queue',
+      link: '/content-center/review-queue',
+      icon: ClipboardCheck,
+      variant: 'default',
+    },
+    {
       label: 'Create Devotion',
       link: '/content-center/devotion/new',
       icon: Plus,
-      variant: 'default',
+      variant: 'outline',
     },
     {
       label: 'Schedule Content',
@@ -141,12 +157,6 @@ export default function ExploreDashboard() {
       label: 'Generate with AI',
       link: '/content-center/ai',
       icon: Sparkles,
-      variant: 'outline',
-    },
-    {
-      label: 'View Analytics',
-      link: '/content-center/analytics',
-      icon: TrendingUp,
       variant: 'outline',
     },
   ];

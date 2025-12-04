@@ -51,6 +51,7 @@ import {
 import { DailyDevotionSkeleton } from '@/components/explore/LoadingSkeleton';
 import { MarkdownText } from '@/components/explore/MarkdownText';
 import { AudioPlayButton } from '@/components/explore/AudioPlayButton';
+import { QuickAskInput } from '@/components/companion/QuickAskInput';
 import Animated, { FadeIn, FadeInDown, FadeInRight, SlideInRight } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 
@@ -258,6 +259,23 @@ function DailyDevotionView({ devotion, contentLanguage, onBack }: DailyDevotionV
               ))}
             </View>
           )}
+
+          {/* Ask Faith Assistant about this devotion */}
+          <View className="mt-6 mb-4">
+            <QuickAskInput
+              context="devotion_reflection"
+              contentId={devotion.id}
+              contextData={{
+                devotionId: devotion.id,
+                devotionTitle: title,
+                verseReference: devotion.main_verse
+                  ? `${devotion.main_verse.book} ${devotion.main_verse.chapter}:${devotion.main_verse.verse_start}`
+                  : undefined,
+                verseText: verseText || undefined,
+              }}
+              language={contentLanguage}
+            />
+          </View>
 
           <View className="h-10" />
         </Animated.View>
@@ -723,6 +741,24 @@ function DayContentView({
               </View>
             </View>
           )}
+
+          {/* Ask Faith Assistant about this day's content */}
+          <View className="mb-6">
+            <QuickAskInput
+              context="devotion_reflection"
+              contentId={plan.id}
+              contextData={{
+                devotionId: plan.id,
+                devotionTitle: `${planTitle} - Day ${dayNumber}`,
+                verseReference: day.main_verse
+                  ? `${day.main_verse.book} ${day.main_verse.chapter}:${day.main_verse.verse_start}`
+                  : undefined,
+                verseText: day.main_verse?.text || undefined,
+              }}
+              title={contentLanguage === 'en' ? 'Questions about today\'s reading?' : 'Pertanyaan tentang bacaan hari ini?'}
+              language={contentLanguage}
+            />
+          </View>
 
           <View className="h-[120px]" />
         </Animated.View>

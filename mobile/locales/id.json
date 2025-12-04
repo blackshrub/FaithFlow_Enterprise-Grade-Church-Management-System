@@ -1007,5 +1007,97 @@
     "goHome": "Ke Beranda",
     "reportSent": "Laporan error terkirim",
     "offlineNote": "Anda tampaknya offline. Error akan dilaporkan saat Anda kembali online."
+  },
+  "onboarding": {
+    "skip": "Lewati",
+    "next": "Lanjutkan",
+    "previous": "Kembali",
+    "complete": "Selesaikan",
+    "saving": "Menyimpan...",
+    "banner": {
+      "title": "Personalisasi Pengalamanmu",
+      "description": "Jawab beberapa pertanyaan singkat untuk menerima konten yang disesuaikan dengan perjalanan rohanimu",
+      "compactTitle": "Personalisasi Perjalananmu",
+      "compactSubtitle": "Ketuk untuk memulai",
+      "benefit1": "Renungan Personal",
+      "benefit2": "Studi Disesuaikan",
+      "benefit3": "Rekomendasi Cerdas",
+      "cta": "Ayo Mulai",
+      "skipText": "Nanti saja"
+    },
+    "questions": {
+      "faith_journey": {
+        "title": "Di mana kamu dalam perjalanan imanmu?",
+        "description": "Ini membantu kami merekomendasikan konten yang sesuai"
+      },
+      "reading_depth": {
+        "title": "Seberapa dalam kamu ingin belajar?",
+        "description": "Kami akan menyesuaikan kompleksitas konten"
+      },
+      "life_challenges": {
+        "title": "Tantangan apa yang sedang kamu hadapi?",
+        "description": "Pilih semua yang berlaku"
+      },
+      "interest_topics": {
+        "title": "Topik apa yang paling menarik bagimu?",
+        "description": "Pilih semua yang berlaku"
+      },
+      "devotion_time": {
+        "title": "Kapan waktu saat teduh favoritmu?",
+        "description": "Kami akan mengirim pengingat di waktu terbaik"
+      }
+    },
+    "success": {
+      "title": "Profil Dibuat!",
+      "message": "Perjalanan rohanimu telah dimulai. Nikmati konten yang dipersonalisasi!"
+    }
+  },
+  "journey": {
+    "title": "Perjalanan",
+    "subtitle": "Program rohani terpandu",
+    "discover": "Temukan Perjalanan",
+    "myJourneys": "Perjalananku",
+    "recommended": "Direkomendasikan untukmu",
+    "categories": {
+      "life_transition": "Transisi Kehidupan",
+      "spiritual_growth": "Pertumbuhan Rohani",
+      "relationships": "Hubungan",
+      "leadership": "Kepemimpinan"
+    },
+    "difficulty": {
+      "beginner": "Pemula",
+      "intermediate": "Menengah",
+      "advanced": "Lanjutan"
+    },
+    "duration": {
+      "weeks": "{{count}} minggu",
+      "days": "{{count}} hari"
+    },
+    "enrollment": {
+      "enroll": "Mulai Perjalanan",
+      "enrolled": "Lanjutkan",
+      "paused": "Lanjutkan",
+      "completed": "Selesai"
+    },
+    "progress": {
+      "week": "Minggu {{current}} dari {{total}}",
+      "day": "Hari {{current}}",
+      "daysCompleted": "{{count}} hari selesai"
+    },
+    "actions": {
+      "pause": "Jeda Perjalanan",
+      "resume": "Lanjutkan Perjalanan",
+      "abandon": "Tinggalkan Perjalanan"
+    },
+    "empty": {
+      "noActive": "Tidak ada perjalanan aktif",
+      "noActiveDesc": "Mulai perjalanan untuk bertumbuh dalam iman",
+      "browse": "Jelajahi Perjalanan"
+    },
+    "today": {
+      "title": "Konten Hari Ini",
+      "markComplete": "Tandai Selesai",
+      "completed": "Selesai!"
+    }
   }
 }

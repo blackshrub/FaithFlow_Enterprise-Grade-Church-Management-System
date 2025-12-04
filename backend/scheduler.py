@@ -279,8 +279,191 @@ def setup_scheduler(db: AsyncIOMotorDatabase):
         name='Generate Counseling Slots',
         replace_existing=True
     )
-    
-    logger.info("APScheduler configured with article publishing, webhook processing, status automation, trash cleanup, counseling slot generation, and call cleanup jobs")
+
+    # Add job: Autonomous Explore content generation
+    async def generate_explore_content():
+        """
+        Autonomously generate Explore content for the next day.
+
+        Runs daily at 3:00 AM to generate:
+        - Daily Devotion (unique topic)
+        - Verse of the Day (meaningful verse)
+        - Bible Figure of the Day (500+ figures, no repeats)
+        - Daily Quiz (varied topics)
+
+        All content goes to review queue - staff just approves/rejects.
+        Images are stored in SeaweedFS automatically.
+        """
+        try:
+            from services.explore.autonomous_generator import AutonomousContentGenerator
+            from services.seaweedfs_service import SeaweedFSService
+
+            logger.info("Starting autonomous Explore content generation")
+
+            # Initialize services
+            seaweedfs = SeaweedFSService()
+            generator = AutonomousContentGenerator(db, seaweedfs)
+
+            # Generate content for global (platform-wide)
+            results = await generator.schedule_daily_generation(church_id="global")
+
+            # Log results
+            for content_type, result in results.items():
+                if result["success"]:
+                    logger.info(f"✓ Generated {content_type}")
+                    # Save to review queue
+                    doc = result["document"]
+                    collection_map = {
+                        "bible_figure": "bible_figures",
+                        "daily_devotion": "daily_devotions",
+                        "verse_of_the_day": "verses_of_the_day",
+                        "daily_quiz": "daily_quizzes",
+                    }
+                    collection = collection_map.get(content_type, f"{content_type}s")
+                    await db[collection].insert_one(doc)
+                    logger.info(f"  Saved to {collection} with status=draft (pending review)")
+                else:
+                    logger.error(f"✗ Failed {content_type}: {result['error']}")
+
+            # Also generate for individual churches that have opted in
+            churches = await db.church_settings.find({
+                "explore_auto_generation": True
+            }).to_list(100)
+
+            for church_setting in churches:
+                church_id = church_setting.get("church_id")
+                try:
+                    church_results = await generator.schedule_daily_generation(church_id=church_id)
+                    for content_type, result in church_results.items():
+                        if result["success"]:
+                            doc = result["document"]
+                            collection = collection_map.get(content_type, f"{content_type}s")
+                            await db[collection].insert_one(doc)
+                            logger.info(f"✓ Generated {content_type} for church {church_id}")
+                except Exception as e:
+                    logger.error(f"Error generating for church {church_id}: {e}")
+
+            logger.info("Autonomous Explore content generation complete")
+
+        except Exception as e:
+            logger.error(f"Error in autonomous content generation job: {e}")
+
+    scheduler.add_job(
+        func=lambda: generate_explore_content(),
+        trigger=CronTrigger(hour=3, minute=0),  # Daily at 3:00 AM
+        id='generate_explore_content',
+        name='Autonomous Explore Content Generation',
+        replace_existing=True
+    )
+
+    # Add job: Weekly Bible Study generation (longer content)
+    async def generate_bible_studies():
+        """
+        Generate new Bible Study series weekly.
+
+        Runs every Sunday at 4:00 AM to generate:
+        - Complete multi-lesson Bible Study series
+        - All lessons are coherent and progressive
+        """
+        try:
+            from services.explore.autonomous_generator import AutonomousContentGenerator
+            from services.seaweedfs_service import SeaweedFSService
+
+            logger.info("Starting weekly Bible Study generation")
+
+            seaweedfs = SeaweedFSService()
+            generator = AutonomousContentGenerator(db, seaweedfs)
+
+            # Generate for global
+            result = await generator.generate_content_autonomously(
+                content_type="bible_study",
+                church_id="global",
+                generate_image=True
+            )
+
+            if "error" not in result:
+                await db.bible_studies.insert_one(result)
+                title = result.get("title", {}).get("en", "Unknown")
+                lessons = len(result.get("lessons", []))
+                logger.info(f"✓ Generated Bible Study: '{title}' with {lessons} lessons")
+            else:
+                logger.error(f"✗ Failed to generate Bible Study: {result['error']}")
+
+        except Exception as e:
+            logger.error(f"Error in Bible Study generation job: {e}")
+
+    scheduler.add_job(
+        func=lambda: generate_bible_studies(),
+        trigger=CronTrigger(day_of_week='sun', hour=4, minute=0),  # Every Sunday at 4:00 AM
+        id='generate_bible_studies',
+        name='Weekly Bible Study Generation',
+        replace_existing=True
+    )
+
+    # Add job: Process prayer follow-ups (14-day check-ins)
+    async def process_prayer_followups():
+        """
+        Send follow-up prompts to members 14 days after prayer submission.
+
+        Runs daily at 9:00 AM to:
+        - Find prayer requests due for follow-up
+        - Send gentle check-in via push notification
+        - Allow member to share update (improved, same, resolved, etc.)
+        """
+        try:
+            from services.explore.prayer_intelligence_service import get_prayer_intelligence_service
+            from services.fcm_service import fcm_service
+
+            logger.info("Processing prayer request follow-ups")
+
+            prayer_service = get_prayer_intelligence_service(db)
+            due_followups = await prayer_service.get_due_followups(limit=100)
+
+            if not due_followups:
+                logger.info("No prayer follow-ups due")
+                return
+
+            logger.info(f"Found {len(due_followups)} prayer follow-ups due")
+
+            for followup in due_followups:
+                try:
+                    # Send follow-up notification
+                    await fcm_service.send_to_member(
+                        db=db,
+                        member_id=followup.user_id,
+                        church_id=followup.church_id,
+                        title="How are you doing?",
+                        body="We've been praying with you. Would you like to share an update?",
+                        notification_type="prayer_followup",
+                        data={
+                            "type": "prayer_followup",
+                            "prayer_request_id": followup.prayer_request_id,
+                            "followup_id": followup.id,
+                            "themes": followup.prayer_themes,
+                        }
+                    )
+
+                    # Mark follow-up as sent
+                    await prayer_service.mark_followup_sent(followup.id)
+                    logger.info(f"Sent follow-up for prayer {followup.prayer_request_id} to member {followup.user_id}")
+
+                except Exception as e:
+                    logger.error(f"Error sending follow-up for prayer {followup.prayer_request_id}: {e}")
+
+            logger.info(f"Prayer follow-up processing complete")
+
+        except Exception as e:
+            logger.error(f"Error in prayer follow-up job: {e}")
+
+    scheduler.add_job(
+        func=lambda: process_prayer_followups(),
+        trigger=CronTrigger(hour=9, minute=0),  # Daily at 9:00 AM
+        id='process_prayer_followups',
+        name='Prayer Follow-up Processing (14-day check-ins)',
+        replace_existing=True
+    )
+
+    logger.info("APScheduler configured with article publishing, webhook processing, status automation, trash cleanup, counseling slot generation, call cleanup, autonomous Explore content generation, and prayer follow-ups")
     
     return scheduler
 

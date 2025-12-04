@@ -104,6 +104,25 @@ export const AuthProvider = ({ children }) => {
     setError(null);
   }, []);
 
+  // Refresh user data from the API (useful after profile updates)
+  const refreshUser = useCallback(async () => {
+    try {
+      const response = await authAPI.getCurrentUser();
+      const userData = response.data;
+      // Update user state with fresh data from API
+      // Keep session_church_id from JWT (don't change it)
+      setUser(prev => ({
+        ...prev,
+        ...userData,
+        session_church_id: prev?.session_church_id ?? userData.session_church_id
+      }));
+      return { success: true, user: userData };
+    } catch (err) {
+      console.error('Error refreshing user:', err);
+      return { success: false, error: err.message };
+    }
+  }, []);
+
   // Memoize context value to prevent unnecessary re-renders of all consumers
   // Without this, every state change creates a new object reference causing app-wide re-renders
   const value = useMemo(() => ({
@@ -113,10 +132,11 @@ export const AuthProvider = ({ children }) => {
     error,
     login,
     logout,
+    refreshUser,
     isAuthenticated: !!user,
     isSuperAdmin: user?.role === 'super_admin',
     isAdmin: user?.role === 'admin' || user?.role === 'super_admin',
-  }), [user, church, loading, error, login, logout]);
+  }), [user, church, loading, error, login, logout, refreshUser]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

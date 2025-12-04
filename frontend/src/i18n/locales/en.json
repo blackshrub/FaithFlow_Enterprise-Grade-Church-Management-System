@@ -181,7 +181,8 @@
     "churches": "Churches",
     "importExport": "Import/Export",
     "settings": "Settings",
-    "integrations": "Integrations"
+    "integrations": "Integrations",
+    "profile": "My Profile"
   },
   "roles": {
     "super_admin": "Super Admin",
@@ -2617,5 +2618,43 @@
       "noAnalytics": "No analytics data available",
       "createFirst": "Create your first content to get started"
     }
+  },
+  "profile": {
+    "title": "My Profile",
+    "subtitle": "Manage your account settings and security",
+    "personalInfo": "Personal Information",
+    "personalInfoDesc": "Update your personal details",
+    "fullName": "Full Name",
+    "enterFullName": "Enter your full name",
+    "email": "Email Address",
+    "enterEmail": "Enter your email",
+    "phone": "Phone Number",
+    "enterPhone": "Enter your phone number",
+    "savePersonalInfo": "Save Personal Info",
+    "security": "Security",
+    "securityDesc": "Update your PIN and password",
+    "kioskPin": "Kiosk PIN",
+    "enterPin": "Enter 6-digit PIN",
+    "pinHelp": "Used for kiosk login. Must be exactly 6 digits.",
+    "pinMustBe6Digits": "PIN must be exactly 6 digits",
+    "changePassword": "Change Password",
+    "currentPassword": "Current Password",
+    "enterCurrentPassword": "Enter current password",
+    "currentPasswordRequired": "Current password is required",
+    "newPassword": "New Password",
+    "enterNewPassword": "Enter new password",
+    "confirmPassword": "Confirm New Password",
+    "confirmNewPassword": "Confirm new password",
+    "passwordsMustMatch": "New passwords do not match",
+    "passwordMinLength": "Password must be at least 6 characters",
+    "saveSecurity": "Save Security Settings",
+    "accountInfo": "Account Information",
+    "accountInfoDesc": "Read-only information about your account",
+    "role": "Role",
+    "status": "Status",
+    "userId": "User ID",
+    "updateSuccess": "Profile updated successfully",
+    "updateError": "Failed to update profile",
+    "noChanges": "No changes to save"
   }
 }

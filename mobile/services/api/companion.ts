@@ -38,6 +38,20 @@ export interface ChatRequest {
     verseText?: string;
     devotionTitle?: string;
     devotionId?: string;
+    // New contextual companion fields (Feature 4)
+    studyId?: string;
+    studyTitle?: string;
+    lessonNumber?: number;
+    lessonTitle?: string;
+    journeySlug?: string;
+    journeyTitle?: string;
+    weekNumber?: number;
+    dayNumber?: number;
+    quizId?: string;
+    quizTitle?: string;
+    questionIndex?: number;
+    // Custom system prompt from backend (Feature 4 - Contextual Companion)
+    systemPrompt?: string;
   };
 }
 
@@ -59,8 +73,19 @@ export interface StreamCallbacks {
 /**
  * Build system prompt with context additions
  * Context-aware prompting for more empathetic and relevant responses
+ *
+ * If contextData.systemPrompt is provided (from backend contextual companion API),
+ * use that instead of the default prompt. This allows the backend to provide
+ * context-bounded prompts for devotions, journeys, quizzes, etc.
  */
 function buildSystemPrompt(context?: CompanionContext, contextData?: ChatRequest['context_data']): string {
+  // Feature 4: If backend provided a custom system prompt, use it directly
+  // This is for contextual companion mode (devotion, journey, quiz, etc.)
+  if (contextData?.systemPrompt) {
+    return contextData.systemPrompt;
+  }
+
+  // Default: Build prompt from template
   let systemPrompt = SPIRITUAL_COMPANION_SYSTEM_PROMPT;
 
   // Add response style guidelines

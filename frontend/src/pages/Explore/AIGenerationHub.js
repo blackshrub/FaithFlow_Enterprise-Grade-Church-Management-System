@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
+import { Label } from '../../components/ui/label';
 import { Textarea } from '../../components/ui/textarea';
 import { Badge } from '../../components/ui/badge';
+import { Switch } from '../../components/ui/switch';
 import {
   Select,
   SelectContent,
@@ -39,7 +41,7 @@ import {
 import {
   ArrowLeft, Sparkles, Loader2, BookOpen, MessageSquare, User, HelpCircle,
   RefreshCw, Check, X, Edit, Eye, ChevronDown, ChevronUp, GraduationCap,
-  FolderTree, Tag, Calendar, Image
+  FolderTree, Tag, Calendar, Image, Zap, Radio
 } from 'lucide-react';
 import {
   useExploreAIConfig,
@@ -50,6 +52,7 @@ import {
   useRegenerateExploreContent
 } from '../../hooks/useExplore';
 import { useToast } from '../../hooks/use-toast';
+import { StreamingContentGenerator } from '../../components/Explore/StreamingContentGenerator';
 
 const contentTypeConfig = {
   // Daily Content
@@ -79,10 +82,26 @@ export default function AIGenerationHub() {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  // Form state
   const [contentType, setContentType] = useState('devotion');
   const [model, setModel] = useState('claude-sonnet-4-5-20250929');
   const [customPrompt, setCustomPrompt] = useState('');
   const [generateBothLanguages, setGenerateBothLanguages] = useState(true);
+
+  // Additional content params
+  const [topic, setTopic] = useState('');
+  const [scriptureReference, setScriptureReference] = useState('');
+  const [figureName, setFigureName] = useState('');
+  const [quizDifficulty, setQuizDifficulty] = useState('medium');
+  const [numQuestions, setNumQuestions] = useState(5);
+  const [studyDuration, setStudyDuration] = useState(7);
+
+  // Streaming mode (default: true for real-time UX)
+  const [useStreaming, setUseStreaming] = useState(true);
+  const [showStreamingGenerator, setShowStreamingGenerator] = useState(false);
+  const [generatedContent, setGeneratedContent] = useState(null);
+
+  // Legacy queue mode state
   const [showPreview, setShowPreview] = useState(false);
   const [previewData, setPreviewData] = useState(null);
   const [expandedJob, setExpandedJob] = useState(null);
@@ -102,16 +121,72 @@ export default function AIGenerationHub() {
   const regenerateMutation = useRegenerateExploreContent();
 
   const handleGenerate = () => {
-    const config = contentTypeConfig[contentType];
-    generateMutation.mutate({
-      content_type: config?.apiType || contentType,
-      model,
-      custom_prompt: customPrompt || undefined,
-      generate_both_languages: generateBothLanguages,
-    }, {
-      onSuccess: () => setCustomPrompt('')
-    });
+    if (useStreaming) {
+      // Use real-time streaming mode
+      setShowStreamingGenerator(true);
+      setGeneratedContent(null);
+    } else {
+      // Use legacy queue mode
+      const config = contentTypeConfig[contentType];
+      generateMutation.mutate({
+        content_type: config?.apiType || contentType,
+        model,
+        custom_prompt: customPrompt || undefined,
+        generate_both_languages: generateBothLanguages,
+      }, {
+        onSuccess: () => setCustomPrompt('')
+      });
+    }
   };
+
+  // Streaming callbacks
+  const handleStreamingComplete = useCallback((content) => {
+    setGeneratedContent(content);
+    toast({
+      title: 'Generation Complete',
+      description: 'AI content has been generated successfully.',
+    });
+  }, [toast]);
+
+  const handleStreamingAccept = useCallback((content) => {
+    // Navigate to editor with pre-filled data
+    const apiTypeToSlug = {
+      'daily_devotion': 'devotion',
+      'verse_of_the_day': 'verse',
+      'bible_figure': 'figure',
+      'daily_quiz': 'quiz',
+      'bible_study': 'bible-study',
+      'devotion_plan': 'devotion-plan',
+      'topical_category': 'topical/category',
+      'topical_verse': 'topical/verses',
+    };
+    const config = contentTypeConfig[contentType];
+    const apiType = config?.apiType || contentType;
+    const routeSlug = apiTypeToSlug[apiType] || contentType;
+
+    // Save to local storage for the editor to pick up
+    localStorage.setItem('ai_generated_content', JSON.stringify({
+      content,
+      content_type: apiType,
+      timestamp: new Date().toISOString(),
+    }));
+
+    toast({
+      title: 'Opening Editor',
+      description: 'You can review and edit the content before publishing.',
+    });
+
+    navigate(`/content-center/${routeSlug}/new?fromAI=true`);
+  }, [contentType, navigate, toast]);
+
+  const handleStreamingEdit = useCallback((content) => {
+    handleStreamingAccept(content);
+  }, [handleStreamingAccept]);
+
+  const handleStreamingReject = useCallback(() => {
+    setShowStreamingGenerator(false);
+    setGeneratedContent(null);
+  }, []);
 
   const handlePreview = (job) => {
     setPreviewData(job);
@@ -286,6 +361,26 @@ export default function AIGenerationHub() {
                 </Select>
               </div>
 
+              {/* Streaming Mode Toggle */}
+              <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg border border-purple-200">
+                <div className="flex items-center gap-2">
+                  <Radio className="h-4 w-4 text-purple-600" />
+                  <div>
+                    <Label htmlFor="streaming-mode" className="text-sm font-medium text-gray-900">
+                      Real-time Streaming
+                    </Label>
+                    <p className="text-xs text-gray-600">
+                      See content as it generates (recommended)
+                    </p>
+                  </div>
+                </div>
+                <Switch
+                  id="streaming-mode"
+                  checked={useStreaming}
+                  onCheckedChange={setUseStreaming}
+                />
+              </div>
+
               {/* Language Options */}
               <div>
                 <Label className="text-sm font-medium text-gray-700 mb-2 block">
@@ -306,6 +401,112 @@ export default function AIGenerationHub() {
                 </div>
               </div>
 
+              {/* Content-specific inputs */}
+              <div className="space-y-3 p-3 bg-gray-50 rounded-lg">
+                <p className="text-xs font-medium text-gray-700 uppercase">Content Parameters</p>
+
+                {/* Topic (for most content types) */}
+                {['devotion', 'verse', 'quiz', 'bible_study', 'devotion_plan', 'topical_category', 'topical_verse'].includes(contentType) && (
+                  <div>
+                    <Label htmlFor="ai-topic" className="text-xs text-gray-600">
+                      Topic/Theme
+                    </Label>
+                    <Input
+                      id="ai-topic"
+                      placeholder="e.g., Faith, Grace, Prayer, Hope"
+                      value={topic}
+                      onChange={(e) => setTopic(e.target.value)}
+                      className="mt-1"
+                    />
+                  </div>
+                )}
+
+                {/* Scripture Reference */}
+                {['devotion', 'verse', 'bible_study'].includes(contentType) && (
+                  <div>
+                    <Label htmlFor="ai-scripture" className="text-xs text-gray-600">
+                      Scripture Reference (Optional)
+                    </Label>
+                    <Input
+                      id="ai-scripture"
+                      placeholder="e.g., John 3:16, Psalm 23"
+                      value={scriptureReference}
+                      onChange={(e) => setScriptureReference(e.target.value)}
+                      className="mt-1"
+                    />
+                  </div>
+                )}
+
+                {/* Figure Name */}
+                {contentType === 'figure' && (
+                  <div>
+                    <Label htmlFor="ai-figure" className="text-xs text-gray-600">
+                      Bible Figure Name
+                    </Label>
+                    <Input
+                      id="ai-figure"
+                      placeholder="e.g., David, Moses, Paul, Ruth"
+                      value={figureName}
+                      onChange={(e) => setFigureName(e.target.value)}
+                      className="mt-1"
+                    />
+                  </div>
+                )}
+
+                {/* Quiz Options */}
+                {contentType === 'quiz' && (
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <Label htmlFor="ai-difficulty" className="text-xs text-gray-600">
+                        Difficulty
+                      </Label>
+                      <Select value={quizDifficulty} onValueChange={setQuizDifficulty}>
+                        <SelectTrigger id="ai-difficulty" className="mt-1">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="easy">Easy</SelectItem>
+                          <SelectItem value="medium">Medium</SelectItem>
+                          <SelectItem value="hard">Hard</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="ai-questions" className="text-xs text-gray-600">
+                        Questions
+                      </Label>
+                      <Input
+                        id="ai-questions"
+                        type="number"
+                        min={3}
+                        max={15}
+                        value={numQuestions}
+                        onChange={(e) => setNumQuestions(parseInt(e.target.value) || 5)}
+                        className="mt-1"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Study Duration */}
+                {['bible_study', 'devotion_plan'].includes(contentType) && (
+                  <div>
+                    <Label htmlFor="ai-duration" className="text-xs text-gray-600">
+                      Duration (Days)
+                    </Label>
+                    <Input
+                      id="ai-duration"
+                      type="number"
+                      min={3}
+                      max={30}
+                      value={studyDuration}
+                      onChange={(e) => setStudyDuration(parseInt(e.target.value) || 7)}
+                      className="mt-1"
+                    />
+                  </div>
+                )}
+              </div>
+
               {/* Custom Prompt */}
               <div>
                 <Label htmlFor="ai-custom-prompt" className="text-sm font-medium text-gray-700 mb-2 block">
@@ -317,7 +518,7 @@ export default function AIGenerationHub() {
                   placeholder={getDefaultPrompt(contentType)}
                   value={customPrompt}
                   onChange={(e) => setCustomPrompt(e.target.value)}
-                  rows={6}
+                  rows={4}
                   className="resize-none"
                 />
                 <p className="text-xs text-gray-500 mt-1">
@@ -328,13 +529,18 @@ export default function AIGenerationHub() {
               {/* Generate Button */}
               <Button
                 onClick={handleGenerate}
-                disabled={generateMutation.isPending}
+                disabled={generateMutation.isPending || showStreamingGenerator}
                 className="w-full bg-purple-600 hover:bg-purple-700"
               >
                 {generateMutation.isPending ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                     Generating...
+                  </>
+                ) : useStreaming ? (
+                  <>
+                    <Zap className="h-4 w-4 mr-2" />
+                    Generate with Streaming
                   </>
                 ) : (
                   <>
@@ -347,13 +553,36 @@ export default function AIGenerationHub() {
           </Card>
         </div>
 
-        {/* Generation Queue */}
-        <div className="lg:col-span-2">
+        {/* Streaming Generator or Generation Queue */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Streaming Generator (when active) */}
+          {showStreamingGenerator && (
+            <StreamingContentGenerator
+              contentType={contentType}
+              model={model}
+              customPrompt={customPrompt}
+              generateBothLanguages={generateBothLanguages}
+              topic={topic}
+              scriptureReference={scriptureReference}
+              figureName={figureName}
+              quizDifficulty={quizDifficulty}
+              numQuestions={numQuestions}
+              studyDuration={studyDuration}
+              onComplete={handleStreamingComplete}
+              onAccept={handleStreamingAccept}
+              onEdit={handleStreamingEdit}
+              onReject={handleStreamingReject}
+            />
+          )}
+
+          {/* Generation Queue (legacy mode or history) */}
           <Card>
             <CardHeader>
               <CardTitle>Generation Queue</CardTitle>
               <CardDescription>
-                Monitor and manage AI-generated content
+                {useStreaming
+                  ? 'Previously generated content (queue mode)'
+                  : 'Monitor and manage AI-generated content'}
               </CardDescription>
             </CardHeader>
             <CardContent>

@@ -577,3 +577,285 @@ export const useExploreGenerationStatus = (jobId) => {
     enabled: !!sessionChurchId && !!jobId
   });
 };
+
+// ============================================
+// LIFE STAGE JOURNEY HOOKS
+// ============================================
+
+export const useJourneys = (params = {}) => {
+  const sessionChurchId = useSessionChurchId();
+
+  return useQuery({
+    queryKey: ['explore', sessionChurchId, 'journeys', params],
+    queryFn: () => exploreService.listJourneys(params),
+    staleTime: 60000,
+    enabled: !!sessionChurchId
+  });
+};
+
+export const useJourney = (journeyId) => {
+  const sessionChurchId = useSessionChurchId();
+
+  return useQuery({
+    queryKey: ['explore', sessionChurchId, 'journeys', journeyId],
+    queryFn: () => exploreService.getJourney(journeyId),
+    staleTime: 60000,
+    enabled: !!sessionChurchId && !!journeyId
+  });
+};
+
+export const useCreateJourney = () => {
+  const queryClient = useQueryClient();
+  const sessionChurchId = useSessionChurchId();
+
+  return useMutation({
+    mutationFn: (data) => exploreService.createJourney(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['explore', sessionChurchId, 'journeys'],
+        refetchType: 'active'
+      });
+      toast.success('Journey created successfully');
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.detail || 'Failed to create journey');
+    }
+  });
+};
+
+export const useUpdateJourney = () => {
+  const queryClient = useQueryClient();
+  const sessionChurchId = useSessionChurchId();
+
+  return useMutation({
+    mutationFn: ({ journeyId, data }) => exploreService.updateJourney(journeyId, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ['explore', sessionChurchId, 'journeys', variables.journeyId],
+        refetchType: 'active'
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['explore', sessionChurchId, 'journeys'],
+        refetchType: 'active'
+      });
+      toast.success('Journey updated successfully');
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.detail || 'Failed to update journey');
+    }
+  });
+};
+
+export const useDeleteJourney = () => {
+  const queryClient = useQueryClient();
+  const sessionChurchId = useSessionChurchId();
+
+  return useMutation({
+    mutationFn: (journeyId) => exploreService.deleteJourney(journeyId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['explore', sessionChurchId, 'journeys'],
+        refetchType: 'active'
+      });
+      toast.success('Journey deleted');
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.detail || 'Failed to delete journey');
+    }
+  });
+};
+
+export const usePublishJourney = () => {
+  const queryClient = useQueryClient();
+  const sessionChurchId = useSessionChurchId();
+
+  return useMutation({
+    mutationFn: (journeyId) => exploreService.publishJourney(journeyId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['explore', sessionChurchId, 'journeys'],
+        refetchType: 'active'
+      });
+      toast.success('Journey published');
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.detail || 'Failed to publish journey');
+    }
+  });
+};
+
+export const useArchiveJourney = () => {
+  const queryClient = useQueryClient();
+  const sessionChurchId = useSessionChurchId();
+
+  return useMutation({
+    mutationFn: (journeyId) => exploreService.archiveJourney(journeyId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['explore', sessionChurchId, 'journeys'],
+        refetchType: 'active'
+      });
+      toast.success('Journey archived');
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.detail || 'Failed to archive journey');
+    }
+  });
+};
+
+// ============================================
+// SERMON INTEGRATION HOOKS
+// ============================================
+
+export const useSermons = (weeks = 8) => {
+  const sessionChurchId = useSessionChurchId();
+
+  return useQuery({
+    queryKey: ['explore', sessionChurchId, 'sermons', weeks],
+    queryFn: () => exploreService.listSermons(weeks),
+    staleTime: 60000,
+    enabled: !!sessionChurchId
+  });
+};
+
+export const useSermon = (sermonId) => {
+  const sessionChurchId = useSessionChurchId();
+
+  return useQuery({
+    queryKey: ['explore', sessionChurchId, 'sermons', sermonId],
+    queryFn: () => exploreService.getSermon(sermonId),
+    staleTime: 60000,
+    enabled: !!sessionChurchId && !!sermonId
+  });
+};
+
+export const useSermonThemes = () => {
+  const sessionChurchId = useSessionChurchId();
+
+  return useQuery({
+    queryKey: ['explore', sessionChurchId, 'sermon-themes'],
+    queryFn: () => exploreService.getSermonThemes(),
+    staleTime: 300000, // 5 minutes
+    enabled: !!sessionChurchId
+  });
+};
+
+export const useWeeklyContentPlan = (sermonId) => {
+  const sessionChurchId = useSessionChurchId();
+
+  return useQuery({
+    queryKey: ['explore', sessionChurchId, 'sermons', sermonId, 'content-plan'],
+    queryFn: () => exploreService.getWeeklyContentPlan(sermonId),
+    staleTime: 60000,
+    enabled: !!sessionChurchId && !!sermonId
+  });
+};
+
+export const useCreateSermon = () => {
+  const queryClient = useQueryClient();
+  const sessionChurchId = useSessionChurchId();
+
+  return useMutation({
+    mutationFn: (data) => exploreService.createSermon(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['explore', sessionChurchId, 'sermons'],
+        refetchType: 'active'
+      });
+      toast.success('Sermon created successfully');
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.detail || 'Failed to create sermon');
+    }
+  });
+};
+
+export const useUpdateSermon = () => {
+  const queryClient = useQueryClient();
+  const sessionChurchId = useSessionChurchId();
+
+  return useMutation({
+    mutationFn: ({ sermonId, data }) => exploreService.updateSermon(sermonId, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ['explore', sessionChurchId, 'sermons', variables.sermonId],
+        refetchType: 'active'
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['explore', sessionChurchId, 'sermons'],
+        refetchType: 'active'
+      });
+      toast.success('Sermon updated successfully');
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.detail || 'Failed to update sermon');
+    }
+  });
+};
+
+export const useDeleteSermon = () => {
+  const queryClient = useQueryClient();
+  const sessionChurchId = useSessionChurchId();
+
+  return useMutation({
+    mutationFn: (sermonId) => exploreService.deleteSermon(sermonId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['explore', sessionChurchId, 'sermons'],
+        refetchType: 'active'
+      });
+      toast.success('Sermon deleted');
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.detail || 'Failed to delete sermon');
+    }
+  });
+};
+
+// ============================================
+// PROFILE ANALYTICS HOOKS
+// ============================================
+
+export const useProfileAnalytics = (timeRange = '30d') => {
+  const sessionChurchId = useSessionChurchId();
+
+  return useQuery({
+    queryKey: ['explore', sessionChurchId, 'profile-analytics', timeRange],
+    queryFn: () => exploreService.getProfileAnalytics(timeRange),
+    staleTime: 60000,
+    enabled: !!sessionChurchId
+  });
+};
+
+export const useProfileAggregates = () => {
+  const sessionChurchId = useSessionChurchId();
+
+  return useQuery({
+    queryKey: ['explore', sessionChurchId, 'profile-aggregates'],
+    queryFn: () => exploreService.getProfileAggregates(),
+    staleTime: 60000,
+    enabled: !!sessionChurchId
+  });
+};
+
+export const useTopEngagers = (limit = 10) => {
+  const sessionChurchId = useSessionChurchId();
+
+  return useQuery({
+    queryKey: ['explore', sessionChurchId, 'top-engagers', limit],
+    queryFn: () => exploreService.getTopEngagers(limit),
+    staleTime: 60000,
+    enabled: !!sessionChurchId
+  });
+};
+
+export const useGrowthIndicators = (timeRange = '30d') => {
+  const sessionChurchId = useSessionChurchId();
+
+  return useQuery({
+    queryKey: ['explore', sessionChurchId, 'growth-indicators', timeRange],
+    queryFn: () => exploreService.getGrowthIndicators(timeRange),
+    staleTime: 60000,
+    enabled: !!sessionChurchId
+  });
+};

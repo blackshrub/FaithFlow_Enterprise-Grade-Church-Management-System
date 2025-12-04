@@ -1,11 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from typing import List
+from datetime import datetime, timezone
 
-from models.user import User, UserCreate, UserLogin, UserResponse
+from models.user import User, UserCreate, UserLogin, UserResponse, ProfileUpdate
 from services.auth_service import auth_service
 from utils.dependencies import get_db, get_current_user, require_admin
 from utils.rate_limit import strict_rate_limit
+from utils.security import hash_password, verify_password
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -78,6 +80,113 @@ async def get_current_user_info(
     return current_user
 
 
+@router.patch("/profile", response_model=UserResponse)
+async def update_profile(
+    profile_data: ProfileUpdate,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    """Update current user's profile (self-service)
+
+    Users can update their own:
+    - full_name
+    - email
+    - phone
+    - kiosk_pin
+    - password (requires current_password verification)
+    """
+    user_id = current_user.get("id")
+    if not user_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid user session"
+        )
+
+    # Get current user from database to verify password
+    user_doc = await db.users.find_one({"id": user_id})
+    if not user_doc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+
+    # Build update data
+    update_data = {}
+
+    # Handle password change
+    if profile_data.new_password:
+        if not profile_data.current_password:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Current password is required to set a new password"
+            )
+        # Verify current password
+        if not verify_password(profile_data.current_password, user_doc.get("hashed_password", "")):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Current password is incorrect"
+            )
+        update_data["hashed_password"] = hash_password(profile_data.new_password)
+
+    # Handle other fields
+    if profile_data.full_name is not None:
+        update_data["full_name"] = profile_data.full_name
+
+    if profile_data.email is not None:
+        # Check if email is already taken by another user
+        existing = await db.users.find_one({
+            "email": profile_data.email,
+            "id": {"$ne": user_id}
+        })
+        if existing:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Email is already in use by another account"
+            )
+        update_data["email"] = profile_data.email
+
+    if profile_data.phone is not None:
+        update_data["phone"] = profile_data.phone
+
+    if profile_data.kiosk_pin is not None:
+        update_data["kiosk_pin"] = profile_data.kiosk_pin
+
+    if not update_data:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No fields to update"
+        )
+
+    # Add updated_at timestamp
+    update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+
+    # Perform update
+    result = await db.users.update_one(
+        {"id": user_id},
+        {"$set": update_data}
+    )
+
+    if result.modified_count == 0:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to update profile"
+        )
+
+    # Fetch and return updated user
+    updated_user = await db.users.find_one(
+        {"id": user_id},
+        {"_id": 0, "hashed_password": 0}
+    )
+
+    # Convert ISO string timestamps back to datetime for response model
+    if isinstance(updated_user.get('created_at'), str):
+        updated_user['created_at'] = datetime.fromisoformat(updated_user['created_at'])
+    if isinstance(updated_user.get('updated_at'), str):
+        updated_user['updated_at'] = datetime.fromisoformat(updated_user['updated_at'])
+
+    return updated_user
+
+
 @router.get("/users", response_model=List[UserResponse])
 async def list_users(
     db: AsyncIOMotorDatabase = Depends(get_db),
@@ -131,10 +240,11 @@ async def switch_church(
     
     # Build new JWT payload
     from utils.security import create_access_token
-    
+
     token_payload = {
         "sub": current_user["id"],
         "email": current_user["email"],
+        "full_name": current_user.get("full_name", ""),
         "role": current_user["role"],
         "church_id": current_user.get("church_id"),
         "session_church_id": church_id,

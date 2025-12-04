@@ -7,6 +7,7 @@ import { Input } from '../../components/ui/input';
 import { Textarea } from '../../components/ui/textarea';
 import { Switch } from '../../components/ui/switch';
 import { Label } from '../../components/ui/label';
+import { Checkbox } from '../../components/ui/checkbox';
 import {
   Select,
   SelectContent,
@@ -55,8 +56,8 @@ export default function ChurchSettings() {
     // AI Generation Settings (Church-level)
     ai_generation_enabled: true,
     ai_model_preference: 'claude-3-5-sonnet-20241022',
-    ai_auto_publish: false,
-    ai_review_required: true,
+    auto_publish_ai_content: true,  // If true, AI content publishes immediately
+    theological_traditions: ['evangelical'],  // Multiple traditions = content on common ground only
 
     // Engagement Settings
     streaks_enabled: true,
@@ -512,26 +513,64 @@ export default function ChurchSettings() {
                       <div className="space-y-0.5">
                         <Label>Auto-Publish AI Content</Label>
                         <p className="text-sm text-gray-500">
-                          Automatically publish approved AI-generated content
+                          When enabled, AI content publishes immediately. When disabled, content goes to review queue for approval.
                         </p>
                       </div>
                       <Switch
-                        checked={formData.ai_auto_publish}
-                        onCheckedChange={(checked) => handleChange('ai_auto_publish', checked)}
+                        checked={formData.auto_publish_ai_content ?? true}
+                        onCheckedChange={(checked) => handleChange('auto_publish_ai_content', checked)}
                       />
                     </div>
 
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <Label>Review Required</Label>
-                        <p className="text-sm text-gray-500">
-                          Require manual review before AI content is published
-                        </p>
+                    <div className="space-y-3">
+                      <Label>Content Style (Theological Traditions)</Label>
+                      <p className="text-sm text-gray-500 mb-2">
+                        Select one or more traditions. When multiple are selected, AI generates content on <strong>common ground only</strong>, avoiding controversial topics between traditions.
+                      </p>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {[
+                          { id: 'evangelical', label: 'Evangelical', desc: 'Personal faith, Scripture-centered' },
+                          { id: 'reformed', label: 'Reformed', desc: "God's sovereignty, doctrinal depth" },
+                          { id: 'charismatic', label: 'Charismatic', desc: 'Spirit-led, experiential faith' },
+                          { id: 'liturgical', label: 'Liturgical', desc: 'Traditional, reverent, sacramental' },
+                          { id: 'mainline', label: 'Mainline', desc: 'Community-focused, social justice' },
+                          { id: 'baptist', label: 'Baptist', desc: "Scripture-saturated, believer's faith" },
+                        ].map((tradition) => {
+                          const traditions = formData.theological_traditions ?? ['evangelical'];
+                          const isChecked = traditions.includes(tradition.id);
+
+                          return (
+                            <div
+                              key={tradition.id}
+                              className={`flex items-start space-x-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                                isChecked ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'
+                              }`}
+                              onClick={() => handleArrayToggle('theological_traditions', tradition.id)}
+                            >
+                              <Checkbox
+                                checked={isChecked}
+                                onCheckedChange={() => handleArrayToggle('theological_traditions', tradition.id)}
+                                className="mt-0.5"
+                              />
+                              <div className="space-y-1">
+                                <p className="font-medium text-sm">{tradition.label}</p>
+                                <p className="text-xs text-gray-500">{tradition.desc}</p>
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
-                      <Switch
-                        checked={formData.ai_review_required}
-                        onCheckedChange={(checked) => handleChange('ai_review_required', checked)}
-                      />
+
+                      {(formData.theological_traditions?.length ?? 0) > 1 && (
+                        <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg mt-2">
+                          <Info className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                          <p className="text-sm text-amber-800">
+                            <strong>Multi-tradition mode:</strong> Content will focus only on what all selected traditions agree on.
+                            Controversial topics (e.g., speaking in tongues, infant baptism, predestination) will be avoided.
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </>
                 )}

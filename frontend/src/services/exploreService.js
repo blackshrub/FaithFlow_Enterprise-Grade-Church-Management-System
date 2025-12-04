@@ -190,6 +190,77 @@ export const exploreService = {
     return data;
   },
 
+  // ==================== REVIEW QUEUE (Autonomous Content) ====================
+
+  /**
+   * Get review queue - all AI-generated content pending review
+   */
+  getReviewQueue: async (params = {}) => {
+    const { data } = await api.get('/explore/admin/review-queue', { params });
+    return data;
+  },
+
+  /**
+   * Get review queue statistics
+   */
+  getReviewQueueStats: async () => {
+    const { data } = await api.get('/explore/admin/review-queue/stats');
+    return data;
+  },
+
+  /**
+   * Approve AI-generated content
+   */
+  approveContent: async (contentType, contentId, scheduledDate = null) => {
+    const { data } = await api.post(`/explore/admin/review-queue/${contentType}/${contentId}/approve`, {
+      scheduled_date: scheduledDate
+    });
+    return data;
+  },
+
+  /**
+   * Reject AI-generated content
+   */
+  rejectContent: async (contentType, contentId, reason = null) => {
+    const { data } = await api.post(`/explore/admin/review-queue/${contentType}/${contentId}/reject`, {
+      reason
+    });
+    return data;
+  },
+
+  /**
+   * Bulk approve multiple content items
+   */
+  bulkApproveContent: async (contentIds, scheduledDate = null) => {
+    const { data } = await api.post('/explore/admin/review-queue/bulk-approve', {
+      content_ids: contentIds,
+      scheduled_date: scheduledDate
+    });
+    return data;
+  },
+
+  /**
+   * Bulk reject multiple content items
+   */
+  bulkRejectContent: async (contentIds, reason = null) => {
+    const { data } = await api.post('/explore/admin/review-queue/bulk-reject', {
+      content_ids: contentIds,
+      reason
+    });
+    return data;
+  },
+
+  /**
+   * Trigger manual content generation
+   */
+  triggerGeneration: async (contentTypes = ['all'], churchId = 'global') => {
+    const { data } = await api.post('/explore/admin/trigger-generation', {
+      content_types: contentTypes,
+      church_id: churchId
+    });
+    return data;
+  },
+
   // ==================== AI PROMPT CONFIGURATION ====================
 
   /**
@@ -286,6 +357,162 @@ export const exploreService = {
       content_type: contentType,
       content_id: contentId,
       adopted
+    });
+    return data;
+  },
+
+  // ==================== LIFE STAGE JOURNEYS ====================
+
+  /**
+   * List all journeys with optional filters
+   */
+  listJourneys: async (params = {}) => {
+    const { data } = await api.get('/explore/admin/journeys', { params });
+    return data;
+  },
+
+  /**
+   * Get journey by ID
+   */
+  getJourney: async (journeyId) => {
+    const { data } = await api.get(`/explore/admin/journeys/${journeyId}`);
+    return data;
+  },
+
+  /**
+   * Create new journey
+   */
+  createJourney: async (journeyData) => {
+    const { data } = await api.post('/explore/admin/journeys', journeyData);
+    return data;
+  },
+
+  /**
+   * Update existing journey
+   */
+  updateJourney: async (journeyId, journeyData) => {
+    const { data } = await api.put(`/explore/admin/journeys/${journeyId}`, journeyData);
+    return data;
+  },
+
+  /**
+   * Delete journey
+   */
+  deleteJourney: async (journeyId) => {
+    const { data } = await api.delete(`/explore/admin/journeys/${journeyId}`);
+    return data;
+  },
+
+  /**
+   * Publish journey
+   */
+  publishJourney: async (journeyId) => {
+    const { data } = await api.post(`/explore/admin/journeys/${journeyId}/publish`);
+    return data;
+  },
+
+  /**
+   * Archive journey
+   */
+  archiveJourney: async (journeyId) => {
+    const { data } = await api.post(`/explore/admin/journeys/${journeyId}/archive`);
+    return data;
+  },
+
+  // ==================== SERMON INTEGRATION ====================
+
+  /**
+   * List upcoming sermons
+   */
+  listSermons: async (weeks = 8) => {
+    const { data } = await api.get('/explore/sermons/admin/list', { params: { weeks } });
+    return data;
+  },
+
+  /**
+   * Get sermon by ID
+   */
+  getSermon: async (sermonId) => {
+    const { data } = await api.get(`/explore/sermons/admin/${sermonId}`);
+    return data;
+  },
+
+  /**
+   * Get available sermon themes
+   */
+  getSermonThemes: async () => {
+    const { data } = await api.get('/explore/sermons/themes');
+    return data;
+  },
+
+  /**
+   * Get weekly content plan for sermon
+   */
+  getWeeklyContentPlan: async (sermonId) => {
+    const { data } = await api.get(`/explore/sermons/admin/${sermonId}/content-plan`);
+    return data;
+  },
+
+  /**
+   * Create new sermon
+   */
+  createSermon: async (sermonData) => {
+    const { data } = await api.post('/explore/sermons/admin/create', sermonData);
+    return data;
+  },
+
+  /**
+   * Update existing sermon
+   */
+  updateSermon: async (sermonId, sermonData) => {
+    const { data } = await api.patch(`/explore/sermons/admin/${sermonId}`, sermonData);
+    return data;
+  },
+
+  /**
+   * Delete sermon
+   */
+  deleteSermon: async (sermonId) => {
+    const { data } = await api.delete(`/explore/sermons/admin/${sermonId}`);
+    return data;
+  },
+
+  // ==================== PROFILE ANALYTICS ====================
+
+  /**
+   * Get profile analytics for time range
+   */
+  getProfileAnalytics: async (timeRange = '30d') => {
+    const { data } = await api.get('/explore/admin/profiles/analytics', {
+      params: { time_range: timeRange }
+    });
+    return data;
+  },
+
+  /**
+   * Get aggregated profile statistics
+   */
+  getProfileAggregates: async () => {
+    const { data } = await api.get('/explore/admin/profiles/aggregates');
+    return data;
+  },
+
+  /**
+   * Get top engagers
+   */
+  getTopEngagers: async (limit = 10) => {
+    const { data } = await api.get('/explore/admin/profiles/top-engagers', {
+      params: { limit }
+    });
+    return data;
+  },
+
+  /**
+   * Get growth indicators for time range
+   */
+  getGrowthIndicators: async (timeRange = '30d') => {
+    const { data } = await api.get('/explore/admin/profiles/growth', {
+      params: { time_range: timeRange }
     });
     return data;
   },

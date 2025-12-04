@@ -51,6 +51,7 @@ import {
 } from 'lucide-react-native';
 import { BibleStudySkeleton } from '@/components/explore/LoadingSkeleton';
 import { MarkdownText } from '@/components/explore/MarkdownText';
+import { QuickAskInput } from '@/components/companion/QuickAskInput';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 
@@ -606,6 +607,23 @@ export default function BibleStudyReaderScreen() {
               </MarkdownText>
             </View>
           )}
+
+          {/* Ask Faith Assistant about this lesson */}
+          <View className="mb-4">
+            <QuickAskInput
+              context="bible_study_lesson"
+              contentId={id as string}
+              lessonNumber={currentLessonIndex + 1}
+              contextData={{
+                studyId: id as string,
+                studyTitle: studyTitle,
+                lessonNumber: currentLessonIndex + 1,
+                lessonTitle: lessonTitle,
+              }}
+              title={contentLanguage === 'en' ? 'Questions about this lesson?' : 'Pertanyaan tentang pelajaran ini?'}
+              language={contentLanguage}
+            />
+          </View>
 
           {/* Bottom spacing for buttons */}
           <View className="h-[140px]" />

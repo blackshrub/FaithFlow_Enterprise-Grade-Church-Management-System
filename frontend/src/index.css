@@ -44,7 +44,22 @@ body:has([data-kiosk="true"]) {
 [data-kiosk="true"] select {
     max-width: 100%;
     box-sizing: border-box;
-    font-size: 16px !important; /* Prevents iOS auto-zoom on focus */
+    font-size: 16px; /* Prevents iOS auto-zoom on focus - base size */
+}
+
+/* Allow larger font sizes for specific kiosk inputs (phone, PIN) */
+[data-kiosk="true"] input.kiosk-large-input {
+    font-size: inherit !important; /* Override base 16px to allow inline styles */
+}
+
+/* Phone number input - large touch-friendly size */
+[data-kiosk="true"] input[data-kiosk-phone="true"] {
+    font-size: clamp(1.75rem, 5vw, 3rem) !important;
+}
+
+/* OTP/PIN input - large touch-friendly size */
+[data-kiosk="true"] input[data-kiosk-otp="true"] {
+    font-size: clamp(1.5rem, 4vw, 2.5rem) !important;
 }
 
 /* Prevent any element from causing horizontal overflow */

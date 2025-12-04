@@ -44,19 +44,28 @@ const KioskHome = () => {
     }
   }, [isValid, navigate]);
 
-  // Set default language when settings are loaded
+  // Set language when settings are loaded
+  // Priority: user's manual selection > default from settings
   useEffect(() => {
-    if (settings?.default_language && !localStorage.getItem('kiosk_language_set')) {
+    const userSetLanguage = localStorage.getItem('kiosk_language_set');
+    const userLanguage = localStorage.getItem('kiosk_user_language');
+
+    if (userSetLanguage && userLanguage) {
+      // User has manually selected a language - use that
+      i18n.changeLanguage(userLanguage);
+    } else if (settings?.default_language) {
+      // Use church default language
       i18n.changeLanguage(settings.default_language);
     }
   }, [settings?.default_language, i18n]);
 
   const handleChangeChurch = () => {
-    // Clear church selection
+    // Clear church selection and language preference
     localStorage.removeItem('kiosk_church_id');
     localStorage.removeItem('kiosk_church_name');
     localStorage.removeItem('kiosk_church_data');
     localStorage.removeItem('kiosk_language_set');
+    localStorage.removeItem('kiosk_user_language');
 
     // Redirect to church selector
     navigate('/kiosk', { replace: true });
@@ -125,7 +134,7 @@ const KioskHome = () => {
 
   return (
     <KioskLayout showBack={false} showHome={false}>
-      <div className="space-y-6 sm:space-y-8 lg:space-y-12 w-full max-w-full overflow-x-hidden px-1">
+      <div className="space-y-6 sm:space-y-8 lg:space-y-12 w-full max-w-full px-2 pb-4">
         {/* Welcome Header */}
         <motion.div
           className="text-center space-y-2 sm:space-y-4"
@@ -141,11 +150,12 @@ const KioskHome = () => {
           </p>
         </motion.div>
 
-        {/* Service Tiles - Tablet landscape (2 cols), Portrait/Mobile (1 col), Desktop (3 cols) */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
+        {/* Service Tiles - auto-rows ensures uniform heights across all cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 lg:gap-6 auto-rows-fr">
           {enabledServices.map((service, index) => (
             <motion.div
               key={service.id}
+              className="h-full"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, delay: index * 0.1 }}

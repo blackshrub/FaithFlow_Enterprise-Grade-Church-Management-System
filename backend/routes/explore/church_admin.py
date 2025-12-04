@@ -43,6 +43,9 @@ async def get_church_settings(
         return {
             "church_id": church_id,
             "explore_enabled": True,
+            # AI Content Generation Settings
+            "auto_publish_ai_content": True,  # If True, AI content publishes immediately; if False, goes to review queue
+            "theological_traditions": ["evangelical"],  # Multiple traditions = content on common ground only
             "features": {
                 "daily_devotion": {"enabled": True, "sort_order": 1, "visible": True},
                 "verse_of_the_day": {"enabled": True, "sort_order": 2, "visible": True},

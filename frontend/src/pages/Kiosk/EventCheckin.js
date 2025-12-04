@@ -12,10 +12,11 @@
  * Uses TanStack Query for data fetching
  */
 
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ClipboardCheck, QrCode, Search, UserCheck, Camera as CameraIcon, Check, ArrowLeft } from 'lucide-react';
+import { ClipboardCheck, QrCode, Search, UserCheck, Camera as CameraIcon, Check, ArrowLeft, Loader2 } from 'lucide-react';
+import { useDeferredSearch } from '../../hooks/useDeferredSearch';
 import { motion } from 'framer-motion';
 import KioskLayout from '../../components/Kiosk/KioskLayout';
 import OTPInput from '../../components/Kiosk/OTPInput';
@@ -43,8 +44,11 @@ const EventCheckinKiosk = () => {
 
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [mode, setMode] = useState('scan'); // scan or search
-  const [searchTerm, setSearchTerm] = useState('');
+
+  // React 19 deferred search - search as you type
+  const { searchValue: searchTerm, setSearchValue: setSearchTerm, deferredValue: deferredSearch, isSearchPending } = useDeferredSearch();
   const [searchResults, setSearchResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
   const [checkinInProgress, setCheckinInProgress] = useState(false);
   const [scanning, setScanning] = useState(false);
   const [lastCheckedIn, setLastCheckedIn] = useState(null);
@@ -171,17 +175,29 @@ const EventCheckinKiosk = () => {
     }
   };
 
-  const handleSearch = async () => {
-    if (!searchTerm.trim()) return;
-    try {
-      // Include church_id in the lookup
-      const response = await kioskApi.lookupMemberByPhone(searchTerm, churchId);
-      setSearchResults(response ? [response] : []);
-    } catch (error) {
-      console.error('Search error:', error);
-      setSearchResults([]);
-    }
-  };
+  // Auto-search as user types (using deferred value)
+  useEffect(() => {
+    const performSearch = async () => {
+      if (!deferredSearch.trim() || deferredSearch.length < 3) {
+        setSearchResults([]);
+        return;
+      }
+
+      setIsSearching(true);
+      try {
+        // Include church_id in the lookup
+        const response = await kioskApi.lookupMemberByPhone(deferredSearch, churchId);
+        setSearchResults(response ? [response] : []);
+      } catch (error) {
+        console.error('Search error:', error);
+        setSearchResults([]);
+      } finally {
+        setIsSearching(false);
+      }
+    };
+
+    performSearch();
+  }, [deferredSearch, churchId]);
 
   const handleMemberCheckin = async (member) => {
     await performCheckin(member.id, member.full_name);
@@ -198,7 +214,7 @@ const EventCheckinKiosk = () => {
   if (step === 'pin') {
     return (
       <KioskLayout showBack showHome>
-        <motion.div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl p-4 sm:p-8 lg:p-12 max-w-2xl mx-auto space-y-4 sm:space-y-6 lg:space-y-8 w-full box-border overflow-hidden" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+        <motion.div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl p-4 sm:p-8 lg:p-12 max-w-2xl mx-auto space-y-4 sm:space-y-6 lg:space-y-8 w-full box-border" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
           <div className="text-center space-y-3 sm:space-y-4">
             <div className="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 bg-blue-100 rounded-full flex items-center justify-center mx-auto">
               <ClipboardCheck className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 text-blue-600" />
@@ -207,7 +223,7 @@ const EventCheckinKiosk = () => {
             <p className="text-base sm:text-lg lg:text-xl text-gray-600">{t('pin.description')}</p>
           </div>
 
-          <div className="space-y-4 sm:space-y-6">
+          <div className="space-y-4 sm:space-y-6 py-2">
             <OTPInput
               length={6}
               value={pin}
@@ -233,7 +249,7 @@ const EventCheckinKiosk = () => {
       <KioskLayout showBack showHome onBack={() => setStep('pin')}>
         <div className="space-y-4 sm:space-y-6 lg:space-y-8 w-full max-w-full overflow-x-hidden">
           <div className="text-center px-2">
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2">Select Event</h2>
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2">{t('event_checkin.select_event')}</h2>
             <p className="text-base sm:text-lg lg:text-xl text-gray-600">Logged in as: {staff?.full_name}</p>
           </div>
 
@@ -294,18 +310,18 @@ const EventCheckinKiosk = () => {
             <Button
               variant={mode === 'scan' ? 'default' : 'outline'}
               onClick={() => setMode('scan')}
-              className="h-10 sm:h-12 lg:h-14 px-4 sm:px-6 lg:px-8 text-sm sm:text-base lg:text-xl rounded-xl"
+              className="h-12 sm:h-14 lg:h-16 px-4 sm:px-6 lg:px-8 text-sm sm:text-base lg:text-xl rounded-xl"
             >
               <QrCode className="mr-1 sm:mr-2 h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6" />
-              Scan QR
+              {t('event_checkin.scan_qr')}
             </Button>
             <Button
               variant={mode === 'search' ? 'default' : 'outline'}
               onClick={() => setMode('search')}
-              className="h-10 sm:h-12 lg:h-14 px-4 sm:px-6 lg:px-8 text-sm sm:text-base lg:text-xl rounded-xl"
+              className="h-12 sm:h-14 lg:h-16 px-4 sm:px-6 lg:px-8 text-sm sm:text-base lg:text-xl rounded-xl"
             >
               <Search className="mr-1 sm:mr-2 h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6" />
-              Search
+              {t('event_checkin.search')}
             </Button>
           </div>
 
@@ -321,7 +337,7 @@ const EventCheckinKiosk = () => {
                     disabled={checkinInProgress}
                   >
                     <CameraIcon className="mr-2 h-5 w-5 sm:h-6 sm:w-6" />
-                    Start Scanning
+                    {t('event_checkin.start_scanning')}
                   </Button>
                 </div>
               ) : (
@@ -330,14 +346,14 @@ const EventCheckinKiosk = () => {
                     <video ref={videoRef} className="w-full" />
                     <div className="absolute inset-0 border-2 sm:border-4 border-blue-500 rounded-xl sm:rounded-2xl pointer-events-none" />
                   </div>
-                  <p className="text-center text-sm sm:text-base lg:text-lg text-gray-600">Point camera at QR code</p>
+                  <p className="text-center text-sm sm:text-base lg:text-lg text-gray-600">{t('event_checkin.camera_hint')}</p>
                   <Button variant="outline" onClick={() => {
                     setScanning(false);
                     if (qrScannerRef.current) {
                       qrScannerRef.current.stop();
                     }
-                  }} className="w-full h-10 sm:h-12 lg:h-14 text-sm sm:text-base lg:text-xl rounded-xl">
-                    Stop Scanning
+                  }} className="w-full h-12 sm:h-14 lg:h-16 text-sm sm:text-base lg:text-xl rounded-xl">
+                    {t('event_checkin.stop_scanning')}
                   </Button>
                 </div>
               )}
@@ -347,17 +363,22 @@ const EventCheckinKiosk = () => {
           {/* Search Mode */}
           {mode === 'search' && (
             <motion.div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 lg:p-8 shadow-xl space-y-4 sm:space-y-6" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-              <div className="flex gap-2 sm:gap-4">
+              <div className="relative">
+                {(isSearchPending || isSearching) ? (
+                  <Loader2 className="absolute left-4 top-1/2 transform -translate-y-1/2 text-blue-500 h-5 w-5 sm:h-6 sm:w-6 animate-spin" />
+                ) : (
+                  <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5 sm:h-6 sm:w-6" />
+                )}
                 <Input
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Name or phone number..."
-                  className="h-10 sm:h-12 lg:h-14 text-sm sm:text-base lg:text-xl px-3 sm:px-4 lg:px-6 rounded-xl flex-1"
-                  onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                  placeholder={t('event_checkin.search_placeholder')}
+                  className="h-12 sm:h-14 lg:h-16 text-sm sm:text-base lg:text-xl pl-12 sm:pl-14 pr-4 rounded-xl"
+                  autoFocus
                 />
-                <Button onClick={handleSearch} className="h-10 sm:h-12 lg:h-14 px-4 sm:px-6 lg:px-8 text-sm sm:text-base lg:text-xl rounded-xl">
-                  Search
-                </Button>
+                {searchTerm.length > 0 && searchTerm.length < 3 && (
+                  <p className="text-xs sm:text-sm text-gray-500 mt-2">{t('event_checkin.min_chars') || 'Type at least 3 characters'}</p>
+                )}
               </div>
 
               {searchResults.length > 0 && (
@@ -411,7 +432,7 @@ const EventCheckinKiosk = () => {
     return (
       <KioskLayout showBack={false} showHome={false}>
         <motion.div
-          className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl p-4 sm:p-8 lg:p-12 max-w-2xl mx-auto space-y-4 sm:space-y-6 lg:space-y-8 text-center w-full box-border overflow-hidden"
+          className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl p-4 sm:p-8 lg:p-12 max-w-2xl mx-auto space-y-4 sm:space-y-6 lg:space-y-8 text-center w-full box-border"
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
         >
@@ -426,9 +447,9 @@ const EventCheckinKiosk = () => {
           </motion.div>
 
           <div className="space-y-2 sm:space-y-3 lg:space-y-4">
-            <h2 className="text-2xl sm:text-3xl lg:text-5xl font-bold text-gray-900">Check-In Complete!</h2>
+            <h2 className="text-2xl sm:text-3xl lg:text-5xl font-bold text-gray-900">{t('event_checkin.success_title')}</h2>
             <p className="text-lg sm:text-2xl lg:text-3xl text-blue-600 font-bold">{lastCheckedIn?.name}</p>
-            <p className="text-base sm:text-lg lg:text-xl text-gray-600">has been checked in successfully.</p>
+            <p className="text-base sm:text-lg lg:text-xl text-gray-600">{t('event_checkin.success_text')}</p>
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
@@ -444,7 +465,7 @@ const EventCheckinKiosk = () => {
               onClick={handleContinueChecking}
               className="flex-1 h-12 sm:h-14 lg:h-16 text-base sm:text-lg lg:text-xl rounded-xl"
             >
-              Check In Another
+              {t('event_checkin.check_another')}
             </Button>
           </div>
         </motion.div>

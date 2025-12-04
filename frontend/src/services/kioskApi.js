@@ -19,13 +19,10 @@ export const kioskApi = {
         }
       });
       
-      console.log('🔍 Kiosk member lookup response:', response.data);
       
       if (response.data?.success && response.data?.member) {
-        console.log('✅ Member found:', response.data.member.full_name);
         return response.data.member;
       } else {
-        console.log('⚠️ Member not found');
         return null;
       }
     } catch (error) {
@@ -111,10 +108,8 @@ export const kioskApi = {
       }
     });
 
-    console.log('🎯 Kiosk events response:', response.data);
 
     const events = response.data?.data || [];
-    console.log('🎯 Events count:', events.length);
 
     return events;
   },

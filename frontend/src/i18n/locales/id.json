@@ -181,7 +181,8 @@
     "churches": "Gereja",
     "importExport": "Impor/Ekspor",
     "settings": "Pengaturan",
-    "integrations": "Integrasi"
+    "integrations": "Integrasi",
+    "profile": "Profil Saya"
   },
   "roles": {
     "super_admin": "Super Admin",
@@ -2599,5 +2600,43 @@
       "noAnalytics": "Tidak ada data analitik tersedia",
       "createFirst": "Buat konten pertama Anda untuk memulai"
     }
+  },
+  "profile": {
+    "title": "Profil Saya",
+    "subtitle": "Kelola pengaturan akun dan keamanan Anda",
+    "personalInfo": "Informasi Pribadi",
+    "personalInfoDesc": "Perbarui data pribadi Anda",
+    "fullName": "Nama Lengkap",
+    "enterFullName": "Masukkan nama lengkap Anda",
+    "email": "Alamat Email",
+    "enterEmail": "Masukkan email Anda",
+    "phone": "Nomor Telepon",
+    "enterPhone": "Masukkan nomor telepon Anda",
+    "savePersonalInfo": "Simpan Info Pribadi",
+    "security": "Keamanan",
+    "securityDesc": "Perbarui PIN dan kata sandi Anda",
+    "kioskPin": "PIN Kiosk",
+    "enterPin": "Masukkan PIN 6 digit",
+    "pinHelp": "Digunakan untuk login kiosk. Harus tepat 6 digit.",
+    "pinMustBe6Digits": "PIN harus tepat 6 digit",
+    "changePassword": "Ganti Kata Sandi",
+    "currentPassword": "Kata Sandi Saat Ini",
+    "enterCurrentPassword": "Masukkan kata sandi saat ini",
+    "currentPasswordRequired": "Kata sandi saat ini diperlukan",
+    "newPassword": "Kata Sandi Baru",
+    "enterNewPassword": "Masukkan kata sandi baru",
+    "confirmPassword": "Konfirmasi Kata Sandi Baru",
+    "confirmNewPassword": "Konfirmasi kata sandi baru",
+    "passwordsMustMatch": "Kata sandi baru tidak cocok",
+    "passwordMinLength": "Kata sandi minimal 6 karakter",
+    "saveSecurity": "Simpan Pengaturan Keamanan",
+    "accountInfo": "Informasi Akun",
+    "accountInfoDesc": "Informasi baca-saja tentang akun Anda",
+    "role": "Peran",
+    "status": "Status",
+    "userId": "ID Pengguna",
+    "updateSuccess": "Profil berhasil diperbarui",
+    "updateError": "Gagal memperbarui profil",
+    "noChanges": "Tidak ada perubahan untuk disimpan"
   }
 }

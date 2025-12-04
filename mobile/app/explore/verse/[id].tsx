@@ -29,6 +29,7 @@ import { ArrowLeft, Check, Share2, Copy } from 'lucide-react-native';
 import { VerseOfTheDaySkeleton } from '@/components/explore/LoadingSkeleton';
 import { MarkdownText } from '@/components/explore/MarkdownText';
 import { AudioPlayButton } from '@/components/explore/AudioPlayButton';
+import { QuickAskInput } from '@/components/companion/QuickAskInput';
 import Animated, { SlideInRight } from 'react-native-reanimated';
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
@@ -285,6 +286,20 @@ export default function VerseOfTheDayScreen() {
               </MarkdownText>
             </View>
           )}
+
+          {/* Ask Faith Assistant about this verse */}
+          <View className="mb-6">
+            <QuickAskInput
+              context="verse_meditation"
+              contentId={id as string}
+              contextData={{
+                verseReference: formatBibleReference(verse.verse, contentLanguage),
+                verseText: verseText,
+              }}
+              title={contentLanguage === 'en' ? 'Questions about this verse?' : 'Pertanyaan tentang ayat ini?'}
+              language={contentLanguage}
+            />
+          </View>
 
           {/* Bottom spacing for button */}
           <View className="h-[100px]" />

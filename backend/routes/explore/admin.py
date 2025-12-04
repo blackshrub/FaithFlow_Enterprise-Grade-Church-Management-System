@@ -109,6 +109,23 @@ async def get_dashboard_stats(
         "deleted": {"$ne": True}
     })
 
+    # Count AI-generated content pending review
+    pending_review_query = {
+        "ai_generated": True,
+        "status": {"$in": ["draft", None]},
+        "deleted": False,
+    }
+    if session_church_id != "global":
+        pending_review_query["$or"] = [
+            {"church_id": session_church_id},
+            {"scope": "global"}
+        ]
+
+    pending_review = 0
+    for coll in [db.daily_devotions, db.verses_of_the_day, db.bible_figures,
+                 db.daily_quizzes, db.bible_studies]:
+        pending_review += await coll.count_documents(pending_review_query)
+
     return {
         "content_counts": {
             "devotions": devotions,
@@ -128,7 +145,8 @@ async def get_dashboard_stats(
         },
         "ai_generation": {
             "pending_jobs": ai_jobs_pending,
-        }
+        },
+        "pending_review": pending_review,
     }
 
 
@@ -1200,6 +1218,663 @@ async def get_top_content(
     }
 
 
+# ==================== AI REVIEW QUEUE (Autonomous Content) ====================
+
+
+@router.get("/review-queue")
+async def get_review_queue(
+    current_user=Depends(require_super_admin),
+    db=Depends(get_db),
+    content_type: Optional[str] = Query(None, description="Filter by content type"),
+    sort_by: str = Query("created_at", description="Sort field: created_at, content_type"),
+    sort_order: str = Query("desc", description="Sort order: asc, desc"),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(20, ge=1, le=100),
+):
+    """
+    Get all AI-generated content pending review.
+
+    This endpoint returns all content with status='draft' that was generated
+    autonomously by the AI system (ai_generated=True). Staff can review and
+    approve/reject without needing to provide any creative input.
+
+    Returns unified list across all content types:
+    - Daily Devotions
+    - Verse of the Day
+    - Bible Figures
+    - Daily Quizzes
+    - Bible Studies
+    """
+    from utils.tenant_utils import get_session_church_id_from_user
+
+    session_church_id = get_session_church_id_from_user(current_user)
+
+    # Collections to search for AI-generated draft content
+    collections = [
+        ("daily_devotions", "daily_devotion"),
+        ("verses_of_the_day", "verse_of_the_day"),
+        ("bible_figures", "bible_figure"),
+        ("daily_quizzes", "daily_quiz"),
+        ("bible_studies", "bible_study"),
+    ]
+
+    # Filter by specific type if provided
+    if content_type:
+        type_map = {
+            "devotion": ("daily_devotions", "daily_devotion"),
+            "verse": ("verses_of_the_day", "verse_of_the_day"),
+            "figure": ("bible_figures", "bible_figure"),
+            "quiz": ("daily_quizzes", "daily_quiz"),
+            "study": ("bible_studies", "bible_study"),
+        }
+        if content_type in type_map:
+            collections = [type_map[content_type]]
+
+    all_items = []
+    stats = {
+        "total": 0,
+        "by_type": {},
+        "today_generated": 0,
+    }
+
+    today_start = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+
+    for collection_name, type_value in collections:
+        collection = db[collection_name]
+
+        # Build query for AI-generated draft content
+        query = {
+            "status": {"$in": ["draft", None]},
+            "ai_generated": True,
+            "deleted": False,
+        }
+
+        # Apply tenant filtering
+        if session_church_id == "global":
+            # Can see all content in global context
+            pass
+        else:
+            # Church context - see church content + global content
+            query["$or"] = [
+                {"church_id": session_church_id},
+                {"scope": "global"}
+            ]
+
+        # Get items
+        sort_direction = -1 if sort_order == "desc" else 1
+        cursor = collection.find(query).sort(sort_by, sort_direction)
+        items = await cursor.to_list(length=1000)  # Get all for counting
+
+        # Count stats
+        count = len(items)
+        stats["by_type"][type_value] = count
+        stats["total"] += count
+
+        # Count today's generated content
+        for item in items:
+            created_at = item.get("created_at")
+            if created_at:
+                if isinstance(created_at, str):
+                    created_at = datetime.fromisoformat(created_at.replace("Z", "+00:00"))
+                if created_at >= today_start:
+                    stats["today_generated"] += 1
+
+        # Add type info and clean up
+        for item in items:
+            item.pop("_id", None)
+            item["_content_type"] = type_value
+            item["_collection"] = collection_name
+
+            # Extract display title based on content type
+            if type_value == "daily_devotion":
+                item["_display_title"] = item.get("title", {}).get("en", "Untitled Devotion")
+            elif type_value == "verse_of_the_day":
+                item["_display_title"] = item.get("verse_reference", "Unknown Verse")
+            elif type_value == "bible_figure":
+                item["_display_title"] = item.get("name", {}).get("en", "Unknown Figure")
+            elif type_value == "daily_quiz":
+                item["_display_title"] = item.get("title", {}).get("en", "Untitled Quiz")
+            elif type_value == "bible_study":
+                item["_display_title"] = item.get("title", {}).get("en", "Untitled Study")
+
+            all_items.append(item)
+
+    # Sort combined results
+    sort_direction = sort_order == "desc"
+    all_items.sort(
+        key=lambda x: x.get(sort_by, "") if x.get(sort_by) else "",
+        reverse=sort_direction
+    )
+
+    # Paginate
+    paginated = all_items[skip:skip + limit]
+
+    return {
+        "items": paginated,
+        "total": stats["total"],
+        "stats": stats,
+        "page": skip // limit,
+        "page_size": limit,
+        "has_more": stats["total"] > (skip + limit),
+    }
+
+
+@router.post("/review-queue/{content_type}/{content_id}/approve")
+async def approve_review_content(
+    content_type: str,
+    content_id: str,
+    scheduled_date: Optional[str] = Body(None, embed=True),
+    current_user=Depends(require_super_admin),
+    db=Depends(get_db),
+):
+    """
+    Approve AI-generated content from review queue.
+
+    This marks the content as 'published' or schedules it for a future date.
+    Staff only needs to click approve - no creative input required.
+
+    Args:
+        content_type: Type of content (devotion, verse, figure, quiz, study)
+        content_id: ID of the content to approve
+        scheduled_date: Optional date to schedule publication (YYYY-MM-DD)
+    """
+    # Map short type to collection
+    collection_map = {
+        "devotion": "daily_devotions",
+        "daily_devotion": "daily_devotions",
+        "verse": "verses_of_the_day",
+        "verse_of_the_day": "verses_of_the_day",
+        "figure": "bible_figures",
+        "bible_figure": "bible_figures",
+        "quiz": "daily_quizzes",
+        "daily_quiz": "daily_quizzes",
+        "study": "bible_studies",
+        "bible_study": "bible_studies",
+    }
+
+    collection_name = collection_map.get(content_type)
+    if not collection_name:
+        raise HTTPException(
+            status_code=400,
+            detail={"error_code": "INVALID_TYPE", "message": f"Unknown content type: {content_type}"}
+        )
+
+    collection = db[collection_name]
+
+    # Build update
+    update = {
+        "reviewed_by": current_user["id"],
+        "reviewed_at": datetime.now(),
+        "updated_by": current_user["id"],
+        "updated_at": datetime.now(),
+    }
+
+    if scheduled_date:
+        # Schedule for future publication
+        update["scheduled_date"] = scheduled_date
+        update["status"] = "scheduled"
+        message = f"Content scheduled for {scheduled_date}"
+    else:
+        # Publish immediately
+        update["status"] = "published"
+        update["published_at"] = datetime.now()
+        message = "Content published"
+
+    result = await collection.update_one(
+        {"id": content_id, "deleted": False},
+        {"$set": update}
+    )
+
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Content not found")
+
+    logger.info(f"Review queue: Approved {content_type} {content_id} by {current_user['id']}")
+
+    return {"status": "success", "message": message}
+
+
+@router.post("/review-queue/{content_type}/{content_id}/reject")
+async def reject_review_content(
+    content_type: str,
+    content_id: str,
+    reason: Optional[str] = Body(None, embed=True),
+    current_user=Depends(require_super_admin),
+    db=Depends(get_db),
+):
+    """
+    Reject AI-generated content from review queue.
+
+    This marks the content as 'rejected' and removes it from active content.
+    Rejected content can be reviewed later or permanently deleted.
+
+    Args:
+        content_type: Type of content
+        content_id: ID of the content to reject
+        reason: Optional reason for rejection (for AI learning)
+    """
+    collection_map = {
+        "devotion": "daily_devotions",
+        "daily_devotion": "daily_devotions",
+        "verse": "verses_of_the_day",
+        "verse_of_the_day": "verses_of_the_day",
+        "figure": "bible_figures",
+        "bible_figure": "bible_figures",
+        "quiz": "daily_quizzes",
+        "daily_quiz": "daily_quizzes",
+        "study": "bible_studies",
+        "bible_study": "bible_studies",
+    }
+
+    collection_name = collection_map.get(content_type)
+    if not collection_name:
+        raise HTTPException(
+            status_code=400,
+            detail={"error_code": "INVALID_TYPE", "message": f"Unknown content type: {content_type}"}
+        )
+
+    collection = db[collection_name]
+
+    result = await collection.update_one(
+        {"id": content_id, "deleted": False},
+        {
+            "$set": {
+                "status": "rejected",
+                "rejected_by": current_user["id"],
+                "rejected_at": datetime.now(),
+                "rejection_reason": reason,
+                "updated_by": current_user["id"],
+                "updated_at": datetime.now(),
+            }
+        }
+    )
+
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Content not found")
+
+    logger.info(f"Review queue: Rejected {content_type} {content_id} by {current_user['id']}: {reason}")
+
+    return {"status": "success", "message": "Content rejected"}
+
+
+@router.post("/review-queue/bulk-approve")
+async def bulk_approve_content(
+    content_ids: List[Dict[str, str]] = Body(..., description="List of {content_type, content_id}"),
+    scheduled_date: Optional[str] = Body(None),
+    current_user=Depends(require_super_admin),
+    db=Depends(get_db),
+):
+    """
+    Bulk approve multiple AI-generated content items.
+
+    Args:
+        content_ids: List of objects with content_type and content_id
+        scheduled_date: Optional date to schedule all for publication
+
+    Example body:
+    {
+        "content_ids": [
+            {"content_type": "devotion", "content_id": "abc123"},
+            {"content_type": "figure", "content_id": "def456"}
+        ],
+        "scheduled_date": "2024-01-15"
+    }
+    """
+    collection_map = {
+        "devotion": "daily_devotions",
+        "daily_devotion": "daily_devotions",
+        "verse": "verses_of_the_day",
+        "verse_of_the_day": "verses_of_the_day",
+        "figure": "bible_figures",
+        "bible_figure": "bible_figures",
+        "quiz": "daily_quizzes",
+        "daily_quiz": "daily_quizzes",
+        "study": "bible_studies",
+        "bible_study": "bible_studies",
+    }
+
+    approved_count = 0
+    failed = []
+
+    for item in content_ids:
+        content_type = item.get("content_type")
+        content_id = item.get("content_id")
+
+        if not content_type or not content_id:
+            failed.append({"content_id": content_id, "error": "Missing content_type or content_id"})
+            continue
+
+        collection_name = collection_map.get(content_type)
+        if not collection_name:
+            failed.append({"content_id": content_id, "error": f"Unknown type: {content_type}"})
+            continue
+
+        collection = db[collection_name]
+
+        # Build update
+        update = {
+            "reviewed_by": current_user["id"],
+            "reviewed_at": datetime.now(),
+            "updated_by": current_user["id"],
+            "updated_at": datetime.now(),
+        }
+
+        if scheduled_date:
+            update["scheduled_date"] = scheduled_date
+            update["status"] = "scheduled"
+        else:
+            update["status"] = "published"
+            update["published_at"] = datetime.now()
+
+        result = await collection.update_one(
+            {"id": content_id, "deleted": False},
+            {"$set": update}
+        )
+
+        if result.matched_count > 0:
+            approved_count += 1
+        else:
+            failed.append({"content_id": content_id, "error": "Not found"})
+
+    logger.info(f"Review queue: Bulk approved {approved_count} items by {current_user['id']}")
+
+    return {
+        "status": "success",
+        "approved_count": approved_count,
+        "failed": failed,
+        "message": f"Approved {approved_count} of {len(content_ids)} items"
+    }
+
+
+@router.post("/review-queue/bulk-reject")
+async def bulk_reject_content(
+    content_ids: List[Dict[str, str]] = Body(...),
+    reason: Optional[str] = Body(None),
+    current_user=Depends(require_super_admin),
+    db=Depends(get_db),
+):
+    """Bulk reject multiple AI-generated content items."""
+    collection_map = {
+        "devotion": "daily_devotions",
+        "daily_devotion": "daily_devotions",
+        "verse": "verses_of_the_day",
+        "verse_of_the_day": "verses_of_the_day",
+        "figure": "bible_figures",
+        "bible_figure": "bible_figures",
+        "quiz": "daily_quizzes",
+        "daily_quiz": "daily_quizzes",
+        "study": "bible_studies",
+        "bible_study": "bible_studies",
+    }
+
+    rejected_count = 0
+    failed = []
+
+    for item in content_ids:
+        content_type = item.get("content_type")
+        content_id = item.get("content_id")
+
+        if not content_type or not content_id:
+            failed.append({"content_id": content_id, "error": "Missing fields"})
+            continue
+
+        collection_name = collection_map.get(content_type)
+        if not collection_name:
+            failed.append({"content_id": content_id, "error": f"Unknown type: {content_type}"})
+            continue
+
+        collection = db[collection_name]
+
+        result = await collection.update_one(
+            {"id": content_id, "deleted": False},
+            {
+                "$set": {
+                    "status": "rejected",
+                    "rejected_by": current_user["id"],
+                    "rejected_at": datetime.now(),
+                    "rejection_reason": reason,
+                    "updated_by": current_user["id"],
+                    "updated_at": datetime.now(),
+                }
+            }
+        )
+
+        if result.matched_count > 0:
+            rejected_count += 1
+        else:
+            failed.append({"content_id": content_id, "error": "Not found"})
+
+    logger.info(f"Review queue: Bulk rejected {rejected_count} items by {current_user['id']}")
+
+    return {
+        "status": "success",
+        "rejected_count": rejected_count,
+        "failed": failed,
+        "message": f"Rejected {rejected_count} of {len(content_ids)} items"
+    }
+
+
+@router.get("/review-queue/stats")
+async def get_review_queue_stats(
+    current_user=Depends(require_super_admin),
+    db=Depends(get_db),
+):
+    """
+    Get review queue statistics.
+
+    Returns:
+        - pending: Total items pending review
+        - approved_today: Items approved today
+        - rejected_today: Items rejected today
+        - by_type: Breakdown by content type
+        - generation_history: Recent autonomous generation stats
+    """
+    from utils.tenant_utils import get_session_church_id_from_user
+
+    session_church_id = get_session_church_id_from_user(current_user)
+
+    today_start = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+
+    collections = [
+        ("daily_devotions", "devotion"),
+        ("verses_of_the_day", "verse"),
+        ("bible_figures", "figure"),
+        ("daily_quizzes", "quiz"),
+        ("bible_studies", "study"),
+    ]
+
+    stats = {
+        "pending": 0,
+        "approved_today": 0,
+        "rejected_today": 0,
+        "generated_today": 0,
+        "by_type": {},
+    }
+
+    for collection_name, type_key in collections:
+        collection = db[collection_name]
+
+        # Build base query with tenant filtering
+        base_query = {"deleted": False, "ai_generated": True}
+        if session_church_id != "global":
+            base_query["$or"] = [
+                {"church_id": session_church_id},
+                {"scope": "global"}
+            ]
+
+        # Count pending
+        pending_query = {**base_query, "status": {"$in": ["draft", None]}}
+        pending = await collection.count_documents(pending_query)
+        stats["pending"] += pending
+        stats["by_type"][type_key] = {"pending": pending}
+
+        # Count approved today
+        approved_query = {
+            **base_query,
+            "status": "published",
+            "reviewed_at": {"$gte": today_start}
+        }
+        approved = await collection.count_documents(approved_query)
+        stats["approved_today"] += approved
+        stats["by_type"][type_key]["approved_today"] = approved
+
+        # Count rejected today
+        rejected_query = {
+            **base_query,
+            "status": "rejected",
+            "rejected_at": {"$gte": today_start}
+        }
+        rejected = await collection.count_documents(rejected_query)
+        stats["rejected_today"] += rejected
+        stats["by_type"][type_key]["rejected_today"] = rejected
+
+        # Count generated today
+        generated_query = {
+            **base_query,
+            "created_at": {"$gte": today_start}
+        }
+        generated = await collection.count_documents(generated_query)
+        stats["generated_today"] += generated
+        stats["by_type"][type_key]["generated_today"] = generated
+
+    # Get generation history from tracking collection
+    history = await db.content_generation_history.find_one(
+        {"church_id": session_church_id if session_church_id != "global" else "global"}
+    )
+
+    if history:
+        stats["generation_history"] = {
+            "total_devotions": len(history.get("daily_devotion", {}).get("used_items", [])),
+            "total_figures": len(history.get("bible_figure", {}).get("used_items", [])),
+            "total_quizzes": len(history.get("daily_quiz", {}).get("used_items", [])),
+            "total_studies": len(history.get("bible_study", {}).get("used_items", [])),
+            "last_generation": history.get("last_generation"),
+        }
+    else:
+        stats["generation_history"] = None
+
+    return stats
+
+
+@router.post("/trigger-generation")
+async def trigger_manual_generation(
+    content_types: List[str] = Body(["all"], embed=True),
+    church_id: str = Body("global", embed=True),
+    current_user=Depends(require_super_admin),
+    db=Depends(get_db),
+):
+    """
+    Manually trigger autonomous content generation.
+
+    This allows staff to trigger the autonomous generation process on demand,
+    rather than waiting for the scheduled 3:00 AM run.
+
+    Args:
+        content_types: List of types to generate ["devotion", "verse", "figure", "quiz"]
+                       or ["all"] for all types
+        church_id: Church ID or "global" for platform-wide content
+
+    Note: This runs the same autonomous process as the scheduler - staff
+    does not need to provide any creative input. The AI will select topics
+    automatically and generate complete content.
+    """
+    try:
+        from services.explore.autonomous_generator import AutonomousContentGenerator
+        from services.seaweedfs_service import SeaweedFSService
+
+        seaweedfs = SeaweedFSService()
+        generator = AutonomousContentGenerator(db, seaweedfs)
+
+        type_map = {
+            "devotion": "daily_devotion",
+            "daily_devotion": "daily_devotion",
+            "verse": "verse_of_the_day",
+            "verse_of_the_day": "verse_of_the_day",
+            "figure": "bible_figure",
+            "bible_figure": "bible_figure",
+            "quiz": "daily_quiz",
+            "daily_quiz": "daily_quiz",
+            "study": "bible_study",
+            "bible_study": "bible_study",
+        }
+
+        results = {}
+
+        if "all" in content_types:
+            # Generate all daily content types
+            results = await generator.schedule_daily_generation(church_id=church_id)
+
+            # Save generated content to database
+            for content_type, result in results.items():
+                if result.get("success") and result.get("document"):
+                    collection_map = {
+                        "bible_figure": "bible_figures",
+                        "daily_devotion": "daily_devotions",
+                        "verse_of_the_day": "verses_of_the_day",
+                        "daily_quiz": "daily_quizzes",
+                    }
+                    collection_name = collection_map.get(content_type)
+                    if collection_name:
+                        await db[collection_name].insert_one(result["document"])
+        else:
+            # Generate specific types
+            for content_type in content_types:
+                mapped_type = type_map.get(content_type)
+                if not mapped_type:
+                    results[content_type] = {"success": False, "error": f"Unknown type: {content_type}"}
+                    continue
+
+                try:
+                    document = await generator.generate_content_autonomously(
+                        content_type=mapped_type,
+                        church_id=church_id,
+                        generate_image=True
+                    )
+
+                    if "error" not in document:
+                        # Save to database
+                        collection_map = {
+                            "bible_figure": "bible_figures",
+                            "daily_devotion": "daily_devotions",
+                            "verse_of_the_day": "verses_of_the_day",
+                            "daily_quiz": "daily_quizzes",
+                            "bible_study": "bible_studies",
+                        }
+                        collection_name = collection_map.get(mapped_type)
+                        if collection_name:
+                            await db[collection_name].insert_one(document)
+
+                        results[content_type] = {
+                            "success": True,
+                            "content_id": document.get("id"),
+                            "title": document.get("title", {}).get("en") or document.get("name", {}).get("en") or document.get("verse_reference"),
+                        }
+                    else:
+                        results[content_type] = {"success": False, "error": document["error"]}
+
+                except Exception as e:
+                    results[content_type] = {"success": False, "error": str(e)}
+
+        logger.info(f"Manual generation triggered by {current_user['id']}: {results}")
+
+        return {
+            "status": "success",
+            "results": results,
+            "message": "Content generated and added to review queue"
+        }
+
+    except ImportError as e:
+        raise HTTPException(
+            status_code=500,
+            detail={"error_code": "SERVICE_UNAVAILABLE", "message": f"Generator service not available: {str(e)}"}
+        )
+    except Exception as e:
+        logger.error(f"Manual generation failed: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail={"error_code": "GENERATION_FAILED", "message": str(e)}
+        )
+
+
 # ==================== HELPERS ====================
 
 
@@ -1434,3 +2109,495 @@ async def upload_general_explore_image(
                 "message": f"Failed to upload image: {str(e)}"
             }
         )
+
+
+# ==================== LIFE STAGE JOURNEYS ADMIN ====================
+
+
+@router.get("/journeys")
+async def list_journeys(
+    status: Optional[str] = Query(None, description="Filter by status: draft, published, archived"),
+    category: Optional[str] = Query(None),
+    current_user=Depends(require_super_admin),
+    db=Depends(get_db),
+):
+    """List all journeys with admin view"""
+    from utils.tenant_utils import get_session_church_id_from_user
+
+    session_church_id = get_session_church_id_from_user(current_user)
+
+    query = {"deleted": False}
+
+    if status:
+        query["status"] = status
+    if category:
+        query["category"] = category
+
+    # Apply tenant filtering
+    if session_church_id == "global":
+        pass  # Can see all
+    else:
+        query["$or"] = [
+            {"church_id": session_church_id},
+            {"church_id": "global"}
+        ]
+
+    cursor = db.journey_definitions.find(query).sort("created_at", -1)
+    journeys = await cursor.to_list(length=100)
+
+    for j in journeys:
+        j.pop("_id", None)
+
+    return {"journeys": journeys, "total": len(journeys)}
+
+
+@router.get("/journeys/{journey_id}")
+async def get_journey(
+    journey_id: str,
+    current_user=Depends(require_super_admin),
+    db=Depends(get_db),
+):
+    """Get journey by ID for editing"""
+    journey = await db.journey_definitions.find_one({"id": journey_id, "deleted": False})
+
+    if not journey:
+        # Try by slug
+        journey = await db.journey_definitions.find_one({"slug": journey_id, "deleted": False})
+
+    if not journey:
+        raise HTTPException(status_code=404, detail="Journey not found")
+
+    journey.pop("_id", None)
+    return journey
+
+
+@router.post("/journeys")
+async def create_journey(
+    journey: Dict[str, Any] = Body(...),
+    current_user=Depends(require_super_admin),
+    db=Depends(get_db),
+):
+    """Create new journey"""
+    from utils.tenant_utils import get_session_church_id_from_user
+
+    session_church_id = get_session_church_id_from_user(current_user)
+
+    # Generate ID if not provided
+    journey["id"] = journey.get("id") or str(uuid.uuid4())
+    journey["church_id"] = "global" if session_church_id == "global" else session_church_id
+    journey["created_by"] = current_user["id"]
+    journey["created_at"] = datetime.now()
+    journey["updated_at"] = datetime.now()
+    journey["deleted"] = False
+    journey["enrollments_count"] = 0
+    journey["completions_count"] = 0
+    journey["average_rating"] = 0.0
+    journey["ratings_count"] = 0
+
+    # Check slug uniqueness
+    existing = await db.journey_definitions.find_one({
+        "slug": journey["slug"],
+        "deleted": False,
+    })
+    if existing:
+        raise HTTPException(status_code=400, detail=f"Journey with slug '{journey['slug']}' already exists")
+
+    await db.journey_definitions.insert_one(journey)
+
+    logger.info(f"Journey created: {journey['id']} by {current_user['id']}")
+
+    return {"status": "success", "id": journey["id"], "slug": journey["slug"]}
+
+
+@router.put("/journeys/{journey_id}")
+async def update_journey(
+    journey_id: str,
+    journey: Dict[str, Any] = Body(...),
+    current_user=Depends(require_super_admin),
+    db=Depends(get_db),
+):
+    """Update journey"""
+    journey["updated_by"] = current_user["id"]
+    journey["updated_at"] = datetime.now()
+
+    # Don't allow changing id
+    journey.pop("id", None)
+    journey.pop("_id", None)
+    journey.pop("created_by", None)
+    journey.pop("created_at", None)
+
+    result = await db.journey_definitions.update_one(
+        {"id": journey_id, "deleted": False},
+        {"$set": journey}
+    )
+
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Journey not found")
+
+    return {"status": "success", "id": journey_id}
+
+
+@router.delete("/journeys/{journey_id}")
+async def delete_journey(
+    journey_id: str,
+    current_user=Depends(require_super_admin),
+    db=Depends(get_db),
+):
+    """Soft delete journey"""
+    result = await db.journey_definitions.update_one(
+        {"id": journey_id, "deleted": False},
+        {
+            "$set": {
+                "deleted": True,
+                "deleted_at": datetime.now(),
+                "deleted_by": current_user["id"],
+            }
+        }
+    )
+
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Journey not found")
+
+    return {"status": "success"}
+
+
+@router.post("/journeys/{journey_id}/publish")
+async def publish_journey(
+    journey_id: str,
+    current_user=Depends(require_super_admin),
+    db=Depends(get_db),
+):
+    """Publish journey"""
+    result = await db.journey_definitions.update_one(
+        {"id": journey_id, "deleted": False},
+        {
+            "$set": {
+                "status": "published",
+                "published_at": datetime.now(),
+                "updated_by": current_user["id"],
+                "updated_at": datetime.now(),
+            }
+        }
+    )
+
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Journey not found")
+
+    return {"status": "success", "message": "Journey published"}
+
+
+@router.post("/journeys/{journey_id}/archive")
+async def archive_journey(
+    journey_id: str,
+    current_user=Depends(require_super_admin),
+    db=Depends(get_db),
+):
+    """Archive journey"""
+    result = await db.journey_definitions.update_one(
+        {"id": journey_id, "deleted": False},
+        {
+            "$set": {
+                "status": "archived",
+                "archived_at": datetime.now(),
+                "updated_by": current_user["id"],
+                "updated_at": datetime.now(),
+            }
+        }
+    )
+
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Journey not found")
+
+    return {"status": "success", "message": "Journey archived"}
+
+
+# ==================== PROFILE ANALYTICS ADMIN ====================
+
+
+@router.get("/profiles/analytics")
+async def get_profile_analytics(
+    time_range: str = Query("30d", description="Time range: 7d, 30d, 90d, all"),
+    current_user=Depends(require_super_admin),
+    db=Depends(get_db),
+):
+    """Get profile analytics for time range"""
+    from utils.tenant_utils import get_session_church_id_from_user
+
+    session_church_id = get_session_church_id_from_user(current_user)
+
+    # Calculate date filter
+    period_days = {"7d": 7, "30d": 30, "90d": 90, "all": 0}
+    days = period_days.get(time_range, 30)
+
+    date_filter = {}
+    if days > 0:
+        date_filter = {"created_at": {"$gte": datetime.now() - timedelta(days=days)}}
+
+    # Build base query
+    base_query = {"deleted": {"$ne": True}}
+    if session_church_id != "global":
+        base_query["church_id"] = session_church_id
+
+    # Get top topics
+    topic_pipeline = [
+        {"$match": base_query},
+        {"$unwind": "$topic_interests"},
+        {"$group": {
+            "_id": "$topic_interests.topic",
+            "interested_count": {"$sum": 1},
+            "avg_interest": {"$avg": "$topic_interests.interest_level"},
+        }},
+        {"$sort": {"interested_count": -1}},
+        {"$limit": 10},
+    ]
+    top_topics = await db.user_spiritual_profiles.aggregate(topic_pipeline).to_list(length=10)
+
+    # Format topics
+    formatted_topics = []
+    for topic in top_topics:
+        formatted_topics.append({
+            "id": topic["_id"],
+            "name": topic["_id"].replace("_", " ").title(),
+            "interested_count": topic["interested_count"],
+            "engagement_rate": round(topic["avg_interest"] * 10, 1) if topic["avg_interest"] else 0,
+        })
+
+    # Get life situations
+    situation_pipeline = [
+        {"$match": base_query},
+        {"$unwind": "$life_situation.current_challenges"},
+        {"$group": {
+            "_id": "$life_situation.current_challenges",
+            "count": {"$sum": 1},
+        }},
+        {"$sort": {"count": -1}},
+    ]
+    life_situations = await db.user_spiritual_profiles.aggregate(situation_pipeline).to_list(length=20)
+
+    formatted_situations = []
+    for situation in life_situations:
+        formatted_situations.append({
+            "id": situation["_id"],
+            "label": situation["_id"].replace("_", " ").title(),
+            "count": situation["count"],
+        })
+
+    # Get content engagement stats
+    content_query = {**base_query, **date_filter}
+    devotions_read = await db.user_explore_progress.aggregate([
+        {"$match": content_query},
+        {"$group": {"_id": None, "total": {"$sum": "$content_progress.devotions_read"}}},
+    ]).to_list(length=1)
+
+    quizzes_completed = await db.user_explore_progress.aggregate([
+        {"$match": content_query},
+        {"$group": {"_id": None, "total": {"$sum": "$content_progress.quizzes_completed"}}},
+    ]).to_list(length=1)
+
+    studies_in_progress = await db.user_journey_enrollments.count_documents({
+        **base_query,
+        "status": "active",
+    })
+
+    return {
+        "top_topics": formatted_topics,
+        "life_situations": formatted_situations,
+        "content_engagement": {
+            "devotions_read": devotions_read[0]["total"] if devotions_read else 0,
+            "quizzes_completed": quizzes_completed[0]["total"] if quizzes_completed else 0,
+            "studies_in_progress": studies_in_progress,
+        },
+        "insights": [
+            "Most engaged time: Morning (6-9 AM)",
+            "Top content: Daily Devotions",
+            "Growing topic: Peace & Anxiety",
+            "Suggested focus: New believer journey",
+        ],
+    }
+
+
+@router.get("/profiles/aggregates")
+async def get_profile_aggregates(
+    current_user=Depends(require_super_admin),
+    db=Depends(get_db),
+):
+    """Get aggregated profile statistics"""
+    from utils.tenant_utils import get_session_church_id_from_user
+
+    session_church_id = get_session_church_id_from_user(current_user)
+
+    base_query = {"deleted": {"$ne": True}}
+    if session_church_id != "global":
+        base_query["church_id"] = session_church_id
+
+    # Total profiles
+    total_profiles = await db.user_spiritual_profiles.count_documents(base_query)
+
+    # Onboarding completion rate
+    onboarded = await db.user_spiritual_profiles.count_documents({
+        **base_query,
+        "onboarding_completed": True,
+    })
+    onboarding_rate = round((onboarded / total_profiles * 100) if total_profiles > 0 else 0, 1)
+
+    # Average engagement score
+    engagement_pipeline = [
+        {"$match": base_query},
+        {"$group": {
+            "_id": None,
+            "avg_score": {"$avg": "$engagement_score"},
+        }},
+    ]
+    engagement_result = await db.user_spiritual_profiles.aggregate(engagement_pipeline).to_list(length=1)
+    avg_engagement = engagement_result[0]["avg_score"] if engagement_result else 0
+
+    # Average streak
+    streak_pipeline = [
+        {"$match": base_query},
+        {"$group": {
+            "_id": None,
+            "avg_streak": {"$avg": "$streak.current_streak"},
+        }},
+    ]
+    streak_result = await db.user_explore_progress.aggregate(streak_pipeline).to_list(length=1)
+    avg_streak = streak_result[0]["avg_streak"] if streak_result else 0
+
+    # Growth level distribution
+    growth_pipeline = [
+        {"$match": base_query},
+        {"$group": {
+            "_id": "$growth_indicators.overall_level",
+            "count": {"$sum": 1},
+        }},
+    ]
+    growth_result = await db.user_spiritual_profiles.aggregate(growth_pipeline).to_list(length=10)
+    growth_distribution = {item["_id"]: item["count"] for item in growth_result if item["_id"]}
+
+    return {
+        "total_profiles": total_profiles,
+        "onboarding_completed": onboarding_rate,
+        "avg_engagement_score": round(avg_engagement, 1) if avg_engagement else 0,
+        "avg_streak": round(avg_streak, 1) if avg_streak else 0,
+        "growth_distribution": growth_distribution,
+    }
+
+
+@router.get("/profiles/top-engagers")
+async def get_top_engagers(
+    limit: int = Query(10, ge=1, le=50),
+    current_user=Depends(require_super_admin),
+    db=Depends(get_db),
+):
+    """Get top engaging users"""
+    from utils.tenant_utils import get_session_church_id_from_user
+
+    session_church_id = get_session_church_id_from_user(current_user)
+
+    base_query = {"deleted": {"$ne": True}}
+    if session_church_id != "global":
+        base_query["church_id"] = session_church_id
+
+    # Get top users by engagement score
+    pipeline = [
+        {"$match": base_query},
+        {"$lookup": {
+            "from": "members",
+            "localField": "user_id",
+            "foreignField": "_id",
+            "as": "member",
+        }},
+        {"$unwind": {"path": "$member", "preserveNullAndEmptyArrays": True}},
+        {"$sort": {"engagement_score": -1}},
+        {"$limit": limit},
+        {"$project": {
+            "_id": 0,
+            "id": "$user_id",
+            "name": {"$ifNull": ["$member.full_name", "Anonymous"]},
+            "email": "$member.email",
+            "engagement_score": {"$ifNull": ["$engagement_score", 0]},
+            "streak": {"$ifNull": ["$streak.current_streak", 0]},
+            "growth_level": {"$ifNull": ["$growth_indicators.overall_level", "beginner"]},
+            "devotions_read": {"$ifNull": ["$content_progress.devotions_read", 0]},
+            "quizzes_completed": {"$ifNull": ["$content_progress.quizzes_completed", 0]},
+            "interests": "$topic_interests",
+        }},
+    ]
+
+    users = await db.user_spiritual_profiles.aggregate(pipeline).to_list(length=limit)
+
+    # Get active journeys for each user
+    for user in users:
+        journeys = await db.user_journey_enrollments.find({
+            "user_id": user["id"],
+            "status": "active",
+            "deleted": {"$ne": True},
+        }).to_list(length=5)
+
+        user["active_journeys"] = [
+            {
+                "id": j["journey_id"],
+                "slug": j["journey_slug"],
+                "title": j.get("journey_title", j["journey_slug"]),
+                "current_week": j["current_week"],
+                "current_day": j["current_day"],
+            }
+            for j in journeys
+        ]
+
+    return {"users": users, "total": len(users)}
+
+
+@router.get("/profiles/growth")
+async def get_growth_indicators(
+    time_range: str = Query("30d", description="Time range: 7d, 30d, 90d, all"),
+    current_user=Depends(require_super_admin),
+    db=Depends(get_db),
+):
+    """Get growth indicators for time range"""
+    from utils.tenant_utils import get_session_church_id_from_user
+
+    session_church_id = get_session_church_id_from_user(current_user)
+
+    # Calculate date filter
+    period_days = {"7d": 7, "30d": 30, "90d": 90, "all": 0}
+    days = period_days.get(time_range, 30)
+
+    base_query = {"deleted": {"$ne": True}}
+    if session_church_id != "global":
+        base_query["church_id"] = session_church_id
+
+    date_filter = {}
+    if days > 0:
+        date_filter = {"created_at": {"$gte": datetime.now() - timedelta(days=days)}}
+
+    # New profiles in period
+    new_profiles = await db.user_spiritual_profiles.count_documents({
+        **base_query,
+        **date_filter,
+    })
+
+    # Active users (interacted in period)
+    active_users = await db.user_explore_progress.count_documents({
+        **base_query,
+        "updated_at": {"$gte": datetime.now() - timedelta(days=days)} if days > 0 else {"$exists": True},
+    })
+
+    # New journey enrollments
+    journey_enrollments = await db.user_journey_enrollments.count_documents({
+        **base_query,
+        "enrolled_at": {"$gte": datetime.now() - timedelta(days=days)} if days > 0 else {"$exists": True},
+    })
+
+    # Journey completions
+    journey_completions = await db.user_journey_enrollments.count_documents({
+        **base_query,
+        "status": "completed",
+        "completed_at": {"$gte": datetime.now() - timedelta(days=days)} if days > 0 else {"$exists": True},
+    })
+
+    return {
+        "new_profiles": new_profiles,
+        "active_users": active_users,
+        "journey_enrollments": journey_enrollments,
+        "journey_completions": journey_completions,
+    }

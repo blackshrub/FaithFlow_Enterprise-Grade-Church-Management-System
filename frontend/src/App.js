@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from "./context/AuthContext";
 import { Toaster } from "./components/ui/sonner";
+import { OfflineIndicator } from "./components/ui/OfflineIndicator";
 import { queryClient } from './lib/react-query';
 import './i18n';
 
@@ -32,6 +33,7 @@ const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Members = lazy(() => import("./pages/Members"));
 const TrashBin = lazy(() => import("./pages/TrashBin"));
 const Settings = lazy(() => import("./pages/Settings"));
+const Profile = lazy(() => import("./pages/Profile"));
 const ConflictReview = lazy(() => import("./pages/ConflictReview"));
 const ImportExport = lazy(() => import("./pages/ImportExport"));
 const SeatLayouts = lazy(() => import("./pages/SeatLayouts"));
@@ -91,6 +93,12 @@ const BibleStudyEditor = lazy(() => import("./pages/Explore/BibleStudyEditor"));
 const TopicalCategoryEditor = lazy(() => import("./pages/Explore/TopicalCategoryEditor"));
 const TopicalVerseEditor = lazy(() => import("./pages/Explore/TopicalVerseEditor"));
 const DevotionPlanEditor = lazy(() => import("./pages/Explore/DevotionPlanEditor"));
+const ReviewQueue = lazy(() => import("./pages/Explore/ReviewQueue"));
+const JourneyList = lazy(() => import("./pages/Explore/JourneyList"));
+const JourneyEditor = lazy(() => import("./pages/Explore/JourneyEditor"));
+const SermonList = lazy(() => import("./pages/Explore/SermonList"));
+const SermonEditor = lazy(() => import("./pages/Explore/SermonEditor"));
+const ProfileAnalytics = lazy(() => import("./pages/Explore/ProfileAnalytics"));
 
 // Groups pages
 const GroupsListPage = lazy(() => import("./pages/Groups/GroupsListPage"));
@@ -132,6 +140,7 @@ function App() {
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <BrowserRouter>
+          <OfflineIndicator />
           <Suspense fallback={<PageLoader />}>
           <Routes>
             {/* Smart Landing - Kiosk for public, Dashboard for logged-in users */}
@@ -236,6 +245,7 @@ function App() {
               <Route path="content-center/analytics" element={<AnalyticsDashboard />} />
               <Route path="content-center/ai" element={<AIGenerationHub />} />
               <Route path="content-center/ai/prompts" element={<AIPromptConfig />} />
+              <Route path="content-center/review-queue" element={<ReviewQueue />} />
               <Route path="content-center/settings" element={<ChurchSettings />} />
 
               {/* Daily Devotion */}
@@ -278,6 +288,19 @@ function App() {
               <Route path="content-center/topical/verses/new" element={<TopicalVerseEditor />} />
               <Route path="content-center/topical/verses/:id/edit" element={<TopicalVerseEditor />} />
 
+              {/* Life Stage Journeys */}
+              <Route path="content-center/journey" element={<JourneyList />} />
+              <Route path="content-center/journey/new" element={<JourneyEditor />} />
+              <Route path="content-center/journey/:id" element={<JourneyEditor />} />
+
+              {/* Sermon Integration */}
+              <Route path="content-center/sermons" element={<SermonList />} />
+              <Route path="content-center/sermons/new" element={<SermonEditor />} />
+              <Route path="content-center/sermons/:id" element={<SermonEditor />} />
+
+              {/* Profile Analytics */}
+              <Route path="content-center/profiles" element={<ProfileAnalytics />} />
+
               {/* Legacy explore routes - redirect to content-center */}
               <Route path="explore" element={<Navigate to="/content-center" replace />} />
               <Route path="explore/*" element={<Navigate to="/content-center" replace />} />
@@ -286,6 +309,7 @@ function App() {
               <Route path="users/management" element={<UserManagement />} />
               <Route path="system/crash-logs" element={<CrashLogs />} />
               <Route path="integrations" element={<SystemSettings />} />
+              <Route path="profile" element={<Profile />} />
 
               {/* Placeholder routes - will be implemented in next phases */}
               <Route path="donations" element={<PlaceholderPage title="Donations" />} />

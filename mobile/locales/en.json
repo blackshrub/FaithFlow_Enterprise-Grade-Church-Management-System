@@ -1013,5 +1013,97 @@
     "goHome": "Go Home",
     "reportSent": "Error report sent",
     "offlineNote": "You appear to be offline. The error will be reported when you're back online."
+  },
+  "onboarding": {
+    "skip": "Skip",
+    "next": "Continue",
+    "previous": "Back",
+    "complete": "Complete Setup",
+    "saving": "Saving...",
+    "banner": {
+      "title": "Personalize Your Experience",
+      "description": "Answer a few quick questions to receive content tailored to your spiritual journey",
+      "compactTitle": "Personalize Your Journey",
+      "compactSubtitle": "Tap to get started",
+      "benefit1": "Personalized Devotions",
+      "benefit2": "Tailored Studies",
+      "benefit3": "Smart Recommendations",
+      "cta": "Let's Get Started",
+      "skipText": "I'll do this later"
+    },
+    "questions": {
+      "faith_journey": {
+        "title": "Where are you in your faith journey?",
+        "description": "This helps us recommend appropriate content"
+      },
+      "reading_depth": {
+        "title": "How deep do you like to go?",
+        "description": "We'll adjust content complexity"
+      },
+      "life_challenges": {
+        "title": "What challenges are you facing?",
+        "description": "Select all that apply"
+      },
+      "interest_topics": {
+        "title": "What topics interest you most?",
+        "description": "Select all that apply"
+      },
+      "devotion_time": {
+        "title": "When do you prefer devotional time?",
+        "description": "We'll send reminders at the best time"
+      }
+    },
+    "success": {
+      "title": "Profile Created!",
+      "message": "Your spiritual journey has begun. Enjoy personalized content!"
+    }
+  },
+  "journey": {
+    "title": "Journeys",
+    "subtitle": "Guided spiritual programs",
+    "discover": "Discover Journeys",
+    "myJourneys": "My Journeys",
+    "recommended": "Recommended for You",
+    "categories": {
+      "life_transition": "Life Transitions",
+      "spiritual_growth": "Spiritual Growth",
+      "relationships": "Relationships",
+      "leadership": "Leadership"
+    },
+    "difficulty": {
+      "beginner": "Beginner",
+      "intermediate": "Intermediate",
+      "advanced": "Advanced"
+    },
+    "duration": {
+      "weeks": "{{count}} weeks",
+      "days": "{{count}} days"
+    },
+    "enrollment": {
+      "enroll": "Start Journey",
+      "enrolled": "Continue",
+      "paused": "Resume",
+      "completed": "Completed"
+    },
+    "progress": {
+      "week": "Week {{current}} of {{total}}",
+      "day": "Day {{current}}",
+      "daysCompleted": "{{count}} days completed"
+    },
+    "actions": {
+      "pause": "Pause Journey",
+      "resume": "Resume Journey",
+      "abandon": "Leave Journey"
+    },
+    "empty": {
+      "noActive": "No active journeys",
+      "noActiveDesc": "Start a journey to grow in your faith",
+      "browse": "Browse Journeys"
+    },
+    "today": {
+      "title": "Today's Content",
+      "markComplete": "Mark as Complete",
+      "completed": "Completed!"
+    }
   }
 }

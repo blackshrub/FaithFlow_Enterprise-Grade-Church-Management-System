@@ -120,8 +120,9 @@ class AuthService:
             # Create access token - ONLY session_church_id, NO user.church_id
             access_token = create_access_token(
                 data={
-                    "sub": user['id'], 
-                    "email": user['email'], 
+                    "sub": user['id'],
+                    "email": user['email'],
+                    "full_name": user.get('full_name', ''),
                     "role": user['role'],
                     "session_church_id": session_church_id  # ONLY this field for church context
                 }

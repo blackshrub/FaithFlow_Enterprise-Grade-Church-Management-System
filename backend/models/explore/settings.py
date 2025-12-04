@@ -70,6 +70,182 @@ class FeatureConfiguration(BaseModel):
     visible: bool = True
 
 
+class TheologicalTradition:
+    """
+    Theological tradition identifiers.
+
+    These influence the implicit style and emphasis of generated content
+    WITHOUT explicitly mentioning denomination names in the content itself.
+
+    When multiple traditions are selected, content focuses ONLY on points
+    of agreement between all selected traditions, avoiding controversial topics.
+    """
+    EVANGELICAL = "evangelical"          # Broad evangelical (default)
+    REFORMED = "reformed"                # Reformed/Calvinist emphasis
+    CHARISMATIC = "charismatic"          # Pentecostal/Charismatic emphasis
+    LITURGICAL = "liturgical"            # Catholic/Orthodox/Anglican style
+    MAINLINE = "mainline"                # Moderate mainline Protestant
+    BAPTIST = "baptist"                  # Baptist distinctives
+
+    # Style guides for each tradition (used in prompts, not shown to users)
+    STYLE_GUIDES = {
+        "evangelical": {
+            "emphasis": "personal relationship with Jesus, Scripture authority, evangelism",
+            "prayer_style": "conversational, personal",
+            "language": "accessible, warm, relational",
+            "themes": "salvation, grace, faith, transformation",
+            # Topics this tradition is comfortable with
+            "safe_topics": ["salvation by faith", "Bible study", "prayer", "evangelism", "sanctification"],
+            # Topics that might be controversial with other traditions
+            "distinctive_topics": ["altar calls", "decision theology", "rapture"],
+        },
+        "reformed": {
+            "emphasis": "God's sovereignty, Scripture alone, covenant theology",
+            "prayer_style": "reverent, God-centered",
+            "language": "theological depth, doctrinal precision",
+            "themes": "sovereignty, election, glory of God, sanctification",
+            "safe_topics": ["God's sovereignty", "Scripture authority", "grace", "holiness", "covenant"],
+            "distinctive_topics": ["predestination", "limited atonement", "cessationism", "infant baptism"],
+        },
+        "charismatic": {
+            "emphasis": "Holy Spirit work, spiritual gifts, worship, healing",
+            "prayer_style": "passionate, expectant, Spirit-led",
+            "language": "dynamic, experiential, faith-filled",
+            "themes": "power, breakthrough, prophetic, praise",
+            "safe_topics": ["Holy Spirit", "worship", "faith", "praise", "God's power"],
+            "distinctive_topics": ["speaking in tongues", "prophecy today", "healing ministry", "slain in Spirit"],
+        },
+        "liturgical": {
+            "emphasis": "sacred tradition, sacraments, church calendar, mystery",
+            "prayer_style": "structured, contemplative, reverent",
+            "language": "formal, beautiful, timeless",
+            "themes": "incarnation, liturgy, saints, sacred space",
+            "safe_topics": ["reverence", "mystery of God", "church history", "contemplation", "incarnation"],
+            "distinctive_topics": ["sacraments", "saints veneration", "Mary", "apostolic succession", "tradition"],
+        },
+        "mainline": {
+            "emphasis": "social justice, community, service, inclusivity",
+            "prayer_style": "thoughtful, community-focused",
+            "language": "inclusive, progressive, pastoral",
+            "themes": "justice, compassion, unity, service",
+            "safe_topics": ["love", "service", "community", "compassion", "justice"],
+            "distinctive_topics": ["social gospel", "inclusive theology", "progressive interpretation"],
+        },
+        "baptist": {
+            "emphasis": "believer's baptism, local church, soul liberty, Scripture",
+            "prayer_style": "heartfelt, direct",
+            "language": "practical, Scripture-saturated",
+            "themes": "believer's faith, obedience, discipleship, missions",
+            "safe_topics": ["personal faith", "Scripture", "discipleship", "missions", "obedience"],
+            "distinctive_topics": ["believer's baptism only", "congregational polity", "separation of church/state"],
+        },
+    }
+
+    # Topics that ALL traditions agree on (universal Christian themes)
+    UNIVERSAL_SAFE_TOPICS = [
+        "God's love", "salvation through Christ", "prayer", "faith", "hope",
+        "love for neighbor", "forgiveness", "grace", "Scripture reading",
+        "Jesus' teachings", "fruits of the Spirit", "God's faithfulness",
+        "trust in God", "gratitude", "serving others", "worship",
+        "God's creation", "redemption", "eternal life", "peace",
+    ]
+
+    # Topics to AVOID when multiple traditions are selected (controversial between traditions)
+    CONTROVERSIAL_TOPICS = {
+        # Reformed vs Charismatic conflicts
+        ("reformed", "charismatic"): [
+            "speaking in tongues", "continuation of gifts", "cessationism",
+            "prophecy today", "healing ministry", "predestination emphasis"
+        ],
+        # Liturgical vs Baptist conflicts
+        ("liturgical", "baptist"): [
+            "infant baptism", "sacraments", "tradition authority",
+            "saints", "Mary", "apostolic succession"
+        ],
+        # Reformed vs Mainline conflicts
+        ("reformed", "mainline"): [
+            "inerrancy", "exclusive salvation", "progressive theology",
+            "social gospel priority"
+        ],
+        # Charismatic vs Liturgical conflicts
+        ("charismatic", "liturgical"): [
+            "spontaneous worship", "structured liturgy", "miraculous gifts",
+            "tradition vs Spirit leading"
+        ],
+        # Baptist vs Liturgical conflicts
+        ("baptist", "liturgical"): [
+            "believer's baptism", "infant baptism", "sacramental theology",
+            "church authority structure"
+        ],
+        # Evangelical vs Mainline conflicts
+        ("evangelical", "mainline"): [
+            "Biblical inerrancy", "exclusive salvation", "social gospel",
+            "progressive interpretation"
+        ],
+    }
+
+    @classmethod
+    def get_controversial_topics(cls, traditions: list) -> list:
+        """Get list of topics to avoid for a combination of traditions."""
+        if len(traditions) <= 1:
+            return []
+
+        avoid = set()
+        traditions_set = set(traditions)
+
+        for pair, topics in cls.CONTROVERSIAL_TOPICS.items():
+            # Check if both traditions in the pair are selected
+            if set(pair).issubset(traditions_set):
+                avoid.update(topics)
+
+        return list(avoid)
+
+    @classmethod
+    def get_common_ground(cls, traditions: list) -> dict:
+        """Get the common ground between multiple traditions."""
+        if not traditions:
+            traditions = ["evangelical"]
+
+        if len(traditions) == 1:
+            return cls.STYLE_GUIDES.get(traditions[0], cls.STYLE_GUIDES["evangelical"])
+
+        # Find intersection of safe topics
+        safe_topics_sets = []
+        for t in traditions:
+            style = cls.STYLE_GUIDES.get(t, {})
+            safe_topics_sets.append(set(style.get("safe_topics", [])))
+
+        common_safe = set.intersection(*safe_topics_sets) if safe_topics_sets else set()
+        common_safe.update(cls.UNIVERSAL_SAFE_TOPICS)
+
+        # Get topics to avoid
+        avoid_topics = cls.get_controversial_topics(traditions)
+
+        # Combine emphasis from all traditions (common themes)
+        all_themes = []
+        for t in traditions:
+            style = cls.STYLE_GUIDES.get(t, {})
+            all_themes.extend(style.get("themes", "").split(", "))
+
+        # Find common themes (appear in multiple traditions)
+        theme_counts = {}
+        for theme in all_themes:
+            theme_counts[theme] = theme_counts.get(theme, 0) + 1
+
+        common_themes = [t for t, count in theme_counts.items() if count > 1]
+        if not common_themes:
+            common_themes = ["faith", "grace", "love", "hope"]
+
+        return {
+            "emphasis": "common Christian faith, Scripture, prayer, Christ-centered living",
+            "prayer_style": "heartfelt, reverent",
+            "language": "accessible, warm, biblically grounded",
+            "themes": ", ".join(common_themes),
+            "safe_topics": list(common_safe),
+            "avoid_topics": avoid_topics,
+        }
+
+
 class ChurchExploreSettings(BaseModel):
     """Church-specific Explore adoption settings"""
     id: str = Field(default_factory=lambda: str(datetime.now().timestamp()))
@@ -77,6 +253,10 @@ class ChurchExploreSettings(BaseModel):
 
     # Master toggle
     explore_enabled: bool = False
+
+    # AI Content Generation Settings
+    auto_publish_ai_content: bool = True  # If True, AI content publishes immediately; if False, goes to review queue
+    theological_traditions: List[str] = ["evangelical"]  # Multiple traditions = content on common ground only without explicit mention
 
     # Feature toggles
     features: Dict[str, FeatureConfiguration] = {

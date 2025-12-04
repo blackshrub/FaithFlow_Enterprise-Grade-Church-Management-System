@@ -12,6 +12,7 @@ import logging
 
 from utils.dependencies import get_db
 from services.whatsapp_service import send_whatsapp_message
+from services.explore.prayer_intelligence_service import get_prayer_intelligence_service
 
 logger = logging.getLogger(__name__)
 
@@ -72,8 +73,6 @@ async def send_otp(
             otp_key = _otp_key(phone)
             await redis.set(otp_key, json.dumps(otp_data), ex=OTP_TTL_SECONDS)
             logger.info(f"🔐 OTP for {phone}: {code} (Redis, expires in {OTP_TTL_SECONDS}s)")
-            print(f"\n🔐 OTP for {phone}: {code}\n")
-            print(f"📦 Stored in Redis, TTL: {OTP_TTL_SECONDS}s\n")
         else:
             # Fallback to MongoDB if Redis unavailable
             expires_at = datetime.utcnow() + timedelta(seconds=OTP_TTL_SECONDS)
@@ -83,7 +82,6 @@ async def send_otp(
                 upsert=True
             )
             logger.info(f"🔐 OTP for {phone}: {code} (MongoDB fallback)")
-            print(f"\n🔐 OTP for {phone}: {code} (MongoDB fallback)\n")
 
         # Get WhatsApp config from SYSTEM SETTINGS (global, configured in Integrations)
         from utils.system_config import get_whatsapp_settings
@@ -94,18 +92,12 @@ async def send_otp(
         whatsapp_pass = (wa_settings.get('whatsapp_password') or '').strip()
         whatsapp_enabled = wa_settings.get('whatsapp_enabled', True)
 
-        print(f"📱 WhatsApp Config from System Settings:")
-        print(f"   Enabled: {whatsapp_enabled}")
-        print(f"   URL: '{whatsapp_url}'")
-        print(f"   Username: '{whatsapp_user}'")
-        print(f"   Password: {'***' if whatsapp_pass else '(empty)'}")
 
         # Send via WhatsApp if enabled and URL is configured
         if whatsapp_enabled and whatsapp_url:
             whatsapp_phone = phone.replace('+', '')  # Remove + for gateway
-            message = f"Your verification code is: {code}\\n\\nThis code will expire in 5 minutes."
+            message = f"Kode verifikasi Anda adalah: {code}. Kode ini dapat digunakan dalam 5 menit."
 
-            print(f"📨 Attempting WhatsApp send to: {whatsapp_phone}")
 
             try:
                 whatsapp_result = await send_whatsapp_message(
@@ -116,46 +108,40 @@ async def send_otp(
                     api_password=whatsapp_pass if whatsapp_pass else None
                 )
 
-                print(f"📨 WhatsApp Result: {whatsapp_result}")
 
                 if whatsapp_result.get('success'):
                     logger.info(f"✅ WhatsApp OTP sent successfully to {phone}")
-                    print(f"✅ WhatsApp OTP delivered to {phone}")
                 else:
                     logger.warning(f"⚠️ WhatsApp failed: {whatsapp_result.get('message')}")
-                    print(f"⚠️ WhatsApp send failed: {whatsapp_result.get('message')}")
 
                 return {
                     "success": True,
                     "message": "OTP sent successfully",
-                    "debug_code": code,
                     "whatsapp_status": whatsapp_result.get('delivery_status', 'unknown'),
-                    "whatsapp_sent": whatsapp_result.get('success', False)
+                    "whatsapp_sent": whatsapp_result.get('success', False),
+                    "expires_in_seconds": OTP_TTL_SECONDS
                 }
             except Exception as wa_error:
                 logger.error(f"⚠️ WhatsApp error: {wa_error}")
-                print(f"⚠️ WhatsApp error: {wa_error}")
         else:
-            print("⚠️ WhatsApp not enabled or URL not configured")
+            logger.info("WhatsApp not enabled or URL not configured")
 
         return {
             "success": True,
             "message": "OTP generated (WhatsApp not configured)",
-            "debug_code": code,
-            "whatsapp_sent": False
+            "whatsapp_sent": False,
+            "expires_in_seconds": OTP_TTL_SECONDS
         }
     
     except Exception as e:
         logger.error(f"❌ Error sending OTP: {e}")
-        import traceback
-        traceback.print_exc()
         # Still return success with console OTP
         code = str(random.randint(1000, 9999)) if 'code' not in locals() else code
         return {
             "success": True,
             "message": "OTP generated (error occurred)",
-            "debug_code": code,
-            "whatsapp_sent": False
+            "whatsapp_sent": False,
+            "expires_in_seconds": OTP_TTL_SECONDS
         }
 
 
@@ -169,7 +155,6 @@ async def verify_otp(
         phone = request.phone
         code = request.code
 
-        print(f"🔍 Verifying OTP for phone: {phone}, code: {code}")
 
         # Try Redis first
         redis = await _get_redis()
@@ -182,9 +167,8 @@ async def verify_otp(
             if otp_data:
                 otp_doc = json.loads(otp_data)
                 otp_doc["_source"] = "redis"
-                print(f"📦 Found OTP in Redis for {phone}")
             else:
-                print(f"❌ No OTP found in Redis for {phone}")
+                logger.debug(f"No OTP found in Redis for {phone}")
 
         # Fallback to MongoDB if not in Redis
         if not otp_doc:
@@ -196,7 +180,6 @@ async def verify_otp(
                     "expires_at": mongo_doc["expires_at"],
                     "_source": "mongodb"
                 }
-                print(f"📦 Found OTP in MongoDB fallback for {phone}")
 
         if not otp_doc:
             raise HTTPException(
@@ -206,7 +189,6 @@ async def verify_otp(
 
         # Check expiry (only for MongoDB, Redis handles TTL automatically)
         if otp_doc.get("_source") == "mongodb" and datetime.utcnow() > otp_doc['expires_at']:
-            print(f"❌ OTP expired for {phone}")
             await db.otp_codes.delete_one({"phone": phone})
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -215,7 +197,6 @@ async def verify_otp(
 
         # Check attempts
         if otp_doc['attempts'] >= OTP_MAX_ATTEMPTS:
-            print(f"❌ Too many attempts for {phone}")
             # Delete from both Redis and MongoDB
             if redis:
                 await redis.delete(_otp_key(phone))
@@ -238,14 +219,12 @@ async def verify_otp(
             else:
                 await db.otp_codes.update_one({"phone": phone}, {"$inc": {"attempts": 1}})
 
-            print(f"❌ Wrong code for {phone}. Expected: {otp_doc['code']}, Got: {code}, Attempts: {otp_doc['attempts']}")
             return {"success": False, "message": "Invalid OTP"}
 
         # Success - remove OTP
         if redis:
             await redis.delete(_otp_key(phone))
         await db.otp_codes.delete_one({"phone": phone})  # Clean up MongoDB too
-        print(f"✅ OTP verified successfully for {phone}")
 
         return {"success": True, "message": "OTP verified"}
     
@@ -253,8 +232,6 @@ async def verify_otp(
         raise
     except Exception as e:
         logger.error(f"Error verifying OTP: {e}")
-        import traceback
-        traceback.print_exc()
         raise HTTPException(status_code=500, detail="Failed to verify OTP")
 
 
@@ -673,15 +650,24 @@ async def submit_prayer_request_kiosk(
     request: PrayerRequestKiosk,
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
-    """Submit prayer request from kiosk (public - no auth required)."""
+    """Submit prayer request from kiosk (public - no auth required).
+
+    After submission, Prayer Intelligence analyzes the request to:
+    1. Extract themes (health, anxiety, relationships, etc.)
+    2. Detect emotional state and urgency
+    3. Suggest relevant scriptures and content
+    4. Schedule 14-day follow-up prompt
+    5. Update user profile for subtle content personalization
+    """
     try:
         # Get member info
         member = await db.members.find_one({"id": request.member_id})
         if not member:
             raise HTTPException(status_code=404, detail="Member not found")
 
+        prayer_id = str(uuid.uuid4())
         prayer_request = {
-            "id": str(uuid.uuid4()),
+            "id": prayer_id,
             "church_id": request.church_id,
             "member_id": request.member_id,
             "member_name": member.get("full_name", "Anonymous") if not request.is_anonymous else "Anonymous",
@@ -695,13 +681,46 @@ async def submit_prayer_request_kiosk(
         }
 
         await db.prayer_requests.insert_one(prayer_request)
+        logger.info(f"Kiosk prayer request: {prayer_id} from member {request.member_id}")
 
-        logger.info(f"Kiosk prayer request: {prayer_request['id']} from member {request.member_id}")
+        # Prayer Intelligence: Analyze request and get immediate resources
+        immediate_resources = None
+        try:
+            prayer_service = get_prayer_intelligence_service(db)
+            analysis = await prayer_service.analyze_prayer_request(
+                church_id=request.church_id,
+                user_id=request.member_id,
+                prayer_request_id=prayer_id,
+                prayer_text=request.request_text,
+                prayer_category=request.category,
+            )
+
+            # Get immediate resources to show user
+            immediate_resources = await prayer_service.get_immediate_resources(prayer_id)
+
+            # Store analysis reference in prayer request
+            await db.prayer_requests.update_one(
+                {"id": prayer_id},
+                {"$set": {
+                    "analysis": {
+                        "themes": list(analysis.themes.keys()),
+                        "urgency": analysis.urgency,
+                        "analyzed_at": datetime.utcnow(),
+                    }
+                }}
+            )
+
+            logger.info(f"Prayer intelligence analyzed: themes={list(analysis.themes.keys())}, urgency={analysis.urgency}")
+
+        except Exception as e:
+            # Don't fail the request if intelligence analysis fails
+            logger.warning(f"Prayer intelligence analysis failed: {e}")
 
         return {
             "success": True,
             "message": "Prayer request submitted successfully",
-            "id": prayer_request["id"]
+            "id": prayer_id,
+            "resources": immediate_resources,  # Scriptures, content themes, guided prayer
         }
 
     except HTTPException:
@@ -709,6 +728,109 @@ async def submit_prayer_request_kiosk(
     except Exception as e:
         logger.error(f"Kiosk prayer request error: {e}")
         raise HTTPException(status_code=500, detail="Failed to submit prayer request")
+
+
+@router.get("/prayer-request/{prayer_id}/resources")
+async def get_prayer_resources(
+    prayer_id: str,
+    db: AsyncIOMotorDatabase = Depends(get_db)
+):
+    """Get resources for a prayer request (scriptures, themes, guided prayer).
+
+    Called after prayer submission to display relevant content.
+    """
+    try:
+        prayer_service = get_prayer_intelligence_service(db)
+        resources = await prayer_service.get_immediate_resources(prayer_id)
+
+        if not resources:
+            return {"resources": None, "message": "No analysis available"}
+
+        return {"resources": resources}
+
+    except Exception as e:
+        logger.error(f"Error getting prayer resources: {e}")
+        raise HTTPException(status_code=500, detail="Failed to get resources")
+
+
+class GuidedPrayerRequest(BaseModel):
+    themes: list[str] = []
+    language: str = "en"
+
+
+class PrayerFollowUpResponse(BaseModel):
+    followup_id: str
+    sentiment: str  # "improved", "same", "worse", "resolved"
+    notes: Optional[str] = None
+
+
+@router.post("/prayer-request/followup-response")
+async def respond_to_prayer_followup(
+    request: PrayerFollowUpResponse,
+    db: AsyncIOMotorDatabase = Depends(get_db)
+):
+    """Record user's response to a 14-day prayer follow-up.
+
+    Sentiment options:
+    - "improved": Things are getting better
+    - "same": No change, still praying
+    - "worse": Situation has worsened (may trigger pastoral outreach)
+    - "resolved": Prayer has been answered
+    """
+    try:
+        prayer_service = get_prayer_intelligence_service(db)
+
+        # Record the response
+        await prayer_service.record_followup_response(
+            followup_id=request.followup_id,
+            sentiment=request.sentiment,
+        )
+
+        logger.info(f"Prayer follow-up response: {request.followup_id} = {request.sentiment}")
+
+        # If situation worsened, we might want to flag for pastoral attention
+        if request.sentiment == "worse":
+            # Get the follow-up to find the original prayer
+            followup = await db.prayer_followups.find_one({"id": request.followup_id})
+            if followup:
+                # Update original prayer request with pastoral flag
+                await db.prayer_requests.update_one(
+                    {"id": followup.get("prayer_request_id")},
+                    {"$set": {"needs_pastoral_attention": True, "followup_sentiment": "worse"}}
+                )
+                logger.info(f"Flagged prayer {followup.get('prayer_request_id')} for pastoral attention")
+
+        return {
+            "success": True,
+            "message": "Thank you for sharing your update. We continue to pray with you.",
+        }
+
+    except Exception as e:
+        logger.error(f"Error recording prayer follow-up response: {e}")
+        raise HTTPException(status_code=500, detail="Failed to record response")
+
+
+@router.post("/prayer-request/guided-prayer")
+async def get_guided_prayer(
+    request: GuidedPrayerRequest,
+    db: AsyncIOMotorDatabase = Depends(get_db)
+):
+    """Generate a guided prayer based on themes.
+
+    Called to help user pray with AI-generated prayer prompts.
+    """
+    try:
+        prayer_service = get_prayer_intelligence_service(db)
+        guided_prayer = await prayer_service.generate_guided_prayer(
+            themes=request.themes,
+            language=request.language,
+        )
+
+        return {"guided_prayer": guided_prayer}
+
+    except Exception as e:
+        logger.error(f"Error generating guided prayer: {e}")
+        raise HTTPException(status_code=500, detail="Failed to generate guided prayer")
 
 
 @router.patch("/update-profile/{member_id}")

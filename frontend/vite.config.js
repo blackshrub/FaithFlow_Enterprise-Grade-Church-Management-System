@@ -55,17 +55,31 @@ export default defineConfig({
         // Cache strategies
         runtimeCaching: [
           {
-            // Cache API responses
-            urlPattern: /^https?:\/\/.*\/api\/.*/i,
+            // Cache API GET responses with Network First
+            urlPattern: ({ request, url }) =>
+              url.pathname.startsWith('/api/') && request.method === 'GET',
             handler: 'NetworkFirst',
             options: {
               cacheName: 'api-cache',
               expiration: {
-                maxEntries: 100,
+                maxEntries: 200,
                 maxAgeSeconds: 60 * 60, // 1 hour
               },
               cacheableResponse: {
                 statuses: [0, 200],
+              },
+              networkTimeoutSeconds: 10, // Fallback to cache after 10s
+            },
+          },
+          {
+            // Cache member photos and avatars
+            urlPattern: /\/files\/.*\.(jpg|jpeg|png|webp)$/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'member-photos',
+              expiration: {
+                maxEntries: 500,
+                maxAgeSeconds: 60 * 60 * 24 * 7, // 7 days
               },
             },
           },
@@ -105,12 +119,34 @@ export default defineConfig({
               },
             },
           },
+          {
+            // Cache Google Fonts
+            urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
+            handler: 'StaleWhileRevalidate',
+            options: {
+              cacheName: 'google-fonts-stylesheets',
+            },
+          },
+          {
+            urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'google-fonts-webfonts',
+              expiration: {
+                maxEntries: 30,
+                maxAgeSeconds: 60 * 60 * 24 * 365, // 1 year
+              },
+            },
+          },
         ],
         // Pre-cache critical assets
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
         // Skip waiting for new service worker
         skipWaiting: true,
         clientsClaim: true,
+        // Offline fallback page
+        navigateFallback: '/index.html',
+        navigateFallbackDenylist: [/^\/api/, /^\/public/],
       },
       devOptions: {
         enabled: false, // Disable PWA in development

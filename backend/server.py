@@ -29,8 +29,13 @@ from routes.explore import (
     explore_public_router,
     explore_admin_router,
     explore_church_router,
+    explore_profile_router,
+    explore_journey_router,
+    explore_sermon_router,
+    explore_companion_router,
 )
 from routes.explore_ai import router as explore_ai_router
+from routes.ai.streaming import router as ai_streaming_router
 
 # Import accounting routes (v1)
 from routes import (
@@ -169,6 +174,13 @@ api_router.include_router(explore_admin_router)  # Super Admin Explore endpoints
 app.include_router(crash_logs.router)  # Has public POST + admin GET endpoints
 api_router.include_router(explore_church_router)  # Church Admin Explore endpoints
 api_router.include_router(explore_ai_router)  # AI Content Generation endpoints
+api_router.include_router(ai_streaming_router)  # AI Streaming (SSE) endpoints
+
+# New Explore feature routes (Features 1, 2, 4, 6, 7, 8)
+api_router.include_router(explore_profile_router)  # User profiling & onboarding
+api_router.include_router(explore_journey_router)  # Life stage journeys
+api_router.include_router(explore_sermon_router)  # Sermon integration
+api_router.include_router(explore_companion_router)  # Contextual companion
 
 # Include accounting routers (v1)
 api_v1_router = APIRouter(prefix="/v1")
@@ -237,6 +249,35 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Security headers middleware
+@app.middleware("http")
+async def add_security_headers(request: Request, call_next: Callable):
+    """Add security headers to all responses (OWASP best practices)."""
+    response = await call_next(request)
+
+    # Prevent MIME type sniffing
+    response.headers["X-Content-Type-Options"] = "nosniff"
+
+    # Prevent clickjacking (allow same origin for iframes if needed)
+    response.headers["X-Frame-Options"] = "SAMEORIGIN"
+
+    # XSS protection (legacy but still useful for older browsers)
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+
+    # Control referrer information sent with requests
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+
+    # Restrict browser features (camera, mic, geolocation, etc.)
+    response.headers["Permissions-Policy"] = "camera=self, microphone=self, geolocation=()"
+
+    # Content Security Policy - relaxed for API (frontend handles strict CSP)
+    # Only set for HTML responses to avoid breaking JSON APIs
+    content_type = response.headers.get("content-type", "")
+    if "text/html" in content_type:
+        response.headers["Content-Security-Policy"] = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'"
+
+    return response
 
 # Request timing middleware
 @app.middleware("http")

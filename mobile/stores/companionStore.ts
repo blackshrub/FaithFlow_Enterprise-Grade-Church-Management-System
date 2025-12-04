@@ -24,12 +24,58 @@ export interface CompanionMessage {
   timestamp: string; // Changed to string for JSON serialization
 }
 
+/**
+ * Context types for companion conversations
+ * - default/morning/evening: General context (time-based greeting)
+ * - fromVerse: Bible verse meditation
+ * - fromDevotion: Daily devotion reflection
+ * - devotion_reflection: Explore devotion context (Feature 4)
+ * - bible_study_lesson: Bible study lesson context (Feature 4)
+ * - journey_day: Life stage journey day context (Feature 4)
+ * - verse_meditation: Verse of the day context (Feature 4)
+ * - quiz_explanation: Quiz explanation context (Feature 4)
+ */
 export type CompanionContext =
   | 'default'
   | 'fromVerse'
   | 'fromDevotion'
   | 'morning'
-  | 'evening';
+  | 'evening'
+  // New contextual companion types (Feature 4)
+  | 'devotion_reflection'
+  | 'bible_study_lesson'
+  | 'journey_day'
+  | 'verse_meditation'
+  | 'quiz_explanation';
+
+/**
+ * Context data for the companion
+ * Different fields used based on context type
+ */
+export interface CompanionContextData {
+  // Verse context
+  verseReference?: string;
+  verseText?: string;
+  // Devotion context
+  devotionTitle?: string;
+  devotionId?: string;
+  // Bible study context (Feature 4)
+  studyId?: string;
+  studyTitle?: string;
+  lessonNumber?: number;
+  lessonTitle?: string;
+  // Journey context (Feature 4)
+  journeySlug?: string;
+  journeyTitle?: string;
+  weekNumber?: number;
+  dayNumber?: number;
+  // Quiz context (Feature 4)
+  quizId?: string;
+  quizTitle?: string;
+  questionIndex?: number;
+  // System prompt from backend (Feature 4)
+  systemPrompt?: string;
+}
 
 interface CompanionState {
   // Chat state
@@ -41,12 +87,7 @@ interface CompanionState {
 
   // Context for personalized greeting
   entryContext: CompanionContext;
-  contextData?: {
-    verseReference?: string;
-    verseText?: string;
-    devotionTitle?: string;
-    devotionId?: string;
-  };
+  contextData?: CompanionContextData;
 
   // Actions
   setEntryContext: (context: CompanionContext, data?: CompanionState['contextData']) => void;
