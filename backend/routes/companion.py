@@ -408,6 +408,108 @@ async def companion_chat(
 
 
 # =============================================================================
+# STREAMING CHAT ENDPOINT
+# =============================================================================
+
+@router.post("/chat/stream")
+async def companion_chat_stream(
+    request: CompanionChatRequest,
+    current_user: dict = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    """
+    Stream a response from the Faith Assistant using Server-Sent Events.
+
+    Returns chunked responses for a real-time chat experience.
+    """
+    from fastapi.responses import StreamingResponse
+    import json
+
+    try:
+        # Get Faith Assistant settings from database
+        fa_settings = await get_faith_assistant_settings(db)
+
+        if not fa_settings.get("enabled", True):
+            raise HTTPException(
+                status_code=503,
+                detail="Faith Assistant is currently disabled."
+            )
+
+        api_key = fa_settings.get("api_key")
+        if not api_key:
+            raise HTTPException(
+                status_code=503,
+                detail="Faith Assistant is not configured. Please contact your church administrator."
+            )
+
+        model = fa_settings.get("model", "claude-sonnet-4-20250514")
+        max_tokens = fa_settings.get("max_tokens", 2048)
+
+        # Build messages for Claude
+        claude_messages = []
+        for msg in request.messages:
+            claude_messages.append({
+                "role": msg.role,
+                "content": msg.content
+            })
+
+        # Add context to system prompt if available
+        system_prompt = FAITH_ASSISTANT_SYSTEM_PROMPT
+        if request.context:
+            context_additions = {
+                "morning": "\n\nThe user is starting their day. Be encouraging and help them prepare spiritually.",
+                "evening": "\n\nThe user is winding down their day. Be reflective and help them find peace.",
+                "fromVerse": f"\n\nThe user came from reading Scripture. They may want to discuss: {request.context_data.get('verseReference', '') if request.context_data else ''}",
+                "fromDevotion": f"\n\nThe user just finished a devotion: {request.context_data.get('devotionTitle', '') if request.context_data else ''}. They may want to discuss it further.",
+            }
+            if request.context in context_additions:
+                system_prompt += context_additions[request.context]
+
+        async def generate():
+            try:
+                client = anthropic.AsyncAnthropic(api_key=api_key)
+
+                async with client.messages.stream(
+                    model=model,
+                    max_tokens=max_tokens,
+                    system=system_prompt,
+                    messages=claude_messages,
+                ) as stream:
+                    async for text in stream.text_stream:
+                        yield f"data: {json.dumps({'type': 'text', 'text': text})}\n\n"
+
+                yield f"data: {json.dumps({'type': 'done'})}\n\n"
+
+            except Exception as e:
+                logger.error(f"Streaming error: {str(e)}")
+                yield f"data: {json.dumps({'type': 'error', 'error': str(e)})}\n\n"
+
+        logger.info(f"Faith Assistant stream - User: {current_user.get('email', 'unknown')}, Model: {model}, Context: {request.context}")
+
+        return StreamingResponse(
+            generate(),
+            media_type="text/event-stream",
+            headers={
+                "Cache-Control": "no-cache",
+                "Connection": "keep-alive",
+            }
+        )
+
+    except anthropic.APIError as e:
+        logger.error(f"Anthropic API error: {str(e)}")
+        raise HTTPException(
+            status_code=502,
+            detail="Unable to connect to Faith Assistant. Please try again later."
+        )
+    except Exception as e:
+        logger.error(f"Companion stream error: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail="An error occurred. Please try again."
+        )
+
+
+# =============================================================================
 # PUBLIC ENDPOINT (for members without full auth)
 # =============================================================================
 

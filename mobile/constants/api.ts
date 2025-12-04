@@ -14,6 +14,7 @@
  */
 
 import Constants from 'expo-constants';
+import { Platform } from 'react-native';
 
 // =============================================================================
 // API CONFIGURATION
@@ -22,11 +23,26 @@ import Constants from 'expo-constants';
 // Get config from expo-constants (set via app.config.js)
 const expoConfig = Constants.expoConfig?.extra;
 
+// Development base URL - handles different platforms:
+// - iOS Simulator: localhost works
+// - Android Emulator: 10.0.2.2 maps to host localhost
+// - Physical devices: Use host machine's local IP
+const getDevBaseUrl = () => {
+  if (Platform.OS === 'android') {
+    // For physical Android device, use your Mac's IP address
+    // For Android Emulator, use 10.0.2.2
+    // Detect if running on emulator (not 100% reliable, so default to IP)
+    return 'http://192.168.0.60:8000';
+  }
+  // iOS simulator can use localhost
+  return 'http://localhost:8000';
+};
+
 // Development vs Production base URL
-// In development: use localhost
+// In development: use platform-appropriate URL
 // In production: use API_URL from environment variable (set during build)
 export const API_BASE_URL = __DEV__
-  ? 'http://localhost:8000'
+  ? getDevBaseUrl()
   : (expoConfig?.apiUrl || 'https://api.yourdomain.com');
 
 // API Prefix - empty for subdomain mode, '/api' for path-based mode

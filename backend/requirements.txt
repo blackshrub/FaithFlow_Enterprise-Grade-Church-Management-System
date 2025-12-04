@@ -65,3 +65,4 @@ livekit>=1.0.0
 livekit-api>=1.0.0
 paho-mqtt>=2.0.0
 pytz>=2024.1
+feedparser>=6.0.0

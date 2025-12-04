@@ -12,8 +12,7 @@ from typing import Optional, List
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 
-from utils.dependencies import get_current_user, get_session_church_id, require_admin
-from utils.database import get_database
+from utils.dependencies import get_current_user, get_session_church_id, require_admin, get_db
 from services.explore.sermon_integration_service import get_sermon_integration_service
 
 router = APIRouter(prefix="/explore/sermons", tags=["Explore Sermons"])
@@ -71,7 +70,7 @@ class UpdateSermonRequest(BaseModel):
 @router.get("/themes")
 async def get_available_themes(
     current_user: dict = Depends(get_current_user),
-    db=Depends(get_database),
+    db=Depends(get_db),
 ):
     """Get available sermon themes for selection"""
     service = get_sermon_integration_service(db)
@@ -87,7 +86,7 @@ async def get_available_themes(
 async def get_theme_scriptures(
     theme: str,
     current_user: dict = Depends(get_current_user),
-    db=Depends(get_database),
+    db=Depends(get_db),
 ):
     """Get suggested scriptures for a theme"""
     service = get_sermon_integration_service(db)
@@ -106,7 +105,7 @@ async def create_sermon(
     request: CreateSermonRequest,
     current_user: dict = Depends(require_admin),
     church_id: str = Depends(get_session_church_id),
-    db=Depends(get_database),
+    db=Depends(get_db),
 ):
     """Create a new sermon input (admin only)"""
     service = get_sermon_integration_service(db)
@@ -147,7 +146,7 @@ async def list_sermons(
     weeks: int = Query(8, ge=1, le=52, description="Number of weeks to fetch"),
     current_user: dict = Depends(require_admin),
     church_id: str = Depends(get_session_church_id),
-    db=Depends(get_database),
+    db=Depends(get_db),
 ):
     """List upcoming sermons (admin only)"""
     service = get_sermon_integration_service(db)
@@ -167,7 +166,7 @@ async def get_sermon(
     sermon_id: str,
     current_user: dict = Depends(require_admin),
     church_id: str = Depends(get_session_church_id),
-    db=Depends(get_database),
+    db=Depends(get_db),
 ):
     """Get sermon details (admin only)"""
     service = get_sermon_integration_service(db)
@@ -188,7 +187,7 @@ async def update_sermon(
     request: UpdateSermonRequest,
     current_user: dict = Depends(require_admin),
     church_id: str = Depends(get_session_church_id),
-    db=Depends(get_database),
+    db=Depends(get_db),
 ):
     """Update sermon (admin only)"""
     service = get_sermon_integration_service(db)
@@ -217,7 +216,7 @@ async def delete_sermon(
     sermon_id: str,
     current_user: dict = Depends(require_admin),
     church_id: str = Depends(get_session_church_id),
-    db=Depends(get_database),
+    db=Depends(get_db),
 ):
     """Delete sermon (admin only)"""
     service = get_sermon_integration_service(db)
@@ -234,7 +233,7 @@ async def get_weekly_content_plan(
     sermon_id: str,
     current_user: dict = Depends(require_admin),
     church_id: str = Depends(get_session_church_id),
-    db=Depends(get_database),
+    db=Depends(get_db),
 ):
     """Get the weekly content plan based on sermon (admin only)"""
     service = get_sermon_integration_service(db)

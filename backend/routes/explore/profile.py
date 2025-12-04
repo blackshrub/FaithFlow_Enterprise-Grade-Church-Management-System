@@ -9,12 +9,11 @@ Handles:
 """
 
 from datetime import datetime
-from typing import List, Optional
+from typing import List, Optional, Any
 from fastapi import APIRouter, Depends, HTTPException, Body
 from pydantic import BaseModel, Field
 
-from utils.dependencies import get_current_user, get_session_church_id
-from utils.database import get_database
+from utils.dependencies import get_current_user, get_session_church_id, get_db
 from services.explore.profile_service import get_profile_service
 
 router = APIRouter(prefix="/explore/profile", tags=["Explore Profile"])
@@ -24,7 +23,7 @@ router = APIRouter(prefix="/explore/profile", tags=["Explore Profile"])
 
 class OnboardingResponseInput(BaseModel):
     question_id: str
-    value: any  # String, int, or list depending on question type
+    value: Any  # String, int, or list depending on question type
 
 
 class SubmitOnboardingRequest(BaseModel):
@@ -76,7 +75,7 @@ class UpdatePreferencesRequest(BaseModel):
 @router.get("/onboarding/questions")
 async def get_onboarding_questions(
     current_user: dict = Depends(get_current_user),
-    db=Depends(get_database),
+    db=Depends(get_db),
 ):
     """Get onboarding questions for the user"""
     service = get_profile_service(db)
@@ -96,7 +95,7 @@ async def submit_onboarding(
     request: SubmitOnboardingRequest,
     current_user: dict = Depends(get_current_user),
     church_id: str = Depends(get_session_church_id),
-    db=Depends(get_database),
+    db=Depends(get_db),
 ):
     """Submit onboarding responses"""
     user_id = str(current_user.get("_id") or current_user.get("id"))
@@ -127,7 +126,7 @@ async def submit_onboarding(
 async def skip_onboarding(
     current_user: dict = Depends(get_current_user),
     church_id: str = Depends(get_session_church_id),
-    db=Depends(get_database),
+    db=Depends(get_db),
 ):
     """Skip onboarding (user can complete later)"""
     user_id = str(current_user.get("_id") or current_user.get("id"))
@@ -148,7 +147,7 @@ async def skip_onboarding(
 async def get_my_profile(
     current_user: dict = Depends(get_current_user),
     church_id: str = Depends(get_session_church_id),
-    db=Depends(get_database),
+    db=Depends(get_db),
 ):
     """Get current user's spiritual profile"""
     user_id = str(current_user.get("_id") or current_user.get("id"))
@@ -182,7 +181,7 @@ async def get_my_profile(
 async def get_my_insights(
     current_user: dict = Depends(get_current_user),
     church_id: str = Depends(get_session_church_id),
-    db=Depends(get_database),
+    db=Depends(get_db),
 ):
     """Get computed profile insights (for content personalization)"""
     user_id = str(current_user.get("_id") or current_user.get("id"))
@@ -200,7 +199,7 @@ async def get_my_insights(
 async def get_my_growth_indicators(
     current_user: dict = Depends(get_current_user),
     church_id: str = Depends(get_session_church_id),
-    db=Depends(get_database),
+    db=Depends(get_db),
 ):
     """Get and update growth indicators"""
     user_id = str(current_user.get("_id") or current_user.get("id"))
@@ -219,7 +218,7 @@ async def update_life_situation(
     request: UpdateLifeSituationRequest,
     current_user: dict = Depends(get_current_user),
     church_id: str = Depends(get_session_church_id),
-    db=Depends(get_database),
+    db=Depends(get_db),
 ):
     """Update user's life situation"""
     user_id = str(current_user.get("_id") or current_user.get("id"))
@@ -256,7 +255,7 @@ async def update_preferences(
     request: UpdatePreferencesRequest,
     current_user: dict = Depends(get_current_user),
     church_id: str = Depends(get_session_church_id),
-    db=Depends(get_database),
+    db=Depends(get_db),
 ):
     """Update user preferences"""
     user_id = str(current_user.get("_id") or current_user.get("id"))
@@ -301,7 +300,7 @@ async def track_content_view(
     request: TrackContentViewRequest,
     current_user: dict = Depends(get_current_user),
     church_id: str = Depends(get_session_church_id),
-    db=Depends(get_database),
+    db=Depends(get_db),
 ):
     """Track content view (called when user opens content)"""
     user_id = str(current_user.get("_id") or current_user.get("id"))
@@ -324,7 +323,7 @@ async def track_content_completion(
     request: TrackContentCompletionRequest,
     current_user: dict = Depends(get_current_user),
     church_id: str = Depends(get_session_church_id),
-    db=Depends(get_database),
+    db=Depends(get_db),
 ):
     """Track content completion"""
     user_id = str(current_user.get("_id") or current_user.get("id"))
@@ -346,7 +345,7 @@ async def track_content_action(
     request: TrackContentActionRequest,
     current_user: dict = Depends(get_current_user),
     church_id: str = Depends(get_session_church_id),
-    db=Depends(get_database),
+    db=Depends(get_db),
 ):
     """Track content action (bookmark, favorite, share, companion)"""
     user_id = str(current_user.get("_id") or current_user.get("id"))
@@ -371,7 +370,7 @@ async def track_quiz_result(
     request: TrackQuizResultRequest,
     current_user: dict = Depends(get_current_user),
     church_id: str = Depends(get_session_church_id),
-    db=Depends(get_database),
+    db=Depends(get_db),
 ):
     """Track quiz result"""
     user_id = str(current_user.get("_id") or current_user.get("id"))
@@ -394,7 +393,7 @@ async def track_quiz_result(
 async def get_profile_analytics(
     current_user: dict = Depends(get_current_user),
     church_id: str = Depends(get_session_church_id),
-    db=Depends(get_database),
+    db=Depends(get_db),
 ):
     """Get aggregated profile analytics for church admin"""
     # Check admin permission

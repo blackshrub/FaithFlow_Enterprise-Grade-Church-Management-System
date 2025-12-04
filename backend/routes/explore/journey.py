@@ -15,8 +15,7 @@ from typing import Optional, List
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 
-from utils.dependencies import get_current_user, get_session_church_id
-from utils.database import get_database
+from utils.dependencies import get_current_user, get_session_church_id, get_db
 from services.explore.journey_service import get_journey_service
 
 router = APIRouter(prefix="/explore/journeys", tags=["Explore Journeys"])
@@ -57,7 +56,7 @@ async def get_available_journeys(
     difficulty: Optional[str] = Query(None, description="Filter by difficulty"),
     current_user: dict = Depends(get_current_user),
     church_id: str = Depends(get_session_church_id),
-    db=Depends(get_database),
+    db=Depends(get_db),
 ):
     """Get all available journeys"""
     service = get_journey_service(db)
@@ -81,7 +80,7 @@ async def get_recommended_journeys(
     limit: int = Query(3, ge=1, le=10),
     current_user: dict = Depends(get_current_user),
     church_id: str = Depends(get_session_church_id),
-    db=Depends(get_database),
+    db=Depends(get_db),
 ):
     """Get AI-recommended journeys based on user profile"""
     user_id = str(current_user.get("_id") or current_user.get("id"))
@@ -123,7 +122,7 @@ async def get_journey_details(
     slug: str,
     current_user: dict = Depends(get_current_user),
     church_id: str = Depends(get_session_church_id),
-    db=Depends(get_database),
+    db=Depends(get_db),
 ):
     """Get full journey details"""
     service = get_journey_service(db)
@@ -145,7 +144,7 @@ async def enroll_in_journey(
     request: EnrollJourneyRequest,
     current_user: dict = Depends(get_current_user),
     church_id: str = Depends(get_session_church_id),
-    db=Depends(get_database),
+    db=Depends(get_db),
 ):
     """Enroll in a journey (self-selection)"""
     user_id = str(current_user.get("_id") or current_user.get("id"))
@@ -186,7 +185,7 @@ async def get_my_enrollments(
     status: Optional[str] = Query(None, description="Filter by status: active, paused, completed"),
     current_user: dict = Depends(get_current_user),
     church_id: str = Depends(get_session_church_id),
-    db=Depends(get_database),
+    db=Depends(get_db),
 ):
     """Get user's journey enrollments"""
     user_id = str(current_user.get("_id") or current_user.get("id"))
@@ -212,7 +211,7 @@ async def get_my_journey_enrollment(
     slug: str,
     current_user: dict = Depends(get_current_user),
     church_id: str = Depends(get_session_church_id),
-    db=Depends(get_database),
+    db=Depends(get_db),
 ):
     """Get specific journey enrollment with progress"""
     user_id = str(current_user.get("_id") or current_user.get("id"))
@@ -240,7 +239,7 @@ async def get_today_content(
     slug: str,
     current_user: dict = Depends(get_current_user),
     church_id: str = Depends(get_session_church_id),
-    db=Depends(get_database),
+    db=Depends(get_db),
 ):
     """Get today's journey content"""
     user_id = str(current_user.get("_id") or current_user.get("id"))
@@ -262,7 +261,7 @@ async def complete_journey_day(
     request: CompleteDayRequest,
     current_user: dict = Depends(get_current_user),
     church_id: str = Depends(get_session_church_id),
-    db=Depends(get_database),
+    db=Depends(get_db),
 ):
     """Mark today's journey day as completed"""
     user_id = str(current_user.get("_id") or current_user.get("id"))
@@ -291,7 +290,7 @@ async def pause_journey(
     request: PauseJourneyRequest,
     current_user: dict = Depends(get_current_user),
     church_id: str = Depends(get_session_church_id),
-    db=Depends(get_database),
+    db=Depends(get_db),
 ):
     """Pause a journey"""
     user_id = str(current_user.get("_id") or current_user.get("id"))
@@ -319,7 +318,7 @@ async def resume_journey(
     slug: str,
     current_user: dict = Depends(get_current_user),
     church_id: str = Depends(get_session_church_id),
-    db=Depends(get_database),
+    db=Depends(get_db),
 ):
     """Resume a paused journey"""
     user_id = str(current_user.get("_id") or current_user.get("id"))
@@ -350,7 +349,7 @@ async def abandon_journey(
     slug: str,
     current_user: dict = Depends(get_current_user),
     church_id: str = Depends(get_session_church_id),
-    db=Depends(get_database),
+    db=Depends(get_db),
 ):
     """Abandon a journey"""
     user_id = str(current_user.get("_id") or current_user.get("id"))
@@ -370,7 +369,7 @@ async def submit_completion_feedback(
     request: CompletionFeedbackRequest,
     current_user: dict = Depends(get_current_user),
     church_id: str = Depends(get_session_church_id),
-    db=Depends(get_database),
+    db=Depends(get_db),
 ):
     """Submit feedback after completing a journey"""
     user_id = str(current_user.get("_id") or current_user.get("id"))

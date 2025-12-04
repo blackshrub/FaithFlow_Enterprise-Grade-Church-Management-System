@@ -16,7 +16,7 @@ from pydantic import BaseModel
 import uuid
 import logging
 
-from utils.dependencies import get_current_user, get_db, require_super_admin
+from utils.dependencies import get_current_user, get_db, require_super_admin, require_admin
 from services.seaweedfs_service import (
     get_seaweedfs_service,
     SeaweedFSError,

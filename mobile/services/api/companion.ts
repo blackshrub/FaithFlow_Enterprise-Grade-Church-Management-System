@@ -2,16 +2,13 @@
  * Faith Assistant (Pendamping Iman) API Service
  *
  * Handles communication with the backend companion chat endpoint.
- * Uses AIOrchestrator for intelligent intent-based model routing.
+ * Uses backend streaming API for secure AI processing.
  */
 
 import { api } from '../api';
 import type { CompanionContext } from '@/stores/companionStore';
 import { SPIRITUAL_COMPANION_SYSTEM_PROMPT } from '@/constants/companionPrompt';
 import {
-  sendAIMessage,
-  type Intent,
-  type AIError,
   type AIResponseMetadata,
   type SuggestedPrompt,
   addUserMessage,
@@ -21,11 +18,6 @@ import {
   getConversationLength,
   buildContextSummary,
 } from '@/services/ai';
-import { DEV_ANTHROPIC_API_KEY } from '@/constants/secrets';
-
-// Development mode configuration
-const DEV_MODE = __DEV__;
-const DEV_API_KEY = DEV_ANTHROPIC_API_KEY || '';
 
 export interface ChatRequest {
   messages: Array<{
@@ -128,17 +120,16 @@ The user just finished a devotion${contextData?.devotionTitle ? `: "${contextDat
 }
 
 /**
- * Send message with streaming using AIOrchestrator
- * Intelligent intent-based model routing and temperature adjustment
+ * Send message with streaming via Backend API
+ *
+ * Uses the backend's /api/explore/companion/chat/stream endpoint
+ * which handles the Anthropic API call server-side with proper authentication.
  *
  * Features:
- * - Intent-based model selection (Haiku/Sonnet/Opus)
- * - Dynamic temperature and token limits
- * - Context summarization for long conversations
- * - Bible verse detection and enhancement
- * - Suggested follow-up prompts
- * - Comprehensive error handling with retry
- * - Timeout protection
+ * - Server-side AI processing (secure API key handling)
+ * - SSE streaming for real-time response
+ * - Context-aware responses
+ * - Error handling
  */
 export function sendCompanionMessageStream(
   request: ChatRequest,
@@ -151,10 +142,9 @@ export function sendCompanionMessageStream(
     .filter(m => m.role === 'user')
     .pop()?.content || '';
 
-  // Get conversation history (excluding the latest message)
-  const history = request.messages.slice(0, -1);
-
   let fullText = '';
+  let eventSource: EventSource | null = null;
+  let isCancelled = false;
 
   // Track user message in session memory
   addUserMessage(latestUserMessage);
@@ -165,33 +155,126 @@ export function sendCompanionMessageStream(
     ? `${systemPrompt}\n\n${contextSummary}`
     : systemPrompt;
 
-  console.log(`[Faith Assistant] Using AIOrchestrator | Session: ${getConversationLength()} turns | Active: ${hasActiveConversation()}`);
+  console.log(`[Faith Assistant] Using Backend API | Session: ${getConversationLength()} turns | Active: ${hasActiveConversation()}`);
 
-  // Use the AIOrchestrator with all advanced features
-  return sendAIMessage({
-    systemPrompt: enhancedSystemPrompt,
-    userInput: latestUserMessage,
-    apiKey: DEV_API_KEY,
-    conversationHistory: history,
-    onStart: callbacks.onStart,
-    onChunk: (chunk) => {
-      fullText += chunk.content;
-      callbacks.onToken?.(chunk.content, fullText);
-    },
-    onComplete: (text, metadata) => {
-      // Track assistant response in session memory
-      addAssistantResponse(text);
+  // Use backend streaming endpoint
+  const startStream = async () => {
+    try {
+      // Get auth token
+      const SecureStore = await import('expo-secure-store');
+      const token = await SecureStore.getItemAsync('auth_token');
 
-      // Notify about suggested prompts if callback provided
-      if (callbacks.onSuggestedPrompts && metadata.suggestedPrompts.length > 0) {
-        callbacks.onSuggestedPrompts(metadata.suggestedPrompts);
+      if (!token) {
+        throw new Error('Not authenticated');
       }
-      callbacks.onComplete?.(text, metadata);
-    },
-    onError: callbacks.onError,
-    onIntentDetected: callbacks.onIntentDetected,
-    onRetry: callbacks.onRetry,
-  });
+
+      // Import API base URL
+      const { API_BASE_URL } = await import('@/constants/api');
+
+      callbacks.onStart?.();
+
+      // Use react-native-sse for SSE streaming
+      const EventSourceModule = await import('react-native-sse');
+      const EventSourceClass = EventSourceModule.default;
+
+      // Prepare request body - matches CompanionChatRequest in backend
+      const body = {
+        messages: request.messages.map(m => ({
+          role: m.role,
+          content: m.content,
+        })),
+        context: request.context || null,
+        context_data: request.context_data || null,
+      };
+
+      eventSource = new EventSourceClass(
+        `${API_BASE_URL}/api/companion/chat/stream`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(body),
+          pollingInterval: 0,
+        }
+      );
+
+      // Handle SSE events
+      eventSource.addEventListener('message', (event: any) => {
+        if (isCancelled) return;
+
+        try {
+          const data = JSON.parse(event.data);
+
+          if (data.type === 'text' && data.text) {
+            fullText += data.text;
+            callbacks.onToken?.(data.text, fullText);
+          } else if (data.type === 'done') {
+            // Track assistant response in session memory
+            addAssistantResponse(fullText);
+
+            // Create minimal metadata for compatibility
+            const metadata: AIResponseMetadata = {
+              intent: 'general_faith' as any,
+              persona: 'adult' as any,
+              model: 'claude-sonnet-4-5-20250929',
+              modelTier: 'balanced',
+              temperature: 0.4,
+              latencyMs: 0,
+              suggestedPrompts: [],
+              detectedVerses: [],
+              wasRetried: false,
+              retryCount: 0,
+            };
+
+            callbacks.onComplete?.(fullText, metadata);
+            eventSource?.close();
+          } else if (data.type === 'error') {
+            throw new Error(data.error || 'Stream error');
+          }
+        } catch (parseError) {
+          // Ignore parse errors for malformed chunks
+          console.warn('[Faith Assistant] Parse error:', parseError);
+        }
+      });
+
+      eventSource.addEventListener('error', (event: any) => {
+        if (isCancelled) return;
+
+        console.error('[Faith Assistant] SSE error:', event);
+        const error = {
+          type: 'stream' as const,
+          message: event.message || 'Stream connection error',
+          retryable: true,
+          originalError: new Error(event.message || 'Stream error'),
+        };
+        callbacks.onError?.(error as any);
+        eventSource?.close();
+      });
+    } catch (error: any) {
+      console.error('[Faith Assistant] Stream setup error:', error);
+      const aiError = {
+        type: 'network' as const,
+        message: error.message || 'Failed to connect to server',
+        retryable: true,
+        originalError: error,
+      };
+      callbacks.onError?.(aiError as any);
+    }
+  };
+
+  // Start the stream
+  startStream();
+
+  // Return cleanup function
+  return () => {
+    isCancelled = true;
+    if (eventSource) {
+      eventSource.close();
+      eventSource = null;
+    }
+  };
 }
 
 /**
@@ -218,54 +301,10 @@ export function getConversationTurnCount(): number {
 }
 
 /**
- * Send message directly to Anthropic API (development mode) - non-streaming
- */
-async function sendDirectToAnthropic(request: ChatRequest): Promise<ChatResponse> {
-  const systemPrompt = buildSystemPrompt(request.context, request.context_data);
-
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': DEV_API_KEY,
-      'anthropic-version': '2023-06-01',
-    },
-    body: JSON.stringify({
-      model: 'claude-sonnet-4-5-20250929',
-      max_tokens: 2048,
-      temperature: 0.4,
-      system: systemPrompt,
-      messages: request.messages.map((m) => ({
-        role: m.role,
-        content: m.content,
-      })),
-    }),
-  });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.error?.message || `API error: ${response.status}`);
-  }
-
-  const data = await response.json();
-
-  return {
-    message: data.content[0]?.text || 'No response received',
-    timestamp: new Date().toISOString(),
-  };
-}
-
-/**
- * Send a message to the Faith Assistant and get a response
+ * Send a message to the Faith Assistant and get a response (non-streaming)
  */
 export async function sendCompanionMessage(request: ChatRequest): Promise<ChatResponse> {
-  // Use direct Anthropic API in development mode
-  if (DEV_MODE) {
-    console.log('[Faith Assistant] Using direct Anthropic API (dev mode)');
-    return sendDirectToAnthropic(request);
-  }
-
-  // Production: use backend API
+  // Always use backend API
   try {
     const response = await api.post<ChatResponse>('/companion/chat', request);
     return response.data;
@@ -286,12 +325,6 @@ export async function sendCompanionMessage(request: ChatRequest): Promise<ChatRe
  * Send message using public endpoint (no auth required)
  */
 export async function sendCompanionMessagePublic(request: ChatRequest): Promise<ChatResponse> {
-  // Use direct Anthropic API in development mode
-  if (DEV_MODE) {
-    console.log('[Faith Assistant] Using direct Anthropic API (dev mode)');
-    return sendDirectToAnthropic(request);
-  }
-
   const response = await api.post<ChatResponse>('/companion/public/chat', request);
   return response.data;
 }

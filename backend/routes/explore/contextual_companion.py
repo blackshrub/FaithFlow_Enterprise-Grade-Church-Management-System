@@ -14,8 +14,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 import json
 
-from utils.dependencies import get_current_user, get_session_church_id
-from utils.database import get_database
+from utils.dependencies import get_current_user, get_session_church_id, get_db
 from services.explore.contextual_companion_service import (
     get_contextual_companion_service,
     ContextType,
@@ -54,7 +53,7 @@ async def get_contextual_prompt(
     request: GetContextRequest,
     current_user: dict = Depends(get_current_user),
     church_id: str = Depends(get_session_church_id),
-    db=Depends(get_database),
+    db=Depends(get_db),
 ):
     """
     Get the system prompt and context for contextual companion
@@ -118,7 +117,7 @@ async def contextual_chat(
     request: ContextualChatRequest,
     current_user: dict = Depends(get_current_user),
     church_id: str = Depends(get_session_church_id),
-    db=Depends(get_database),
+    db=Depends(get_db),
 ):
     """
     Chat with contextual companion (non-streaming)
@@ -182,7 +181,7 @@ async def contextual_chat_stream(
     request: ContextualChatRequest,
     current_user: dict = Depends(get_current_user),
     church_id: str = Depends(get_session_church_id),
-    db=Depends(get_database),
+    db=Depends(get_db),
 ):
     """
     Streaming contextual chat
