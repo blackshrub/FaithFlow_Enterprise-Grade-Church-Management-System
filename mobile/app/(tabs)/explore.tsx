@@ -22,7 +22,7 @@ import {
   StatusBar,
   FlatList,
   Dimensions,
-  ImageBackground,
+  Image,
 } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -78,6 +78,9 @@ import {
   useTodayCollapsibleHeader,
   todayListItemMotion,
 } from '@/components/motion/today-motion';
+
+// Animated Image for shared element transitions (Reanimated 4+)
+const AnimatedImage = Animated.createAnimatedComponent(Image);
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const STUDY_CARD_WIDTH = (SCREEN_WIDTH - 48 - 16) / 1.8;
@@ -671,56 +674,62 @@ function BibleStudyCard({ study, onPress, contentLanguage }: BibleStudyCardProps
         onPress={onPress}
         className="flex-1 overflow-hidden rounded-[20px] active:scale-[0.97] active:opacity-95"
       >
-        <ImageBackground
+        {/* Background Image with shared element transition */}
+        <AnimatedImage
           source={{
             uri: study.cover_image_url || 'https://images.unsplash.com/photo-1504052434569-70ad5836ab65?w=400',
           }}
-          className="flex-1"
-          imageStyle={{ borderRadius: 20 }}
-        >
-          {/* Gradient overlay - absolute to cover entire image */}
-          <LinearGradient
-            colors={['rgba(0,0,0,0.4)', 'rgba(0,0,0,0.2)', 'rgba(0,0,0,0.85)']}
-            locations={[0, 0.4, 1]}
-            className="absolute inset-0 rounded-[20px]"
-          />
+          className="absolute inset-0 w-full h-full rounded-[20px]"
+          resizeMode="cover"
+          sharedTransitionTag={`study-${study.id}-image`}
+        />
 
-          {/* Content - sits on top of gradient */}
-          <View className="flex-1 justify-between p-3.5">
-            {/* Difficulty badge */}
-            <View
-              className="self-end px-3 py-1.5 rounded-full"
-              style={{ backgroundColor: difficultyColors[difficulty] || Colors.neutral[500] }}
+        {/* Gradient overlay - absolute to cover entire image */}
+        <LinearGradient
+          colors={['rgba(0,0,0,0.4)', 'rgba(0,0,0,0.2)', 'rgba(0,0,0,0.85)']}
+          locations={[0, 0.4, 1]}
+          className="absolute inset-0 rounded-[20px]"
+        />
+
+        {/* Content - sits on top of gradient */}
+        <View className="flex-1 justify-between p-3.5">
+          {/* Difficulty badge */}
+          <View
+            className="self-end px-3 py-1.5 rounded-full"
+            style={{ backgroundColor: difficultyColors[difficulty] || Colors.neutral[500] }}
+          >
+            <Text className="text-[10px] font-bold text-white uppercase tracking-wide">
+              {getDifficultyLabel(difficulty)}
+            </Text>
+          </View>
+
+          {/* Bottom content */}
+          <View className="gap-2.5">
+            <Animated.Text
+              className="text-[16px] font-bold text-white leading-[20px]"
+              numberOfLines={2}
+              sharedTransitionTag={`study-${study.id}-title`}
             >
-              <Text className="text-[10px] font-bold text-white uppercase tracking-wide">
-                {getDifficultyLabel(difficulty)}
-              </Text>
-            </View>
-
-            {/* Bottom content */}
-            <View className="gap-2.5">
-              <Text className="text-[16px] font-bold text-white leading-[20px]" numberOfLines={2}>
-                {title}
-              </Text>
-              <View className="flex-row items-center gap-3">
-                <View className="flex-row items-center gap-1.5 bg-white/20 px-2 py-1 rounded-full">
-                  <BookOpen size={11} color={Colors.white} />
-                  <Text className="text-[11px] font-semibold text-white">{lessonCount}</Text>
-                </View>
-                <View className="flex-row items-center gap-1.5 bg-white/20 px-2 py-1 rounded-full">
-                  <Clock size={11} color={Colors.white} />
-                  <Text className="text-[11px] font-semibold text-white">{formatDuration(duration)}</Text>
-                </View>
-                {rating > 0 && (
-                  <View className="flex-row items-center gap-1">
-                    <Star size={11} color="#F59E0B" fill="#F59E0B" />
-                    <Text className="text-[11px] font-semibold text-white">{rating.toFixed(1)}</Text>
-                  </View>
-                )}
+              {title}
+            </Animated.Text>
+            <View className="flex-row items-center gap-3">
+              <View className="flex-row items-center gap-1.5 bg-white/20 px-2 py-1 rounded-full">
+                <BookOpen size={11} color={Colors.white} />
+                <Text className="text-[11px] font-semibold text-white">{lessonCount}</Text>
               </View>
+              <View className="flex-row items-center gap-1.5 bg-white/20 px-2 py-1 rounded-full">
+                <Clock size={11} color={Colors.white} />
+                <Text className="text-[11px] font-semibold text-white">{formatDuration(duration)}</Text>
+              </View>
+              {rating > 0 && (
+                <View className="flex-row items-center gap-1">
+                  <Star size={11} color="#F59E0B" fill="#F59E0B" />
+                  <Text className="text-[11px] font-semibold text-white">{rating.toFixed(1)}</Text>
+                </View>
+              )}
             </View>
           </View>
-        </ImageBackground>
+        </View>
       </Pressable>
     </View>
   );

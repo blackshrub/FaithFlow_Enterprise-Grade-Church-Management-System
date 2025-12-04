@@ -22,7 +22,7 @@ import {
   View,
   Text,
   Pressable,
-  ImageBackground,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -55,6 +55,9 @@ import { QuickAskInput } from '@/components/companion/QuickAskInput';
 import { profileApi } from '@/services/api/explore';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
+
+// Animated Image for shared element transitions (Reanimated 4+)
+const AnimatedImage = Animated.createAnimatedComponent(Image);
 
 export default function BibleStudyReaderScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -198,56 +201,59 @@ export default function BibleStudyReaderScreen() {
     return (
       <SafeAreaView className="flex-1 bg-white" edges={['top']}>
         <ScrollView className="flex-1" contentContainerClassName="pb-6" showsVerticalScrollIndicator={false}>
-          {/* Hero Section */}
-          <Animated.View entering={FadeIn.duration(400)}>
-            <ImageBackground
+          {/* Hero Section with shared element transition */}
+          <Animated.View entering={FadeIn.duration(400)} className="relative h-[280px]">
+            {/* Background Image with shared element transition */}
+            <AnimatedImage
               source={{
                 uri: study.cover_image_url || 'https://images.unsplash.com/photo-1504052434569-70ad5836ab65?w=800',
               }}
-              className="h-[280px]"
+              className="absolute inset-0 w-full h-full"
+              resizeMode="cover"
+              sharedTransitionTag={`study-${id}-image`}
+            />
+            <LinearGradient
+              colors={['rgba(0,0,0,0.3)', 'rgba(0,0,0,0.85)']}
+              className="flex-1 p-4 justify-between"
             >
-              <LinearGradient
-                colors={['rgba(0,0,0,0.3)', 'rgba(0,0,0,0.85)']}
-                className="flex-1 p-4 justify-between"
+              {/* Back Button */}
+              <Pressable
+                onPress={handleGoBack}
+                className="w-10 h-10 rounded-full items-center justify-center"
+                style={{ backgroundColor: 'rgba(0,0,0,0.3)' }}
               >
-                {/* Back Button */}
-                <Pressable
-                  onPress={handleGoBack}
-                  className="w-10 h-10 rounded-full items-center justify-center"
-                  style={{ backgroundColor: 'rgba(0,0,0,0.3)' }}
-                >
-                  <ArrowLeft size={24} color="#FFFFFF" />
-                </Pressable>
+                <ArrowLeft size={24} color="#FFFFFF" />
+              </Pressable>
 
-                {/* Course Info on Hero */}
-                <View className="mt-auto">
-                  <View className="flex-row gap-3 mb-2">
-                    <View className="flex-row items-center gap-1.5">
-                      <GraduationCap size={14} color="#FFFFFF" />
-                      <Text className="text-white text-[13px] font-semibold">
-                        {totalLessons} {contentLanguage === 'en' ? 'Lessons' : 'Pelajaran'}
-                      </Text>
-                    </View>
-                    <View className="flex-row items-center gap-1.5">
-                      <Clock size={14} color="#FFFFFF" />
-                      <Text className="text-white text-[13px] font-semibold">
-                        {study.estimated_duration_minutes || 30} {contentLanguage === 'en' ? 'min' : 'mnt'}
-                      </Text>
-                    </View>
+              {/* Course Info on Hero */}
+              <View className="mt-auto">
+                <View className="flex-row gap-3 mb-2">
+                  <View className="flex-row items-center gap-1.5">
+                    <GraduationCap size={14} color="#FFFFFF" />
+                    <Text className="text-white text-[13px] font-semibold">
+                      {totalLessons} {contentLanguage === 'en' ? 'Lessons' : 'Pelajaran'}
+                    </Text>
                   </View>
-                  <Text
-                    className="text-[26px] font-extrabold text-white leading-8"
-                    style={{
-                      textShadowColor: 'rgba(0,0,0,0.5)',
-                      textShadowOffset: { width: 0, height: 2 },
-                      textShadowRadius: 4,
-                    }}
-                  >
-                    {studyTitle}
-                  </Text>
+                  <View className="flex-row items-center gap-1.5">
+                    <Clock size={14} color="#FFFFFF" />
+                    <Text className="text-white text-[13px] font-semibold">
+                      {study.estimated_duration_minutes || 30} {contentLanguage === 'en' ? 'min' : 'mnt'}
+                    </Text>
+                  </View>
                 </View>
-              </LinearGradient>
-            </ImageBackground>
+                <Animated.Text
+                  className="text-[26px] font-extrabold text-white leading-8"
+                  style={{
+                    textShadowColor: 'rgba(0,0,0,0.5)',
+                    textShadowOffset: { width: 0, height: 2 },
+                    textShadowRadius: 4,
+                  }}
+                  sharedTransitionTag={`study-${id}-title`}
+                >
+                  {studyTitle}
+                </Animated.Text>
+              </View>
+            </LinearGradient>
           </Animated.View>
 
           <Animated.View entering={FadeInDown.duration(500).delay(200)} className="px-5 pt-6">
