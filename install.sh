@@ -1270,12 +1270,21 @@ JWT_SECRET_KEY=$jwt_secret
 JWT_ALGORITHM=HS256
 JWT_EXPIRE_MINUTES=1440
 
+# Redis Configuration
+REDIS_URL=redis://localhost:6379
+
+# SeaweedFS File Storage (if installed)
+# SEAWEEDFS_MASTER_URL=http://localhost:9333
+# SEAWEEDFS_FILER_URL=http://localhost:8888
+# SEAWEEDFS_PUBLIC_URL=https://files.yourdomain.com
+
 # WhatsApp API (Configure in admin panel)
 WHATSAPP_API_URL=
 WHATSAPP_USERNAME=
 WHATSAPP_PASSWORD=
 
-# AI Services (Optional)
+# AI Features (Optional - get keys from providers)
+# Enables: Prayer Intelligence, Contextual Companion, Content Generation
 ANTHROPIC_API_KEY=
 STABILITY_API_KEY=
 BACKEND_ENV

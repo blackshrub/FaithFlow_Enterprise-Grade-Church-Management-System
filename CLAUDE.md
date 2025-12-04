@@ -4,9 +4,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-FaithFlow is an enterprise-grade, multi-tenant church management system with FastAPI backend, React frontend, and MongoDB database. Complete data isolation per church via `church_id` scoping.
+FaithFlow is an enterprise-grade, multi-tenant church management system with FastAPI backend, React frontend, React Native mobile app, and MongoDB database. Features AI-powered Prayer Intelligence, Contextual Companion, and News Context System. Complete data isolation per church via `church_id` scoping.
 
-**Tech Stack:** FastAPI + MongoDB (Motor) + React + TanStack Query + shadcn/ui + Tailwind + react-i18next
+**Tech Stack:**
+- **Backend:** FastAPI + Python 3.11 + MongoDB (Motor) + Redis + Granian (Rust ASGI) + msgspec
+- **Frontend:** React 18 + TanStack Query + shadcn/ui + Tailwind + react-i18next
+- **Mobile:** React Native + Expo + NativeWind + Gluestack UI + Reanimated
+- **AI:** Anthropic Claude (Prayer Intelligence, Contextual Companion, Content Generation)
+- **Real-time:** EMQX (MQTT) + LiveKit (WebRTC voice/video)
+- **Storage:** SeaweedFS (files) + Redis (cache)
 
 ## Development Commands
 
@@ -746,6 +752,123 @@ const PRIMARY_COLOR = '#3B82F6';
 | Lists | React Native `<FlatList>` |
 | Animations | Reanimated + NativeWind |
 | Icon colors | Inline hex values |
+
+---
+
+# 🔷 12. AI-Powered Features Architecture
+
+FaithFlow includes several AI-powered features that require `ANTHROPIC_API_KEY` to be set.
+
+## Prayer Intelligence System
+
+**Purpose:** Automatically analyze prayer requests to extract themes, detect urgency, generate guided prayers, and schedule follow-ups.
+
+**Key Files:**
+- `backend/services/prayer_intelligence.py` - Core AI analysis service
+- `backend/routes/prayer_requests.py` - API endpoints including `/analytics/*`
+- `frontend/src/pages/PrayerRequests/PrayerAnalytics.js` - Admin dashboard
+- `mobile/app/prayer/resources.tsx` - Mobile prayer resources screen
+- `mobile/services/api/prayer.ts` - Mobile API service
+
+**Data Flow:**
+1. Member submits prayer → `POST /api/prayer-requests`
+2. Backend calls Prayer Intelligence service
+3. AI extracts: themes, urgency, guided_prayer, verses
+4. Response includes `resources` object for mobile display
+5. Follow-up scheduled for 14 days later
+
+**API Endpoints:**
+```
+POST /api/prayer-requests - Submit with AI analysis
+GET /api/prayer-requests/analytics/summary - Stats dashboard
+GET /api/prayer-requests/analytics/follow-ups - Follow-up list
+```
+
+## Contextual Companion (AI Chat)
+
+**Purpose:** Scripture-grounded AI chat assistant with context awareness.
+
+**Key Files:**
+- `backend/services/contextual_companion.py` - AI chat service
+- `backend/routes/contextual_companion.py` - API endpoints
+- `mobile/services/api/contextual-companion.ts` - Mobile API
+- `mobile/components/companion/QuickAskInput.tsx` - Chat input component
+
+**Context Types:** `bible_study`, `devotion`, `prayer`, `general`
+
+**API Endpoints:**
+```
+POST /api/contextual-companion/chat - Send message, get response
+GET /api/contextual-companion/starters - Get conversation starters
+```
+
+## News Context System
+
+**Purpose:** Monitor national news for contextual content generation.
+
+**Key Files:**
+- `backend/services/news_context.py` - RSS fetching and analysis
+- `backend/routes/explore/admin.py` - Admin endpoints
+- `frontend/src/pages/Explore/NewsContextDashboard.js` - Admin dashboard
+- `backend/scheduler.py` - Scheduled tasks (6:30 AM, 2:00 PM)
+
+**News Sources:** Kompas, Detik, CNN Indonesia, BMKG (disaster alerts)
+
+**API Endpoints:**
+```
+GET /api/explore/admin/news-contexts - List contexts
+POST /api/explore/admin/news-contexts/trigger - Manual fetch
+GET /api/explore/admin/news-contexts/stats/summary - Statistics
+```
+
+## Content Center (Explore Module)
+
+**Purpose:** Manage spiritual content with optional AI generation.
+
+**Key Files:**
+- `backend/routes/explore/admin.py` - Admin CRUD
+- `backend/routes/explore/public.py` - Public/mobile API
+- `backend/services/explore/` - Content services
+- `frontend/src/pages/Explore/` - Admin dashboard pages
+
+**Content Types:**
+- Devotions (`/content-center/devotion`)
+- Verse of the Day (`/content-center/verse`)
+- Bible Figures (`/content-center/figure`)
+- Daily Quizzes (`/content-center/quiz`)
+- Bible Studies (`/content-center/bible-study`)
+- Topical Verses (`/content-center/topical`)
+
+**AI Generation:**
+- Generate devotions from Bible passages
+- Create quizzes from chapters
+- Draft Bible figure profiles
+- Bilingual content (EN/ID)
+
+---
+
+# 🔷 13. Required Environment Variables
+
+## Core (Required)
+```env
+MONGO_URL=mongodb://...
+DB_NAME=faithflow
+JWT_SECRET=<64-char-string>
+REDIS_URL=redis://localhost:6379
+```
+
+## AI Features (Optional but Recommended)
+```env
+ANTHROPIC_API_KEY=sk-ant-...  # Enables all AI features
+STABILITY_API_KEY=sk-...       # AI image generation
+```
+
+## File Storage
+```env
+SEAWEEDFS_MASTER_URL=http://seaweedfs-master:9333
+SEAWEEDFS_FILER_URL=http://seaweedfs-filer:8888
+SEAWEEDFS_PUBLIC_URL=https://files.yourdomain.com
+```
 
 ---
 

@@ -18,10 +18,12 @@
 #  - FaithFlow Web Application (React frontend)                                #
 #  - FaithFlow API Server (FastAPI backend)                                    #
 #  - MongoDB Database                                                          #
+#  - Redis (Caching, sessions, queues)                                         #
 #  - Traefik Reverse Proxy with automatic SSL                                  #
 #  - LiveKit (Voice/Video Calling)                                             #
 #  - coTURN (NAT Traversal for video calls)                                    #
 #  - EMQX (Real-time messaging)                                                #
+#  - SeaweedFS (Distributed file storage)                                      #
 #                                                                              #
 #  Architecture (all on your server):                                          #
 #    yourdomain.com         -> Frontend (React app)                            #
@@ -1090,6 +1092,23 @@ INIT_SUPER_ADMIN_NAME=$SUPER_ADMIN_NAME
 INIT_CHURCH_NAME=$CHURCH_NAME
 INIT_CHURCH_CITY=$CHURCH_CITY
 INIT_CHURCH_COUNTRY=$CHURCH_COUNTRY
+
+# Redis Configuration
+REDIS_URL=redis://redis:6379
+
+# SeaweedFS File Storage
+SEAWEEDFS_MASTER_URL=http://seaweedfs-master:9333
+SEAWEEDFS_FILER_URL=http://seaweedfs-filer:8888
+SEAWEEDFS_PUBLIC_URL=https://files.$DOMAIN
+
+# AI Features (Optional - get keys from providers)
+# Uncomment and add your keys to enable AI-powered features:
+# - Prayer Intelligence (theme extraction, guided prayers)
+# - Contextual Companion (AI chat)
+# - Content generation (devotions, quizzes)
+# - News context analysis
+# ANTHROPIC_API_KEY=sk-ant-your-key-here
+# STABILITY_API_KEY=sk-your-key-here
 
 # Internal Configuration (don't change)
 COMPOSE_PROJECT_NAME=faithflow
