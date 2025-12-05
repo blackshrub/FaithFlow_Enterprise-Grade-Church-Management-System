@@ -112,17 +112,44 @@ const humanConfig = {
   },
 };
 
-// Thresholds for face matching (tuned for 1024D embeddings from faceres.json)
-// Human library faceres.json produces unnormalized embeddings (values 0-2.5 range)
-// For 1024D vectors with ~40% sparsity, Euclidean distances are higher than normalized embeddings
-// Empirically tuned: same person ~0.6-1.0, different person ~1.4+
+// Thresholds for face matching (tuned for L2-normalized 1024D embeddings)
+// After normalization, Euclidean distance range is 0-2:
+// - 0 = identical vectors
+// - ~0.6-0.9 = same person, different image
+// - ~1.0-1.2 = uncertain
+// - >1.2 = different person
 const THRESHOLDS = {
   // Distance below this = high confidence match (auto check-in)
-  HIGH_CONFIDENCE: 1.0,
+  HIGH_CONFIDENCE: 0.8,
   // Distance between HIGH and LOW = uncertain (ask confirmation)
-  LOW_CONFIDENCE: 1.3,
+  LOW_CONFIDENCE: 1.1,
   // Above LOW_CONFIDENCE = no match
 };
+
+/**
+ * L2 normalize a descriptor (convert to unit vector)
+ * This ensures consistent distance calculations regardless of original scale
+ */
+function normalizeDescriptor(descriptor) {
+  if (!descriptor || descriptor.length === 0) return null;
+
+  // Calculate L2 norm (magnitude)
+  let sumSquares = 0;
+  for (let i = 0; i < descriptor.length; i++) {
+    sumSquares += descriptor[i] * descriptor[i];
+  }
+  const norm = Math.sqrt(sumSquares);
+
+  // Avoid division by zero
+  if (norm === 0) return descriptor;
+
+  // Normalize to unit vector
+  const normalized = new Float32Array(descriptor.length);
+  for (let i = 0; i < descriptor.length; i++) {
+    normalized[i] = descriptor[i] / norm;
+  }
+  return normalized;
+}
 
 class FaceRecognitionService {
   constructor() {
@@ -189,11 +216,15 @@ class FaceRecognitionService {
       memberName: m.memberName || m.member_name || m.full_name,
       descriptors: (m.descriptors || m.face_descriptors || []).map(d => {
         // Convert descriptor to Float32Array if needed
+        let rawDescriptor;
         if (d.descriptor) {
-          return new Float32Array(d.descriptor);
+          rawDescriptor = new Float32Array(d.descriptor);
+        } else {
+          rawDescriptor = new Float32Array(d);
         }
-        return new Float32Array(d);
-      }),
+        // L2 normalize for consistent distance calculations
+        return normalizeDescriptor(rawDescriptor);
+      }).filter(d => d !== null),
       photoUrl: m.photoUrl || m.photo_url || m.photo_thumbnail_url,
     })).filter(m => m.descriptors.length > 0);
 
@@ -297,9 +328,13 @@ class FaceRecognitionService {
         return null;
       }
 
+      // L2 normalize the descriptor for consistent distance calculations
+      const rawDescriptor = new Float32Array(face.embedding);
+      const normalizedDescriptor = normalizeDescriptor(rawDescriptor);
+
       return {
         face,
-        descriptor: new Float32Array(face.embedding),
+        descriptor: normalizedDescriptor,
         box: face.box, // [x, y, width, height]
         confidence: face.score,
       };
