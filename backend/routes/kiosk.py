@@ -1040,8 +1040,11 @@ class FaceCheckinRequest(BaseModel):
     """Face check-in request."""
     event_id: str
     member_id: str
+    church_id: Optional[str] = None  # Can be sent in body or query
     descriptor: Optional[list] = None  # Face descriptor for verification
     photo_base64: Optional[str] = None  # Captured photo (optional, for progressive learning)
+    confidence: Optional[str] = None  # Match confidence level
+    source: Optional[str] = None  # Source of check-in (kiosk_face, etc.)
 
 
 class SaveFacePhotoRequest(BaseModel):
@@ -1117,7 +1120,7 @@ async def get_face_descriptors(
 @router.post("/face-checkin")
 async def face_checkin(
     request: FaceCheckinRequest,
-    church_id: str = Query(..., description="Church ID"),
+    church_id: Optional[str] = Query(None, description="Church ID (can also be sent in request body)"),
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """Check-in member using face recognition.
@@ -1130,11 +1133,16 @@ async def face_checkin(
     The actual face matching happens client-side. This endpoint just processes
     the check-in after a match is confirmed.
     """
+    # Use church_id from query param or request body
+    effective_church_id = church_id or request.church_id
+    if not effective_church_id:
+        raise HTTPException(status_code=400, detail="church_id is required (query param or body)")
+
     try:
         # Verify member exists
         member = await db.members.find_one({
             "id": request.member_id,
-            "church_id": church_id
+            "church_id": effective_church_id
         })
 
         if not member:
@@ -1236,10 +1244,11 @@ async def save_face_photo(
     """Save captured face photo for progressive learning.
 
     This endpoint:
-    1. Checks if enough time has passed since last photo (30 days)
-    2. Saves photo to SeaweedFS
-    3. Adds descriptor to member's face_descriptors array
-    4. Keeps only last 5 descriptors per member
+    1. Checks if enough time has passed since last photo (7 days)
+    2. Generates face embedding using InsightFace
+    3. Saves photo to SeaweedFS
+    4. Adds descriptor to member's face_descriptors array
+    5. Keeps only last 5 descriptors per member
 
     Called silently after successful face check-in.
     """
@@ -1253,27 +1262,47 @@ async def save_face_photo(
         if not member:
             raise HTTPException(status_code=404, detail="Member not found")
 
-        # Check if enough time has passed (30 days)
+        # Check if enough time has passed (7 days for progressive learning)
         last_photo_at = member.get("last_face_photo_at")
         if last_photo_at:
             days_since = (datetime.utcnow() - last_photo_at).days
-            if days_since < 30:
-                logger.debug(f"Skipping face photo save: Only {days_since} days since last photo")
+            if days_since < 7:
+                logger.info(f"[Progressive Learning] Skipping for {member.get('full_name')}: Only {days_since} days since last capture (need 7)")
                 return {
                     "success": True,
                     "saved": False,
-                    "reason": f"Photo captured {days_since} days ago, waiting for 30 days"
+                    "reason": f"Photo captured {days_since} days ago, waiting for 7 days"
                 }
+
+        # Generate face embedding using InsightFace
+        from services.face_recognition import face_recognition_service
+        import base64
+
+        logger.info(f"[Progressive Learning] Generating embedding for {member.get('full_name')}...")
+
+        embedding_result = await face_recognition_service.get_embedding(
+            request.photo_base64,
+            enforce_detection=False
+        )
+
+        if not embedding_result or not embedding_result.get('embedding'):
+            logger.warning(f"[Progressive Learning] No face detected in photo for {member.get('full_name')}")
+            return {
+                "success": True,
+                "saved": False,
+                "reason": "No face detected in captured photo"
+            }
+
+        embedding = embedding_result['embedding']
+        logger.info(f"[Progressive Learning] Embedding generated ({len(embedding)}D) for {member.get('full_name')}")
 
         # Save photo to SeaweedFS
         photo_url = None
         try:
             from services.seaweedfs_service import seaweedfs_service
-            import base64
 
             # Decode base64
             if request.photo_base64.startswith('data:'):
-                # Remove data URL prefix
                 photo_data = base64.b64decode(request.photo_base64.split(',')[1])
             else:
                 photo_data = base64.b64decode(request.photo_base64)
@@ -1288,16 +1317,16 @@ async def save_face_photo(
 
             if result and result.get("url"):
                 photo_url = result["url"]
-                logger.info(f"Face photo saved to SeaweedFS: {photo_url}")
+                logger.info(f"[Progressive Learning] Photo saved to SeaweedFS: {photo_url}")
         except Exception as e:
-            logger.warning(f"Failed to save face photo to SeaweedFS: {e}")
-            # Continue without photo URL
+            logger.warning(f"[Progressive Learning] Failed to save photo to SeaweedFS: {e}")
 
-        # Create new descriptor entry
+        # Create new descriptor entry with InsightFace-generated embedding
         new_descriptor = {
-            "descriptor": request.descriptor,
+            "descriptor": embedding,  # Use InsightFace-generated embedding
             "captured_at": datetime.utcnow(),
-            "photo_url": photo_url
+            "photo_url": photo_url,
+            "source": "progressive_learning"  # Track where this came from
         }
 
         # Get existing descriptors
@@ -1320,7 +1349,7 @@ async def save_face_photo(
             }
         )
 
-        logger.info(f"Face descriptor saved for member {request.member_id}, total: {len(existing_descriptors)}")
+        logger.info(f"[Progressive Learning] ✅ New embedding saved for {member.get('full_name')} (total: {len(existing_descriptors)} embeddings)")
 
         return {
             "success": True,

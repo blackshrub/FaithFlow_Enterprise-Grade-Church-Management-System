@@ -53,9 +53,11 @@ arq>=0.26.0
 # AI
 anthropic>=0.39.0
 
-# Face Recognition
-deepface>=0.0.93
-tf-keras>=2.16.0
+# Face Recognition (InsightFace with ArcFace - ONNX Runtime)
+# InsightFace uses ONNX Runtime, no TensorFlow dependency
+# ArcFace model is more accurate than FaceNet512
+insightface>=0.7.3
+onnxruntime>=1.15.0
 
 # Utilities
 python-dotenv>=1.0.1

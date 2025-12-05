@@ -288,8 +288,25 @@ async def list_members(
         {"$limit": limit},
         {
             "$addFields": {
+                # Check if member has at least one face_descriptor entry with a valid (non-empty) descriptor array
                 "has_face_descriptors": {
-                    "$gt": [{"$size": {"$ifNull": ["$face_descriptors", []]}}, 0]
+                    "$gt": [
+                        {
+                            "$size": {
+                                "$filter": {
+                                    "input": {"$ifNull": ["$face_descriptors", []]},
+                                    "as": "fd",
+                                    "cond": {
+                                        "$gt": [
+                                            {"$size": {"$ifNull": ["$$fd.descriptor", []]}},
+                                            0
+                                        ]
+                                    }
+                                }
+                            }
+                        },
+                        0
+                    ]
                 }
             }
         },

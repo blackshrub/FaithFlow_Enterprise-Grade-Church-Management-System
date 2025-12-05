@@ -128,12 +128,19 @@
     "confirm_now": "Konfirmasi Sekarang",
     "face_not_recognized": "Wajah tidak dikenali",
     "try_qr_or_search": "Coba tunjukkan kode QR atau gunakan pencarian manual",
+    "hold_still": "Tetap diam untuk check-in...",
+    "look_away_cancel": "Lihat ke arah lain untuk batal",
+    "hold_countdown": "Tahan",
     "success_title": "Check-In Berhasil!",
     "success_text": "telah berhasil check-in.",
     "check_another": "Check In Lainnya",
     "error_invalid_qr": "Kode QR tidak valid",
     "error_not_registered": "Anggota tidak terdaftar untuk acara ini",
-    "error_generic": "Check-in gagal. Silakan coba lagi."
+    "error_generic": "Check-in gagal. Silakan coba lagi.",
+    "position_face": "Posisikan wajah atau kode QR Anda di sini",
+    "checked_in": "Berhasil check-in!",
+    "hold_still_short": "Tetap diam...",
+    "new_visitor": "Pengunjung Baru"
   },
   "prayer": {
     "title": "Permintaan Doa",

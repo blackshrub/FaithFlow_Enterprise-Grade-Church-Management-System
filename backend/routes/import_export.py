@@ -1166,37 +1166,56 @@ async def get_members_needing_face_descriptors(
     try:
         church_id = current_user.get('session_church_id')
 
-        # Find members with photos but no face descriptors
-        query = {
-            "church_id": church_id,
-            "is_deleted": {"$ne": True},
-            "$and": [
-                {
+        # Find members with photos but no VALID face descriptors
+        # Use aggregation to also catch members with entries that have empty descriptor arrays
+        members = await db.members.aggregate([
+            {
+                "$match": {
+                    "church_id": church_id,
+                    "is_deleted": {"$ne": True},
                     "$or": [
                         {"photo_url": {"$exists": True, "$ne": None, "$ne": ""}},
                         {"photo_base64": {"$exists": True, "$ne": None, "$ne": ""}}
                     ]
-                },
-                {
-                    "$or": [
-                        {"face_descriptors": {"$exists": False}},
-                        {"face_descriptors": []},
-                        {"face_descriptors": None}
-                    ]
                 }
-            ]
-        }
-
-        members = await db.members.find(
-            query,
+            },
             {
-                "_id": 0,
-                "id": 1,
-                "full_name": 1,
-                "photo_url": 1,
-                "photo_base64": 1
-            }
-        ).to_list(length=1000)  # Limit to 1000 for safety
+                # Check for valid face descriptors (at least one entry with non-empty descriptor)
+                "$addFields": {
+                    "has_valid_descriptor": {
+                        "$gt": [
+                            {
+                                "$size": {
+                                    "$filter": {
+                                        "input": {"$ifNull": ["$face_descriptors", []]},
+                                        "as": "fd",
+                                        "cond": {
+                                            "$gt": [
+                                                {"$size": {"$ifNull": ["$$fd.descriptor", []]}},
+                                                0
+                                            ]
+                                        }
+                                    }
+                                }
+                            },
+                            0
+                        ]
+                    }
+                }
+            },
+            # Only include members WITHOUT valid descriptors
+            {"$match": {"has_valid_descriptor": False}},
+            {
+                "$project": {
+                    "_id": 0,
+                    "id": 1,
+                    "full_name": 1,
+                    "photo_url": 1,
+                    "photo_base64": 1
+                }
+            },
+            {"$limit": 1000}  # Limit for safety
+        ]).to_list(length=1000)
 
         # Get total counts for stats
         total_with_photos = await db.members.count_documents({
@@ -1208,11 +1227,42 @@ async def get_members_needing_face_descriptors(
             ]
         })
 
-        total_with_descriptors = await db.members.count_documents({
-            "church_id": church_id,
-            "is_deleted": {"$ne": True},
-            "face_descriptors": {"$exists": True, "$ne": [], "$ne": None}
-        })
+        # Count members with VALID face descriptors (at least one entry with non-empty descriptor array)
+        valid_descriptor_result = await db.members.aggregate([
+            {
+                "$match": {
+                    "church_id": church_id,
+                    "is_deleted": {"$ne": True},
+                    "face_descriptors": {"$exists": True, "$ne": [], "$ne": None}
+                }
+            },
+            {
+                "$addFields": {
+                    "has_valid_descriptor": {
+                        "$gt": [
+                            {
+                                "$size": {
+                                    "$filter": {
+                                        "input": "$face_descriptors",
+                                        "as": "fd",
+                                        "cond": {
+                                            "$gt": [
+                                                {"$size": {"$ifNull": ["$$fd.descriptor", []]}},
+                                                0
+                                            ]
+                                        }
+                                    }
+                                }
+                            },
+                            0
+                        ]
+                    }
+                }
+            },
+            {"$match": {"has_valid_descriptor": True}},
+            {"$count": "count"}
+        ]).to_list(1)
+        total_with_descriptors = valid_descriptor_result[0]["count"] if valid_descriptor_result else 0
 
         return {
             "success": True,
@@ -1319,11 +1369,42 @@ async def get_members_with_photos(
             "is_deleted": {"$ne": True}
         })
 
-        total_with_descriptors = await db.members.count_documents({
-            "church_id": church_id,
-            "is_deleted": {"$ne": True},
-            "face_descriptors": {"$exists": True, "$ne": [], "$ne": None}
-        })
+        # Count members with VALID face descriptors (at least one entry with non-empty descriptor array)
+        valid_descriptor_result = await db.members.aggregate([
+            {
+                "$match": {
+                    "church_id": church_id,
+                    "is_deleted": {"$ne": True},
+                    "face_descriptors": {"$exists": True, "$ne": [], "$ne": None}
+                }
+            },
+            {
+                "$addFields": {
+                    "has_valid_descriptor": {
+                        "$gt": [
+                            {
+                                "$size": {
+                                    "$filter": {
+                                        "input": "$face_descriptors",
+                                        "as": "fd",
+                                        "cond": {
+                                            "$gt": [
+                                                {"$size": {"$ifNull": ["$$fd.descriptor", []]}},
+                                                0
+                                            ]
+                                        }
+                                    }
+                                }
+                            },
+                            0
+                        ]
+                    }
+                }
+            },
+            {"$match": {"has_valid_descriptor": True}},
+            {"$count": "count"}
+        ]).to_list(1)
+        total_with_descriptors = valid_descriptor_result[0]["count"] if valid_descriptor_result else 0
 
         return {
             "success": True,

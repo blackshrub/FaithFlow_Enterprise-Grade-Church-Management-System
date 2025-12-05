@@ -588,10 +588,6 @@ export default function Members() {
                             <span title={t('members.faceCheckinEnabled') || 'Face check-in enabled'}>
                               <ScanFace className="h-5 w-5 text-green-600 mx-auto" />
                             </span>
-                          ) : (member.photo_url || member.photo_thumbnail_url) ? (
-                            <span title={t('members.noFaceData') || 'No face data - run migration'}>
-                              <ScanFace className="h-5 w-5 text-yellow-500 mx-auto" />
-                            </span>
                           ) : (
                             <span className="text-gray-300">—</span>
                           )}

@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
@@ -21,8 +21,9 @@ import { faceRecognitionAPI, importExportAPI } from '../../services/api';
 /**
  * Face Recognition Migration Component
  *
- * Uses DeepFace backend for face descriptor generation.
- * DeepFace with FaceNet512 provides much higher accuracy than browser-based solutions.
+ * Uses InsightFace backend with ArcFace model for face descriptor generation.
+ * ArcFace provides 512D embeddings with state-of-the-art accuracy (better than FaceNet512).
+ * Uses ONNX Runtime - no TensorFlow dependency.
  *
  * Features:
  * - Generate face descriptors for members without them
@@ -42,6 +43,43 @@ export default function FaceRecognitionMigration() {
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
   const [showRegenerateConfirm, setShowRegenerateConfirm] = useState(false);
+  const [isPolling, setIsPolling] = useState(false);
+  const pollingIntervalRef = useRef(null);
+  const previousDescriptorCount = useRef(0);
+
+  // Auto-poll stats while processing is happening in background
+  useEffect(() => {
+    if (isPolling) {
+      // Start polling every 3 seconds
+      pollingIntervalRef.current = setInterval(() => {
+        refetch();
+        refetchAll();
+      }, 3000);
+
+      return () => {
+        if (pollingIntervalRef.current) {
+          clearInterval(pollingIntervalRef.current);
+        }
+      };
+    }
+  }, [isPolling, refetch, refetchAll]);
+
+  // Stop polling when processing is complete (no more needing descriptors and count stable)
+  useEffect(() => {
+    if (isPolling && data?.stats) {
+      const currentCount = data.stats.total_with_descriptors;
+
+      // If we have descriptors and the count hasn't changed in last poll, processing is done
+      if (data.stats.needing_descriptors === 0 && currentCount === previousDescriptorCount.current && currentCount > 0) {
+        console.log('[Migration] Processing complete - stopping polling');
+        setIsPolling(false);
+        setProcessing(false);
+        setComplete(true);
+      }
+
+      previousDescriptorCount.current = currentCount;
+    }
+  }, [isPolling, data?.stats]);
 
   // Filter members to only include those with actual photos (not empty strings)
   const membersToProcess = useMemo(() => {
@@ -74,8 +112,8 @@ export default function FaceRecognitionMigration() {
       // Get member IDs to process
       const memberIds = membersToProcess.map(m => m.id);
 
-      console.log(`[Migration] Starting DeepFace regeneration for ${memberIds.length} members...`);
-      setProgress({ total: memberIds.length, message: 'Processing with DeepFace (FaceNet512)...' });
+      console.log(`[Migration] Starting InsightFace regeneration for ${memberIds.length} members...`);
+      setProgress({ total: memberIds.length, message: 'Processing with InsightFace (ArcFace)...' });
 
       // Call backend regenerate API (only for specified members, don't clear existing)
       const response = await faceRecognitionAPI.regenerateDescriptors(memberIds, false);
@@ -84,7 +122,9 @@ export default function FaceRecognitionMigration() {
       console.log('[Migration] Backend result:', regenerateResult);
 
       setResult(regenerateResult);
-      setComplete(true);
+      // Don't set complete here - let polling detect when it's done
+      // Start polling to watch progress
+      setIsPolling(true);
 
       // Refresh data to update stats
       refetch();
@@ -92,9 +132,9 @@ export default function FaceRecognitionMigration() {
     } catch (err) {
       console.error('[Migration] Error:', err);
       setError(err.response?.data?.detail || err.message || 'Migration failed');
-    } finally {
       setProcessing(false);
     }
+    // Don't setProcessing(false) here - let polling handle it
   }, [membersToProcess, refetch, refetchAll]);
 
   // Regenerate all face descriptors (clear and re-run with DeepFace)
@@ -120,10 +160,10 @@ export default function FaceRecognitionMigration() {
       console.log('[Regenerate] Face descriptors cleared');
       setClearing(false);
 
-      // Step 2: Regenerate using DeepFace backend (all members with photos)
-      setProgress({ total: allMembersWithPhotos.length, message: 'Processing with DeepFace (FaceNet512)...' });
+      // Step 2: Regenerate using InsightFace backend (all members with photos)
+      setProgress({ total: allMembersWithPhotos.length, message: 'Processing with InsightFace (ArcFace)...' });
 
-      console.log(`[Regenerate] Starting DeepFace regeneration for ${allMembersWithPhotos.length} members...`);
+      console.log(`[Regenerate] Starting InsightFace regeneration for ${allMembersWithPhotos.length} members...`);
 
       // Call backend regenerate API (all members, already cleared)
       const response = await faceRecognitionAPI.regenerateDescriptors(null, false);
@@ -132,7 +172,9 @@ export default function FaceRecognitionMigration() {
       console.log('[Regenerate] Backend result:', regenerateResult);
 
       setResult(regenerateResult);
-      setComplete(true);
+      // Don't set complete here - let polling detect when it's done
+      // Start polling to watch progress
+      setIsPolling(true);
 
       // Refresh data to update stats
       refetch();
@@ -140,10 +182,10 @@ export default function FaceRecognitionMigration() {
     } catch (err) {
       console.error('[Regenerate] Error:', err);
       setError(err.response?.data?.detail || err.message || 'Regeneration failed');
-    } finally {
       setClearing(false);
       setProcessing(false);
     }
+    // Don't setProcessing(false) or setClearing(false) here - let polling handle it
   }, [allMembersWithPhotos, refetch, refetchAll]);
 
   if (isLoading) {
@@ -173,7 +215,7 @@ export default function FaceRecognitionMigration() {
           <CardDescription className="flex items-center gap-2">
             <Server className="h-4 w-4 text-blue-500" />
             {t('importExport.faceRecognitionMigrationDesc') ||
-              'Generate face descriptors using DeepFace (FaceNet512) backend for highly accurate face check-in.'}
+              'Generate face descriptors using InsightFace (ArcFace) backend for highly accurate face check-in.'}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -208,12 +250,12 @@ export default function FaceRecognitionMigration() {
             </Card>
           </div>
 
-          {/* DeepFace Info Banner */}
+          {/* InsightFace Info Banner */}
           <Alert className="mb-6 border-blue-500 bg-blue-50">
             <Server className="h-4 w-4 text-blue-600" />
             <AlertDescription className="text-blue-800">
-              <strong>DeepFace Backend:</strong> Uses FaceNet512 model with RetinaFace detector for highly accurate face recognition.
-              Processing happens on the server, not in browser.
+              <strong>InsightFace Backend:</strong> Uses ArcFace model (buffalo_l) with 512D embeddings for state-of-the-art face recognition accuracy.
+              Processing happens on the server using ONNX Runtime.
             </AlertDescription>
           </Alert>
 
@@ -252,26 +294,31 @@ export default function FaceRecognitionMigration() {
                 <div className="flex items-center gap-2 mb-3">
                   <Loader2 className="h-5 w-5 text-blue-600 animate-spin" />
                   <span className="font-medium">
-                    {clearing ? 'Clearing existing descriptors...' : progress.message}
+                    {clearing ? 'Clearing existing descriptors...' : 'Processing with InsightFace (ArcFace)...'}
                   </span>
                 </div>
-                <Progress value={processing ? 50 : 100} className="h-3" />
+                <Progress
+                  value={stats.total_with_photos > 0 ? (stats.total_with_descriptors / stats.total_with_photos) * 100 : 0}
+                  className="h-3"
+                />
                 <p className="text-sm text-gray-500 mt-2">
-                  Processing {progress.total} members on backend server...
+                  {stats.total_with_descriptors} / {stats.total_with_photos} members processed
+                  ({stats.total_with_photos > 0 ? Math.round((stats.total_with_descriptors / stats.total_with_photos) * 100) : 0}%)
+                  {isPolling && <span className="ml-2 text-blue-500">(auto-refreshing every 3s)</span>}
                 </p>
               </div>
             </div>
           )}
 
           {/* Complete Message */}
-          {complete && result && (
+          {complete && (
             <Alert className="mb-6 border-green-500 bg-green-50">
               <CheckCircle className="h-4 w-4 text-green-600" />
               <AlertDescription className="text-green-800">
                 <p className="font-medium mb-2">Migration complete!</p>
                 <p>
-                  {result.total} members queued for processing on backend.
-                  The actual processing happens in background - refresh to see updated stats.
+                  {stats.total_with_descriptors} members now have face descriptors.
+                  Face check-in is ready to use!
                 </p>
               </AlertDescription>
             </Alert>
@@ -296,11 +343,11 @@ export default function FaceRecognitionMigration() {
               <AlertDescription className="text-red-800">
                 <p className="font-medium mb-2">
                   {t('importExport.regenerateWarning') ||
-                    `This will clear ALL ${stats.total_with_descriptors} existing face descriptors and regenerate from photos using DeepFace.`}
+                    `This will clear ALL ${stats.total_with_descriptors} existing face descriptors and regenerate from photos using InsightFace.`}
                 </p>
                 <p className="text-sm mb-4">
                   {t('importExport.regenerateWarningDesc') ||
-                    'This is recommended when switching from browser-based face recognition to DeepFace backend.'}
+                    'This is recommended when switching from browser-based face recognition to InsightFace backend.'}
                 </p>
                 <div className="flex gap-2">
                   <Button variant="destructive" size="sm" onClick={regenerateAll}>
@@ -332,7 +379,7 @@ export default function FaceRecognitionMigration() {
                 className="flex items-center gap-2"
               >
                 <Trash2 className="h-4 w-4" />
-                {t('importExport.regenerateAll') || 'Regenerate All (DeepFace)'}
+                {t('importExport.regenerateAll') || 'Regenerate All (InsightFace)'}
               </Button>
             )}
 
@@ -352,7 +399,7 @@ export default function FaceRecognitionMigration() {
               {t('importExport.membersToProcess') || 'Members to Process'} ({membersToProcess.length})
             </CardTitle>
             <CardDescription>
-              {t('importExport.membersPreviewDesc') || 'Preview of members that will have face descriptors generated using DeepFace.'}
+              {t('importExport.membersPreviewDesc') || 'Preview of members that will have face descriptors generated using InsightFace.'}
             </CardDescription>
           </CardHeader>
           <CardContent>

@@ -2,25 +2,30 @@
  * Face Recognition Service using @vladmandic/human
  *
  * Optimized for church kiosk check-in:
- * - Fast detection (~50ms per frame)
- * - Accurate face recognition (1024D embeddings from faceres.json model)
+ * - Fast face DETECTION only (~30-50ms per frame)
+ * - Backend InsightFace handles accurate MATCHING (not browser-based)
  * - Parallel QR + Face detection support
- * - Progressive photo collection for improved accuracy
+ *
+ * Architecture:
+ * - Browser: Human library for fast face DETECTION (is a face present?)
+ * - Backend: InsightFace/ArcFace for accurate MATCHING (who is this person?)
+ * - This separation provides low-latency detection with high-accuracy matching
  *
  * Configuration tuned for:
- * - Speed over full feature set
- * - Face detection + recognition only (no emotion, age, etc.)
+ * - Maximum speed (detection only, no embeddings)
+ * - Face detection only (no emotion, age, mesh, etc.)
  * - WebGL backend for GPU acceleration
  */
 
 import { Human } from '@vladmandic/human';
 
-// Optimized configuration for face recognition kiosk
+// Optimized configuration for face DETECTION only (matching done on backend)
+// Tuned for FAST startup and kiosk use - minimal model, no rotation
 const humanConfig = {
   // Use WebGL for GPU acceleration, fallback to WASM
   backend: 'webgl',
 
-  // Model base path - will be loaded from CDN or local
+  // Model base path - will be loaded from CDN
   modelBasePath: 'https://cdn.jsdelivr.net/npm/@vladmandic/human/models/',
 
   // Caching for faster subsequent loads
@@ -29,23 +34,31 @@ const humanConfig = {
   // Debug mode off for production
   debug: false,
 
-  // Only enable face detection and recognition
+  // Skip slow async functions during detection
+  async: true,
+
+  // Warmup config - use smallest input for faster warmup
+  warmup: 'face',
+
+  // Only enable face detection (NOT embedding generation)
   face: {
     enabled: true,
 
-    // Detector configuration - optimized for speed
+    // Detector configuration - balanced for accuracy and speed
     detector: {
       enabled: true,
-      // Use 'blazeface' for fastest, 'ssd' for better accuracy
+      // Use 'blazeface-back' - optimized for back-facing cameras, more accurate than blazeface
+      // Options: blazeface (fastest), blazeface-back (balanced, recommended for kiosk)
       modelPath: 'blazeface-back.json',
-      rotation: true,          // Handle rotated faces
-      maxDetected: 1,          // Only detect 1 face (kiosk use case)
-      minConfidence: 0.5,      // Minimum confidence to detect
-      iouThreshold: 0.3,       // Non-max suppression threshold
+      rotation: false,         // Disable rotation - kiosk users face camera directly
+      maxDetected: 3,          // Detect up to 3 faces, then pick best one
+      minConfidence: 0.5,      // Confidence threshold
+      iouThreshold: 0.3,       // Standard threshold for NMS
       return: true,
+      skipFrames: 0,           // Don't skip frames
     },
 
-    // Mesh disabled - not needed for recognition
+    // Mesh disabled - not needed
     mesh: {
       enabled: false,
     },
@@ -55,11 +68,11 @@ const humanConfig = {
       enabled: false,
     },
 
-    // Face description/embedding - CRITICAL for recognition
+    // DISABLED: Embedding generation now handled by backend InsightFace
+    // This significantly speeds up detection since we only need to know
+    // IF a face is present, not generate embeddings for it
     description: {
-      enabled: true,
-      modelPath: 'faceres.json',  // FaceRes model for 512D embeddings
-      minConfidence: 0.5,
+      enabled: false,  // Was true - embeddings not needed for detection-only mode
     },
 
     // Emotion disabled - not needed
@@ -103,33 +116,61 @@ const humanConfig = {
     enabled: false,
   },
 
-  // Filter configuration for smoother detection
+  // Filter configuration - disabled to avoid canvas readback warnings
+  // The Human library creates internal canvas contexts for filtering
+  // which trigger willReadFrequently warnings. Since we're using WebGL
+  // backend and don't need image preprocessing, we disable filtering.
   filter: {
-    enabled: true,
-    equalization: false,      // Don't equalize histogram
-    flip: false,              // Don't flip image
-    return: true,
+    enabled: false,           // Disable to avoid canvas readback warnings
+    equalization: false,
+    flip: false,
+    return: false,
   },
 };
 
-// Thresholds for face matching (tuned for L2-normalized 1024D embeddings)
+// Thresholds for face matching (tuned for L2-normalized 512D embeddings from InsightFace)
 // After normalization, Euclidean distance range is 0-2:
 // - 0 = identical vectors
 // - ~0.6-0.9 = same person, different image
 // - ~1.0-1.2 = uncertain
 // - >1.2 = different person
 //
-// NOTE: Database face descriptors may have been generated from poor quality photos.
-// To prevent false positives (matching wrong person), we set HIGH_CONFIDENCE very low
-// so that ALL matches require user confirmation. This can be raised after
-// face descriptors are regenerated with better quality photos.
+// These thresholds are set LOOSER to account for:
+// - Lighting variations in kiosk environment
+// - Angle differences between profile photo and live capture
+// - Aging and appearance changes
 const THRESHOLDS = {
   // Distance below this = high confidence match (auto check-in)
-  // Set to 0.5 to be very strict - only near-identical matches auto check-in
-  HIGH_CONFIDENCE: 0.5,
+  // LOOSER: 0.85 corresponds to ~0.35 cosine distance
+  HIGH_CONFIDENCE: 0.85,
   // Distance between HIGH and LOW = uncertain (ask confirmation)
-  LOW_CONFIDENCE: 1.0,
+  // LOOSER: 1.05 corresponds to ~0.55 cosine distance
+  LOW_CONFIDENCE: 1.05,
   // Above LOW_CONFIDENCE = no match
+};
+
+// Recency weight factor for progressive learning
+// Newer embeddings (higher index in array) get a small distance bonus
+// This prioritizes recently captured faces over older ones
+const RECENCY_BONUS = 0.02; // Each position from oldest reduces distance by this amount
+
+// Face filtering thresholds for kiosk mode
+// IMPORTANT: Visual capture zone is a SQUARE (70% of frame HEIGHT), not a rectangle!
+// For 16:9 video, this square is centered horizontally
+const KIOSK_THRESHOLDS = {
+  // Square capture zone: 70% of frame HEIGHT (same as visual in EventCheckin.js)
+  // The square is centered both horizontally and vertically
+  CAPTURE_ZONE_SIZE: 0.7,  // Square side = 70% of frame height
+
+  // Minimum face size as percentage of CAPTURE ZONE (not frame)
+  // Face should fill at least 15% of the capture zone
+  MIN_FACE_SIZE_RATIO: 0.15,
+
+  // Minimum face area in pixels (absolute threshold)
+  MIN_FACE_AREA: 5000,  // ~70x70 pixels minimum
+
+  // Maximum number of faces before showing warning
+  MAX_FACES_WARNING: 2,
 };
 
 /**
@@ -273,21 +314,35 @@ class FaceRecognitionService {
 
     let bestMatch = null;
     let bestDistance = Infinity;
+    let bestDescriptorIndex = -1;
 
     for (const member of this.memberDescriptors) {
       // Compare against all stored descriptors for this member
-      for (const storedDescriptor of member.descriptors) {
-        const distance = this.calculateDistance(descriptor, storedDescriptor);
-        if (distance < bestDistance) {
-          bestDistance = distance;
+      // Descriptors are ordered oldest-first, newest-last (from backend $slice: -5)
+      const totalDescriptors = member.descriptors.length;
+
+      for (let i = 0; i < totalDescriptors; i++) {
+        const storedDescriptor = member.descriptors[i];
+        const rawDistance = this.calculateDistance(descriptor, storedDescriptor);
+
+        // Apply recency bonus: newer descriptors (higher index) get distance reduction
+        // Index 0 = oldest (no bonus), Index 4 = newest (full bonus of 0.08)
+        const recencyBonus = i * RECENCY_BONUS;
+        const adjustedDistance = rawDistance - recencyBonus;
+
+        if (adjustedDistance < bestDistance) {
+          bestDistance = adjustedDistance;
           bestMatch = member;
+          bestDescriptorIndex = i;
         }
       }
     }
 
     // Log the best match for debugging
     if (bestMatch) {
-      console.log(`[FaceRecognition] Best match: ${bestMatch.memberName}, distance: ${bestDistance.toFixed(4)}, threshold: ${THRESHOLDS.LOW_CONFIDENCE}`);
+      const totalDesc = bestMatch.descriptors.length;
+      const isRecent = bestDescriptorIndex >= totalDesc - 2;
+      console.log(`[FaceRecognition] Best match: ${bestMatch.memberName}, distance: ${bestDistance.toFixed(4)}, descriptor #${bestDescriptorIndex + 1}/${totalDesc}${isRecent ? ' (recent)' : ''}, threshold: ${THRESHOLDS.LOW_CONFIDENCE}`);
     }
 
     if (!bestMatch || bestDistance > THRESHOLDS.LOW_CONFIDENCE) {
@@ -313,9 +368,113 @@ class FaceRecognitionService {
   }
 
   /**
-   * Detect face and get descriptor from video element
+   * Calculate the square capture zone bounds
+   * The capture zone is a SQUARE with side = 70% of frame height, centered on frame
+   * @param {number} frameWidth - Video frame width
+   * @param {number} frameHeight - Video frame height
+   * @returns {{ minX, maxX, minY, maxY, size }}
+   */
+  getCaptureZoneBounds(frameWidth, frameHeight) {
+    // Square side = 70% of frame height
+    const squareSize = frameHeight * KIOSK_THRESHOLDS.CAPTURE_ZONE_SIZE;
+
+    // Center the square horizontally and vertically
+    const centerX = frameWidth / 2;
+    const centerY = frameHeight / 2;
+
+    return {
+      minX: centerX - squareSize / 2,
+      maxX: centerX + squareSize / 2,
+      minY: centerY - squareSize / 2,
+      maxY: centerY + squareSize / 2,
+      size: squareSize,
+    };
+  }
+
+  /**
+   * Check if a face is within the square capture zone
+   * @param {Array} box - [x, y, width, height]
+   * @param {number} frameWidth - Video frame width
+   * @param {number} frameHeight - Video frame height
+   * @returns {boolean}
+   */
+  isFaceCentered(box, frameWidth, frameHeight) {
+    if (!box || box.length < 4) return false;
+
+    const [x, y, width, height] = box;
+    const faceCenterX = x + width / 2;
+    const faceCenterY = y + height / 2;
+
+    // Get the SQUARE capture zone (not rectangle!)
+    const zone = this.getCaptureZoneBounds(frameWidth, frameHeight);
+
+    const isInZone = faceCenterX >= zone.minX && faceCenterX <= zone.maxX &&
+                     faceCenterY >= zone.minY && faceCenterY <= zone.maxY;
+
+    if (!isInZone) {
+      console.log(`[FaceRecognition] Face center (${Math.round(faceCenterX)}, ${Math.round(faceCenterY)}) outside capture zone: X[${Math.round(zone.minX)}-${Math.round(zone.maxX)}], Y[${Math.round(zone.minY)}-${Math.round(zone.maxY)}]`);
+    }
+
+    return isInZone;
+  }
+
+  /**
+   * Check if a face is large enough relative to the capture zone
+   * @param {Array} box - [x, y, width, height]
+   * @param {number} frameWidth - Video frame width
+   * @param {number} frameHeight - Video frame height
+   * @returns {boolean}
+   */
+  isFaceLargeEnough(box, frameWidth, frameHeight) {
+    if (!box || box.length < 4) return false;
+
+    const [, , width, height] = box;
+    const faceArea = width * height;
+
+    // Get capture zone size
+    const zone = this.getCaptureZoneBounds(frameWidth, frameHeight);
+
+    // Check face size relative to capture zone (not frame)
+    const relativeSize = width / zone.size;
+    return relativeSize >= KIOSK_THRESHOLDS.MIN_FACE_SIZE_RATIO &&
+           faceArea >= KIOSK_THRESHOLDS.MIN_FACE_AREA;
+  }
+
+  /**
+   * Calculate face priority score (higher = better candidate)
+   * Prioritizes: larger, more centered, higher confidence
+   */
+  calculateFaceScore(face, frameWidth, frameHeight) {
+    const box = face.box || [0, 0, 0, 0];
+    const [x, y, width, height] = box;
+
+    // Size score: larger faces get higher score
+    const sizeScore = (width * height) / (frameWidth * frameHeight);
+
+    // Center score: faces closer to center get higher score
+    const faceCenterX = x + width / 2;
+    const faceCenterY = y + height / 2;
+    const frameCenterX = frameWidth / 2;
+    const frameCenterY = frameHeight / 2;
+    const distanceFromCenter = Math.sqrt(
+      Math.pow(faceCenterX - frameCenterX, 2) +
+      Math.pow(faceCenterY - frameCenterY, 2)
+    );
+    const maxDistance = Math.sqrt(Math.pow(frameCenterX, 2) + Math.pow(frameCenterY, 2));
+    const centerScore = 1 - (distanceFromCenter / maxDistance);
+
+    // Confidence score
+    const confidenceScore = face.score || 0;
+
+    // Weighted combination: size (40%), center (40%), confidence (20%)
+    return (sizeScore * 0.4) + (centerScore * 0.4) + (confidenceScore * 0.2);
+  }
+
+  /**
+   * Detect face in video element (detection only, no embedding)
+   * Embeddings are generated by backend InsightFace for matching
    * @param {HTMLVideoElement} videoElement
-   * @returns {{ face, descriptor, box } | null}
+   * @returns {{ face, box, confidence, faceCount, hasMultipleFaces, isOffCenter } | null}
    */
   async detectFace(videoElement) {
     if (!this.isReady || !videoElement) return null;
@@ -327,22 +486,59 @@ class FaceRecognitionService {
         return null;
       }
 
-      const face = result.face[0];
+      const frameWidth = videoElement.videoWidth || 640;
+      const frameHeight = videoElement.videoHeight || 480;
+      const allFaces = result.face;
+      const faceCount = allFaces.length;
 
-      // Check if we got a valid face with embedding
-      if (!face.embedding || face.embedding.length === 0) {
-        return null;
+      // Filter faces: must be within square capture zone and large enough
+      const validFaces = allFaces.filter(face => {
+        const box = face.box || [0, 0, 0, 0];
+        const isCentered = this.isFaceCentered(box, frameWidth, frameHeight);
+        const isLarge = this.isFaceLargeEnough(box, frameWidth, frameHeight);
+
+        if (!isCentered || !isLarge) {
+          console.log(`[FaceRecognition] Filtered out: centered=${isCentered}, large=${isLarge}, box=[${box.map(v => Math.round(v)).join(',')}]`);
+        }
+
+        return isCentered && isLarge;
+      });
+
+      if (validFaces.length === 0) {
+        // Faces detected but none in valid region
+        console.log(`[FaceRecognition] ${faceCount} faces detected, but none in center region or large enough`);
+        return {
+          face: null,
+          box: null,
+          confidence: 0,
+          faceCount,
+          hasMultipleFaces: faceCount >= KIOSK_THRESHOLDS.MAX_FACES_WARNING,
+          isOffCenter: faceCount > 0,  // Faces exist but not centered
+          filteredOut: true,
+        };
       }
 
-      // L2 normalize the descriptor for consistent distance calculations
-      const rawDescriptor = new Float32Array(face.embedding);
-      const normalizedDescriptor = normalizeDescriptor(rawDescriptor);
+      // Sort valid faces by score and pick the best one
+      const scoredFaces = validFaces.map(face => ({
+        face,
+        score: this.calculateFaceScore(face, frameWidth, frameHeight),
+      })).sort((a, b) => b.score - a.score);
+
+      const bestFace = scoredFaces[0].face;
+
+      // Note: Embeddings are NOT generated anymore (description.enabled=false)
+      // Backend InsightFace handles embedding generation for matching
+      // We only return detection info (face present, bounding box, confidence)
 
       return {
-        face,
-        descriptor: normalizedDescriptor,
-        box: face.box, // [x, y, width, height]
-        confidence: face.score,
+        face: bestFace,
+        box: bestFace.box, // [x, y, width, height]
+        confidence: bestFace.score,
+        faceCount,
+        hasMultipleFaces: validFaces.length >= KIOSK_THRESHOLDS.MAX_FACES_WARNING,
+        isOffCenter: false,
+        filteredOut: false,
+        // descriptor is intentionally not included - backend handles matching
       };
     } catch (error) {
       console.error('[FaceRecognition] Detection error:', error);
@@ -597,7 +793,9 @@ class FaceRecognitionService {
       canvas.width = videoElement.videoWidth;
       canvas.height = videoElement.videoHeight;
 
-      const ctx = canvas.getContext('2d');
+      // Use willReadFrequently: true for better performance when doing
+      // multiple readback operations (getImageData/toDataURL)
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
       ctx.drawImage(videoElement, 0, 0);
 
       // Return as base64 JPEG (smaller file size)

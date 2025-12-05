@@ -175,6 +175,7 @@ async def match_face(
             },
             {
                 "_id": 1,
+                "id": 1,  # Custom UUID field used by kiosk endpoints
                 "full_name": 1,
                 "face_descriptors": 1,
                 "photo_url": 1,
@@ -190,8 +191,10 @@ async def match_face(
                 embedding = desc.get('descriptor', [])
 
                 if embedding:
+                    # Use custom 'id' field if available, fallback to _id for legacy data
+                    member_id = member.get('id') or str(member['_id'])
                     member_embeddings.append({
-                        "member_id": str(member['_id']),
+                        "member_id": member_id,
                         "member_name": member.get('full_name', 'Unknown'),
                         "embedding": embedding,
                         "photo_url": member.get('photo_thumbnail_url') or member.get('photo_url')
@@ -419,6 +422,7 @@ async def public_match_face(
             },
             {
                 "_id": 1,
+                "id": 1,  # Custom UUID field used by kiosk endpoints
                 "full_name": 1,
                 "face_descriptors": 1,
                 "photo_url": 1,
@@ -433,8 +437,10 @@ async def public_match_face(
                 embedding = desc.get('descriptor', [])
 
                 if embedding:
+                    # Use custom 'id' field if available, fallback to _id for legacy data
+                    member_id = member.get('id') or str(member['_id'])
                     member_embeddings.append({
-                        "member_id": str(member['_id']),
+                        "member_id": member_id,
                         "member_name": member.get('full_name', 'Unknown'),
                         "embedding": embedding,
                         "photo_url": member.get('photo_thumbnail_url') or member.get('photo_url')

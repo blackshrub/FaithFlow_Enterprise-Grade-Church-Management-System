@@ -128,12 +128,19 @@
     "confirm_now": "Confirm Now",
     "face_not_recognized": "Face not recognized",
     "try_qr_or_search": "Try showing your QR code or use manual search",
+    "hold_still": "Hold still to check in...",
+    "look_away_cancel": "Look away to cancel",
+    "hold_countdown": "Hold",
     "success_title": "Check-In Complete!",
     "success_text": "has been checked in successfully.",
     "check_another": "Check In Another",
     "error_invalid_qr": "Invalid QR code",
     "error_not_registered": "Member not registered for this event",
-    "error_generic": "Check-in failed. Please try again."
+    "error_generic": "Check-in failed. Please try again.",
+    "position_face": "Position your face or QR code here",
+    "checked_in": "Checked in!",
+    "hold_still": "Hold still...",
+    "new_visitor": "New Visitor"
   },
   "prayer": {
     "title": "Prayer Request",

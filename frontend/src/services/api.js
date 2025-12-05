@@ -35,9 +35,8 @@ const getAPIBaseURL = () => {
   const secureOrigin = origin.replace('http://', 'https://');
 
   // Subdomain mode: api.flow.gkbj.org (no /api prefix)
-  // Backend runs with API_PREFIX="" so routes are /kiosk/*, /auth/*, etc.
+  // Backend runs with API_PREFIX="" so routes are /settings/*, /members/*, etc.
   const hostname = window.location.hostname;
-  const subdomainURL = `https://api.${hostname}`;
 
   // For localhost development, use path-based
   if (hostname === 'localhost' || hostname === '127.0.0.1') {
@@ -46,6 +45,8 @@ const getAPIBaseURL = () => {
     return fallbackURL;
   }
 
+  // Subdomain mode - no /api prefix
+  const subdomainURL = `https://api.${hostname}`;
   console.log('⚠️ Using auto-detected subdomain API URL:', subdomainURL);
   return subdomainURL;
 };
@@ -406,13 +407,13 @@ export const faceRecognitionAPI = {
 export const publicFaceRecognitionAPI = {
   // Match face against database (kiosk)
   matchFace: (imageSource, churchId) =>
-    publicApi.post('/public/face-recognition/match', {
+    api.post('/public/face-recognition/match', {
       image_source: imageSource,
       church_id: churchId
     }),
 
   // Get thresholds for display
-  getThresholds: () => publicApi.get('/public/face-recognition/thresholds'),
+  getThresholds: () => api.get('/public/face-recognition/thresholds'),
 };
 
 // Seat Layouts API

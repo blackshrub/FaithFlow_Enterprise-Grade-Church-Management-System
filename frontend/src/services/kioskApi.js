@@ -231,7 +231,9 @@ export const kioskApi = {
    * Called after client-side face match
    */
   faceCheckin: async (data) => {
-    const response = await api.post('/kiosk/face-checkin', data);
+    // church_id must be sent as query param (FastAPI requirement)
+    const { church_id, ...bodyData } = data;
+    const response = await api.post(`/kiosk/face-checkin?church_id=${church_id}`, bodyData);
     return response.data;
   },
 

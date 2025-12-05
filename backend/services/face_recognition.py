@@ -1,10 +1,11 @@
 """
-Face Recognition Service using DeepFace
+Face Recognition Service using InsightFace (ArcFace)
 
-Provides highly accurate face recognition using FaceNet512 model:
+Provides highly accurate face recognition using ArcFace model:
 - 512-dimensional face embeddings
 - Cosine similarity matching
-- Much more accurate than browser-based solutions
+- State-of-the-art accuracy (better than FaceNet512)
+- Uses ONNX Runtime - no TensorFlow dependency
 
 Usage:
     from services.face_recognition import face_recognition_service
@@ -21,47 +22,51 @@ import base64
 import io
 import logging
 import os
-import tempfile
-from typing import Optional, List, Dict, Any, Tuple
-from functools import lru_cache
+from typing import Optional, List, Dict, Any
 import numpy as np
 from PIL import Image
 import httpx
 
 logger = logging.getLogger(__name__)
 
-# DeepFace configuration
-MODEL_NAME = "Facenet512"  # 512D embeddings, very accurate
-DETECTOR_BACKEND = "retinaface"  # Most accurate face detector
-DISTANCE_METRIC = "cosine"  # Works well with normalized embeddings
+# Configuration
+MODEL_NAME = "buffalo_l"  # InsightFace ArcFace model (512D embeddings)
+DISTANCE_METRIC = "cosine"
 
 # Matching thresholds for cosine distance
 # Cosine distance range: 0 (identical) to 2 (opposite)
+# Looser thresholds to account for lighting/angle variations in kiosk environment
 THRESHOLDS = {
-    "high_confidence": 0.25,  # Very strong match - auto check-in
-    "low_confidence": 0.45,   # Uncertain - ask for confirmation
+    "high_confidence": 0.35,  # Strong match - auto check-in (was 0.25, now looser)
+    "low_confidence": 0.55,   # Possible match - ask for confirmation (was 0.45, now looser)
     # Above low_confidence = no match
 }
+
+# Recency weighting for progressive learning
+# More recent embeddings are weighted higher (they represent current appearance)
+RECENCY_WEIGHT_FACTOR = 0.1  # Each position from newest adds this much distance penalty
 
 
 class FaceRecognitionService:
     """
-    Face recognition service using DeepFace with FaceNet512 model.
+    Face recognition service using InsightFace with ArcFace model.
 
     Features:
-    - Lazy model loading (first use initializes the model)
-    - Async-friendly (runs DeepFace in thread pool)
+    - Uses ArcFace model (state-of-the-art accuracy)
+    - 512-dimensional embeddings
+    - Uses ONNX Runtime (no TensorFlow dependency)
+    - Async-friendly (runs in thread pool)
     - Supports both file paths and URLs
-    - L2 normalized embeddings for consistent distance calculation
     """
 
     def __init__(self):
         self._initialized = False
         self._lock = asyncio.Lock()
         self._http_client = None
+        self._app = None
 
     async def _ensure_initialized(self):
-        """Lazy initialization of DeepFace models."""
+        """Lazy initialization of InsightFace model."""
         if self._initialized:
             return
 
@@ -69,35 +74,34 @@ class FaceRecognitionService:
             if self._initialized:
                 return
 
-            logger.info("[FaceRecognition] Initializing DeepFace with FaceNet512...")
+            logger.info("[FaceRecognition] Initializing InsightFace with ArcFace model...")
 
-            # Import DeepFace here to avoid slow startup
-            # Models are downloaded on first use
             try:
-                from deepface import DeepFace
+                import insightface
+                from insightface.app import FaceAnalysis
 
-                # Warm up the model by running a dummy detection
-                # This downloads models if not present
-                dummy_img = np.zeros((100, 100, 3), dtype=np.uint8)
-                dummy_img[40:60, 40:60] = [200, 180, 160]  # Simple face-like pattern
-
+                # Initialize InsightFace app
                 # Run in thread pool to not block
                 loop = asyncio.get_event_loop()
-                await loop.run_in_executor(
-                    None,
-                    lambda: DeepFace.represent(
-                        dummy_img,
-                        model_name=MODEL_NAME,
-                        detector_backend="skip",  # Skip detection for warmup
-                        enforce_detection=False
+
+                def _init():
+                    app = FaceAnalysis(
+                        name=MODEL_NAME,
+                        providers=['CPUExecutionProvider']
                     )
-                )
+                    # Use smaller detection size for faster processing (320x320 instead of 640x640)
+                    # This is 4x faster while still accurate for kiosk face detection
+                    # (faces are typically close to camera in kiosk setting)
+                    app.prepare(ctx_id=-1, det_size=(320, 320))
+                    return app
+
+                self._app = await loop.run_in_executor(None, _init)
 
                 self._initialized = True
-                logger.info("[FaceRecognition] DeepFace initialized successfully")
+                logger.info("[FaceRecognition] InsightFace initialized successfully")
 
             except Exception as e:
-                logger.error(f"[FaceRecognition] Failed to initialize DeepFace: {e}")
+                logger.error(f"[FaceRecognition] Failed to initialize InsightFace: {e}")
                 raise
 
     async def _get_http_client(self) -> httpx.AsyncClient:
@@ -114,7 +118,7 @@ class FaceRecognitionService:
             source: File path, URL, or base64-encoded image
 
         Returns:
-            numpy array of the image (RGB format)
+            numpy array of the image (BGR format for InsightFace)
         """
         img_data = None
 
@@ -141,12 +145,16 @@ class FaceRecognitionService:
             except Exception:
                 raise ValueError(f"Invalid image source: {source[:50]}...")
 
-        # Convert to PIL Image then to numpy array
+        # Convert to PIL Image then to numpy array (BGR for InsightFace)
         img = Image.open(io.BytesIO(img_data))
         if img.mode != 'RGB':
             img = img.convert('RGB')
 
-        return np.array(img)
+        # Convert RGB to BGR for InsightFace
+        img_array = np.array(img)
+        img_bgr = img_array[:, :, ::-1]
+
+        return img_bgr
 
     async def get_embedding(
         self,
@@ -158,65 +166,60 @@ class FaceRecognitionService:
 
         Args:
             image_source: File path, URL, or base64 string
-            enforce_detection: If True, raise error if no face detected
+            enforce_detection: If True, return None if no face detected
 
         Returns:
             Dict with:
             - embedding: List[float] - 512D face embedding (L2 normalized)
             - face_confidence: float - Detection confidence
             - facial_area: Dict - Bounding box of detected face
-            Or None if no face detected and enforce_detection=False
+            Or None if no face detected and enforce_detection=True
         """
         await self._ensure_initialized()
-
-        from deepface import DeepFace
 
         try:
             # Load image
             img_array = await self._load_image(image_source)
 
-            # Run DeepFace in thread pool
+            # Run InsightFace in thread pool
             loop = asyncio.get_event_loop()
 
-            def _represent():
-                return DeepFace.represent(
-                    img_array,
-                    model_name=MODEL_NAME,
-                    detector_backend=DETECTOR_BACKEND,
-                    enforce_detection=enforce_detection,
-                    align=True
-                )
+            def _get_faces():
+                return self._app.get(img_array)
 
-            results = await loop.run_in_executor(None, _represent)
+            faces = await loop.run_in_executor(None, _get_faces)
 
-            if not results:
+            if not faces:
+                if enforce_detection:
+                    logger.warning("[FaceRecognition] No face detected in image")
                 return None
 
-            # Get first face result
-            result = results[0]
-            embedding = result.get('embedding', [])
+            # Get the first (largest) face
+            face = faces[0]
+            embedding = face.normed_embedding  # Already L2 normalized
 
-            # L2 normalize the embedding
-            embedding_np = np.array(embedding, dtype=np.float32)
-            norm = np.linalg.norm(embedding_np)
-            if norm > 0:
-                embedding_np = embedding_np / norm
+            # Get bounding box
+            bbox = face.bbox.astype(int)
+            facial_area = {
+                "x": int(bbox[0]),
+                "y": int(bbox[1]),
+                "w": int(bbox[2] - bbox[0]),
+                "h": int(bbox[3] - bbox[1])
+            }
 
             return {
-                'embedding': embedding_np.tolist(),
-                'face_confidence': result.get('face_confidence', 0),
-                'facial_area': result.get('facial_area', {}),
+                'embedding': embedding.tolist(),
+                'face_confidence': float(face.det_score),
+                'facial_area': facial_area,
                 'model': MODEL_NAME,
                 'embedding_size': len(embedding)
             }
 
         except Exception as e:
-            if "Face could not be detected" in str(e):
-                logger.warning(f"[FaceRecognition] No face detected in image")
-                if not enforce_detection:
-                    return None
             logger.error(f"[FaceRecognition] Error generating embedding: {e}")
-            raise
+            if enforce_detection:
+                raise
+            return None
 
     def calculate_distance(
         self,
@@ -329,8 +332,8 @@ class FaceRecognitionService:
             - model: str
         """
         # Get embeddings for both images
-        emb1_result = await self.get_embedding(image1_source)
-        emb2_result = await self.get_embedding(image2_source)
+        emb1_result = await self.get_embedding(image1_source, enforce_detection=False)
+        emb2_result = await self.get_embedding(image2_source, enforce_detection=False)
 
         if not emb1_result or not emb2_result:
             return {
