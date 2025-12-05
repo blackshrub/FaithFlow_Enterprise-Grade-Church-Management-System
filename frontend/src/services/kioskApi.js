@@ -9,17 +9,17 @@ import api from './api';
 // ==================== IDENTITY & AUTH ====================
 
 export const kioskApi = {
-  // Phone lookup - PUBLIC endpoint for kiosk
+  // Phone lookup - PUBLIC endpoint for kiosk (backward compatible)
   lookupMemberByPhone: async (phone, church_id) => {
     try {
       const response = await api.get('/kiosk/lookup-member', {
-        params: { 
+        params: {
           phone: phone,
           church_id: church_id
         }
       });
-      
-      
+
+
       if (response.data?.success && response.data?.member) {
         return response.data.member;
       } else {
@@ -28,6 +28,27 @@ export const kioskApi = {
     } catch (error) {
       console.error('❌ Member lookup error:', error);
       return null;
+    }
+  },
+
+  // Search members by name or phone - returns multiple results
+  searchMembers: async (query, church_id) => {
+    try {
+      const response = await api.get('/kiosk/lookup-member', {
+        params: {
+          search: query,
+          church_id: church_id
+        }
+      });
+
+      if (response.data?.success && response.data?.members) {
+        return response.data.members;
+      } else {
+        return [];
+      }
+    } catch (error) {
+      console.error('❌ Member search error:', error);
+      return [];
     }
   },
 
@@ -184,6 +205,62 @@ export const kioskApi = {
   updateMemberProfile: async (member_id, data) => {
     // Use public kiosk endpoint (no auth required)
     const response = await api.patch(`/kiosk/update-profile/${member_id}`, data);
+    return response.data;
+  },
+
+  // ==================== FACE RECOGNITION ====================
+
+  /**
+   * Get all members with face descriptors for a church
+   * Used to load face database for client-side matching
+   */
+  getFaceDescriptors: async (churchId) => {
+    try {
+      const response = await api.get('/kiosk/face-descriptors', {
+        params: { church_id: churchId }
+      });
+      return response.data?.members || [];
+    } catch (error) {
+      console.error('Failed to fetch face descriptors:', error);
+      return [];
+    }
+  },
+
+  /**
+   * Check-in a member using face recognition
+   * Called after client-side face match
+   */
+  faceCheckin: async (data) => {
+    const response = await api.post('/kiosk/face-checkin', data);
+    return response.data;
+  },
+
+  /**
+   * Save captured face photo for progressive learning
+   * Silent capture - builds face database over time
+   */
+  saveFacePhoto: async (memberId, photoBase64, descriptor, churchId) => {
+    try {
+      const response = await api.post('/kiosk/save-face-photo', {
+        member_id: memberId,
+        photo_base64: photoBase64,
+        descriptor: descriptor,
+        church_id: churchId
+      });
+      return response.data;
+    } catch (error) {
+      // Silent failure - don't interrupt check-in flow
+      console.error('Failed to save face photo:', error);
+      return null;
+    }
+  },
+
+  /**
+   * RSVP and check-in in one step (for face recognition)
+   * Used when member has no RSVP but we detect their face
+   */
+  rsvpAndCheckin: async (data) => {
+    const response = await api.post('/kiosk/rsvp-and-checkin', data);
     return response.data;
   },
 };

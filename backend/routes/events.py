@@ -49,27 +49,9 @@ async def create_event(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Seat selection requires a seat layout")
     
     event = Event(**event_data.model_dump(mode='json'))
+    # Use mode='json' to automatically convert datetime to ISO strings
     event_doc = event.model_dump(mode='json')
-    event_doc['created_at'] = event_doc['created_at'].isoformat()
-    event_doc['updated_at'] = event_doc['updated_at'].isoformat()
-    
-    # Convert datetime fields
-    if event_doc.get('event_date'):
-        event_doc['event_date'] = event_doc['event_date'].isoformat()
-    if event_doc.get('event_end_date'):
-        event_doc['event_end_date'] = event_doc['event_end_date'].isoformat()
-    if event_doc.get('reservation_start'):
-        event_doc['reservation_start'] = event_doc['reservation_start'].isoformat()
-    if event_doc.get('reservation_end'):
-        event_doc['reservation_end'] = event_doc['reservation_end'].isoformat()
-    
-    # Convert session dates
-    if event_doc.get('sessions'):
-        for session in event_doc['sessions']:
-            if session.get('date'):
-                session['date'] = session['date'].isoformat() if hasattr(session['date'], 'isoformat') else session['date']
-            if session.get('end_date'):
-                session['end_date'] = session['end_date'].isoformat() if hasattr(session['end_date'], 'isoformat') else session['end_date']
+    # Note: model_dump(mode='json') already converts datetime fields to ISO strings
     
     await db.events.insert_one(event_doc)
     logger.info(f"Event created: {event.name} (ID: {event.id})")

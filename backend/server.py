@@ -36,6 +36,7 @@ from routes.explore import (
 )
 from routes.explore_ai import router as explore_ai_router
 from routes.ai.streaming import router as ai_streaming_router
+from routes.face_recognition import router as face_recognition_router, public_router as face_recognition_public_router
 
 # Import accounting routes (v1)
 from routes import (
@@ -165,8 +166,12 @@ api_router.include_router(community_subgroups.mobile_router)  # Community sub-gr
 api_router.include_router(call.router)  # Voice/Video calling (LiveKit)
 api_router.include_router(companion.router)  # Faith Assistant (Pendamping Iman)
 
+# Face Recognition API (admin endpoints)
+app.include_router(face_recognition_router)  # /api/face-recognition/*
+
 # Public API (no auth required)
 app.include_router(public_members.router)
+app.include_router(face_recognition_public_router)  # /public/face-recognition/* (kiosk)
 
 # Include Explore routes
 app.include_router(explore_public_router)  # Public Explore endpoints

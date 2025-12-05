@@ -1,9 +1,9 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, Download, Printer, QrCode } from 'lucide-react';
+import { X, Download, Printer, QrCode, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-function MemberQRModal({ member, onClose }) {
+function MemberQRModal({ member, onClose, isLoading }) {
   const { t } = useTranslation();
 
   const handleDownload = () => {
@@ -67,7 +67,12 @@ function MemberQRModal({ member, onClose }) {
             {t('members.universalID')}
           </p>
 
-          {member.personal_qr_code ? (
+          {isLoading ? (
+            <div className="py-12">
+              <Loader2 className="h-16 w-16 mx-auto text-blue-600 animate-spin mb-4" />
+              <p className="text-gray-500">{t('common.loading')}</p>
+            </div>
+          ) : member.personal_qr_code ? (
             <>
               <div className="bg-white p-4 rounded-lg inline-block border-2 border-gray-200 mb-4">
                 <img

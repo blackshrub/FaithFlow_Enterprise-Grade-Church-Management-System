@@ -208,7 +208,8 @@ async def list_members(
     gender: Optional[str] = Query(None, regex="^(Male|Female)$"),
     marital_status: Optional[str] = Query(None, regex="^(Married|Not Married|Widow|Widower)$"),
     member_status: Optional[str] = None,
-    demographic_category: Optional[str] = None
+    demographic_category: Optional[str] = None,
+    has_face: Optional[bool] = None
 ):
     """List all members in current church with pagination, search, and comprehensive filters"""
     
@@ -251,7 +252,13 @@ async def list_members(
     # Add demographic category filter
     if demographic_category:
         query['demographic_category'] = demographic_category
-    
+
+    # Add face descriptors filter (using $expr to check array size before pagination)
+    if has_face is True:
+        query['$expr'] = {'$gt': [{'$size': {'$ifNull': ['$face_descriptors', []]}}, 0]}
+    elif has_face is False:
+        query['$expr'] = {'$eq': [{'$size': {'$ifNull': ['$face_descriptors', []]}}, 0]}
+
     # Add incomplete data filter
     if incomplete_data is True:
         incomplete_or = [
@@ -996,3 +1003,62 @@ async def delete_member_document(
     )
 
     return None
+
+
+@router.post("/migrate/backfill-personal-id-codes")
+async def backfill_personal_id_codes(
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current_user: dict = Depends(require_admin)
+):
+    """
+    Backfill personal_id_code for existing members who don't have one.
+    Admin-only endpoint.
+    """
+    session_church_id = get_session_church_id(current_user)
+
+    # Find all members without personal_id_code
+    query = {
+        "church_id": session_church_id,
+        "$or": [
+            {"personal_id_code": {"$exists": False}},
+            {"personal_id_code": None},
+            {"personal_id_code": ""}
+        ]
+    }
+
+    members_without_code = await db.members.find(query, {"id": 1}).to_list(None)
+
+    if not members_without_code:
+        return {
+            "message": "All members already have personal_id_code",
+            "updated_count": 0
+        }
+
+    updated_count = 0
+    for member in members_without_code:
+        member_id = member['id']
+
+        # Generate new personal ID code
+        member_code = generate_member_id_code()
+        qr_data = generate_member_qr_data(member_id, member_code)
+
+        # Update member with new personal_id_code
+        await db.members.update_one(
+            {"id": member_id},
+            {
+                "$set": {
+                    "personal_id_code": qr_data['member_code'],
+                    "personal_qr_code": qr_data['qr_code'],
+                    "personal_qr_data": qr_data['qr_data'],
+                    "updated_at": datetime.now().isoformat()
+                }
+            }
+        )
+        updated_count += 1
+
+    logger.info(f"Backfilled personal_id_code for {updated_count} members in church {session_church_id}")
+
+    return {
+        "message": f"Successfully generated personal_id_code for {updated_count} members",
+        "updated_count": updated_count
+    }

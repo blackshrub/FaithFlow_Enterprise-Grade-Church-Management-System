@@ -544,12 +544,15 @@ async def get_public_events_kiosk(
 ):
     """Get upcoming events for kiosk (public - no auth required)."""
     try:
-        now = datetime.utcnow()
+        # Use today's date at midnight for comparison (event_date is stored as ISO string)
+        today = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+        today_str = today.strftime("%Y-%m-%d")
 
-        # Query for upcoming events
+        # Query for today's and future events (string comparison works with ISO format)
         query = {
             "church_id": church_id,
-            "event_date": {"$gte": now}
+            "event_date": {"$gte": today_str},
+            "is_active": True
         }
 
         projection = {
@@ -949,52 +952,486 @@ async def update_member_profile_kiosk(
 
 @router.get("/lookup-member")
 async def lookup_member_by_phone(
-    phone: str = Query(..., description="Phone number to lookup"),
+    phone: str = Query(None, description="Phone number to lookup"),
+    search: str = Query(None, description="Search by name or phone"),
     church_id: str = Query(..., description="Church ID"),
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
-    """Lookup member by phone (public endpoint for kiosk).
+    """Lookup member by phone or name (public endpoint for kiosk).
 
-    Tries multiple phone formats to find match.
+    Supports:
+    - phone parameter: Tries multiple phone formats to find match
+    - search parameter: Searches by name (case-insensitive) OR phone
     """
     try:
-        # Clean phone number
-        clean_phone = phone.replace('+', '').replace('-', '').replace(' ', '')
-        
-        logger.info(f"Kiosk member lookup: {phone} → {clean_phone}")
-        
-        # Try multiple formats
-        phone_variations = [
-            phone,  # Original
-            clean_phone,  # Without +
-            f"+{clean_phone}",  # With +
-        ]
-        
-        # If starts with 0, also try with 62
-        if clean_phone.startswith('0'):
-            phone_variations.append('62' + clean_phone[1:])
-            phone_variations.append('+62' + clean_phone[1:])
-        
-        # Search with regex to match any variation
-        member = await db.members.find_one({
-            "church_id": church_id,
-            "phone_whatsapp": {"$in": phone_variations}
-        }, {"_id": 0})
-        
-        if member:
-            logger.info(f"Member found: {member.get('full_name')}")
-            return {
-                "success": True,
-                "member": member
-            }
+        # Use search param if provided, otherwise use phone param
+        query_term = search or phone
+        if not query_term:
+            return {"success": False, "member": None, "members": []}
+
+        logger.info(f"Kiosk member lookup: query={query_term}")
+
+        # Check if query looks like a phone number (mostly digits)
+        clean_query = query_term.replace('+', '').replace('-', '').replace(' ', '')
+        is_phone_search = clean_query.isdigit() and len(clean_query) >= 8
+
+        if is_phone_search:
+            # Phone search - try multiple formats
+            phone_variations = [
+                query_term,  # Original
+                clean_query,  # Without +
+                f"+{clean_query}",  # With +
+            ]
+
+            # If starts with 0, also try with 62
+            if clean_query.startswith('0'):
+                phone_variations.append('62' + clean_query[1:])
+                phone_variations.append('+62' + clean_query[1:])
+
+            member = await db.members.find_one({
+                "church_id": church_id,
+                "phone_whatsapp": {"$in": phone_variations},
+                "is_deleted": {"$ne": True}
+            }, {"_id": 0})
+
+            if member:
+                logger.info(f"Member found by phone: {member.get('full_name')}")
+                return {
+                    "success": True,
+                    "member": member,
+                    "members": [member]
+                }
         else:
-            logger.info(f"Member not found for phone: {phone}")
-            return {
-                "success": False,
-                "member": None
-            }
-    
+            # Name search - case-insensitive regex
+            import re
+            name_pattern = re.compile(re.escape(query_term), re.IGNORECASE)
+
+            members = await db.members.find({
+                "church_id": church_id,
+                "full_name": {"$regex": name_pattern},
+                "is_deleted": {"$ne": True}
+            }, {"_id": 0}).limit(10).to_list(length=10)
+
+            if members:
+                logger.info(f"Found {len(members)} members by name search: {query_term}")
+                return {
+                    "success": True,
+                    "member": members[0],  # First match for backward compatibility
+                    "members": members
+                }
+
+        logger.info(f"Member not found for query: {query_term}")
+        return {
+            "success": False,
+            "member": None,
+            "members": []
+        }
+
     except Exception as e:
         logger.error(f"Member lookup error: {e}")
         raise HTTPException(status_code=500, detail="Lookup failed")
+
+
+# =============================================================================
+# FACE RECOGNITION ENDPOINTS
+# =============================================================================
+
+class FaceCheckinRequest(BaseModel):
+    """Face check-in request."""
+    event_id: str
+    member_id: str
+    descriptor: Optional[list] = None  # Face descriptor for verification
+    photo_base64: Optional[str] = None  # Captured photo (optional, for progressive learning)
+
+
+class SaveFacePhotoRequest(BaseModel):
+    """Save face photo for progressive learning."""
+    member_id: str
+    descriptor: list  # 512D face descriptor
+    photo_base64: str  # Base64 encoded JPEG
+
+
+@router.get("/face-descriptors")
+async def get_face_descriptors(
+    church_id: str = Query(..., description="Church ID"),
+    event_id: Optional[str] = Query(None, description="Event ID to filter by RSVP list"),
+    db: AsyncIOMotorDatabase = Depends(get_db)
+):
+    """Get all members with face descriptors for client-side matching.
+
+    Returns members with their face descriptors for browser-based face recognition.
+    If event_id is provided, optionally prioritize RSVPed members.
+
+    Response is optimized for kiosk use:
+    - Only returns members with face_checkin_enabled=true
+    - Only returns members with at least one face descriptor
+    - Returns last 5 descriptors per member for accuracy
+    """
+    try:
+        # Query members with face descriptors
+        query = {
+            "church_id": church_id,
+            "face_checkin_enabled": {"$ne": False},  # Include if not explicitly disabled
+            "face_descriptors": {"$exists": True, "$ne": []},
+            "is_deleted": {"$ne": True}
+        }
+
+        projection = {
+            "_id": 0,
+            "id": 1,
+            "full_name": 1,
+            "photo_url": 1,
+            "photo_thumbnail_url": 1,
+            "face_descriptors": {"$slice": -5},  # Last 5 descriptors
+        }
+
+        members = await db.members.find(query, projection).to_list(length=2000)
+
+        # Format for client consumption
+        result = []
+        for member in members:
+            if member.get("face_descriptors"):
+                result.append({
+                    "member_id": member["id"],
+                    "member_name": member["full_name"],
+                    "photo_url": member.get("photo_thumbnail_url") or member.get("photo_url"),
+                    "descriptors": [
+                        fd.get("descriptor") for fd in member["face_descriptors"]
+                        if fd.get("descriptor")
+                    ]
+                })
+
+        logger.info(f"Face descriptors: Returning {len(result)} members for church {church_id}")
+
+        return {
+            "success": True,
+            "members": result,
+            "total": len(result)
+        }
+
+    except Exception as e:
+        logger.error(f"Error fetching face descriptors: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch face descriptors")
+
+
+@router.post("/face-checkin")
+async def face_checkin(
+    request: FaceCheckinRequest,
+    church_id: str = Query(..., description="Church ID"),
+    db: AsyncIOMotorDatabase = Depends(get_db)
+):
+    """Check-in member using face recognition.
+
+    This endpoint:
+    1. Verifies the member exists
+    2. Performs check-in for the event
+    3. Optionally saves the captured photo for progressive learning
+
+    The actual face matching happens client-side. This endpoint just processes
+    the check-in after a match is confirmed.
+    """
+    try:
+        # Verify member exists
+        member = await db.members.find_one({
+            "id": request.member_id,
+            "church_id": church_id
+        })
+
+        if not member:
+            raise HTTPException(status_code=404, detail="Member not found")
+
+        # Get event
+        event = await db.events.find_one({"id": request.event_id})
+        if not event:
+            raise HTTPException(status_code=404, detail="Event not found")
+
+        # Check if already checked in
+        existing_checkin = None
+        for attendance in event.get("attendance_list", []):
+            if attendance.get("member_id") == request.member_id:
+                existing_checkin = attendance
+                break
+
+        if existing_checkin:
+            return {
+                "success": True,
+                "message": "Already checked in",
+                "member": {
+                    "id": member["id"],
+                    "full_name": member["full_name"],
+                    "photo_url": member.get("photo_thumbnail_url") or member.get("photo_url")
+                },
+                "already_checked_in": True
+            }
+
+        # Check RSVP requirement
+        requires_rsvp = event.get("requires_rsvp", False)
+        is_rsvped = False
+
+        if requires_rsvp:
+            for rsvp in event.get("rsvp_list", []):
+                if rsvp.get("member_id") == request.member_id:
+                    is_rsvped = True
+                    break
+
+            if not is_rsvped:
+                return {
+                    "success": False,
+                    "message": "RSVP required",
+                    "requires_rsvp": True,
+                    "member": {
+                        "id": member["id"],
+                        "full_name": member["full_name"],
+                        "photo_url": member.get("photo_thumbnail_url") or member.get("photo_url")
+                    }
+                }
+
+        # Perform check-in
+        attendance_entry = {
+            "member_id": request.member_id,
+            "member_name": member["full_name"],
+            "checked_in_at": datetime.utcnow(),
+            "source": "face_recognition",
+            "check_in_method": "face"
+        }
+
+        await db.events.update_one(
+            {"id": request.event_id},
+            {"$push": {"attendance_list": attendance_entry}}
+        )
+
+        # Also update RSVP status if exists
+        await db.events.update_one(
+            {"id": request.event_id, "rsvp_list.member_id": request.member_id},
+            {"$set": {"rsvp_list.$.status": "attended", "rsvp_list.$.attended_at": datetime.utcnow()}}
+        )
+
+        logger.info(f"Face check-in: Event {request.event_id}, Member {request.member_id} ({member['full_name']})")
+
+        # Optionally save photo for progressive learning (done in separate endpoint)
+
+        return {
+            "success": True,
+            "message": "Checked in successfully",
+            "member": {
+                "id": member["id"],
+                "full_name": member["full_name"],
+                "photo_url": member.get("photo_thumbnail_url") or member.get("photo_url")
+            }
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Face check-in error: {e}")
+        raise HTTPException(status_code=500, detail="Check-in failed")
+
+
+@router.post("/save-face-photo")
+async def save_face_photo(
+    request: SaveFacePhotoRequest,
+    church_id: str = Query(..., description="Church ID"),
+    db: AsyncIOMotorDatabase = Depends(get_db)
+):
+    """Save captured face photo for progressive learning.
+
+    This endpoint:
+    1. Checks if enough time has passed since last photo (30 days)
+    2. Saves photo to SeaweedFS
+    3. Adds descriptor to member's face_descriptors array
+    4. Keeps only last 5 descriptors per member
+
+    Called silently after successful face check-in.
+    """
+    try:
+        # Get member
+        member = await db.members.find_one({
+            "id": request.member_id,
+            "church_id": church_id
+        })
+
+        if not member:
+            raise HTTPException(status_code=404, detail="Member not found")
+
+        # Check if enough time has passed (30 days)
+        last_photo_at = member.get("last_face_photo_at")
+        if last_photo_at:
+            days_since = (datetime.utcnow() - last_photo_at).days
+            if days_since < 30:
+                logger.debug(f"Skipping face photo save: Only {days_since} days since last photo")
+                return {
+                    "success": True,
+                    "saved": False,
+                    "reason": f"Photo captured {days_since} days ago, waiting for 30 days"
+                }
+
+        # Save photo to SeaweedFS
+        photo_url = None
+        try:
+            from services.seaweedfs_service import seaweedfs_service
+            import base64
+
+            # Decode base64
+            if request.photo_base64.startswith('data:'):
+                # Remove data URL prefix
+                photo_data = base64.b64decode(request.photo_base64.split(',')[1])
+            else:
+                photo_data = base64.b64decode(request.photo_base64)
+
+            # Upload to SeaweedFS
+            result = await seaweedfs_service.upload_file(
+                file_data=photo_data,
+                filename=f"face_{request.member_id}_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.jpg",
+                content_type="image/jpeg",
+                path=f"churches/{church_id}/face_photos/{request.member_id}"
+            )
+
+            if result and result.get("url"):
+                photo_url = result["url"]
+                logger.info(f"Face photo saved to SeaweedFS: {photo_url}")
+        except Exception as e:
+            logger.warning(f"Failed to save face photo to SeaweedFS: {e}")
+            # Continue without photo URL
+
+        # Create new descriptor entry
+        new_descriptor = {
+            "descriptor": request.descriptor,
+            "captured_at": datetime.utcnow(),
+            "photo_url": photo_url
+        }
+
+        # Get existing descriptors
+        existing_descriptors = member.get("face_descriptors", [])
+
+        # Add new descriptor and keep only last 5
+        existing_descriptors.append(new_descriptor)
+        if len(existing_descriptors) > 5:
+            existing_descriptors = existing_descriptors[-5:]
+
+        # Update member
+        await db.members.update_one(
+            {"id": request.member_id},
+            {
+                "$set": {
+                    "face_descriptors": existing_descriptors,
+                    "last_face_photo_at": datetime.utcnow(),
+                    "updated_at": datetime.utcnow()
+                }
+            }
+        )
+
+        logger.info(f"Face descriptor saved for member {request.member_id}, total: {len(existing_descriptors)}")
+
+        return {
+            "success": True,
+            "saved": True,
+            "total_descriptors": len(existing_descriptors),
+            "photo_url": photo_url
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Save face photo error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to save face photo")
+
+
+@router.post("/rsvp-and-checkin")
+async def rsvp_and_checkin(
+    request: FaceCheckinRequest,
+    church_id: str = Query(..., description="Church ID"),
+    db: AsyncIOMotorDatabase = Depends(get_db)
+):
+    """RSVP and check-in in one step (for face recognition when not RSVPed).
+
+    Used when face recognition identifies a member who hasn't RSVPed
+    for an event that requires RSVP.
+    """
+    try:
+        from services.qr_service import generate_confirmation_code, generate_rsvp_qr_data
+
+        # Verify member
+        member = await db.members.find_one({
+            "id": request.member_id,
+            "church_id": church_id
+        })
+
+        if not member:
+            raise HTTPException(status_code=404, detail="Member not found")
+
+        # Get event
+        event = await db.events.find_one({"id": request.event_id})
+        if not event:
+            raise HTTPException(status_code=404, detail="Event not found")
+
+        # Check if already RSVPed
+        is_rsvped = False
+        for rsvp in event.get("rsvp_list", []):
+            if rsvp.get("member_id") == request.member_id:
+                is_rsvped = True
+                break
+
+        # Add RSVP if not already RSVPed
+        if not is_rsvped:
+            confirmation_code = generate_confirmation_code()
+            qr_data = generate_rsvp_qr_data(request.event_id, request.member_id, '', confirmation_code)
+
+            rsvp_entry = {
+                "member_id": request.member_id,
+                "member_name": member["full_name"],
+                "session_id": None,
+                "seat": None,
+                "timestamp": datetime.utcnow(),
+                "status": "attended",  # Directly set to attended
+                "attended_at": datetime.utcnow(),
+                "confirmation_code": confirmation_code,
+                "qr_data": qr_data,
+                "source": "face_recognition_kiosk"
+            }
+
+            await db.events.update_one(
+                {"id": request.event_id},
+                {"$push": {"rsvp_list": rsvp_entry}}
+            )
+
+            logger.info(f"Face RSVP added: Event {request.event_id}, Member {request.member_id}")
+
+        # Add to attendance list
+        attendance_entry = {
+            "member_id": request.member_id,
+            "member_name": member["full_name"],
+            "checked_in_at": datetime.utcnow(),
+            "source": "face_recognition",
+            "check_in_method": "face"
+        }
+
+        # Check if already in attendance
+        existing_attendance = await db.events.find_one({
+            "id": request.event_id,
+            "attendance_list.member_id": request.member_id
+        })
+
+        if not existing_attendance:
+            await db.events.update_one(
+                {"id": request.event_id},
+                {"$push": {"attendance_list": attendance_entry}}
+            )
+
+        logger.info(f"Face RSVP+Check-in: Event {request.event_id}, Member {request.member_id}")
+
+        return {
+            "success": True,
+            "message": "RSVPed and checked in successfully",
+            "member": {
+                "id": member["id"],
+                "full_name": member["full_name"],
+                "photo_url": member.get("photo_thumbnail_url") or member.get("photo_url")
+            }
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"RSVP and check-in error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to RSVP and check-in")
 

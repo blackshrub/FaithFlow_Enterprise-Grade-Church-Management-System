@@ -18,7 +18,7 @@ import {
   MessageSquare, Clock, CheckCircle, XCircle, Activity, BarChart3
 } from 'lucide-react';
 import api from '../../services/api';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth } from '../../context/AuthContext';
 
 // Theme display configuration
 const THEME_CONFIG = {

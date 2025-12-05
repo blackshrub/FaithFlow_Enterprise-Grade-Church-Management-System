@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import api from '../../services/api';
 import { useToast } from '../../hooks/use-toast';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth } from '../../context/AuthContext';
 
 // Category display configuration
 const CATEGORY_CONFIG = {

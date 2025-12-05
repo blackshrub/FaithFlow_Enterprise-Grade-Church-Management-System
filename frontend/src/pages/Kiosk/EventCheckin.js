@@ -4,8 +4,14 @@
  * Flow:
  * 1. PIN entry (6-digit)
  * 2. Select event
- * 3. QR scan or search member
- * 4. Check-in confirmation
+ * 3. Camera always-on with parallel QR + Face detection
+ * 4. Auto check-in with 3-second cancel option
+ *
+ * Face Recognition Features:
+ * - Uses @vladmandic/human for face detection and embedding
+ * - Client-side face matching against loaded member descriptors
+ * - Silent photo capture once per month for progressive learning
+ * - Auto-confirm with "Not you? Cancel" button (3 seconds)
  *
  * NO INACTIVITY TIMEOUT for this page
  *
@@ -15,9 +21,21 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ClipboardCheck, QrCode, Search, UserCheck, Camera as CameraIcon, Check, ArrowLeft, Loader2 } from 'lucide-react';
+import {
+  ClipboardCheck,
+  QrCode,
+  Search,
+  UserCheck,
+  Camera as CameraIcon,
+  Check,
+  ArrowLeft,
+  Loader2,
+  X,
+  ScanFace,
+  AlertCircle,
+} from 'lucide-react';
 import { useDeferredSearch } from '../../hooks/useDeferredSearch';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import KioskLayout from '../../components/Kiosk/KioskLayout';
 import OTPInput from '../../components/Kiosk/OTPInput';
 import { Button } from '../../components/ui/button';
@@ -27,17 +45,25 @@ import { useKioskEvents, useVerifyPIN, useKioskChurch } from '../../hooks/useKio
 import api from '../../services/api';
 import kioskApi from '../../services/kioskApi';
 import QrScanner from 'qr-scanner';
+import { faceRecognitionService, FACE_MATCH_THRESHOLDS } from '../../services/faceRecognitionService';
+
+// Constants
+const CANCEL_COUNTDOWN_SECONDS = 3;
+const NO_FACE_TIMEOUT_MS = 3000; // 3 seconds before showing "unrecognized" message
 
 const EventCheckinKiosk = () => {
   const navigate = useNavigate();
   const { t } = useTranslation('kiosk');
   const videoRef = useRef(null);
   const qrScannerRef = useRef(null);
+  const faceDetectionIntervalRef = useRef(null);
+  const noFaceTimeoutRef = useRef(null);
+  const cancelCountdownRef = useRef(null);
 
   // Get church context
   const { churchId } = useKioskChurch();
 
-  const [step, setStep] = useState('pin'); // pin, select_event, scan_or_search, success
+  const [step, setStep] = useState('pin'); // pin, select_event, scan_or_search, confirming, success
   const [pin, setPin] = useState('');
   const [pinError, setPinError] = useState('');
   const [staff, setStaff] = useState(null);
@@ -50,10 +76,25 @@ const EventCheckinKiosk = () => {
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
   const [checkinInProgress, setCheckinInProgress] = useState(false);
-  const [scanning, setScanning] = useState(false);
   const [lastCheckedIn, setLastCheckedIn] = useState(null);
   const [checkinError, setCheckinError] = useState('');
   const [recentCheckins, setRecentCheckins] = useState([]);
+
+  // Face recognition state
+  const [faceReady, setFaceReady] = useState(false);
+  const [faceLoading, setFaceLoading] = useState(false);
+  const [faceError, setFaceError] = useState(null);
+  const [showUnrecognized, setShowUnrecognized] = useState(false);
+  const [faceStatus, setFaceStatus] = useState(''); // idle, detecting, matched, unknown
+
+  // Confirmation modal state
+  const [confirmingMember, setConfirmingMember] = useState(null);
+  const [confirmingDescriptor, setConfirmingDescriptor] = useState(null);
+  const [cancelCountdown, setCancelCountdown] = useState(CANCEL_COUNTDOWN_SECONDS);
+
+  // Camera state
+  const [cameraActive, setCameraActive] = useState(false);
+  const [cameraError, setCameraError] = useState(null);
 
   // Fetch events using TanStack Query
   const {
@@ -66,74 +107,204 @@ const EventCheckinKiosk = () => {
   // PIN verification mutation
   const pinMutation = useVerifyPIN();
 
-  // Check-in API call
-  const performCheckin = useCallback(async (memberId, memberName, qrCode = null) => {
-    if (checkinInProgress) return;
+  // Initialize face recognition when component mounts
+  useEffect(() => {
+    const initFace = async () => {
+      setFaceLoading(true);
+      try {
+        const ready = await faceRecognitionService.initialize();
+        setFaceReady(ready);
+        if (!ready) {
+          setFaceError('Face recognition initialization failed');
+        }
+      } catch (error) {
+        console.error('Face init error:', error);
+        setFaceError(error.message);
+      } finally {
+        setFaceLoading(false);
+      }
+    };
+    initFace();
 
-    setCheckinInProgress(true);
-    setCheckinError('');
+    return () => {
+      faceRecognitionService.dispose();
+    };
+  }, []);
+
+  // Load face descriptors when event is selected + periodic refresh for new members
+  useEffect(() => {
+    if (selectedEvent && churchId && faceReady) {
+      loadFaceDescriptors();
+
+      // Refresh face descriptors every 2 minutes to pick up new members
+      const refreshInterval = setInterval(() => {
+        loadFaceDescriptors();
+      }, 2 * 60 * 1000); // 2 minutes
+
+      return () => clearInterval(refreshInterval);
+    }
+  }, [selectedEvent, churchId, faceReady]);
+
+  const loadFaceDescriptors = async () => {
+    try {
+      const members = await kioskApi.getFaceDescriptors(churchId);
+      faceRecognitionService.loadMemberDescriptors(members);
+      console.log(`[EventCheckin] Loaded ${members.length} member face descriptors`);
+    } catch (error) {
+      console.error('Failed to load face descriptors:', error);
+    }
+  };
+
+  // Start camera when entering scan_or_search step (always-on camera)
+  useEffect(() => {
+    if (step === 'scan_or_search' && mode === 'scan' && !cameraActive) {
+      startCamera();
+    }
+
+    return () => {
+      if (step !== 'scan_or_search' || mode !== 'scan') {
+        stopCamera();
+      }
+    };
+  }, [step, mode]);
+
+  // Start camera and detection
+  const startCamera = async () => {
+    if (!videoRef.current) return;
 
     try {
-      // Call the events check-in API
-      const response = await api.post(`/events/${selectedEvent.id}/check-in`, {
-        member_id: memberId,
-        qr_code: qrCode,
-        source: 'kiosk'
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'user', width: 640, height: 480 }
       });
+      videoRef.current.srcObject = stream;
+      await videoRef.current.play();
+      setCameraActive(true);
+      setCameraError(null);
 
-      if (response.data) {
-        // Success - add to recent checkins and show success
-        setLastCheckedIn({ name: memberName, time: new Date() });
-        setRecentCheckins(prev => [
-          { name: memberName, time: new Date() },
-          ...prev.slice(0, 9)
-        ]);
-        setStep('success');
-      }
+      // Start QR scanner
+      startQRScanner();
+
+      // Start face detection loop
+      startFaceDetection();
+
     } catch (error) {
-      console.error('Check-in error:', error);
-      const errorMessage = error.response?.data?.detail || t('errors.generic');
-      setCheckinError(errorMessage);
-
-      // Auto-clear error after 3 seconds
-      setTimeout(() => setCheckinError(''), 3000);
-    } finally {
-      setCheckinInProgress(false);
+      console.error('Camera start error:', error);
+      setCameraError('Unable to access camera. Please check permissions.');
     }
-  }, [selectedEvent, checkinInProgress, t]);
+  };
 
-  // QR scanning with qr-scanner library
-  useEffect(() => {
-    if (scanning && videoRef.current) {
-      qrScannerRef.current = new QrScanner(
-        videoRef.current,
-        result => handleQRScanned(result.data),
-        {
-          highlightScanRegion: true,
-          highlightCodeOutline: true,
-        }
-      );
-
-      qrScannerRef.current.start();
-
-      return () => {
-        if (qrScannerRef.current) {
-          qrScannerRef.current.stop();
-          qrScannerRef.current.destroy();
-        }
-      };
-    }
-  }, [scanning]);
-
-  const handleQRScanned = async (qrData) => {
+  // Stop camera and all detection
+  const stopCamera = () => {
+    // Stop QR scanner
     if (qrScannerRef.current) {
       qrScannerRef.current.stop();
+      qrScannerRef.current.destroy();
+      qrScannerRef.current = null;
     }
-    setScanning(false);
+
+    // Stop face detection
+    if (faceDetectionIntervalRef.current) {
+      clearInterval(faceDetectionIntervalRef.current);
+      faceDetectionIntervalRef.current = null;
+    }
+
+    // Stop no-face timeout
+    if (noFaceTimeoutRef.current) {
+      clearTimeout(noFaceTimeoutRef.current);
+      noFaceTimeoutRef.current = null;
+    }
+
+    // Stop video stream
+    if (videoRef.current?.srcObject) {
+      const tracks = videoRef.current.srcObject.getTracks();
+      tracks.forEach(track => track.stop());
+      videoRef.current.srcObject = null;
+    }
+
+    setCameraActive(false);
+    setFaceStatus('idle');
+    setShowUnrecognized(false);
+  };
+
+  // Start QR scanner on video element
+  const startQRScanner = () => {
+    if (!videoRef.current || qrScannerRef.current) return;
+
+    qrScannerRef.current = new QrScanner(
+      videoRef.current,
+      result => handleQRScanned(result.data),
+      {
+        highlightScanRegion: false, // We'll handle our own overlay
+        highlightCodeOutline: true,
+      }
+    );
+
+    qrScannerRef.current.start();
+  };
+
+  // Start face detection loop (parallel with QR)
+  const startFaceDetection = () => {
+    if (!faceReady || faceDetectionIntervalRef.current) return;
+
+    let consecutiveNoFace = 0;
+    const NO_FACE_THRESHOLD = 15; // ~3 seconds at 5 FPS
+
+    faceDetectionIntervalRef.current = setInterval(async () => {
+      if (!videoRef.current || step === 'confirming' || checkinInProgress) return;
+
+      try {
+        const detection = await faceRecognitionService.detectFace(videoRef.current);
+
+        if (detection) {
+          consecutiveNoFace = 0;
+          setShowUnrecognized(false);
+
+          // Clear no-face timeout
+          if (noFaceTimeoutRef.current) {
+            clearTimeout(noFaceTimeoutRef.current);
+            noFaceTimeoutRef.current = null;
+          }
+
+          // Try to match face
+          const match = faceRecognitionService.findBestMatch(detection.descriptor);
+
+          if (match) {
+            setFaceStatus('matched');
+            // High confidence - initiate check-in with confirmation modal
+            handleFaceMatch(match, detection.descriptor);
+          } else {
+            setFaceStatus('unknown');
+          }
+        } else {
+          consecutiveNoFace++;
+          setFaceStatus('detecting');
+
+          // Show unrecognized after threshold
+          if (consecutiveNoFace >= NO_FACE_THRESHOLD) {
+            if (!noFaceTimeoutRef.current) {
+              noFaceTimeoutRef.current = setTimeout(() => {
+                setShowUnrecognized(true);
+              }, 0);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Face detection error:', error);
+      }
+    }, 200); // 5 FPS
+  };
+
+  // Handle QR code scanned
+  const handleQRScanned = async (qrData) => {
+    if (checkinInProgress || step === 'confirming') return;
+
+    // Pause QR scanner temporarily
+    if (qrScannerRef.current) {
+      qrScannerRef.current.pause();
+    }
 
     try {
-      // QR data might be member ID or formatted QR code
-      // Try to parse it - could be JSON or plain member ID
+      // Parse QR data
       let memberId = qrData;
       let memberName = 'Member';
 
@@ -142,16 +313,180 @@ const EventCheckinKiosk = () => {
         memberId = parsed.member_id || parsed.memberId || qrData;
         memberName = parsed.member_name || parsed.name || 'Member';
       } catch {
-        // Not JSON, use as-is (plain member ID)
         memberId = qrData;
       }
 
-      // Perform check-in with QR code
+      // Perform check-in directly for QR (no confirmation modal needed - they scanned their QR)
       await performCheckin(memberId, memberName, qrData);
     } catch (error) {
       console.error('QR scan error:', error);
       setCheckinError('Invalid QR code');
       setTimeout(() => setCheckinError(''), 3000);
+    } finally {
+      // Resume QR scanner
+      if (qrScannerRef.current) {
+        qrScannerRef.current.start();
+      }
+    }
+  };
+
+  // Handle face match - show confirmation modal
+  const handleFaceMatch = (match, descriptor) => {
+    if (checkinInProgress || step === 'confirming') return;
+
+    // Pause detection during confirmation
+    if (faceDetectionIntervalRef.current) {
+      clearInterval(faceDetectionIntervalRef.current);
+      faceDetectionIntervalRef.current = null;
+    }
+    if (qrScannerRef.current) {
+      qrScannerRef.current.pause();
+    }
+
+    setConfirmingMember(match.member);
+    setConfirmingDescriptor(Array.from(descriptor));
+    setCancelCountdown(CANCEL_COUNTDOWN_SECONDS);
+    setStep('confirming');
+
+    // Start auto-confirm countdown
+    startAutoConfirmCountdown(match.member, descriptor);
+  };
+
+  // Start auto-confirm countdown
+  const startAutoConfirmCountdown = (member, descriptor) => {
+    let countdown = CANCEL_COUNTDOWN_SECONDS;
+
+    cancelCountdownRef.current = setInterval(() => {
+      countdown--;
+      setCancelCountdown(countdown);
+
+      if (countdown <= 0) {
+        clearInterval(cancelCountdownRef.current);
+        cancelCountdownRef.current = null;
+        // Auto-confirm
+        confirmFaceCheckin(member, descriptor);
+      }
+    }, 1000);
+  };
+
+  // Cancel face check-in
+  const cancelFaceCheckin = () => {
+    if (cancelCountdownRef.current) {
+      clearInterval(cancelCountdownRef.current);
+      cancelCountdownRef.current = null;
+    }
+
+    setConfirmingMember(null);
+    setConfirmingDescriptor(null);
+    setCancelCountdown(CANCEL_COUNTDOWN_SECONDS);
+    setStep('scan_or_search');
+
+    // Resume detection
+    setTimeout(() => {
+      if (qrScannerRef.current) {
+        qrScannerRef.current.start();
+      }
+      startFaceDetection();
+    }, 500);
+  };
+
+  // Confirm face check-in
+  const confirmFaceCheckin = async (member = confirmingMember, descriptor = confirmingDescriptor) => {
+    if (cancelCountdownRef.current) {
+      clearInterval(cancelCountdownRef.current);
+      cancelCountdownRef.current = null;
+    }
+
+    if (!member) return;
+
+    await performCheckin(
+      member.memberId,
+      member.memberName,
+      null, // no QR code
+      descriptor,
+      true // is face check-in
+    );
+  };
+
+  // Check-in API call
+  const performCheckin = useCallback(async (memberId, memberName, qrCode = null, descriptor = null, isFaceCheckin = false) => {
+    if (checkinInProgress) return;
+
+    setCheckinInProgress(true);
+    setCheckinError('');
+
+    try {
+      let response;
+
+      if (isFaceCheckin) {
+        // Use face check-in endpoint
+        response = await kioskApi.faceCheckin({
+          member_id: memberId,
+          event_id: selectedEvent.id,
+          church_id: churchId,
+          confidence: 'high',
+          source: 'kiosk_face'
+        });
+      } else {
+        // Use regular check-in endpoint
+        response = await api.post(`/events/${selectedEvent.id}/check-in`, {
+          member_id: memberId,
+          qr_code: qrCode,
+          source: 'kiosk'
+        });
+        response = response.data;
+      }
+
+      if (response) {
+        // Success - add to recent checkins and show success
+        setLastCheckedIn({ name: memberName, time: new Date(), memberId });
+        setRecentCheckins(prev => [
+          { name: memberName, time: new Date() },
+          ...prev.slice(0, 9)
+        ]);
+
+        // Silent photo capture for progressive learning (if face check-in)
+        if (isFaceCheckin && descriptor && videoRef.current) {
+          silentPhotoCapture(memberId, descriptor);
+        }
+
+        setConfirmingMember(null);
+        setConfirmingDescriptor(null);
+        setStep('success');
+      }
+    } catch (error) {
+      console.error('Check-in error:', error);
+      const errorMessage = error.response?.data?.detail || t('errors.generic');
+      setCheckinError(errorMessage);
+
+      // Reset to scan_or_search on error
+      setConfirmingMember(null);
+      setConfirmingDescriptor(null);
+      setStep('scan_or_search');
+
+      // Auto-clear error after 3 seconds
+      setTimeout(() => setCheckinError(''), 3000);
+    } finally {
+      setCheckinInProgress(false);
+    }
+  }, [selectedEvent, churchId, checkinInProgress, t]);
+
+  // Silent photo capture for progressive face learning
+  const silentPhotoCapture = async (memberId, descriptor) => {
+    try {
+      const photoBase64 = faceRecognitionService.captureFrame(videoRef.current);
+      if (photoBase64) {
+        await kioskApi.saveFacePhoto(
+          memberId,
+          photoBase64,
+          Array.from(descriptor),
+          churchId
+        );
+        console.log('[EventCheckin] Silent face photo captured');
+      }
+    } catch (error) {
+      // Silent failure - don't interrupt flow
+      console.error('Silent photo capture failed:', error);
     }
   };
 
@@ -175,7 +510,7 @@ const EventCheckinKiosk = () => {
     }
   };
 
-  // Auto-search as user types (using deferred value)
+  // Auto-search as user types (using deferred value) - searches by name or phone
   useEffect(() => {
     const performSearch = async () => {
       if (!deferredSearch.trim() || deferredSearch.length < 3) {
@@ -185,9 +520,9 @@ const EventCheckinKiosk = () => {
 
       setIsSearching(true);
       try {
-        // Include church_id in the lookup
-        const response = await kioskApi.lookupMemberByPhone(deferredSearch, churchId);
-        setSearchResults(response ? [response] : []);
+        // Use searchMembers which returns multiple results and supports name search
+        const members = await kioskApi.searchMembers(deferredSearch, churchId);
+        setSearchResults(members || []);
       } catch (error) {
         console.error('Search error:', error);
         setSearchResults([]);
@@ -287,7 +622,84 @@ const EventCheckinKiosk = () => {
     );
   }
 
-  // STEP: Scan or Search
+  // STEP: Confirming (Face Match Confirmation Modal)
+  if (step === 'confirming' && confirmingMember) {
+    return (
+      <KioskLayout showBack={false} showHome={false}>
+        <motion.div
+          className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl p-6 sm:p-8 lg:p-12 max-w-xl mx-auto w-full"
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+        >
+          <div className="text-center space-y-4 sm:space-y-6">
+            {/* Member Info */}
+            <div className="flex flex-col items-center space-y-4">
+              {confirmingMember.photoUrl ? (
+                <img
+                  src={confirmingMember.photoUrl}
+                  alt={confirmingMember.memberName}
+                  className="w-24 h-24 sm:w-32 sm:h-32 rounded-full object-cover border-4 border-blue-500"
+                />
+              ) : (
+                <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full bg-blue-100 flex items-center justify-center border-4 border-blue-500">
+                  <ScanFace className="w-12 h-12 sm:w-16 sm:h-16 text-blue-600" />
+                </div>
+              )}
+              <div>
+                <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900">
+                  {confirmingMember.memberName}
+                </h2>
+                <p className="text-base sm:text-lg text-gray-600 mt-1">
+                  {t('event_checkin.checking_in_to') || 'Checking in to'}: {selectedEvent?.name}
+                </p>
+              </div>
+            </div>
+
+            {/* Auto-confirm countdown indicator */}
+            <div className="relative">
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <motion.div
+                  className="bg-blue-600 h-2 rounded-full"
+                  initial={{ width: '100%' }}
+                  animate={{ width: '0%' }}
+                  transition={{ duration: CANCEL_COUNTDOWN_SECONDS, ease: 'linear' }}
+                />
+              </div>
+              <p className="text-sm text-gray-500 mt-2">
+                {t('event_checkin.auto_confirm_in') || 'Auto-confirming in'} {cancelCountdown}s
+              </p>
+            </div>
+
+            {/* Cancel Button */}
+            <Button
+              variant="outline"
+              onClick={cancelFaceCheckin}
+              className="w-full h-14 sm:h-16 text-lg sm:text-xl rounded-xl border-2 border-red-300 text-red-600 hover:bg-red-50"
+            >
+              <X className="mr-2 h-5 w-5 sm:h-6 sm:w-6" />
+              {t('event_checkin.not_you_cancel') || "Not you? Cancel"} ({cancelCountdown})
+            </Button>
+
+            {/* Confirm Now Button (optional - for immediate check-in) */}
+            <Button
+              onClick={() => confirmFaceCheckin()}
+              disabled={checkinInProgress}
+              className="w-full h-14 sm:h-16 text-lg sm:text-xl rounded-xl bg-green-600 hover:bg-green-700"
+            >
+              {checkinInProgress ? (
+                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+              ) : (
+                <Check className="mr-2 h-5 w-5 sm:h-6 sm:w-6" />
+              )}
+              {t('event_checkin.confirm_now') || 'Confirm Now'}
+            </Button>
+          </div>
+        </motion.div>
+      </KioskLayout>
+    );
+  }
+
+  // STEP: Scan or Search (Always-On Camera)
   if (step === 'scan_or_search') {
     return (
       <KioskLayout showBack showHome onBack={() => setStep('select_event')}>
@@ -312,8 +724,8 @@ const EventCheckinKiosk = () => {
               onClick={() => setMode('scan')}
               className="h-12 sm:h-14 lg:h-16 px-4 sm:px-6 lg:px-8 text-sm sm:text-base lg:text-xl rounded-xl"
             >
-              <QrCode className="mr-1 sm:mr-2 h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6" />
-              {t('event_checkin.scan_qr')}
+              <ScanFace className="mr-1 sm:mr-2 h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6" />
+              {t('event_checkin.scan_face_qr') || 'Face / QR'}
             </Button>
             <Button
               variant={mode === 'search' ? 'default' : 'outline'}
@@ -325,38 +737,105 @@ const EventCheckinKiosk = () => {
             </Button>
           </div>
 
-          {/* Scan Mode */}
+          {/* Scan Mode (Always-On Camera) */}
           {mode === 'scan' && (
             <motion.div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 lg:p-8 shadow-xl" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-              {!scanning ? (
-                <div className="text-center space-y-4 sm:space-y-6">
-                  <QrCode className="w-20 h-20 sm:w-24 sm:h-24 lg:w-32 lg:h-32 mx-auto text-gray-300" />
-                  <Button
-                    onClick={() => setScanning(true)}
-                    className="h-12 sm:h-14 lg:h-16 px-6 sm:px-8 lg:px-12 text-base sm:text-lg lg:text-xl rounded-xl"
-                    disabled={checkinInProgress}
-                  >
-                    <CameraIcon className="mr-2 h-5 w-5 sm:h-6 sm:w-6" />
-                    {t('event_checkin.start_scanning')}
-                  </Button>
-                </div>
-              ) : (
-                <div className="space-y-3 sm:space-y-4">
-                  <div className="relative rounded-xl sm:rounded-2xl overflow-hidden bg-black">
-                    <video ref={videoRef} className="w-full" />
-                    <div className="absolute inset-0 border-2 sm:border-4 border-blue-500 rounded-xl sm:rounded-2xl pointer-events-none" />
+              <div className="space-y-3 sm:space-y-4">
+                {/* Camera View */}
+                <div className="relative rounded-xl sm:rounded-2xl overflow-hidden bg-black aspect-video">
+                  <video
+                    ref={videoRef}
+                    className="w-full h-full object-cover mirror"
+                    style={{ transform: 'scaleX(-1)' }}
+                    playsInline
+                    muted
+                  />
+
+                  {/* Camera Overlay */}
+                  <div className="absolute inset-0 pointer-events-none">
+                    {/* QR scan region indicator */}
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="w-48 h-48 sm:w-64 sm:h-64 border-2 border-blue-500 rounded-2xl opacity-50" />
+                    </div>
+
+                    {/* Face status indicator */}
+                    <div className="absolute top-3 left-3 right-3 flex justify-between items-center">
+                      {/* Face recognition status */}
+                      <div className={`px-3 py-1.5 rounded-full text-sm font-medium flex items-center gap-2 ${
+                        faceStatus === 'matched' ? 'bg-green-500 text-white' :
+                        faceStatus === 'detecting' ? 'bg-blue-500 text-white' :
+                        faceStatus === 'unknown' ? 'bg-yellow-500 text-white' :
+                        'bg-gray-800 bg-opacity-60 text-white'
+                      }`}>
+                        <ScanFace className="w-4 h-4" />
+                        {faceStatus === 'matched' ? 'Face Recognized' :
+                         faceStatus === 'detecting' ? 'Detecting...' :
+                         faceStatus === 'unknown' ? 'Unknown Face' :
+                         'Face Detection'}
+                      </div>
+
+                      {/* QR indicator */}
+                      <div className="px-3 py-1.5 rounded-full text-sm font-medium flex items-center gap-2 bg-gray-800 bg-opacity-60 text-white">
+                        <QrCode className="w-4 h-4" />
+                        QR Ready
+                      </div>
+                    </div>
                   </div>
-                  <p className="text-center text-sm sm:text-base lg:text-lg text-gray-600">{t('event_checkin.camera_hint')}</p>
-                  <Button variant="outline" onClick={() => {
-                    setScanning(false);
-                    if (qrScannerRef.current) {
-                      qrScannerRef.current.stop();
-                    }
-                  }} className="w-full h-12 sm:h-14 lg:h-16 text-sm sm:text-base lg:text-xl rounded-xl">
-                    {t('event_checkin.stop_scanning')}
-                  </Button>
+
+                  {/* Camera Error */}
+                  {cameraError && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-gray-900 bg-opacity-80">
+                      <div className="text-center text-white p-4">
+                        <AlertCircle className="w-12 h-12 mx-auto mb-2 text-red-400" />
+                        <p>{cameraError}</p>
+                        <Button
+                          onClick={startCamera}
+                          className="mt-4"
+                        >
+                          Retry
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Face Loading */}
+                  {faceLoading && (
+                    <div className="absolute bottom-3 left-3 px-3 py-1.5 rounded-full text-sm font-medium flex items-center gap-2 bg-gray-800 bg-opacity-60 text-white">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Loading face recognition...
+                    </div>
+                  )}
                 </div>
-              )}
+
+                {/* Instructions */}
+                <div className="text-center">
+                  <p className="text-sm sm:text-base lg:text-lg text-gray-600">
+                    {t('event_checkin.face_qr_hint') || 'Look at the camera or show your QR code to check in'}
+                  </p>
+                </div>
+
+                {/* Unrecognized Message */}
+                <AnimatePresence>
+                  {showUnrecognized && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                      className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 flex items-center gap-3"
+                    >
+                      <AlertCircle className="w-6 h-6 text-yellow-600 flex-shrink-0" />
+                      <div>
+                        <p className="font-medium text-yellow-800">
+                          {t('event_checkin.face_not_recognized') || "Face not recognized"}
+                        </p>
+                        <p className="text-sm text-yellow-700">
+                          {t('event_checkin.try_qr_or_search') || 'Try showing your QR code or use manual search'}
+                        </p>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
             </motion.div>
           )}
 

@@ -109,6 +109,8 @@
     "viewQR": "Lihat Kode QR",
     "universalID": "ID Jemaat Universal",
     "useForCheckIn": "Gunakan kode QR ini untuk check-in di semua acara",
+    "personalIdCode": "ID Pribadi / Kode QR",
+    "personalIdHint": "ID unik untuk check-in di kiosk dan pencarian jemaat",
     "notmarried": "Belum Menikah",
     "widow": "Janda",
     "widower": "Duda",
@@ -128,7 +130,9 @@
     "faceDetectionError": "Deteksi wajah gagal",
     "faceCheckin": "Wajah",
     "faceCheckinEnabled": "Face check-in aktif",
-    "noFaceData": "Tidak ada data wajah",
+    "noFaceData": "Tidak Ada Data Wajah",
+    "hasFaceData": "Ada Data Wajah",
+    "allFaceStatus": "Semua Status Wajah",
     "documentNotAvailable": "File tidak tersedia (diimpor sebelum fitur penyimpanan dokumen)",
     "uploadDocument": "Unggah Dokumen",
     "documentHint": "PDF, DOC, JPG maks 10MB"
@@ -173,7 +177,9 @@
     "searching": "Mencari...",
     "clear": "Hapus",
     "noResults": "Tidak ada hasil",
-    "copy": "Salin"
+    "copy": "Salin",
+    "members": "anggota",
+    "refresh": "Segarkan"
   },
   "nav": {
     "dashboard": "Dasbor",
@@ -1031,9 +1037,16 @@
     "noFace": "tidak ada wajah",
     "migrationComplete": "Migrasi selesai! {{processed}} wajah terdeteksi, {{failed}} foto tidak terdeteksi wajahnya.",
     "startMigration": "Mulai Migrasi",
+    "loadingFaceModels": "Memuat model pengenalan wajah...",
+    "loadingFaceModelsDesc": "Ini mungkin memakan beberapa detik pada pemuatan pertama.",
     "membersToProcess": "Jemaat yang Akan Diproses",
     "membersPreviewDesc": "Pratinjau jemaat yang akan dibuatkan deskriptor wajahnya.",
-    "andMoreMembers": "...dan {{count}} jemaat lainnya"
+    "andMoreMembers": "...dan {{count}} jemaat lainnya",
+    "clearingDescriptors": "Menghapus deskriptor wajah yang ada...",
+    "regenerateAll": "Regenerasi Semua Deskriptor",
+    "regenerateWarning": "Ini akan menghapus SEMUA deskriptor wajah yang ada dan menghasilkannya ulang dari foto.",
+    "regenerateWarningDesc": "Proses ini mungkin memakan beberapa menit. Check-in wajah tidak akan tersedia sampai selesai.",
+    "confirmRegenerate": "Ya, Regenerasi Semua"
   },
   "accounting": {
     "title": "Akuntansi",

@@ -468,7 +468,8 @@ async def import_members(
         # Import valid data
         imported_count = 0
         import_errors = []
-        
+        imported_members_with_photos = []  # Track members with photos for face recognition
+
         for idx, member_data in enumerate(valid_data, start=1):
             try:
                 # Set default member status if not provided
@@ -555,6 +556,15 @@ async def import_members(
                 
                 await db.members.insert_one(member_doc)
                 imported_count += 1
+
+                # Track members with photos for face descriptor generation
+                if member_doc.get('photo_url') or member_doc.get('photo_base64'):
+                    imported_members_with_photos.append({
+                        'id': member_doc['id'],
+                        'full_name': member_doc.get('full_name', ''),
+                        'photo_url': member_doc.get('photo_url'),
+                        'photo_base64': member_doc.get('photo_base64')
+                    })
             except Exception as e:
                 import_errors.append(f"Row {idx}: {str(e)}")
         
@@ -588,7 +598,8 @@ async def import_members(
             "total_records": len(data),
             "imported": imported_count,
             "failed": len(import_errors),
-            "errors": import_errors
+            "errors": import_errors,
+            "members_with_photos": imported_members_with_photos  # For face descriptor generation
         }
     except HTTPException:
         # Clean up temp files on failure
@@ -990,5 +1001,343 @@ async def cleanup_expired_sessions(
         logger.error(f"Error cleaning up expired sessions: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+
+
+# ============= Face Descriptor Routes (for import and migration) =============
+
+from pydantic import BaseModel
+from typing import Any
+
+
+class FaceDescriptorUpdate(BaseModel):
+    """Single face descriptor update"""
+    member_id: str
+    descriptor: List[float]  # 512D face embedding
+    source: str = "import"  # "import", "migration", "admin_upload"
+
+
+class BulkFaceDescriptorRequest(BaseModel):
+    """Bulk face descriptor update request"""
+    updates: List[FaceDescriptorUpdate]
+
+
+@router.post("/update-face-descriptor")
+async def update_face_descriptor(
+    update: FaceDescriptorUpdate,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current_user: dict = Depends(require_admin)
+):
+    """Update face descriptor for a single member (admin only).
+
+    Used after CSV import or when generating descriptors for existing members.
+    No cooldown period - this is for admin/migration use.
+    """
+    try:
+        church_id = current_user.get('session_church_id')
+
+        # Verify member exists and belongs to this church
+        member = await db.members.find_one({
+            "id": update.member_id,
+            "church_id": church_id,
+            "is_deleted": {"$ne": True}
+        })
+
+        if not member:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Member not found"
+            )
+
+        # Create face descriptor entry
+        face_entry = {
+            "descriptor": update.descriptor,
+            "captured_at": datetime.now().isoformat(),
+            "source": update.source
+        }
+
+        # Update member with face descriptor (replace existing)
+        result = await db.members.update_one(
+            {"id": update.member_id},
+            {
+                "$set": {
+                    "face_descriptors": [face_entry],
+                    "updated_at": datetime.now().isoformat()
+                }
+            }
+        )
+
+        return {
+            "success": True,
+            "member_id": update.member_id,
+            "updated": result.modified_count > 0
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error updating face descriptor: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
+
+
+@router.post("/bulk-update-face-descriptors")
+async def bulk_update_face_descriptors(
+    request: BulkFaceDescriptorRequest,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current_user: dict = Depends(require_admin)
+):
+    """Bulk update face descriptors for multiple members (admin only).
+
+    Used after CSV import to efficiently update many members at once.
+    """
+    try:
+        church_id = current_user.get('session_church_id')
+
+        success_count = 0
+        failed_count = 0
+        errors = []
+
+        for update in request.updates:
+            try:
+                # Verify member exists and belongs to this church
+                member = await db.members.find_one({
+                    "id": update.member_id,
+                    "church_id": church_id,
+                    "is_deleted": {"$ne": True}
+                })
+
+                if not member:
+                    failed_count += 1
+                    errors.append(f"Member {update.member_id}: not found")
+                    continue
+
+                # Create face descriptor entry
+                face_entry = {
+                    "descriptor": update.descriptor,
+                    "captured_at": datetime.now().isoformat(),
+                    "source": update.source
+                }
+
+                # Update member
+                await db.members.update_one(
+                    {"id": update.member_id},
+                    {
+                        "$set": {
+                            "face_descriptors": [face_entry],
+                            "updated_at": datetime.now().isoformat()
+                        }
+                    }
+                )
+                success_count += 1
+
+            except Exception as e:
+                failed_count += 1
+                errors.append(f"Member {update.member_id}: {str(e)}")
+
+        return {
+            "success": True,
+            "total": len(request.updates),
+            "updated": success_count,
+            "failed": failed_count,
+            "errors": errors[:10]  # Limit error list
+        }
+
+    except Exception as e:
+        logger.error(f"Error in bulk face descriptor update: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
+
+
+@router.get("/members-needing-face-descriptors")
+async def get_members_needing_face_descriptors(
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current_user: dict = Depends(require_admin)
+):
+    """Get members with photos but no face descriptors (for migration).
+
+    Returns list of members that need face descriptor generation.
+    """
+    try:
+        church_id = current_user.get('session_church_id')
+
+        # Find members with photos but no face descriptors
+        query = {
+            "church_id": church_id,
+            "is_deleted": {"$ne": True},
+            "$and": [
+                {
+                    "$or": [
+                        {"photo_url": {"$exists": True, "$ne": None, "$ne": ""}},
+                        {"photo_base64": {"$exists": True, "$ne": None, "$ne": ""}}
+                    ]
+                },
+                {
+                    "$or": [
+                        {"face_descriptors": {"$exists": False}},
+                        {"face_descriptors": []},
+                        {"face_descriptors": None}
+                    ]
+                }
+            ]
+        }
+
+        members = await db.members.find(
+            query,
+            {
+                "_id": 0,
+                "id": 1,
+                "full_name": 1,
+                "photo_url": 1,
+                "photo_base64": 1
+            }
+        ).to_list(length=1000)  # Limit to 1000 for safety
+
+        # Get total counts for stats
+        total_with_photos = await db.members.count_documents({
+            "church_id": church_id,
+            "is_deleted": {"$ne": True},
+            "$or": [
+                {"photo_url": {"$exists": True, "$ne": None, "$ne": ""}},
+                {"photo_base64": {"$exists": True, "$ne": None, "$ne": ""}}
+            ]
+        })
+
+        total_with_descriptors = await db.members.count_documents({
+            "church_id": church_id,
+            "is_deleted": {"$ne": True},
+            "face_descriptors": {"$exists": True, "$ne": [], "$ne": None}
+        })
+
+        return {
+            "success": True,
+            "members": members,
+            "total_needing_descriptors": len(members),
+            "stats": {
+                "total_with_photos": total_with_photos,
+                "total_with_descriptors": total_with_descriptors,
+                "needing_descriptors": total_with_photos - total_with_descriptors
+            }
+        }
+
+    except Exception as e:
+        logger.error(f"Error fetching members needing descriptors: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
+
+
+@router.post("/clear-face-descriptors")
+async def clear_face_descriptors(
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current_user: dict = Depends(require_admin)
+):
+    """Clear all face descriptors for members in this church.
+
+    This is used to reset face data before regeneration with improved quality.
+    Only affects members with photos (to allow regeneration).
+    """
+    try:
+        church_id = current_user.get('session_church_id')
+
+        # Clear face_descriptors for all members with photos
+        result = await db.members.update_many(
+            {
+                "church_id": church_id,
+                "is_deleted": {"$ne": True},
+                "$or": [
+                    {"photo_url": {"$exists": True, "$ne": None, "$ne": ""}},
+                    {"photo_base64": {"$exists": True, "$ne": None, "$ne": ""}}
+                ]
+            },
+            {
+                "$set": {
+                    "face_descriptors": [],
+                    "updated_at": datetime.now().isoformat()
+                }
+            }
+        )
+
+        logger.info(f"Cleared face descriptors for {result.modified_count} members in church {church_id}")
+
+        return {
+            "success": True,
+            "cleared_count": result.modified_count,
+            "message": f"Cleared face descriptors for {result.modified_count} members"
+        }
+
+    except Exception as e:
+        logger.error(f"Error clearing face descriptors: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
+
+
+@router.get("/members-with-photos")
+async def get_members_with_photos(
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current_user: dict = Depends(require_admin)
+):
+    """Get all members with photos for face descriptor regeneration.
+
+    Unlike members-needing-face-descriptors, this returns ALL members with photos,
+    even those who already have descriptors (for regeneration purposes).
+    """
+    try:
+        church_id = current_user.get('session_church_id')
+
+        # Find all members with photos
+        members = await db.members.find(
+            {
+                "church_id": church_id,
+                "is_deleted": {"$ne": True},
+                "$or": [
+                    {"photo_url": {"$exists": True, "$ne": None, "$ne": ""}},
+                    {"photo_base64": {"$exists": True, "$ne": None, "$ne": ""}}
+                ]
+            },
+            {
+                "_id": 0,
+                "id": 1,
+                "full_name": 1,
+                "photo_url": 1,
+                "photo_base64": 1,
+                "face_descriptors": {"$slice": 1}  # Include first descriptor to show quality
+            }
+        ).to_list(length=2000)
+
+        # Get stats
+        total_members = await db.members.count_documents({
+            "church_id": church_id,
+            "is_deleted": {"$ne": True}
+        })
+
+        total_with_descriptors = await db.members.count_documents({
+            "church_id": church_id,
+            "is_deleted": {"$ne": True},
+            "face_descriptors": {"$exists": True, "$ne": [], "$ne": None}
+        })
+
+        return {
+            "success": True,
+            "members": members,
+            "stats": {
+                "total_members": total_members,
+                "total_with_photos": len(members),
+                "total_with_descriptors": total_with_descriptors
+            }
+        }
+
+    except Exception as e:
+        logger.error(f"Error fetching members with photos: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=str(e)
         )

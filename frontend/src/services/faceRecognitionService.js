@@ -118,11 +118,17 @@ const humanConfig = {
 // - ~0.6-0.9 = same person, different image
 // - ~1.0-1.2 = uncertain
 // - >1.2 = different person
+//
+// NOTE: Database face descriptors may have been generated from poor quality photos.
+// To prevent false positives (matching wrong person), we set HIGH_CONFIDENCE very low
+// so that ALL matches require user confirmation. This can be raised after
+// face descriptors are regenerated with better quality photos.
 const THRESHOLDS = {
   // Distance below this = high confidence match (auto check-in)
-  HIGH_CONFIDENCE: 0.8,
+  // Set to 0.5 to be very strict - only near-identical matches auto check-in
+  HIGH_CONFIDENCE: 0.5,
   // Distance between HIGH and LOW = uncertain (ask confirmation)
-  LOW_CONFIDENCE: 1.1,
+  LOW_CONFIDENCE: 1.0,
   // Above LOW_CONFIDENCE = no match
 };
 
@@ -456,9 +462,18 @@ class FaceRecognitionService {
    * Generate face descriptor from an image URL
    * Used for processing member profile photos
    * @param {string} imageUrl - URL of the image
-   * @returns {Float32Array | null}
+   * @param {Object} options - { minWidth, minHeight, minConfidence, returnQuality }
+   * @returns {Object | Array | null} - If returnQuality: {descriptor, quality}, else Array
    */
-  async generateDescriptorFromUrl(imageUrl) {
+  async generateDescriptorFromUrl(imageUrl, options = {}) {
+    const {
+      minWidth = 150,         // Minimum image width
+      minHeight = 150,        // Minimum image height
+      minConfidence = 0.6,    // Minimum face detection confidence
+      minFaceSize = 80,       // Minimum face bounding box size (pixels)
+      returnQuality = false,  // Whether to return quality metadata
+    } = options;
+
     if (!this.isReady) {
       const initResult = await this.initialize();
       if (!initResult) {
@@ -487,24 +502,82 @@ class FaceRecognitionService {
       throw loadError;
     }
 
+    // Check minimum image dimensions
+    if (img.width < minWidth || img.height < minHeight) {
+      const reason = `Image too small: ${img.width}x${img.height} (min: ${minWidth}x${minHeight})`;
+      console.warn(`[FaceRecognition] ${reason}`);
+      if (returnQuality) {
+        return { descriptor: null, quality: { success: false, reason, imageSize: { width: img.width, height: img.height } } };
+      }
+      return null;
+    }
+
     // Detect face in image
     try {
       const result = await this.human.detect(img);
 
       if (!result.face || result.face.length === 0) {
-        console.warn(`[FaceRecognition] No face detected in image (${img.width}x${img.height}):`, imageUrl.substring(0, 80));
+        const reason = `No face detected in image (${img.width}x${img.height})`;
+        console.warn(`[FaceRecognition] ${reason}`);
+        if (returnQuality) {
+          return { descriptor: null, quality: { success: false, reason, imageSize: { width: img.width, height: img.height } } };
+        }
         return null;
       }
 
       const face = result.face[0];
-      console.log(`[FaceRecognition] Face detected: confidence=${face.score?.toFixed(2)}, box=${JSON.stringify(face.box?.map(v => Math.round(v)))}`);
+      const faceBox = face.box || [0, 0, 0, 0];
+      const faceWidth = faceBox[2];
+      const faceHeight = faceBox[3];
+      const confidence = face.score || 0;
 
-      if (!face.embedding || face.embedding.length === 0) {
-        console.warn('[FaceRecognition] Face found but no embedding generated:', imageUrl.substring(0, 80));
+      console.log(`[FaceRecognition] Face detected: confidence=${confidence.toFixed(2)}, size=${Math.round(faceWidth)}x${Math.round(faceHeight)}, box=${JSON.stringify(faceBox.map(v => Math.round(v)))}`);
+
+      // Check minimum confidence
+      if (confidence < minConfidence) {
+        const reason = `Low confidence: ${confidence.toFixed(2)} (min: ${minConfidence})`;
+        console.warn(`[FaceRecognition] ${reason}`);
+        if (returnQuality) {
+          return { descriptor: null, quality: { success: false, reason, confidence, faceSize: { width: faceWidth, height: faceHeight } } };
+        }
         return null;
       }
 
-      return Array.from(face.embedding); // Convert to regular array for JSON serialization
+      // Check minimum face size
+      if (faceWidth < minFaceSize || faceHeight < minFaceSize) {
+        const reason = `Face too small: ${Math.round(faceWidth)}x${Math.round(faceHeight)} (min: ${minFaceSize}x${minFaceSize})`;
+        console.warn(`[FaceRecognition] ${reason}`);
+        if (returnQuality) {
+          return { descriptor: null, quality: { success: false, reason, confidence, faceSize: { width: faceWidth, height: faceHeight } } };
+        }
+        return null;
+      }
+
+      if (!face.embedding || face.embedding.length === 0) {
+        const reason = 'Face found but no embedding generated';
+        console.warn(`[FaceRecognition] ${reason}`);
+        if (returnQuality) {
+          return { descriptor: null, quality: { success: false, reason, confidence, faceSize: { width: faceWidth, height: faceHeight } } };
+        }
+        return null;
+      }
+
+      const descriptor = Array.from(face.embedding);
+
+      if (returnQuality) {
+        return {
+          descriptor,
+          quality: {
+            success: true,
+            confidence,
+            imageSize: { width: img.width, height: img.height },
+            faceSize: { width: faceWidth, height: faceHeight },
+            faceRatio: (faceWidth * faceHeight) / (img.width * img.height), // Face area ratio
+          }
+        };
+      }
+
+      return descriptor;
     } catch (detectError) {
       console.error('[FaceRecognition] Face detection error:', detectError);
       throw new Error(`Face detection failed: ${detectError.message}`);

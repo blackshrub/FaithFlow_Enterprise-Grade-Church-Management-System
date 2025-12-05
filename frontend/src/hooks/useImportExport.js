@@ -141,3 +141,54 @@ export const useCleanupUploads = () => {
     },
   });
 };
+
+// Face descriptor hooks (for import and migration)
+export const useUpdateFaceDescriptor = () => {
+  return useMutation({
+    mutationFn: (data) => importExportAPI.updateFaceDescriptor(data).then(res => res.data),
+    onError: (error) => {
+      console.error('Face descriptor update failed:', error);
+    },
+  });
+};
+
+export const useBulkUpdateFaceDescriptors = () => {
+  const queryClient = useQueryClient();
+  const { church } = useAuth();
+
+  return useMutation({
+    mutationFn: (updates) => importExportAPI.bulkUpdateFaceDescriptors(updates).then(res => res.data),
+    onSuccess: (data) => {
+      if (data.updated > 0) {
+        toast.success(`Face descriptors generated for ${data.updated} members`);
+      }
+      // Invalidate all member-related queries to refresh has_face_descriptors
+      queryClient.invalidateQueries({ queryKey: queryKeys.members.all(church?.id) });
+      queryClient.invalidateQueries({ queryKey: ['members-needing-face-descriptors', church?.id] });
+      queryClient.invalidateQueries({ queryKey: ['members-with-photos', church?.id] });
+    },
+    onError: (error) => {
+      toast.error('Failed to update face descriptors');
+    },
+  });
+};
+
+export const useMembersNeedingFaceDescriptors = () => {
+  const { church } = useAuth();
+
+  return useQuery({
+    queryKey: ['members-needing-face-descriptors', church?.id],
+    queryFn: () => importExportAPI.getMembersNeedingFaceDescriptors().then(res => res.data),
+    enabled: !!church?.id,
+  });
+};
+
+export const useMembersWithPhotos = () => {
+  const { church } = useAuth();
+
+  return useQuery({
+    queryKey: ['members-with-photos', church?.id],
+    queryFn: () => importExportAPI.getMembersWithPhotos().then(res => res.data),
+    enabled: !!church?.id,
+  });
+};

@@ -370,6 +370,49 @@ export const importExportAPI = {
   updateFaceDescriptor: (data) => api.post('/import-export/update-face-descriptor', data),
   bulkUpdateFaceDescriptors: (updates) => api.post('/import-export/bulk-update-face-descriptors', { updates }),
   getMembersNeedingFaceDescriptors: () => api.get('/import-export/members-needing-face-descriptors'),
+  getMembersWithPhotos: () => api.get('/import-export/members-with-photos'),
+  clearFaceDescriptors: () => api.post('/import-export/clear-face-descriptors'),
+};
+
+// Face Recognition API (DeepFace backend - more accurate than browser-based)
+export const faceRecognitionAPI = {
+  // Generate face embedding from image (admin)
+  generateEmbedding: (imageSource, memberId = null) =>
+    api.post('/api/face-recognition/generate-embedding', {
+      image_source: imageSource,
+      member_id: memberId
+    }),
+
+  // Match face against database (admin)
+  matchFace: (imageSource) =>
+    api.post('/api/face-recognition/match', { image_source: imageSource }),
+
+  // Regenerate all face descriptors using DeepFace (admin)
+  regenerateDescriptors: (memberIds = null, clearExisting = true) =>
+    api.post('/api/face-recognition/regenerate', {
+      member_ids: memberIds,
+      clear_existing: clearExisting
+    }),
+
+  // Bulk update face descriptors (admin)
+  bulkUpdate: (updates) =>
+    api.post('/api/face-recognition/bulk-update', { updates }),
+
+  // Get thresholds for display
+  getThresholds: () => api.get('/public/face-recognition/thresholds'),
+};
+
+// Public Face Recognition API (for kiosk - no auth required)
+export const publicFaceRecognitionAPI = {
+  // Match face against database (kiosk)
+  matchFace: (imageSource, churchId) =>
+    publicApi.post('/public/face-recognition/match', {
+      image_source: imageSource,
+      church_id: churchId
+    }),
+
+  // Get thresholds for display
+  getThresholds: () => publicApi.get('/public/face-recognition/thresholds'),
 };
 
 // Seat Layouts API

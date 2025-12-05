@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { useMembers, useMemberStats, useCreateMember, useUpdateMember, useDeleteMember } from '../hooks/useMembers';
+import { useMembers, useMember, useMemberStats, useCreateMember, useUpdateMember, useDeleteMember } from '../hooks/useMembers';
 import { useDeferredSearch } from '../hooks/useDeferredSearch';
 import { useMemberStatuses, useDemographics } from '../hooks/useSettings';
 import { Button } from '../components/ui/button';
@@ -47,11 +47,14 @@ export default function Members() {
     gender: '',
     marital_status: '',
     member_status: '',
-    demographic_category: ''
+    demographic_category: '',
+    has_face: ''
   });
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState(null);
+  const [editingMemberId, setEditingMemberId] = useState(null);
+  const [qrMemberId, setQrMemberId] = useState(null);
   const [qrMember, setQrMember] = useState(null);
   const [formData, setFormData] = useState(initialFormData);
   const [currentPage, setCurrentPage] = useState(1);
@@ -77,13 +80,62 @@ export default function Members() {
     gender: filters.gender || undefined,
     marital_status: filters.marital_status || undefined,
     member_status: filters.member_status || undefined,
-    demographic_category: filters.demographic_category || undefined
+    demographic_category: filters.demographic_category || undefined,
+    has_face: filters.has_face === 'true' ? true : filters.has_face === 'false' ? false : undefined
   });
   // Filter out any null/undefined items or items without id
   const members = (membersRaw || []).filter(m => m && m.id);
   const { data: stats } = useMemberStats();
   const { data: statusesRaw = [] } = useMemberStatuses();
   const { data: demographicsRaw = [] } = useDemographics();
+
+  // Fetch full member data when editing (includes personal_document, notes, etc.)
+  const { data: fullMemberData, isLoading: isLoadingMember } = useMember(editingMemberId, {
+    enabled: !!editingMemberId,
+    staleTime: 0, // Always fetch fresh data
+    cacheTime: 0, // Don't cache between different members
+  });
+
+  // Fetch full member data for QR modal (includes personal_qr_code)
+  const { data: qrMemberData, isLoading: isLoadingQrMember } = useMember(qrMemberId, {
+    enabled: !!qrMemberId,
+    staleTime: 0,
+    cacheTime: 0,
+  });
+
+  // Populate form when full member data loads
+  useEffect(() => {
+    if (fullMemberData && editingMemberId) {
+      const member = fullMemberData;
+      const formValues = {
+        first_name: member.first_name || '',
+        last_name: member.last_name || '',
+        phone_whatsapp: member.phone_whatsapp || '',
+        date_of_birth: member.date_of_birth || '',
+        gender: member.gender ? member.gender.toLowerCase() : '',
+        address: member.address || '',
+        marital_status: member.marital_status ? member.marital_status.toLowerCase().replace(/\s+/g, '') : '',
+        member_status: member.member_status || '',
+        baptism_date: member.baptism_date || '',
+        photo_base64: member.photo_base64 || '',
+        personal_document: member.personal_document || '',
+        personal_document_base64: member.personal_document_base64 || '',
+        notes: member.notes || '',
+        face_descriptors: member.face_descriptors || [],
+        has_face_descriptors: member.has_face_descriptors || (member.face_descriptors?.length > 0) || false,
+        personal_id_code: member.personal_id_code || ''
+      };
+      setFormData(formValues);
+      setSelectedMember(member);
+    }
+  }, [fullMemberData, editingMemberId]);
+
+  // Populate QR member when full data loads
+  useEffect(() => {
+    if (qrMemberData && qrMemberId) {
+      setQrMember(qrMemberData);
+    }
+  }, [qrMemberData, qrMemberId]);
 
   // Filter out any null/undefined items AND items without id to prevent render errors
   const statuses = (statusesRaw || []).filter(s => s && s.id);
@@ -99,7 +151,7 @@ export default function Members() {
   );
 
   const hasActiveFilters = useMemo(
-    () => filters.gender || filters.marital_status || filters.member_status || filters.demographic_category,
+    () => filters.gender || filters.marital_status || filters.member_status || filters.demographic_category || filters.has_face,
     [filters]
   );
 
@@ -121,7 +173,8 @@ export default function Members() {
       gender: '',
       marital_status: '',
       member_status: '',
-      demographic_category: ''
+      demographic_category: '',
+      has_face: ''
     });
   };
 
@@ -229,39 +282,29 @@ export default function Members() {
   };
 
   const openEditDialog = (member) => {
-    setSelectedMember(member);
-    const formValues = {
-      first_name: member.first_name || '',
-      last_name: member.last_name || '',
-      phone_whatsapp: member.phone_whatsapp || '',
-      date_of_birth: member.date_of_birth || '',
-      gender: member.gender ? member.gender.toLowerCase() : '',
-      address: member.address || '',
-      marital_status: member.marital_status ? member.marital_status.toLowerCase().replace(/\s+/g, '') : '',
-      member_status: member.member_status || '',
-      baptism_date: member.baptism_date || '',
-      photo_base64: member.photo_base64 || '',
-      personal_document: member.personal_document || '',
-      personal_document_base64: member.personal_document_base64 || '',
-      notes: member.notes || '',
-      face_descriptors: member.face_descriptors || [],  // Preserve existing face recognition data
-      has_face_descriptors: member.has_face_descriptors || false  // Track if face data exists (from list projection)
-    };
-    setFormData(formValues);
+    // Reset form to initial state to prevent showing stale data from previous member
+    setFormData(initialFormData);
+    setSelectedMember(null);
+    // Set member ID to trigger fetch of full member data via useMember hook
+    setEditingMemberId(member.id);
+    // Open dialog (form will be populated by useEffect when fullMemberData loads)
     setIsEditDialogOpen(true);
   };
 
   const resetForm = () => {
     setFormData(initialFormData);
     setSelectedMember(null);
+    setEditingMemberId(null);
   };
 
   const openQRModal = (member) => {
-    setQrMember(member);
+    // Set member ID to trigger fetch of full member data (includes personal_qr_code)
+    setQrMemberId(member.id);
   };
 
   const closeQRModal = () => {
     setQrMember(null);
+    setQrMemberId(null);
   };
 
   return (
@@ -292,7 +335,7 @@ export default function Members() {
                 {t('members.addMember')}
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl">
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>{t('members.addNewMember')}</DialogTitle>
                 <DialogDescription>
@@ -404,6 +447,17 @@ export default function Members() {
                 {demographics.map(demo => (
                   <SelectItem key={demo.id} value={demo.name}>{demo.name}</SelectItem>
                 ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={filters.has_face} onValueChange={(value) => setFilters({...filters, has_face: value})}>
+              <SelectTrigger className="w-44">
+                <SelectValue placeholder={t('members.faceCheckin') || 'Face Check-in'} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value=" ">{t('members.allFaceStatus') || 'All Face Status'}</SelectItem>
+                <SelectItem value="true">{t('members.hasFaceData') || 'Has Face Data'}</SelectItem>
+                <SelectItem value="false">{t('members.noFaceData') || 'No Face Data'}</SelectItem>
               </SelectContent>
             </Select>
 
@@ -534,10 +588,12 @@ export default function Members() {
                             <span title={t('members.faceCheckinEnabled') || 'Face check-in enabled'}>
                               <ScanFace className="h-5 w-5 text-green-600 mx-auto" />
                             </span>
-                          ) : (
-                            <span title={t('members.noFaceData') || 'No face data'}>
-                              <ScanFace className="h-5 w-5 text-gray-300 mx-auto" />
+                          ) : (member.photo_url || member.photo_thumbnail_url) ? (
+                            <span title={t('members.noFaceData') || 'No face data - run migration'}>
+                              <ScanFace className="h-5 w-5 text-yellow-500 mx-auto" />
                             </span>
+                          ) : (
+                            <span className="text-gray-300">—</span>
                           )}
                         </TableCell>
                         <TableCell className="text-right">
@@ -614,46 +670,57 @@ export default function Members() {
       </Card>
 
       {/* Edit Dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-2xl">
+      <Dialog open={isEditDialogOpen} onOpenChange={(open) => {
+        setIsEditDialogOpen(open);
+        if (!open) resetForm();
+      }}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{t('members.editMember')}</DialogTitle>
             <DialogDescription>
               {t('members.updateMember')}
             </DialogDescription>
           </DialogHeader>
-          <form onSubmit={handleUpdateMember}>
-            <MemberForm formData={formData} setFormData={setFormData} member={selectedMember} />
-            <DialogFooter className="mt-6">
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={() => setIsEditDialogOpen(false)}
-                disabled={updateMember.isPending}
-              >
-                {t('common.cancel')}
-              </Button>
-              <Button type="submit" disabled={updateMember.isPending}>
-                {updateMember.isPending ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    {t('common.loading')}
-                  </>
-                ) : (
-                  t('common.update')
-                )}
-              </Button>
-            </DialogFooter>
-          </form>
+          {isLoadingMember || !selectedMember ? (
+            <div className="py-12 text-center">
+              <Loader2 className="h-12 w-12 animate-spin text-blue-600 mx-auto mb-4" />
+              <p className="text-gray-500">{t('common.loading')}</p>
+            </div>
+          ) : (
+            <form onSubmit={handleUpdateMember}>
+              <MemberForm formData={formData} setFormData={setFormData} member={selectedMember} />
+              <DialogFooter className="mt-6">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsEditDialogOpen(false)}
+                  disabled={updateMember.isPending}
+                >
+                  {t('common.cancel')}
+                </Button>
+                <Button type="submit" disabled={updateMember.isPending}>
+                  {updateMember.isPending ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      {t('common.loading')}
+                    </>
+                  ) : (
+                    t('common.update')
+                  )}
+                </Button>
+              </DialogFooter>
+            </form>
+          )}
         </DialogContent>
       </Dialog>
 
       {/* QR Code Modal */}
-      {qrMember && (
+      {(qrMember || qrMemberId) && (
         <MemberQRModal
-          member={qrMember}
-          isOpen={!!qrMember}
+          member={qrMember || { full_name: t('common.loading') }}
+          isOpen={!!qrMemberId}
           onClose={closeQRModal}
+          isLoading={isLoadingQrMember || !qrMember}
         />
       )}
     </div>

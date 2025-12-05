@@ -654,21 +654,28 @@ class Projections:
         "member_status": 1,
     }
 
-    # Event list - excludes description, seat_layout, full RSVP list
+    # Event list - excludes description, seat_layout, full RSVP/attendance lists
     EVENT_LIST = {
         "_id": 0,
         "id": 1,
         "church_id": 1,
-        "title": 1,
-        "start_date": 1,
-        "end_date": 1,
+        "name": 1,
+        "event_type": 1,
+        "event_date": 1,
+        "event_end_date": 1,
         "location": 1,
-        "cover_image": 1,
+        "event_photo": 1,
         "event_category_id": 1,
         "is_active": 1,
+        "requires_rsvp": 1,
+        "enable_seat_selection": 1,
+        "seat_layout_id": 1,
+        "seat_capacity": 1,
+        "reservation_start": 1,
+        "reservation_end": 1,
+        "sessions": 1,
         "created_at": 1,
-        "rsvp_count": 1,
-        "capacity": 1,
+        "updated_at": 1,
     }
 
     # Article list - excludes full content
@@ -679,13 +686,20 @@ class Projections:
         "title": 1,
         "slug": 1,
         "excerpt": 1,
-        "cover_image": 1,
-        "category": 1,
+        "featured_image": 1,
+        "category_ids": 1,
+        "tag_ids": 1,
         "status": 1,
-        "published_at": 1,
+        "publish_date": 1,
+        "scheduled_publish_date": 1,
+        "schedule_status": 1,
+        "reading_time": 1,
+        "views_count": 1,
+        "allow_comments": 1,
+        "created_by": 1,
+        "updated_by": 1,
         "created_at": 1,
-        "author_id": 1,
-        "view_count": 1,
+        "updated_at": 1,
     }
 
     # Community/Group list - excludes member list
@@ -696,11 +710,15 @@ class Projections:
         "name": 1,
         "description": 1,
         "cover_image": 1,
-        "category_id": 1,
-        "leader_id": 1,
-        "member_count": 1,
+        "category": 1,
+        "meeting_schedule": 1,
+        "location": 1,
+        "leader_member_ids": 1,
+        "leader_member_id": 1,  # Backward compat
+        "leader_name": 1,  # Backward compat
         "is_active": 1,
         "created_at": 1,
+        "updated_at": 1,
     }
 
 
@@ -726,13 +744,15 @@ class ResponseOptimizer:
         """Return slimmed down event data for lists."""
         return {
             "id": event.get("id"),
-            "title": event.get("title"),
-            "start_date": event.get("start_date"),
-            "end_date": event.get("end_date"),
+            "name": event.get("name"),
+            "event_type": event.get("event_type"),
+            "event_date": event.get("event_date"),
+            "event_end_date": event.get("event_end_date"),
             "location": event.get("location"),
-            "cover_image": event.get("cover_image"),
+            "event_photo": event.get("event_photo"),
             "event_category_id": event.get("event_category_id"),
-            "rsvp_count": event.get("rsvp_count", 0),
+            "is_active": event.get("is_active"),
+            "requires_rsvp": event.get("requires_rsvp"),
         }
 
     @staticmethod

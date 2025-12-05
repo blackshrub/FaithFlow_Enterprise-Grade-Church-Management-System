@@ -4,6 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs'
 import ImportWizard from '../components/ImportExport/ImportWizard';
 import ExportPanel from '../components/ImportExport/ExportPanel';
 import ImportHistory from '../components/ImportExport/ImportHistory';
+import FaceRecognitionMigration from '../components/ImportExport/FaceRecognitionMigration';
 
 export default function ImportExport() {
   const { t } = useTranslation();
@@ -17,9 +18,10 @@ export default function ImportExport() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full max-w-2xl grid-cols-3">
+        <TabsList className="grid w-full max-w-3xl grid-cols-4">
           <TabsTrigger value="import">{t('importExport.import')}</TabsTrigger>
           <TabsTrigger value="export">{t('importExport.export')}</TabsTrigger>
+          <TabsTrigger value="face-migration">{t('importExport.faceRecognition') || 'Face Recognition'}</TabsTrigger>
           <TabsTrigger value="history">{t('importExport.history')}</TabsTrigger>
         </TabsList>
 
@@ -29,6 +31,10 @@ export default function ImportExport() {
 
         <TabsContent value="export" className="mt-6">
           <ExportPanel />
+        </TabsContent>
+
+        <TabsContent value="face-migration" className="mt-6">
+          <FaceRecognitionMigration />
         </TabsContent>
 
         <TabsContent value="history" className="mt-6">

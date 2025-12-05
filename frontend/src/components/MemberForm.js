@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Textarea } from '../components/ui/textarea';
 import { Button } from '../components/ui/button';
 import { useMemberStatuses } from '../hooks/useSettings';
-import { FileText, Upload, X, Loader2, ScanFace, CheckCircle, AlertCircle } from 'lucide-react';
+import { FileText, Upload, X, Loader2, ScanFace, CheckCircle, AlertCircle, QrCode, Copy } from 'lucide-react';
 import { faceRecognitionService } from '../services/faceRecognitionService';
 
 export default function MemberForm({ formData, setFormData, member = null }) {
@@ -16,6 +16,20 @@ export default function MemberForm({ formData, setFormData, member = null }) {
   const [photoPreview, setPhotoPreview] = useState(member?.photo_url || member?.photo_base64 || null);
   const [documentPreview, setDocumentPreview] = useState(member?.personal_document_base64 || null);
   const [documentName, setDocumentName] = useState(member?.personal_document || '');
+
+  // Update previews when member prop changes (fixes issue when editing different members)
+  useEffect(() => {
+    if (member) {
+      setPhotoPreview(member.photo_url || member.photo_base64 || null);
+      setDocumentPreview(member.personal_document_base64 || null);
+      setDocumentName(member.personal_document || '');
+    } else {
+      // Reset when member is cleared (e.g., when closing dialog)
+      setPhotoPreview(null);
+      setDocumentPreview(null);
+      setDocumentName('');
+    }
+  }, [member?.id, member?.photo_url, member?.photo_base64, member?.personal_document_base64, member?.personal_document]);
 
   // Face detection state - check if member already has face descriptors
   // Use has_face_descriptors boolean (from list projection) OR check face_descriptors array length
@@ -292,7 +306,36 @@ export default function MemberForm({ formData, setFormData, member = null }) {
           )}
         </div>
       </div>
-      
+
+      {/* Personal ID/QR Code Section - Read-only, only for existing members */}
+      {member && formData.personal_id_code && (
+        <div className="border-b pb-4">
+          <Label>{t('members.personalIdCode') || 'Personal ID / QR Code'}</Label>
+          <div className="flex items-center gap-3 mt-2">
+            <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-lg border">
+              <QrCode className="h-5 w-5 text-blue-600" />
+              <span className="font-mono text-lg font-semibold text-gray-900">
+                {formData.personal_id_code}
+              </span>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                navigator.clipboard.writeText(formData.personal_id_code);
+              }}
+              title={t('common.copy') || 'Copy'}
+            >
+              <Copy className="h-4 w-4" />
+            </Button>
+          </div>
+          <p className="text-xs text-gray-500 mt-1">
+            {t('members.personalIdHint') || 'Unique identifier for kiosk check-in and member lookup'}
+          </p>
+        </div>
+      )}
+
       {/* Form fields */}
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">

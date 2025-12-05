@@ -48,6 +48,20 @@ class MemberBase(BaseModel):
     personal_id_code: Optional[str] = None  # Unique 6-digit code for member
     preferred_language: Optional[Literal['en', 'id']] = None  # Member's preferred language for communications
 
+    # Face Recognition (for kiosk check-in)
+    face_descriptors: List[Dict[str, Any]] = Field(
+        default_factory=list,
+        description="Array of face descriptors for recognition. Each entry: {descriptor: float[], captured_at: datetime, photo_url: str}"
+    )
+    face_checkin_enabled: bool = Field(
+        default=True,
+        description="Whether face check-in is enabled for this member"
+    )
+    last_face_photo_at: Optional[datetime] = Field(
+        None,
+        description="When the last face photo was captured (for monthly capture logic)"
+    )
+
     @field_validator('email', mode='before')
     @classmethod
     def empty_string_to_none(cls, v):
@@ -95,6 +109,10 @@ class MemberUpdate(BaseModel):
     personal_document_base64: Optional[str] = None  # DEPRECATED
     documents: Optional[List[Dict[str, Any]]] = None
     custom_fields: Optional[Dict[str, Any]] = None
+
+    # Face Recognition (for kiosk check-in)
+    face_descriptors: Optional[List[Dict[str, Any]]] = None
+    face_checkin_enabled: Optional[bool] = None
 
     @field_validator('email', mode='before')
     @classmethod

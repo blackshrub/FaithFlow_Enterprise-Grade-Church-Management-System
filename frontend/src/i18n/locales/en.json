@@ -109,6 +109,8 @@
     "viewQR": "View QR Code",
     "universalID": "Universal Member ID",
     "useForCheckIn": "Use this QR code for check-in at any event",
+    "personalIdCode": "Personal ID / QR Code",
+    "personalIdHint": "Unique identifier for kiosk check-in and member lookup",
     "notmarried": "Not Married",
     "widow": "Widow",
     "widower": "Widower",
@@ -128,7 +130,9 @@
     "faceDetectionError": "Face detection failed",
     "faceCheckin": "Face",
     "faceCheckinEnabled": "Face check-in enabled",
-    "noFaceData": "No face data",
+    "noFaceData": "No Face Data",
+    "hasFaceData": "Has Face Data",
+    "allFaceStatus": "All Face Status",
     "documentNotAvailable": "File not available (imported before document storage feature)",
     "uploadDocument": "Upload Document",
     "documentHint": "PDF, DOC, JPG max 10MB"
@@ -173,7 +177,9 @@
     "searching": "Searching...",
     "clear": "Clear",
     "noResults": "No results found",
-    "copy": "Copy"
+    "copy": "Copy",
+    "members": "members",
+    "refresh": "Refresh"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -1041,9 +1047,16 @@
     "noFace": "no face",
     "migrationComplete": "Migration complete! {{processed}} faces detected, {{failed}} photos had no detectable face.",
     "startMigration": "Start Migration",
+    "loadingFaceModels": "Loading face recognition models...",
+    "loadingFaceModelsDesc": "This may take a few seconds on first load.",
     "membersToProcess": "Members to Process",
     "membersPreviewDesc": "Preview of members that will have face descriptors generated.",
-    "andMoreMembers": "...and {{count}} more members"
+    "andMoreMembers": "...and {{count}} more members",
+    "clearingDescriptors": "Clearing existing face descriptors...",
+    "regenerateAll": "Regenerate All Descriptors",
+    "regenerateWarning": "This will clear ALL existing face descriptors and regenerate them from photos.",
+    "regenerateWarningDesc": "This process may take several minutes. Face check-in will be unavailable until complete.",
+    "confirmRegenerate": "Yes, Regenerate All"
   },
   "accounting": {
     "title": "Accounting",
