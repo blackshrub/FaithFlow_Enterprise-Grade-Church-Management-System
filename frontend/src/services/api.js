@@ -34,7 +34,8 @@ const getAPIBaseURL = () => {
   const origin = window.location.origin;
   const secureOrigin = origin.replace('http://', 'https://');
 
-  // Try subdomain mode first: api.flow.gkbj.org
+  // Subdomain mode: api.flow.gkbj.org (no /api prefix)
+  // Backend runs with API_PREFIX="" so routes are /kiosk/*, /auth/*, etc.
   const hostname = window.location.hostname;
   const subdomainURL = `https://api.${hostname}`;
 
@@ -364,6 +365,11 @@ export const importExportAPI = {
 
   // Cleanup expired temp sessions
   cleanupExpiredSessions: () => api.post('/import-export/cleanup-expired-sessions'),
+
+  // Face descriptor management (for import and migration)
+  updateFaceDescriptor: (data) => api.post('/import-export/update-face-descriptor', data),
+  bulkUpdateFaceDescriptors: (updates) => api.post('/import-export/bulk-update-face-descriptors', { updates }),
+  getMembersNeedingFaceDescriptors: () => api.get('/import-export/members-needing-face-descriptors'),
 };
 
 // Seat Layouts API
