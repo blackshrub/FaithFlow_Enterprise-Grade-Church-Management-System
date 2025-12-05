@@ -59,23 +59,18 @@ services:
   # - Security headers
   # ===========================================================================
   traefik:
-    image: traefik:v3.2
+    image: traefik:v3.3
     container_name: faithflow-traefik
     restart: unless-stopped
-    environment:
-      - DOCKER_API_VERSION=1.45
-      - DOCKER_HOST=unix:///var/run/docker.sock
     command:
       # Enable Traefik dashboard (for monitoring)
       - "--api.dashboard=true"
       - "--api.insecure=false"
       # Enable ping endpoint for healthcheck
       - "--ping=true"
-      # Docker provider (auto-discovers containers)
-      - "--providers.docker=true"
-      - "--providers.docker.exposedbydefault=false"
-      - "--providers.docker.network=faithflow_faithflow-network"
-      - "--providers.docker.endpoint=unix:///var/run/docker.sock"
+      # File provider (static configuration from YAML files)
+      - "--providers.file.directory=/etc/traefik/dynamic"
+      - "--providers.file.watch=true"
       # Entry points (where traffic comes in)
       - "--entrypoints.web.address=:80"
       - "--entrypoints.websecure.address=:443"
@@ -92,28 +87,14 @@ services:
       # Logging
       - "--log.level=INFO"
       - "--accesslog=true"
-      # Enable file provider for dynamic config
-      - "--providers.file.directory=/etc/traefik/dynamic"
-      - "--providers.file.watch=true"
     ports:
       - "80:80"        # HTTP (redirects to HTTPS)
       - "443:443/tcp"  # HTTPS (HTTP/1.1, HTTP/2)
       - "443:443/udp"  # HTTP/3 (QUIC)
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
       - traefik_letsencrypt:/letsencrypt
       - traefik_logs:/var/log/traefik
       - ./docker/traefik:/etc/traefik/dynamic:ro
-    labels:
-      # Enable Traefik dashboard at traefik.yourdomain.com
-      - "traefik.enable=true"
-      - "traefik.http.routers.traefik.rule=Host(`traefik.${DOMAIN}`)"
-      - "traefik.http.routers.traefik.entrypoints=websecure"
-      - "traefik.http.routers.traefik.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.traefik.service=api@internal"
-      # Dashboard password protection (default: admin/admin - CHANGE THIS!)
-      - "traefik.http.routers.traefik.middlewares=traefik-auth"
-      - "traefik.http.middlewares.traefik-auth.basicauth.users=${TRAEFIK_DASHBOARD_AUTH:-admin:$$apr1$$ruca84Hq$$mbjdMZBAG.KWn7vfN/SNK/}"
     healthcheck:
       test: ["CMD", "wget", "--spider", "--quiet", "http://localhost:8080/ping"]
       interval: 30s
@@ -564,6 +545,12 @@ services:
       - "traefik.http.routers.seaweedfs.entrypoints=websecure"
       - "traefik.http.routers.seaweedfs.tls.certresolver=letsencrypt"
       - "traefik.http.services.seaweedfs.loadbalancer.server.port=8888"
+      # CORS headers - required for face recognition (canvas needs crossorigin images)
+      - "traefik.http.routers.seaweedfs.middlewares=seaweedfs-cors"
+      - "traefik.http.middlewares.seaweedfs-cors.headers.accesscontrolallowmethods=GET,OPTIONS,HEAD"
+      - "traefik.http.middlewares.seaweedfs-cors.headers.accesscontrolallowheaders=*"
+      - "traefik.http.middlewares.seaweedfs-cors.headers.accesscontrolalloworiginlist=*"
+      - "traefik.http.middlewares.seaweedfs-cors.headers.accesscontrolmaxage=86400"
     networks:
       - faithflow-network
 
