@@ -551,6 +551,8 @@ services:
       - "traefik.http.middlewares.seaweedfs-cors.headers.accesscontrolallowheaders=*"
       - "traefik.http.middlewares.seaweedfs-cors.headers.accesscontrolalloworiginlist=*"
       - "traefik.http.middlewares.seaweedfs-cors.headers.accesscontrolmaxage=86400"
+      - "traefik.http.middlewares.seaweedfs-cors.headers.addvaryheader=true"
+      - "traefik.http.middlewares.seaweedfs-cors.headers.accesscontrolexposeheaders=Content-Length,Content-Range"
     networks:
       - faithflow-network
 
