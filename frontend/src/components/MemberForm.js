@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
@@ -6,7 +6,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Textarea } from '../components/ui/textarea';
 import { Button } from '../components/ui/button';
 import { useMemberStatuses } from '../hooks/useSettings';
-import { FileText, Upload, X } from 'lucide-react';
+import { FileText, Upload, X, Loader2, ScanFace, CheckCircle, AlertCircle } from 'lucide-react';
+import { faceRecognitionService } from '../services/faceRecognitionService';
 
 export default function MemberForm({ formData, setFormData, member = null }) {
   const { t } = useTranslation();
@@ -16,18 +17,74 @@ export default function MemberForm({ formData, setFormData, member = null }) {
   const [documentPreview, setDocumentPreview] = useState(member?.personal_document_base64 || null);
   const [documentName, setDocumentName] = useState(member?.personal_document || '');
 
+  // Face detection state - check if member already has face descriptors
+  // Use has_face_descriptors boolean (from list projection) OR check face_descriptors array length
+  const hasFaceDescriptors = member?.face_descriptors?.length > 0 ||
+                              formData?.face_descriptors?.length > 0 ||
+                              member?.has_face_descriptors ||
+                              formData?.has_face_descriptors;
+  const [faceDetectionStatus, setFaceDetectionStatus] = useState(hasFaceDescriptors ? 'success' : 'idle'); // idle, detecting, success, no_face, error
+  const [faceDescriptor, setFaceDescriptor] = useState(null);
+
+  // Initialize face recognition service
+  useEffect(() => {
+    faceRecognitionService.initialize().catch(console.error);
+  }, []);
+
+  // Update face detection status when formData changes (for existing members)
+  useEffect(() => {
+    const hasData = formData?.face_descriptors?.length > 0 || formData?.has_face_descriptors;
+    if (hasData && faceDetectionStatus === 'idle') {
+      setFaceDetectionStatus('success');
+    }
+  }, [formData?.face_descriptors, formData?.has_face_descriptors]);
+
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handlePhotoUpload = (e) => {
+  const handlePhotoUpload = async (e) => {
     const file = e.target.files[0];
     if (file) {
       const reader = new FileReader();
-      reader.onloadend = () => {
+      reader.onloadend = async () => {
         const base64 = reader.result;
         setPhotoPreview(base64);
         handleChange('photo_base64', base64);
+
+        // Generate face descriptor from the uploaded photo
+        setFaceDetectionStatus('detecting');
+        setFaceDescriptor(null);
+
+        try {
+          // Create object URL for the file
+          const objectUrl = URL.createObjectURL(file);
+          const descriptor = await faceRecognitionService.generateDescriptorFromUrl(objectUrl);
+          URL.revokeObjectURL(objectUrl);
+
+          if (descriptor) {
+            setFaceDescriptor(descriptor);
+            setFaceDetectionStatus('success');
+            // Store the descriptor as a new face entry
+            const newFaceEntry = {
+              descriptor: descriptor,
+              captured_at: new Date().toISOString(),
+              source: 'admin_upload'
+            };
+            // Update form data with the face descriptor
+            handleChange('face_descriptors', [newFaceEntry]);
+            console.log('[MemberForm] Face descriptor generated successfully');
+          } else {
+            setFaceDetectionStatus('no_face');
+            // Clear any existing face descriptors if no face found
+            handleChange('face_descriptors', []);
+            console.log('[MemberForm] No face detected in uploaded photo');
+          }
+        } catch (error) {
+          console.error('[MemberForm] Face detection error:', error);
+          setFaceDetectionStatus('error');
+          handleChange('face_descriptors', []);
+        }
       };
       reader.readAsDataURL(file);
     }
@@ -36,6 +93,10 @@ export default function MemberForm({ formData, setFormData, member = null }) {
   const removePhoto = () => {
     setPhotoPreview(null);
     handleChange('photo_base64', '');
+    // Also clear face data
+    setFaceDetectionStatus('idle');
+    setFaceDescriptor(null);
+    handleChange('face_descriptors', []);
   };
 
   const handleDocumentUpload = (e) => {
@@ -75,15 +136,48 @@ export default function MemberForm({ formData, setFormData, member = null }) {
         <div className="flex items-center gap-4 mt-2">
           {photoPreview ? (
             <>
-              <img 
-                src={photoPreview} 
-                alt="Preview"
-                className="h-20 w-20 rounded-lg object-cover border-2 border-gray-200"
-              />
+              <div className="relative">
+                <img
+                  src={photoPreview}
+                  alt="Preview"
+                  className="h-20 w-20 rounded-lg object-cover border-2 border-gray-200"
+                />
+                {/* Face detection status overlay */}
+                {faceDetectionStatus === 'detecting' && (
+                  <div className="absolute inset-0 bg-black bg-opacity-50 rounded-lg flex items-center justify-center">
+                    <Loader2 className="h-6 w-6 text-white animate-spin" />
+                  </div>
+                )}
+              </div>
               <div className="flex flex-col gap-2">
                 <span className="text-sm text-gray-600">
                   {member ? t('members.photoUploaded') : t('members.photoSelected')}
                 </span>
+                {/* Face detection status message */}
+                {faceDetectionStatus === 'detecting' && (
+                  <span className="text-xs text-blue-600 flex items-center gap-1">
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                    {t('members.detectingFace') || 'Detecting face...'}
+                  </span>
+                )}
+                {faceDetectionStatus === 'success' && (
+                  <span className="text-xs text-green-600 flex items-center gap-1">
+                    <CheckCircle className="h-3 w-3" />
+                    {t('members.faceDetected') || 'Face detected for check-in'}
+                  </span>
+                )}
+                {faceDetectionStatus === 'no_face' && (
+                  <span className="text-xs text-yellow-600 flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" />
+                    {t('members.noFaceDetected') || 'No face detected'}
+                  </span>
+                )}
+                {faceDetectionStatus === 'error' && (
+                  <span className="text-xs text-red-600 flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" />
+                    {t('members.faceDetectionError') || 'Face detection failed'}
+                  </span>
+                )}
                 <Button
                   type="button"
                   variant="outline"

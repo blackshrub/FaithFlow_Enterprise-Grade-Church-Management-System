@@ -12,7 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '.
 import { Badge } from '../components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '../components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
-import { Plus, Search, Edit, Trash2, UserX, Phone, Mail, Loader2, QrCode, ChevronLeft, ChevronRight, Filter, X, AlertCircle } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, UserX, Phone, Mail, Loader2, QrCode, ChevronLeft, ChevronRight, Filter, X, AlertCircle, ScanFace, CheckCircle } from 'lucide-react';
 import MemberForm from '../components/MemberForm';
 import MemberAvatar from '../components/MemberAvatar';
 import MemberQRModal from '../components/Members/MemberQRModal';
@@ -30,7 +30,8 @@ const initialFormData = {
   photo_base64: '',
   personal_document: '',
   personal_document_base64: '',
-  notes: ''
+  notes: '',
+  face_descriptors: []  // Face recognition data for kiosk check-in
 };
 
 export default function Members() {
@@ -242,7 +243,9 @@ export default function Members() {
       photo_base64: member.photo_base64 || '',
       personal_document: member.personal_document || '',
       personal_document_base64: member.personal_document_base64 || '',
-      notes: member.notes || ''
+      notes: member.notes || '',
+      face_descriptors: member.face_descriptors || [],  // Preserve existing face recognition data
+      has_face_descriptors: member.has_face_descriptors || false  // Track if face data exists (from list projection)
     };
     setFormData(formValues);
     setIsEditDialogOpen(true);
@@ -453,10 +456,12 @@ export default function Members() {
                       <TableHead className="w-12"></TableHead>
                       <TableHead>{t('members.name')}</TableHead>
                       <TableHead>{t('members.contact')}</TableHead>
+                      <TableHead>{t('members.address')}</TableHead>
                       <TableHead>{t('members.gender')}</TableHead>
                       <TableHead>{t('members.maritalStatus')}</TableHead>
                       <TableHead>Demographic</TableHead>
                       <TableHead>{t('members.status')}</TableHead>
+                      <TableHead className="text-center">{t('members.faceCheckin') || 'Face'}</TableHead>
                       <TableHead className="text-right">{t('members.actions')}</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -488,6 +493,15 @@ export default function Members() {
                           </div>
                         </TableCell>
                         <TableCell>
+                          {member.address ? (
+                            <span className="text-sm text-gray-700 truncate max-w-[200px] block" title={member.address}>
+                              {member.address}
+                            </span>
+                          ) : (
+                            <span className="text-gray-400">{t('common.na')}</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
                           {member.gender ? (
                             <Badge variant="outline">
                               {t(`members.${member.gender.toLowerCase()}`)}
@@ -513,6 +527,17 @@ export default function Members() {
                             <Badge>{member.member_status}</Badge>
                           ) : (
                             <span className="text-gray-400">{t('common.na')}</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {member.has_face_descriptors ? (
+                            <span title={t('members.faceCheckinEnabled') || 'Face check-in enabled'}>
+                              <ScanFace className="h-5 w-5 text-green-600 mx-auto" />
+                            </span>
+                          ) : (
+                            <span title={t('members.noFaceData') || 'No face data'}>
+                              <ScanFace className="h-5 w-5 text-gray-300 mx-auto" />
+                            </span>
                           )}
                         </TableCell>
                         <TableCell className="text-right">

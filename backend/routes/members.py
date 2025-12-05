@@ -273,10 +273,28 @@ async def list_members(
         else:
             query['$or'] = incomplete_or
     
-    # Use projection to exclude heavy fields (photo_base64, documents)
+    # Use aggregation to compute has_face_descriptors + apply projection
     # This reduces response size by ~70% for list queries
-    members = await db.members.find(query, Projections.MEMBER_LIST).skip(skip).limit(limit).to_list(limit)
-    
+    pipeline = [
+        {"$match": query},
+        {"$skip": skip},
+        {"$limit": limit},
+        {
+            "$addFields": {
+                "has_face_descriptors": {
+                    "$gt": [{"$size": {"$ifNull": ["$face_descriptors", []]}}, 0]
+                }
+            }
+        },
+        {
+            "$project": {
+                **Projections.MEMBER_LIST,
+                "has_face_descriptors": 1
+            }
+        }
+    ]
+    members = await db.members.aggregate(pipeline).to_list(limit)
+
     # Convert ISO strings to datetime/date
     for member in members:
         if isinstance(member.get('created_at'), str):

@@ -616,7 +616,8 @@ class Projections:
         events = await db.events.find(query, Projections.EVENT_LIST).to_list(100)
     """
 
-    # Member list - excludes large fields (photo_base64, documents, custom_fields)
+    # Member list - excludes large fields (photo_base64, documents, custom_fields, face_descriptors)
+    # Note: has_face_descriptors is computed via aggregation in routes/members.py
     MEMBER_LIST = {
         "_id": 0,
         "id": 1,
@@ -628,6 +629,9 @@ class Projections:
         "phone_whatsapp": 1,
         "gender": 1,
         "date_of_birth": 1,
+        "address": 1,
+        "marital_status": 1,
+        "baptism_date": 1,
         "member_status": 1,
         "membership_status": 1,
         "demographic_category": 1,
@@ -637,6 +641,7 @@ class Projections:
         "photo_url": 1,           # Use URL instead of base64
         "photo_thumbnail_url": 1,
         "personal_id_code": 1,
+        "face_checkin_enabled": 1,  # Boolean for face check-in feature toggle
     }
 
     # Member card - minimal fields for cards/avatars
