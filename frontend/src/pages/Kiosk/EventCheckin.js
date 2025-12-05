@@ -720,9 +720,12 @@ const EventCheckinKiosk = () => {
         setConfirmingMember(null);
         setConfirmingDescriptor(null);
 
-        // Clear search field and results for next search
-        setSearchTerm('');
-        setSearchResults([]);
+        // Only clear search field for NEW check-ins (not for "already checked in")
+        // This prevents interrupting staff who are searching for others while being detected
+        if (!isAlreadyCheckedIn) {
+          setSearchTerm('');
+          setSearchResults([]);
+        }
 
         // Show success overlay with alreadyCheckedIn flag for different styling
         setSuccessMember({ name: memberName, memberId, alreadyCheckedIn: isAlreadyCheckedIn });
@@ -1156,7 +1159,7 @@ const EventCheckinKiosk = () => {
           )}
         </AnimatePresence>
 
-        {/* Quick Add New Visitor Modal */}
+        {/* Quick Add New Visitor Modal - Tablet-First Horizontal Layout */}
         <AnimatePresence>
           {showQuickAdd && (
             <motion.div
@@ -1166,7 +1169,7 @@ const EventCheckinKiosk = () => {
               exit={{ opacity: 0 }}
             >
               <motion.div
-                className="bg-white rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl"
+                className="bg-white rounded-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-2xl"
                 initial={{ scale: 0.9, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.9, opacity: 0 }}
@@ -1186,165 +1189,175 @@ const EventCheckinKiosk = () => {
                   </Button>
                 </div>
 
-                {/* Form */}
-                <form onSubmit={handleQuickAddSubmit} className="p-4 space-y-4">
-                  {/* Photo Capture */}
-                  <div>
-                    <Label className="text-sm font-medium">
-                      {t('new_profile.photo_label') || 'Photo'}
-                    </Label>
-                    {!quickAddShowCamera && !quickAddData.photo_base64 && (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => setQuickAddShowCamera(true)}
-                        className="w-full h-20 mt-1"
-                      >
-                        <CameraIcon className="mr-2 h-6 w-6" />
-                        {t('new_profile.photo_take') || 'Take Photo'}
-                      </Button>
-                    )}
-                    {quickAddShowCamera && (
-                      <div className="space-y-2 mt-1">
-                        <div className="relative rounded-xl overflow-hidden">
-                          <Webcam
-                            ref={quickAddWebcamRef}
-                            screenshotFormat="image/jpeg"
-                            className="w-full rounded-xl"
-                            videoConstraints={{ facingMode: 'user', width: 640, height: 480 }}
-                            style={{ transform: 'scaleX(-1)' }}
-                          />
-                          {quickAddCountdown > 0 && (
-                            <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50">
-                              <div className="text-6xl font-bold text-white">{quickAddCountdown}</div>
-                            </div>
-                          )}
+                {/* Form - Horizontal Layout on Tablet */}
+                <form onSubmit={handleQuickAddSubmit} className="p-4">
+                  <div className="flex flex-col md:flex-row gap-6">
+                    {/* LEFT: Photo Capture - Fixed width on tablet */}
+                    <div className="md:w-56 flex-shrink-0">
+                      <Label className="text-sm font-medium mb-2 block">
+                        {t('new_profile.photo_label') || 'Photo'}
+                      </Label>
+                      {!quickAddShowCamera && !quickAddData.photo_base64 && (
+                        <div
+                          onClick={() => setQuickAddShowCamera(true)}
+                          className="w-full md:w-52 h-52 border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-colors"
+                        >
+                          <CameraIcon className="h-12 w-12 text-gray-400 mb-2" />
+                          <span className="text-sm text-gray-500 text-center px-2">
+                            {t('new_profile.photo_take') || 'Take Photo'}
+                          </span>
                         </div>
-                        <div className="flex gap-2">
+                      )}
+                      {quickAddShowCamera && (
+                        <div className="space-y-2">
+                          <div className="relative rounded-xl overflow-hidden w-full md:w-52 h-52">
+                            <Webcam
+                              ref={quickAddWebcamRef}
+                              screenshotFormat="image/jpeg"
+                              className="w-full h-full object-cover rounded-xl"
+                              videoConstraints={{ facingMode: 'user', width: 320, height: 320 }}
+                              style={{ transform: 'scaleX(-1)' }}
+                            />
+                            {quickAddCountdown > 0 && (
+                              <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50">
+                                <div className="text-5xl font-bold text-white">{quickAddCountdown}</div>
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => { setQuickAddShowCamera(false); setQuickAddCountdown(0); }}
+                              className="flex-1"
+                              disabled={quickAddCountdown > 0}
+                            >
+                              {t('button.cancel') || 'Cancel'}
+                            </Button>
+                            <Button
+                              type="button"
+                              size="sm"
+                              onClick={captureQuickAddPhoto}
+                              className="flex-1"
+                              disabled={quickAddCountdown > 0}
+                            >
+                              {quickAddCountdown > 0 ? '...' : t('button.capture') || 'Capture'}
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                      {quickAddData.photo_base64 && (
+                        <div className="space-y-2">
+                          <img
+                            src={quickAddData.photo_base64}
+                            alt="Preview"
+                            className="w-full md:w-52 h-52 rounded-xl object-cover border-4 border-blue-200"
+                          />
                           <Button
                             type="button"
                             variant="outline"
-                            onClick={() => { setQuickAddShowCamera(false); setQuickAddCountdown(0); }}
-                            className="flex-1 h-10"
-                            disabled={quickAddCountdown > 0}
+                            size="sm"
+                            onClick={() => setQuickAddShowCamera(true)}
+                            className="w-full"
                           >
-                            {t('button.cancel') || 'Cancel'}
-                          </Button>
-                          <Button
-                            type="button"
-                            onClick={captureQuickAddPhoto}
-                            className="flex-1 h-10"
-                            disabled={quickAddCountdown > 0}
-                          >
-                            {quickAddCountdown > 0 ? t('button.capturing') || 'Capturing...' : t('button.capture') || 'Capture'}
+                            {t('new_profile.photo_change') || 'Retake'}
                           </Button>
                         </div>
+                      )}
+                    </div>
+
+                    {/* RIGHT: Form Fields - 2 columns on tablet */}
+                    <div className="flex-1 space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {/* Full Name - full width */}
+                        <div className="md:col-span-2">
+                          <Label htmlFor="visitor_name" className="text-sm font-medium">
+                            {t('new_profile.name_label') || 'Full Name'} *
+                          </Label>
+                          <Input
+                            id="visitor_name"
+                            value={quickAddData.full_name}
+                            onChange={(e) => setQuickAddData({ ...quickAddData, full_name: e.target.value })}
+                            placeholder="Enter visitor name"
+                            className="h-11 mt-1"
+                            autoFocus
+                            required
+                          />
+                        </div>
+
+                        {/* Gender */}
+                        <div>
+                          <Label className="text-sm font-medium">
+                            {t('new_profile.gender_label') || 'Gender'} *
+                          </Label>
+                          <Select
+                            value={quickAddData.gender}
+                            onValueChange={(value) => setQuickAddData({ ...quickAddData, gender: value })}
+                          >
+                            <SelectTrigger className="h-11 mt-1">
+                              <SelectValue placeholder="Select gender" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Male">{t('new_profile.gender_male') || 'Male'}</SelectItem>
+                              <SelectItem value="Female">{t('new_profile.gender_female') || 'Female'}</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {/* Date of Birth */}
+                        <div>
+                          <Label htmlFor="visitor_dob" className="text-sm font-medium">
+                            {t('new_profile.birthdate_label') || 'Date of Birth'}
+                          </Label>
+                          <Input
+                            id="visitor_dob"
+                            type="date"
+                            value={quickAddData.date_of_birth}
+                            onChange={(e) => setQuickAddData({ ...quickAddData, date_of_birth: e.target.value })}
+                            className="h-11 mt-1"
+                          />
+                        </div>
+
+                        {/* Phone Number - full width */}
+                        <div className="md:col-span-2">
+                          <Label htmlFor="visitor_phone" className="text-sm font-medium">
+                            {t('phone.label') || 'Phone Number'}
+                          </Label>
+                          <Input
+                            id="visitor_phone"
+                            value={quickAddData.phone_whatsapp}
+                            onChange={(e) => setQuickAddData({ ...quickAddData, phone_whatsapp: e.target.value })}
+                            placeholder="08xxxxxxxxxx"
+                            className="h-11 mt-1"
+                          />
+                        </div>
                       </div>
-                    )}
-                    {quickAddData.photo_base64 && (
-                      <div className="space-y-2 mt-1">
-                        <img
-                          src={quickAddData.photo_base64}
-                          alt="Preview"
-                          className="w-24 h-24 rounded-full object-cover mx-auto border-4 border-blue-200"
-                        />
+
+                      {/* Buttons */}
+                      <div className="flex gap-3 pt-2">
                         <Button
                           type="button"
                           variant="outline"
-                          onClick={() => setQuickAddShowCamera(true)}
-                          className="w-full h-10"
+                          onClick={resetQuickAddForm}
+                          className="flex-1 h-11"
                         >
-                          {t('new_profile.photo_change') || 'Retake Photo'}
+                          {t('button.cancel') || 'Cancel'}
+                        </Button>
+                        <Button
+                          type="submit"
+                          disabled={quickAddLoading || !quickAddData.full_name.trim() || !quickAddData.gender}
+                          className="flex-1 h-11 bg-green-600 hover:bg-green-700"
+                        >
+                          {quickAddLoading ? (
+                            <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                          ) : (
+                            <UserPlus className="w-5 h-5 mr-2" />
+                          )}
+                          {quickAddLoading ? 'Adding...' : 'Add & Check In'}
                         </Button>
                       </div>
-                    )}
-                  </div>
-
-                  {/* Full Name */}
-                  <div>
-                    <Label htmlFor="visitor_name" className="text-sm font-medium">
-                      {t('new_profile.name_label') || 'Full Name'} *
-                    </Label>
-                    <Input
-                      id="visitor_name"
-                      value={quickAddData.full_name}
-                      onChange={(e) => setQuickAddData({ ...quickAddData, full_name: e.target.value })}
-                      placeholder="Enter visitor name"
-                      className="h-12 text-lg mt-1"
-                      autoFocus
-                      required
-                    />
-                  </div>
-
-                  {/* Gender */}
-                  <div>
-                    <Label className="text-sm font-medium">
-                      {t('new_profile.gender_label') || 'Gender'} *
-                    </Label>
-                    <Select
-                      value={quickAddData.gender}
-                      onValueChange={(value) => setQuickAddData({ ...quickAddData, gender: value })}
-                    >
-                      <SelectTrigger className="h-12 text-lg mt-1">
-                        <SelectValue placeholder="Select gender" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Male">{t('new_profile.gender_male') || 'Male'}</SelectItem>
-                        <SelectItem value="Female">{t('new_profile.gender_female') || 'Female'}</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Date of Birth */}
-                  <div>
-                    <Label htmlFor="visitor_dob" className="text-sm font-medium">
-                      {t('new_profile.birthdate_label') || 'Date of Birth'}
-                    </Label>
-                    <Input
-                      id="visitor_dob"
-                      type="date"
-                      value={quickAddData.date_of_birth}
-                      onChange={(e) => setQuickAddData({ ...quickAddData, date_of_birth: e.target.value })}
-                      className="h-12 text-lg mt-1"
-                    />
-                  </div>
-
-                  {/* Phone Number */}
-                  <div>
-                    <Label htmlFor="visitor_phone" className="text-sm font-medium">
-                      {t('phone.label') || 'Phone Number'}
-                    </Label>
-                    <Input
-                      id="visitor_phone"
-                      value={quickAddData.phone_whatsapp}
-                      onChange={(e) => setQuickAddData({ ...quickAddData, phone_whatsapp: e.target.value })}
-                      placeholder="08xxxxxxxxxx"
-                      className="h-12 text-lg mt-1"
-                    />
-                  </div>
-
-                  {/* Buttons */}
-                  <div className="flex gap-3 pt-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={resetQuickAddForm}
-                      className="flex-1 h-12 text-base"
-                    >
-                      {t('button.cancel') || 'Cancel'}
-                    </Button>
-                    <Button
-                      type="submit"
-                      disabled={quickAddLoading || !quickAddData.full_name.trim() || !quickAddData.gender}
-                      className="flex-1 h-12 text-base bg-green-600 hover:bg-green-700"
-                    >
-                      {quickAddLoading ? (
-                        <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                      ) : (
-                        <UserPlus className="w-5 h-5 mr-2" />
-                      )}
-                      {quickAddLoading ? 'Adding...' : 'Add & Check In'}
-                    </Button>
+                    </div>
                   </div>
                 </form>
               </motion.div>
