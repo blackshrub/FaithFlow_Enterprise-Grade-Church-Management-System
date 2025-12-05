@@ -8,9 +8,10 @@
  * 4. Auto check-in with 3-second cancel option
  *
  * Face Recognition Features:
- * - Uses @vladmandic/human for face detection and embedding
- * - Client-side face matching against loaded member descriptors
- * - Silent photo capture once per month for progressive learning
+ * - Uses @vladmandic/human for fast browser-based face DETECTION (knows when face is present)
+ * - Sends detected face images to backend DeepFace (FaceNet512) for accurate MATCHING
+ * - DeepFace provides much higher accuracy than browser-based solutions
+ * - Silent photo capture for progressive learning (backend regenerates embeddings)
  * - Auto-confirm with "Not you? Cancel" button (3 seconds)
  *
  * NO INACTIVITY TIMEOUT for this page
@@ -42,10 +43,10 @@ import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import MemberAvatar from '../../components/MemberAvatar';
 import { useKioskEvents, useVerifyPIN, useKioskChurch } from '../../hooks/useKiosk';
-import api from '../../services/api';
+import api, { publicFaceRecognitionAPI } from '../../services/api';
 import kioskApi from '../../services/kioskApi';
 import QrScanner from 'qr-scanner';
-import { faceRecognitionService, FACE_MATCH_THRESHOLDS } from '../../services/faceRecognitionService';
+import { faceRecognitionService } from '../../services/faceRecognitionService';
 
 // Constants
 const CANCEL_COUNTDOWN_SECONDS = 3;
@@ -131,29 +132,8 @@ const EventCheckinKiosk = () => {
     };
   }, []);
 
-  // Load face descriptors when event is selected + periodic refresh for new members
-  useEffect(() => {
-    if (selectedEvent && churchId && faceReady) {
-      loadFaceDescriptors();
-
-      // Refresh face descriptors every 2 minutes to pick up new members
-      const refreshInterval = setInterval(() => {
-        loadFaceDescriptors();
-      }, 2 * 60 * 1000); // 2 minutes
-
-      return () => clearInterval(refreshInterval);
-    }
-  }, [selectedEvent, churchId, faceReady]);
-
-  const loadFaceDescriptors = async () => {
-    try {
-      const members = await kioskApi.getFaceDescriptors(churchId);
-      faceRecognitionService.loadMemberDescriptors(members);
-      console.log(`[EventCheckin] Loaded ${members.length} member face descriptors`);
-    } catch (error) {
-      console.error('Failed to load face descriptors:', error);
-    }
-  };
+  // Note: Face descriptors are now matched on the backend using DeepFace
+  // No need to load them client-side anymore
 
   // Start camera when entering scan_or_search step (always-on camera)
   useEffect(() => {
@@ -243,16 +223,19 @@ const EventCheckinKiosk = () => {
   };
 
   // Start face detection loop (parallel with QR)
+  // Uses browser-based detection for speed, then sends to backend DeepFace for accurate matching
   const startFaceDetection = () => {
     if (!faceReady || faceDetectionIntervalRef.current) return;
 
     let consecutiveNoFace = 0;
     const NO_FACE_THRESHOLD = 15; // ~3 seconds at 5 FPS
+    let isMatchingInProgress = false; // Prevent overlapping backend calls
 
     faceDetectionIntervalRef.current = setInterval(async () => {
-      if (!videoRef.current || step === 'confirming' || checkinInProgress) return;
+      if (!videoRef.current || step === 'confirming' || checkinInProgress || isMatchingInProgress) return;
 
       try {
+        // Use browser-based detection to know if a face is present (fast)
         const detection = await faceRecognitionService.detectFace(videoRef.current);
 
         if (detection) {
@@ -265,15 +248,48 @@ const EventCheckinKiosk = () => {
             noFaceTimeoutRef.current = null;
           }
 
-          // Try to match face
-          const match = faceRecognitionService.findBestMatch(detection.descriptor);
+          // Face detected - now send to backend DeepFace for accurate matching
+          isMatchingInProgress = true;
+          setFaceStatus('detecting');
 
-          if (match) {
-            setFaceStatus('matched');
-            // High confidence - initiate check-in with confirmation modal
-            handleFaceMatch(match, detection.descriptor);
-          } else {
+          try {
+            // Capture frame as base64
+            const frameBase64 = faceRecognitionService.captureFrame(videoRef.current);
+            if (!frameBase64) {
+              isMatchingInProgress = false;
+              return;
+            }
+
+            // Send to backend for DeepFace matching
+            const response = await publicFaceRecognitionAPI.matchFace(frameBase64, churchId);
+            const matchResult = response.data;
+
+            if (matchResult.found) {
+              setFaceStatus('matched');
+              console.log(`[EventCheckin] DeepFace match: ${matchResult.member_name} (distance: ${matchResult.distance?.toFixed(4)}, confidence: ${matchResult.confidence})`);
+
+              // Create match object compatible with handleFaceMatch
+              const match = {
+                member: {
+                  memberId: matchResult.member_id,
+                  memberName: matchResult.member_name,
+                  photoUrl: matchResult.photo_url,
+                },
+                distance: matchResult.distance,
+                confidence: matchResult.confidence,
+              };
+
+              // Initiate check-in with confirmation modal
+              handleFaceMatch(match, null); // No descriptor needed for backend matching
+            } else {
+              setFaceStatus('unknown');
+              console.log('[EventCheckin] DeepFace: No match found');
+            }
+          } catch (backendError) {
+            console.error('Backend face matching error:', backendError);
             setFaceStatus('unknown');
+          } finally {
+            isMatchingInProgress = false;
           }
         } else {
           consecutiveNoFace++;
@@ -291,7 +307,7 @@ const EventCheckinKiosk = () => {
       } catch (error) {
         console.error('Face detection error:', error);
       }
-    }, 200); // 5 FPS
+    }, 200); // 5 FPS for browser detection, backend calls throttled by isMatchingInProgress
   };
 
   // Handle QR code scanned
@@ -344,7 +360,8 @@ const EventCheckinKiosk = () => {
     }
 
     setConfirmingMember(match.member);
-    setConfirmingDescriptor(Array.from(descriptor));
+    // Descriptor may be null when using backend DeepFace matching
+    setConfirmingDescriptor(descriptor ? Array.from(descriptor) : null);
     setCancelCountdown(CANCEL_COUNTDOWN_SECONDS);
     setStep('confirming');
 
@@ -446,8 +463,8 @@ const EventCheckinKiosk = () => {
         ]);
 
         // Silent photo capture for progressive learning (if face check-in)
-        if (isFaceCheckin && descriptor && videoRef.current) {
-          silentPhotoCapture(memberId, descriptor);
+        if (isFaceCheckin && videoRef.current) {
+          silentPhotoCapture(memberId);
         }
 
         setConfirmingMember(null);
@@ -472,14 +489,16 @@ const EventCheckinKiosk = () => {
   }, [selectedEvent, churchId, checkinInProgress, t]);
 
   // Silent photo capture for progressive face learning
-  const silentPhotoCapture = async (memberId, descriptor) => {
+  // Note: With DeepFace backend, we capture the photo but the backend
+  // will regenerate the embedding using DeepFace instead of using browser-generated ones
+  const silentPhotoCapture = async (memberId) => {
     try {
       const photoBase64 = faceRecognitionService.captureFrame(videoRef.current);
       if (photoBase64) {
         await kioskApi.saveFacePhoto(
           memberId,
           photoBase64,
-          Array.from(descriptor),
+          null, // Descriptor is now generated by backend DeepFace
           churchId
         );
         console.log('[EventCheckin] Silent face photo captured');

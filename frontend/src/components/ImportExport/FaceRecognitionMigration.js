@@ -4,7 +4,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui
 import { Button } from '../ui/button';
 import { Alert, AlertDescription } from '../ui/alert';
 import { Progress } from '../ui/progress';
-import { Badge } from '../ui/badge';
 import {
   ScanFace,
   Loader2,
@@ -13,12 +12,23 @@ import {
   RefreshCw,
   Play,
   Users,
-  Trash2
+  Trash2,
+  Server
 } from 'lucide-react';
 import { useMembersNeedingFaceDescriptors, useMembersWithPhotos } from '../../hooks/useImportExport';
-import { faceRecognitionService } from '../../services/faceRecognitionService';
-import { importExportAPI } from '../../services/api';
+import { faceRecognitionAPI, importExportAPI } from '../../services/api';
 
+/**
+ * Face Recognition Migration Component
+ *
+ * Uses DeepFace backend for face descriptor generation.
+ * DeepFace with FaceNet512 provides much higher accuracy than browser-based solutions.
+ *
+ * Features:
+ * - Generate face descriptors for members without them
+ * - Regenerate all descriptors (clear and re-run)
+ * - Backend processing (no browser resource usage)
+ */
 export default function FaceRecognitionMigration() {
   const { t } = useTranslation();
   const { data, isLoading, refetch } = useMembersNeedingFaceDescriptors();
@@ -26,10 +36,10 @@ export default function FaceRecognitionMigration() {
 
   // Processing state
   const [processing, setProcessing] = useState(false);
-  const [initializing, setInitializing] = useState(false); // Loading face-api models
-  const [clearing, setClearing] = useState(false); // Clearing existing descriptors
-  const [progress, setProgress] = useState({ current: 0, total: 0, processed: 0, failed: 0 });
+  const [clearing, setClearing] = useState(false);
+  const [progress, setProgress] = useState({ total: 0, message: '' });
   const [complete, setComplete] = useState(false);
+  const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
   const [showRegenerateConfirm, setShowRegenerateConfirm] = useState(false);
 
@@ -47,6 +57,7 @@ export default function FaceRecognitionMigration() {
     );
   }, [allMembersData?.members]);
 
+  // Start migration - only process members without face descriptors
   const startMigration = useCallback(async () => {
     if (membersToProcess.length === 0) {
       setError('No members with photos to process');
@@ -54,118 +65,39 @@ export default function FaceRecognitionMigration() {
     }
 
     setProcessing(true);
-    setInitializing(true);
     setComplete(false);
     setError(null);
-    setProgress({ current: 0, total: membersToProcess.length, processed: 0, failed: 0 });
+    setResult(null);
+    setProgress({ total: membersToProcess.length, message: 'Starting backend face recognition...' });
 
     try {
-      // Initialize face recognition service (can take several seconds to load models)
-      console.log('[Migration] Initializing face recognition service...');
-      const initResult = await faceRecognitionService.initialize();
-      if (!initResult) {
-        throw new Error('Failed to initialize face recognition service. Check browser console for details.');
-      }
-      console.log('[Migration] Face recognition service ready');
-      setInitializing(false);
+      // Get member IDs to process
+      const memberIds = membersToProcess.map(m => m.id);
 
-      const updates = [];
-      let processed = 0;
-      let failed = 0;
-      const failedMembers = [];
+      console.log(`[Migration] Starting DeepFace regeneration for ${memberIds.length} members...`);
+      setProgress({ total: memberIds.length, message: 'Processing with DeepFace (FaceNet512)...' });
 
-      // Process members with proper isolation to prevent descriptor contamination
-      // IMPORTANT: The Human library can cache results between detections, causing
-      // similar embeddings for different faces. We add delays and cache invalidation.
-      const BATCH_SIZE = 50;
-      const DELAY_BETWEEN_DETECTIONS = 100; // ms - allow model to reset
+      // Call backend regenerate API (only for specified members, don't clear existing)
+      const response = await faceRecognitionAPI.regenerateDescriptors(memberIds, false);
+      const regenerateResult = response.data;
 
-      for (let i = 0; i < membersToProcess.length; i++) {
-        const member = membersToProcess[i];
-        setProgress(prev => ({ ...prev, current: i + 1 }));
+      console.log('[Migration] Backend result:', regenerateResult);
 
-        try {
-          // Get photo URL (prefer SeaweedFS URL over base64)
-          const photoUrl = member.photo_url || member.photo_base64;
-
-          console.log(`[Migration] Processing ${i + 1}/${membersToProcess.length}: ${member.full_name}`);
-
-          // Add small delay between detections to allow model to reset
-          if (i > 0) {
-            await new Promise(resolve => setTimeout(resolve, DELAY_BETWEEN_DETECTIONS));
-          }
-
-          // Generate face descriptor with quality checks enabled
-          const result = await faceRecognitionService.generateDescriptorFromUrl(photoUrl, {
-            minWidth: 150,
-            minHeight: 150,
-            minConfidence: 0.6,
-            minFaceSize: 80,
-            returnQuality: true  // Get quality metadata
-          });
-
-          if (result?.descriptor) {
-            updates.push({
-              member_id: member.id,
-              descriptor: result.descriptor,
-              source: 'migration',
-              quality: result.quality  // Store quality metadata
-            });
-            processed++;
-            console.log(`[Migration] ✓ Face detected for ${member.full_name} (confidence: ${result.quality?.confidence?.toFixed(2) || 'N/A'})`);
-          } else {
-            const reason = result?.quality?.reason || 'No face detected';
-            console.warn(`[Migration] ✗ ${reason} for ${member.full_name}`);
-            failedMembers.push({ name: member.full_name, reason });
-            failed++;
-          }
-        } catch (err) {
-          console.error(`[Migration] ✗ Error processing ${member.full_name}:`, err.message);
-          failedMembers.push({ name: member.full_name, reason: err.message });
-          failed++;
-        }
-
-        setProgress(prev => ({ ...prev, processed, failed }));
-
-        // Send batch update every BATCH_SIZE members
-        if (updates.length >= BATCH_SIZE) {
-          console.log(`[Migration] Sending batch of ${updates.length} descriptors...`);
-          await importExportAPI.bulkUpdateFaceDescriptors(updates);
-          updates.length = 0; // Clear array
-
-          // Extra delay after batch to allow memory cleanup
-          await new Promise(resolve => setTimeout(resolve, 500));
-        }
-      }
-
-      // Send remaining updates
-      if (updates.length > 0) {
-        console.log(`[Migration] Sending final batch of ${updates.length} descriptors...`);
-        await importExportAPI.bulkUpdateFaceDescriptors(updates);
-      }
-
-      setProgress(prev => ({ ...prev, processed, failed }));
+      setResult(regenerateResult);
       setComplete(true);
-      console.log(`[Migration] Complete: ${processed} processed, ${failed} failed`);
-
-      // Log first 10 failures for debugging
-      if (failedMembers.length > 0) {
-        console.log('[Migration] First 10 failures:', failedMembers.slice(0, 10));
-      }
 
       // Refresh data to update stats
       refetch();
       refetchAll();
     } catch (err) {
       console.error('[Migration] Error:', err);
-      setError(err.message || 'Migration failed');
+      setError(err.response?.data?.detail || err.message || 'Migration failed');
     } finally {
       setProcessing(false);
-      setInitializing(false);
     }
   }, [membersToProcess, refetch, refetchAll]);
 
-  // Regenerate all face descriptors (clear and re-run)
+  // Regenerate all face descriptors (clear and re-run with DeepFace)
   const regenerateAll = useCallback(async () => {
     setShowRegenerateConfirm(false);
 
@@ -178,111 +110,39 @@ export default function FaceRecognitionMigration() {
     setProcessing(true);
     setComplete(false);
     setError(null);
+    setResult(null);
+    setProgress({ total: allMembersWithPhotos.length, message: 'Clearing existing descriptors...' });
 
     try {
       // Step 1: Clear all existing face descriptors
       console.log('[Regenerate] Clearing all face descriptors...');
       await importExportAPI.clearFaceDescriptors();
       console.log('[Regenerate] Face descriptors cleared');
-
-      // Note: We don't refetch here to avoid component re-render during processing
-      // The allMembersWithPhotos array was already captured before regeneration started
-
       setClearing(false);
-      setInitializing(true);
 
-      // Step 2: Initialize face recognition service
-      console.log('[Regenerate] Initializing face recognition service...');
-      const initResult = await faceRecognitionService.initialize();
-      if (!initResult) {
-        throw new Error('Failed to initialize face recognition service');
-      }
-      console.log('[Regenerate] Face recognition service ready');
-      setInitializing(false);
+      // Step 2: Regenerate using DeepFace backend (all members with photos)
+      setProgress({ total: allMembersWithPhotos.length, message: 'Processing with DeepFace (FaceNet512)...' });
 
-      // Step 3: Process all members with photos
-      setProgress({ current: 0, total: allMembersWithPhotos.length, processed: 0, failed: 0 });
+      console.log(`[Regenerate] Starting DeepFace regeneration for ${allMembersWithPhotos.length} members...`);
 
-      const updates = [];
-      let processed = 0;
-      let failed = 0;
-      const failedMembers = [];
-      const BATCH_SIZE = 50;
-      const DELAY_BETWEEN_DETECTIONS = 100;
+      // Call backend regenerate API (all members, already cleared)
+      const response = await faceRecognitionAPI.regenerateDescriptors(null, false);
+      const regenerateResult = response.data;
 
-      for (let i = 0; i < allMembersWithPhotos.length; i++) {
-        const member = allMembersWithPhotos[i];
-        setProgress(prev => ({ ...prev, current: i + 1 }));
+      console.log('[Regenerate] Backend result:', regenerateResult);
 
-        try {
-          const photoUrl = member.photo_url || member.photo_base64;
-          console.log(`[Regenerate] Processing ${i + 1}/${allMembersWithPhotos.length}: ${member.full_name}`);
-
-          if (i > 0) {
-            await new Promise(resolve => setTimeout(resolve, DELAY_BETWEEN_DETECTIONS));
-          }
-
-          const result = await faceRecognitionService.generateDescriptorFromUrl(photoUrl, {
-            minWidth: 150,
-            minHeight: 150,
-            minConfidence: 0.6,
-            minFaceSize: 80,
-            returnQuality: true
-          });
-
-          if (result?.descriptor) {
-            updates.push({
-              member_id: member.id,
-              descriptor: result.descriptor,
-              source: 'regeneration',
-              quality: result.quality
-            });
-            processed++;
-            console.log(`[Regenerate] ✓ Face detected for ${member.full_name}`);
-          } else {
-            const reason = result?.quality?.reason || 'No face detected';
-            console.warn(`[Regenerate] ✗ ${reason} for ${member.full_name}`);
-            failedMembers.push({ name: member.full_name, reason });
-            failed++;
-          }
-        } catch (err) {
-          console.error(`[Regenerate] ✗ Error for ${member.full_name}:`, err.message);
-          failedMembers.push({ name: member.full_name, reason: err.message });
-          failed++;
-        }
-
-        setProgress(prev => ({ ...prev, processed, failed }));
-
-        if (updates.length >= BATCH_SIZE) {
-          console.log(`[Regenerate] Sending batch of ${updates.length} descriptors...`);
-          await importExportAPI.bulkUpdateFaceDescriptors(updates);
-          updates.length = 0;
-          await new Promise(resolve => setTimeout(resolve, 500));
-        }
-      }
-
-      if (updates.length > 0) {
-        console.log(`[Regenerate] Sending final batch of ${updates.length} descriptors...`);
-        await importExportAPI.bulkUpdateFaceDescriptors(updates);
-      }
-
-      setProgress(prev => ({ ...prev, processed, failed }));
+      setResult(regenerateResult);
       setComplete(true);
-      console.log(`[Regenerate] Complete: ${processed} processed, ${failed} failed`);
 
-      if (failedMembers.length > 0) {
-        console.log('[Regenerate] First 10 failures:', failedMembers.slice(0, 10));
-      }
-
+      // Refresh data to update stats
       refetch();
       refetchAll();
     } catch (err) {
       console.error('[Regenerate] Error:', err);
-      setError(err.message || 'Regeneration failed');
+      setError(err.response?.data?.detail || err.message || 'Regeneration failed');
     } finally {
       setClearing(false);
       setProcessing(false);
-      setInitializing(false);
     }
   }, [allMembersWithPhotos, refetch, refetchAll]);
 
@@ -300,7 +160,6 @@ export default function FaceRecognitionMigration() {
   }
 
   const stats = data?.stats || { total_with_photos: 0, total_with_descriptors: 0, needing_descriptors: 0 };
-  const progressPercentage = progress.total > 0 ? (progress.current / progress.total) * 100 : 0;
 
   return (
     <div className="space-y-6">
@@ -311,9 +170,10 @@ export default function FaceRecognitionMigration() {
             <ScanFace className="h-6 w-6" />
             {t('importExport.faceRecognitionMigration') || 'Face Recognition Migration'}
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="flex items-center gap-2">
+            <Server className="h-4 w-4 text-blue-500" />
             {t('importExport.faceRecognitionMigrationDesc') ||
-              'Generate face descriptors for existing members to enable face check-in at kiosk.'}
+              'Generate face descriptors using DeepFace (FaceNet512) backend for highly accurate face check-in.'}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -348,8 +208,17 @@ export default function FaceRecognitionMigration() {
             </Card>
           </div>
 
+          {/* DeepFace Info Banner */}
+          <Alert className="mb-6 border-blue-500 bg-blue-50">
+            <Server className="h-4 w-4 text-blue-600" />
+            <AlertDescription className="text-blue-800">
+              <strong>DeepFace Backend:</strong> Uses FaceNet512 model with RetinaFace detector for highly accurate face recognition.
+              Processing happens on the server, not in browser.
+            </AlertDescription>
+          </Alert>
+
           {/* Status Messages */}
-          {stats.needing_descriptors === 0 && (
+          {stats.needing_descriptors === 0 && !processing && (
             <Alert className="mb-6 border-green-500 bg-green-50">
               <CheckCircle className="h-4 w-4 text-green-600" />
               <AlertDescription className="text-green-800">
@@ -379,48 +248,31 @@ export default function FaceRecognitionMigration() {
           {/* Processing Progress */}
           {processing && (
             <div className="mb-6 space-y-4">
-              {initializing ? (
-                /* Initializing face recognition models */
-                <div className="py-4">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Loader2 className="h-5 w-5 text-blue-600 animate-spin" />
-                    <span className="font-medium">
-                      {t('importExport.loadingFaceModels') || 'Loading face recognition models...'}
-                    </span>
-                  </div>
-                  <p className="text-sm text-gray-500">
-                    {t('importExport.loadingFaceModelsDesc') || 'This may take a few seconds on first load.'}
-                  </p>
+              <div className="py-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <Loader2 className="h-5 w-5 text-blue-600 animate-spin" />
+                  <span className="font-medium">
+                    {clearing ? 'Clearing existing descriptors...' : progress.message}
+                  </span>
                 </div>
-              ) : (
-                /* Processing members */
-                <>
-                  <div className="flex items-center gap-2">
-                    <ScanFace className="h-5 w-5 text-blue-600 animate-pulse" />
-                    <span className="font-medium">
-                      {t('importExport.processingPhotos') || 'Processing member photos...'}
-                    </span>
-                  </div>
-                  <Progress value={progressPercentage} className="h-3" />
-                  <div className="flex justify-between text-sm text-gray-500">
-                    <span>{progress.current} / {progress.total} {t('common.members') || 'members'}</span>
-                    <div className="flex gap-4">
-                      <span className="text-green-600">{progress.processed} {t('importExport.detected') || 'detected'}</span>
-                      <span className="text-yellow-600">{progress.failed} {t('importExport.noFace') || 'no face'}</span>
-                    </div>
-                  </div>
-                </>
-              )}
+                <Progress value={processing ? 50 : 100} className="h-3" />
+                <p className="text-sm text-gray-500 mt-2">
+                  Processing {progress.total} members on backend server...
+                </p>
+              </div>
             </div>
           )}
 
           {/* Complete Message */}
-          {complete && (
+          {complete && result && (
             <Alert className="mb-6 border-green-500 bg-green-50">
               <CheckCircle className="h-4 w-4 text-green-600" />
               <AlertDescription className="text-green-800">
-                {t('importExport.migrationComplete', { processed: progress.processed, failed: progress.failed }) ||
-                  `Migration complete! ${progress.processed} faces detected, ${progress.failed} photos had no detectable face.`}
+                <p className="font-medium mb-2">Migration complete!</p>
+                <p>
+                  {result.total} members queued for processing on backend.
+                  The actual processing happens in background - refresh to see updated stats.
+                </p>
               </AlertDescription>
             </Alert>
           )}
@@ -444,11 +296,11 @@ export default function FaceRecognitionMigration() {
               <AlertDescription className="text-red-800">
                 <p className="font-medium mb-2">
                   {t('importExport.regenerateWarning') ||
-                    `This will clear ALL ${stats.total_with_descriptors} existing face descriptors and regenerate from photos.`}
+                    `This will clear ALL ${stats.total_with_descriptors} existing face descriptors and regenerate from photos using DeepFace.`}
                 </p>
                 <p className="text-sm mb-4">
                   {t('importExport.regenerateWarningDesc') ||
-                    'This may take several minutes. Face check-in will be unavailable until complete.'}
+                    'This is recommended when switching from browser-based face recognition to DeepFace backend.'}
                 </p>
                 <div className="flex gap-2">
                   <Button variant="destructive" size="sm" onClick={regenerateAll}>
@@ -472,15 +324,15 @@ export default function FaceRecognitionMigration() {
               </Button>
             )}
 
-            {/* Regenerate All button - always visible when there are descriptors */}
-            {stats.total_with_descriptors > 0 && !processing && (
+            {/* Regenerate All button - always visible when there are descriptors or photos */}
+            {(stats.total_with_descriptors > 0 || stats.total_with_photos > 0) && !processing && (
               <Button
                 variant="destructive"
                 onClick={() => setShowRegenerateConfirm(true)}
                 className="flex items-center gap-2"
               >
                 <Trash2 className="h-4 w-4" />
-                {t('importExport.regenerateAll') || 'Regenerate All Descriptors'}
+                {t('importExport.regenerateAll') || 'Regenerate All (DeepFace)'}
               </Button>
             )}
 
@@ -500,7 +352,7 @@ export default function FaceRecognitionMigration() {
               {t('importExport.membersToProcess') || 'Members to Process'} ({membersToProcess.length})
             </CardTitle>
             <CardDescription>
-              {t('importExport.membersPreviewDesc') || 'Preview of members that will have face descriptors generated.'}
+              {t('importExport.membersPreviewDesc') || 'Preview of members that will have face descriptors generated using DeepFace.'}
             </CardDescription>
           </CardHeader>
           <CardContent>
