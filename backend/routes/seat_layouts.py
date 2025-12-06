@@ -33,9 +33,8 @@ async def create_seat_layout(
     
     layout = SeatLayout(**layout_data.model_dump(mode='json'))
     layout_doc = layout.model_dump(mode='json')
-    layout_doc['created_at'] = layout_doc['created_at'].isoformat()
-    layout_doc['updated_at'] = layout_doc['updated_at'].isoformat()
-    
+    # mode='json' already converts datetime to ISO strings
+
     await db.seat_layouts.insert_one(layout_doc)
     return layout
 

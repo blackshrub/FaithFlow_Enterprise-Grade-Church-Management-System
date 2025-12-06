@@ -30,12 +30,8 @@ async def create_church(
     """Create a new church (super admin only)"""
     church = Church(**church_data.model_dump(mode='json'))
     church_doc = church.model_dump(mode='json')
-    church_doc['created_at'] = church_doc['created_at'].isoformat()
-    church_doc['updated_at'] = church_doc['updated_at'].isoformat()
-    
-    if church_doc.get('established_date'):
-        church_doc['established_date'] = church_doc['established_date'].isoformat()
-    
+    # mode='json' already converts datetime/date to ISO strings
+
     await db.churches.insert_one(church_doc)
     return church
 

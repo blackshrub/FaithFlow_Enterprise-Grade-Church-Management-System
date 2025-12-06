@@ -86,11 +86,13 @@ export default function ExportPanel() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">{t('importExport.allDemographics')}</SelectItem>
-                {demographics.map((demo) => (
-                  <SelectItem key={demo.id} value={demo.name}>
-                    {demo.name}
-                  </SelectItem>
-                ))}
+                {demographics
+                  .filter((demo) => demo.name && demo.name.trim() !== '')
+                  .map((demo) => (
+                    <SelectItem key={demo.id} value={demo.name}>
+                      {demo.name}
+                    </SelectItem>
+                  ))}
               </SelectContent>
             </Select>
           </div>

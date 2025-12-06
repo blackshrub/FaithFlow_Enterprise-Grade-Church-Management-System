@@ -570,12 +570,12 @@ check_prerequisites() {
 
     # Check required files
     print_info "Checking required files..."
-    if [ ! -f "$SCRIPT_DIR/docker-compose.prod.yml" ]; then
-        print_error "docker-compose.prod.yml not found"
+    if [ ! -f "$SCRIPT_DIR/docker/compose/prod.yml" ]; then
+        print_error "docker/compose/prod.yml not found"
         echo ""
         echo -e "${YELLOW}  How to fix:${NC}"
         echo -e "${WHITE}    Make sure you're running from the FaithFlow directory${NC}"
-        echo -e "${WHITE}    The docker-compose.prod.yml file should be in the same folder${NC}"
+        echo -e "${WHITE}    The docker/compose/prod.yml file should be in the same folder${NC}"
         echo ""
         exit 1
     fi
@@ -1221,9 +1221,9 @@ build_and_start() {
     cd "$SCRIPT_DIR"
 
     # Determine compose files based on configuration
-    local COMPOSE_CMD="docker compose -f docker-compose.prod.yml"
+    local COMPOSE_CMD="docker compose -f docker/compose/prod.yml"
     if [ "$EXTERNAL_TRAEFIK" = true ]; then
-        COMPOSE_CMD="docker compose -f docker-compose.prod.yml -f docker-compose.external-traefik.yml"
+        COMPOSE_CMD="docker compose -f docker/compose/prod.yml -f docker/compose/external-traefik.yml"
         print_info "Using external Traefik configuration"
     fi
 
@@ -1344,9 +1344,9 @@ initialize_database() {
     cd "$SCRIPT_DIR"
 
     # Determine compose files based on configuration
-    local COMPOSE_CMD="docker compose -f docker-compose.prod.yml"
+    local COMPOSE_CMD="docker compose -f docker/compose/prod.yml"
     if [ "$EXTERNAL_TRAEFIK" = true ]; then
-        COMPOSE_CMD="docker compose -f docker-compose.prod.yml -f docker-compose.external-traefik.yml"
+        COMPOSE_CMD="docker compose -f docker/compose/prod.yml -f docker/compose/external-traefik.yml"
     fi
 
     print_info "Waiting for MongoDB to be ready..."
@@ -1452,17 +1452,17 @@ EOF
     echo -e "${BLUE}  │  ${WHITE}Useful Commands${BLUE}                                                   │${NC}"
     echo -e "${BLUE}  ├─────────────────────────────────────────────────────────────────────┤${NC}"
     if [ "$EXTERNAL_TRAEFIK" = true ]; then
-        local COMPOSE_FILES="-f docker-compose.prod.yml -f docker-compose.external-traefik.yml"
+        local COMPOSE_FILES="-f docker/compose/prod.yml -f docker/compose/external-traefik.yml"
         echo -e "${BLUE}  │  ${CYAN}View logs:${NC}    docker compose $COMPOSE_FILES logs -f${BLUE}"
         echo -e "${BLUE}  │  ${CYAN}Check status:${NC} docker compose $COMPOSE_FILES ps${BLUE}"
         echo -e "${BLUE}  │  ${CYAN}Stop all:${NC}     docker compose $COMPOSE_FILES down${BLUE}"
         echo -e "${BLUE}  │  ${CYAN}Restart:${NC}      docker compose $COMPOSE_FILES restart${BLUE}"
         echo -e "${BLUE}  │  ${CYAN}Update:${NC}       ./docker-update.sh --external-traefik${BLUE}"
     else
-        echo -e "${BLUE}  │  ${CYAN}View logs:${NC}      docker compose -f docker-compose.prod.yml logs -f${BLUE}│${NC}"
-        echo -e "${BLUE}  │  ${CYAN}Check status:${NC}   docker compose -f docker-compose.prod.yml ps${BLUE}     │${NC}"
-        echo -e "${BLUE}  │  ${CYAN}Stop all:${NC}       docker compose -f docker-compose.prod.yml down${BLUE}   │${NC}"
-        echo -e "${BLUE}  │  ${CYAN}Restart:${NC}        docker compose -f docker-compose.prod.yml restart${BLUE}│${NC}"
+        echo -e "${BLUE}  │  ${CYAN}View logs:${NC}      docker compose -f docker/compose/prod.yml logs -f${BLUE}│${NC}"
+        echo -e "${BLUE}  │  ${CYAN}Check status:${NC}   docker compose -f docker/compose/prod.yml ps${BLUE}     │${NC}"
+        echo -e "${BLUE}  │  ${CYAN}Stop all:${NC}       docker compose -f docker/compose/prod.yml down${BLUE}   │${NC}"
+        echo -e "${BLUE}  │  ${CYAN}Restart:${NC}        docker compose -f docker/compose/prod.yml restart${BLUE}│${NC}"
         echo -e "${BLUE}  │  ${CYAN}Update:${NC}         ./docker-update.sh${BLUE}                              │${NC}"
     fi
     echo -e "${BLUE}  └─────────────────────────────────────────────────────────────────────┘${NC}"

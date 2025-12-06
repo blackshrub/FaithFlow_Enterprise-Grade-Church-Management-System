@@ -56,11 +56,12 @@ async def create_webhook(
         )
     
     # Create webhook
-    webhook = WebhookConfig(**webhook_data.model_dump(mode='json'))
-    webhook_doc = webhook.model_dump(mode='json')
+    webhook = WebhookConfig(**webhook_data.model_dump())
+    webhook_doc = webhook.model_dump()
+    # Convert datetime to ISO strings for MongoDB
     webhook_doc['created_at'] = webhook_doc['created_at'].isoformat()
     webhook_doc['updated_at'] = webhook_doc['updated_at'].isoformat()
-    
+
     await db.webhook_configs.insert_one(webhook_doc)
     return webhook
 

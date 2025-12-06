@@ -87,13 +87,8 @@ async def quick_add_member(
         demographic = await auto_assign_demographic(member_doc, db)
         if demographic:
             member_doc['demographic_category'] = demographic
-    
-    # Convert dates
-    member_doc['created_at'] = member_doc['created_at'].isoformat()
-    member_doc['updated_at'] = member_doc['updated_at'].isoformat()
-    if member_doc.get('date_of_birth'):
-        member_doc['date_of_birth'] = member_doc['date_of_birth'].isoformat()
-    
+
+    # mode='json' already converts datetime/date to ISO strings
     await db.members.insert_one(member_doc)
     
     return member
@@ -172,17 +167,8 @@ async def create_member(
         demographic = await auto_assign_demographic(member_doc, db)
         if demographic:
             member_doc['demographic_category'] = demographic
-    
-    # Convert datetime and date fields to ISO strings
-    member_doc['created_at'] = member_doc['created_at'].isoformat()
-    member_doc['updated_at'] = member_doc['updated_at'].isoformat()
-    if member_doc.get('date_of_birth'):
-        member_doc['date_of_birth'] = member_doc['date_of_birth'].isoformat()
-    if member_doc.get('baptism_date'):
-        member_doc['baptism_date'] = member_doc['baptism_date'].isoformat()
-    if member_doc.get('membership_date'):
-        member_doc['membership_date'] = member_doc['membership_date'].isoformat()
-    
+
+    # mode='json' already converts datetime/date to ISO strings
     await db.members.insert_one(member_doc)
     
     # Trigger webhook: member.created (hybrid: try immediate, fallback to queue)
@@ -466,15 +452,8 @@ async def update_member(
             demographic = await auto_assign_demographic(temp_member, db)
             if demographic:
                 update_data['demographic_category'] = demographic
-        
-        # Convert date fields to ISO strings
-        if update_data.get('date_of_birth'):
-            update_data['date_of_birth'] = update_data['date_of_birth'].isoformat()
-        if update_data.get('baptism_date'):
-            update_data['baptism_date'] = update_data['baptism_date'].isoformat()
-        if update_data.get('membership_date'):
-            update_data['membership_date'] = update_data['membership_date'].isoformat()
-        
+
+        # mode='json' already converts datetime/date to ISO strings
         await db.members.update_one(
             {"id": member_id},
             {"$set": update_data}

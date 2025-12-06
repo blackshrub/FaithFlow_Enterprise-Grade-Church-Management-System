@@ -44,8 +44,7 @@ async def create_member_status(
     
     member_status = MemberStatus(**status_data.model_dump(mode='json'))
     status_doc = member_status.model_dump(mode='json')
-    status_doc['created_at'] = status_doc['created_at'].isoformat()
-    status_doc['updated_at'] = status_doc['updated_at'].isoformat()
+    # mode='json' already converts datetime to ISO strings, no need for isoformat()
     
     # If this is being set as default, unset all others
     if status_doc.get('is_default'):
@@ -184,16 +183,19 @@ async def update_member_status(
             {"id": status_id},
             {"$set": update_data}
         )
-    
+
+    # Invalidate cache after mutation
+    await invalidate_church_cache(status.get('church_id'))
+
     # Get updated status
     updated_status = await db.member_statuses.find_one({"id": status_id}, {"_id": 0})
-    
+
     # Convert ISO strings
     if isinstance(updated_status.get('created_at'), str):
         updated_status['created_at'] = datetime.fromisoformat(updated_status['created_at'])
     if isinstance(updated_status.get('updated_at'), str):
         updated_status['updated_at'] = datetime.fromisoformat(updated_status['updated_at'])
-    
+
     return updated_status
 
 
@@ -238,7 +240,12 @@ async def delete_member_status(
             detail=f"Cannot delete status: {rules_using_status} rule(s) are using this status as target"
         )
 
+    church_id = member_status.get('church_id')
     await db.member_statuses.delete_one({"id": status_id})
+
+    # Invalidate cache after mutation
+    await invalidate_church_cache(church_id)
+
     return None
 
 
@@ -279,10 +286,13 @@ async def create_demographic_preset(
     
     demographic = DemographicPreset(**preset_data.model_dump(mode='json'))
     preset_doc = demographic.model_dump(mode='json')
-    preset_doc['created_at'] = preset_doc['created_at'].isoformat()
-    preset_doc['updated_at'] = preset_doc['updated_at'].isoformat()
-    
+    # mode='json' already converts datetime to ISO strings, no need for isoformat()
+
     await db.demographic_presets.insert_one(preset_doc)
+
+    # Invalidate cache after mutation
+    await invalidate_church_cache(preset_data.church_id)
+
     return demographic
 
 
@@ -516,16 +526,19 @@ async def update_demographic_preset(
             {"id": preset_id},
             {"$set": update_data}
         )
-    
+
+    # Invalidate cache after mutation
+    await invalidate_church_cache(preset.get('church_id'))
+
     # Get updated preset
     updated_preset = await db.demographic_presets.find_one({"id": preset_id}, {"_id": 0})
-    
+
     # Convert ISO strings
     if isinstance(updated_preset.get('created_at'), str):
         updated_preset['created_at'] = datetime.fromisoformat(updated_preset['created_at'])
     if isinstance(updated_preset.get('updated_at'), str):
         updated_preset['updated_at'] = datetime.fromisoformat(updated_preset['updated_at'])
-    
+
     return updated_preset
 
 
@@ -551,7 +564,12 @@ async def delete_demographic_preset(
             detail="Access denied"
         )
 
+    church_id = preset.get('church_id')
     await db.demographic_presets.delete_one({"id": preset_id})
+
+    # Invalidate cache after mutation
+    await invalidate_church_cache(church_id)
+
     return None
 
 
@@ -745,9 +763,8 @@ async def create_church_settings(
     
     church_settings = ChurchSettings(**settings_data.model_dump(mode='json'))
     settings_doc = church_settings.model_dump(mode='json')
-    settings_doc['created_at'] = settings_doc['created_at'].isoformat()
-    settings_doc['updated_at'] = settings_doc['updated_at'].isoformat()
-    
+    # mode='json' already converts datetime to ISO strings, no need for isoformat()
+
     await db.church_settings.insert_one(settings_doc)
     return church_settings
 
@@ -876,9 +893,8 @@ async def create_event_category(
     
     category = EventCategory(**category_data.model_dump(mode='json'))
     cat_doc = category.model_dump(mode='json')
-    cat_doc['created_at'] = cat_doc['created_at'].isoformat()
-    cat_doc['updated_at'] = cat_doc['updated_at'].isoformat()
-    
+    # mode='json' already converts datetime to ISO strings, no need for isoformat()
+
     await db.event_categories.insert_one(cat_doc)
     return category
 

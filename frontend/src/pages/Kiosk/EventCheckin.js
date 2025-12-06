@@ -1090,11 +1090,12 @@ const EventCheckinKiosk = () => {
         <AnimatePresence>
           {successMember && !successMember.alreadyCheckedIn && (
             <motion.div
-              className="fixed inset-0 flex flex-col items-center justify-center z-50 bg-green-600"
+              className="fixed inset-0 flex flex-col items-center justify-center z-50 bg-green-600 cursor-pointer"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.3 }}
+              onClick={() => setSuccessMember(null)}
             >
               {/* Success icon */}
               <motion.div
@@ -1121,21 +1122,28 @@ const EventCheckinKiosk = () => {
                   transition={{ duration: 3, ease: 'linear' }}
                 />
               </div>
+              {/* Tap to close hint */}
+              <p className="mt-6 text-green-200 text-sm sm:text-base">
+                {t('event_checkin.tap_to_close') || 'Tap anywhere to close'}
+              </p>
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* Small Toast for Already Checked In - Non-blocking */}
+        {/* Small Toast for Already Checked In - Non-blocking but tappable */}
         <AnimatePresence>
           {successMember && successMember.alreadyCheckedIn && (
             <motion.div
-              className="fixed top-4 left-4 right-4 z-50 flex justify-center pointer-events-none"
+              className="fixed top-4 left-4 right-4 z-50 flex justify-center"
               initial={{ opacity: 0, y: -50 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -50 }}
               transition={{ duration: 0.3 }}
             >
-              <div className="bg-blue-600 text-white px-6 py-3 rounded-xl shadow-lg flex items-center gap-3 max-w-md">
+              <div
+                className="bg-blue-600 text-white px-6 py-3 rounded-xl shadow-lg flex items-center gap-3 max-w-md cursor-pointer hover:bg-blue-700 transition-colors"
+                onClick={() => setSuccessMember(null)}
+              >
                 <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center flex-shrink-0">
                   <Check className="w-6 h-6 text-blue-600" />
                 </div>
@@ -1145,14 +1153,17 @@ const EventCheckinKiosk = () => {
                     {t('event_checkin.already_checked_in') || 'Already checked in'}
                   </p>
                 </div>
-                {/* Progress bar */}
-                <div className="w-16 h-1.5 rounded-full overflow-hidden bg-blue-700">
-                  <motion.div
-                    className="h-full bg-white"
-                    initial={{ width: '100%' }}
-                    animate={{ width: '0%' }}
-                    transition={{ duration: 2, ease: 'linear' }}
-                  />
+                {/* Progress bar + X icon */}
+                <div className="flex items-center gap-2">
+                  <div className="w-12 h-1.5 rounded-full overflow-hidden bg-blue-700">
+                    <motion.div
+                      className="h-full bg-white"
+                      initial={{ width: '100%' }}
+                      animate={{ width: '0%' }}
+                      transition={{ duration: 2, ease: 'linear' }}
+                    />
+                  </div>
+                  <X className="w-5 h-5 text-blue-200" />
                 </div>
               </div>
             </motion.div>

@@ -10,7 +10,7 @@ from datetime import datetime
 from typing import Optional
 from pydantic import BaseModel
 
-from utils.dependencies import get_current_user, get_db, require_super_admin
+from utils.dependencies import get_current_user, get_db, require_admin, require_super_admin
 from models.system_settings import SystemSettings, SystemSettingsUpdate
 from utils.encryption import encrypt_sensitive_data, decrypt_sensitive_data
 
@@ -83,12 +83,12 @@ def mask_sensitive_fields(settings: dict) -> dict:
 
 @router.get("/settings")
 async def get_system_settings(
-    current_user=Depends(require_super_admin),
+    current_user=Depends(require_admin),
     db=Depends(get_db),
     include_sensitive: bool = False,
 ):
     """
-    Get system settings (super admin only)
+    Get system settings (admin only)
 
     Args:
         include_sensitive: If True, returns full API keys. If False, returns masked values.
@@ -117,11 +117,11 @@ async def get_system_settings(
 @router.put("/settings")
 async def update_system_settings(
     updates: SystemSettingsUpdate,
-    current_user=Depends(require_super_admin),
+    current_user=Depends(require_admin),
     db=Depends(get_db),
 ):
     """
-    Update system settings (super admin only)
+    Update system settings (admin only)
 
     Only updates provided fields. API keys are encrypted before storage.
     """
@@ -184,7 +184,7 @@ class TestAIConnectionRequest(BaseModel):
 @router.post("/settings/test-ai-connection")
 async def test_ai_connection(
     request: Optional[TestAIConnectionRequest] = None,
-    current_user=Depends(require_super_admin),
+    current_user=Depends(require_admin),
     db=Depends(get_db),
 ):
     """
@@ -249,7 +249,7 @@ class TestStabilityRequest(BaseModel):
 @router.post("/settings/test-stability-connection")
 async def test_stability_connection(
     request: Optional[TestStabilityRequest] = None,
-    current_user=Depends(require_super_admin),
+    current_user=Depends(require_admin),
     db=Depends(get_db),
 ):
     """
@@ -322,7 +322,7 @@ class TestFaithAssistantRequest(BaseModel):
 @router.post("/settings/test-faith-assistant")
 async def test_faith_assistant(
     request: Optional[TestFaithAssistantRequest] = None,
-    current_user=Depends(require_super_admin),
+    current_user=Depends(require_admin),
     db=Depends(get_db),
 ):
     """
@@ -388,7 +388,7 @@ async def test_faith_assistant(
 
 @router.get("/settings/ai-usage")
 async def get_ai_usage_stats(
-    current_user=Depends(require_super_admin),
+    current_user=Depends(require_admin),
     db=Depends(get_db),
 ):
     """
@@ -426,7 +426,7 @@ class TestVoiceRequest(BaseModel):
 @router.post("/settings/test-voice-connection")
 async def test_voice_connection(
     request: Optional[TestVoiceRequest] = None,
-    current_user=Depends(require_super_admin),
+    current_user=Depends(require_admin),
     db=Depends(get_db),
 ):
     """
@@ -732,7 +732,7 @@ class TestGoogleTTSRequest(BaseModel):
 @router.post("/settings/test-google-tts")
 async def test_google_tts(
     request: Optional[TestGoogleTTSRequest] = None,
-    current_user=Depends(require_super_admin),
+    current_user=Depends(require_admin),
     db=Depends(get_db),
 ):
     """
@@ -809,7 +809,7 @@ class TestGroqRequest(BaseModel):
 @router.post("/settings/test-groq")
 async def test_groq(
     request: Optional[TestGroqRequest] = None,
-    current_user=Depends(require_super_admin),
+    current_user=Depends(require_admin),
     db=Depends(get_db),
 ):
     """
@@ -890,7 +890,7 @@ class TestPaymentRequest(BaseModel):
 @router.post("/settings/test-ipaymu")
 async def test_ipaymu(
     request: Optional[TestPaymentRequest] = None,
-    current_user=Depends(require_super_admin),
+    current_user=Depends(require_admin),
     db=Depends(get_db),
 ):
     """

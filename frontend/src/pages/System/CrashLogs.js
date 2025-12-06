@@ -268,14 +268,14 @@ export default function CrashLogs() {
               </div>
             </div>
             <Select
-              value={filters.status}
-              onValueChange={(value) => handleFilterChange('status', value)}
+              value={filters.status || "all"}
+              onValueChange={(value) => handleFilterChange('status', value === "all" ? "" : value)}
             >
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder={t('crashLogs.allStatuses', 'All Statuses')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">{t('crashLogs.allStatuses', 'All Statuses')}</SelectItem>
+                <SelectItem value="all">{t('crashLogs.allStatuses', 'All Statuses')}</SelectItem>
                 <SelectItem value="new">{t('crashLogs.status.new', 'New')}</SelectItem>
                 <SelectItem value="investigating">{t('crashLogs.status.investigating', 'Investigating')}</SelectItem>
                 <SelectItem value="resolved">{t('crashLogs.status.resolved', 'Resolved')}</SelectItem>
@@ -283,14 +283,14 @@ export default function CrashLogs() {
               </SelectContent>
             </Select>
             <Select
-              value={filters.platform}
-              onValueChange={(value) => handleFilterChange('platform', value)}
+              value={filters.platform || "all"}
+              onValueChange={(value) => handleFilterChange('platform', value === "all" ? "" : value)}
             >
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder={t('crashLogs.allPlatforms', 'All Platforms')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">{t('crashLogs.allPlatforms', 'All Platforms')}</SelectItem>
+                <SelectItem value="all">{t('crashLogs.allPlatforms', 'All Platforms')}</SelectItem>
                 <SelectItem value="ios">iOS</SelectItem>
                 <SelectItem value="android">Android</SelectItem>
                 <SelectItem value="web">Web</SelectItem>

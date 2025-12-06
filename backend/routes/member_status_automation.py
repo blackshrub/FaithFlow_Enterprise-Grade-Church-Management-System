@@ -62,9 +62,8 @@ async def create_status(
     
     member_status = MemberStatus(**status_data.model_dump(mode='json'))
     status_doc = member_status.model_dump(mode='json')
-    status_doc['created_at'] = status_doc['created_at'].isoformat()
-    status_doc['updated_at'] = status_doc['updated_at'].isoformat()
-    
+    # mode='json' already converts datetime to ISO strings
+
     # Enforce single default
     if status_doc.get('is_default'):
         await db.member_statuses.update_many(
@@ -222,9 +221,8 @@ async def create_rule(
     rule_dict = rule.model_dump(mode='json')
     human_readable = RuleEngineService.translate_rule_to_human(rule_dict, statuses_map)
     rule_dict['human_readable'] = human_readable
-    rule_dict['created_at'] = rule_dict['created_at'].isoformat()
-    rule_dict['updated_at'] = rule_dict['updated_at'].isoformat()
-    
+    # mode='json' already converts datetime to ISO strings
+
     await db.member_status_rules.insert_one(rule_dict)
     logger.info(f"Status rule created: {rule.name}")
     return rule

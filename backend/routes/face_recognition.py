@@ -245,7 +245,7 @@ async def regenerate_descriptors(
     # Build query
     query = {"church_id": church_id}
     if request.member_ids:
-        query["_id"] = {"$in": request.member_ids}
+        query["id"] = {"$in": request.member_ids}  # Use 'id' field (UUID), not '_id' (MongoDB ObjectId)
 
     # Only process members with photos
     query["$or"] = [
@@ -256,7 +256,7 @@ async def regenerate_descriptors(
     # Get members
     members = await db.members.find(
         query,
-        {"_id": 1, "full_name": 1, "photo_url": 1, "photo_base64": 1}
+        {"_id": 1, "id": 1, "full_name": 1, "photo_url": 1, "photo_base64": 1}
     ).to_list(length=None)
 
     total = len(members)
@@ -268,7 +268,7 @@ async def regenerate_descriptors(
     if request.clear_existing:
         if request.member_ids:
             await db.members.update_many(
-                {"_id": {"$in": request.member_ids}, "church_id": church_id},
+                {"id": {"$in": request.member_ids}, "church_id": church_id},
                 {"$set": {"face_descriptors": []}}
             )
         else:
@@ -284,7 +284,7 @@ async def regenerate_descriptors(
         errors = []
 
         for member in members:
-            member_id = str(member['_id'])
+            member_id = member.get('id') or str(member['_id'])
             photo_url = member.get('photo_url') or member.get('photo_base64')
 
             if not photo_url:

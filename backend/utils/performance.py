@@ -616,8 +616,9 @@ class Projections:
         events = await db.events.find(query, Projections.EVENT_LIST).to_list(100)
     """
 
-    # Member list - excludes large fields (photo_base64, documents, custom_fields, face_descriptors)
+    # Member list - excludes large fields (documents, custom_fields, face_descriptors)
     # Note: has_face_descriptors is computed via aggregation in routes/members.py
+    # Note: photo_base64 included for legacy compatibility (members without photo_url)
     MEMBER_LIST = {
         "_id": 0,
         "id": 1,
@@ -638,8 +639,9 @@ class Projections:
         "is_active": 1,
         "created_at": 1,
         "updated_at": 1,
-        "photo_url": 1,           # Use URL instead of base64
+        "photo_url": 1,           # Preferred: SeaweedFS URL
         "photo_thumbnail_url": 1,
+        "photo_base64": 1,        # Legacy: base64 encoded photo
         "personal_id_code": 1,
         "face_checkin_enabled": 1,  # Boolean for face check-in feature toggle
     }

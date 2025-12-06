@@ -24,7 +24,7 @@ set -euo pipefail
 readonly SCRIPT_VERSION="1.1.0"
 readonly SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 readonly LOG_FILE="/var/log/faithflow-docker-update.log"
-COMPOSE_FILE="docker-compose.prod.yml"
+COMPOSE_FILE="docker/compose/prod.yml"
 
 # Minimum required versions
 readonly MIN_DOCKER_VERSION="24.0"
@@ -257,8 +257,8 @@ check_prerequisites() {
     # Check if compose file exists
     if [ ! -f "$COMPOSE_FILE" ]; then
         # Try development compose file
-        if [ -f "docker-compose.yml" ]; then
-            COMPOSE_FILE="docker-compose.yml"
+        if [ -f "docker/compose/dev.yml" ]; then
+            COMPOSE_FILE="docker/compose/dev.yml"
             print_info "Using development compose file"
         else
             print_error "Docker Compose file not found"
@@ -468,7 +468,7 @@ EOF
     echo ""
 
     if [ "$EXTERNAL_TRAEFIK" = true ]; then
-        echo -e "${BLUE}  View logs: ${WHITE}docker compose -f docker-compose.prod.yml -f docker-compose.external-traefik.yml logs -f${NC}"
+        echo -e "${BLUE}  View logs: ${WHITE}docker compose -f docker/compose/prod.yml -f docker/compose/external-traefik.yml logs -f${NC}"
     else
         echo -e "${BLUE}  View logs: ${WHITE}docker compose -f $COMPOSE_FILE logs -f${NC}"
     fi
@@ -526,8 +526,8 @@ parse_args() {
 # Set up compose command based on configuration
 setup_compose_cmd() {
     if [ "$EXTERNAL_TRAEFIK" = true ]; then
-        if [ -f "$SCRIPT_DIR/docker-compose.external-traefik.yml" ]; then
-            COMPOSE_CMD="docker compose -f $COMPOSE_FILE -f docker-compose.external-traefik.yml"
+        if [ -f "$SCRIPT_DIR/docker/compose/external-traefik.yml" ]; then
+            COMPOSE_CMD="docker compose -f $COMPOSE_FILE -f docker/compose/external-traefik.yml"
             print_info "Using external Traefik configuration"
         else
             print_warn "External Traefik config not found, using standard configuration"

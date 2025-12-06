@@ -16,13 +16,15 @@ export const useMembers = (params = {}) => {
 };
 
 // Hook to get member by ID
-export const useMember = (memberId) => {
+export const useMember = (memberId, options = {}) => {
   const { church } = useAuth();
-  
+
   return useQuery({
     queryKey: queryKeys.members.detail(church?.id, memberId),
     queryFn: () => membersAPI.get(memberId).then(res => res.data),
-    enabled: !!church?.id && !!memberId,
+    enabled: (options.enabled ?? true) && !!church?.id && !!memberId,
+    staleTime: options.staleTime,
+    gcTime: options.cacheTime, // React Query v5 renamed cacheTime to gcTime
   });
 };
 

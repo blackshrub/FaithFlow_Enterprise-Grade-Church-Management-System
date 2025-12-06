@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 
 const COLORS = [
   { bg: '#3B82F6', text: '#FFFFFF' }, // Blue
@@ -78,6 +78,29 @@ function getMemberPhotoSrc(member, photo) {
 }
 
 export default function MemberAvatar({ member, name, photo, firstName, lastName, size = 'md', className = '' }) {
+  const [imageError, setImageError] = useState(false);
+
+  // Get the best available photo source early (needed for useEffect dependency)
+  const photoSrc = getMemberPhotoSrc(member, photo);
+
+  // Debug logging (remove in production)
+  useEffect(() => {
+    if (member?.full_name) {
+      console.log('[MemberAvatar] Debug:', {
+        name: member.full_name,
+        photo_url: member.photo_url,
+        photo_base64: member.photo_base64 ? 'yes' : 'no',
+        photoSrc: photoSrc ? photoSrc.substring(0, 50) + '...' : 'null',
+        imageError
+      });
+    }
+  }, [member?.full_name, member?.photo_url, member?.photo_base64, photoSrc, imageError]);
+
+  // Reset error state when photo source changes
+  useEffect(() => {
+    setImageError(false);
+  }, [photoSrc]);
+
   // Support both interfaces:
   // 1. member object: { full_name, first_name, last_name, photo_url, photo_base64 }
   // 2. individual props: name, photo, firstName, lastName
@@ -94,29 +117,24 @@ export default function MemberAvatar({ member, name, photo, firstName, lastName,
 
   const sizeClass = sizes[size] || sizes.md;
 
-  // Get the best available photo source
-  const photoSrc = getMemberPhotoSrc(member, photo);
+  // Generate initials and color (always needed for fallback)
+  const initials = getInitials(full_name, first_name, last_name);
+  const displayName = full_name || `${first_name || ''} ${last_name || ''}`.trim();
+  const color = getColorFromName(displayName || 'Default');
 
-  // If photo exists, show it
-  if (photoSrc) {
+  // If photo exists and hasn't errored, show it
+  if (photoSrc && !imageError) {
     return (
       <img
         src={photoSrc}
         alt={full_name || `${first_name || ''} ${last_name || ''}`.trim() || 'Member'}
         className={`${sizeClass} rounded-full object-cover ${className}`}
-        onError={(e) => {
-          // Hide broken image and show fallback initials
-          e.target.style.display = 'none';
-        }}
+        onError={() => setImageError(true)}
       />
     );
   }
-  
-  // Generate placeholder with initials
-  const initials = getInitials(full_name, first_name, last_name);
-  const displayName = full_name || `${first_name || ''} ${last_name || ''}`.trim();
-  const color = getColorFromName(displayName || 'Default');
-  
+
+  // Show placeholder with initials
   return (
     <div
       className={`${sizeClass} rounded-full flex items-center justify-center font-semibold ${className}`}

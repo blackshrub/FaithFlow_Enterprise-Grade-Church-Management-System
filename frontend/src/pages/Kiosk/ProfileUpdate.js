@@ -394,7 +394,7 @@ const ProfileUpdateKiosk = () => {
             {config.label}
           </Label>
           <Select
-            value={formData[fieldName] || ''}
+            value={formData[fieldName] || undefined}
             onValueChange={(value) => setFormData({ ...formData, [fieldName]: value })}
           >
             <SelectTrigger className="h-10 sm:h-12 lg:h-14 text-sm sm:text-base lg:text-xl px-3 sm:px-4 lg:px-6 rounded-xl">

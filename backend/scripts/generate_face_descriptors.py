@@ -44,8 +44,8 @@ async def get_members_needing_descriptors():
         "$and": [
             {
                 "$or": [
-                    {"photo_url": {"$exists": True, "$ne": None, "$ne": ""}},
-                    {"photo_base64": {"$exists": True, "$ne": None, "$ne": ""}}
+                    {"photo_url": {"$exists": True, "$nin": [None, ""]}},
+                    {"photo_base64": {"$exists": True, "$nin": [None, ""]}}
                 ]
             },
             {
@@ -78,8 +78,8 @@ async def get_stats():
     with_photo = await db.members.count_documents({
         "is_deleted": {"$ne": True},
         "$or": [
-            {"photo_url": {"$exists": True, "$ne": None, "$ne": ""}},
-            {"photo_base64": {"$exists": True, "$ne": None, "$ne": ""}}
+            {"photo_url": {"$exists": True, "$nin": [None, ""]}},
+            {"photo_base64": {"$exists": True, "$nin": [None, ""]}}
         ]
     })
 

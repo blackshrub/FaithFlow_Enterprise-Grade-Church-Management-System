@@ -1180,8 +1180,8 @@ async def get_members_needing_face_descriptors(
                     "church_id": church_id,
                     "is_deleted": {"$ne": True},
                     "$or": [
-                        {"photo_url": {"$exists": True, "$ne": None, "$ne": ""}},
-                        {"photo_base64": {"$exists": True, "$ne": None, "$ne": ""}}
+                        {"photo_url": {"$exists": True, "$nin": [None, ""]}},
+                        {"photo_base64": {"$exists": True, "$nin": [None, ""]}}
                     ]
                 }
             },
@@ -1224,12 +1224,13 @@ async def get_members_needing_face_descriptors(
         ]).to_list(length=1000)
 
         # Get total counts for stats
+        # NOTE: Use $nin instead of multiple $ne - MongoDB only applies the last $ne!
         total_with_photos = await db.members.count_documents({
             "church_id": church_id,
             "is_deleted": {"$ne": True},
             "$or": [
-                {"photo_url": {"$exists": True, "$ne": None, "$ne": ""}},
-                {"photo_base64": {"$exists": True, "$ne": None, "$ne": ""}}
+                {"photo_url": {"$exists": True, "$nin": [None, ""]}},
+                {"photo_base64": {"$exists": True, "$nin": [None, ""]}}
             ]
         })
 
@@ -1308,8 +1309,8 @@ async def clear_face_descriptors(
                 "church_id": church_id,
                 "is_deleted": {"$ne": True},
                 "$or": [
-                    {"photo_url": {"$exists": True, "$ne": None, "$ne": ""}},
-                    {"photo_base64": {"$exists": True, "$ne": None, "$ne": ""}}
+                    {"photo_url": {"$exists": True, "$nin": [None, ""]}},
+                    {"photo_base64": {"$exists": True, "$nin": [None, ""]}}
                 ]
             },
             {
@@ -1355,8 +1356,8 @@ async def get_members_with_photos(
                 "church_id": church_id,
                 "is_deleted": {"$ne": True},
                 "$or": [
-                    {"photo_url": {"$exists": True, "$ne": None, "$ne": ""}},
-                    {"photo_base64": {"$exists": True, "$ne": None, "$ne": ""}}
+                    {"photo_url": {"$exists": True, "$nin": [None, ""]}},
+                    {"photo_base64": {"$exists": True, "$nin": [None, ""]}}
                 ]
             },
             {

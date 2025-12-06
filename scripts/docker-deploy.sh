@@ -12,7 +12,7 @@ docker image prune -f --filter "until=24h"
 docker builder prune -f --filter "until=24h"
 
 echo "🔨 Building and deploying..."
-DOCKER_BUILDKIT=1 docker compose -f docker-compose.prod.yml up -d --build
+DOCKER_BUILDKIT=1 docker compose -f docker/compose/prod.yml up -d --build
 
 echo "✅ Deploy complete!"
 docker system df

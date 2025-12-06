@@ -377,7 +377,7 @@ export default function MemberForm({ formData, setFormData, member = null }) {
         </div>
         <div className="space-y-2">
           <Label htmlFor="gender">{t('members.gender')}</Label>
-          <Select value={formData.gender || ''} onValueChange={(value) => handleChange('gender', value)}>
+          <Select value={formData.gender || undefined} onValueChange={(value) => handleChange('gender', value)}>
             <SelectTrigger>
               <SelectValue placeholder={t('members.selectGender')} />
             </SelectTrigger>
@@ -389,7 +389,7 @@ export default function MemberForm({ formData, setFormData, member = null }) {
         </div>
         <div className="space-y-2">
           <Label htmlFor="marital_status">{t('members.maritalStatus')}</Label>
-          <Select value={formData.marital_status || ''} onValueChange={(value) => handleChange('marital_status', value)}>
+          <Select value={formData.marital_status || undefined} onValueChange={(value) => handleChange('marital_status', value)}>
             <SelectTrigger>
               <SelectValue placeholder={t('members.selectStatus')} />
             </SelectTrigger>
@@ -406,8 +406,8 @@ export default function MemberForm({ formData, setFormData, member = null }) {
           {statusesLoading ? (
             <Input value={formData.member_status || ''} disabled className="bg-gray-50" />
           ) : (
-            <Select 
-              value={formData.member_status || ''} 
+            <Select
+              value={formData.member_status || undefined}
               onValueChange={(value) => {
                 console.log('[DEBUG] Member status selected:', value);
                 handleChange('member_status', value);
@@ -420,13 +420,15 @@ export default function MemberForm({ formData, setFormData, member = null }) {
               </SelectTrigger>
               <SelectContent>
                 {memberStatuses.length > 0 ? (
-                  memberStatuses.map((status) => (
-                    <SelectItem key={status.id} value={status.name}>
-                      {status.name}
-                    </SelectItem>
-                  ))
+                  memberStatuses
+                    .filter((status) => status.name && status.name.trim() !== '')
+                    .map((status) => (
+                      <SelectItem key={status.id} value={status.name}>
+                        {status.name}
+                      </SelectItem>
+                    ))
                 ) : (
-                  <SelectItem value="" disabled>{t('common.loading')}</SelectItem>
+                  <div className="px-2 py-1.5 text-sm text-gray-500">{t('common.loading')}</div>
                 )}
               </SelectContent>
             </Select>

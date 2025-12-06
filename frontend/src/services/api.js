@@ -132,11 +132,19 @@ api.interceptors.response.use(
       console.error('   Request URL:', error.config.baseURL + (error.config.url || ''));
     }
     if (error.response?.status === 401) {
-      // Token expired or invalid
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('user');
-      localStorage.removeItem('church');
-      window.location.href = '/login';
+      // Check if this is a kiosk or public endpoint - don't redirect to login for these
+      const requestUrl = error.config?.url || '';
+      const isKioskEndpoint = requestUrl.includes('/kiosk/') || requestUrl.startsWith('/kiosk');
+      const isPublicEndpoint = requestUrl.includes('/public/') || requestUrl.startsWith('/public');
+
+      if (!isKioskEndpoint && !isPublicEndpoint) {
+        // Token expired or invalid for admin endpoints - redirect to login
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('user');
+        localStorage.removeItem('church');
+        window.location.href = '/login';
+      }
+      // For kiosk/public endpoints, just let the error propagate to be handled by the caller
     }
     return Promise.reject(error);
   }
