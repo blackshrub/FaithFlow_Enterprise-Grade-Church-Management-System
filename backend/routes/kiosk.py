@@ -11,6 +11,7 @@ import uuid
 import random
 import json
 import logging
+import traceback
 
 from utils.dependencies import get_db
 from services.whatsapp_service import send_whatsapp_message
@@ -130,6 +131,7 @@ async def send_otp(
                 }
             except Exception as wa_error:
                 logger.error(f"⚠️ WhatsApp error: {wa_error}")
+                logger.error(f"⚠️ WhatsApp full traceback:\n{traceback.format_exc()}")
         else:
             logger.info("WhatsApp not enabled or URL not configured")
 
@@ -142,6 +144,7 @@ async def send_otp(
     
     except Exception as e:
         logger.error(f"❌ Error sending OTP: {e}")
+        logger.error(f"❌ Full traceback:\n{traceback.format_exc()}")
         # Still return success with console OTP
         code = str(random.randint(1000, 9999)) if 'code' not in locals() else code
         return {
