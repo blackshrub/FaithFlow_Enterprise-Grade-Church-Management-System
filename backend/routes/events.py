@@ -1,10 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File
 from motor.motor_asyncio import AsyncIOMotorDatabase
+from pymongo.errors import DuplicateKeyError
 from typing import List, Optional
 from datetime import datetime, timezone
 import logging
+import uuid
 
-from models.event import Event, EventCreate, EventUpdate
+from models.event import Event, EventCreate, EventUpdate, EventAttendance
 from utils.dependencies import get_db, require_admin, get_current_user, get_session_church_id
 from services.qr_service import generate_confirmation_code, generate_rsvp_qr_data
 from services.whatsapp_service import send_whatsapp_message, format_rsvp_confirmation_message
@@ -12,6 +14,13 @@ from services.seaweedfs_service import (
     get_seaweedfs_service,
     SeaweedFSError,
     StorageCategory
+)
+from services.redis.checkin_cache import (
+    is_checked_in,
+    mark_checked_in,
+    get_cached_rsvp,
+    cache_rsvp,
+    get_checkin_stats,
 )
 from utils.performance import Projections
 
@@ -66,18 +75,31 @@ async def list_events(
     is_active: Optional[bool] = None
 ):
     """List all events for current church"""
-    
+
     query = {}
     if current_user.get('role') != 'super_admin':
         query['church_id'] = current_user.get('session_church_id')
-    
+
     if event_type:
         query['event_type'] = event_type
     if is_active is not None:
         query['is_active'] = is_active
-    
-    # Use projection to exclude heavy fields (description, seat_layout, RSVP list)
-    events = await db.events.find(query, Projections.EVENT_LIST).sort("created_at", -1).to_list(1000)
+
+    # Use aggregation to get counts without returning full lists
+    pipeline = [
+        {"$match": query},
+        {"$addFields": {
+            "rsvp_count": {"$size": {"$ifNull": ["$rsvp_list", []]}},
+            "attendance_count": {"$size": {"$ifNull": ["$attendance_list", []]}},
+            # Also include rsvp_list for whatsapp status tracking
+            "rsvp_list": {"$ifNull": ["$rsvp_list", []]},
+            "attendance_list": {"$ifNull": ["$attendance_list", []]}
+        }},
+        {"$project": {"_id": 0}},
+        {"$sort": {"created_at": -1}},
+        {"$limit": 1000}
+    ]
+    events = await db.events.aggregate(pipeline).to_list(1000)
     
     for event in events:
         if isinstance(event.get('created_at'), str):
@@ -596,13 +618,28 @@ async def mark_attendance(
     member_id: str = Query(None),
     session_id: Optional[str] = None,
     qr_code: Optional[str] = Query(None),
+    check_in_method: str = Query("manual"),
     db: AsyncIOMotorDatabase = Depends(get_db),
     current_user: dict = Depends(get_current_user)
 ):
-    """Mark member as checked-in for event - accepts member_id OR qr_code"""
-    
+    """
+    Mark member as checked-in for event.
+
+    Accepts member_id OR qr_code. Uses Redis cache for O(1) duplicate
+    detection and separate event_attendance collection for scalability.
+
+    Args:
+        event_id: Event identifier
+        member_id: Member identifier (optional if qr_code provided)
+        session_id: Session identifier for series events
+        qr_code: RSVP or Member QR code
+        check_in_method: How the check-in was performed (manual, qr, face)
+    """
+
     # Parse QR code if provided
     parsed_member_id = member_id
+    confirmation_code = None
+
     if qr_code:
         parts = qr_code.split('|')
         if len(parts) >= 3:
@@ -610,42 +647,88 @@ async def mark_attendance(
             if qr_type == 'RSVP':
                 # RSVP QR: RSVP|event_id|member_id|session|code
                 parsed_member_id = parts[2] if len(parts) > 2 else None
+                confirmation_code = parts[4] if len(parts) > 4 else None
                 # Validate event matches
                 qr_event_id = parts[1] if len(parts) > 1 else None
                 if qr_event_id != event_id:
-                    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="QR code is for a different event")
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail="QR code is for a different event"
+                    )
+                check_in_method = "qr"
             elif qr_type == 'MEMBER':
                 # Personal QR: MEMBER|member_id|unique_code
                 parsed_member_id = parts[1] if len(parts) > 1 else None
+                check_in_method = "qr"
             else:
-                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid QR code format")
-    
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Invalid QR code format"
+                )
+
     if not parsed_member_id:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="member_id or qr_code required")
-    
-    event = await db.events.find_one({"id": event_id})
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="member_id or qr_code required"
+        )
+
+    # O(1) Redis cache check for duplicate (before hitting DB)
+    if await is_checked_in(event_id, parsed_member_id, session_id):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Member already checked in for this session"
+        )
+
+    # Fetch event (with projection for performance)
+    event = await db.events.find_one(
+        {"id": event_id},
+        {"_id": 0, "id": 1, "name": 1, "church_id": 1, "event_type": 1,
+         "event_date": 1, "requires_rsvp": 1, "rsvp_list": 1}
+    )
     if not event:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
-    
-    # Check if member exists
-    member = await db.members.find_one({"id": parsed_member_id, "church_id": event.get('church_id')})
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Event not found"
+        )
+
+    church_id = event.get('church_id')
+
+    # Check if member exists (with projection)
+    member = await db.members.find_one(
+        {"id": parsed_member_id, "church_id": church_id},
+        {"_id": 0, "id": 1, "full_name": 1, "photo_base64": 1}
+    )
     if not member:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Member not found in this church")
-    
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Member not found in this church"
+        )
+
     # Validate session for series events
     if event.get('event_type') == 'series':
         if not session_id:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="session_id is required for series events")
-    
-    # Check if RSVP required and member has RSVP
-    has_rsvp = False
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="session_id is required for series events"
+            )
+
+    # Check if RSVP required
     if event.get('requires_rsvp'):
-        has_rsvp = any(
-            r.get('member_id') == parsed_member_id and r.get('session_id') == session_id 
-            for r in event.get('rsvp_list', [])
-        )
+        # Try Redis cache first for O(1) lookup
+        cached_rsvp = None
+        if confirmation_code:
+            cached_rsvp = await get_cached_rsvp(event_id, confirmation_code)
+
+        has_rsvp = cached_rsvp is not None
+
+        # Fallback to array scan if not in cache
         if not has_rsvp:
-            # Return special status for kiosk to handle onsite RSVP
+            has_rsvp = any(
+                r.get('member_id') == parsed_member_id and r.get('session_id') == session_id
+                for r in event.get('rsvp_list', [])
+            )
+
+        if not has_rsvp:
             return {
                 "success": False,
                 "requires_onsite_rsvp": True,
@@ -653,33 +736,67 @@ async def mark_attendance(
                 "member_name": member.get('full_name'),
                 "message": "Member has not registered for this event. Onsite RSVP required."
             }
-    
-    # Check if already checked in
-    already_checked = any(
-        a.get('member_id') == parsed_member_id and a.get('session_id') == session_id 
-        for a in event.get('attendance_list', [])
-    )
-    if already_checked:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Member already checked in for this session")
-    
-    # Add attendance
-    attendance_entry = {
-        'member_id': parsed_member_id,
-        'member_name': member.get('full_name'),
-        'session_id': session_id,
-        'check_in_time': datetime.now(timezone.utc).isoformat()
+
+    # Create attendance record for new collection
+    now = datetime.now(timezone.utc)
+    attendance_record = {
+        "id": str(uuid.uuid4()),
+        "church_id": church_id,
+        "event_id": event_id,
+        "member_id": parsed_member_id,
+        "member_name": member.get('full_name'),
+        "session_id": session_id,
+        "check_in_time": now,
+        "check_in_method": check_in_method,
+        "source": current_user.get('id', 'api'),
+        "event_name": event.get('name'),
+        "event_date": event.get('event_date'),
+        "member_photo": member.get('photo_base64'),
     }
-    
-    await db.events.update_one(
-        {"id": event_id},
-        {"$push": {"attendance_list": attendance_entry}}
+
+    try:
+        # Insert into new event_attendance collection (unique index prevents duplicates)
+        await db.event_attendance.insert_one(attendance_record)
+
+        # Mark in Redis cache for fast future checks
+        await mark_checked_in(event_id, parsed_member_id, session_id, check_in_method)
+
+        # Also update legacy attendance_list for backward compatibility
+        legacy_entry = {
+            'member_id': parsed_member_id,
+            'member_name': member.get('full_name'),
+            'session_id': session_id,
+            'check_in_time': now.isoformat(),
+            'check_in_method': check_in_method,
+        }
+        await db.events.update_one(
+            {"id": event_id},
+            {"$push": {"attendance_list": legacy_entry}}
+        )
+
+    except DuplicateKeyError:
+        # Race condition: another request already checked in this member
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Member already checked in for this session"
+        )
+
+    logger.info(
+        f"Check-in: Event {event_id}, Member {parsed_member_id}, "
+        f"Session {session_id}, Method {check_in_method}"
     )
-    
-    logger.info(f"Attendance marked: Event {event_id}, Member {parsed_member_id}, Session {session_id}")
+
     return {
-        "success": True, 
-        "message": "Check-in successful", 
-        "attendance": attendance_entry,
+        "success": True,
+        "message": "Check-in successful",
+        "attendance": {
+            "id": attendance_record["id"],
+            "member_id": parsed_member_id,
+            "member_name": member.get('full_name'),
+            "session_id": session_id,
+            "check_in_time": now.isoformat(),
+            "check_in_method": check_in_method,
+        },
         "member_name": member.get('full_name'),
         "member_photo": member.get('photo_base64')
     }
@@ -689,34 +806,88 @@ async def mark_attendance(
 async def get_event_attendance(
     event_id: str,
     session_id: Optional[str] = Query(None),
+    page: int = Query(1, ge=1),
+    per_page: int = Query(100, ge=1, le=500),
     db: AsyncIOMotorDatabase = Depends(get_db),
     current_user: dict = Depends(get_current_user)
 ):
-    """Get attendance for an event or specific session"""
-    
-    event = await db.events.find_one({"id": event_id}, {"_id": 0})
+    """
+    Get attendance for an event or specific session.
+
+    Uses the new event_attendance collection for better scalability
+    with pagination support for large events.
+
+    Args:
+        event_id: Event identifier
+        session_id: Filter by session (for series events)
+        page: Page number (default 1)
+        per_page: Records per page (default 100, max 500)
+    """
+
+    # Verify event exists and get basic info
+    event = await db.events.find_one(
+        {"id": event_id},
+        {"_id": 0, "id": 1, "name": 1, "church_id": 1, "rsvp_list": 1}
+    )
     if not event:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
-    
-    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') != event.get('church_id'):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
-    
-    all_attendance = event.get('attendance_list', [])
-    all_rsvps = event.get('rsvp_list', [])
-    
-    # Filter by session if provided
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Event not found"
+        )
+
+    # Check access
+    if (current_user.get('role') != 'super_admin' and
+            current_user.get('session_church_id') != event.get('church_id')):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied"
+        )
+
+    # Build query for new collection
+    query = {"event_id": event_id}
     if session_id:
-        all_attendance = [a for a in all_attendance if a.get('session_id') == session_id]
+        query["session_id"] = session_id
+
+    # Get total count
+    total_attendance = await db.event_attendance.count_documents(query)
+
+    # Get paginated attendance from new collection
+    skip = (page - 1) * per_page
+    cursor = db.event_attendance.find(
+        query,
+        {"_id": 0, "id": 1, "member_id": 1, "member_name": 1,
+         "session_id": 1, "check_in_time": 1, "check_in_method": 1,
+         "member_photo": 1}
+    ).sort("check_in_time", -1).skip(skip).limit(per_page)
+
+    attendance_list = await cursor.to_list(length=per_page)
+
+    # Get RSVP count for rate calculation
+    all_rsvps = event.get('rsvp_list', [])
+    if session_id:
         all_rsvps = [r for r in all_rsvps if r.get('session_id') == session_id]
-    
+    total_rsvps = len(all_rsvps)
+
+    # Get check-in method stats from Redis cache
+    method_stats = await get_checkin_stats(event_id)
+
+    # Calculate attendance rate
+    attendance_rate = None
+    if total_rsvps > 0:
+        attendance_rate = round((total_attendance / total_rsvps) * 100, 1)
+
     return {
         "event_id": event_id,
         "event_name": event.get('name'),
         "session_id": session_id,
-        "total_attendance": len(all_attendance),
-        "total_rsvps": len(all_rsvps),
-        "attendance_rate": f"{(len(all_attendance) / len(all_rsvps) * 100):.1f}%" if all_rsvps else "N/A",
-        "attendance": all_attendance
+        "total_attendance": total_attendance,
+        "total_rsvps": total_rsvps,
+        "attendance_rate": f"{attendance_rate}%" if attendance_rate else "N/A",
+        "method_stats": method_stats,
+        "page": page,
+        "per_page": per_page,
+        "total_pages": (total_attendance + per_page - 1) // per_page if total_attendance > 0 else 1,
+        "attendance": attendance_list
     }
 
 

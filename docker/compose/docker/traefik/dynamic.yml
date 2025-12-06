@@ -1,0 +1,140 @@
+# Traefik Dynamic Configuration
+# This file configures all routers and services
+
+http:
+  routers:
+    # Frontend Router
+    frontend:
+      rule: "Host(`flow.gkbj.org`) || Host(`www.flow.gkbj.org`)"
+      entryPoints:
+        - websecure
+      service: frontend
+      tls:
+        certResolver: letsencrypt
+      middlewares:
+        - security-headers
+        - gzip
+
+    # Backend API Router
+    # Note: Backend runs with API_PREFIX="" for clean subdomain URLs
+    # api.flow.gkbj.org/kiosk/* -> backend /kiosk/*
+    backend:
+      rule: "Host(`api.flow.gkbj.org`)"
+      entryPoints:
+        - websecure
+      service: backend
+      tls:
+        certResolver: letsencrypt
+      middlewares:
+        - security-headers
+        - cors-headers
+
+    # Traefik Dashboard
+    traefik-dashboard:
+      rule: "Host(`traefik.flow.gkbj.org`)"
+      entryPoints:
+        - websecure
+      service: api@internal
+      tls:
+        certResolver: letsencrypt
+      middlewares:
+        - traefik-auth
+
+    # LiveKit Router
+    livekit:
+      rule: "Host(`livekit.flow.gkbj.org`)"
+      entryPoints:
+        - websecure
+      service: livekit
+      tls:
+        certResolver: letsencrypt
+
+    # EMQX Dashboard Router
+    emqx:
+      rule: "Host(`emqx.flow.gkbj.org`)"
+      entryPoints:
+        - websecure
+      service: emqx
+      tls:
+        certResolver: letsencrypt
+
+    # SeaweedFS Filer Router
+    seaweedfs:
+      rule: "Host(`files.flow.gkbj.org`)"
+      entryPoints:
+        - websecure
+      service: seaweedfs
+      tls:
+        certResolver: letsencrypt
+
+  services:
+    frontend:
+      loadBalancer:
+        servers:
+          - url: "http://faithflow-frontend:80"
+
+    backend:
+      loadBalancer:
+        servers:
+          - url: "http://faithflow-backend:8000"
+
+    livekit:
+      loadBalancer:
+        servers:
+          - url: "http://faithflow-livekit:7880"
+
+    emqx:
+      loadBalancer:
+        servers:
+          - url: "http://faithflow-emqx:18083"
+
+    seaweedfs:
+      loadBalancer:
+        servers:
+          - url: "http://faithflow-seaweedfs-filer:8888"
+
+  middlewares:
+    # Security headers
+    security-headers:
+      headers:
+        browserXssFilter: true
+        contentTypeNosniff: true
+        frameDeny: true
+        stsIncludeSubdomains: true
+        stsPreload: true
+        stsSeconds: 31536000
+        customFrameOptionsValue: "SAMEORIGIN"
+
+    # CORS headers for API
+    cors-headers:
+      headers:
+        accessControlAllowMethods:
+          - GET
+          - POST
+          - PUT
+          - PATCH
+          - DELETE
+          - OPTIONS
+        accessControlAllowHeaders:
+          - "*"
+        accessControlAllowOriginList:
+          - "https://flow.gkbj.org"
+          - "https://www.flow.gkbj.org"
+        accessControlMaxAge: 86400
+        addVaryHeader: true
+
+    # Gzip compression
+    gzip:
+      compress: true
+
+    # Add /api prefix for subdomain mode
+    # Allows api.flow.gkbj.org/kiosk -> backend /api/kiosk
+    api-prefix:
+      addPrefix:
+        prefix: "/api"
+
+    # Traefik dashboard auth (admin:admin - CHANGE THIS!)
+    traefik-auth:
+      basicAuth:
+        users:
+          - "admin:$$apr1$$ruca84Hq$$mbjdMZBAG.KWn7vfN/SNK/"

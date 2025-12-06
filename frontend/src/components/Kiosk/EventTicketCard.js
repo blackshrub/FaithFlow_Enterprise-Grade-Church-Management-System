@@ -221,9 +221,9 @@ const EventTicketCard = ({
 
     if (status === 'pending' || status === 'sending') {
       return (
-        <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-          <Loader2 size={12} className="mr-1 animate-spin" />
-          {t('group_registration.whatsapp_sending', 'Sending...')}
+        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+          <CheckCircle size={12} className="mr-1" />
+          {t('group_registration.whatsapp_on_the_way', 'WhatsApp on the way')}
         </Badge>
       );
     }

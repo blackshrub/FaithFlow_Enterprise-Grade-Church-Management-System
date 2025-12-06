@@ -19,7 +19,7 @@
  * Uses TanStack Query for data fetching
  */
 
-import React, { useState, useRef, useCallback, useEffect } from 'react';
+import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
@@ -35,6 +35,9 @@ import {
   X,
   ScanFace,
   AlertCircle,
+  WifiOff,
+  Users,
+  Volume2,
 } from 'lucide-react';
 import { useDeferredSearch } from '../../hooks/useDeferredSearch';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -56,6 +59,42 @@ import { faceRecognitionService } from '../../services/faceRecognitionService';
 const CANCEL_COUNTDOWN_SECONDS = 3;
 const HOLD_COUNTDOWN_SECONDS = 1; // Quick 1-second confirmation delay (was 3)
 const NO_FACE_TIMEOUT_MS = 3000; // 3 seconds before showing "unrecognized" message
+const ATTENDANCE_POLL_INTERVAL_MS = 30000; // Poll attendance count every 30 seconds
+
+// Sound feedback - Web Audio API for reliable cross-browser playback
+const playSuccessSound = () => {
+  try {
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+
+    // Pleasant "ding" sound - two quick notes
+    oscillator.frequency.setValueAtTime(880, audioContext.currentTime); // A5
+    oscillator.frequency.setValueAtTime(1318.5, audioContext.currentTime + 0.1); // E6
+
+    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + 0.3);
+  } catch (e) {
+    console.log('Sound playback not available');
+  }
+};
+
+// Haptic/vibration feedback
+const triggerHapticFeedback = () => {
+  try {
+    if ('vibrate' in navigator) {
+      navigator.vibrate([50, 30, 100]); // Short-pause-medium pattern
+    }
+  } catch (e) {
+    console.log('Haptic feedback not available');
+  }
+};
 
 // CSS animation for perimeter progress
 // Perimeter of 92x92 rect with rx=12: ~(92*4) - (4*12) + (2*PI*12) ≈ 368
@@ -70,6 +109,10 @@ const perimeterProgressStyle = `
 }
 `;
 
+// QR scan debounce constants
+const QR_SCAN_DEBOUNCE_MS = 3000; // Prevent duplicate scans within 3 seconds
+const VALID_QR_TYPES = ['RSVP', 'MEMBER']; // Valid QR code prefixes
+
 const EventCheckinKiosk = () => {
   const navigate = useNavigate();
   const { t } = useTranslation('kiosk');
@@ -80,6 +123,7 @@ const EventCheckinKiosk = () => {
   const cancelCountdownRef = useRef(null);
   const cameraStartingRef = useRef(false);  // Prevent double starts
   const successTimeoutRef = useRef(null);   // Auto-dismiss success overlay
+  const recentQrScansRef = useRef(new Map()); // Track recent QR scans for debounce
 
   // Get church context
   const { churchId } = useKioskChurch();
@@ -135,6 +179,21 @@ const EventCheckinKiosk = () => {
   // Camera state
   const [cameraActive, setCameraActive] = useState(false);
   const [cameraError, setCameraError] = useState(null);
+  const [cameraLoading, setCameraLoading] = useState(false); // Show skeleton while camera initializes
+
+  // Attendance count state
+  const [attendanceCount, setAttendanceCount] = useState(0);
+  const attendancePollRef = useRef(null);
+
+  // Offline status
+  const [isOffline, setIsOffline] = useState(!navigator.onLine);
+  const offlineQueueRef = useRef([]); // Queue for offline check-ins
+
+  // Refs for values that need to be accessed in interval closures
+  // (state values get captured at closure creation time, refs are always current)
+  const checkinInProgressRef = useRef(false);
+  const successMemberRef = useRef(null);
+  const cameraActiveRef = useRef(false);
 
   // Fetch events using TanStack Query
   const {
@@ -171,6 +230,102 @@ const EventCheckinKiosk = () => {
     };
   }, []);
 
+  // Keep refs in sync with state (for interval closures)
+  useEffect(() => {
+    checkinInProgressRef.current = checkinInProgress;
+  }, [checkinInProgress]);
+
+  useEffect(() => {
+    successMemberRef.current = successMember;
+  }, [successMember]);
+
+  useEffect(() => {
+    cameraActiveRef.current = cameraActive;
+  }, [cameraActive]);
+
+  // Monitor online/offline status
+  useEffect(() => {
+    const handleOnline = async () => {
+      setIsOffline(false);
+      // Process offline queue when back online
+      if (offlineQueueRef.current.length > 0 && selectedEvent) {
+        console.log(`[Kiosk] Back online, processing ${offlineQueueRef.current.length} queued check-ins`);
+        const queue = [...offlineQueueRef.current];
+        offlineQueueRef.current = [];
+        for (const item of queue) {
+          try {
+            await kioskApi.faceCheckin(item);
+          } catch (e) {
+            console.error('Failed to process queued check-in:', e);
+          }
+        }
+      }
+    };
+
+    const handleOffline = () => {
+      setIsOffline(true);
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, [selectedEvent]);
+
+  // Health check: ensure face detection is running when it should be
+  // This acts as a safety net to restart detection if it gets stuck
+  useEffect(() => {
+    if (step !== 'checkin' || !faceReady || !cameraActive) return;
+
+    const healthCheckInterval = setInterval(() => {
+      // If we're in checkin mode and detection should be running but isn't
+      // Use refs for real-time values
+      if (
+        step === 'checkin' &&
+        faceReady &&
+        cameraActiveRef.current &&
+        !checkinInProgressRef.current &&
+        !successMemberRef.current &&
+        !faceDetectionIntervalRef.current
+      ) {
+        console.log('[EventCheckin] Health check: face detection not running, restarting...');
+        startFaceDetectionInternal();
+      }
+    }, 3000); // Check every 3 seconds (more responsive)
+
+    return () => clearInterval(healthCheckInterval);
+  }, [step, faceReady, cameraActive]);
+
+  // Fetch and poll attendance count
+  useEffect(() => {
+    const fetchAttendanceCount = async () => {
+      if (!selectedEvent?.id || !churchId) return;
+      try {
+        const count = await kioskApi.getEventAttendanceCount(selectedEvent.id, churchId);
+        setAttendanceCount(count);
+      } catch (e) {
+        console.error('Failed to fetch attendance count:', e);
+      }
+    };
+
+    // Initial fetch when event is selected
+    if (step === 'checkin' && selectedEvent?.id) {
+      fetchAttendanceCount();
+      // Start polling
+      attendancePollRef.current = setInterval(fetchAttendanceCount, ATTENDANCE_POLL_INTERVAL_MS);
+    }
+
+    return () => {
+      if (attendancePollRef.current) {
+        clearInterval(attendancePollRef.current);
+        attendancePollRef.current = null;
+      }
+    };
+  }, [step, selectedEvent?.id, churchId]);
+
   // Note: Face descriptors are now matched on the backend using DeepFace
   // No need to load them client-side anymore
 
@@ -205,6 +360,7 @@ const EventCheckinKiosk = () => {
     }
 
     cameraStartingRef.current = true;
+    setCameraLoading(true); // Show skeleton while loading
 
     try {
       // Stop any existing QR scanner first
@@ -246,14 +402,25 @@ const EventCheckinKiosk = () => {
       console.log('[EventCheckin] QR Scanner started, camera active');
 
       setCameraActive(true);
+      setCameraLoading(false); // Hide skeleton
 
       // Start face detection loop after camera is ready
       startFaceDetection();
 
     } catch (error) {
       console.error('Camera start error:', error);
-      setCameraError('Unable to access camera. Please check permissions.');
+      // More helpful error messages based on error type
+      let errorMessage = 'Unable to access camera. Please check permissions.';
+      if (error.name === 'NotAllowedError') {
+        errorMessage = 'Camera access denied. Please allow camera access in your browser settings.';
+      } else if (error.name === 'NotFoundError') {
+        errorMessage = 'No camera found. Please connect a camera and try again.';
+      } else if (error.name === 'NotReadableError') {
+        errorMessage = 'Camera is in use by another application. Please close other apps using the camera.';
+      }
+      setCameraError(errorMessage);
       setCameraActive(false);
+      setCameraLoading(false);
     } finally {
       cameraStartingRef.current = false;
     }
@@ -275,6 +442,7 @@ const EventCheckinKiosk = () => {
     if (faceDetectionIntervalRef.current) {
       clearInterval(faceDetectionIntervalRef.current);
       faceDetectionIntervalRef.current = null;
+      console.log('[EventCheckin] stopCamera: face detection cleared');
     }
 
     // Stop hold countdown
@@ -354,11 +522,10 @@ const EventCheckinKiosk = () => {
 
   // Perform check-in after hold countdown completes
   const performHoldCheckin = async (member) => {
-    // Pause face detection during check-in
-    if (faceDetectionIntervalRef.current) {
-      clearInterval(faceDetectionIntervalRef.current);
-      faceDetectionIntervalRef.current = null;
-    }
+    console.log(`[EventCheckin] performHoldCheckin for ${member.memberName}`);
+
+    // Stop face detection during check-in (will be restarted after success)
+    stopFaceDetection();
 
     // Perform the actual check-in
     await performCheckin(
@@ -373,6 +540,26 @@ const EventCheckinKiosk = () => {
     resetHoldCountdown();
   };
 
+  // Stop face detection completely
+  const stopFaceDetection = useCallback(() => {
+    if (faceDetectionIntervalRef.current) {
+      clearInterval(faceDetectionIntervalRef.current);
+      faceDetectionIntervalRef.current = null;
+      console.log('[EventCheckin] Face detection stopped');
+    }
+  }, []);
+
+  // Restart face detection - clears old interval and starts fresh
+  const restartFaceDetection = useCallback(() => {
+    stopFaceDetection();
+    // Small delay to ensure clean state
+    setTimeout(() => {
+      if (faceReady && step === 'checkin' && !successMember) {
+        startFaceDetectionInternal();
+      }
+    }, 100);
+  }, [faceReady, step, successMember]);
+
   // Start face detection loop (parallel with QR)
   // Uses browser-based detection for speed, then sends to backend DeepFace for accurate matching
   // Flow: Match → 1-second delay with spinner → auto check-in
@@ -381,24 +568,58 @@ const EventCheckinKiosk = () => {
   // - Extended grace period for brief detection gaps (movement, blinking, slight head turns)
   // - Sticky match caching - skip backend calls if same person already matched
   // - Faster detection interval (150ms = ~6.7 FPS)
-  const startFaceDetection = () => {
-    if (!faceReady || faceDetectionIntervalRef.current) return;
+  const startFaceDetectionInternal = () => {
+    // Always clear existing interval first to prevent zombies
+    if (faceDetectionIntervalRef.current) {
+      clearInterval(faceDetectionIntervalRef.current);
+      faceDetectionIntervalRef.current = null;
+    }
+
+    if (!faceReady) {
+      console.log('[EventCheckin] Face detection not started - faceReady is false');
+      return;
+    }
+
+    console.log('[EventCheckin] Starting fresh face detection loop');
 
     let consecutiveNoFace = 0;
     let consecutiveMissedMatch = 0; // Grace period counter for holding state
-    const NO_FACE_THRESHOLD = 20; // ~3 seconds at 6.7 FPS
-    const GRACE_PERIOD_FRAMES = 8; // Allow 8 missed matches before resetting (~1.2 seconds) - tolerant of movement
+    const NO_FACE_THRESHOLD = 20; // ~6 seconds at 3.3 FPS
+    const GRACE_PERIOD_FRAMES = 8; // Allow 8 missed matches before resetting (~2.4 seconds) - tolerant of movement
     let isMatchingInProgress = false; // Prevent overlapping backend calls
+    let loopErrorCount = 0; // Track consecutive errors for auto-recovery
+    const MAX_LOOP_ERRORS = 5;
 
     // Sticky match caching - skip redundant backend calls
     let lastMatchedMemberId = null;
     let lastMatchTime = 0;
     let consecutiveMatchConfirmations = 0;
-    const MATCH_CACHE_DURATION_MS = 1500; // Trust cached match for 1.5 seconds
+    const MATCH_CACHE_DURATION_MS = 2500; // Trust cached match for 2.5 seconds (increased for stability)
     const CONFIRMATIONS_NEEDED = 2; // Need 2 matches before considering it "confirmed"
 
+    // Track loop iterations for debugging
+    let loopIteration = 0;
+
     faceDetectionIntervalRef.current = setInterval(async () => {
-      if (!videoRef.current || step === 'confirming' || checkinInProgress || successMember) return;
+      loopIteration++;
+
+      // Log every 30 iterations (~10 seconds) to confirm loop is alive
+      if (loopIteration % 30 === 0) {
+        console.log(`[EventCheckin] Face detection alive: iteration ${loopIteration}, matching: ${isMatchingInProgress}, checkinInProgress: ${checkinInProgressRef.current}`);
+      }
+
+      // Skip if conditions not met (but keep loop running for when conditions are met again)
+      // Use refs for values that change over time (refs are always current, state values are stale in closures)
+      if (!videoRef.current || !cameraActiveRef.current) {
+        return;
+      }
+
+      // Skip during check-in or success overlay, but don't stop the loop
+      if (checkinInProgressRef.current || successMemberRef.current) {
+        // Reset matching flag in case it was stuck
+        isMatchingInProgress = false;
+        return;
+      }
 
       // Skip if a backend call is already in progress
       if (isMatchingInProgress) return;
@@ -553,15 +774,112 @@ const EventCheckinKiosk = () => {
             }
           }
         }
+
+        // Reset error count on successful loop iteration
+        loopErrorCount = 0;
       } catch (error) {
         console.error('Face detection error:', error);
+        loopErrorCount++;
+
+        // Auto-recovery: if too many errors, restart the detection loop
+        if (loopErrorCount >= MAX_LOOP_ERRORS) {
+          console.log('[EventCheckin] Too many detection errors, restarting loop...');
+          isMatchingInProgress = false;
+          loopErrorCount = 0;
+          // Don't restart here - let the next iteration try fresh
+        }
       }
-    }, 150); // ~6.7 FPS for faster detection response
+    }, 300); // ~3.3 FPS - balanced for accuracy vs performance
   };
 
-  // Handle QR code scanned
+  // Public function to start face detection (wraps internal)
+  const startFaceDetection = () => {
+    startFaceDetectionInternal();
+  };
+
+  // Validate QR code format before API call
+  const validateQRCode = (qrData) => {
+    if (!qrData || typeof qrData !== 'string') {
+      return { valid: false, error: 'Invalid QR code format' };
+    }
+
+    // Check for pipe-delimited format (RSVP|event_id|member_id|session|code)
+    const parts = qrData.split('|');
+    if (parts.length >= 2) {
+      const qrType = parts[0];
+      if (!VALID_QR_TYPES.includes(qrType)) {
+        return { valid: false, error: 'Unknown QR code type' };
+      }
+
+      // Validate RSVP format
+      if (qrType === 'RSVP') {
+        if (parts.length < 3) {
+          return { valid: false, error: 'Invalid RSVP QR code' };
+        }
+        const qrEventId = parts[1];
+        // Check if QR is for the correct event
+        if (selectedEvent && qrEventId !== selectedEvent.id) {
+          return { valid: false, error: 'QR code is for a different event' };
+        }
+      }
+
+      // Validate MEMBER format
+      if (qrType === 'MEMBER') {
+        if (parts.length < 2 || !parts[1]) {
+          return { valid: false, error: 'Invalid member QR code' };
+        }
+      }
+
+      return { valid: true };
+    }
+
+    // Try JSON format
+    try {
+      const parsed = JSON.parse(qrData);
+      if (parsed.member_id || parsed.memberId) {
+        return { valid: true };
+      }
+      return { valid: false, error: 'QR code missing member ID' };
+    } catch {
+      // Assume raw member ID (UUID format check)
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (uuidRegex.test(qrData)) {
+        return { valid: true };
+      }
+      return { valid: false, error: 'Invalid QR code format' };
+    }
+  };
+
+  // Handle QR code scanned with debounce and validation
   const handleQRScanned = async (qrData) => {
     if (checkinInProgress || step === 'confirming') return;
+
+    // Debounce: Check if this QR was scanned recently
+    const now = Date.now();
+    const lastScan = recentQrScansRef.current.get(qrData);
+    if (lastScan && now - lastScan < QR_SCAN_DEBOUNCE_MS) {
+      console.log('[QR] Duplicate scan ignored (debounce)');
+      return;
+    }
+
+    // Record this scan time
+    recentQrScansRef.current.set(qrData, now);
+
+    // Clean up old entries (older than 30 seconds)
+    for (const [key, time] of recentQrScansRef.current) {
+      if (now - time > 30000) {
+        recentQrScansRef.current.delete(key);
+      }
+    }
+
+    // Validate QR format before API call
+    const validation = validateQRCode(qrData);
+    if (!validation.valid) {
+      console.log('[QR] Invalid format:', validation.error);
+      setCheckinError(validation.error);
+      setTimeout(() => setCheckinError(''), 3000);
+      return;
+    }
 
     // Pause QR scanner temporarily
     if (qrScannerRef.current) {
@@ -585,7 +903,7 @@ const EventCheckinKiosk = () => {
       await performCheckin(memberId, memberName, qrData);
     } catch (error) {
       console.error('QR scan error:', error);
-      setCheckinError('Invalid QR code');
+      setCheckinError('Failed to process QR code');
       setTimeout(() => setCheckinError(''), 3000);
     } finally {
       // Resume QR scanner
@@ -677,6 +995,16 @@ const EventCheckinKiosk = () => {
     setCheckinInProgress(true);
     setCheckinError('');
 
+    // Clear any stuck hold state immediately
+    if (holdIntervalRef.current) {
+      clearInterval(holdIntervalRef.current);
+      holdIntervalRef.current = null;
+    }
+    setHoldingMember(null);
+    holdingMemberIdRef.current = null;
+    setHoldCountdown(HOLD_COUNTDOWN_SECONDS);
+    setFaceStatus('idle');
+
     try {
       let response;
 
@@ -699,6 +1027,13 @@ const EventCheckinKiosk = () => {
         // Only add to recent checkins if NOT already checked in
         // Also prevent duplicates in the list
         if (!isAlreadyCheckedIn) {
+          // Trigger success feedback - sound and haptic
+          playSuccessSound();
+          triggerHapticFeedback();
+
+          // Increment attendance count locally (optimistic update)
+          setAttendanceCount(prev => prev + 1);
+
           setRecentCheckins(prev => {
             // Check if this member is already in recent checkins
             const alreadyInList = prev.some(item => item.memberId === memberId);
@@ -740,9 +1075,10 @@ const EventCheckinKiosk = () => {
         successTimeoutRef.current = setTimeout(() => {
           setSuccessMember(null);
           successTimeoutRef.current = null;
-          // Restart face detection after success
-          if (step === 'checkin' && faceReady) {
-            startFaceDetection();
+          // Restart face detection after success - use restart to ensure clean state
+          console.log('[EventCheckin] Success timeout - restarting face detection');
+          if (step === 'checkin' && faceReady && cameraActive) {
+            restartFaceDetection();
           }
         }, dismissTime);
 
@@ -762,17 +1098,27 @@ const EventCheckinKiosk = () => {
       }
       setCheckinError(errorMessage);
 
-      // Reset to checkin on error
+      // Reset to checkin on error - also clear any stuck hold state
       setConfirmingMember(null);
       setConfirmingDescriptor(null);
+      setHoldingMember(null);
+      holdingMemberIdRef.current = null;
+      setFaceStatus('idle');
       setStep('checkin');
 
-      // Auto-clear error after 3 seconds
-      setTimeout(() => setCheckinError(''), 3000);
+      // Auto-clear error after 3 seconds, then restart detection
+      setTimeout(() => {
+        setCheckinError('');
+        // Restart face detection after error is cleared
+        if (step === 'checkin' && faceReady && cameraActive) {
+          console.log('[EventCheckin] Error cleared - restarting face detection');
+          restartFaceDetection();
+        }
+      }, 3000);
     } finally {
       setCheckinInProgress(false);
     }
-  }, [selectedEvent, churchId, checkinInProgress, t]);
+  }, [selectedEvent, churchId, checkinInProgress, t, step, faceReady, cameraActive, restartFaceDetection]);
 
   // Silent photo capture for progressive face learning
   // Note: With DeepFace backend, we capture the photo but the backend
@@ -908,7 +1254,7 @@ const EventCheckinKiosk = () => {
               const canvas = document.createElement('canvas');
               canvas.width = img.width;
               canvas.height = img.height;
-              const ctx = canvas.getContext('2d');
+              const ctx = canvas.getContext('2d', { willReadFrequently: true });
               ctx.translate(canvas.width, 0);
               ctx.scale(-1, 1);
               ctx.drawImage(img, 0, 0);
@@ -1345,20 +1691,22 @@ const EventCheckinKiosk = () => {
                         </div>
                       </div>
 
-                      {/* Buttons */}
+                      {/* Buttons - min 56px height for touch targets */}
                       <div className="flex gap-3 pt-2">
                         <Button
                           type="button"
                           variant="outline"
                           onClick={resetQuickAddForm}
-                          className="flex-1 h-11"
+                          className="flex-1 h-14 text-lg"
+                          aria-label="Cancel new visitor form"
                         >
                           {t('button.cancel') || 'Cancel'}
                         </Button>
                         <Button
                           type="submit"
                           disabled={quickAddLoading || !quickAddData.full_name.trim() || !quickAddData.gender}
-                          className="flex-1 h-11 bg-green-600 hover:bg-green-700"
+                          className="flex-1 h-14 text-lg bg-green-600 hover:bg-green-700"
+                          aria-label="Add new visitor and check them in"
                         >
                           {quickAddLoading ? (
                             <Loader2 className="w-5 h-5 animate-spin mr-2" />
@@ -1377,18 +1725,60 @@ const EventCheckinKiosk = () => {
         </AnimatePresence>
 
         <div className="space-y-3 sm:space-y-4 w-full max-w-full overflow-x-hidden">
-          {/* Header */}
-          <div className="text-center px-2">
-            <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold mb-1">Check-In: {selectedEvent?.name}</h2>
-            {checkinError && (
-              <motion.p
-                className="text-sm sm:text-base text-red-600 mt-1"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
+          {/* Offline Indicator */}
+          <AnimatePresence>
+            {isOffline && (
+              <motion.div
+                className="bg-yellow-100 border border-yellow-300 rounded-xl px-4 py-3 flex items-center justify-between"
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                role="alert"
+                aria-live="polite"
               >
-                {checkinError}
-              </motion.p>
+                <div className="flex items-center gap-3">
+                  <WifiOff className="w-5 h-5 text-yellow-600" />
+                  <span className="text-yellow-800 font-medium text-lg">
+                    {t('errors.network') || 'Network offline - check-ins will be queued'}
+                  </span>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => window.location.reload()}
+                  className="border-yellow-400 text-yellow-700 hover:bg-yellow-50 min-h-[44px]"
+                  aria-label="Retry connection"
+                >
+                  {t('button.retry') || 'Retry'}
+                </Button>
+              </motion.div>
             )}
+          </AnimatePresence>
+
+          {/* Header with Attendance Count */}
+          <div className="flex items-center justify-between px-2">
+            <div className="flex-1">
+              <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold">Check-In: {selectedEvent?.name}</h2>
+              {checkinError && (
+                <motion.p
+                  className="text-sm sm:text-base lg:text-lg text-red-600 mt-1"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  role="alert"
+                >
+                  {checkinError}
+                </motion.p>
+              )}
+            </div>
+            {/* Attendance Count Display */}
+            <div
+              className="bg-blue-600 text-white rounded-xl px-4 py-2 flex items-center gap-2 shadow-lg"
+              aria-label={`${attendanceCount} people checked in`}
+            >
+              <Users className="w-5 h-5" />
+              <span className="text-xl sm:text-2xl font-bold">{attendanceCount}</span>
+              <span className="text-sm text-blue-100 hidden sm:inline">checked in</span>
+            </div>
           </div>
 
           {/* Side-by-Side Layout: Camera (left) + Search (right) */}
@@ -1401,12 +1791,25 @@ const EventCheckinKiosk = () => {
               </div>
 
               {/* Camera View - mirrored for natural selfie experience */}
-              <div className="relative rounded-xl overflow-hidden bg-black aspect-video" style={{ transform: 'scaleX(-1)' }}>
+              <div className="relative rounded-xl overflow-hidden bg-gray-900 aspect-video" style={{ transform: 'scaleX(-1)' }}>
+                {/* Camera Loading Skeleton */}
+                {cameraLoading && (
+                  <div className="absolute inset-0 flex items-center justify-center z-20" style={{ transform: 'scaleX(-1)' }}>
+                    <div className="animate-pulse space-y-4 text-center">
+                      <div className="w-20 h-20 mx-auto rounded-full bg-gray-700 flex items-center justify-center">
+                        <CameraIcon className="w-10 h-10 text-gray-500 animate-pulse" />
+                      </div>
+                      <div className="h-4 bg-gray-700 rounded w-32 mx-auto"></div>
+                      <p className="text-gray-400 text-sm">Initializing camera...</p>
+                    </div>
+                  </div>
+                )}
                 <video
                   ref={videoRef}
-                  className="w-full h-full object-cover"
+                  className={`w-full h-full object-cover transition-opacity duration-300 ${cameraLoading ? 'opacity-0' : 'opacity-100'}`}
                   playsInline
                   muted
+                  aria-label="Camera feed for face recognition and QR scanning"
                 />
 
                 {/* Camera Overlay - also mirrored back so text is readable */}
@@ -1550,16 +1953,20 @@ const EventCheckinKiosk = () => {
 
                 {/* Camera Error */}
                 {cameraError && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-gray-900 bg-opacity-80 rounded-xl">
-                    <div className="text-center text-white p-4">
-                      <AlertCircle className="w-10 h-10 mx-auto mb-2 text-red-400" />
-                      <p className="text-sm">{cameraError}</p>
+                  <div className="absolute inset-0 flex items-center justify-center bg-gray-900 bg-opacity-80 rounded-xl" style={{ transform: 'scaleX(-1)' }}>
+                    <div className="text-center text-white p-6 max-w-sm">
+                      <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <AlertCircle className="w-10 h-10 text-red-400" />
+                      </div>
+                      <h3 className="text-xl font-bold mb-2">Camera Error</h3>
+                      <p className="text-base text-gray-300 mb-4">{cameraError}</p>
                       <Button
                         onClick={startCamera}
-                        className="mt-3"
-                        size="sm"
+                        className="h-14 px-8 text-lg"
+                        aria-label="Retry camera access"
                       >
-                        Retry
+                        <CameraIcon className="w-5 h-5 mr-2" />
+                        Retry Camera
                       </Button>
                     </div>
                   </div>
@@ -1594,71 +2001,73 @@ const EventCheckinKiosk = () => {
 
             {/* RIGHT: Manual Search */}
             <div className="lg:w-2/5 bg-white rounded-2xl p-3 sm:p-4 shadow-xl flex flex-col">
-              <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
-                  <Search className="w-5 h-5 text-blue-600" />
-                  <span className="font-semibold text-gray-800">{t('event_checkin.search') || 'Manual Search'}</span>
+                  <Search className="w-6 h-6 text-blue-600" />
+                  <span className="font-semibold text-lg text-gray-800">{t('event_checkin.search') || 'Manual Search'}</span>
                 </div>
-                {/* New Visitor Button */}
+                {/* New Visitor Button - larger touch target */}
                 <Button
                   variant="outline"
-                  size="sm"
                   onClick={() => setShowQuickAdd(true)}
-                  className="h-8 px-3 text-xs rounded-lg border-green-300 text-green-700 hover:bg-green-50"
+                  className="h-12 px-4 text-base rounded-xl border-green-300 text-green-700 hover:bg-green-50"
+                  aria-label="Add new visitor"
                 >
-                  <UserPlus className="w-3.5 h-3.5 mr-1" />
+                  <UserPlus className="w-5 h-5 mr-2" />
                   {t('event_checkin.new_visitor') || 'New Visitor'}
                 </Button>
               </div>
 
-              {/* Search Input */}
+              {/* Search Input - larger for touch */}
               <div className="relative mb-3">
                 {(isSearchPending || isSearching) ? (
-                  <Loader2 className="absolute left-3 top-1/2 transform -translate-y-1/2 text-blue-500 h-4 w-4 animate-spin" />
+                  <Loader2 className="absolute left-4 top-1/2 transform -translate-y-1/2 text-blue-500 h-5 w-5 animate-spin" />
                 ) : (
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
                 )}
                 <Input
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   placeholder={t('event_checkin.search_placeholder') || 'Name or phone...'}
-                  className="h-10 sm:h-12 text-sm pl-10 pr-3 rounded-lg"
+                  className="h-14 text-lg pl-12 pr-4 rounded-xl"
+                  aria-label="Search for members by name or phone"
                 />
               </div>
 
               {/* Search hint */}
               {searchTerm.length > 0 && searchTerm.length < 3 && (
-                <p className="text-xs text-gray-500 mb-2">{t('event_checkin.min_chars') || 'Type at least 3 characters'}</p>
+                <p className="text-sm text-gray-500 mb-2">{t('event_checkin.min_chars') || 'Type at least 3 characters'}</p>
               )}
 
               {/* Search Results - scrollable, uses remaining space */}
-              <div className="flex-1 overflow-y-auto space-y-2" style={{ maxHeight: 'calc(100vh - 380px)', minHeight: '200px' }}>
+              <div className="flex-1 overflow-y-auto space-y-2" style={{ maxHeight: 'calc(100vh - 420px)', minHeight: '200px' }}>
                 {searchResults.length > 0 ? (
                   searchResults.map(member => (
                     <button
                       key={member.id}
                       onClick={() => handleMemberCheckin(member)}
                       disabled={checkinInProgress}
-                      className="w-full bg-blue-50 rounded-lg p-2.5 sm:p-3 flex items-center gap-2 hover:bg-blue-100 transition-all disabled:opacity-50"
+                      className="w-full bg-blue-50 rounded-xl p-4 flex items-center gap-3 hover:bg-blue-100 active:bg-blue-200 transition-all disabled:opacity-50 min-h-[72px]"
+                      aria-label={`Check in ${member.full_name}`}
                     >
-                      <MemberAvatar member={member} size="sm" />
+                      <MemberAvatar member={member} size="md" />
                       <div className="text-left flex-1 min-w-0">
-                        <p className="text-sm sm:text-base font-semibold truncate">{member.full_name}</p>
-                        <p className="text-xs sm:text-sm text-gray-600 truncate">{member.phone_whatsapp}</p>
+                        <p className="text-lg font-semibold truncate">{member.full_name}</p>
+                        <p className="text-base text-gray-600 truncate">{member.phone_whatsapp}</p>
                       </div>
                       {checkinInProgress ? (
-                        <Loader2 className="w-5 h-5 text-green-600 animate-spin flex-shrink-0" />
+                        <Loader2 className="w-7 h-7 text-green-600 animate-spin flex-shrink-0" />
                       ) : (
-                        <UserCheck className="w-5 h-5 text-green-600 flex-shrink-0" />
+                        <UserCheck className="w-7 h-7 text-green-600 flex-shrink-0" />
                       )}
                     </button>
                   ))
                 ) : searchTerm.length >= 3 && !isSearching ? (
-                  <p className="text-center text-gray-500 text-sm py-4">
+                  <p className="text-center text-gray-500 text-lg py-6">
                     {t('event_checkin.no_results') || 'No members found'}
                   </p>
                 ) : (
-                  <p className="text-center text-gray-400 text-xs py-4">
+                  <p className="text-center text-gray-400 text-base py-6">
                     Search by name or phone number
                   </p>
                 )}
@@ -1668,12 +2077,12 @@ const EventCheckinKiosk = () => {
 
           {/* Recent Check-ins */}
           {recentCheckins.length > 0 && (
-            <div className="bg-white rounded-xl p-2.5 sm:p-3 shadow">
-              <p className="text-xs sm:text-sm font-medium text-gray-700 mb-2">Recent ({recentCheckins.length})</p>
-              <div className="flex gap-1.5 overflow-x-auto">
+            <div className="bg-white rounded-xl p-3 sm:p-4 shadow">
+              <p className="text-sm sm:text-base font-medium text-gray-700 mb-2">Recent ({recentCheckins.length})</p>
+              <div className="flex gap-2 overflow-x-auto pb-1">
                 {recentCheckins.slice(0, 8).map((item, idx) => (
-                  <div key={idx} className="flex-shrink-0 bg-green-50 rounded-md px-2 py-1 border border-green-200">
-                    <p className="text-[10px] sm:text-xs font-medium text-green-900 truncate max-w-[70px] sm:max-w-[100px]">
+                  <div key={idx} className="flex-shrink-0 bg-green-50 rounded-lg px-3 py-2 border border-green-200">
+                    <p className="text-sm font-medium text-green-900 truncate max-w-[90px] sm:max-w-[120px]">
                       {item.name}
                     </p>
                   </div>

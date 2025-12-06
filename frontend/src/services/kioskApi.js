@@ -120,12 +120,15 @@ export const kioskApi = {
 
   // ==================== EVENT REGISTRATION ====================
 
-  getUpcomingEvents: async (churchId) => {
+  getUpcomingEvents: async (churchId, forRegistration = false) => {
     // Use public kiosk endpoint (no auth required)
+    // forRegistration=true filters to only show events that require RSVP (for member registration)
+    // forRegistration=false shows all events (for staff check-in)
     const response = await api.get('/kiosk/events', {
       params: {
         church_id: churchId || localStorage.getItem('kiosk_church_id'),
-        limit: 50
+        limit: 50,
+        for_registration: forRegistration
       }
     });
 
@@ -139,6 +142,27 @@ export const kioskApi = {
     const response = await api.post('/kiosk/register-event', {
       event_id,
       member_id
+    });
+    return response.data;
+  },
+
+  /**
+   * Register a group (primary member + companions) for an event
+   * @param {Object} data - Group registration data
+   * @param {string} data.event_id - Event ID
+   * @param {string} data.church_id - Church ID
+   * @param {string} data.primary_member_id - Verified member's ID
+   * @param {boolean} data.include_self - Whether to include primary member
+   * @param {Array} data.companions - List of companions to register
+   * @returns {Object} Registration result with tickets
+   */
+  registerGroup: async (data) => {
+    const response = await api.post('/kiosk/register-group', {
+      event_id: data.event_id,
+      church_id: data.church_id || localStorage.getItem('kiosk_church_id'),
+      primary_member_id: data.primary_member_id,
+      include_self: data.include_self ?? true,
+      companions: data.companions || []
     });
     return response.data;
   },
@@ -164,11 +188,34 @@ export const kioskApi = {
     return response.data?.data || [];
   },
 
-  getAvailableSlots: async (counselor_id, date_from, date_to) => {
+  getAvailableSlots: async (counselor_id, date_from, date_to, churchId) => {
     const response = await api.get('/public/counseling/availability', {
-      params: { counselor_id, date_from, date_to }
+      params: {
+        church_id: churchId || localStorage.getItem('kiosk_church_id'),
+        counselor_id,
+        date_from,
+        date_to
+      }
     });
     return response.data?.data || [];
+  },
+
+  // Get all available dates in a range (for calendar highlighting)
+  getAvailableDates: async (date_from, date_to, churchId) => {
+    try {
+      const response = await api.get('/public/counseling/availability', {
+        params: {
+          church_id: churchId || localStorage.getItem('kiosk_church_id'),
+          date_from,
+          date_to
+        }
+      });
+      // Return array of dates that have available slots
+      return (response.data?.data || []).map(item => item.date);
+    } catch (error) {
+      console.error('Failed to fetch available dates:', error);
+      return [];
+    }
   },
 
   createCounselingRequest: async (data) => {
@@ -227,6 +274,37 @@ export const kioskApi = {
   },
 
   /**
+   * Get face descriptors scoped to a specific event
+   * Returns only faces of RSVP'd members + recent attendees (80% smaller payload)
+   */
+  getEventFaceDescriptors: async (eventId, churchId) => {
+    try {
+      const response = await api.get(`/kiosk/face-descriptors/event/${eventId}`, {
+        params: { church_id: churchId }
+      });
+      return response.data || { members: [], total_members: 0, event_rsvps: 0 };
+    } catch (error) {
+      console.error('Failed to fetch event face descriptors:', error);
+      return { members: [], total_members: 0, event_rsvps: 0 };
+    }
+  },
+
+  /**
+   * Get attendance count for an event
+   */
+  getEventAttendanceCount: async (eventId, churchId) => {
+    try {
+      const response = await api.get(`/kiosk/event-attendance-count/${eventId}`, {
+        params: { church_id: churchId }
+      });
+      return response.data?.count || 0;
+    } catch (error) {
+      console.error('Failed to fetch attendance count:', error);
+      return 0;
+    }
+  },
+
+  /**
    * Check-in a member using face recognition
    * Called after client-side face match
    */
@@ -243,11 +321,11 @@ export const kioskApi = {
    */
   saveFacePhoto: async (memberId, photoBase64, descriptor, churchId) => {
     try {
-      const response = await api.post('/kiosk/save-face-photo', {
+      // church_id is a query param, other fields in body
+      const response = await api.post(`/kiosk/save-face-photo?church_id=${churchId}`, {
         member_id: memberId,
         photo_base64: photoBase64,
-        descriptor: descriptor,
-        church_id: churchId
+        descriptor: descriptor || null  // Optional - backend can regenerate
       });
       return response.data;
     } catch (error) {

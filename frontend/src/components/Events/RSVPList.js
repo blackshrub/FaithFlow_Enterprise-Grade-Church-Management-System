@@ -29,10 +29,11 @@ function RSVPList({ event, rsvpData, isLoading, selectedSession }) {
   const [selectedRsvp, setSelectedRsvp] = useState(null);
 
   // Fetch all members to display names (for members not in RSVP member_name)
+  // Use high limit since church may have many members and we need lookup for all RSVPs
   const { data: members = [] } = useQuery({
-    queryKey: ['members'],
+    queryKey: ['members', 'full-list'],
     queryFn: async () => {
-      const response = await membersAPI.list();
+      const response = await membersAPI.list({ limit: 1000 });
       return response.data;
     },
   });

@@ -17,10 +17,11 @@ function AttendanceModal({ event, onClose }) {
     },
   });
 
+  // Fetch members for lookup (high limit for church-wide lookup)
   const { data: members = [] } = useQuery({
-    queryKey: ['members'],
+    queryKey: ['members', 'full-list'],
     queryFn: async () => {
-      const response = await membersAPI.list();
+      const response = await membersAPI.list({ limit: 2000 });
       return response.data;
     },
   });

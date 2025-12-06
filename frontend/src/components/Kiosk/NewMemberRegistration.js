@@ -144,8 +144,8 @@ const NewMemberRegistration = ({ phone, onComplete, onError, initialExpiresIn = 
               const canvas = document.createElement('canvas');
               canvas.width = img.width;
               canvas.height = img.height;
-              const ctx = canvas.getContext('2d');
-              
+              const ctx = canvas.getContext('2d', { willReadFrequently: true });
+
               // Flip horizontally to un-mirror
               ctx.translate(canvas.width, 0);
               ctx.scale(-1, 1);

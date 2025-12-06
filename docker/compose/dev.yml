@@ -37,6 +37,7 @@ services:
   # ===========================================================================
   # Redis - Cache, Sessions, Rate Limiting
   # ===========================================================================
+  # SECURITY: Redis is bound to localhost only (127.0.0.1) to prevent external access
   redis:
     image: redis:7.4-alpine
     container_name: faithflow-redis
@@ -45,7 +46,7 @@ services:
     volumes:
       - redis_data:/data
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"  # Bind to localhost only - NOT accessible from external network
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 30s

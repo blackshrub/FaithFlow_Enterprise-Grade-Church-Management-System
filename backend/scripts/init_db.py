@@ -114,6 +114,16 @@ async def init_database():
     await db.members.create_index([("church_id", 1), ("member_status", 1)])  # For status filtering
     await db.members.create_index([("church_id", 1), ("demographic_category", 1)])  # For demographic filtering
 
+    # Text index for fast member search (name + phone)
+    try:
+        await db.members.create_index(
+            [("full_name", "text"), ("phone_whatsapp", "text")],
+            default_language="none",  # Disable language-specific stemming
+            name="member_search_text"
+        )
+    except Exception:
+        pass  # Index may already exist with different options
+
     # Group indexes
     await db.groups.create_index("church_id")
     await db.group_memberships.create_index([("church_id", 1), ("group_id", 1), ("status", 1)])  # For membership queries
@@ -121,6 +131,18 @@ async def init_database():
     # Event indexes
     await db.events.create_index("church_id")
     await db.events.create_index([("church_id", 1), ("event_type", 1)])  # For event type filtering
+    await db.events.create_index([("church_id", 1), ("is_active", 1), ("event_date", -1)])  # For upcoming events
+
+    # Event Attendance indexes (separate collection for scalability)
+    # Unique constraint prevents duplicate check-ins at database level
+    await db.event_attendance.create_index(
+        [("event_id", 1), ("member_id", 1), ("session_id", 1)],
+        unique=True,
+        name="unique_checkin"
+    )
+    await db.event_attendance.create_index([("event_id", 1), ("check_in_time", -1)])  # For attendance list
+    await db.event_attendance.create_index([("church_id", 1), ("check_in_time", -1)])  # For church-wide reports
+    await db.event_attendance.create_index([("member_id", 1), ("check_in_time", -1)])  # For member history
 
     # Article indexes
     await db.articles.create_index([("church_id", 1), ("status", 1)])  # For published/draft filtering

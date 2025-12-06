@@ -84,6 +84,7 @@ async def send_whatsapp_message(
 
         # If image is provided, use /send/image endpoint with multipart/form-data
         if image_base64:
+            logger.info(f"📷 Image provided, length={len(image_base64)}, has_prefix={',' in image_base64}")
             # Remove data:image/png;base64, prefix if present
             if ',' in image_base64:
                 image_base64 = image_base64.split(',')[1]
@@ -91,6 +92,7 @@ async def send_whatsapp_message(
             # Decode base64 to binary
             try:
                 image_binary = base64.b64decode(image_base64)
+                logger.info(f"📷 Decoded image binary, size={len(image_binary)} bytes")
             except Exception as e:
                 logger.error(f"Failed to decode base64 image: {e}")
                 # Fall back to text-only message
@@ -108,6 +110,7 @@ async def send_whatsapp_message(
                     'view_once': 'false'
                 }
 
+                logger.info(f"📷 Sending image to {whatsapp_url}/send/image for {wa_phone}")
                 response = requests.post(
                     f"{whatsapp_url}/send/image",
                     files=files,
@@ -115,8 +118,10 @@ async def send_whatsapp_message(
                     auth=auth,
                     timeout=30  # Longer timeout for image upload
                 )
+                logger.info(f"📷 Response: {response.status_code} - {response.text[:200] if response.text else 'empty'}")
             else:
                 # Fall back to text-only if image decode failed
+                logger.info(f"📱 Fallback to text-only (image decode failed)")
                 response = requests.post(
                     f"{whatsapp_url}/send/message",
                     json={'phone': wa_phone, 'message': message},
@@ -125,6 +130,7 @@ async def send_whatsapp_message(
                 )
         else:
             # Text-only message using /send/message endpoint
+            logger.info(f"📱 Sending text-only message to {wa_phone}")
             response = requests.post(
                 f"{whatsapp_url}/send/message",
                 json={'phone': wa_phone, 'message': message},

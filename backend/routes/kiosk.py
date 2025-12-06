@@ -1,6 +1,6 @@
 """Kiosk backend endpoints - OTP, member lookup, event registration, etc."""
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query, BackgroundTasks
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from pymongo.errors import DuplicateKeyError
 from pydantic import BaseModel
@@ -519,9 +519,80 @@ Sampai jumpa! 🙏
         return "failed"
 
 
+def _send_whatsapp_tickets_background(
+    tickets_data: list,
+    event_id: str,
+    mongo_url: str,
+    db_name: str
+):
+    """Background task to send WhatsApp tickets and update DB status.
+
+    This runs in a separate thread, so we need to create a new MongoDB connection.
+    """
+    import asyncio
+    from motor.motor_asyncio import AsyncIOMotorClient
+
+    async def _do_send():
+        # Create new MongoDB connection for this background task
+        client = AsyncIOMotorClient(mongo_url)
+        db = client[db_name]
+
+        try:
+            for ticket_info in tickets_data:
+                try:
+                    status = await _send_ticket_whatsapp(
+                        db,
+                        ticket_info['phone'],
+                        ticket_info['member_name'],
+                        ticket_info['event_name'],
+                        ticket_info['event_date'],
+                        ticket_info['location'],
+                        ticket_info['start_time'],
+                        ticket_info['confirmation_code'],
+                        ticket_info['qr_code']
+                    )
+
+                    # Update the RSVP entry in database with actual status
+                    await db.events.update_one(
+                        {
+                            "id": event_id,
+                            "rsvp_list.member_id": ticket_info['member_id'],
+                            "rsvp_list.confirmation_code": ticket_info['confirmation_code']
+                        },
+                        {"$set": {"rsvp_list.$.whatsapp_status": status}}
+                    )
+                    logger.info(f"✅ Background: WhatsApp status '{status}' for {ticket_info['member_name']}")
+
+                except Exception as e:
+                    logger.error(f"Background WhatsApp error for {ticket_info['member_name']}: {e}")
+                    # Update status to failed
+                    try:
+                        await db.events.update_one(
+                            {
+                                "id": event_id,
+                                "rsvp_list.member_id": ticket_info['member_id'],
+                                "rsvp_list.confirmation_code": ticket_info['confirmation_code']
+                            },
+                            {"$set": {"rsvp_list.$.whatsapp_status": "failed"}}
+                        )
+                    except Exception:
+                        pass
+        finally:
+            client.close()
+
+    # Run the async function in a new event loop
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    try:
+        loop.run_until_complete(_do_send())
+    finally:
+        loop.close()
+
+
 @router.post("/register-group", response_model=GroupRegistrationResponse)
 async def register_group_kiosk(
     request: GroupRegistrationRequest,
+    background_tasks: BackgroundTasks,
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """Register a group (primary member + companions) for an event.
@@ -530,7 +601,7 @@ async def register_group_kiosk(
     companions for an event in a single request. Companions can be existing
     members or new guests (who will be created as Pre-Visitors).
 
-    WhatsApp tickets are sent asynchronously to all registrants with valid phones.
+    WhatsApp tickets are sent in the background for fast response.
     """
     try:
         from services.qr_service import generate_confirmation_code, generate_rsvp_qr_data
@@ -822,42 +893,39 @@ async def register_group_kiosk(
             )
             logger.info(f"Group registration: Added {len(rsvp_entries)} RSVPs to event {request.event_id}")
 
-        # 6. Send WhatsApp tickets (await to ensure status is correct in response)
+        # 6. Schedule WhatsApp tickets in background (non-blocking for fast response)
+        tickets_to_send = []
         for ticket in tickets:
             if ticket.phone and ticket.whatsapp_status == "sending":
-                try:
-                    status = await _send_ticket_whatsapp(
-                        db,
-                        ticket.phone,
-                        ticket.member_name,
-                        event_name,
-                        event_date,
-                        location,
-                        start_time,
-                        ticket.confirmation_code,
-                        ticket.qr_code
-                    )
-                    # Update ticket status in memory for response
-                    ticket.whatsapp_status = status
+                tickets_to_send.append({
+                    'member_id': ticket.member_id,
+                    'phone': ticket.phone,
+                    'member_name': ticket.member_name,
+                    'event_name': event_name,
+                    'event_date': event_date,
+                    'location': location,
+                    'start_time': start_time,
+                    'confirmation_code': ticket.confirmation_code,
+                    'qr_code': ticket.qr_code
+                })
 
-                    # Also update the RSVP entry in the database
-                    try:
-                        await db.events.update_one(
-                            {
-                                "id": request.event_id,
-                                "rsvp_list.member_id": ticket.member_id,
-                                "rsvp_list.confirmation_code": ticket.confirmation_code
-                            },
-                            {"$set": {"rsvp_list.$.whatsapp_status": status}}
-                        )
-                        logger.info(f"Updated WhatsApp status to '{status}' for {ticket.member_name}")
-                    except Exception as e:
-                        logger.error(f"Failed to update WhatsApp status in DB: {e}")
-                except Exception as e:
-                    logger.error(f"Error sending WhatsApp ticket to {ticket.member_name}: {e}")
-                    ticket.whatsapp_status = "failed"
+        if tickets_to_send:
+            # Get MongoDB connection info for background task
+            import os
+            mongo_url = os.environ.get('MONGO_URL', 'mongodb://localhost:27017')
+            db_name = os.environ.get('DB_NAME', 'faithflow')
 
-        # 7. Return response
+            # Schedule background task - returns immediately
+            background_tasks.add_task(
+                _send_whatsapp_tickets_background,
+                tickets_to_send,
+                request.event_id,
+                mongo_url,
+                db_name
+            )
+            logger.info(f"Scheduled {len(tickets_to_send)} WhatsApp tickets for background sending")
+
+        # 7. Return response immediately (WhatsApp sends in background)
         logger.info(f"Group registration complete: {len(tickets)} tickets created, primary count={sum(1 for t in tickets if t.is_primary)}")
         for i, t in enumerate(tickets):
             logger.info(f"  Ticket {i}: member_id={t.member_id}, name={t.member_name}, is_primary={t.is_primary}")

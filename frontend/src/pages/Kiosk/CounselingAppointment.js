@@ -25,7 +25,7 @@ import { Button } from '../../components/ui/button';
 import { Textarea } from '../../components/ui/textarea';
 import { Label } from '../../components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
-import { useKioskCounselorSlots, useCreateCounselingRequest, useKioskChurch } from '../../hooks/useKiosk';
+import { useKioskCounselorSlots, useKioskAvailableDates, useCreateCounselingRequest, useKioskChurch } from '../../hooks/useKiosk';
 import { format, addDays, startOfDay } from 'date-fns';
 
 const CounselingKiosk = () => {
@@ -52,7 +52,7 @@ const CounselingKiosk = () => {
   const [selectedSlot, setSelectedSlot] = useState(null);
 
   // Generate next 14 days (memoized)
-  const availableDates = useMemo(() => {
+  const calendarDates = useMemo(() => {
     const dates = [];
     for (let i = 1; i <= 14; i++) {
       dates.push(addDays(startOfDay(new Date()), i));
@@ -60,15 +60,30 @@ const CounselingKiosk = () => {
     return dates;
   }, []);
 
+  // Calculate date range for API (first and last date in the range)
+  const dateRangeFrom = useMemo(() => format(addDays(startOfDay(new Date()), 1), 'yyyy-MM-dd'), []);
+  const dateRangeTo = useMemo(() => format(addDays(startOfDay(new Date()), 14), 'yyyy-MM-dd'), []);
+
+  // Fetch available dates (dates that have slots) - prefetch for calendar display
+  const {
+    data: availableDatesData = [],
+    isLoading: datesLoading,
+  } = useKioskAvailableDates(churchId, dateRangeFrom, dateRangeTo, {
+    enabled: !!churchId,
+  });
+
+  // Convert available dates to a Set for O(1) lookup
+  const availableDatesSet = useMemo(() => new Set(availableDatesData), [availableDatesData]);
+
   // Format selected date for API
   const selectedDateStr = selectedDate ? format(selectedDate, 'yyyy-MM-dd') : null;
 
-  // Fetch slots using TanStack Query
+  // Fetch slots using TanStack Query (with churchId)
   const {
     data: slotsData = [],
     isLoading: slotsLoading,
-  } = useKioskCounselorSlots(null, selectedDateStr, selectedDateStr, {
-    enabled: step === 'select_time' && !!selectedDateStr,
+  } = useKioskCounselorSlots(churchId, null, selectedDateStr, selectedDateStr, {
+    enabled: step === 'select_time' && !!selectedDateStr && !!churchId,
   });
 
   // Process slots data
@@ -235,33 +250,66 @@ const CounselingKiosk = () => {
             <p className="text-base sm:text-lg lg:text-xl text-gray-600">{t('counseling.date_label')}</p>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3 lg:gap-4">
-            {availableDates.map((date, index) => (
-              <motion.button
-                key={date.toISOString()}
-                onClick={() => {
-                  setSelectedDate(date);
-                  setStep('select_time');
-                }}
-                className="bg-blue-50 hover:bg-blue-100 rounded-2xl p-3 sm:p-4 lg:p-6 text-center transition-all"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.05 }}
-              >
-                <div className="text-base sm:text-lg lg:text-xl font-bold text-gray-900">
-                  {format(date, 'EEE')}
+          {datesLoading ? (
+            <div className="text-center py-8 sm:py-12">
+              <div className="text-lg sm:text-xl lg:text-2xl text-gray-600">{t('counseling.loading_dates') || 'Loading available dates...'}</div>
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3 lg:gap-4">
+                {calendarDates.map((date, index) => {
+                  const dateStr = format(date, 'yyyy-MM-dd');
+                  const hasSlots = availableDatesSet.has(dateStr);
+
+                  return (
+                    <motion.button
+                      key={date.toISOString()}
+                      onClick={() => {
+                        if (hasSlots) {
+                          setSelectedDate(date);
+                          setStep('select_time');
+                        }
+                      }}
+                      disabled={!hasSlots}
+                      className={`rounded-2xl p-3 sm:p-4 lg:p-6 text-center transition-all ${
+                        hasSlots
+                          ? 'bg-blue-50 hover:bg-blue-100 cursor-pointer'
+                          : 'bg-gray-100 cursor-not-allowed opacity-50'
+                      }`}
+                      whileHover={hasSlots ? { scale: 1.05 } : {}}
+                      whileTap={hasSlots ? { scale: 0.95 } : {}}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.05 }}
+                    >
+                      <div className={`text-base sm:text-lg lg:text-xl font-bold ${hasSlots ? 'text-gray-900' : 'text-gray-400'}`}>
+                        {format(date, 'EEE')}
+                      </div>
+                      <div className={`text-xl sm:text-2xl lg:text-3xl font-bold ${hasSlots ? 'text-blue-600' : 'text-gray-400'}`}>
+                        {format(date, 'dd')}
+                      </div>
+                      <div className={`text-sm sm:text-base lg:text-lg ${hasSlots ? 'text-gray-600' : 'text-gray-400'}`}>
+                        {format(date, 'MMM')}
+                      </div>
+                      {!hasSlots && (
+                        <div className="text-xs sm:text-sm text-gray-400 mt-1">
+                          {t('counseling.no_slots_short') || 'No slots'}
+                        </div>
+                      )}
+                    </motion.button>
+                  );
+                })}
+              </div>
+
+              {availableDatesSet.size === 0 && !datesLoading && (
+                <div className="text-center py-4">
+                  <p className="text-base sm:text-lg lg:text-xl text-orange-600">
+                    {t('counseling.no_slots_available') || 'No counseling slots available in the next 14 days. Please try again later.'}
+                  </p>
                 </div>
-                <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-blue-600">
-                  {format(date, 'dd')}
-                </div>
-                <div className="text-sm sm:text-base lg:text-lg text-gray-600">
-                  {format(date, 'MMM')}
-                </div>
-              </motion.button>
-            ))}
-          </div>
+              )}
+            </>
+          )}
         </motion.div>
       </KioskLayout>
     );

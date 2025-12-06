@@ -165,10 +165,11 @@ services:
       --save 900 1
       --save 300 10
       --save 60 10000
+      --requirepass ${REDIS_PASSWORD}
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -176,7 +177,7 @@ services:
     networks:
       - faithflow-network
     # Redis is NOT exposed externally for security
-    # Access via: docker compose exec redis redis-cli
+    # Access via: docker compose exec redis redis-cli -a $REDIS_PASSWORD
 
   # ===========================================================================
   # BACKEND - FastAPI Application
@@ -202,8 +203,8 @@ services:
       # Database (with authentication)
       - MONGO_URL=mongodb://${MONGO_APP_USER:-faithflow_app}:${MONGO_APP_PASSWORD}@mongodb:27017/faithflow?authSource=faithflow
       - DB_NAME=faithflow
-      # Redis
-      - REDIS_URL=redis://redis:6379
+      # Redis (with password authentication)
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379
       # Authentication
       - JWT_SECRET=${JWT_SECRET}
       - JWT_ALGORITHM=HS256

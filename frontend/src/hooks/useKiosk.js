@@ -12,10 +12,11 @@ import kioskApi from '../services/kioskApi';
 export const kioskKeys = {
   all: ['kiosk'],
   settings: (churchId) => [...kioskKeys.all, 'settings', churchId],
-  events: (churchId) => [...kioskKeys.all, 'events', churchId],
+  events: (churchId, forRegistration) => [...kioskKeys.all, 'events', churchId, forRegistration],
   groups: (churchId, category) => [...kioskKeys.all, 'groups', churchId, category],
   counselors: (churchId) => [...kioskKeys.all, 'counselors', churchId],
-  counselorSlots: (counselorId, dateFrom, dateTo) => [...kioskKeys.all, 'slots', counselorId, dateFrom, dateTo],
+  counselorSlots: (churchId, counselorId, dateFrom, dateTo) => [...kioskKeys.all, 'slots', churchId, counselorId, dateFrom, dateTo],
+  availableDates: (churchId, dateFrom, dateTo) => [...kioskKeys.all, 'availableDates', churchId, dateFrom, dateTo],
   member: (phone, churchId) => [...kioskKeys.all, 'member', phone, churchId],
 };
 
@@ -49,18 +50,21 @@ export function useKioskSettings(churchId, options = {}) {
 // ==================== EVENTS ====================
 
 /**
- * Hook to fetch upcoming events for kiosk registration
+ * Hook to fetch upcoming events for kiosk
  * @param {string} churchId - The church ID
  * @param {object} options - Additional react-query options
+ * @param {boolean} options.forRegistration - If true, only fetch events that require RSVP (for member registration)
  */
 export function useKioskEvents(churchId, options = {}) {
+  const { forRegistration = false, ...queryOptions } = options;
+
   return useQuery({
-    queryKey: kioskKeys.events(churchId),
-    queryFn: () => kioskApi.getUpcomingEvents(churchId),
+    queryKey: kioskKeys.events(churchId, forRegistration),
+    queryFn: () => kioskApi.getUpcomingEvents(churchId, forRegistration),
     enabled: !!churchId,
     staleTime: 2 * 60 * 1000, // 2 minutes - events may have capacity changes
     gcTime: 10 * 60 * 1000, // 10 minutes cache
-    ...options,
+    ...queryOptions,
   });
 }
 
@@ -72,6 +76,22 @@ export function useRegisterForEvent() {
 
   return useMutation({
     mutationFn: ({ eventId, memberId }) => kioskApi.registerForEvent(eventId, memberId),
+    onSuccess: (data, variables) => {
+      // Invalidate events to refresh capacity
+      queryClient.invalidateQueries({ queryKey: kioskKeys.all });
+    },
+  });
+}
+
+/**
+ * Mutation hook for group event registration (primary + companions)
+ * @returns Mutation with registerGroup function
+ */
+export function useRegisterGroup() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data) => kioskApi.registerGroup(data),
     onSuccess: (data, variables) => {
       // Invalidate events to refresh capacity
       queryClient.invalidateQueries({ queryKey: kioskKeys.all });
@@ -133,18 +153,37 @@ export function useKioskCounselors(churchId, options = {}) {
 
 /**
  * Hook to fetch counselor available slots
- * @param {string} counselorId - The counselor ID
+ * @param {string} churchId - The church ID
+ * @param {string} counselorId - The counselor ID (optional, null for all counselors)
  * @param {string} dateFrom - Start date
  * @param {string} dateTo - End date
  * @param {object} options - Additional react-query options
  */
-export function useKioskCounselorSlots(counselorId, dateFrom, dateTo, options = {}) {
+export function useKioskCounselorSlots(churchId, counselorId, dateFrom, dateTo, options = {}) {
   return useQuery({
-    queryKey: kioskKeys.counselorSlots(counselorId, dateFrom, dateTo),
-    queryFn: () => kioskApi.getAvailableSlots(counselorId, dateFrom, dateTo),
-    enabled: !!counselorId && !!dateFrom && !!dateTo,
+    queryKey: kioskKeys.counselorSlots(churchId, counselorId, dateFrom, dateTo),
+    queryFn: () => kioskApi.getAvailableSlots(counselorId, dateFrom, dateTo, churchId),
+    enabled: !!churchId && !!dateFrom && !!dateTo,
     staleTime: 2 * 60 * 1000, // 2 minutes - slots can be booked quickly
     gcTime: 10 * 60 * 1000,
+    ...options,
+  });
+}
+
+/**
+ * Hook to fetch dates that have available counseling slots
+ * @param {string} churchId - The church ID
+ * @param {string} dateFrom - Start date (YYYY-MM-DD)
+ * @param {string} dateTo - End date (YYYY-MM-DD)
+ * @param {object} options - Additional react-query options
+ */
+export function useKioskAvailableDates(churchId, dateFrom, dateTo, options = {}) {
+  return useQuery({
+    queryKey: kioskKeys.availableDates(churchId, dateFrom, dateTo),
+    queryFn: () => kioskApi.getAvailableDates(dateFrom, dateTo, churchId),
+    enabled: !!churchId && !!dateFrom && !!dateTo,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 15 * 60 * 1000,
     ...options,
   });
 }

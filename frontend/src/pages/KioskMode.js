@@ -17,10 +17,11 @@ function KioskMode() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { data: events = [] } = useEvents({ is_active: true });
+  // Fetch members for lookup (high limit for church-wide lookup)
   const { data: members = [] } = useQuery({
-    queryKey: ['members'],
+    queryKey: ['members', 'full-list'],
     queryFn: async () => {
-      const response = await membersAPI.list();
+      const response = await membersAPI.list({ limit: 1000 });
       return response.data;
     },
   });

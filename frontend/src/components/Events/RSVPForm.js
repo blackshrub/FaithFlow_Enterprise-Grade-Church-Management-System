@@ -19,11 +19,11 @@ function RSVPForm({ event, selectedSession, onSuccess, onCancel }) {
   const [selectedSeat, setSelectedSeat] = useState(null);
   const [sessionId, setSessionId] = useState(selectedSession || '');
 
-  // Fetch members for search
+  // Fetch members for search (high limit for church-wide lookup)
   const { data: members = [] } = useQuery({
-    queryKey: ['members'],
+    queryKey: ['members', 'full-list'],
     queryFn: async () => {
-      const response = await membersAPI.list();
+      const response = await membersAPI.list({ limit: 1000 });
       return response.data;
     },
   });
