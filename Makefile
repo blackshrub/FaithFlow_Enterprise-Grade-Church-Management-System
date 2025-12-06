@@ -27,6 +27,10 @@ YELLOW := \033[33m
 RED := \033[31m
 RESET := \033[0m
 
+# Docker Compose with env file
+COMPOSE_PROD := docker compose -f docker/compose/prod.yml --env-file .env
+COMPOSE_DEV := docker compose -f docker/compose/dev.yml --env-file .env
+
 # =============================================================================
 # HELP
 # =============================================================================
@@ -100,7 +104,7 @@ up: prod
 ## Stop all services
 down:
 	@echo "$(YELLOW)Stopping all services...$(RESET)"
-	docker compose -f docker/compose/prod.yml down
+	$(COMPOSE_PROD) down
 	@echo "$(GREEN)✓ All services stopped$(RESET)"
 
 ## Show status of all containers
@@ -113,7 +117,7 @@ status:
 
 ## View all logs
 logs:
-	docker compose -f docker/compose/prod.yml logs -f --tail=100
+	$(COMPOSE_PROD) logs -f --tail=100
 
 ## View backend logs only
 logs-backend:
@@ -130,7 +134,7 @@ logs-frontend:
 ## Start development mode (with hot reload)
 dev:
 	@echo "$(CYAN)Starting development mode...$(RESET)"
-	docker compose -f docker/compose/dev.yml up -d
+	$(COMPOSE_DEV) up -d
 	@echo "$(GREEN)✓ Development mode started$(RESET)"
 	@echo "  Backend:  http://localhost:8000"
 	@echo "  Frontend: http://localhost:3000"
@@ -138,7 +142,7 @@ dev:
 ## Rebuild and start development
 dev-build:
 	@echo "$(CYAN)Rebuilding development mode...$(RESET)"
-	docker compose -f docker/compose/dev.yml up -d --build
+	$(COMPOSE_DEV) up -d --build
 	@echo "$(GREEN)✓ Development rebuilt and started$(RESET)"
 
 # =============================================================================
@@ -148,13 +152,13 @@ dev-build:
 ## Start production services
 prod:
 	@echo "$(CYAN)Starting production services...$(RESET)"
-	docker compose -f docker/compose/prod.yml up -d
+	$(COMPOSE_PROD) up -d
 	@echo "$(GREEN)✓ Production services started$(RESET)"
 
 ## Rebuild and start production
 prod-build:
 	@echo "$(CYAN)Rebuilding production...$(RESET)"
-	DOCKER_BUILDKIT=1 docker compose -f docker/compose/prod.yml up -d --build
+	DOCKER_BUILDKIT=1 $(COMPOSE_PROD) up -d --build
 	@echo "$(GREEN)✓ Production rebuilt and started$(RESET)"
 
 ## Full deploy: prune old resources, rebuild with no cache, start
@@ -164,9 +168,9 @@ deploy:
 	docker image prune -f --filter "until=24h"
 	docker builder prune -f --filter "until=24h"
 	@echo "$(YELLOW)Step 2/3: Rebuilding services...$(RESET)"
-	DOCKER_BUILDKIT=1 docker compose -f docker/compose/prod.yml build --no-cache
+	DOCKER_BUILDKIT=1 $(COMPOSE_PROD) build --no-cache
 	@echo "$(YELLOW)Step 3/3: Starting services...$(RESET)"
-	docker compose -f docker/compose/prod.yml up -d
+	$(COMPOSE_PROD) up -d
 	@echo "$(GREEN)✓ Deploy complete!$(RESET)"
 	@docker system df
 
@@ -177,48 +181,48 @@ deploy:
 ## Restart only backend (fast, no rebuild)
 restart-backend:
 	@echo "$(CYAN)Restarting backend...$(RESET)"
-	docker compose -f docker/compose/prod.yml restart backend
+	$(COMPOSE_PROD) restart backend
 	@echo "$(GREEN)✓ Backend restarted$(RESET)"
 
 ## Restart only frontend (fast, no rebuild)
 restart-frontend:
 	@echo "$(CYAN)Restarting frontend...$(RESET)"
-	docker compose -f docker/compose/prod.yml restart frontend
+	$(COMPOSE_PROD) restart frontend
 	@echo "$(GREEN)✓ Frontend restarted$(RESET)"
 
 ## Build backend with cache and restart (fast)
 build-backend:
 	@echo "$(CYAN)Building backend (with cache)...$(RESET)"
-	docker compose -f docker/compose/prod.yml build backend
-	docker compose -f docker/compose/prod.yml up -d backend
+	$(COMPOSE_PROD) build backend
+	$(COMPOSE_PROD) up -d backend
 	@echo "$(GREEN)✓ Backend built and started$(RESET)"
 
 ## Build frontend with cache and restart (fast)
 build-frontend:
 	@echo "$(CYAN)Building frontend (with cache)...$(RESET)"
-	docker compose -f docker/compose/prod.yml build frontend
-	docker compose -f docker/compose/prod.yml up -d frontend
+	$(COMPOSE_PROD) build frontend
+	$(COMPOSE_PROD) up -d frontend
 	@echo "$(GREEN)✓ Frontend built and started$(RESET)"
 
 ## Build both backend and frontend with cache (fast)
 build-all:
 	@echo "$(CYAN)Building backend and frontend (with cache)...$(RESET)"
-	docker compose -f docker/compose/prod.yml build backend frontend
-	docker compose -f docker/compose/prod.yml up -d backend frontend
+	$(COMPOSE_PROD) build backend frontend
+	$(COMPOSE_PROD) up -d backend frontend
 	@echo "$(GREEN)✓ Backend and frontend built and started$(RESET)"
 
 ## Rebuild backend with no cache and restart (slow, full rebuild)
 rebuild-backend:
 	@echo "$(CYAN)Rebuilding backend (no cache)...$(RESET)"
-	docker compose -f docker/compose/prod.yml build --no-cache backend
-	docker compose -f docker/compose/prod.yml up -d backend
+	$(COMPOSE_PROD) build --no-cache backend
+	$(COMPOSE_PROD) up -d backend
 	@echo "$(GREEN)✓ Backend rebuilt and started$(RESET)"
 
 ## Rebuild frontend with no cache and restart (slow, full rebuild)
 rebuild-frontend:
 	@echo "$(CYAN)Rebuilding frontend (no cache)...$(RESET)"
-	docker compose -f docker/compose/prod.yml build --no-cache frontend
-	docker compose -f docker/compose/prod.yml up -d frontend
+	$(COMPOSE_PROD) build --no-cache frontend
+	$(COMPOSE_PROD) up -d frontend
 	@echo "$(GREEN)✓ Frontend rebuilt and started$(RESET)"
 
 # =============================================================================
@@ -241,9 +245,18 @@ restore:
 shell-mongo:
 	docker exec -it faithflow-mongodb mongosh faithflow
 
-## Open Redis CLI
+## Open Redis CLI (uses REDIS_PASSWORD from .env)
 shell-redis:
-	docker exec -it faithflow-redis redis-cli
+	@if [ -f .env ]; then \
+		REDIS_PASS=$$(grep REDIS_PASSWORD .env | cut -d '=' -f2); \
+		if [ -n "$$REDIS_PASS" ]; then \
+			docker exec -it faithflow-redis redis-cli -a $$REDIS_PASS; \
+		else \
+			docker exec -it faithflow-redis redis-cli; \
+		fi \
+	else \
+		docker exec -it faithflow-redis redis-cli; \
+	fi
 
 ## Open bash in backend container
 shell-backend:
@@ -266,7 +279,7 @@ prune:
 clean:
 	@echo "$(RED)WARNING: This will delete all data including database!$(RESET)"
 	@read -p "Are you sure? [y/N] " confirm && [ "$$confirm" = "y" ] || exit 1
-	docker compose -f docker/compose/prod.yml down -v
+	$(COMPOSE_PROD) down -v
 	@echo "$(GREEN)✓ All services and volumes removed$(RESET)"
 
 # =============================================================================
