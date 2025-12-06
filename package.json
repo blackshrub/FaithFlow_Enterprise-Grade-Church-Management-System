@@ -1,9 +1,0 @@
-{
-  "dependencies": {
-    "expo-audio": "^1.0.15",
-    "react-native-callkeep": "^4.3.16"
-  },
-  "devDependencies": {
-    "typescript": "^5.9.3"
-  }
-}
