@@ -545,9 +545,12 @@ async def import_members(
                 member_doc['personal_qr_data'] = qr_data['qr_data']
                 
                 # Convert datetime and date fields to isoformat for MongoDB
-                member_doc['created_at'] = member_doc['created_at'].isoformat()
-                member_doc['updated_at'] = member_doc['updated_at'].isoformat()
-                
+                # Check if they have isoformat method (not already strings)
+                if hasattr(member_doc.get('created_at'), 'isoformat'):
+                    member_doc['created_at'] = member_doc['created_at'].isoformat()
+                if hasattr(member_doc.get('updated_at'), 'isoformat'):
+                    member_doc['updated_at'] = member_doc['updated_at'].isoformat()
+
                 # Convert date fields to isoformat
                 date_fields = ['date_of_birth', 'baptism_date', 'membership_date']
                 for field in date_fields:
@@ -583,8 +586,11 @@ async def import_members(
         
         log = ImportLog(**import_log.model_dump(mode='json'))
         log_doc = log.model_dump(mode='json')
-        log_doc['created_at'] = log_doc['created_at'].isoformat()
-        log_doc['updated_at'] = log_doc['updated_at'].isoformat()
+        # Check if they have isoformat method (not already strings)
+        if hasattr(log_doc.get('created_at'), 'isoformat'):
+            log_doc['created_at'] = log_doc['created_at'].isoformat()
+        if hasattr(log_doc.get('updated_at'), 'isoformat'):
+            log_doc['updated_at'] = log_doc['updated_at'].isoformat()
         await db.import_logs.insert_one(log_doc)
         
         # Clean up temp files on success
