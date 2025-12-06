@@ -111,22 +111,33 @@ async def simulate_photo_matching(
 
         logger.info(f"Extracted {len(extracted_files)} files from archive")
         if len(extracted_files) > 0:
-            sample_files = list(extracted_files.keys())[:3]
+            sample_files = list(extracted_files.keys())[:10]
             logger.info(f"Sample ZIP filenames (normalized): {sample_files}")
 
         # Create lookup by normalized filename from CSV
         member_lookup = {}
+        sample_csv_values = []
         for idx, member in enumerate(members_data):
             if member.get(photo_filename_field):
-                normalized = file_upload_service.normalize_filename(member[photo_filename_field])
+                original_value = member[photo_filename_field]
+                normalized = file_upload_service.normalize_filename(original_value)
                 if normalized:
                     member_lookup[normalized] = {
                         'row_index': idx + 1,
                         'full_name': member.get('full_name', f"Row {idx + 1}"),
-                        'original_filename': member[photo_filename_field]
+                        'original_filename': original_value
                     }
+                    if len(sample_csv_values) < 10:
+                        sample_csv_values.append(f"'{original_value}' -> '{normalized}'")
 
         logger.info(f"Created member lookup with {len(member_lookup)} entries from CSV")
+        logger.info(f"Sample CSV photo_filename values: {sample_csv_values}")
+
+        # Log first few keys from each for comparison
+        csv_keys = list(member_lookup.keys())[:10]
+        zip_keys = list(extracted_files.keys())[:10]
+        logger.info(f"CSV normalized keys (first 10): {csv_keys}")
+        logger.info(f"ZIP normalized keys (first 10): {zip_keys}")
 
         # Generate session ID
         session_id = str(uuid.uuid4())
