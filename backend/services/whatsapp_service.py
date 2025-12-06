@@ -47,7 +47,7 @@ async def send_whatsapp_message(
 ) -> dict:
     """
     Send WhatsApp message via gateway and check delivery status
-    
+
     Args:
         phone_number: Recipient phone number (format: 628xxxxx)
         message: Text message to send
@@ -55,92 +55,114 @@ async def send_whatsapp_message(
         api_url: Optional WhatsApp API URL (overrides env)
         api_username: Optional WhatsApp API username (overrides env)
         api_password: Optional WhatsApp API password (overrides env)
-    
+
     Returns:
         dict with success status, message, and delivery_status
     """
+    import base64
+
     # Use parameters if provided, otherwise use env variables as fallback
     whatsapp_url = api_url or _ENV_WHATSAPP_API_URL
     whatsapp_user = api_username or _ENV_WHATSAPP_USERNAME
     whatsapp_pass = api_password or _ENV_WHATSAPP_PASSWORD
-    
+
     if not whatsapp_url:
         logger.warning("WhatsApp API URL not configured")
         return {
-            'success': False, 
+            'success': False,
             'message': 'WhatsApp not configured',
             'delivery_status': 'not_configured'
         }
-    
+
     try:
-        # Prepare payload
-        payload = {
-            'phone': phone_number,
-            'message': message,
-        }
-        
-        # Add image if provided
+        # Format phone number for WhatsApp (add @s.whatsapp.net suffix)
+        wa_phone = phone_number
+        if not wa_phone.endswith('@s.whatsapp.net'):
+            wa_phone = f"{phone_number}@s.whatsapp.net"
+
+        auth = (whatsapp_user, whatsapp_pass) if whatsapp_user else None
+
+        # If image is provided, use /send/image endpoint with multipart/form-data
         if image_base64:
             # Remove data:image/png;base64, prefix if present
             if ',' in image_base64:
                 image_base64 = image_base64.split(',')[1]
-            payload['image'] = image_base64
-        
-        # Send request to WhatsApp gateway
-        # Using go-whatsapp-web-multidevice API format
-        response = requests.post(
-            f"{whatsapp_url}/send/message",  # Changed from /send to /send/message
-            json=payload,
-            auth=(whatsapp_user, whatsapp_pass) if whatsapp_user else None,
-            timeout=15
-        )
-        
+
+            # Decode base64 to binary
+            try:
+                image_binary = base64.b64decode(image_base64)
+            except Exception as e:
+                logger.error(f"Failed to decode base64 image: {e}")
+                # Fall back to text-only message
+                image_binary = None
+
+            if image_binary:
+                # Use /send/image endpoint with multipart/form-data
+                files = {
+                    'image': ('qrcode.png', image_binary, 'image/png')
+                }
+                data = {
+                    'phone': wa_phone,
+                    'caption': message,
+                    'compress': 'false',
+                    'view_once': 'false'
+                }
+
+                response = requests.post(
+                    f"{whatsapp_url}/send/image",
+                    files=files,
+                    data=data,
+                    auth=auth,
+                    timeout=30  # Longer timeout for image upload
+                )
+            else:
+                # Fall back to text-only if image decode failed
+                response = requests.post(
+                    f"{whatsapp_url}/send/message",
+                    json={'phone': wa_phone, 'message': message},
+                    auth=auth,
+                    timeout=15
+                )
+        else:
+            # Text-only message using /send/message endpoint
+            response = requests.post(
+                f"{whatsapp_url}/send/message",
+                json={'phone': wa_phone, 'message': message},
+                auth=auth,
+                timeout=15
+            )
+
         if response.status_code == 200:
             result = response.json()
-            message_id = result.get('messageId', result.get('id'))
-            
-            # Check delivery status
-            delivery_status = 'sent'
-            if message_id:
-                try:
-                    status_response = requests.get(
-                        f"{whatsapp_url}/message-status/{message_id}",
-                        auth=(whatsapp_user, whatsapp_pass) if whatsapp_user else None,
-                        timeout=5
-                    )
-                    if status_response.status_code == 200:
-                        status_data = status_response.json()
-                        delivery_status = status_data.get('status', 'sent')
-                except Exception as e:
-                    logger.warning(f"Could not check delivery status: {str(e)}")
-            
-            logger.info(f"WhatsApp message sent to {phone_number}, status: {delivery_status}")
+            message_id = result.get('results', {}).get('messageID') or result.get('messageId', result.get('id'))
+
+            logger.info(f"WhatsApp message sent to {phone_number}, message_id: {message_id}")
             return {
-                'success': True, 
+                'success': True,
                 'message': 'Message sent successfully',
-                'delivery_status': delivery_status,
+                'delivery_status': 'sent',
                 'message_id': message_id
             }
         else:
             logger.error(f"WhatsApp API error: {response.status_code} - {response.text}")
             return {
-                'success': False, 
+                'success': False,
                 'message': f'API error: {response.status_code}',
                 'delivery_status': 'failed',
                 'error_details': response.text
             }
-    
+
     except requests.exceptions.Timeout:
         logger.error("WhatsApp API timeout")
         return {
-            'success': False, 
+            'success': False,
             'message': 'Request timeout',
             'delivery_status': 'timeout'
         }
     except Exception as e:
         logger.error(f"WhatsApp send error: {str(e)}")
         return {
-            'success': False, 
+            'success': False,
             'message': str(e),
             'delivery_status': 'error'
         }

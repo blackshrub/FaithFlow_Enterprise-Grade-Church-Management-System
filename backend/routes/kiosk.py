@@ -814,10 +814,10 @@ async def register_group_kiosk(
             )
             logger.info(f"Group registration: Added {len(rsvp_entries)} RSVPs to event {request.event_id}")
 
-        # 6. Send WhatsApp tickets asynchronously
-        async def send_all_tickets():
-            for ticket in tickets:
-                if ticket.phone and ticket.whatsapp_status == "sending":
+        # 6. Send WhatsApp tickets (await to ensure status is correct in response)
+        for ticket in tickets:
+            if ticket.phone and ticket.whatsapp_status == "sending":
+                try:
                     status = await _send_ticket_whatsapp(
                         db,
                         ticket.phone,
@@ -845,9 +845,9 @@ async def register_group_kiosk(
                         logger.info(f"Updated WhatsApp status to '{status}' for {ticket.member_name}")
                     except Exception as e:
                         logger.error(f"Failed to update WhatsApp status in DB: {e}")
-
-        # Run WhatsApp sends in background (don't block response)
-        asyncio.create_task(send_all_tickets())
+                except Exception as e:
+                    logger.error(f"Error sending WhatsApp ticket to {ticket.member_name}: {e}")
+                    ticket.whatsapp_status = "failed"
 
         # 7. Return response
         logger.info(f"Group registration complete: {len(tickets)} tickets created, primary count={sum(1 for t in tickets if t.is_primary)}")
