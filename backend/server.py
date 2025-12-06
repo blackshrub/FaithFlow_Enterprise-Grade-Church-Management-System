@@ -425,7 +425,7 @@ async def startup_event():
             from config.redis import init_redis, health_check, get_redis
             await init_redis()
             redis_health = await health_check()
-            redis_client = get_redis()
+            redis_client = await get_redis()
             logger.info(f"✓ Redis connected (v{redis_health.get('version', 'unknown')})")
 
             # Start pub/sub subscriber for distributed cache invalidation

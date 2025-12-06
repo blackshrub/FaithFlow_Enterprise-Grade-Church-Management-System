@@ -35,17 +35,21 @@ def setup_scheduler(db: AsyncIOMotorDatabase):
     from datetime import datetime, timezone
     
     # Add job: Publish scheduled articles every 30 seconds
+    # Pass async function directly with args - AsyncIOScheduler will await it properly
     scheduler.add_job(
-        func=lambda: publish_scheduled_articles(db),
+        func=publish_scheduled_articles,
+        args=[db],
         trigger=IntervalTrigger(seconds=30),
         id='publish_scheduled_articles',
         name='Publish Scheduled Articles',
         replace_existing=True
     )
-    
+
     # Add job: Process webhook queue every 10 seconds
+    # Pass async method directly with args - AsyncIOScheduler will await it properly
     scheduler.add_job(
-        func=lambda: webhook_service.process_webhook_queue(db),
+        func=webhook_service.process_webhook_queue,
+        args=[db],
         trigger=IntervalTrigger(seconds=10),
         id='process_webhook_queue',
         name='Process Webhook Queue',
@@ -117,8 +121,9 @@ def setup_scheduler(db: AsyncIOMotorDatabase):
     # Each church's schedule is converted from their local timezone to UTC
     from apscheduler.triggers.cron import CronTrigger
     
+    # Pass async function directly - AsyncIOScheduler will await it properly
     scheduler.add_job(
-        func=lambda: run_status_automation_job(),
+        func=run_status_automation_job,
         trigger=CronTrigger(minute=0),  # Every hour at XX:00
         id='status_automation',
         name='Member Status Automation',
@@ -146,8 +151,9 @@ def setup_scheduler(db: AsyncIOMotorDatabase):
         except Exception as e:
             logger.error(f"Error emptying trash bin: {e}")
     
+    # Pass async function directly - AsyncIOScheduler will await it properly
     scheduler.add_job(
-        func=lambda: empty_trash_bin(),
+        func=empty_trash_bin,
         trigger=CronTrigger(hour=2, minute=0),  # Daily at 2 AM
         id='empty_trash_bin',
         name='Empty Trash Bin (14 days)',
@@ -227,8 +233,9 @@ def setup_scheduler(db: AsyncIOMotorDatabase):
         except Exception as e:
             logger.error(f"Error in stale call cleanup job: {e}")
 
+    # Pass async function directly - AsyncIOScheduler will await it properly
     scheduler.add_job(
-        func=lambda: cleanup_stale_calls_job(),
+        func=cleanup_stale_calls_job,
         trigger=IntervalTrigger(seconds=30),
         id='cleanup_stale_calls',
         name='Cleanup Stale Calls',
@@ -272,8 +279,9 @@ def setup_scheduler(db: AsyncIOMotorDatabase):
         except Exception as e:
             logger.error(f"Error in counseling slot generation job: {e}")
     
+    # Pass async function directly - AsyncIOScheduler will await it properly
     scheduler.add_job(
-        func=lambda: generate_counseling_slots(),
+        func=generate_counseling_slots,
         trigger=CronTrigger(hour=2, minute=30),  # Daily at 2:30 AM
         id='generate_counseling_slots',
         name='Generate Counseling Slots',
@@ -348,8 +356,9 @@ def setup_scheduler(db: AsyncIOMotorDatabase):
         except Exception as e:
             logger.error(f"Error in autonomous content generation job: {e}")
 
+    # Pass async function directly - AsyncIOScheduler will await it properly
     scheduler.add_job(
-        func=lambda: generate_explore_content(),
+        func=generate_explore_content,
         trigger=CronTrigger(hour=3, minute=0),  # Daily at 3:00 AM
         id='generate_explore_content',
         name='Autonomous Explore Content Generation',
@@ -392,8 +401,9 @@ def setup_scheduler(db: AsyncIOMotorDatabase):
         except Exception as e:
             logger.error(f"Error in Bible Study generation job: {e}")
 
+    # Pass async function directly - AsyncIOScheduler will await it properly
     scheduler.add_job(
-        func=lambda: generate_bible_studies(),
+        func=generate_bible_studies,
         trigger=CronTrigger(day_of_week='sun', hour=4, minute=0),  # Every Sunday at 4:00 AM
         id='generate_bible_studies',
         name='Weekly Bible Study Generation',
@@ -455,8 +465,9 @@ def setup_scheduler(db: AsyncIOMotorDatabase):
         except Exception as e:
             logger.error(f"Error in prayer follow-up job: {e}")
 
+    # Pass async function directly - AsyncIOScheduler will await it properly
     scheduler.add_job(
-        func=lambda: process_prayer_followups(),
+        func=process_prayer_followups,
         trigger=CronTrigger(hour=9, minute=0),  # Daily at 9:00 AM
         id='process_prayer_followups',
         name='Prayer Follow-up Processing (14-day check-ins)',
@@ -518,16 +529,18 @@ def setup_scheduler(db: AsyncIOMotorDatabase):
         except Exception as e:
             logger.error(f"Error in news context job: {e}")
 
+    # Pass async function directly - AsyncIOScheduler will await it properly
     scheduler.add_job(
-        func=lambda: process_news_context(),
+        func=process_news_context,
         trigger=CronTrigger(hour=6, minute=30),  # Daily at 6:30 AM
         id='process_news_context_morning',
         name='News Context Processing (Morning)',
         replace_existing=True
     )
 
+    # Pass async function directly - AsyncIOScheduler will await it properly
     scheduler.add_job(
-        func=lambda: process_news_context(),
+        func=process_news_context,
         trigger=CronTrigger(hour=14, minute=0),  # Daily at 2:00 PM
         id='process_news_context_afternoon',
         name='News Context Processing (Afternoon)',
