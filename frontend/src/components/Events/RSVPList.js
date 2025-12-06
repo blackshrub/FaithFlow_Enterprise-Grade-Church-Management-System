@@ -47,12 +47,13 @@ function RSVPList({ event, rsvpData, isLoading, selectedSession }) {
   }, [members]);
 
   // Get member display info (name, phone, photo)
+  // Uses RSVP data first, falls back to member lookup
   const getMemberInfo = (rsvp) => {
     const member = memberMap[rsvp.member_id];
     return {
       name: rsvp.member_name || member?.full_name || `Member ID: ${rsvp.member_id}`,
-      phone: member?.phone_whatsapp || member?.phone || null,
-      photo: member?.photo_url || member?.photo_thumbnail_url || null,
+      phone: rsvp.phone || member?.phone_whatsapp || member?.phone || null,
+      photo: rsvp.photo_url || member?.photo_url || member?.photo_thumbnail_url || null,
       initials: (rsvp.member_name || member?.full_name || 'U').substring(0, 2).toUpperCase()
     };
   };
@@ -245,7 +246,11 @@ function RSVPList({ event, rsvpData, isLoading, selectedSession }) {
               <div className="flex items-start gap-4">
                 {/* Member Photo */}
                 <Avatar className="h-12 w-12 flex-shrink-0">
-                  <AvatarImage src={memberInfo.photo} alt={memberInfo.name} />
+                  <AvatarImage
+                    src={memberInfo.photo}
+                    alt={memberInfo.name}
+                    className="object-cover"
+                  />
                   <AvatarFallback className="bg-blue-100 text-blue-600">
                     {memberInfo.initials}
                   </AvatarFallback>

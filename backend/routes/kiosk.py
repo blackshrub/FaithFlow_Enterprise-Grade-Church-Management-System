@@ -606,9 +606,12 @@ async def register_group_kiosk(
                 )
 
                 phone = primary_member.get("phone_whatsapp")
+                photo_url = primary_member.get("photo_url") or primary_member.get("photo_thumbnail_url")
                 rsvp_entry = {
                     "member_id": request.primary_member_id,
                     "member_name": primary_member.get("full_name"),
+                    "phone": phone,
+                    "photo_url": photo_url,
                     "session_id": None,
                     "seat": None,
                     "timestamp": datetime.utcnow(),
@@ -643,6 +646,7 @@ async def register_group_kiosk(
                 member_id = None
                 member_name = None
                 member_phone = None
+                member_photo = None
                 is_new = False
 
                 if companion.type == "existing":
@@ -671,6 +675,7 @@ async def register_group_kiosk(
                     member_id = companion.member_id
                     member_name = existing_member.get("full_name")
                     member_phone = existing_member.get("phone_whatsapp")
+                    member_photo = existing_member.get("photo_url") or existing_member.get("photo_thumbnail_url")
 
                 elif companion.type == "new":
                     # Create new Pre-Visitor
@@ -705,6 +710,7 @@ async def register_group_kiosk(
                             member_id = existing_by_phone.get("id")
                             member_name = existing_by_phone.get("full_name")
                             member_phone = existing_by_phone.get("phone_whatsapp")
+                            member_photo = existing_by_phone.get("photo_url") or existing_by_phone.get("photo_thumbnail_url")
                             logger.info(f"Found existing member by phone: {member_name}")
                         else:
                             # Create new member
@@ -771,6 +777,8 @@ async def register_group_kiosk(
                 rsvp_entry = {
                     "member_id": member_id,
                     "member_name": member_name,
+                    "phone": member_phone,
+                    "photo_url": member_photo,
                     "session_id": None,
                     "seat": None,
                     "timestamp": datetime.utcnow(),
