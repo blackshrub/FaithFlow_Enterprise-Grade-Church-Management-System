@@ -268,6 +268,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Rate limiting middleware (starts with in-memory, upgrades to Redis on startup if available)
+from middleware.rate_limit import RateLimitMiddleware
+app.add_middleware(RateLimitMiddleware)
+
 # Security headers middleware
 @app.middleware("http")
 async def add_security_headers(request: Request, call_next: Callable):
@@ -436,13 +440,16 @@ async def startup_event():
         except Exception as e:
             logger.warning(f"⚠ Redis connection failed: {e} - falling back to in-memory")
 
-    # Initialize rate limiting (uses Redis if available, falls back to in-memory)
-    try:
-        from middleware.rate_limit import setup_rate_limiting
-        setup_rate_limiting(app, redis_client=redis_client)
-        logger.info("✓ Rate limiting initialized")
-    except Exception as e:
-        logger.warning(f"⚠ Rate limiting initialization failed: {e}")
+    # Upgrade rate limiting to Redis if available (middleware already added at startup)
+    if redis_client:
+        try:
+            from middleware.rate_limit import RateLimitMiddleware
+            RateLimitMiddleware.upgrade_to_redis(redis_client)
+            logger.info("✓ Rate limiting upgraded to Redis backend")
+        except Exception as e:
+            logger.warning(f"⚠ Rate limiting Redis upgrade failed: {e} - using in-memory")
+    else:
+        logger.info("✓ Rate limiting using in-memory backend")
 
     # Log API configuration
     if API_PREFIX:

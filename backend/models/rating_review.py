@@ -40,7 +40,7 @@ class RatingReview(BaseModel):
     updated_at: str
 
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "id": "review-123",
                 "event_id": "event-456",

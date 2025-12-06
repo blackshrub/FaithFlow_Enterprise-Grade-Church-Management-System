@@ -198,14 +198,27 @@ def get_rate_limit_config(path: str) -> Tuple[int, int]:
 class RateLimitMiddleware(BaseHTTPMiddleware):
     """Rate limiting middleware for FastAPI."""
 
+    # Class-level limiter instance for late binding
+    _shared_limiter: Optional['InMemoryRateLimiter'] = None
+
     def __init__(self, app, redis_client=None):
         super().__init__(app)
-        if redis_client:
-            self.limiter = RedisRateLimiter(redis_client)
-            logger.info("Rate limiter using Redis backend")
-        else:
-            self.limiter = InMemoryRateLimiter()
-            logger.info("Rate limiter using in-memory backend")
+        # Use shared limiter if already initialized, otherwise create new one
+        if RateLimitMiddleware._shared_limiter is None:
+            if redis_client:
+                RateLimitMiddleware._shared_limiter = RedisRateLimiter(redis_client)
+                logger.info("Rate limiter initialized with Redis backend")
+            else:
+                RateLimitMiddleware._shared_limiter = InMemoryRateLimiter()
+                logger.info("Rate limiter initialized with in-memory backend")
+        self.limiter = RateLimitMiddleware._shared_limiter
+
+    @classmethod
+    def upgrade_to_redis(cls, redis_client):
+        """Upgrade rate limiter to use Redis backend (called after Redis connects)."""
+        if redis_client and not isinstance(cls._shared_limiter, RedisRateLimiter):
+            cls._shared_limiter = RedisRateLimiter(redis_client)
+            logger.info("Rate limiter upgraded to Redis backend")
 
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
         path = request.url.path
