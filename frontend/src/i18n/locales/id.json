@@ -657,7 +657,21 @@
       "filterBySession": "Filter berdasarkan Sesi",
       "allSessions": "Semua Sesi",
       "noRSVPsForSession": "Tidak ada RSVP untuk sesi ini",
-      "registerFirst": "Jadilah yang pertama mendaftar!"
+      "registerFirst": "Jadilah yang pertama mendaftar!",
+      "searchPlaceholder": "Cari berdasarkan nama, telepon, atau kode...",
+      "showing": "Menampilkan {{from}}-{{to}} dari {{total}}",
+      "statusRegistered": "Terdaftar",
+      "statusConfirmed": "Dikonfirmasi",
+      "statusCancelled": "Dibatalkan",
+      "statusCheckedIn": "Sudah Check-In",
+      "ticketQR": "Tiket Acara",
+      "noQRCode": "Tidak ada kode QR",
+      "downloadQR": "Unduh QR",
+      "downloadTicket": "Unduh Tiket",
+      "whatsapp_sent": "Terkirim",
+      "whatsapp_pending": "Menunggu",
+      "whatsapp_failed": "Gagal",
+      "whatsapp_not_configured": "Tidak dikonfigurasi"
     }
   },
   "devotions": {

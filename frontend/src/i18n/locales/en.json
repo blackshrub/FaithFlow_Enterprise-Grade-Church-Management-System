@@ -577,7 +577,21 @@
       "filterBySession": "Filter by Session",
       "allSessions": "All Sessions",
       "noRSVPsForSession": "No RSVPs for this session",
-      "registerFirst": "Be the first to register!"
+      "registerFirst": "Be the first to register!",
+      "searchPlaceholder": "Search by name, phone, or code...",
+      "showing": "Showing {{from}}-{{to}} of {{total}}",
+      "statusRegistered": "Registered",
+      "statusConfirmed": "Confirmed",
+      "statusCancelled": "Cancelled",
+      "statusCheckedIn": "Checked In",
+      "ticketQR": "Event Ticket",
+      "noQRCode": "No QR code available",
+      "downloadQR": "Download QR",
+      "downloadTicket": "Download Ticket",
+      "whatsapp_sent": "Sent",
+      "whatsapp_pending": "Pending",
+      "whatsapp_failed": "Failed",
+      "whatsapp_not_configured": "Not configured"
     },
     "attendance": {
       "noAttendance": "No attendance yet",
