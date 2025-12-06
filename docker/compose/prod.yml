@@ -189,7 +189,7 @@ services:
   # ===========================================================================
   backend:
     build:
-      context: ./backend
+      context: ../../backend
       dockerfile: Dockerfile
     container_name: faithflow-backend
     restart: unless-stopped
@@ -280,7 +280,7 @@ services:
   # ===========================================================================
   frontend:
     build:
-      context: ./frontend
+      context: ../../frontend
       dockerfile: Dockerfile
       args:
         - VITE_API_URL=https://api.${DOMAIN}

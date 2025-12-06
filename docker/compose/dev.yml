@@ -60,7 +60,7 @@ services:
   # ===========================================================================
   backend:
     build:
-      context: ./backend
+      context: ../../backend
       dockerfile: Dockerfile
     container_name: faithflow-backend
     restart: unless-stopped
@@ -80,7 +80,7 @@ services:
       # Subdomain deployment mode - no /api prefix (api.yourdomain.com)
       - API_PREFIX=
     volumes:
-      - ./backend:/app:cached
+      - ../../backend:/app:cached
       - backend_uploads:/app/uploads
     ports:
       - "8000:8000"
@@ -98,7 +98,7 @@ services:
   # ===========================================================================
   frontend:
     build:
-      context: ./frontend
+      context: ../../frontend
       dockerfile: Dockerfile
       args:
         - REACT_APP_API_URL=http://localhost:8000

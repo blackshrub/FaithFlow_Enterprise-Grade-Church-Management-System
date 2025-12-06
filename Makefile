@@ -13,6 +13,7 @@
 
 .PHONY: help up down restart logs build clean dev prod status \
         restart-backend restart-frontend rebuild-backend rebuild-frontend \
+        build-backend build-frontend build-all \
         shell-backend shell-mongo shell-redis \
         backup restore prune
 
@@ -54,8 +55,11 @@ help:
 	@echo "$(GREEN)▶ INDIVIDUAL SERVICES$(RESET)"
 	@echo "  make restart-backend  Restart only backend"
 	@echo "  make restart-frontend Restart only frontend"
-	@echo "  make rebuild-backend  Rebuild and restart backend (no cache)"
-	@echo "  make rebuild-frontend Rebuild and restart frontend (no cache)"
+	@echo "  make build-backend    Build and restart backend (with cache)"
+	@echo "  make build-frontend   Build and restart frontend (with cache)"
+	@echo "  make build-all        Build both backend and frontend (with cache)"
+	@echo "  make rebuild-backend  Rebuild backend (no cache, slower)"
+	@echo "  make rebuild-frontend Rebuild frontend (no cache, slower)"
 	@echo "  make logs-backend     View backend logs only"
 	@echo "  make logs-frontend    View frontend logs only"
 	@echo ""
@@ -69,6 +73,15 @@ help:
 	@echo "  make prune            Clean unused Docker resources"
 	@echo "  make clean            Stop all + remove volumes (DANGER!)"
 	@echo "  make shell-backend    Open bash in backend container"
+	@echo ""
+	@echo "$(GREEN)▶ SHORTCUTS$(RESET)"
+	@echo "  make bb               Build backend (with cache)"
+	@echo "  make bf               Build frontend (with cache)"
+	@echo "  make ba               Build all (with cache)"
+	@echo "  make rb               Restart backend"
+	@echo "  make rf               Restart frontend"
+	@echo "  make lb               Logs backend"
+	@echo "  make lf               Logs frontend"
 	@echo ""
 	@echo "$(YELLOW)▶ WHEN TO USE --no-cache (rebuild-*):$(RESET)"
 	@echo "  • After changing Dockerfile"
@@ -173,14 +186,35 @@ restart-frontend:
 	docker compose -f docker/compose/prod.yml restart frontend
 	@echo "$(GREEN)✓ Frontend restarted$(RESET)"
 
-## Rebuild backend with no cache and restart
+## Build backend with cache and restart (fast)
+build-backend:
+	@echo "$(CYAN)Building backend (with cache)...$(RESET)"
+	docker compose -f docker/compose/prod.yml build backend
+	docker compose -f docker/compose/prod.yml up -d backend
+	@echo "$(GREEN)✓ Backend built and started$(RESET)"
+
+## Build frontend with cache and restart (fast)
+build-frontend:
+	@echo "$(CYAN)Building frontend (with cache)...$(RESET)"
+	docker compose -f docker/compose/prod.yml build frontend
+	docker compose -f docker/compose/prod.yml up -d frontend
+	@echo "$(GREEN)✓ Frontend built and started$(RESET)"
+
+## Build both backend and frontend with cache (fast)
+build-all:
+	@echo "$(CYAN)Building backend and frontend (with cache)...$(RESET)"
+	docker compose -f docker/compose/prod.yml build backend frontend
+	docker compose -f docker/compose/prod.yml up -d backend frontend
+	@echo "$(GREEN)✓ Backend and frontend built and started$(RESET)"
+
+## Rebuild backend with no cache and restart (slow, full rebuild)
 rebuild-backend:
 	@echo "$(CYAN)Rebuilding backend (no cache)...$(RESET)"
 	docker compose -f docker/compose/prod.yml build --no-cache backend
 	docker compose -f docker/compose/prod.yml up -d backend
 	@echo "$(GREEN)✓ Backend rebuilt and started$(RESET)"
 
-## Rebuild frontend with no cache and restart
+## Rebuild frontend with no cache and restart (slow, full rebuild)
 rebuild-frontend:
 	@echo "$(CYAN)Rebuilding frontend (no cache)...$(RESET)"
 	docker compose -f docker/compose/prod.yml build --no-cache frontend
@@ -244,6 +278,15 @@ rb: restart-backend
 
 ## Alias: restart frontend
 rf: restart-frontend
+
+## Alias: build backend (with cache)
+bb: build-backend
+
+## Alias: build frontend (with cache)
+bf: build-frontend
+
+## Alias: build all (with cache)
+ba: build-all
 
 ## Alias: logs backend
 lb: logs-backend
