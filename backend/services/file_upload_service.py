@@ -17,40 +17,58 @@ class FileUploadService:
     """Service for handling bulk file uploads and matching"""
     
     @staticmethod
-    def normalize_filename(filename: str) -> str:
-        """Normalize filename: lowercase and standardize extensions
-        
+    def normalize_filename(filename: str, for_matching: bool = True) -> str:
+        """Normalize filename for matching: lowercase, standardize extensions and characters
+
         Args:
             filename: Original filename
-            
+            for_matching: If True, applies aggressive normalization for matching purposes
+
         Returns:
             Normalized filename or empty string if invalid
         """
+        import re
+
         if not filename or filename.startswith('.'):
             return ''  # Skip hidden files and invalid names
-        
-        # Convert to lowercase
-        filename = filename.lower()
-        
+
+        # Strip whitespace and convert to lowercase
+        filename = filename.strip().lower()
+
+        # Get base name and extension
+        if '.' in filename:
+            base_name, ext = filename.rsplit('.', 1)
+            ext = '.' + ext
+        else:
+            # No extension - for CSV fields, try to match without extension
+            base_name = filename
+            ext = ''
+
+        # Normalize base name for matching:
+        # - Replace spaces, underscores, dashes, dots with underscore
+        # - Remove multiple consecutive underscores
+        # - Remove leading/trailing underscores
+        if for_matching:
+            base_name = re.sub(r'[\s\-_.]+', '_', base_name)  # Normalize separators to underscore
+            base_name = re.sub(r'_+', '_', base_name)  # Remove multiple underscores
+            base_name = base_name.strip('_')  # Remove leading/trailing underscores
+
         # Standardize image extensions to .jpg
-        image_extensions = ['.jpeg', '.png', '.gif', '.bmp', '.webp']
-        for ext in image_extensions:
-            if filename.endswith(ext):
-                # Replace extension with .jpg
-                base_name = filename[:-len(ext)]
-                filename = base_name + '.jpg'
-                break
-        
-        # Standardize PDF extensions to lowercase .pdf
-        if filename.upper().endswith('.PDF'):
-            filename = filename[:-4] + '.pdf'
-        
-        # Filter out non-photo/document files
-        valid_extensions = ['.jpg', '.pdf', '.doc', '.docx', '.txt']
-        if not any(filename.endswith(ext) for ext in valid_extensions):
-            return ''  # Skip non-relevant files
-        
-        return filename
+        image_extensions = {'.jpeg': '.jpg', '.png': '.jpg', '.gif': '.jpg', '.bmp': '.jpg', '.webp': '.jpg'}
+        if ext in image_extensions:
+            ext = image_extensions[ext]
+
+        # If no extension but for matching purposes, assume it's a photo
+        if not ext and for_matching:
+            ext = '.jpg'
+
+        # Filter out non-photo/document files (only if we have an extension)
+        if ext:
+            valid_extensions = ['.jpg', '.pdf', '.doc', '.docx', '.txt']
+            if ext not in valid_extensions:
+                return ''  # Skip non-relevant files
+
+        return base_name + ext
     
     @staticmethod
     def extract_archive(file_content: bytes, filename: str) -> Dict[str, bytes]:
