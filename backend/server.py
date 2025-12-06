@@ -12,6 +12,9 @@ from typing import Callable
 # Custom ORJSONResponse for ~10x faster JSON serialization
 from utils.responses import ORJSONResponse
 
+# Environment validation (runs on import if RUN_ENV_VALIDATION=true)
+from utils.env_validation import validate_environment
+
 # Import routes
 from routes import (
     auth, churches, members, settings, import_export, photo_document_sim,
@@ -62,6 +65,14 @@ from routes import (
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
+
+# Validate environment on startup (critical checks only in production)
+is_production = os.environ.get('ENVIRONMENT', '').lower() in ('production', 'prod')
+if is_production:
+    validate_environment(exit_on_failure=True)
+else:
+    # Just log warnings in development
+    validate_environment(exit_on_failure=False)
 
 # API Prefix Configuration
 # Set API_PREFIX="" for subdomain deployment (api.domain.com)
@@ -278,6 +289,16 @@ async def add_security_headers(request: Request, call_next: Callable):
     # Restrict browser features (camera, mic, geolocation, etc.)
     response.headers["Permissions-Policy"] = "camera=self, microphone=self, geolocation=()"
 
+    # HTTP Strict Transport Security (HSTS)
+    # Only add for HTTPS requests or when behind a reverse proxy
+    if request.url.scheme == "https" or request.headers.get("x-forwarded-proto") == "https":
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains; preload"
+
+    # Prevent caching of sensitive responses
+    if "/auth/" in str(request.url.path) or "/login" in str(request.url.path):
+        response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, private"
+        response.headers["Pragma"] = "no-cache"
+
     # Content Security Policy - relaxed for API (frontend handles strict CSP)
     # Only set for HTML responses to avoid breaking JSON APIs
     content_type = response.headers.get("content-type", "")
@@ -393,12 +414,18 @@ redis_enabled = os.environ.get('REDIS_ENABLED', 'true').lower() == 'true'
 @app.on_event("startup")
 async def startup_event():
     """Initialize scheduler and services on startup."""
+    logger.info("=" * 60)
+    logger.info("FaithFlow Backend Starting...")
+    logger.info("=" * 60)
+
     # Initialize Redis connection (if enabled)
+    redis_client = None
     if redis_enabled:
         try:
-            from config.redis import init_redis, health_check
+            from config.redis import init_redis, health_check, get_redis
             await init_redis()
             redis_health = await health_check()
+            redis_client = get_redis()
             logger.info(f"✓ Redis connected (v{redis_health.get('version', 'unknown')})")
 
             # Start pub/sub subscriber for distributed cache invalidation
@@ -408,6 +435,14 @@ async def startup_event():
             logger.info("✓ Redis pub/sub subscriber started")
         except Exception as e:
             logger.warning(f"⚠ Redis connection failed: {e} - falling back to in-memory")
+
+    # Initialize rate limiting (uses Redis if available, falls back to in-memory)
+    try:
+        from middleware.rate_limit import setup_rate_limiting
+        setup_rate_limiting(app, redis_client=redis_client)
+        logger.info("✓ Rate limiting initialized")
+    except Exception as e:
+        logger.warning(f"⚠ Rate limiting initialization failed: {e}")
 
     # Log API configuration
     if API_PREFIX:

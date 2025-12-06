@@ -8,6 +8,12 @@ from services.auth_service import auth_service
 from utils.dependencies import get_db, get_current_user, require_admin
 from utils.rate_limit import strict_rate_limit
 from utils.security import hash_password, verify_password
+from utils.security_audit import (
+    audit_auth_attempt,
+    track_failed_login,
+    clear_failed_attempts,
+    audit_admin_action
+)
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -47,7 +53,20 @@ async def login(
 
     Rate limited to 5 requests per minute per IP to prevent brute force attacks.
     """
-    
+
+    # Check for brute force attack
+    if track_failed_login(request, login_data.email):
+        audit_auth_attempt(
+            request=request,
+            success=False,
+            email=login_data.email,
+            failure_reason="brute_force_blocked"
+        )
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Too many failed attempts. Please try again later.",
+        )
+
     # Try API key authentication first (if email looks like api username)
     if login_data.email.startswith('api_'):
         result = await auth_service.authenticate_api_key(
@@ -55,20 +74,43 @@ async def login(
             api_key=login_data.password,
             db=db
         )
-        
+
         if result:
+            clear_failed_attempts(request, login_data.email)
+            audit_auth_attempt(
+                request=request,
+                success=True,
+                email=login_data.email,
+                method="api_key"
+            )
             return result
-    
+
     # Fall back to regular user authentication
     result = await auth_service.authenticate_user(login_data, db)
-    
+
     if not result:
+        audit_auth_attempt(
+            request=request,
+            success=False,
+            email=login_data.email,
+            failure_reason="invalid_credentials"
+        )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid credentials",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
+
+    # Successful login
+    clear_failed_attempts(request, login_data.email)
+    audit_auth_attempt(
+        request=request,
+        success=True,
+        user_id=result.get("user", {}).get("id"),
+        email=login_data.email,
+        method="password"
+    )
+
     return result
 
 

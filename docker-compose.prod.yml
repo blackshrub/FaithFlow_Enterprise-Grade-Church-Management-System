@@ -117,12 +117,19 @@ services:
     container_name: faithflow-mongodb
     restart: unless-stopped
     environment:
+      # Authentication (REQUIRED for security)
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:?MONGO_ROOT_PASSWORD is required}
       MONGO_INITDB_DATABASE: faithflow
+      # Application user (created by init script)
+      MONGO_APP_USER: ${MONGO_APP_USER:-faithflow_app}
+      MONGO_APP_PASSWORD: ${MONGO_APP_PASSWORD:?MONGO_APP_PASSWORD is required}
     volumes:
       - mongodb_data:/data/db
       - mongodb_config:/data/configdb
+      - ./docker/mongodb/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
     healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      test: ["CMD", "mongosh", "-u", "${MONGO_ROOT_USER:-admin}", "-p", "${MONGO_ROOT_PASSWORD}", "--authenticationDatabase", "admin", "--eval", "db.adminCommand('ping')"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -130,7 +137,7 @@ services:
     networks:
       - faithflow-network
     # MongoDB is NOT exposed externally for security
-    # Access via: docker compose exec mongodb mongosh faithflow
+    # Access via: docker compose exec mongodb mongosh -u admin -p $MONGO_ROOT_PASSWORD faithflow
 
   # ===========================================================================
   # REDIS - In-Memory Cache, Session Store, and Message Broker
@@ -192,8 +199,8 @@ services:
       redis:
         condition: service_healthy
     environment:
-      # Database
-      - MONGO_URL=mongodb://mongodb:27017
+      # Database (with authentication)
+      - MONGO_URL=mongodb://${MONGO_APP_USER:-faithflow_app}:${MONGO_APP_PASSWORD}@mongodb:27017/faithflow?authSource=faithflow
       - DB_NAME=faithflow
       # Redis
       - REDIS_URL=redis://redis:6379
