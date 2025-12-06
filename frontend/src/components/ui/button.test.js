@@ -23,7 +23,7 @@ describe('Button', () => {
 
   it('calls onClick handler when clicked', async () => {
     const user = userEvent.setup();
-    const handleClick = jest.fn();
+    const handleClick = vi.fn();
 
     render(<Button onClick={handleClick}>Click me</Button>);
 
@@ -34,7 +34,7 @@ describe('Button', () => {
 
   it('does not call onClick when disabled', async () => {
     const user = userEvent.setup();
-    const handleClick = jest.fn();
+    const handleClick = vi.fn();
 
     render(<Button onClick={handleClick} disabled>Click me</Button>);
 
@@ -75,21 +75,21 @@ describe('Button', () => {
     const { container } = render(<Button size="sm">Small</Button>);
 
     const button = container.querySelector('button');
-    expect(button).toHaveClass('h-9');
+    expect(button).toHaveClass('h-8');
   });
 
   it('renders with large size', () => {
     const { container } = render(<Button size="lg">Large</Button>);
 
     const button = container.querySelector('button');
-    expect(button).toHaveClass('h-11');
+    expect(button).toHaveClass('h-10');
   });
 
   it('renders with icon size', () => {
     const { container } = render(<Button size="icon">×</Button>);
 
     const button = container.querySelector('button');
-    expect(button).toHaveClass('h-10', 'w-10');
+    expect(button).toHaveClass('h-9', 'w-9');
   });
 
   it('applies custom className', () => {

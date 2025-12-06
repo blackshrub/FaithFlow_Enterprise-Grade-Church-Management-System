@@ -5,6 +5,19 @@ import path from 'path';
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  // Vitest configuration
+  test: {
+    globals: true,
+    environment: 'jsdom',
+    setupFiles: ['./src/test/setup.js'],
+    include: ['src/**/*.{test,spec}.{js,jsx,ts,tsx}'],
+    exclude: ['node_modules', 'e2e/**/*'],
+    coverage: {
+      reporter: ['text', 'html'],
+      exclude: ['node_modules/', 'src/test/'],
+    },
+  },
+
   plugins: [
     // React with Babel + React Compiler for auto-memoization
     react({
