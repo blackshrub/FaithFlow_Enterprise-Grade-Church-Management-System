@@ -34,6 +34,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { usePathname } from 'expo-router';
 import { V10_EASING, V10_DURATION, V10_CONFIG, GLOBAL_MOTION_DELAY, setGlobalMotionDelay } from '@/components/motion/premium-motion';
+import { getLiteMode, getAnimationMultiplier } from '@/stores/deviceCapability';
 
 // Re-export GLOBAL_MOTION_DELAY for backwards compatibility
 export { GLOBAL_MOTION_DELAY };
@@ -209,6 +210,10 @@ export function withPremiumMotionV10<P extends object>(
         baseDuration = getPerformanceAdjustedDuration(baseDuration);
       }
 
+      // Apply Lite Mode multiplier (0.5x duration when active)
+      const liteMultiplier = getAnimationMultiplier();
+      baseDuration = Math.round(baseDuration * liteMultiplier);
+
       return baseDuration;
     }, [customDuration, enableVelocityAware, enableLowPerfDetection]);
 
@@ -244,22 +249,25 @@ export function withPremiumMotionV10<P extends object>(
         return;
       }
 
+      // Check Lite Mode - disable scale animations for faster rendering
+      const isLiteMode = getLiteMode();
+
       // Set initial values based on animation type
       switch (animation) {
         case 'sharedAxisX':
-          translateX.value = V10_CONFIG.translateX;
-          scale.value = V10_CONFIG.sharedAxisXScale;
+          translateX.value = isLiteMode ? V10_CONFIG.translateX * 0.5 : V10_CONFIG.translateX;
+          scale.value = isLiteMode ? 1 : V10_CONFIG.sharedAxisXScale; // No scale in Lite Mode
           break;
         case 'sharedAxisY':
-          translateY.value = V10_CONFIG.translateY;
-          scale.value = V10_CONFIG.sharedAxisYScale;
+          translateY.value = isLiteMode ? V10_CONFIG.translateY * 0.5 : V10_CONFIG.translateY;
+          scale.value = isLiteMode ? 1 : V10_CONFIG.sharedAxisYScale; // No scale in Lite Mode
           break;
         case 'slideLift':
-          scale.value = V10_CONFIG.slideLiftScale;
+          scale.value = isLiteMode ? 1 : V10_CONFIG.slideLiftScale; // No scale in Lite Mode
           break;
         case 'fadeThrough':
         default:
-          scale.value = V10_CONFIG.initialScale;
+          scale.value = isLiteMode ? 1 : V10_CONFIG.initialScale; // No scale in Lite Mode
           break;
       }
 

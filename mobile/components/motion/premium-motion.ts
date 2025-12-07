@@ -894,22 +894,25 @@ export const V10_EASING = {
   emphasized: Easing.bezier(0.2, 0.0, 0.0, 1.0),
 } as const;
 
-/** V10 timing constants */
+/** V10 timing constants - OPTIMIZED for snappiness (20-30% faster) */
 export const V10_DURATION = {
   /** Standard shared axis duration */
-  sharedAxisX: 260,
-  sharedAxisY: 280,
+  sharedAxisX: 200, // Was 260
+  sharedAxisY: 220, // Was 280
   /** Fast fade through */
-  fadeThrough: 200,
+  fadeThrough: 150, // Was 200
   /** Slide lift (depth) */
-  slideLift: 240,
+  slideLift: 180, // Was 240
   /** Collapse/expand */
-  collapse: 180,
+  collapse: 140, // Was 180
   /** Ultra fast (velocity-aware rapid nav) */
-  ultraFast: 120,
+  ultraFast: 100, // Was 120
   /** Slow emphasis */
-  emphasis: 320,
+  emphasis: 260, // Was 320
 } as const;
+
+/** Maximum stagger delay cap (prevents 10th item waiting 500ms) */
+export const MAX_STAGGER_DELAY = 150;
 
 /** V10 configuration constants */
 export const V10_CONFIG = {
@@ -1064,7 +1067,7 @@ export const PMotionV10 = {
     }),
 
   // ============================================================================
-  // STAGGERED ANIMATIONS (Uses GLOBAL_MOTION_DELAY)
+  // STAGGERED ANIMATIONS (Uses GLOBAL_MOTION_DELAY) - OPTIMIZED
   // ============================================================================
 
   /**
@@ -1073,20 +1076,20 @@ export const PMotionV10 = {
    */
   sectionStagger: (index: number) =>
     FadeInUp
-      .duration(260)
+      .duration(200) // Was 260
       .easing(V10_EASING.entering)
-      .delay(getGlobalMotionDelay() + index * 60),
+      .delay(getGlobalMotionDelay() + Math.min(index * 40, MAX_STAGGER_DELAY)), // Was index * 60, now capped
 
   /**
-   * Card stagger - for lists/cards
+   * Card stagger - for lists/cards (SNAPPIER)
    * @param index Item index
    * @param baseDelay Additional base delay
    */
   cardStagger: (index: number, baseDelay = 0) =>
     FadeInUp
-      .duration(280)
+      .duration(200) // Was 280
       .easing(V10_EASING.entering)
-      .delay(getGlobalMotionDelay() + baseDelay + index * 50),
+      .delay(getGlobalMotionDelay() + baseDelay + Math.min(index * 30, MAX_STAGGER_DELAY)), // Was index * 50, now 30 and capped
 
   /**
    * Horizontal stagger - for horizontal scrolling items
@@ -1095,9 +1098,9 @@ export const PMotionV10 = {
    */
   horizontalStagger: (index: number, baseDelay = 0) =>
     FadeIn
-      .duration(220)
+      .duration(180) // Was 220
       .easing(V10_EASING.entering)
-      .delay(getGlobalMotionDelay() + baseDelay + index * 70),
+      .delay(getGlobalMotionDelay() + baseDelay + Math.min(index * 40, MAX_STAGGER_DELAY)), // Was index * 70, now 40 and capped
 
   // ============================================================================
   // CONTAINER ANIMATIONS (No GLOBAL_MOTION_DELAY)
@@ -1263,33 +1266,33 @@ export const PMotionV10 = {
 
   /**
    * List item stagger - optimized for FlatList/ScrollView items
-   * Shorter delay intervals for snappy list rendering
+   * Ultra-fast delays for snappy list rendering (OPTIMIZED)
    * @param index Item index
    * @param baseDelay Optional base delay offset
    */
   listItemStagger: (index: number, baseDelay = 0) =>
     FadeIn
-      .duration(200)
+      .duration(150) // Was 200
       .easing(V10_EASING.entering)
-      .delay(getGlobalMotionDelay() + baseDelay + index * 35)
+      .delay(getGlobalMotionDelay() + baseDelay + Math.min(index * 25, MAX_STAGGER_DELAY)) // Was index * 35, now 25 and capped
       .withInitialValues({
         opacity: 0,
-        transform: [{ translateY: 8 }],
+        transform: [{ translateY: 6 }], // Reduced from 8
       }),
 
   /**
-   * List item stagger with scale - for cards/tiles
+   * List item stagger with scale - for cards/tiles (OPTIMIZED)
    * @param index Item index
    * @param baseDelay Optional base delay offset
    */
   listItemStaggerScale: (index: number, baseDelay = 0) =>
     FadeIn
-      .duration(220)
+      .duration(180) // Was 220
       .easing(V10_EASING.entering)
-      .delay(getGlobalMotionDelay() + baseDelay + index * 40)
+      .delay(getGlobalMotionDelay() + baseDelay + Math.min(index * 30, MAX_STAGGER_DELAY)) // Was index * 40, now 30 and capped
       .withInitialValues({
         opacity: 0,
-        transform: [{ translateY: 10 }, { scale: 0.97 }],
+        transform: [{ translateY: 8 }, { scale: 0.98 }], // Reduced movement
       }),
 
   /**
@@ -1305,6 +1308,70 @@ export const PMotionV10 = {
   quickFadeExit: FadeOut
     .duration(80)
     .easing(V10_EASING.exiting),
+};
+
+// ============================================================================
+// LITE MODE AWARE ANIMATIONS
+// ============================================================================
+
+import { getLiteMode, shouldDisableStagger } from '@/stores/deviceCapability';
+
+/**
+ * Get animation duration adjusted for Lite Mode
+ * Returns 50% of duration when Lite Mode is active
+ */
+export const getLiteModeAwareDuration = (baseDuration: number): number => {
+  return getLiteMode() ? Math.round(baseDuration * 0.5) : baseDuration;
+};
+
+/**
+ * Get stagger delay adjusted for Lite Mode
+ * Returns 0 when Lite Mode is active (all items appear together)
+ */
+export const getLiteModeAwareStaggerDelay = (
+  index: number,
+  delayPerItem: number,
+  baseDelay: number = 0
+): number => {
+  if (shouldDisableStagger()) {
+    return getGlobalMotionDelay(); // No stagger, just base delay
+  }
+  return getGlobalMotionDelay() + baseDelay + Math.min(index * delayPerItem, MAX_STAGGER_DELAY);
+};
+
+/**
+ * Lite Mode aware card stagger
+ * In Lite Mode: No stagger, faster duration
+ */
+export const liteAwareCardStagger = (index: number, baseDelay = 0) => {
+  if (shouldDisableStagger()) {
+    // Lite Mode: Simple fade, no stagger
+    return FadeIn
+      .duration(100)
+      .easing(V10_EASING.entering)
+      .delay(getGlobalMotionDelay());
+  }
+  return PMotionV10.cardStagger(index, baseDelay);
+};
+
+/**
+ * Lite Mode aware list item stagger
+ * In Lite Mode: Instant appearance
+ */
+export const liteAwareListItemStagger = (index: number, baseDelay = 0) => {
+  if (shouldDisableStagger()) {
+    // Lite Mode: No animation
+    return undefined;
+  }
+  return PMotionV10.listItemStagger(index, baseDelay);
+};
+
+/**
+ * Check if animations should be skipped entirely
+ * Use this in components for conditional animation
+ */
+export const shouldSkipAnimation = (): boolean => {
+  return getLiteMode();
 };
 
 // Export default

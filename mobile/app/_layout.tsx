@@ -39,6 +39,7 @@ import { BiometricLockScreen } from '@/components/auth/BiometricLockScreen';
 import { useBiometricLock } from '@/hooks/useBiometricLock';
 import { BibleNoteEditorHost } from '@/components/bible/BibleNoteEditorHost';
 import { useVoiceSettingsStore } from '@/stores/voiceSettings';
+import { initDeviceCapability } from '@/stores/deviceCapability';
 import * as Updates from 'expo-updates';
 // Note: We do NOT use CallKit because iOS requires VoIP PushKit for CallKit (we use standard FCM)
 // The in-app IncomingCallOverlay provides a WhatsApp-style UI instead
@@ -72,6 +73,14 @@ export default function RootLayout() {
   // Flush any queued crash reports when app starts
   useEffect(() => {
     flushCrashQueue();
+  }, []);
+
+  /**
+   * DEVICE CAPABILITY DETECTION - Lite Mode for low-end devices
+   * Detects device RAM, CPU, and frame timing to auto-enable Lite Mode
+   */
+  useEffect(() => {
+    initDeviceCapability();
   }, []);
 
   /**

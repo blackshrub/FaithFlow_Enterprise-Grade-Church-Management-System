@@ -391,6 +391,117 @@ export const isLowMemoryDevice = () => {
 };
 
 // ============================================================================
+// LITE MODE OPTIMIZATIONS
+// ============================================================================
+
+import { getLiteMode } from '@/stores/deviceCapability';
+
+/**
+ * FlatList props optimized for Lite Mode (low-end devices)
+ * Reduces batch sizes and render counts for smoother scrolling
+ */
+export const LITE_MODE_FLATLIST_PROPS = {
+  removeClippedSubviews: true, // Always true in Lite Mode
+  maxToRenderPerBatch: 3, // Reduced from 10
+  updateCellsBatchingPeriod: 100, // Increased from 50
+  initialNumToRender: 5, // Reduced from 10
+  windowSize: 5, // Reduced from 21
+  onEndReachedThreshold: 0.8, // Increased for earlier prefetch
+} as const;
+
+/**
+ * FlashList props optimized for Lite Mode
+ */
+export const LITE_MODE_FLASHLIST_PROPS = {
+  estimatedItemSize: 100,
+  drawDistance: 200, // Reduced from 500
+  initialNumToRender: 3,
+  maxToRenderPerBatch: 3,
+} as const;
+
+/**
+ * Get performance-optimized list props based on Lite Mode status
+ * @param listType - Type of list: 'default' | 'large' | 'image' | 'chat'
+ */
+export const getOptimizedListProps = (listType: 'default' | 'large' | 'image' | 'chat' = 'default') => {
+  const isLiteMode = getLiteMode();
+
+  if (isLiteMode) {
+    return LITE_MODE_FLATLIST_PROPS;
+  }
+
+  switch (listType) {
+    case 'large':
+      return LARGE_LIST_PROPS;
+    case 'image':
+      return IMAGE_LIST_PROPS;
+    case 'chat':
+      return CHAT_LIST_PROPS;
+    default:
+      return FLATLIST_PERFORMANCE_PROPS;
+  }
+};
+
+/**
+ * Get optimized FlashList props based on Lite Mode status
+ * @param estimatedItemSize - Estimated height of each item
+ */
+export const getOptimizedFlashListProps = (estimatedItemSize: number = 100) => {
+  const isLiteMode = getLiteMode();
+
+  if (isLiteMode) {
+    return {
+      ...LITE_MODE_FLASHLIST_PROPS,
+      estimatedItemSize,
+    };
+  }
+
+  return {
+    estimatedItemSize,
+    drawDistance: 500,
+    initialNumToRender: 10,
+    maxToRenderPerBatch: 10,
+  };
+};
+
+/**
+ * Get image optimization props based on Lite Mode status
+ * Returns reduced quality settings for Lite Mode
+ */
+export const getOptimizedImageProps = () => {
+  const isLiteMode = getLiteMode();
+
+  if (isLiteMode) {
+    return {
+      ...OPTIMIZED_IMAGE_PROPS,
+      transition: 100, // Faster transition
+      // Note: Lite Mode can use lower resolution images via API
+    };
+  }
+
+  return OPTIMIZED_IMAGE_PROPS;
+};
+
+/**
+ * Get React Query options based on Lite Mode status
+ * Returns longer stale times for Lite Mode to reduce network usage
+ */
+export const getLiteModeQueryOptions = () => {
+  const isLiteMode = getLiteMode();
+
+  if (isLiteMode) {
+    return {
+      ...QUERY_DEFAULT_OPTIONS,
+      staleTime: 1000 * 60 * 10, // 10 minutes (vs 2 minutes default)
+      gcTime: 1000 * 60 * 30, // 30 minutes (vs 10 minutes default)
+      retry: 1, // Fewer retries
+    };
+  }
+
+  return QUERY_DEFAULT_OPTIONS;
+};
+
+// ============================================================================
 // COMMUNITIES-SPECIFIC OPTIMIZATIONS
 // ============================================================================
 
@@ -986,6 +1097,14 @@ export default {
   // Memory
   estimateListMemory,
   isLowMemoryDevice,
+
+  // Lite Mode
+  LITE_MODE_FLATLIST_PROPS,
+  LITE_MODE_FLASHLIST_PROPS,
+  getOptimizedListProps,
+  getOptimizedFlashListProps,
+  getOptimizedImageProps,
+  getLiteModeQueryOptions,
 
   // Performance Monitoring
   markAppReady,
