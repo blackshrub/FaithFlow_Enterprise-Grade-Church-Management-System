@@ -37,15 +37,16 @@ import {
   type CompanionContextData,
 } from '@/stores/companionStore';
 import { Text } from '@/components/ui/text';
+import { colors } from '@/constants/theme';
 
-// Premium color palette
+// Premium colors (from centralized theme)
 const Colors = {
   gradient: {
-    primary: ['#4F46E5', '#7C3AED', '#A855F7'] as const,
-    warm: ['#7C3AED', '#9333EA', '#A855F7'] as const,
+    primary: colors.premium.ai.gradient,
+    warm: colors.premium.ai.gradientWarm,
   },
-  white: '#FFFFFF',
-  shadow: '#4F46E5',
+  white: colors.white,
+  shadow: colors.premium.ai.shadow,
 };
 
 interface ContextualChatButtonProps {

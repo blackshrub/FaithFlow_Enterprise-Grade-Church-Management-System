@@ -56,6 +56,7 @@ import {
   BarChart3,
   Calendar,
 } from 'lucide-react-native';
+import type { LucideIcon } from 'lucide-react-native';
 
 import { Text } from '@/components/ui/text';
 import { Heading } from '@/components/ui/heading';
@@ -79,7 +80,7 @@ import type { CommunitySettings } from '@/types/communities';
 
 interface SettingSectionProps {
   title: string;
-  icon: any;
+  icon: LucideIcon;
   iconColor?: string;
   children: React.ReactNode;
 }
@@ -110,7 +111,7 @@ function SettingSection({ title, icon, iconColor, children }: SettingSectionProp
 interface SettingRowProps {
   label: string;
   description?: string;
-  icon?: any;
+  icon?: LucideIcon;
   iconColor?: string;
   value?: string | React.ReactNode;
   onPress?: () => void;
@@ -172,7 +173,7 @@ function SettingRow({
 interface ToggleRowProps {
   label: string;
   description?: string;
-  icon?: any;
+  icon?: LucideIcon;
   iconColor?: string;
   value: boolean;
   onValueChange: (value: boolean) => void;
@@ -237,7 +238,7 @@ interface SelectOption {
 interface SelectRowProps {
   label: string;
   description?: string;
-  icon?: any;
+  icon?: LucideIcon;
   iconColor?: string;
   value: string;
   options: SelectOption[];

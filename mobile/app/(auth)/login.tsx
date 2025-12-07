@@ -57,33 +57,34 @@ import { useSendOTP } from "@/hooks/useAuth";
 import { useAuthStore } from "@/stores/auth";
 import { getErrorMessage } from "@/utils/errorHelpers";
 import { useBiometricAuthStore, useBiometricName, useBiometricAvailable } from "@/stores/biometricAuth";
+import { colors } from "@/constants/theme";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
-// Premium color palette
+// Premium colors (imported from centralized theme)
 const COLORS = {
-  // Primary gradient - Deep indigo to violet
-  gradientStart: '#4338CA',
-  gradientMid: '#6366F1',
-  gradientEnd: '#8B5CF6',
+  // Primary gradient
+  gradientStart: colors.premium.gradient.start,
+  gradientMid: colors.premium.gradient.mid,
+  gradientEnd: colors.premium.gradient.end,
 
   // Accent
-  accent: '#A78BFA',
-  accentLight: '#C4B5FD',
+  accent: colors.premium.accent.primary,
+  accentLight: colors.premium.accent.light,
 
   // Glass effects
-  glassWhite: 'rgba(255, 255, 255, 0.15)',
-  glassBorder: 'rgba(255, 255, 255, 0.25)',
+  glassWhite: colors.premium.glass.white,
+  glassBorder: colors.premium.glass.border,
 
   // Text
-  textPrimary: '#1F2937',
-  textSecondary: '#6B7280',
-  textWhite: '#FFFFFF',
-  textWhiteMuted: 'rgba(255, 255, 255, 0.8)',
+  textPrimary: colors.gray[800],
+  textSecondary: colors.gray[500],
+  textWhite: colors.premium.text.primary,
+  textWhiteMuted: colors.premium.text.muted,
 
   // Surface
-  surface: '#FFFFFF',
-  surfaceLight: '#F9FAFB',
+  surface: colors.white,
+  surfaceLight: colors.gray[50],
 };
 
 // Animated background orb

@@ -25,6 +25,7 @@ import {
   Home,
   MessageCircle,
 } from 'lucide-react-native';
+import type { LucideIcon } from 'lucide-react-native';
 import { View } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { Heading } from '@/components/ui/heading';
@@ -39,7 +40,7 @@ import { prayerApi, type PrayerResource } from '@/services/api/prayer';
 import { colors, borderRadius, shadows } from '@/constants/theme';
 
 // Theme display config
-const THEME_DISPLAY: Record<string, { label: { en: string; id: string }; icon: any; color: string }> = {
+const THEME_DISPLAY: Record<string, { label: { en: string; id: string }; icon: LucideIcon; color: string }> = {
   health: { label: { en: 'Health & Healing', id: 'Kesehatan & Pemulihan' }, icon: Heart, color: '#EF4444' },
   anxiety: { label: { en: 'Peace & Rest', id: 'Damai & Istirahat' }, icon: Sparkles, color: '#8B5CF6' },
   grief: { label: { en: 'Comfort', id: 'Penghiburan' }, icon: Heart, color: '#6366F1' },

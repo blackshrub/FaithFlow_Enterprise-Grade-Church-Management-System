@@ -160,6 +160,8 @@ const CommunityItem = memo(({ community, onPress, onPressIn }: CommunityItemProp
             contentFit="cover"
             cachePolicy="memory-disk"
             transition={150}
+            placeholder="LBMkBn00_N4n%Mxu-;WB~qt7M{WB"
+            placeholderContentFit="cover"
           />
         ) : (
           <View className="w-16 h-16 rounded-full items-center justify-center" style={{ backgroundColor: COLORS.primaryLight }}>

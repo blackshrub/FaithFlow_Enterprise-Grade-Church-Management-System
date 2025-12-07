@@ -15,6 +15,8 @@ import {
   Share,
   Alert,
   StatusBar,
+  NativeSyntheticEvent,
+  NativeScrollEvent,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
@@ -129,7 +131,7 @@ function EventsScreen() {
   // TodayStyle scroll value driving collapsible header
   const scrollY = useSharedValue(0);
 
-  const handleScrollEvent = useCallback((event: any) => {
+  const handleScrollEvent = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const y = event.nativeEvent.contentOffset.y ?? 0;
     scrollY.value = y;
   }, [scrollY]);

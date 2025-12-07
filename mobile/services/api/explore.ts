@@ -61,6 +61,15 @@ export interface UserProfile {
 }
 
 // Journey Types
+export interface JourneyWeek {
+  title: { en: string; id: string };
+  description: { en: string; id: string };
+  days: Array<{
+    day_number: number;
+    title: { en: string; id: string };
+  }>;
+}
+
 export interface Journey {
   id: string;
   slug: string;
@@ -317,7 +326,7 @@ export const journeyApi = {
   /**
    * Get journey details
    */
-  getJourneyDetails: async (slug: string): Promise<Journey & { weeks: any[] }> => {
+  getJourneyDetails: async (slug: string): Promise<Journey & { weeks: JourneyWeek[] }> => {
     const response = await api.get(`/api/explore/journeys/${slug}`);
     return response.data.data;
   },

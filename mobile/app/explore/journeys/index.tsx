@@ -251,6 +251,10 @@ function RecommendedCard({
             source={{ uri: journey.cover_image_url }}
             className="w-full h-full"
             contentFit="cover"
+            cachePolicy="memory-disk"
+            transition={200}
+            placeholder="L5H2EC=PM+yV0g%2.mRj009E%gRj"
+            placeholderContentFit="cover"
           />
         ) : (
           <LinearGradient

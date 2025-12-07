@@ -54,6 +54,8 @@ import { showSuccessToast, showErrorToast } from '@/components/ui/Toast';
 import { QUERY_KEYS } from '@/constants/api';
 import { prayerApi, type PrayerSubmission } from '@/services/api/prayer';
 import type { PrayerCategory } from '@/types/prayer';
+import { getErrorMessage } from '@/utils/errorHelpers';
+import type { LucideIcon } from 'lucide-react-native';
 
 export default function CreatePrayerRequestScreen() {
   const { t } = useTranslation();
@@ -71,7 +73,7 @@ export default function CreatePrayerRequestScreen() {
   const categories: {
     value: PrayerCategory;
     label: string;
-    icon: any;
+    icon: LucideIcon;
     color: string;
     bgColor: string;
   }[] = [
@@ -165,11 +167,11 @@ export default function CreatePrayerRequestScreen() {
         router.back();
       }
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       console.error('Failed to create prayer request:', error);
       showErrorToast(
         t('prayer.create.error'),
-        error.response?.data?.detail || t('prayer.create.errorDesc')
+        getErrorMessage(error, t('prayer.create.errorDesc'))
       );
     },
   });

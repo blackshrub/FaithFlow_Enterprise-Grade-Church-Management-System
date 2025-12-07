@@ -131,6 +131,10 @@ function EventCardComponent({
               source={{ uri: event.event_photo }}
               className="w-full h-full"
               contentFit="cover"
+              cachePolicy="memory-disk"
+              transition={200}
+              placeholder="L6PZfSi_.AyE_3t7t7R**0o#DgR4"
+              placeholderContentFit="cover"
             />
           ) : (
             <LinearGradient

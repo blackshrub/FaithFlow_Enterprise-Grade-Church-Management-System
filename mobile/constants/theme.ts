@@ -153,6 +153,43 @@ export const colors = {
   white: '#ffffff',
   black: '#000000',
 
+  // Premium color palette (for special screens like login, AI features)
+  premium: {
+    // Indigo/Violet gradient (login, auth screens)
+    gradient: {
+      start: '#4338CA',   // indigo-700
+      mid: '#6366F1',     // indigo-500
+      end: '#8B5CF6',     // violet-500
+    },
+    // Accent colors
+    accent: {
+      primary: '#A78BFA', // violet-400
+      light: '#C4B5FD',   // violet-300
+    },
+    // Glass effects
+    glass: {
+      white: 'rgba(255, 255, 255, 0.15)',
+      border: 'rgba(255, 255, 255, 0.25)',
+    },
+    // Text on gradient
+    text: {
+      primary: '#FFFFFF',
+      muted: 'rgba(255, 255, 255, 0.8)',
+    },
+    // AI companion gradient
+    ai: {
+      gradient: ['#4F46E5', '#7C3AED', '#A855F7'] as const,
+      gradientWarm: ['#7C3AED', '#9333EA', '#A855F7'] as const,
+      shadow: '#4F46E5',
+    },
+    // Gold accent (giving, premium features)
+    gold: {
+      primary: '#D4AF37',
+      light: '#F4E5BC',
+      dark: '#B8962E',
+    },
+  },
+
   // Semantic colors
   background: {
     light: '#ffffff',

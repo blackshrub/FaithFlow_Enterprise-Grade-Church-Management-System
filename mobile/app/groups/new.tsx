@@ -28,6 +28,7 @@ import {
   MapPin,
   Hash,
 } from 'lucide-react-native';
+import type { LucideIcon } from 'lucide-react-native';
 import { View } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { Heading } from '@/components/ui/heading';
@@ -84,7 +85,7 @@ export default function CreateGroupScreen() {
   const categories: {
     value: BackendGroupCategory;
     label: string;
-    icon: any;
+    icon: LucideIcon;
     color: string;
     bgColor: string;
   }[] = [

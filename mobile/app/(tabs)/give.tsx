@@ -71,6 +71,7 @@ import {
   Info,
   AlertCircle,
 } from 'lucide-react-native';
+import type { LucideIcon } from 'lucide-react-native';
 
 import {
   usePaymentConfig,
@@ -116,7 +117,7 @@ type OfferingType = 'tithe' | 'weekly' | 'mission' | 'other';
 
 interface OfferingTypeConfig {
   id: OfferingType;
-  icon: any;
+  icon: LucideIcon;
   gradient: [string, string];
   labelKey: string;
   subtitleKey: string;
@@ -164,7 +165,7 @@ const QUICK_AMOUNTS = [
 ];
 
 // Payment method info
-const PAYMENT_INFO: Record<string, { icon: any; name: string; description: string }> = {
+const PAYMENT_INFO: Record<string, { icon: LucideIcon; name: string; description: string }> = {
   va: {
     icon: Banknote,
     name: 'Bank Transfer',

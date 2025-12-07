@@ -62,6 +62,7 @@ import {
   useEnrollJourney,
   useTodayContent,
 } from '@/hooks/explore/useJourney';
+import type { JourneyWeek } from '@/services/api/explore';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const HEADER_HEIGHT = 280;
@@ -382,6 +383,10 @@ function JourneyDetailScreen() {
             source={{ uri: journey.cover_image_url }}
             className="w-full h-full"
             contentFit="cover"
+            cachePolicy="memory-disk"
+            transition={200}
+            placeholder="L5H2EC=PM+yV0g%2.mRj009E%gRj"
+            placeholderContentFit="cover"
           />
         ) : (
           <LinearGradient
@@ -515,7 +520,7 @@ function JourneyDetailScreen() {
               {t('journey.progress.week', { current: '', total: journey.weeks?.length || 0 }).replace(' of ', '')} Overview
             </Text>
 
-            {journey.weeks?.map((week: any, index: number) => (
+            {journey.weeks?.map((week: JourneyWeek, index: number) => (
               <WeekItem
                 key={index}
                 weekNumber={index + 1}
