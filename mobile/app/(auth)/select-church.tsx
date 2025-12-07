@@ -12,6 +12,7 @@ import { Pressable } from "@/components/ui/pressable";
 import { Search, ChevronRight } from "lucide-react-native";
 import { useSendOTP } from "@/hooks/useAuth";
 import { showErrorToast } from "@/components/ui/Toast";
+import { getErrorMessage } from "@/utils/errorHelpers";
 
 // Mock church data - in production, this would come from an API
 const MOCK_CHURCHES = [
@@ -50,12 +51,12 @@ export default function SelectChurchScreen() {
           church_id: churchId,
         },
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error sending OTP:", error);
       setSelectedChurch(null);
       showErrorToast(
         "Gagal mengirim OTP",
-        error.response?.data?.detail || "Silakan coba lagi"
+        getErrorMessage(error, "Silakan coba lagi")
       );
     }
   };

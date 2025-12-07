@@ -20,8 +20,18 @@ import {
   Platform,
   KeyboardAvoidingView,
   ScrollView,
-  StyleSheet,
+  StyleProp,
+  ViewStyle,
 } from "react-native";
+
+// Replacement for StyleSheet.absoluteFill using inline style
+const absoluteFillStyle: StyleProp<ViewStyle> = {
+  position: 'absolute',
+  top: 0,
+  left: 0,
+  right: 0,
+  bottom: 0,
+};
 import { useRouter } from "expo-router";
 import Animated, {
   FadeInUp,
@@ -45,6 +55,7 @@ import { Button, ButtonText, ButtonSpinner } from "@/components/ui/button";
 import { PhoneInput } from "@/components/forms/PhoneInput";
 import { useSendOTP } from "@/hooks/useAuth";
 import { useAuthStore } from "@/stores/auth";
+import { getErrorMessage } from "@/utils/errorHelpers";
 import { useBiometricAuthStore, useBiometricName, useBiometricAvailable } from "@/stores/biometricAuth";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
@@ -218,8 +229,8 @@ export default function LoginScreen() {
         pathname: "/(auth)/select-church",
         params: { phone: `+62${phone}` },
       });
-    } catch (error: any) {
-      setPhoneError(error.response?.data?.detail || "Failed to send OTP");
+    } catch (error: unknown) {
+      setPhoneError(getErrorMessage(error, "Failed to send OTP"));
     }
   };
 
@@ -240,7 +251,7 @@ export default function LoginScreen() {
         colors={[COLORS.gradientStart, COLORS.gradientMid, COLORS.gradientEnd]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
-        style={StyleSheet.absoluteFill}
+        style={absoluteFillStyle}
       />
 
       {/* Floating Orbs for depth */}
@@ -382,7 +393,7 @@ export default function LoginScreen() {
                       colors={[COLORS.gradientStart, COLORS.gradientMid]}
                       start={{ x: 0, y: 0 }}
                       end={{ x: 1, y: 0 }}
-                      style={StyleSheet.absoluteFill}
+                      style={absoluteFillStyle}
                     />
                     {/* Content */}
                     <View className="flex-row items-center justify-center gap-2.5 z-[1]">

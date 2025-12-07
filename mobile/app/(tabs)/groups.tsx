@@ -513,6 +513,11 @@ function CommunityScreen() {
           estimatedItemSize={80}
           contentContainerStyle={{ paddingBottom: 100 }}
           showsVerticalScrollIndicator={false}
+          // Performance optimizations
+          initialNumToRender={10}
+          maxToRenderPerBatch={10}
+          windowSize={5}
+          drawDistance={200}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}

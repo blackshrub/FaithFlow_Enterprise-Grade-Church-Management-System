@@ -11,13 +11,18 @@ import { Pressable } from "@/components/ui/pressable";
 import { OTPInput } from "@/components/forms/OTPInput";
 import { useSendOTP, useVerifyOTP } from "@/hooks/useAuth";
 import { showSuccessToast } from "@/components/ui/Toast";
+import { getErrorMessage } from "@/utils/errorHelpers";
+
+// Constants
+const OTP_EXPIRY_SECONDS = 300; // 5 minutes
+const OTP_LENGTH = 6;
 
 export default function VerifyOTPScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ phone: string; church_id: string }>();
   const [otp, setOtp] = useState("");
   const [error, setError] = useState("");
-  const [countdown, setCountdown] = useState(300); // 5 minutes
+  const [countdown, setCountdown] = useState(OTP_EXPIRY_SECONDS);
 
   const sendOTP = useSendOTP();
   const verifyOTP = useVerifyOTP();
@@ -40,8 +45,8 @@ export default function VerifyOTPScreen() {
   };
 
   const handleVerifyOTP = async () => {
-    if (otp.length !== 6) {
-      setError("Kode OTP harus 6 digit");
+    if (otp.length !== OTP_LENGTH) {
+      setError(`Kode OTP harus ${OTP_LENGTH} digit`);
       return;
     }
 
@@ -55,8 +60,8 @@ export default function VerifyOTPScreen() {
       // Navigation handled by useVerifyOTP success callback
       // User will be redirected to tabs automatically via index.tsx
       router.replace("/(tabs)");
-    } catch (error: any) {
-      setError(error.response?.data?.detail || "Kode OTP tidak valid");
+    } catch (error: unknown) {
+      setError(getErrorMessage(error, "Kode OTP tidak valid"));
       setOtp("");
     }
   };
@@ -68,12 +73,12 @@ export default function VerifyOTPScreen() {
         church_id: params.church_id || "",
       });
 
-      setCountdown(300); // Reset countdown
+      setCountdown(OTP_EXPIRY_SECONDS);
       setError("");
       setOtp("");
       showSuccessToast("OTP Terkirim", "Kode OTP baru telah dikirim ke WhatsApp Anda");
-    } catch (error: any) {
-      setError(error.response?.data?.detail || "Gagal mengirim ulang OTP");
+    } catch (error: unknown) {
+      setError(getErrorMessage(error, "Gagal mengirim ulang OTP"));
     }
   };
 
@@ -102,7 +107,7 @@ export default function VerifyOTPScreen() {
             <OTPInput
               value={otp}
               onChangeText={setOtp}
-              length={6}
+              length={OTP_LENGTH}
               error={error}
               disabled={verifyOTP.isPending}
             />
@@ -110,7 +115,7 @@ export default function VerifyOTPScreen() {
             <Button
               size="lg"
               onPress={handleVerifyOTP}
-              isDisabled={verifyOTP.isPending || otp.length !== 6}
+              isDisabled={verifyOTP.isPending || otp.length !== OTP_LENGTH}
               className="w-full"
             >
               {verifyOTP.isPending && <ButtonSpinner className="mr-2" />}

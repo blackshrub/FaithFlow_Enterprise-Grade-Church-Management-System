@@ -41,6 +41,7 @@ import {
 import { useAuthStore } from '@/stores/auth';
 import { showSuccessToast, showErrorToast } from '@/components/ui/Toast';
 import { api } from '@/services/api';
+import { getErrorMessage } from '@/utils/errorHelpers';
 
 // Gluestack for AlertDialog
 import {
@@ -171,11 +172,11 @@ function ProfileEditScreen() {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       showSuccessToast(t('profile.edit.success'), t('profile.edit.successDesc'));
       router.back();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to update profile:', error);
       showErrorToast(
         t('profile.edit.error'),
-        error.response?.data?.detail || t('profile.edit.errorDesc')
+        getErrorMessage(error, t('profile.edit.errorDesc'))
       );
     } finally {
       setSaving(false);

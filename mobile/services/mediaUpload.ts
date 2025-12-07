@@ -32,6 +32,8 @@ export interface UploadResult {
   // Direct access to media properties for convenience
   fid?: string;
   url?: string;
+  // Abort function for cancelling in-progress uploads
+  abort?: () => void;
 }
 
 export type UploadProgressCallback = (progress: UploadProgress) => void;
@@ -165,20 +167,23 @@ export async function uploadMedia(
     if (attachment.duration) formData.append('duration', String(attachment.duration));
 
     // Upload using XMLHttpRequest for progress tracking
-    const result = await uploadWithProgress(
+    const { promise, abort } = uploadWithProgress(
       `/api/mobile/communities/${communityId}/upload-media`,
       formData,
       onProgress
     );
 
+    const result = await promise;
+
     if (!result.success) {
-      return { success: false, error: result.error || 'Upload failed' };
+      return { success: false, error: result.error || 'Upload failed', abort };
     }
 
     // Return the media object
     return {
       success: true,
       media: result.data?.media,
+      abort,
     };
 
   } catch (error) {
@@ -191,30 +196,56 @@ export async function uploadMedia(
 }
 
 /**
- * Upload with XMLHttpRequest for progress tracking
+ * Upload result with optional abort function for cancellation
  */
-async function uploadWithProgress(
+export interface CancellableUpload {
+  promise: Promise<{ success: boolean; data?: any; error?: string }>;
+  abort: () => void;
+}
+
+/**
+ * Upload with XMLHttpRequest for progress tracking
+ * Returns both a promise and an abort function for proper cleanup
+ */
+function uploadWithProgress(
   endpoint: string,
   formData: FormData,
   onProgress?: UploadProgressCallback
-): Promise<{ success: boolean; data?: any; error?: string }> {
-  return new Promise((resolve) => {
-    const xhr = new XMLHttpRequest();
-    const url = `${API_BASE_URL}${endpoint}`;
+): CancellableUpload {
+  const xhr = new XMLHttpRequest();
+  const url = `${API_BASE_URL}${endpoint}`;
 
-    // Track upload progress
-    xhr.upload.addEventListener('progress', (event) => {
-      if (event.lengthComputable && onProgress) {
-        onProgress({
-          loaded: event.loaded,
-          total: event.total,
-          percentage: Math.round((event.loaded / event.total) * 100),
-        });
-      }
-    });
+  // Track if already cleaned up to prevent double cleanup
+  let cleaned = false;
 
-    // Handle completion
-    xhr.addEventListener('load', () => {
+  // Event handler references for cleanup
+  const handleProgress = (event: ProgressEvent) => {
+    if (event.lengthComputable && onProgress) {
+      onProgress({
+        loaded: event.loaded,
+        total: event.total,
+        percentage: Math.round((event.loaded / event.total) * 100),
+      });
+    }
+  };
+
+  // Cleanup function to remove all event listeners
+  const cleanup = () => {
+    if (cleaned) return;
+    cleaned = true;
+    xhr.upload.removeEventListener('progress', handleProgress);
+    xhr.removeEventListener('load', handleLoad);
+    xhr.removeEventListener('error', handleError);
+    xhr.removeEventListener('abort', handleAbort);
+  };
+
+  let handleLoad: () => void;
+  let handleError: () => void;
+  let handleAbort: () => void;
+
+  const promise = new Promise<{ success: boolean; data?: any; error?: string }>((resolve) => {
+    handleLoad = () => {
+      cleanup();
       if (xhr.status >= 200 && xhr.status < 300) {
         try {
           const data = JSON.parse(xhr.responseText);
@@ -232,16 +263,23 @@ async function uploadWithProgress(
         }
         resolve({ success: false, error: errorMessage });
       }
-    });
+    };
 
-    // Handle errors
-    xhr.addEventListener('error', () => {
+    handleError = () => {
+      cleanup();
       resolve({ success: false, error: 'Network error during upload' });
-    });
+    };
 
-    xhr.addEventListener('abort', () => {
+    handleAbort = () => {
+      cleanup();
       resolve({ success: false, error: 'Upload cancelled' });
-    });
+    };
+
+    // Attach event listeners
+    xhr.upload.addEventListener('progress', handleProgress);
+    xhr.addEventListener('load', handleLoad);
+    xhr.addEventListener('error', handleError);
+    xhr.addEventListener('abort', handleAbort);
 
     // Open and send
     xhr.open('POST', url);
@@ -254,6 +292,16 @@ async function uploadWithProgress(
 
     xhr.send(formData);
   });
+
+  // Abort function for cancellation
+  const abort = () => {
+    cleanup();
+    if (xhr.readyState !== XMLHttpRequest.DONE) {
+      xhr.abort();
+    }
+  };
+
+  return { promise, abort };
 }
 
 /**

@@ -43,6 +43,7 @@ import * as Haptics from 'expo-haptics';
 import { X, Mic, Volume2, Wifi, WifiOff, AlertTriangle } from 'lucide-react-native';
 import { BlurView } from 'expo-blur';
 import { Text } from '@/components/ui/text';
+import { getErrorMessage } from '@/utils/errorHelpers';
 
 // Try to import native WebRTC module (only works in dev build)
 let RealtimeService: any = null;
@@ -257,11 +258,11 @@ export function VoiceChatModal({
           },
         }
       );
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[VoiceChatModal] Connection failed:', error);
       if (isMountedRef.current) {
         setState('error');
-        setStatusText(error.message || (language === 'id' ? 'Gagal terhubung' : 'Failed to connect'));
+        setStatusText(getErrorMessage(error, language === 'id' ? 'Gagal terhubung' : 'Failed to connect'));
       }
     }
   }, [language, instructions]);

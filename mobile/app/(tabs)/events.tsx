@@ -67,6 +67,7 @@ import { EventsHeader, type EventsTab } from '@/components/events/EventsHeader';
 
 // Shared motion from today-motion module
 import { todayListItemMotion } from '@/components/motion/today-motion';
+import { getErrorMessage } from '@/utils/errorHelpers';
 
 // Custom colors not in tailwind
 const Colors = {
@@ -154,19 +155,17 @@ function EventsScreen() {
     });
   }, [categories, selectedCategory, overlay]);
 
-  // Handle calendar bottom sheet
-  const handleOpenCalendar = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-
-    // Build events array with status for calendar markers
-    const calendarEvents: Array<{ id: string; date: string; status: 'upcoming' | 'rsvp' | 'attended' | 'passed'; title?: string }> = [];
+  // Memoize calendar events array (computed once when data changes, not on every modal open)
+  const calendarEvents = useMemo(() => {
+    const events: Array<{ id: string; date: string; status: 'upcoming' | 'rsvp' | 'attended' | 'passed'; title?: string }> = [];
+    const eventMap = new Map<string, typeof events[0]>();
 
     // Add upcoming events
     upcomingQuery.data?.forEach((event) => {
       if (event.event_date) {
         const eventDate = new Date(event.event_date);
         const isPassed = eventDate < new Date();
-        calendarEvents.push({
+        eventMap.set(event.id, {
           id: event.id,
           date: event.event_date,
           status: isPassed ? 'passed' : 'upcoming',
@@ -175,14 +174,14 @@ function EventsScreen() {
       }
     });
 
-    // Add RSVP events (mark as rsvp)
+    // Update with RSVP status (higher priority)
     rsvpsQuery.data?.forEach((event) => {
       if (event.event_date) {
-        const existing = calendarEvents.find((e) => e.id === event.id);
+        const existing = eventMap.get(event.id);
         if (existing) {
           existing.status = 'rsvp';
         } else {
-          calendarEvents.push({
+          eventMap.set(event.id, {
             id: event.id,
             date: event.event_date,
             status: 'rsvp',
@@ -192,14 +191,14 @@ function EventsScreen() {
       }
     });
 
-    // Add attended events
+    // Update with attended status (highest priority)
     attendedQuery.data?.forEach((event) => {
       if (event.event_date) {
-        const existing = calendarEvents.find((e) => e.id === event.id);
+        const existing = eventMap.get(event.id);
         if (existing) {
           existing.status = 'attended';
         } else {
-          calendarEvents.push({
+          eventMap.set(event.id, {
             id: event.id,
             date: event.event_date,
             status: 'attended',
@@ -208,6 +207,13 @@ function EventsScreen() {
         }
       }
     });
+
+    return Array.from(eventMap.values());
+  }, [upcomingQuery.data, rsvpsQuery.data, attendedQuery.data]);
+
+  // Handle calendar bottom sheet
+  const handleOpenCalendar = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
     overlay.showBottomSheet(CalendarSheet, {
       events: calendarEvents,
@@ -222,7 +228,7 @@ function EventsScreen() {
         setSelectedDate(date);
       },
     });
-  }, [overlay, upcomingQuery.data, rsvpsQuery.data, attendedQuery.data, selectedDate]);
+  }, [overlay, calendarEvents, selectedDate]);
 
   // Handle tab change with Shared Axis X direction detection
   const handleTabChange = useCallback((newTab: Tab) => {
@@ -391,8 +397,8 @@ function EventsScreen() {
       queryClient.invalidateQueries({ queryKey: ['attended-events'] });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       Alert.alert(t('common.success'), t('events.ratingSuccess'));
-    } catch (error: any) {
-      Alert.alert(t('common.error'), error.response?.data?.detail || t('events.ratingError'));
+    } catch (error: unknown) {
+      Alert.alert(t('common.error'), getErrorMessage(error, t('events.ratingError')));
       throw error;
     }
   }, [member, queryClient, t]);
@@ -691,6 +697,11 @@ function EventsScreen() {
               scrollEventThrottle={16}
               showsVerticalScrollIndicator={false}
               contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 120 }}
+              // Performance optimizations
+              initialNumToRender={5}
+              maxToRenderPerBatch={5}
+              windowSize={5}
+              drawDistance={300}
               refreshControl={
                 <RefreshControl
                   refreshing={refreshing}
