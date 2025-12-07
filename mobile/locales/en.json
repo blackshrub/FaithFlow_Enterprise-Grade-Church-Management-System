@@ -805,7 +805,9 @@
       "reflection": "Reflection",
       "prayer": "Prayer",
       "completed": "Completed",
-      "markComplete": "Mark as Complete"
+      "markComplete": "Mark as Complete",
+      "contentNotFound": "Content not found",
+      "sharedFrom": "Shared from FaithFlow"
     },
     "figure": {
       "timeline": "Timeline",

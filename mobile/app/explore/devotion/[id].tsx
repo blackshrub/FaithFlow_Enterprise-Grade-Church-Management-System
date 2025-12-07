@@ -22,6 +22,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ExploreColors } from '@/constants/explore/designSystem';
 import { formatBibleReference } from '@/constants/explore/bibleBooks';
@@ -63,6 +64,7 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 export default function DevotionDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const { t } = useTranslation();
   const contentLanguage = useExploreStore((state) => state.contentLanguage);
 
   const { data: dailyDevotion, isLoading: isDailyLoading } = useDailyDevotion(id as string);
@@ -114,7 +116,7 @@ export default function DevotionDetailScreen() {
       </View>
       <View className="flex-1 justify-center items-center p-5">
         <Text className="text-base text-neutral-500">
-          {contentLanguage === 'en' ? 'Content not found' : 'Konten tidak ditemukan'}
+          {t('explore.devotion.contentNotFound')}
         </Text>
       </View>
     </SafeAreaView>
@@ -132,6 +134,7 @@ interface DailyDevotionViewProps {
 }
 
 function DailyDevotionView({ devotion, contentLanguage, onBack }: DailyDevotionViewProps) {
+  const { t } = useTranslation();
   const title = devotion.title[contentLanguage] || devotion.title.en;
   const content = devotion.content[contentLanguage] || devotion.content.en;
   const summary = devotion.summary?.[contentLanguage] || devotion.summary?.en;
@@ -162,7 +165,7 @@ function DailyDevotionView({ devotion, contentLanguage, onBack }: DailyDevotionV
   const handleShare = async () => {
     try {
       await Share.share({
-        message: `📖 ${title}\n\n${summary || ''}\n\nShared from FaithFlow`,
+        message: `📖 ${title}\n\n${summary || ''}\n\n${t('explore.devotion.sharedFrom')}`,
       });
     } catch (error) {
       console.error('Error sharing:', error);
@@ -195,7 +198,7 @@ function DailyDevotionView({ devotion, contentLanguage, onBack }: DailyDevotionV
                 <View className="absolute top-3 right-3 flex-row items-center gap-1.5 bg-black/60 px-2 py-1.5 rounded-lg">
                   <Clock size={14} color="#FFFFFF" />
                   <Text className="text-white text-sm font-semibold">
-                    {devotion.reading_time_minutes} {contentLanguage === 'en' ? 'min read' : 'menit baca'}
+                    {devotion.reading_time_minutes} {t('explore.devotion.readTime')}
                   </Text>
                 </View>
               )}

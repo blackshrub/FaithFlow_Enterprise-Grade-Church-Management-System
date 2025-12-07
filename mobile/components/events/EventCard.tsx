@@ -11,7 +11,7 @@
  * Styling: NativeWind-first with inline style for shadows/spacing constants
  */
 
-import React, { memo } from 'react';
+import React, { memo, useMemo, useCallback } from 'react';
 import { View, Text, Pressable } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Image } from 'expo-image';
@@ -101,16 +101,39 @@ function EventCardComponent({
   isRSVPPending = false,
   isCancelPending = false,
 }: EventCardProps) {
+  // Memoize visibility flags
   const showRSVPButton = activeTab === 'upcoming' && event.requires_rsvp && event.can_rsvp;
   const showNoRSVPNeeded = activeTab === 'upcoming' && !event.requires_rsvp;
   const showCancelButton = activeTab === 'my_rsvps' && event.my_rsvp;
   const showAttendedBadge = activeTab === 'attended' && event.my_attendance;
   const ratingData = activeTab === 'attended' ? getEventRating(event.id) : null;
 
-  const getCategoryColor = (categoryId?: string) => {
-    const category = categories.find((c) => c.id === categoryId);
-    return category?.color || Colors.primary[500];
-  };
+  // Create O(1) category lookup map (memoized)
+  const categoryMap = useMemo(() => {
+    const map = new Map<string, EventCategory>();
+    categories.forEach((cat) => map.set(cat.id, cat));
+    return map;
+  }, [categories]);
+
+  // Memoize category color getter
+  const getCategoryColor = useCallback(
+    (categoryId?: string) => {
+      if (!categoryId) return Colors.primary[500];
+      return categoryMap.get(categoryId)?.color || Colors.primary[500];
+    },
+    [categoryMap]
+  );
+
+  // Memoize the event's category data
+  const eventCategory = useMemo(() => {
+    if (!event.event_category_id) return null;
+    return categoryMap.get(event.event_category_id);
+  }, [event.event_category_id, categoryMap]);
+
+  const categoryColor = useMemo(
+    () => getCategoryColor(event.event_category_id),
+    [getCategoryColor, event.event_category_id]
+  );
 
   return (
     <View style={{ marginBottom: spacing.m }}>
@@ -209,11 +232,11 @@ function EventCardComponent({
         {/* Event Content */}
         <View style={{ padding: spacing.m }}>
           {/* Category Tag */}
-          {event.event_category_id && (
+          {eventCategory && (
             <View
               className="flex-row items-center self-start"
               style={{
-                backgroundColor: getCategoryColor(event.event_category_id) + '20',
+                backgroundColor: categoryColor + '20',
                 paddingHorizontal: spacing.s,
                 paddingVertical: spacing.xs,
                 borderRadius: radius.s,
@@ -223,13 +246,13 @@ function EventCardComponent({
             >
               <View
                 className="w-1.5 h-1.5 rounded-full"
-                style={{ backgroundColor: getCategoryColor(event.event_category_id) }}
+                style={{ backgroundColor: categoryColor }}
               />
               <Text
                 className="text-[11px] font-bold uppercase tracking-wide"
-                style={{ color: getCategoryColor(event.event_category_id) }}
+                style={{ color: categoryColor }}
               >
-                {categories.find((c) => c.id === event.event_category_id)?.name || ''}
+                {eventCategory.name}
               </Text>
             </View>
           )}

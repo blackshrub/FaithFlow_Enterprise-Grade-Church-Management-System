@@ -799,7 +799,9 @@
       "reflection": "Refleksi",
       "prayer": "Doa",
       "completed": "Selesai",
-      "markComplete": "Tandai Selesai"
+      "markComplete": "Tandai Selesai",
+      "contentNotFound": "Konten tidak ditemukan",
+      "sharedFrom": "Dibagikan dari FaithFlow"
     },
     "figure": {
       "timeline": "Kronologi",
