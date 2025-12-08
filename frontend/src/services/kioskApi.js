@@ -223,6 +223,126 @@ export const kioskApi = {
     return response.data;
   },
 
+  // ==================== MEMBER CARE (Request Forms) ====================
+
+  /**
+   * Get guided prayer text for Accept Jesus form
+   */
+  getGuidedPrayer: async (churchId) => {
+    try {
+      const response = await api.get('/kiosk/member-care/guided-prayer', {
+        params: { church_id: churchId || localStorage.getItem('kiosk_church_id') }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Failed to fetch guided prayer:', error);
+      return {
+        prayer_en: 'Lord Jesus, I believe You are the Son of God who died for my sins...',
+        prayer_id: 'Tuhan Yesus, saya percaya Engkau adalah Anak Allah yang mati untuk dosa-dosa saya...'
+      };
+    }
+  },
+
+  /**
+   * Submit Accept Jesus / Recommitment request
+   */
+  submitAcceptJesus: async (data) => {
+    const churchId = data.church_id || localStorage.getItem('kiosk_church_id');
+    const response = await api.post(`/kiosk/member-care/accept-jesus?church_id=${churchId}`, {
+      member_id: data.member_id,
+      full_name: data.full_name,
+      phone: data.phone,
+      email: data.email,
+      commitment_type: data.commitment_type,
+      prayer_read: data.prayer_read,
+      guided_prayer_text: data.guided_prayer_text,
+      notes: data.notes
+    });
+    return response.data;
+  },
+
+  /**
+   * Submit Baptism request
+   */
+  submitBaptism: async (data) => {
+    const churchId = data.church_id || localStorage.getItem('kiosk_church_id');
+    const response = await api.post(`/kiosk/member-care/baptism?church_id=${churchId}`, {
+      member_id: data.member_id,
+      full_name: data.full_name,
+      phone: data.phone,
+      email: data.email,
+      preferred_date: data.preferred_date,
+      testimony: data.testimony,
+      notes: data.notes
+    });
+    return response.data;
+  },
+
+  /**
+   * Submit Child Dedication request
+   */
+  submitChildDedication: async (data) => {
+    const churchId = data.church_id || localStorage.getItem('kiosk_church_id');
+    const response = await api.post(`/kiosk/member-care/child-dedication?church_id=${churchId}`, {
+      member_id: data.member_id,
+      full_name: data.full_name,
+      phone: data.phone,
+      email: data.email,
+      father: data.father,
+      mother: data.mother,
+      child: data.child,
+      notes: data.notes
+    });
+    return response.data;
+  },
+
+  /**
+   * Submit Holy Matrimony request
+   */
+  submitHolyMatrimony: async (data) => {
+    const churchId = data.church_id || localStorage.getItem('kiosk_church_id');
+    const response = await api.post(`/kiosk/member-care/holy-matrimony?church_id=${churchId}`, {
+      member_id: data.member_id,
+      full_name: data.full_name,
+      phone: data.phone,
+      email: data.email,
+      person_a: data.person_a,
+      person_b: data.person_b,
+      planned_wedding_date: data.planned_wedding_date,
+      notes: data.notes
+    });
+    return response.data;
+  },
+
+  /**
+   * Search members for spouse/partner selection
+   */
+  searchMembersForSelection: async (query, churchId) => {
+    try {
+      const response = await api.get('/kiosk/members/search', {
+        params: {
+          q: query,
+          church_id: churchId || localStorage.getItem('kiosk_church_id')
+        }
+      });
+      return response.data?.members || [];
+    } catch (error) {
+      console.error('Member search error:', error);
+      return [];
+    }
+  },
+
+  /**
+   * Upload child photo for child dedication
+   */
+  uploadChildPhoto: async (photoBase64, churchId) => {
+    const response = await api.post('/kiosk/member-care/upload-child-photo', {
+      photo_base64: photoBase64,
+      church_id: churchId || localStorage.getItem('kiosk_church_id')
+    });
+    return response.data;
+  },
+
   // ==================== GROUPS ====================
 
   getPublicGroups: async (category = null, churchId = null) => {
