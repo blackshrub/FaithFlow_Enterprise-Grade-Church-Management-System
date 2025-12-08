@@ -6,9 +6,11 @@ import enTranslations from './locales/en.json';
 import idTranslations from './locales/id.json';
 import enKiosk from './locales/en/kiosk.json';
 import idKiosk from './locales/id/kiosk.json';
+import enSettings from './locales/en/settings.json';
+import idSettings from './locales/id/settings.json';
 
 // Force cache bust for translations
-const TRANSLATION_VERSION = '1.7.0';
+const TRANSLATION_VERSION = '1.8.0';
 
 i18n
   .use(LanguageDetector)
@@ -18,10 +20,12 @@ i18n
       en: {
         translation: enTranslations,
         kiosk: enKiosk,
+        settings: enSettings,
       },
       id: {
         translation: idTranslations,
         kiosk: idKiosk,
+        settings: idSettings,
       },
     },
     fallbackLng: 'en',

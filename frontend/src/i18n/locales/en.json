@@ -224,6 +224,7 @@
     "statusAutomation": "Status Automation",
     "kiosk": "Kiosk",
     "explore": "Explore",
+    "whatsapp": "WhatsApp",
     "aiPrompts": "AI Prompts",
     "displayPreferences": "Display Preferences",
     "displayPreferencesDesc": "Configure how dates, times, and numbers are displayed",
@@ -671,7 +672,93 @@
       "memberCheckedIn": "{{name}} has been checked in",
       "searchResults": "Search Results",
       "noResults": "No members found",
-      "tryDifferentSearch": "Try a different search term"
+      "tryDifferentSearch": "Try a different search term",
+      "common": {
+        "thisIsMe": "This is me",
+        "isBaptized": "Has been baptized",
+        "cancel": "Cancel",
+        "enterManually": "Enter manually",
+        "enterManuallyHint": "For new people not in our database",
+        "profilePhoto": "Profile Photo",
+        "tapToCapture": "Tap to take/upload photo",
+        "fullName": "Full Name",
+        "namePlaceholder": "Enter full name",
+        "phone": "Phone Number",
+        "gender": "Gender",
+        "selectGender": "Select gender",
+        "male": "Male",
+        "female": "Female",
+        "birthDate": "Date of Birth",
+        "searchPlaceholder": "Search by name or phone...",
+        "noResults": "No members found",
+        "searchHint": "Type at least 3 characters to search",
+        "notInList": "Person not in list? Enter manually",
+        "searchMember": "Search church member",
+        "searchMemberHint": "Find by name or phone",
+        "continue": "Continue"
+      },
+      "childDedication": {
+        "title": "Child Dedication",
+        "subtitle": "Dedicate your child to God",
+        "fatherTitle": "Father's Information",
+        "fatherSubtitle": "Please provide father's details",
+        "selectFather": "Select father",
+        "motherTitle": "Mother's Information",
+        "motherSubtitle": "Please provide mother's details",
+        "selectMother": "Select mother",
+        "childTitle": "Child's Information",
+        "childPhoto": "Child's Photo",
+        "required": "Required",
+        "childName": "Child's Full Name",
+        "father": "Father",
+        "mother": "Mother",
+        "tapToCapture": "Tap to take photo",
+        "submit": "Submit Request",
+        "successTitle": "Request Submitted!",
+        "successText": "Our team will contact you to schedule the dedication.",
+        "whatNext": "What happens next?",
+        "next1": "We will contact you within 3-5 days",
+        "next2": "Dedication dates are scheduled monthly",
+        "next3": "You may be invited to a preparation session"
+      },
+      "holyMatrimony": {
+        "title": "Holy Matrimony",
+        "subtitle": "Request a church wedding ceremony",
+        "yourInfo": "Your Information",
+        "personASubtitle": "Please provide your details",
+        "selectYourself": "Select yourself",
+        "partnerInfo": "Partner's Information",
+        "personBSubtitle": "Please provide your partner's details",
+        "selectPartner": "Select your partner",
+        "baptismNote": "Note:",
+        "baptismRequirement": "Both partners should be baptized for a church wedding. Our team will discuss this with you.",
+        "weddingDetails": "Wedding Details",
+        "plannedDate": "Planned Wedding Date (Optional)",
+        "dateNote": "We will confirm availability with you",
+        "notes": "Additional Notes (Optional)",
+        "notesPlaceholder": "Any questions or special requests...",
+        "baptized": "Baptized",
+        "notBaptized": "Not Baptized",
+        "submit": "Submit Request",
+        "successTitle": "Request Submitted!",
+        "successText": "Congratulations on your upcoming wedding! Our team will contact you soon.",
+        "whatNext": "What happens next?",
+        "next1": "Our pastoral team will contact you within 3-5 days",
+        "next2": "You will be invited to a pre-marital counseling session",
+        "next3": "We will discuss wedding dates and requirements"
+      },
+      "acceptJesus": {
+        "title": "Accept Jesus",
+        "subtitle": "Start your journey of faith",
+        "successTitle": "Welcome to the Family!",
+        "successText": "Your decision has been recorded. We will be in touch soon."
+      },
+      "baptism": {
+        "title": "Baptism Request",
+        "subtitle": "Take this important step of faith",
+        "successTitle": "Request Submitted!",
+        "successText": "We will contact you to discuss baptism preparation."
+      }
     }
   },
   "devotions": {
@@ -2788,5 +2875,99 @@
     "step2Desc": "Analyzes significance and spiritual relevance of news events using keyword matching and categorization",
     "step3Title": "3. Content Generation",
     "step3Desc": "When significant events are detected, contextual devotions and verses are generated for your congregation"
+  },
+  "requestForms": {
+    "title": "Request Forms",
+    "dashboard": "Dashboard",
+    "acceptJesus": "Accept Jesus",
+    "baptism": "Baptism",
+    "childDedication": "Child Dedication",
+    "holyMatrimony": "Holy Matrimony",
+    "overview": "Overview",
+    "allRequests": "All Requests",
+    "newRequest": "New Request",
+    "viewRequest": "View Details",
+    "noRequests": "No requests found",
+    "totalRequests": "Total Requests",
+    "newToday": "New Today",
+    "pendingFollowUp": "Pending Follow-up",
+    "completedThisMonth": "Completed This Month",
+    "recentRequests": "Recent Requests",
+    "requestType": "Request Type",
+    "requesterName": "Requester Name",
+    "submittedDate": "Submitted",
+    "status": "Status",
+    "actions": "Actions",
+    "filterByType": "Filter by Type",
+    "filterByStatus": "Filter by Status",
+    "searchPlaceholder": "Search by name or phone...",
+    "statuses": {
+      "new": "New",
+      "contacted": "Contacted",
+      "scheduled": "Scheduled",
+      "completed": "Completed",
+      "cancelled": "Cancelled"
+    },
+    "types": {
+      "accept_jesus": "Accept Jesus",
+      "baptism": "Baptism",
+      "child_dedication": "Child Dedication",
+      "holy_matrimony": "Holy Matrimony"
+    },
+    "detail": {
+      "title": "Request Details",
+      "submittedBy": "Submitted By",
+      "phone": "Phone",
+      "email": "Email",
+      "submittedOn": "Submitted On",
+      "source": "Source",
+      "status": "Status",
+      "assignedTo": "Assigned To",
+      "notes": "Notes",
+      "internalNotes": "Internal Notes",
+      "updateStatus": "Update Status",
+      "assignStaff": "Assign Staff",
+      "markContacted": "Mark as Contacted",
+      "markScheduled": "Mark as Scheduled",
+      "markCompleted": "Mark as Completed"
+    },
+    "acceptJesusDetail": {
+      "commitmentType": "Commitment Type",
+      "firstTime": "First Time Decision",
+      "recommitment": "Recommitment",
+      "prayerRead": "Prayer Read"
+    },
+    "baptismDetail": {
+      "preferredDate": "Preferred Date",
+      "scheduledDate": "Scheduled Date",
+      "location": "Location"
+    },
+    "childDedicationDetail": {
+      "father": "Father",
+      "mother": "Mother",
+      "child": "Child",
+      "childName": "Child Name",
+      "birthDate": "Birth Date",
+      "gender": "Gender",
+      "photo": "Photo",
+      "baptized": "Baptized"
+    },
+    "holyMatrimonyDetail": {
+      "personA": "Person A",
+      "personB": "Person B",
+      "plannedDate": "Planned Wedding Date",
+      "scheduledDate": "Scheduled Date",
+      "location": "Location",
+      "bothBaptized": "Both Baptized"
+    },
+    "success": {
+      "updated": "Request updated successfully",
+      "assigned": "Staff assigned successfully",
+      "statusChanged": "Status changed successfully"
+    },
+    "error": {
+      "loadFailed": "Failed to load requests",
+      "updateFailed": "Failed to update request"
+    }
   }
 }

@@ -24,7 +24,8 @@ from routes import (
     giving, member_auth, notifications, rating_review, system_settings,
     call,  # Voice/Video calling
     companion,  # Faith Assistant (Pendamping Iman)
-    crash_logs  # Mobile crash logging
+    crash_logs,  # Mobile crash logging
+    whatsapp_templates,  # WhatsApp message templates
 )
 
 # Import Explore routes
@@ -53,6 +54,8 @@ from routes import (
 from routes import (
     articles, article_categories, article_tags, article_comments,
     articles_public, article_preview, prayer_requests,
+    # Member care routes (Accept Jesus, Baptism, Child Dedication, Holy Matrimony)
+    member_care,
     # Legacy group routes (backward compatibility during migration)
     groups, group_memberships, groups_public,
     group_join_requests, group_leave_requests,
@@ -172,6 +175,8 @@ api_router.include_router(giving.router)  # Giving/offering with iPaymu
 api_router.include_router(notifications.router)  # Push notifications
 api_router.include_router(rating_review.router)  # Event ratings & reviews
 api_router.include_router(prayer_requests.router)  # Prayer requests (mobile compatibility)
+api_router.include_router(member_care.router)  # Member care requests (admin CRUD)
+api_router.include_router(whatsapp_templates.router)  # WhatsApp message templates (admin)
 api_router.include_router(community_messages.mobile_router)  # Community messaging (mobile)
 api_router.include_router(community_subgroups.mobile_router)  # Community sub-groups (mobile)
 api_router.include_router(call.router)  # Voice/Video calling (LiveKit)

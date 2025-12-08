@@ -7,6 +7,7 @@ import CategoriesTab from '../components/Settings/CategoriesTab';
 import StatusAutomationTab from '../components/Settings/StatusAutomationTab';
 import DemographicsTab from '../components/Settings/DemographicsTab';
 import KioskSettingsTab from './Settings/KioskSettings';
+import WhatsAppTemplatesTab from './Settings/WhatsAppTemplates';
 import ExploreSettingsTab from '../components/Settings/ExploreSettingsTab';
 import ExploreAIPromptsTab from '../components/Settings/ExploreAIPromptsTab';
 
@@ -37,12 +38,13 @@ export default function Settings() {
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
-          <TabsList className="inline-flex w-max md:w-full md:grid md:max-w-4xl md:grid-cols-6 lg:grid-cols-7 gap-1">
+          <TabsList className="inline-flex w-max md:w-full md:grid md:max-w-4xl md:grid-cols-7 lg:grid-cols-8 gap-1">
             <TabsTrigger value="general" className="whitespace-nowrap">{t('settings.general')}</TabsTrigger>
             <TabsTrigger value="categories" className="whitespace-nowrap">{t('settings.categories') || 'Categories'}</TabsTrigger>
             <TabsTrigger value="automation" className="whitespace-nowrap">{t('settings.statusAutomation') || 'Automation'}</TabsTrigger>
             <TabsTrigger value="demographics" className="whitespace-nowrap">{t('settings.demographics')}</TabsTrigger>
             <TabsTrigger value="kiosk" className="whitespace-nowrap">{t('settings.kiosk') || 'Kiosk'}</TabsTrigger>
+            <TabsTrigger value="whatsapp" className="whitespace-nowrap">{t('settings.whatsapp') || 'WhatsApp'}</TabsTrigger>
             <TabsTrigger value="explore" className="whitespace-nowrap">{t('settings.explore') || 'Explore'}</TabsTrigger>
             {isSuperAdmin && <TabsTrigger value="ai-prompts" className="whitespace-nowrap">{t('settings.aiPrompts') || 'AI Prompts'}</TabsTrigger>}
           </TabsList>
@@ -66,6 +68,10 @@ export default function Settings() {
 
         <TabsContent value="kiosk" className="mt-6">
           <KioskSettingsTab />
+        </TabsContent>
+
+        <TabsContent value="whatsapp" className="mt-6">
+          <WhatsAppTemplatesTab />
         </TabsContent>
 
         <TabsContent value="explore" className="mt-6">
