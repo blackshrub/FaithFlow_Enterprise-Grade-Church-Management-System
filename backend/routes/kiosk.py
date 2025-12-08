@@ -1054,6 +1054,11 @@ async def get_public_kiosk_settings(
                 "enable_counseling": kiosk_settings.get("enable_counseling", True),
                 "enable_groups": kiosk_settings.get("enable_groups", True),
                 "enable_profile_update": kiosk_settings.get("enable_profile_update", True),
+                # Member Care Services (new)
+                "enable_accept_jesus": kiosk_settings.get("enable_accept_jesus", True),
+                "enable_baptism": kiosk_settings.get("enable_baptism", True),
+                "enable_child_dedication": kiosk_settings.get("enable_child_dedication", True),
+                "enable_holy_matrimony": kiosk_settings.get("enable_holy_matrimony", True),
                 "timeout_minutes": kiosk_settings.get("timeout_minutes", 2),
                 "default_language": kiosk_settings.get("default_language", "id"),
                 "home_title": kiosk_settings.get("home_title", ""),
@@ -1070,6 +1075,11 @@ async def get_public_kiosk_settings(
             "enable_counseling": True,
             "enable_groups": True,
             "enable_profile_update": True,
+            # Member Care Services (new)
+            "enable_accept_jesus": True,
+            "enable_baptism": True,
+            "enable_child_dedication": True,
+            "enable_holy_matrimony": True,
             "timeout_minutes": 2,
             "default_language": "id",
             "home_title": "",
@@ -1088,6 +1098,11 @@ async def get_public_kiosk_settings(
             "enable_counseling": True,
             "enable_groups": True,
             "enable_profile_update": True,
+            # Member Care Services (new)
+            "enable_accept_jesus": True,
+            "enable_baptism": True,
+            "enable_child_dedication": True,
+            "enable_holy_matrimony": True,
             "timeout_minutes": 2,
             "default_language": "id",
             "home_title": "",
@@ -2481,4 +2496,434 @@ async def get_event_attendance_count(
     except Exception as e:
         logger.error(f"Error getting attendance count: {e}")
         return {"success": True, "count": 0, "event_id": event_id}
+
+
+# =============================================================================
+# MEMBER CARE REQUEST ENDPOINTS
+# =============================================================================
+
+from services.member_care_service import MemberCareService, MemberSearchService
+from models.member_care_request import (
+    AcceptJesusCreate,
+    BaptismCreate,
+    ChildDedicationCreate,
+    HolyMatrimonyCreate,
+    MemberCareSubmissionResponse,
+    MemberSearchResponse,
+)
+
+
+class AcceptJesusKioskRequest(BaseModel):
+    """Request model for Accept Jesus submission from kiosk."""
+    member_id: str
+    full_name: str
+    phone: str
+    email: Optional[str] = None
+    commitment_type: Literal["first_time", "recommitment"]
+    prayer_read: bool = False
+    follow_up_requested: bool = True
+    notes: Optional[str] = None
+
+
+class BaptismKioskRequest(BaseModel):
+    """Request model for Baptism submission from kiosk."""
+    member_id: str
+    full_name: str
+    phone: str
+    email: Optional[str] = None
+    preferred_date: Optional[str] = None
+    previous_baptism: bool = False
+    testimony: Optional[str] = None
+    notes: Optional[str] = None
+
+
+class PersonInfoRequest(BaseModel):
+    """Person info for Child Dedication and Holy Matrimony."""
+    name: str
+    phone: Optional[str] = None
+    member_id: Optional[str] = None
+    is_baptized: Optional[bool] = None
+
+
+class ChildInfoRequest(BaseModel):
+    """Child info for Child Dedication."""
+    name: str
+    birth_date: str  # YYYY-MM-DD
+    gender: Optional[Literal["male", "female"]] = None
+    photo_url: str
+    photo_fid: Optional[str] = None
+    photo_thumbnail_url: Optional[str] = None
+
+
+class ChildDedicationKioskRequest(BaseModel):
+    """Request model for Child Dedication submission from kiosk."""
+    member_id: str
+    full_name: str
+    phone: str
+    email: Optional[str] = None
+    father: PersonInfoRequest
+    mother: PersonInfoRequest
+    child: ChildInfoRequest
+    preferred_date: Optional[str] = None
+    notes: Optional[str] = None
+
+
+class HolyMatrimonyKioskRequest(BaseModel):
+    """Request model for Holy Matrimony submission from kiosk."""
+    member_id: str
+    full_name: str
+    phone: str
+    email: Optional[str] = None
+    person_a: PersonInfoRequest
+    person_b: PersonInfoRequest
+    planned_wedding_date: Optional[str] = None
+    venue_preference: Optional[Literal["church", "offsite", "undecided"]] = None
+    notes: Optional[str] = None
+
+
+@router.post("/member-care/accept-jesus")
+async def submit_accept_jesus(
+    request: AcceptJesusKioskRequest,
+    church_id: str = Query(..., description="Church ID"),
+    db: AsyncIOMotorDatabase = Depends(get_db),
+):
+    """
+    Submit Accept Jesus / Recommitment request from kiosk.
+
+    This is called after OTP verification. The requester has:
+    1. Read the guided salvation prayer
+    2. Confirmed they prayed the prayer
+    3. Optionally requested follow-up contact
+    """
+    try:
+        service = MemberCareService(db)
+
+        # Parse date if provided
+        from datetime import date
+        create_data = AcceptJesusCreate(
+            member_id=request.member_id,
+            full_name=request.full_name,
+            phone=request.phone,
+            email=request.email,
+            commitment_type=request.commitment_type,
+            prayer_read=request.prayer_read,
+            follow_up_requested=request.follow_up_requested,
+            notes=request.notes,
+        )
+
+        result = await service.create_accept_jesus_request(
+            church_id=church_id,
+            data=create_data,
+            source="kiosk",
+        )
+
+        return MemberCareSubmissionResponse(
+            success=True,
+            message="Your decision has been recorded. Welcome to God's family!",
+            message_key="member_care.accept_jesus.success",
+            request_id=result["id"],
+            request_type="accept_jesus",
+        )
+
+    except Exception as e:
+        logger.error(f"Accept Jesus submission error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to submit request")
+
+
+@router.post("/member-care/baptism")
+async def submit_baptism(
+    request: BaptismKioskRequest,
+    church_id: str = Query(..., description="Church ID"),
+    db: AsyncIOMotorDatabase = Depends(get_db),
+):
+    """
+    Submit Baptism request from kiosk.
+
+    Called after OTP verification with optional preferred date.
+    """
+    try:
+        service = MemberCareService(db)
+
+        from datetime import date
+        preferred_date = None
+        if request.preferred_date:
+            preferred_date = date.fromisoformat(request.preferred_date)
+
+        create_data = BaptismCreate(
+            member_id=request.member_id,
+            full_name=request.full_name,
+            phone=request.phone,
+            email=request.email,
+            preferred_date=preferred_date,
+            previous_baptism=request.previous_baptism,
+            testimony=request.testimony,
+            notes=request.notes,
+        )
+
+        result = await service.create_baptism_request(
+            church_id=church_id,
+            data=create_data,
+            source="kiosk",
+        )
+
+        return MemberCareSubmissionResponse(
+            success=True,
+            message="Your baptism request has been received. We will contact you soon.",
+            message_key="member_care.baptism.success",
+            request_id=result["id"],
+            request_type="baptism",
+        )
+
+    except Exception as e:
+        logger.error(f"Baptism submission error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to submit request")
+
+
+@router.post("/member-care/child-dedication")
+async def submit_child_dedication(
+    request: ChildDedicationKioskRequest,
+    church_id: str = Query(..., description="Church ID"),
+    db: AsyncIOMotorDatabase = Depends(get_db),
+):
+    """
+    Submit Child Dedication request from kiosk.
+
+    Requires:
+    - Father info (name, phone, optional member_id)
+    - Mother info (name, phone, optional member_id)
+    - Child info (name, birth_date, photo_url - required)
+    """
+    try:
+        service = MemberCareService(db)
+
+        from datetime import date
+        from models.member_care_request import PersonInfoCreate, ChildInfoCreate
+
+        preferred_date = None
+        if request.preferred_date:
+            preferred_date = date.fromisoformat(request.preferred_date)
+
+        child_birth_date = date.fromisoformat(request.child.birth_date)
+
+        create_data = ChildDedicationCreate(
+            member_id=request.member_id,
+            full_name=request.full_name,
+            phone=request.phone,
+            email=request.email,
+            father=PersonInfoCreate(
+                name=request.father.name,
+                phone=request.father.phone,
+                member_id=request.father.member_id,
+            ),
+            mother=PersonInfoCreate(
+                name=request.mother.name,
+                phone=request.mother.phone,
+                member_id=request.mother.member_id,
+            ),
+            child=ChildInfoCreate(
+                name=request.child.name,
+                birth_date=child_birth_date,
+                gender=request.child.gender,
+                photo_url=request.child.photo_url,
+                photo_fid=request.child.photo_fid,
+                photo_thumbnail_url=request.child.photo_thumbnail_url,
+            ),
+            preferred_date=preferred_date,
+            notes=request.notes,
+        )
+
+        result = await service.create_child_dedication_request(
+            church_id=church_id,
+            data=create_data,
+            source="kiosk",
+        )
+
+        return MemberCareSubmissionResponse(
+            success=True,
+            message="Your child dedication request has been received. We will contact you to schedule the ceremony.",
+            message_key="member_care.child_dedication.success",
+            request_id=result["id"],
+            request_type="child_dedication",
+        )
+
+    except Exception as e:
+        logger.error(f"Child dedication submission error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to submit request")
+
+
+@router.post("/member-care/holy-matrimony")
+async def submit_holy_matrimony(
+    request: HolyMatrimonyKioskRequest,
+    church_id: str = Query(..., description="Church ID"),
+    db: AsyncIOMotorDatabase = Depends(get_db),
+):
+    """
+    Submit Holy Matrimony request from kiosk.
+
+    Requires:
+    - Person A info (submitter or partner)
+    - Person B info (partner - can be searched or newly registered)
+    - Planned wedding date (optional)
+    - Baptism status for each person
+    """
+    try:
+        service = MemberCareService(db)
+
+        from datetime import date
+        from models.member_care_request import PersonInfoCreate
+
+        planned_date = None
+        if request.planned_wedding_date:
+            planned_date = date.fromisoformat(request.planned_wedding_date)
+
+        create_data = HolyMatrimonyCreate(
+            member_id=request.member_id,
+            full_name=request.full_name,
+            phone=request.phone,
+            email=request.email,
+            person_a=PersonInfoCreate(
+                name=request.person_a.name,
+                phone=request.person_a.phone,
+                member_id=request.person_a.member_id,
+                is_baptized=request.person_a.is_baptized,
+            ),
+            person_b=PersonInfoCreate(
+                name=request.person_b.name,
+                phone=request.person_b.phone,
+                member_id=request.person_b.member_id,
+                is_baptized=request.person_b.is_baptized,
+            ),
+            planned_wedding_date=planned_date,
+            venue_preference=request.venue_preference,
+            notes=request.notes,
+        )
+
+        result = await service.create_holy_matrimony_request(
+            church_id=church_id,
+            data=create_data,
+            source="kiosk",
+        )
+
+        return MemberCareSubmissionResponse(
+            success=True,
+            message="Your holy matrimony request has been received. Our pastoral team will contact you soon.",
+            message_key="member_care.holy_matrimony.success",
+            request_id=result["id"],
+            request_type="holy_matrimony",
+        )
+
+    except Exception as e:
+        logger.error(f"Holy matrimony submission error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to submit request")
+
+
+@router.get("/member-care/guided-prayer")
+async def get_guided_prayer(
+    church_id: str = Query(..., description="Church ID"),
+    language: str = Query("id", description="Language: 'en' or 'id'"),
+    db: AsyncIOMotorDatabase = Depends(get_db),
+):
+    """
+    Get the guided salvation prayer for Accept Jesus flow.
+
+    Returns the prayer text in the requested language.
+    Uses church-specific text if configured, otherwise default.
+    """
+    try:
+        service = MemberCareService(db)
+        prayer_text = await service.get_guided_prayer(church_id, language)
+
+        return {
+            "success": True,
+            "prayer": prayer_text,
+            "language": language,
+        }
+
+    except Exception as e:
+        logger.error(f"Get guided prayer error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to get prayer")
+
+
+@router.get("/members/search")
+async def search_members_for_selection(
+    q: str = Query(..., min_length=2, description="Search query (name or phone)"),
+    church_id: str = Query(..., description="Church ID"),
+    exclude_ids: Optional[str] = Query(None, description="Comma-separated member IDs to exclude"),
+    limit: int = Query(10, ge=1, le=50),
+    db: AsyncIOMotorDatabase = Depends(get_db),
+):
+    """
+    Search members for spouse/couple selection in Child Dedication and Holy Matrimony.
+
+    Returns limited member info: id, name, phone, photo.
+    Used by MemberSearchSelect component in kiosk and mobile.
+    """
+    try:
+        service = MemberSearchService(db)
+
+        exclude_list = None
+        if exclude_ids:
+            exclude_list = [id.strip() for id in exclude_ids.split(",") if id.strip()]
+
+        result = await service.search_members(
+            church_id=church_id,
+            query=q,
+            limit=limit,
+            exclude_ids=exclude_list,
+        )
+
+        return MemberSearchResponse(**result)
+
+    except Exception as e:
+        logger.error(f"Member search error: {e}")
+        raise HTTPException(status_code=500, detail="Search failed")
+
+
+@router.post("/member-care/upload-child-photo")
+async def upload_child_photo(
+    church_id: str = Query(..., description="Church ID"),
+    photo_base64: str = Query(..., description="Base64 encoded photo"),
+    db: AsyncIOMotorDatabase = Depends(get_db),
+):
+    """
+    Upload child photo for Child Dedication request.
+
+    Accepts base64 encoded image and stores in SeaweedFS.
+    Returns URL and file ID for use in submission.
+    """
+    try:
+        from services.seaweedfs_service import SeaweedFSService, StorageCategory
+        import base64
+
+        # Decode base64
+        if photo_base64.startswith("data:"):
+            # Remove data URL prefix
+            photo_base64 = photo_base64.split(",")[1]
+
+        photo_bytes = base64.b64decode(photo_base64)
+
+        # Upload to SeaweedFS
+        seaweed_service = SeaweedFSService()
+        result = await seaweed_service.upload_by_category(
+            file_content=photo_bytes,
+            filename=f"child_photo_{uuid.uuid4()}.jpg",
+            category=StorageCategory.MEMBER_DOCUMENT,
+            church_id=church_id,
+        )
+
+        if not result.get("success"):
+            raise HTTPException(status_code=500, detail="Failed to upload photo")
+
+        return {
+            "success": True,
+            "photo_url": result.get("url"),
+            "photo_fid": result.get("fid"),
+            "photo_thumbnail_url": result.get("thumbnail_url"),
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Child photo upload error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to upload photo")
 
