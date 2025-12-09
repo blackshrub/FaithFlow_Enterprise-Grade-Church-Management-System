@@ -38,6 +38,7 @@ import { ErrorBoundary, flushCrashQueue } from '@/components/ErrorBoundary';
 import { BiometricLockScreen } from '@/components/auth/BiometricLockScreen';
 import { useBiometricLock } from '@/hooks/useBiometricLock';
 import { BibleNoteEditorHost } from '@/components/bible/BibleNoteEditorHost';
+import { GrowPanel } from '@/components/grow';
 import { useVoiceSettingsStore } from '@/stores/voiceSettings';
 import { initDeviceCapability } from '@/stores/deviceCapability';
 import * as Updates from 'expo-updates';
@@ -188,7 +189,7 @@ export default function RootLayout() {
 
   return (
     <ErrorBoundary isGlobal>
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#F5F5F5' }}>
       <PersistQueryClientProvider
         client={queryClient}
         persistOptions={{
@@ -228,23 +229,25 @@ export default function RootLayout() {
             <Stack
               screenOptions={{
                 headerShown: false,
-                // V7: Let PageTransition handle animations for wrapped screens
-                // Use 'none' for zero interference, screens handle their own transitions
-                animation: 'none',
-                // Optimize for 60fps
-                animationTypeForReplace: 'push',
+                // Native iOS-style slide transitions for detail screens
+                animation: 'slide_from_right',
+                gestureEnabled: true,
+                gestureDirection: 'horizontal',
+                // Transparent content to show persistent background
+                contentStyle: { backgroundColor: 'transparent' },
               }}
             >
               <Stack.Screen
                 name="(auth)"
                 options={{
                   animation: 'fade', // Auth has its own transition flow
+                  contentStyle: { backgroundColor: '#FFFFFF' },
                 }}
               />
               <Stack.Screen
                 name="(tabs)"
                 options={{
-                  animation: 'none', // Tabs use V7 PageTransition
+                  animation: 'none', // Tab switches are instant
                 }}
               />
               {/* DISABLED: Call feature temporarily disabled */}
@@ -262,6 +265,40 @@ export default function RootLayout() {
                   presentation: 'transparentModal',
                 }}
               />
+
+              {/**
+               * Shared Element Transition Screens
+               *
+               * These screens use Reanimated's sharedTransitionTag for hero images.
+               * animation: 'fade' provides smooth transitions that don't conflict with
+               * shared element animations, while still supporting gesture-back navigation.
+               *
+               * Note: 'none' causes flicker on gesture-back because it disables ALL animations.
+               */}
+              <Stack.Screen
+                name="events/[id]"
+                options={{
+                  animation: 'fade', // Fade doesn't conflict with shared element transition
+                }}
+              />
+              <Stack.Screen
+                name="explore/devotion/[id]"
+                options={{
+                  animation: 'fade',
+                }}
+              />
+              <Stack.Screen
+                name="explore/figure/[id]"
+                options={{
+                  animation: 'fade',
+                }}
+              />
+              <Stack.Screen
+                name="explore/studies/[id]"
+                options={{
+                  animation: 'fade',
+                }}
+              />
             </Stack>
 
             {/**
@@ -276,6 +313,9 @@ export default function RootLayout() {
 
             {/* Bible Note Editor Host - bridges bibleUIStore to overlay system */}
             <BibleNoteEditorHost />
+
+            {/* Grow Panel - FAB menu overlay for Bible & Explore */}
+            <GrowPanel />
 
             {/* Toast must be rendered at root level */}
             <Toast />

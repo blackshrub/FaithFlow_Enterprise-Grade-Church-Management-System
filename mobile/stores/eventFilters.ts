@@ -9,6 +9,7 @@
  */
 
 import { create } from 'zustand';
+import { useShallow } from 'zustand/shallow';
 import { EventStatus } from '@/utils/eventStatus';
 
 interface EventFiltersStore {
@@ -95,3 +96,38 @@ export const useEventFiltersStore = create<EventFiltersStore>((set, get) => ({
     });
   },
 }));
+
+// Granular selectors - prevent cascading re-renders
+export const useSearchTerm = () => useEventFiltersStore((s) => s.searchTerm);
+export const useSelectedCategory = () => useEventFiltersStore((s) => s.selectedCategory);
+export const useSelectedDate = () => useEventFiltersStore((s) => s.selectedDate);
+export const useSelectedStatus = () => useEventFiltersStore((s) => s.selectedStatus);
+export const useIsSearching = () => useEventFiltersStore((s) => s.isSearching);
+export const useIsCalendarOpen = () => useEventFiltersStore((s) => s.isCalendarOpen);
+
+// Actions selector - never causes re-renders since actions are stable
+export const useEventFilterActions = () =>
+  useEventFiltersStore(
+    useShallow((s) => ({
+      setSearchTerm: s.setSearchTerm,
+      setCategory: s.setCategory,
+      setSelectedDate: s.setSelectedDate,
+      clearSelectedDate: s.clearSelectedDate,
+      setStatus: s.setStatus,
+      setIsSearching: s.setIsSearching,
+      setIsCalendarOpen: s.setIsCalendarOpen,
+      clearAllFilters: s.clearAllFilters,
+      clearSearch: s.clearSearch,
+    }))
+  );
+
+// Combined filters selector for query dependencies
+export const useEventFilters = () =>
+  useEventFiltersStore(
+    useShallow((s) => ({
+      searchTerm: s.searchTerm,
+      selectedCategory: s.selectedCategory,
+      selectedDate: s.selectedDate,
+      selectedStatus: s.selectedStatus,
+    }))
+  );

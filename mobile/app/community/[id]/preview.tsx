@@ -42,6 +42,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 import { useCommunity, useJoinCommunity } from '@/hooks/useCommunities';
 import { useAuthStore } from '@/stores/auth';
+import { communityColors, colors } from '@/constants/theme';
 
 // =============================================================================
 // CONSTANTS
@@ -49,31 +50,6 @@ import { useAuthStore } from '@/stores/auth';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const HEADER_HEIGHT = 220;
-
-const COLORS = {
-  // Brand colors
-  primary: '#075E54',
-  primaryLight: '#128C7E',
-  accent: '#25D366',
-
-  // Neutrals
-  white: '#FFFFFF',
-  background: '#F5F5F5',
-  surface: '#F7F7F7',
-  divider: '#EBEBEB',
-
-  // Text
-  textPrimary: '#1A1A1A',
-  textSecondary: '#65676B',
-  textTertiary: '#8A8D91',
-  textOnPrimary: '#FFFFFF',
-
-  // Category colors
-  categoryCell: '#075E54',
-  categoryMinistry: '#6366F1',
-  categoryActivity: '#22C55E',
-  categorySupport: '#F59E0B',
-};
 
 // =============================================================================
 // LOADING SKELETON
@@ -86,14 +62,14 @@ const LoadingSkeleton = memo(() => {
     <View className="flex-1 bg-white">
       <StatusBar barStyle="light-content" />
       {/* Header skeleton */}
-      <View style={{ height: HEADER_HEIGHT, backgroundColor: COLORS.primaryLight }} />
+      <View style={{ height: HEADER_HEIGHT, backgroundColor: communityColors.light }} />
       {/* Content skeleton */}
       <View className="p-5">
-        <View className="h-8 w-48 rounded mb-2" style={{ backgroundColor: COLORS.surface }} />
-        <View className="h-4 w-32 rounded mb-6" style={{ backgroundColor: COLORS.surface }} />
-        <View className="h-24 w-full rounded-xl mb-4" style={{ backgroundColor: COLORS.surface }} />
-        <View className="h-32 w-full rounded-xl mb-4" style={{ backgroundColor: COLORS.surface }} />
-        <View className="h-14 w-full rounded-full" style={{ backgroundColor: COLORS.surface }} />
+        <View className="h-8 w-48 rounded mb-2" style={{ backgroundColor: communityColors.background.surface }} />
+        <View className="h-4 w-32 rounded mb-6" style={{ backgroundColor: communityColors.background.surface }} />
+        <View className="h-24 w-full rounded-xl mb-4" style={{ backgroundColor: communityColors.background.surface }} />
+        <View className="h-32 w-full rounded-xl mb-4" style={{ backgroundColor: communityColors.background.surface }} />
+        <View className="h-14 w-full rounded-full" style={{ backgroundColor: communityColors.background.surface }} />
       </View>
     </View>
   );
@@ -119,13 +95,13 @@ function CommunityPreviewScreen() {
   const joinMutation = useJoinCommunity();
 
   const getCategoryColor = useCallback((category?: string) => {
-    const categoryColors: Record<string, string> = {
-      cell_group: COLORS.categoryCell,
-      ministry_team: COLORS.categoryMinistry,
-      activity: COLORS.categoryActivity,
-      support_group: COLORS.categorySupport,
+    const categoryColorsMap: Record<string, string> = {
+      cell_group: communityColors.category.general,
+      ministry_team: communityColors.category.ministry,
+      activity: communityColors.category.activity,
+      support_group: communityColors.category.support,
     };
-    return categoryColors[category || ''] || COLORS.textTertiary;
+    return categoryColorsMap[category || ''] || communityColors.text.tertiary;
   }, []);
 
   const getCategoryLabel = useCallback((category?: string) => {
@@ -207,7 +183,7 @@ function CommunityPreviewScreen() {
   }
 
   return (
-    <View className="flex-1" style={{ backgroundColor: COLORS.background }}>
+    <View className="flex-1" style={{ backgroundColor: communityColors.background.surface }}>
       <StatusBar barStyle="light-content" />
 
       {/* Header with cover image */}
@@ -220,7 +196,7 @@ function CommunityPreviewScreen() {
           />
         ) : (
           <LinearGradient
-            colors={[getCategoryColor(community?.category), COLORS.primary]}
+            colors={[getCategoryColor(community?.category), communityColors.dark]}
             style={{ width: SCREEN_WIDTH, height: HEADER_HEIGHT }}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
@@ -254,26 +230,19 @@ function CommunityPreviewScreen() {
             justifyContent: 'center',
           }}
         >
-          <ChevronLeft size={24} color={COLORS.white} />
+          <ChevronLeft size={24} color={colors.white} />
         </Pressable>
 
         {/* Community name overlay */}
-        <View
-          style={{
-            position: 'absolute',
-            bottom: 0,
-            left: 0,
-            right: 0,
-            padding: 20,
-          }}
-        >
+        <View className="absolute bottom-0 left-0 right-0 p-5">
+
           {/* Category badge */}
           <Animated.View entering={FadeIn.delay(100).duration(300)}>
             <View
               className="self-start px-3 py-1 rounded-full mb-2"
               style={{ backgroundColor: getCategoryColor(community?.category) }}
             >
-              <Text className="text-[12px] font-bold" style={{ color: COLORS.white }}>
+              <Text className="text-[12px] font-bold" style={{ color: colors.white }}>
                 {getCategoryLabel(community?.category)}
               </Text>
             </View>
@@ -281,7 +250,7 @@ function CommunityPreviewScreen() {
 
           {/* Name */}
           <Animated.View entering={FadeInUp.delay(150).duration(300)}>
-            <Text className="text-[28px] font-bold" style={{ color: COLORS.white }}>
+            <Text className="text-[28px] font-bold" style={{ color: colors.white }}>
               {community?.name}
             </Text>
           </Animated.View>
@@ -319,26 +288,26 @@ function CommunityPreviewScreen() {
         entering={FadeInDown.delay(250).duration(400)}
         className="flex-1"
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ padding: 20, paddingBottom: 120 }}
+        contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 20, paddingBottom: 100 }}
       >
         {/* Description */}
         {community?.description && (
           <View
             className="rounded-2xl p-4 mb-4"
-            style={{ backgroundColor: COLORS.white }}
+            style={{ backgroundColor: colors.white }}
           >
             <View className="flex-row items-center mb-3">
               <View
                 className="w-10 h-10 rounded-xl items-center justify-center"
-                style={{ backgroundColor: COLORS.surface }}
+                style={{ backgroundColor: communityColors.background.surface }}
               >
-                <Info size={20} color={COLORS.primary} />
+                <Info size={20} color={communityColors.dark} />
               </View>
-              <Text className="text-[17px] font-semibold ml-3" style={{ color: COLORS.textPrimary }}>
+              <Text className="text-[17px] font-semibold ml-3" style={{ color: communityColors.text.primary }}>
                 {t('communities.info.description', 'About')}
               </Text>
             </View>
-            <Text className="text-[15px] leading-[22px]" style={{ color: COLORS.textSecondary }}>
+            <Text className="text-[15px] leading-[22px]" style={{ color: communityColors.text.secondary }}>
               {community.description}
             </Text>
           </View>
@@ -348,21 +317,21 @@ function CommunityPreviewScreen() {
         {(community?.meeting_schedule || community?.meeting_location) && (
           <View
             className="rounded-2xl p-4 mb-4"
-            style={{ backgroundColor: COLORS.white }}
+            style={{ backgroundColor: colors.white }}
           >
             {community.meeting_schedule && (
               <View className="flex-row items-start mb-4">
                 <View
                   className="w-10 h-10 rounded-xl items-center justify-center"
-                  style={{ backgroundColor: COLORS.surface }}
+                  style={{ backgroundColor: communityColors.background.surface }}
                 >
-                  <Calendar size={20} color={COLORS.primary} />
+                  <Calendar size={20} color={communityColors.dark} />
                 </View>
                 <View className="flex-1 ml-3">
-                  <Text className="text-[13px] font-medium mb-0.5" style={{ color: COLORS.textTertiary }}>
+                  <Text className="text-[13px] font-medium mb-0.5" style={{ color: communityColors.text.tertiary }}>
                     {t('communities.info.schedule', 'Schedule')}
                   </Text>
-                  <Text className="text-[15px] font-medium" style={{ color: COLORS.textPrimary }}>
+                  <Text className="text-[15px] font-medium" style={{ color: communityColors.text.primary }}>
                     {community.meeting_schedule}
                   </Text>
                 </View>
@@ -373,15 +342,15 @@ function CommunityPreviewScreen() {
               <View className="flex-row items-start">
                 <View
                   className="w-10 h-10 rounded-xl items-center justify-center"
-                  style={{ backgroundColor: COLORS.surface }}
+                  style={{ backgroundColor: communityColors.background.surface }}
                 >
-                  <MapPin size={20} color={COLORS.primary} />
+                  <MapPin size={20} color={communityColors.dark} />
                 </View>
                 <View className="flex-1 ml-3">
-                  <Text className="text-[13px] font-medium mb-0.5" style={{ color: COLORS.textTertiary }}>
+                  <Text className="text-[13px] font-medium mb-0.5" style={{ color: communityColors.text.tertiary }}>
                     {t('communities.info.location', 'Location')}
                   </Text>
-                  <Text className="text-[15px] font-medium" style={{ color: COLORS.textPrimary }}>
+                  <Text className="text-[15px] font-medium" style={{ color: communityColors.text.primary }}>
                     {community.meeting_location}
                   </Text>
                 </View>
@@ -418,27 +387,27 @@ function CommunityPreviewScreen() {
         style={{
           paddingBottom: insets.bottom + 16,
           paddingTop: 16,
-          backgroundColor: COLORS.white,
+          backgroundColor: colors.white,
           borderTopWidth: 1,
-          borderTopColor: COLORS.divider,
+          borderTopColor: communityColors.divider,
         }}
       >
         {isPending ? (
           <View
             className="flex-row items-center justify-center py-4 rounded-full"
-            style={{ backgroundColor: COLORS.surface }}
+            style={{ backgroundColor: communityColors.background.surface }}
           >
-            <Clock size={20} color={COLORS.textTertiary} />
-            <Text className="text-[16px] font-semibold ml-2" style={{ color: COLORS.textTertiary }}>
+            <Clock size={20} color={communityColors.text.tertiary} />
+            <Text className="text-[16px] font-semibold ml-2" style={{ color: communityColors.text.tertiary }}>
               {t('groups.pendingApproval', 'Pending Approval')}
             </Text>
           </View>
         ) : isFull ? (
           <View
             className="flex-row items-center justify-center py-4 rounded-full"
-            style={{ backgroundColor: COLORS.surface }}
+            style={{ backgroundColor: communityColors.background.surface }}
           >
-            <Text className="text-[16px] font-semibold" style={{ color: COLORS.textTertiary }}>
+            <Text className="text-[16px] font-semibold" style={{ color: communityColors.text.tertiary }}>
               {t('groups.full', 'Community is Full')}
             </Text>
           </View>
@@ -447,14 +416,14 @@ function CommunityPreviewScreen() {
             onPress={handleJoin}
             disabled={joinMutation.isPending}
             className="flex-row items-center justify-center py-4 rounded-full active:opacity-90"
-            style={{ backgroundColor: COLORS.accent }}
+            style={{ backgroundColor: communityColors.accent }}
           >
             {joinMutation.isPending ? (
-              <ActivityIndicator color={COLORS.white} />
+              <ActivityIndicator color={colors.white} />
             ) : (
               <>
-                <Check size={22} color={COLORS.white} />
-                <Text className="text-[17px] font-bold ml-2" style={{ color: COLORS.white }}>
+                <Check size={22} color={colors.white} />
+                <Text className="text-[17px] font-bold ml-2" style={{ color: colors.white }}>
                   {community?.is_private
                     ? t('groups.requestToJoin', 'Request to Join')
                     : t('groups.join', 'Join Community')}

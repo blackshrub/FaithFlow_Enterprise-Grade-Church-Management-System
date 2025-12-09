@@ -20,11 +20,13 @@ import { colors } from '@/constants/theme';
 // TYPES
 // =============================================================================
 
-interface WhatsAppTextProps {
+export interface WhatsAppTextProps {
   children: string;
   style?: TextStyle;
   selectable?: boolean;
   onLinkPress?: (url: string) => void;
+  /** NativeWind className - applied to the root Text component */
+  className?: string;
 }
 
 interface TextPart {
@@ -157,6 +159,7 @@ export function WhatsAppText({
   style,
   selectable = true,
   onLinkPress,
+  className,
 }: WhatsAppTextProps) {
   const parts = useMemo(() => parseWhatsAppText(children), [children]);
 
@@ -172,7 +175,7 @@ export function WhatsAppText({
 
   return (
     <Text
-      className="text-base leading-[22px]"
+      className={className || "text-base leading-[22px]"}
       style={[{ color: colors.gray[900] }, style]}
       selectable={selectable}
     >

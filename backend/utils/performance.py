@@ -644,6 +644,10 @@ class Projections:
         "photo_base64": 1,        # Legacy: base64 encoded photo
         "personal_id_code": 1,
         "face_checkin_enabled": 1,  # Boolean for face check-in feature toggle
+        # Trash bin fields - needed for deleted members list
+        "deleted_at": 1,
+        "deleted_by": 1,
+        "is_deleted": 1,
     }
 
     # Member card - minimal fields for cards/avatars

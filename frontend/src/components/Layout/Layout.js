@@ -38,12 +38,16 @@ import {
   Bookmark,
   BarChart3,
   Wand2,
+  ClipboardList,
 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Label } from '../ui/label';
 import FaithFlowLogo from '../Branding/FaithFlowLogo';
 import { prefetchRoute } from '../../lib/prefetch';
+import { useUnreadCounts } from '../../hooks/useRequestForms';
+import { usePendingAppointmentsCount } from '../../hooks/useCounseling';
+import { Badge } from '../ui/badge';
 
 export default function Layout() {
   const { t, i18n } = useTranslation();
@@ -53,6 +57,12 @@ export default function Layout() {
   const { user, church, logout, isSuperAdmin } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Get unread counts for request forms navigation badges
+  const { data: unreadCounts } = useUnreadCounts();
+
+  // Get pending appointments count for counseling navigation badge
+  const { data: pendingAppointments } = usePendingAppointmentsCount();
 
   const handleLogout = () => {
     logout();
@@ -78,6 +88,9 @@ export default function Layout() {
     }
     if (path.includes('/counseling')) {
       setExpandedMenus(prev => ({ ...prev, counseling: true }));
+    }
+    if (path.includes('/request-forms') || path.includes('/prayer-requests')) {
+      setExpandedMenus(prev => ({ ...prev, requestForms: true }));
     }
     if (path.includes('/articles')) {
       setExpandedMenus(prev => ({ ...prev, articles: true }));
@@ -145,18 +158,32 @@ export default function Layout() {
     { type: 'section', label: 'KIOSK' },
     { icon: Monitor, label: 'Kiosk Mode', path: '/kiosk' },
     
-    // Spiritual Care Section
-    { type: 'section', label: 'SPIRITUAL CARE' },
-    { icon: Heart, label: t('prayerRequests.title') || 'Prayer Requests', path: '/prayer-requests' },
+    // Member Care Section
+    { type: 'section', label: 'MEMBER CARE' },
+    {
+      icon: ClipboardList,
+      label: t('requestForms.title') || 'Request Forms',
+      key: 'requestForms',
+      badge: unreadCounts?.total || 0, // Total unread count for main menu
+      submenu: [
+        { label: t('requestForms.dashboard') || 'Dashboard', path: '/request-forms' },
+        { label: t('prayerRequests.title') || 'Prayer Requests', path: '/prayer-requests' },
+        { label: t('requestForms.acceptJesus') || 'Accept Jesus', path: '/request-forms/accept-jesus', badge: unreadCounts?.accept_jesus || 0 },
+        { label: t('requestForms.baptism') || 'Baptism', path: '/request-forms/baptism', badge: unreadCounts?.baptism || 0 },
+        { label: t('requestForms.childDedication') || 'Child Dedication', path: '/request-forms/child-dedication', badge: unreadCounts?.child_dedication || 0 },
+        { label: t('requestForms.holyMatrimony') || 'Holy Matrimony', path: '/request-forms/holy-matrimony', badge: unreadCounts?.holy_matrimony || 0 },
+      ]
+    },
     {
       icon: MessageCircleHeart,
-      label: 'Counseling & Prayer',
+      label: 'Counseling',
       key: 'counseling',
+      badge: pendingAppointments?.pending_count || 0,
       submenu: [
         { label: 'Dashboard', path: '/counseling' },
         { label: 'Counselors', path: '/counseling/counselors' },
         { label: 'Availability', path: '/counseling/availability' },
-        { label: 'Appointments', path: '/counseling/appointments' },
+        { label: 'Appointments', path: '/counseling/appointments', badge: pendingAppointments?.pending_count || 0 },
       ]
     },
     
@@ -415,6 +442,12 @@ export default function Layout() {
                       {!sidebarCollapsed && (
                         <>
                           <span className="text-sm font-medium flex-1 text-left">{item.label}</span>
+                          {/* Show badge for unread counts */}
+                          {item.badge > 0 && (
+                            <Badge variant="destructive" className="h-5 min-w-[20px] px-1.5 text-xs rounded-full">
+                              {item.badge}
+                            </Badge>
+                          )}
                           {hasSubmenu && (
                             isExpanded ? (
                               <ChevronDown className="h-4 w-4" />
@@ -447,7 +480,13 @@ export default function Layout() {
                                 }`}
                               >
                                 <span className="w-1.5 h-1.5 rounded-full bg-current mr-3 opacity-50 flex-shrink-0"></span>
-                                <span className="text-left">{subItem.label}</span>
+                                <span className="text-left flex-1">{subItem.label}</span>
+                                {/* Show badge for submenu unread counts */}
+                                {subItem.badge > 0 && (
+                                  <Badge variant="destructive" className="h-4 min-w-[16px] px-1 text-[10px] rounded-full ml-2">
+                                    {subItem.badge}
+                                  </Badge>
+                                )}
                               </button>
                             </li>
                           );

@@ -55,9 +55,7 @@ import { QuickAskInput } from '@/components/companion/QuickAskInput';
 import { profileApi } from '@/services/api/explore';
 import Animated, { FadeIn, FadeInDown, FadeInRight, SlideInRight } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
-
-// Animated Image for shared element transitions (Reanimated 4+)
-const AnimatedImage = Animated.createAnimatedComponent(Image);
+import { AnimatedImage, sharedTags } from '@/utils/sharedTransitions';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -185,13 +183,21 @@ function DailyDevotionView({ devotion, contentLanguage, onBack }: DailyDevotionV
 
       <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 24 }} showsVerticalScrollIndicator={false}>
         {devotion.image_url && (
-          <Animated.View entering={SlideInRight.duration(250)} className="relative w-full h-[220px]">
-            {/* Background Image with shared element transition */}
+          <View className="relative w-full h-[220px]">
+            {/* Background Image - Shared Element Transition */}
             <AnimatedImage
               source={{ uri: devotion.image_url }}
-              className="absolute inset-0 w-full h-full"
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                width: '100%',
+                height: '100%',
+              }}
               resizeMode="cover"
-              sharedTransitionTag={`devotion-${devotion.id}-image`}
+              sharedTransitionTag={sharedTags.devotionImage(devotion.id)}
             />
             <LinearGradient colors={['transparent', 'rgba(0,0,0,0.7)']} className="flex-1 p-3 justify-end">
               {devotion.reading_time_minutes && (
@@ -216,16 +222,15 @@ function DailyDevotionView({ devotion, contentLanguage, onBack }: DailyDevotionV
                 </View>
               )}
             </LinearGradient>
-          </Animated.View>
+          </View>
         )}
 
         <Animated.View entering={SlideInRight.duration(250).delay(30)} className="px-5 pt-6">
-          {/* Title with Audio Button and shared element transition */}
+          {/* Title with Audio Button */}
           <View className="flex-row items-start justify-between mb-1">
             <Animated.Text
               className="text-[32px] font-extrabold flex-1 mr-3"
               style={{ color: ExploreColors.neutral[900], lineHeight: 40, letterSpacing: -0.5 }}
-              sharedTransitionTag={`devotion-${devotion.id}-title`}
             >
               {title}
             </Animated.Text>
@@ -415,12 +420,11 @@ function DevotionPlanView({ plan, contentLanguage, onBack }: DevotionPlanViewPro
 
       <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 24 }} showsVerticalScrollIndicator={false}>
         <Animated.View entering={FadeIn.duration(400)} className="relative w-full h-[220px]">
-          {/* Background Image with shared element transition */}
+          {/* Background Image */}
           <AnimatedImage
             source={{ uri: plan.cover_image_url || 'https://images.unsplash.com/photo-1504052434569-70ad5836ab65?w=800' }}
             className="absolute inset-0 w-full h-full"
             resizeMode="cover"
-            sharedTransitionTag={`devotion-${plan.id}-image`}
           />
           <LinearGradient colors={['transparent', 'rgba(0,0,0,0.8)']} className="flex-1 p-3 justify-end">
             <View className="absolute top-3 right-3 flex-row items-center gap-1.5 bg-black/60 px-2 py-1.5 rounded-lg">
@@ -442,7 +446,6 @@ function DevotionPlanView({ plan, contentLanguage, onBack }: DevotionPlanViewPro
           <Animated.Text
             className="text-[36px] font-extrabold mb-1"
             style={{ color: ExploreColors.neutral[900], lineHeight: 44, letterSpacing: -0.5 }}
-            sharedTransitionTag={`devotion-${plan.id}-title`}
           >
             {title}
           </Animated.Text>

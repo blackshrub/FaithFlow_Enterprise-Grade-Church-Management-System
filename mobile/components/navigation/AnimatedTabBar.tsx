@@ -23,9 +23,10 @@
 
 import React, { useEffect, useRef } from 'react';
 import { View, Pressable, Animated, StyleSheet } from 'react-native';
-import { useRouter, useSegments } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
+import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
+import * as Haptics from 'expo-haptics';
 
 import { Text } from '@/components/ui/text';
 import { colors, touchTargets } from '@/constants/theme';
@@ -41,24 +42,24 @@ import {
 
 interface Tab {
   name: string;
+  screenName: string; // React Navigation screen name
   icon: React.ComponentType<{ size?: number; color?: string; isActive?: boolean }>;
   label: string;
-  route: string;
 }
 
 // Left tabs (before FAB)
 const LEFT_TABS: Tab[] = [
   {
     name: 'today',
+    screenName: 'today', // Changed from 'index' - redirect workaround for Expo Router lag
     icon: SunriseIcon,
     label: 'tabs.today',
-    route: '/(tabs)',
   },
   {
     name: 'events',
+    screenName: 'events',
     icon: CalendarIcon,
     label: 'tabs.events',
-    route: '/(tabs)/events',
   },
 ];
 
@@ -66,40 +67,34 @@ const LEFT_TABS: Tab[] = [
 const RIGHT_TABS: Tab[] = [
   {
     name: 'groups',
+    screenName: 'groups',
     icon: MessageCircleIcon,
     label: 'tabs.community',
-    route: '/(tabs)/groups',
   },
   {
     name: 'give',
+    screenName: 'give',
     icon: HeartHandshakeIcon,
     label: 'tabs.give',
-    route: '/(tabs)/give',
   },
 ];
 
-export function AnimatedTabBar() {
-  const router = useRouter();
-  const segments = useSegments();
+export function AnimatedTabBar({ navigation, state }: BottomTabBarProps) {
   const { t } = useTranslation();
-  const { focusModeActive, tabBarVisible } = useBibleUIStore();
-  const { close: closeGrowPanel } = useGrowStore();
+  // Selective subscriptions to prevent unnecessary re-renders
+  const focusModeActive = useBibleUIStore((s) => s.focusModeActive);
+  const tabBarVisible = useBibleUIStore((s) => s.tabBarVisible);
+  const closeGrowPanel = useGrowStore((s) => s.close);
   const insets = useSafeAreaInsets();
 
   // Animation value for tab bar visibility (focus mode)
   const tabBarTranslateY = useRef(new Animated.Value(0)).current;
 
-  // Determine active tab from route segments
-  const getActiveRoute = () => {
-    const tabName = segments[1] as string | undefined;
-    if (!tabName || tabName === 'index') return '/(tabs)';
-    return `/(tabs)/${tabName}`;
-  };
-
-  const activeRoute = getActiveRoute();
+  // Get current active screen name from React Navigation state
+  const currentRoute = state?.routes?.[state.index]?.name || 'index';
 
   // Check if we're on the Bible screen
-  const isBibleScreen = activeRoute === '/(tabs)/bible';
+  const isBibleScreen = currentRoute === 'bible';
 
   // Animate tab bar visibility based on focus mode and scroll direction
   useEffect(() => {
@@ -121,18 +116,21 @@ export function AnimatedTabBar() {
   }, [isBibleScreen, focusModeActive, tabBarVisible, tabBarTranslateY]);
 
   const handleTabPress = (tab: Tab) => {
+    // Haptic feedback on every tap
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
     // Close grow panel when navigating
     closeGrowPanel();
 
     // Don't navigate if already on this tab
-    if (tab.route && activeRoute !== tab.route) {
-      // Use replace for instant tab switching (no stack push delay)
-      router.replace(tab.route as any);
+    if (tab.screenName !== currentRoute) {
+      // Use jumpTo for instant tab switching (recommended for bottom tabs)
+      navigation.jumpTo(tab.screenName);
     }
   };
 
   const renderTab = (tab: Tab) => {
-    const isActive = activeRoute === tab.route;
+    const isActive = tab.screenName === currentRoute;
     const IconComponent = tab.icon;
 
     return (

@@ -71,13 +71,16 @@ import {
 } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { useSharedValue } from 'react-native-reanimated';
-import { withPremiumMotionV10 } from '@/hoc';
 import { PMotionV10 } from '@/components/motion/premium-motion';
+import { useFocusKey } from '@/hooks/useFocusAnimation';
 import {
   useTodayHeaderMotion,
   useTodayCollapsibleHeader,
   todayListItemMotion,
 } from '@/components/motion/today-motion';
+
+// Import shared transition utilities
+import { sharedTags } from '@/utils/sharedTransitions';
 
 // Animated Image for shared element transitions (Reanimated 4+)
 const AnimatedImage = Animated.createAnimatedComponent(Image);
@@ -122,10 +125,8 @@ function ExploreScreen() {
   const contentLanguage = useExploreStore((state) => state.contentLanguage);
   const setContentLanguage = useExploreStore((state) => state.setContentLanguage);
 
-  // Animation key - only changes on initial mount, not on every focus
-  // This prevents flickering when returning from sub-pages
-  const animationKeyRef = useRef(Date.now());
-  const animationKey = animationKeyRef.current;
+  // Focus key - triggers child animation replay on tab focus (no container opacity flash)
+  const focusKey = useFocusKey();
 
   // Data queries
   const { data: homeData, isLoading, error, refetch } = useExploreHome();
@@ -277,7 +278,7 @@ function ExploreScreen() {
       <Animated.View className="px-5" style={[headerEnterStyle, headerPaddingAnimatedStyle]}>
         {/* Top row: Title + Language toggle - aligned horizontally */}
         <Animated.View
-          key={`top-${animationKey}`}
+          key={`top-${focusKey}`}
           entering={todayListItemMotion(0)}
           style={titleRowAnimatedStyle}
           className="flex-row justify-between items-start mb-5"
@@ -307,7 +308,7 @@ function ExploreScreen() {
 
         {/* Stats row - Collapsible with shared statsRowAnimatedStyle - stagger index 1 */}
         <Animated.View
-          key={`stats-${animationKey}`}
+          key={`stats-${focusKey}`}
           entering={todayListItemMotion(1)}
           style={statsRowAnimatedStyle}
           className="flex-row items-center rounded-2xl py-4 px-6"
@@ -401,7 +402,7 @@ function ExploreScreen() {
         {/* Daily Devotion */}
         {homeData.daily_devotion && (
           <Animated.View
-            key={`devotion-${animationKey}`}
+            key={`devotion-${focusKey}`}
             entering={todayListItemMotion(sectionIndex++)}
             className="mb-8"
           >
@@ -416,7 +417,7 @@ function ExploreScreen() {
                 router.push(`/explore/devotion/${homeData.daily_devotion?.id}`);
               }}
               completed={homeData.daily_devotion.completed}
-              sharedTransitionTag={`devotion-${homeData.daily_devotion?.id}`}
+              sharedTransitionTag={sharedTags.devotionImage(homeData.daily_devotion?.id || '')}
             />
           </Animated.View>
         )}
@@ -424,7 +425,7 @@ function ExploreScreen() {
         {/* Verse of the Day */}
         {homeData.verse_of_the_day && (
           <Animated.View
-            key={`verse-${animationKey}`}
+            key={`verse-${focusKey}`}
             entering={todayListItemMotion(sectionIndex++)}
             className="mb-8"
           >
@@ -445,7 +446,7 @@ function ExploreScreen() {
         {/* Bible Figure of the Day */}
         {homeData.bible_figure && (
           <Animated.View
-            key={`figure-${animationKey}`}
+            key={`figure-${focusKey}`}
             entering={todayListItemMotion(sectionIndex++)}
             className="mb-8"
           >
@@ -459,7 +460,7 @@ function ExploreScreen() {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 router.push(`/explore/figure/${homeData.bible_figure?.id}`);
               }}
-              sharedTransitionTag={`figure-${homeData.bible_figure?.id}`}
+              sharedTransitionTag={sharedTags.figureImage(homeData.bible_figure?.id || '')}
             />
           </Animated.View>
         )}
@@ -467,7 +468,7 @@ function ExploreScreen() {
         {/* Daily Quiz */}
         {homeData.daily_quiz && (
           <Animated.View
-            key={`quiz-${animationKey}`}
+            key={`quiz-${focusKey}`}
             entering={todayListItemMotion(sectionIndex++)}
             className="mb-8"
           >
@@ -490,7 +491,7 @@ function ExploreScreen() {
         {/* Bible Studies Carousel */}
         {bibleStudies && bibleStudies.length > 0 && (
           <Animated.View
-            key={`studies-${animationKey}`}
+            key={`studies-${focusKey}`}
             entering={todayListItemMotion(sectionIndex++)}
             className="mb-8"
           >
@@ -537,7 +538,7 @@ function ExploreScreen() {
 
         {/* Faith Assistant - Spiritual Companion */}
         <Animated.View
-          key={`companion-${animationKey}`}
+          key={`companion-${focusKey}`}
           entering={todayListItemMotion(sectionIndex++)}
           className="mb-8"
         >
@@ -549,7 +550,7 @@ function ExploreScreen() {
 
         {/* Explore More */}
         <Animated.View
-          key={`more-${animationKey}`}
+          key={`more-${focusKey}`}
           entering={todayListItemMotion(sectionIndex++)}
           className="mb-8"
         >
@@ -589,7 +590,7 @@ function ExploreScreen() {
   };
 
   return (
-    <Animated.View className="flex-1 bg-neutral-100">
+    <View className="flex-1 bg-neutral-100">
       <StatusBar barStyle="light-content" />
       {renderHeader()}
 
@@ -611,14 +612,14 @@ function ExploreScreen() {
       </Animated.ScrollView>
 
       {/* CelebrationModal and StreakDetailsModal now rendered via OverlayHost in _layout.tsx */}
-    </Animated.View>
+    </View>
   );
 }
 
-// Memoize screen + Apply Premium Motion V10 Ultra HOC for zero-blink tab transitions
+// Memoize screen for performance
 const MemoizedExploreScreen = memo(ExploreScreen);
 MemoizedExploreScreen.displayName = 'ExploreScreen';
-export default withPremiumMotionV10(MemoizedExploreScreen);
+export default MemoizedExploreScreen;
 
 // Bible Study Card with V10 touch scaling
 interface BibleStudyCardProps {
@@ -674,14 +675,23 @@ function BibleStudyCard({ study, onPress, contentLanguage }: BibleStudyCardProps
         onPress={onPress}
         className="flex-1 overflow-hidden rounded-[20px] active:scale-[0.97] active:opacity-95"
       >
-        {/* Background Image with shared element transition */}
+        {/* Background Image - Shared Element Transition */}
         <AnimatedImage
           source={{
             uri: study.cover_image_url || 'https://images.unsplash.com/photo-1504052434569-70ad5836ab65?w=400',
           }}
-          className="absolute inset-0 w-full h-full rounded-[20px]"
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            width: '100%',
+            height: '100%',
+            borderRadius: 20,
+          }}
           resizeMode="cover"
-          sharedTransitionTag={`study-${study.id}-image`}
+          sharedTransitionTag={sharedTags.studyImage(study.id)}
         />
 
         {/* Gradient overlay - absolute to cover entire image */}
@@ -708,7 +718,6 @@ function BibleStudyCard({ study, onPress, contentLanguage }: BibleStudyCardProps
             <Animated.Text
               className="text-[16px] font-bold text-white leading-[20px]"
               numberOfLines={2}
-              sharedTransitionTag={`study-${study.id}-title`}
             >
               {title}
             </Animated.Text>

@@ -213,7 +213,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
       error_message: error.message || 'Unknown error',
       stack_trace: error.stack,
       screen_name: screenName || (isGlobal ? 'global' : 'unknown'),
-      component_name: this.extractComponentName(errorInfo.componentStack),
+      component_name: this.extractComponentName(errorInfo.componentStack ?? undefined),
       device_info: getDeviceInfo(),
       user_context: getUserContext(),
       is_online: isOnline,

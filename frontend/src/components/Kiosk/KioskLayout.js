@@ -67,7 +67,7 @@ const KioskLayout = ({ children, showBack = false, showHome = true, onBack = nul
   };
 
   return (
-    <div data-kiosk="true" className="min-h-screen w-full max-w-[100vw] overflow-x-hidden bg-gradient-to-br from-slate-50 to-slate-100 flex flex-col">
+    <div data-kiosk="true" className="h-screen w-full max-w-[100vw] overflow-hidden bg-gradient-to-br from-slate-50 to-slate-100 flex flex-col">
       {/* Top Navigation - Mobile responsive */}
       <div className="p-2 sm:p-4 lg:p-6 flex flex-wrap items-center justify-between gap-2 sm:gap-4 w-full max-w-[100vw] overflow-x-hidden">
         {/* Left: Church name + Navigation buttons */}
@@ -139,18 +139,16 @@ const KioskLayout = ({ children, showBack = false, showHome = true, onBack = nul
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="flex-1 flex items-center justify-center p-2 sm:p-4 lg:p-6 pb-8 sm:pb-12 lg:pb-16 w-full min-w-0 overflow-y-auto overflow-x-hidden">
-        <div className="w-full max-w-[calc(100vw-1rem)] sm:max-w-[calc(100vw-2rem)] lg:max-w-7xl min-w-0 py-4">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.35 }}
-            className="w-full min-w-0"
-          >
-            {children}
-          </motion.div>
-        </div>
+      {/* Main Content - fills remaining height */}
+      <div className="flex-1 flex flex-col min-h-0 w-full overflow-x-hidden">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35 }}
+          className="flex-1 flex flex-col min-h-0 w-full"
+        >
+          {children}
+        </motion.div>
       </div>
 
       {/* Inactivity Warning Modal */}

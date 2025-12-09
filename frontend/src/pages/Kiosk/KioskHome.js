@@ -14,7 +14,11 @@ import {
   MessageCircleHeart,
   Users,
   UserCog,
-  ClipboardCheck
+  ClipboardCheck,
+  Cross,
+  Droplets,
+  Baby,
+  Gem
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import KioskLayout from '../../components/Kiosk/KioskLayout';
@@ -80,6 +84,41 @@ const KioskHome = () => {
   }
 
   const services = [
+    // Member Care Services (highlighted with special styling)
+    {
+      id: 'accept_jesus',
+      icon: Cross,
+      title: t('home.accept_jesus'),
+      description: t('home.accept_jesus_desc'),
+      path: '/kiosk/accept-jesus',
+      enabled: settings?.enable_accept_jesus !== false,
+      highlight: true, // Special golden/highlighted styling
+    },
+    {
+      id: 'baptism',
+      icon: Droplets,
+      title: t('home.baptism'),
+      description: t('home.baptism_desc'),
+      path: '/kiosk/baptism',
+      enabled: settings?.enable_baptism !== false,
+    },
+    {
+      id: 'child_dedication',
+      icon: Baby,
+      title: t('home.child_dedication'),
+      description: t('home.child_dedication_desc'),
+      path: '/kiosk/child-dedication',
+      enabled: settings?.enable_child_dedication !== false,
+    },
+    {
+      id: 'holy_matrimony',
+      icon: Gem,
+      title: t('home.holy_matrimony'),
+      description: t('home.holy_matrimony_desc'),
+      path: '/kiosk/holy-matrimony',
+      enabled: settings?.enable_holy_matrimony !== false,
+    },
+    // Existing Services
     {
       id: 'event_registration',
       icon: Calendar,
@@ -134,40 +173,44 @@ const KioskHome = () => {
 
   return (
     <KioskLayout showBack={false} showHome={false}>
-      <div className="space-y-6 sm:space-y-8 lg:space-y-12 w-full max-w-full px-2 pb-4">
-        {/* Welcome Header */}
+      {/* Full-height container for landscape - no scroll */}
+      <div className="flex flex-col h-full w-full max-w-7xl mx-auto px-3 sm:px-4 lg:px-6">
+        {/* Welcome Header - compact */}
         <motion.div
-          className="text-center space-y-2 sm:space-y-4"
+          className="text-center py-3 sm:py-4 lg:py-6 flex-shrink-0"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
         >
-          <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 px-2">
+          <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900">
             {settings?.home_title || t('home.title')}
           </h1>
-          <p className="text-base sm:text-xl md:text-2xl lg:text-3xl text-gray-600 px-2">
+          <p className="text-sm sm:text-base md:text-lg lg:text-xl text-gray-600 mt-1">
             {settings?.home_subtitle || t('home.subtitle')}
           </p>
         </motion.div>
 
-        {/* Service Tiles - auto-rows ensures uniform heights across all cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 lg:gap-6 auto-rows-fr">
-          {enabledServices.map((service, index) => (
-            <motion.div
-              key={service.id}
-              className="h-full"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, delay: index * 0.1 }}
-            >
-              <ServiceTile
-                icon={service.icon}
-                title={service.title}
-                description={service.description}
-                onClick={() => navigate(service.path, { state: { churchId } })}
-              />
-            </motion.div>
-          ))}
+        {/* Service Tiles Grid - fills remaining space */}
+        {/* Landscape: 5 cols (2 rows), Portrait: 2-3 cols (scrollable) */}
+        <div className="flex-1 min-h-0 pb-3 sm:pb-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-3 lg:gap-4 h-full auto-rows-fr">
+            {enabledServices.map((service, index) => (
+              <motion.div
+                key={service.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: index * 0.04 }}
+              >
+                <ServiceTile
+                  icon={service.icon}
+                  title={service.title}
+                  description={service.description}
+                  onClick={() => navigate(service.path, { state: { churchId } })}
+                  highlight={service.highlight}
+                />
+              </motion.div>
+            ))}
+          </div>
         </div>
       </div>
     </KioskLayout>

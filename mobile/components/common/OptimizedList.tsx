@@ -21,7 +21,7 @@ import {
   ActivityIndicator,
   ViewStyle,
 } from 'react-native';
-import { FlashList, ListRenderItem } from '@shopify/flash-list';
+import { FlashList, type ListRenderItem, type FlashListProps } from '@shopify/flash-list';
 import { Text } from '@/components/ui/text';
 import type { StyleProp, ViewStyle as ContentStyle } from 'react-native';
 
@@ -138,8 +138,9 @@ interface OptimizedListProps<T> {
 
   /**
    * React 19: ref as regular prop (no forwardRef needed)
+   * Note: Using any for FlashList ref type as FlashList is a value, not a type
    */
-  ref?: Ref<FlashList<T>>;
+  ref?: React.RefObject<any>;
 }
 
 // ============================================================================

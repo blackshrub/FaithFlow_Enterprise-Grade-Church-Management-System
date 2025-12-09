@@ -18,6 +18,11 @@ class WhatsAppTemplateType(str, Enum):
     BAPTISM_CONFIRMATION = "baptism_confirmation"
     CHILD_DEDICATION_CONFIRMATION = "child_dedication_confirmation"
     HOLY_MATRIMONY_CONFIRMATION = "holy_matrimony_confirmation"
+    # Admin notification for new requests
+    NEW_REQUEST_ADMIN_NOTIFICATION = "new_request_admin_notification"
+    # Counseling appointment notifications
+    COUNSELING_APPOINTMENT_ADMIN_NOTIFICATION = "counseling_appointment_admin_notification"
+    COUNSELING_APPOINTMENT_MEMBER_CONFIRMATION = "counseling_appointment_member_confirmation"
 
 
 # Available placeholders for each template type
@@ -33,6 +38,15 @@ TEMPLATE_PLACEHOLDERS: Dict[WhatsAppTemplateType, List[str]] = {
     ],
     WhatsAppTemplateType.HOLY_MATRIMONY_CONFIRMATION: [
         "name", "partner_name", "both_baptized", "planned_date", "church_name"
+    ],
+    WhatsAppTemplateType.NEW_REQUEST_ADMIN_NOTIFICATION: [
+        "church_name", "request_type", "requester_name", "requester_phone", "details"
+    ],
+    WhatsAppTemplateType.COUNSELING_APPOINTMENT_ADMIN_NOTIFICATION: [
+        "church_name", "member_name", "member_phone", "appointment_type", "topic", "date", "time", "counselor_name", "urgency"
+    ],
+    WhatsAppTemplateType.COUNSELING_APPOINTMENT_MEMBER_CONFIRMATION: [
+        "church_name", "name", "appointment_type", "topic", "date", "time", "counselor_name"
     ],
 }
 
@@ -84,6 +98,47 @@ Couple: {{name}} & {{partner_name}}
 Our pastoral team will contact you within 3x24 hours to discuss pre-marital counseling and wedding preparation.
 
 God bless your union!""",
+
+    WhatsAppTemplateType.NEW_REQUEST_ADMIN_NOTIFICATION: """*{{church_name}}*
+📋 *New Member Care Request*
+
+Type: {{request_type}}
+From: {{requester_name}}
+Phone: {{requester_phone}}
+
+{{details}}
+
+Please check the admin dashboard for details.""",
+
+    WhatsAppTemplateType.COUNSELING_APPOINTMENT_ADMIN_NOTIFICATION: """*{{church_name}}*
+🗓️ *New Counseling Appointment Request*
+
+Member: {{member_name}}
+Phone: {{member_phone}}
+Type: {{appointment_type}}
+Topic: {{topic}}
+Urgency: {{urgency}}
+
+📅 Date: {{date}}
+⏰ Time: {{time}}
+👤 Counselor: {{counselor_name}}
+
+Please review and approve/reject in the admin dashboard.""",
+
+    WhatsAppTemplateType.COUNSELING_APPOINTMENT_MEMBER_CONFIRMATION: """*{{church_name}}*
+
+Dear {{name}},
+
+Your counseling appointment request has been submitted!
+
+📅 Date: {{date}}
+⏰ Time: {{time}}
+👤 Counselor: {{counselor_name}}
+📋 Topic: {{topic}}
+
+Our team will review your request and notify you once approved.
+
+God bless you!""",
 }
 
 
@@ -134,6 +189,47 @@ Pasangan: {{name}} & {{partner_name}}
 Tim pastoral kami akan menghubungi Anda dalam waktu 3x24 jam untuk membahas konseling pranikah dan persiapan pernikahan.
 
 Tuhan memberkati persatuan Anda!""",
+
+    WhatsAppTemplateType.NEW_REQUEST_ADMIN_NOTIFICATION: """*{{church_name}}*
+📋 *Permohonan Member Care Baru*
+
+Jenis: {{request_type}}
+Dari: {{requester_name}}
+Telepon: {{requester_phone}}
+
+{{details}}
+
+Silakan cek dashboard admin untuk detail.""",
+
+    WhatsAppTemplateType.COUNSELING_APPOINTMENT_ADMIN_NOTIFICATION: """*{{church_name}}*
+🗓️ *Permintaan Konseling Baru*
+
+Jemaat: {{member_name}}
+Telepon: {{member_phone}}
+Jenis: {{appointment_type}}
+Topik: {{topic}}
+Urgensi: {{urgency}}
+
+📅 Tanggal: {{date}}
+⏰ Waktu: {{time}}
+👤 Konselor: {{counselor_name}}
+
+Silakan tinjau dan setujui/tolak di dashboard admin.""",
+
+    WhatsAppTemplateType.COUNSELING_APPOINTMENT_MEMBER_CONFIRMATION: """*{{church_name}}*
+
+Kepada {{name}},
+
+Permintaan konseling Anda telah dikirim!
+
+📅 Tanggal: {{date}}
+⏰ Waktu: {{time}}
+👤 Konselor: {{counselor_name}}
+📋 Topik: {{topic}}
+
+Tim kami akan meninjau permintaan Anda dan memberitahu setelah disetujui.
+
+Tuhan memberkati!""",
 }
 
 

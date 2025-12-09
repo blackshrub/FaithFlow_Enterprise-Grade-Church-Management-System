@@ -31,14 +31,21 @@ import { colors } from '@/constants/theme';
 const { width, height } = Dimensions.get('window');
 
 // Tab bar visual height (content area only, safe area handled separately)
-const TAB_BAR_HEIGHT = Platform.OS === 'ios' ? 56 : 56;
+const TAB_BAR_CONTENT_HEIGHT = 56;
+// Extra padding in tab bar content
+const TAB_BAR_PADDING = 16;
 
 export function GrowPanel() {
   const { t } = useTranslation();
-  const { isOpen, close } = useGrowStore();
+  // Selective subscriptions to prevent re-renders
+  const isOpen = useGrowStore((s) => s.isOpen);
+  const close = useGrowStore((s) => s.close);
   const insets = useSafeAreaInsets();
 
   if (!isOpen) return null;
+
+  // Calculate total tab bar height including safe area
+  const tabBarTotalHeight = TAB_BAR_CONTENT_HEIGHT + TAB_BAR_PADDING + (insets.bottom > 0 ? insets.bottom - 8 : 4);
 
   return (
     <>
@@ -51,7 +58,7 @@ export function GrowPanel() {
           left: 0,
           right: 0,
           top: 0,
-          bottom: TAB_BAR_HEIGHT,
+          bottom: tabBarTotalHeight,
           zIndex: 100,
         }}
         pointerEvents="auto"
@@ -81,7 +88,7 @@ export function GrowPanel() {
         exiting={SlideOutDown.duration(180)}
         className="absolute left-4 right-4 z-[101] rounded-3xl p-5"
         style={{
-          bottom: TAB_BAR_HEIGHT + insets.bottom + 16,
+          bottom: tabBarTotalHeight + 16,
           backgroundColor: Platform.OS === 'ios'
             ? 'rgba(255, 255, 255, 0.95)'
             : colors.white,

@@ -666,6 +666,31 @@ async def list_slots(
 
 # ==================== APPOINTMENTS ====================
 
+@router.get("/appointments/pending-count")
+async def get_pending_count(
+    current_user: dict = Depends(get_current_user),
+    db: AsyncIOMotorDatabase = Depends(get_db)
+):
+    """Get count of pending appointments that need attention."""
+    try:
+        church_id = get_session_church_id_from_user(current_user)
+
+        # Count appointments with status "pending" (waiting for approval)
+        pending_count = await db.counseling_appointments.count_documents({
+            "church_id": church_id,
+            "status": "pending"
+        })
+
+        return {
+            "success": True,
+            "pending_count": pending_count
+        }
+
+    except Exception as e:
+        logger.error(f"Error getting pending count: {e}")
+        raise HTTPException(status_code=500, detail="INTERNAL_ERROR")
+
+
 @router.get("/appointments")
 async def list_appointments(
     status: Optional[str] = Query(None),

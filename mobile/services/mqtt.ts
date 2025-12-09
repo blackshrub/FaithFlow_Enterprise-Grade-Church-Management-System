@@ -89,9 +89,10 @@ class MQTTService {
   private errorCallbacks: Set<ErrorCallback> = new Set();
   private subscribedTopics: Set<string> = new Set();
   private reconnectAttempts = 0;
-  private maxReconnectAttempts = __DEV__ ? 3 : 10; // Fewer attempts in dev
+  private maxReconnectAttempts = __DEV__ ? 2 : 10; // Very few attempts in dev
   private connectionOptions: MQTTConnectionOptions | null = null;
   private isConnecting = false;
+  private hasLoggedUnavailable = false; // Prevent spam logging
 
   // Get MQTT broker URL based on environment
   private getBrokerUrl(): string {
@@ -200,29 +201,48 @@ class MQTTService {
       });
 
       this.client.on('error', (error: Error) => {
-        console.error('[MQTT] Connection error:', error);
+        // Only log once in dev to avoid spam
+        if (__DEV__ && !this.hasLoggedUnavailable) {
+          console.log('[MQTT] Broker unavailable - real-time features disabled');
+          console.log('[MQTT] To enable: cd backend/docker && docker-compose -f docker-compose.emqx.yml up -d');
+          this.hasLoggedUnavailable = true;
+        } else if (!__DEV__) {
+          console.error('[MQTT] Connection error:', error.message);
+        }
         this.isConnecting = false;
         this.errorCallbacks.forEach((cb) => cb(error));
       });
 
       this.client.on('close', () => {
-        console.log('[MQTT] Connection closed');
+        if (!this.hasLoggedUnavailable) {
+          console.log('[MQTT] Connection closed');
+        }
         this.isConnecting = false;
         this.connectionCallbacks.forEach((cb) => cb(false));
       });
 
       this.client.on('reconnect', () => {
         this.reconnectAttempts++;
-        console.log(`[MQTT] Reconnecting... attempt ${this.reconnectAttempts}`);
+
+        // Only log first attempt, then silently give up in dev
+        if (this.reconnectAttempts === 1) {
+          console.log('[MQTT] Attempting to reconnect...');
+        }
 
         if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-          console.error('[MQTT] Max reconnection attempts reached');
+          if (!this.hasLoggedUnavailable) {
+            console.log('[MQTT] Broker not available - disabling real-time features');
+            this.hasLoggedUnavailable = true;
+          }
           this.disconnect();
         }
       });
 
       this.client.on('offline', () => {
-        console.log('[MQTT] Client went offline');
+        // Silent in dev mode
+        if (!__DEV__) {
+          console.log('[MQTT] Client went offline');
+        }
       });
     } catch (error) {
       this.isConnecting = false;
@@ -249,7 +269,7 @@ class MQTTService {
     this.isConnecting = false;
     this.reconnectAttempts = 0;
     this.connectionOptions = null;
-    console.log('[MQTT] Disconnected');
+    // Don't reset hasLoggedUnavailable - we don't want to spam on every reconnect attempt
   }
 
   /**

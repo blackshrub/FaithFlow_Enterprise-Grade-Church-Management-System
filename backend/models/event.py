@@ -65,6 +65,10 @@ class Event(EventBase):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
+    # Computed fields from aggregation (for list queries)
+    rsvp_count: Optional[int] = Field(None, description="Computed: number of RSVPs")
+    attendance_count: Optional[int] = Field(None, description="Computed: number of attendees")
+
 
 # =============================================================================
 # Event Attendance - Separate Collection for Scalability

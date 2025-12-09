@@ -179,13 +179,14 @@ export async function connect(
     );
 
     // 2. Get microphone access
+    // Note: React Native WebRTC types may not include all audio constraints
     localStream = await mediaDevices.getUserMedia({
       audio: {
         echoCancellation: true,
         noiseSuppression: true,
         autoGainControl: true,
         sampleRate: 24000,
-      },
+      } as any,
       video: false,
     });
 
@@ -201,7 +202,8 @@ export async function connect(
     }
 
     // 5. Handle incoming audio from AI
-    peerConnection.ontrack = (event) => {
+    // Note: React Native WebRTC uses different event handler pattern
+    (peerConnection as any).ontrack = (event: { track: MediaStreamTrack }) => {
       console.log('[Realtime] Received remote track');
       if (event.track.kind === 'audio') {
         currentCallbacks?.onRemoteAudioTrack?.(event.track);
@@ -209,8 +211,9 @@ export async function connect(
     };
 
     // 6. Create data channel for events
-    dataChannel = peerConnection.createDataChannel('oai-events');
-    setupDataChannelHandlers(dataChannel, sessionConfig);
+    const channel = peerConnection.createDataChannel('oai-events');
+    dataChannel = channel as any;
+    setupDataChannelHandlers(dataChannel as RTCDataChannel, sessionConfig);
 
     // 7. Create and set local description
     const offer = await peerConnection.createOffer({

@@ -44,43 +44,13 @@ import { Image } from 'expo-image';
 
 // Gluestack UI for buttons
 import { Button, ButtonText, ButtonIcon } from '@/components/ui/button';
+import { communityColors, colors } from '@/constants/theme';
 
 import { withPremiumMotionV10 } from '@/hoc';
 
 import { useCommunity } from '@/hooks/useCommunities';
 import { getThreadsForCommunity } from '@/mock/community-mockdata';
 import type { CommunityThread } from '@/types/communities';
-
-// =============================================================================
-// DESIGN TOKENS - WhatsApp exact colors
-// =============================================================================
-
-const COLORS = {
-  // WhatsApp green
-  primary: '#25D366',
-  primaryDark: '#075E54', // Darker green for unread badge
-  unreadBadge: '#1B8755', // Even darker green
-
-  // Background
-  background: '#FFFFFF',
-  headerBg: '#F0F2F5', // Light grey header
-  surface: '#F0F2F5',
-  overlay: 'rgba(0, 0, 0, 0.5)',
-
-  // Text
-  textPrimary: '#000000',
-  textSecondary: '#667781', // Light grey for subtitles
-  textTertiary: '#8696A0',
-
-  // Borders
-  divider: '#E9EDEF',
-
-  // States
-  pressed: '#F5F6F6',
-
-  // Icons
-  iconGrey: '#54656F',
-};
 
 // =============================================================================
 // MENU SHEET
@@ -108,7 +78,7 @@ const MenuSheet = memo(({ visible, onClose, onInfo, onSettings, isLeader }: Menu
     >
       <Pressable
         className="flex-1"
-        style={{ backgroundColor: COLORS.overlay }}
+        style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
         onPress={onClose}
       >
         <Animated.View
@@ -132,16 +102,16 @@ const MenuSheet = memo(({ visible, onClose, onInfo, onSettings, isLeader }: Menu
               onInfo();
             }}
             className="flex-row items-center px-4 py-3.5"
-            style={({ pressed }) => pressed && { backgroundColor: COLORS.pressed }}
+            style={({ pressed }) => pressed && { backgroundColor: communityColors.pressed }}
           >
-            <Info size={20} color={COLORS.iconGrey} />
-            <Text className="text-[16px] ml-3" style={{ color: COLORS.textPrimary }}>
+            <Info size={20} color={communityColors.text.tertiary} />
+            <Text className="text-[16px] ml-3" style={{ color: communityColors.text.primary }}>
               {t('communities.info.title', 'Community Info')}
             </Text>
           </Pressable>
 
           {/* Divider */}
-          <View className="h-px mx-4" style={{ backgroundColor: COLORS.divider }} />
+          <View className="h-px mx-4" style={{ backgroundColor: communityColors.divider }} />
 
           {/* Community Settings - only for leaders */}
           {isLeader && (
@@ -152,10 +122,10 @@ const MenuSheet = memo(({ visible, onClose, onInfo, onSettings, isLeader }: Menu
                 onSettings();
               }}
               className="flex-row items-center px-4 py-3.5"
-              style={({ pressed }) => pressed && { backgroundColor: COLORS.pressed }}
+              style={({ pressed }) => pressed && { backgroundColor: communityColors.pressed }}
             >
-              <Settings size={20} color={COLORS.iconGrey} />
-              <Text className="text-[16px] ml-3" style={{ color: COLORS.textPrimary }}>
+              <Settings size={20} color={communityColors.text.tertiary} />
+              <Text className="text-[16px] ml-3" style={{ color: communityColors.text.primary }}>
                 {t('communities.settings', 'Community Settings')}
               </Text>
             </Pressable>
@@ -231,22 +201,21 @@ const ThreadItem = memo(({ thread, onPress, isAnnouncement = false }: ThreadItem
   return (
     <Pressable
       onPress={onPress}
-      className="flex-row px-4 bg-white"
+      className="flex-row px-5 py-3.5 min-h-[80px] items-start bg-white"
       style={({ pressed }) => [
-        { minHeight: 88, paddingVertical: 14, alignItems: 'flex-start' },
-        pressed && Platform.OS === 'ios' ? { backgroundColor: COLORS.pressed } : undefined,
+        pressed && Platform.OS === 'ios' ? { backgroundColor: communityColors.pressed } : undefined,
       ]}
       android_ripple={{ color: 'rgba(0,0,0,0.1)' }}
     >
       {/* Avatar - 56px */}
-      <View style={{ marginRight: 12 }}>
+      <View className="mr-3">
         {isAnnouncement ? (
           // Announcement icon - green megaphone in circle
           <View
             className="w-[56px] h-[56px] rounded-full items-center justify-center"
             style={{ backgroundColor: '#DCF8C6' }}
           >
-            <Volume2 size={28} color={COLORS.primaryDark} />
+            <Volume2 size={28} color={communityColors.dark} />
           </View>
         ) : thread.cover_image ? (
           <Image
@@ -269,12 +238,12 @@ const ThreadItem = memo(({ thread, onPress, isAnnouncement = false }: ThreadItem
       </View>
 
       {/* Content - top aligned */}
-      <View className="flex-1 border-b" style={{ borderBottomColor: COLORS.divider, paddingBottom: 14 }}>
+      <View className="flex-1 border-b" style={{ borderBottomColor: communityColors.divider, paddingBottom: 14 }}>
         <View className="flex-row justify-between items-start">
           {/* Name */}
           <Text
             className={`flex-1 text-[17px] mr-2 ${hasUnread ? 'font-semibold' : 'font-normal'}`}
-            style={{ color: COLORS.textPrimary }}
+            style={{ color: communityColors.text.primary }}
             numberOfLines={1}
           >
             {thread.name}
@@ -282,7 +251,7 @@ const ThreadItem = memo(({ thread, onPress, isAnnouncement = false }: ThreadItem
           {/* Date */}
           <Text
             className="text-[13px]"
-            style={{ color: hasUnread ? COLORS.primaryDark : COLORS.textSecondary }}
+            style={{ color: hasUnread ? communityColors.dark : communityColors.text.secondary }}
           >
             {formatDate(thread.last_message?.created_at)}
           </Text>
@@ -291,7 +260,7 @@ const ThreadItem = memo(({ thread, onPress, isAnnouncement = false }: ThreadItem
         <View className="flex-row justify-between items-start mt-1">
           <Text
             className="flex-1 text-[15px] leading-[20px]"
-            style={{ color: COLORS.textSecondary }}
+            style={{ color: communityColors.text.secondary }}
             numberOfLines={2}
           >
             {senderName ? (
@@ -307,7 +276,7 @@ const ThreadItem = memo(({ thread, onPress, isAnnouncement = false }: ThreadItem
           {hasUnread && (
             <View
               className="ml-2 min-w-[20px] h-[20px] rounded-full items-center justify-center px-1.5"
-              style={{ backgroundColor: COLORS.unreadBadge }}
+              style={{ backgroundColor: communityColors.mentionBadge }}
             >
               <Text className="text-[12px] font-bold text-white">
                 {(thread.unread_count ?? 0) > 99 ? '99+' : thread.unread_count}
@@ -327,8 +296,8 @@ ThreadItem.displayName = 'ThreadItem';
 // =============================================================================
 
 const SectionHeader = memo(({ title }: { title: string }) => (
-  <View style={{ paddingHorizontal: 16, paddingVertical: 10, backgroundColor: COLORS.background }}>
-    <Text style={{ fontSize: 15, fontWeight: '600', color: COLORS.textSecondary }}>
+  <View className="px-5 py-2.5 bg-white">
+    <Text className="text-[15px] font-semibold" style={{ color: communityColors.text.secondary }}>
       {title}
     </Text>
   </View>
@@ -345,15 +314,15 @@ const LoadingSkeleton = memo(() => {
 
   return (
     <View className="flex-1 bg-white">
-      <StatusBar barStyle="dark-content" backgroundColor={COLORS.headerBg} />
-      <View style={{ paddingTop: insets.top, backgroundColor: COLORS.headerBg }}>
+      <StatusBar barStyle="dark-content" backgroundColor={communityColors.background.surface} />
+      <View style={{ paddingTop: insets.top, backgroundColor: communityColors.background.surface }}>
         {/* Header skeleton */}
-        <View className="flex-row items-center justify-between px-4 py-2">
+        <View className="flex-row items-center justify-between px-5 py-2">
           <View className="w-8 h-8 rounded" style={{ backgroundColor: '#E0E0E0' }} />
           <View className="w-8 h-8 rounded" style={{ backgroundColor: '#E0E0E0' }} />
         </View>
         {/* Community info skeleton */}
-        <View className="flex-row items-center px-4 py-4">
+        <View className="flex-row items-center px-5 py-4">
           <View className="w-[60px] h-[60px] rounded-2xl mr-3" style={{ backgroundColor: '#E0E0E0' }} />
           <View className="flex-1">
             <View className="h-7 w-48 rounded mb-2" style={{ backgroundColor: '#E0E0E0' }} />
@@ -366,27 +335,16 @@ const LoadingSkeleton = memo(() => {
         <Animated.View
           key={i}
           entering={FadeIn.delay(i * 80).duration(300)}
-          style={{
-            flexDirection: 'row',
-            alignItems: 'flex-start',
-            paddingHorizontal: 16,
-            paddingVertical: 14,
-            minHeight: 88,
-          }}
+          className="flex-row items-start px-5 py-3.5 min-h-[80px]"
         >
           <View
-            style={{
-              width: 56,
-              height: 56,
-              borderRadius: 28,
-              marginRight: 12,
-              backgroundColor: COLORS.surface,
-            }}
+            className="w-[56px] h-[56px] rounded-full mr-3"
+            style={{ backgroundColor: communityColors.background.surface }}
           />
-          <View style={{ flex: 1, paddingBottom: 14 }}>
-            <View style={{ height: 16, width: '75%', borderRadius: 4, marginBottom: 8, backgroundColor: COLORS.surface }} />
-            <View style={{ height: 12, width: '100%', borderRadius: 4, marginBottom: 4, backgroundColor: COLORS.surface }} />
-            <View style={{ height: 12, width: '66%', borderRadius: 4, backgroundColor: COLORS.surface }} />
+          <View className="flex-1 pb-3.5">
+            <View className="h-4 w-3/4 rounded mb-2" style={{ backgroundColor: communityColors.background.surface }} />
+            <View className="h-3 w-full rounded mb-1" style={{ backgroundColor: communityColors.background.surface }} />
+            <View className="h-3 w-2/3 rounded" style={{ backgroundColor: communityColors.background.surface }} />
           </View>
         </Animated.View>
       ))}
@@ -470,11 +428,11 @@ function CommunityThreadsScreen() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.headerBg }} edges={['top']}>
-      <StatusBar barStyle="dark-content" backgroundColor={COLORS.headerBg} />
+    <SafeAreaView style={{ flex: 1, backgroundColor: communityColors.background.surface }} edges={['top']}>
+      <StatusBar barStyle="dark-content" backgroundColor={communityColors.background.surface} />
 
       {/* Header - Light grey background */}
-      <View style={{ backgroundColor: COLORS.headerBg }}>
+      <View style={{ backgroundColor: communityColors.background.surface }}>
         {/* Navigation bar */}
         <View className="flex-row items-center justify-between px-2 h-11">
           {/* Back button */}
@@ -483,7 +441,7 @@ function CommunityThreadsScreen() {
             className="w-10 h-10 items-center justify-center"
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <ChevronLeft size={28} color={COLORS.textPrimary} strokeWidth={1.5} />
+            <ChevronLeft size={28} color={communityColors.text.primary} strokeWidth={1.5} />
           </Pressable>
 
           {/* Menu button */}
@@ -492,7 +450,7 @@ function CommunityThreadsScreen() {
             className="w-10 h-10 items-center justify-center"
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <MoreHorizontal size={24} color={COLORS.textPrimary} />
+            <MoreHorizontal size={24} color={communityColors.text.primary} />
           </Pressable>
         </View>
 
@@ -523,14 +481,14 @@ function CommunityThreadsScreen() {
             {/* Community Name - Bold and larger */}
             <Text
               className="text-[22px] font-bold"
-              style={{ color: COLORS.textPrimary }}
+              style={{ color: communityColors.text.primary }}
               numberOfLines={2}
             >
               {community?.name || 'Community'}
             </Text>
 
             {/* "Community" subtitle - light grey */}
-            <Text className="text-[14px] mt-0.5" style={{ color: COLORS.textSecondary }}>
+            <Text className="text-[14px] mt-0.5" style={{ color: communityColors.text.secondary }}>
               {t('communities.community', 'Community')}
             </Text>
           </View>
@@ -545,8 +503,8 @@ function CommunityThreadsScreen() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={handleRefresh}
-              tintColor={COLORS.primary}
-              colors={[COLORS.primary]}
+              tintColor={communityColors.accent}
+              colors={[communityColors.accent]}
             />
           }
           contentContainerStyle={{ paddingTop: 12, paddingBottom: 20 }}
@@ -584,17 +542,13 @@ function CommunityThreadsScreen() {
         {/* Add Group Button - Gluestack Button at bottom */}
         <SafeAreaView edges={['bottom']} style={{ backgroundColor: '#FFFFFF' }}>
           <View
-            style={{
-              paddingHorizontal: 16,
-              paddingVertical: 12,
-              borderTopWidth: 0.5,
-              borderTopColor: COLORS.divider,
-            }}
+            className="px-5 py-3 border-t-[0.5px]"
+            style={{ borderTopColor: communityColors.divider }}
           >
             <Button
               size="lg"
               className="rounded-full"
-              style={{ backgroundColor: COLORS.primary }}
+              style={{ backgroundColor: communityColors.accent }}
               onPress={handleAddGroup}
             >
               <ButtonIcon as={Plus} size="md" className="mr-2" />

@@ -121,6 +121,17 @@ const AvailabilityPage = lazy(() => import("./pages/Counseling/Availability"));
 const AppointmentsListPage = lazy(() => import("./pages/Counseling/Appointments"));
 const AppointmentDetailPage = lazy(() => import("./pages/Counseling/AppointmentDetail"));
 
+// Request Forms pages (Member Care)
+const RequestFormsDashboard = lazy(() => import("./pages/RequestForms/index"));
+const AcceptJesusList = lazy(() => import("./pages/RequestForms/AcceptJesusList"));
+const AcceptJesusDetail = lazy(() => import("./pages/RequestForms/AcceptJesusDetail"));
+const BaptismList = lazy(() => import("./pages/RequestForms/BaptismList"));
+const BaptismDetail = lazy(() => import("./pages/RequestForms/BaptismDetail"));
+const ChildDedicationList = lazy(() => import("./pages/RequestForms/ChildDedicationList"));
+const ChildDedicationDetail = lazy(() => import("./pages/RequestForms/ChildDedicationDetail"));
+const HolyMatrimonyList = lazy(() => import("./pages/RequestForms/HolyMatrimonyList"));
+const HolyMatrimonyDetail = lazy(() => import("./pages/RequestForms/HolyMatrimonyDetail"));
+
 // Kiosk pages
 const ChurchSelector = lazy(() => import("./components/Kiosk/ChurchSelector"));
 const KioskHome = lazy(() => import("./pages/Kiosk/KioskHome"));
@@ -130,6 +141,12 @@ const CounselingKiosk = lazy(() => import("./pages/Kiosk/CounselingAppointment")
 const JoinGroupKiosk = lazy(() => import("./pages/Kiosk/JoinGroup"));
 const ProfileUpdateKiosk = lazy(() => import("./pages/Kiosk/ProfileUpdate"));
 const EventCheckinKiosk = lazy(() => import("./pages/Kiosk/EventCheckin"));
+
+// Kiosk pages - Member Care Request Forms
+const AcceptJesusKiosk = lazy(() => import("./pages/Kiosk/AcceptJesus"));
+const BaptismKiosk = lazy(() => import("./pages/Kiosk/Baptism"));
+const ChildDedicationKiosk = lazy(() => import("./pages/Kiosk/ChildDedication"));
+const HolyMatrimonyKiosk = lazy(() => import("./pages/Kiosk/HolyMatrimony"));
 
 // System pages
 const UserManagement = lazy(() => import("./pages/System/UserManagement"));
@@ -161,6 +178,12 @@ function App() {
             <Route path="/kiosk/groups/join" element={<JoinGroupKiosk />} />
             <Route path="/kiosk/profile/update" element={<ProfileUpdateKiosk />} />
             <Route path="/kiosk/checkin" element={<EventCheckinKiosk />} />
+
+            {/* Kiosk - Member Care Request Forms */}
+            <Route path="/kiosk/accept-jesus" element={<AcceptJesusKiosk />} />
+            <Route path="/kiosk/baptism" element={<BaptismKiosk />} />
+            <Route path="/kiosk/child-dedication" element={<ChildDedicationKiosk />} />
+            <Route path="/kiosk/holy-matrimony" element={<HolyMatrimonyKiosk />} />
 
             {/* Protected Admin Routes */}
             <Route
@@ -240,6 +263,17 @@ function App() {
               <Route path="counseling/availability" element={<AvailabilityPage />} />
               <Route path="counseling/appointments" element={<AppointmentsListPage />} />
               <Route path="counseling/appointments/:appointmentId" element={<AppointmentDetailPage />} />
+
+              {/* Request Forms Routes (Member Care) */}
+              <Route path="request-forms" element={<RequestFormsDashboard />} />
+              <Route path="request-forms/accept-jesus" element={<AcceptJesusList />} />
+              <Route path="request-forms/accept-jesus/:id" element={<AcceptJesusDetail />} />
+              <Route path="request-forms/baptism" element={<BaptismList />} />
+              <Route path="request-forms/baptism/:id" element={<BaptismDetail />} />
+              <Route path="request-forms/child-dedication" element={<ChildDedicationList />} />
+              <Route path="request-forms/child-dedication/:id" element={<ChildDedicationDetail />} />
+              <Route path="request-forms/holy-matrimony" element={<HolyMatrimonyList />} />
+              <Route path="request-forms/holy-matrimony/:id" element={<HolyMatrimonyDetail />} />
 
               {/* Content Center Routes (formerly Explore) */}
               {/* Overview */}

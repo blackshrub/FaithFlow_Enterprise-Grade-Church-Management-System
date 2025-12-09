@@ -26,37 +26,37 @@ import { MessageStatusIndicator } from './ChatOptimizations';
 import { PollCard, Poll } from '@/components/communities/PollCard';
 
 import type { CommunityMessage } from '@/types/communities';
+import { communityColors, colors } from '@/constants/theme';
 
 // =============================================================================
-// DESIGN TOKENS - World-Class UI/UX Standards
+// DESIGN TOKENS - Chat-specific semantic aliases to communityColors
 // =============================================================================
 
-// Message bubble colors
-const COLORS = {
+const CHAT_COLORS = {
   // Bubble backgrounds
-  outgoing: '#DCF8C6', // WhatsApp light green
-  incoming: '#FFFFFF',
+  outgoing: communityColors.bubble.outgoing,
+  incoming: communityColors.bubble.incoming,
 
   // Text colors
-  textPrimary: '#1A1A1A',
-  textSecondary: '#5E5E5E',
-  textMeta: '#667781', // WhatsApp's timestamp gray
-  textSenderName: '#06CF9C', // WhatsApp teal for sender names
+  textPrimary: communityColors.text.primary,
+  textSecondary: communityColors.text.secondary,
+  textMeta: communityColors.text.tertiary,
+  textSenderName: communityColors.text.senderName,
 
   // Status colors
-  statusRead: '#53BDEB', // WhatsApp blue ticks
+  statusRead: communityColors.status.read,
 
   // UI elements
-  replyBorder: '#06CF9C',
+  replyBorder: communityColors.text.senderName,
   replyBackground: 'rgba(6, 207, 156, 0.08)',
-  deletedBackground: '#F5F6F6',
-  reactionBadge: '#FFFFFF',
-  reactionBadgeBorder: '#E9EDEF',
+  deletedBackground: communityColors.background.surface,
+  reactionBadge: colors.white,
+  reactionBadgeBorder: communityColors.border,
 
   // Media
   overlay: 'rgba(0, 0, 0, 0.4)',
   playButton: 'rgba(255, 255, 255, 0.95)',
-  documentBg: '#F0F2F5',
+  documentBg: communityColors.background.surface,
 };
 
 // Bubble dimensions
@@ -191,9 +191,9 @@ export const MessageBubble = React.memo(
         <View className={`my-0.5 px-3 ${isOwnMessage ? 'items-end' : 'items-start'}`}>
           <View
             className={`px-3.5 py-2.5 rounded-[18px] border border-gray-200 ${isOwnMessage ? 'rounded-br-[4px]' : 'rounded-bl-[4px]'}`}
-            style={{ backgroundColor: COLORS.deletedBackground }}
+            style={{ backgroundColor: CHAT_COLORS.deletedBackground }}
           >
-            <Text className="text-[15px] italic" style={{ color: COLORS.textSecondary }}>
+            <Text className="text-[15px] italic" style={{ color: CHAT_COLORS.textSecondary }}>
               {isOwnMessage
                 ? t('chat.youDeletedMessage', 'You deleted this message')
                 : t('chat.messageDeleted', 'This message was deleted')}
@@ -208,7 +208,7 @@ export const MessageBubble = React.memo(
       return (
         <View className={`my-0.5 px-3 ${isOwnMessage ? 'items-end' : 'items-start'}`}>
           {showSender && !isOwnMessage && message.sender && (
-            <Text className="text-[13px] font-semibold tracking-wide ml-2 mb-1" style={{ color: COLORS.textSenderName }}>
+            <Text className="text-[13px] font-semibold tracking-wide ml-2 mb-1" style={{ color: CHAT_COLORS.textSenderName }}>
               {message.sender.name}
             </Text>
           )}
@@ -236,7 +236,7 @@ export const MessageBubble = React.memo(
         <View className="max-w-[82%]">
           {/* Sender name for group chats */}
           {showSender && !isOwnMessage && message.sender && (
-            <Text className="text-[13px] font-semibold tracking-wide ml-2 mb-1" style={{ color: COLORS.textSenderName }}>
+            <Text className="text-[13px] font-semibold tracking-wide ml-2 mb-1" style={{ color: CHAT_COLORS.textSenderName }}>
               {message.sender.name}
             </Text>
           )}
@@ -246,14 +246,14 @@ export const MessageBubble = React.memo(
             <Pressable
               onPress={handleReplyPreviewTap}
               className={`flex-row rounded-lg mb-1 overflow-hidden ${isOwnMessage ? 'bg-black/5' : ''}`}
-              style={!isOwnMessage ? { backgroundColor: COLORS.replyBackground } : undefined}
+              style={!isOwnMessage ? { backgroundColor: CHAT_COLORS.replyBackground } : undefined}
             >
-              <View className="w-1" style={{ backgroundColor: COLORS.replyBorder }} />
+              <View className="w-1" style={{ backgroundColor: CHAT_COLORS.replyBorder }} />
               <View className="flex-1 py-2 px-3">
-                <Text className="text-[13px] font-semibold mb-0.5" style={{ color: COLORS.replyBorder }}>
+                <Text className="text-[13px] font-semibold mb-0.5" style={{ color: CHAT_COLORS.replyBorder }}>
                   {message.reply_to.sender_name}
                 </Text>
-                <Text className="text-[13px] leading-[17px]" style={{ color: COLORS.textSecondary }} numberOfLines={1}>
+                <Text className="text-[13px] leading-[17px]" style={{ color: CHAT_COLORS.textSecondary }} numberOfLines={1}>
                   {message.reply_to.preview}
                 </Text>
               </View>
@@ -264,7 +264,7 @@ export const MessageBubble = React.memo(
           <View
             className={`px-3.5 py-2.5 rounded-[18px] ${isOwnMessage ? 'rounded-br-[4px]' : 'rounded-bl-[4px]'}`}
             style={[
-              { backgroundColor: isOwnMessage ? COLORS.outgoing : COLORS.incoming },
+              { backgroundColor: isOwnMessage ? CHAT_COLORS.outgoing : CHAT_COLORS.incoming },
               Platform.select({
                 ios: {
                   shadowColor: '#000',
@@ -311,13 +311,13 @@ export const MessageBubble = React.memo(
                 />
                 <View
                   className="absolute inset-0 items-center justify-center rounded-xl"
-                  style={{ backgroundColor: COLORS.overlay }}
+                  style={{ backgroundColor: CHAT_COLORS.overlay }}
                 >
                   <View
                     className="w-14 h-14 rounded-full items-center justify-center"
-                    style={{ backgroundColor: COLORS.playButton }}
+                    style={{ backgroundColor: CHAT_COLORS.playButton }}
                   >
-                    <Play size={24} color="#1A1A1A" style={{ marginLeft: 4 }} />
+                    <Play size={24} color={CHAT_COLORS.textPrimary} style={{ marginLeft: 4 }} />
                   </View>
                 </View>
               </Pressable>
@@ -347,21 +347,21 @@ export const MessageBubble = React.memo(
                   }
                 }}
                 className={`flex-row items-center rounded-lg p-3 mb-1 ${isOwnMessage ? 'bg-black/5' : ''}`}
-                style={!isOwnMessage ? { backgroundColor: COLORS.documentBg } : undefined}
+                style={!isOwnMessage ? { backgroundColor: CHAT_COLORS.documentBg } : undefined}
               >
                 <View className="w-11 h-11 rounded-full bg-white items-center justify-center mr-3">
-                  <FileText size={24} color="#06CF9C" />
+                  <FileText size={24} color={CHAT_COLORS.textSenderName} />
                 </View>
                 <View className="flex-1">
-                  <Text className="text-sm font-medium mb-0.5" style={{ color: COLORS.textPrimary }} numberOfLines={1}>
+                  <Text className="text-sm font-medium mb-0.5" style={{ color: CHAT_COLORS.textPrimary }} numberOfLines={1}>
                     {message.media.file_name || t('chat.document', 'Document')}
                   </Text>
-                  <Text className="text-xs" style={{ color: COLORS.textSecondary }}>
+                  <Text className="text-xs" style={{ color: CHAT_COLORS.textSecondary }}>
                     {formatFileSize(message.media.file_size)}
                   </Text>
                 </View>
                 <View className="w-9 h-9 rounded-full items-center justify-center">
-                  <Download size={20} color="#5E5E5E" />
+                  <Download size={20} color={CHAT_COLORS.textSecondary} />
                 </View>
               </Pressable>
             )}
@@ -395,7 +395,7 @@ export const MessageBubble = React.memo(
 
             {/* Text content */}
             {message.text && (
-              <WhatsAppText className="text-base leading-[22px] tracking-[0.1px]" style={{ color: COLORS.textPrimary }}>
+              <WhatsAppText className="text-base leading-[22px] tracking-[0.1px]" style={{ color: CHAT_COLORS.textPrimary }}>
                 {message.text}
               </WhatsAppText>
             )}
@@ -414,11 +414,11 @@ export const MessageBubble = React.memo(
             {/* Timestamp and status */}
             <View className="flex-row justify-end items-center mt-1 gap-1">
               {message.is_edited && (
-                <Text className="text-[11px] mr-1" style={{ color: COLORS.textMeta }}>
+                <Text className="text-[11px] mr-1" style={{ color: CHAT_COLORS.textMeta }}>
                   {t('chat.edited', 'edited')}
                 </Text>
               )}
-              <Text className="text-[11px]" style={{ color: COLORS.textMeta }}>
+              <Text className="text-[11px]" style={{ color: CHAT_COLORS.textMeta }}>
                 {formatTime(message.created_at)}
               </Text>
               {isOwnMessage && (
@@ -446,8 +446,8 @@ export const MessageBubble = React.memo(
                   className="flex-row items-center px-2 py-1 rounded-xl border"
                   style={[
                     {
-                      backgroundColor: COLORS.reactionBadge,
-                      borderColor: COLORS.reactionBadgeBorder,
+                      backgroundColor: CHAT_COLORS.reactionBadge,
+                      borderColor: CHAT_COLORS.reactionBadgeBorder,
                     },
                     Platform.select({
                       ios: {
@@ -462,7 +462,7 @@ export const MessageBubble = React.memo(
                 >
                   <Text className="text-base">{emoji}</Text>
                   {memberIds.length > 1 && (
-                    <Text className="text-xs font-medium ml-1" style={{ color: COLORS.textSecondary }}>
+                    <Text className="text-xs font-medium ml-1" style={{ color: CHAT_COLORS.textSecondary }}>
                       {memberIds.length}
                     </Text>
                   )}

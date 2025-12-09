@@ -72,18 +72,23 @@ export const LIST_ITEM_DURATION = 220;
  * Hook for Today-style header mount animation.
  * Provides smooth fade-in with subtle translateY.
  *
+ * @param skip - If true, skips animation and starts at final state (for revisits)
  * @returns mounted - SharedValue for animation progress
  * @returns headerEnterStyle - AnimatedStyle to apply to header content wrapper
  */
-export const useTodayHeaderMotion = () => {
-  const mounted = useSharedValue(0);
+export const useTodayHeaderMotion = (skip = false) => {
+  // Start at final state if skipping animation
+  const mounted = useSharedValue(skip ? 1 : 0);
 
   useEffect(() => {
+    // Skip animation if already visited
+    if (skip) return;
+
     mounted.value = withTiming(1, {
       duration: HEADER_ENTER_DURATION,
       easing: HEADER_ENTER_EASING,
     });
-  }, [mounted]);
+  }, [mounted, skip]);
 
   const headerEnterStyle = useAnimatedStyle(() => ({
     opacity: mounted.value,
@@ -198,25 +203,26 @@ export const useEventsCollapsibleHeader = (
   });
 
   // Stats row with delayed opacity fade
+  // Height: icon (36px) + padding (10px * 2) = 56px
   const statsRowAnimatedStyle = useAnimatedStyle(() => ({
     // Delayed opacity: stays visible until 30% collapse, then fades
     opacity: interpolate(collapse.value, [0, 0.3, 1], [1, 1, 0], 'clamp'),
-    height: interpolate(collapse.value, [0, 1], [72, 0], 'clamp'),
-    marginBottom: interpolate(collapse.value, [0, 1], [spacing.m, 0], 'clamp'),
+    height: interpolate(collapse.value, [0, 1], [56, 0], 'clamp'),
+    marginBottom: interpolate(collapse.value, [0, 1], [spacing.sm, 0], 'clamp'),
     overflow: 'hidden' as const,
   }));
 
   // Header top row animated style
   const headerTopAnimatedStyle = useAnimatedStyle(() => ({
-    marginBottom: interpolate(collapse.value, [0, 1], [spacing.m, 0], 'clamp'),
+    marginBottom: interpolate(collapse.value, [0, 1], [spacing.sm, 0], 'clamp'),
   }));
 
-  // Header padding animated style
+  // Header padding animated style (reduced bottom padding for uniform look)
   const headerPaddingAnimatedStyle = useAnimatedStyle(() => ({
     paddingBottom: interpolate(
       collapse.value,
       [0, 1],
-      [spacing.l, spacing.s],
+      [spacing.m, spacing.s],
       'clamp'
     ),
   }));

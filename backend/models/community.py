@@ -120,8 +120,16 @@ class Community(CommunityBase):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()), description="Unique ID")
     church_id: str = Field(..., description="Church ID")
     member_count: int = Field(0, description="Cached member count")
+    members_count: Optional[int] = Field(None, description="Computed: member count (alias for aggregation)")
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+    # Computed fields for mobile endpoints (from aggregation)
+    my_role: Optional[str] = Field(None, description="Computed: current user's role in community")
+    joined_at: Optional[datetime] = Field(None, description="Computed: when current user joined")
+    notifications_enabled: Optional[bool] = Field(None, description="Computed: user's notification setting")
+    muted_until: Optional[datetime] = Field(None, description="Computed: when mute expires")
+    unread_count: Optional[int] = Field(None, description="Computed: unread message count for user")
 
     class Config:
         json_schema_extra = {

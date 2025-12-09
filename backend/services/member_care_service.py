@@ -489,6 +489,10 @@ class MemberCareService:
             "member_id": person_data.member_id,
         }
 
+        # Include photo_url if passed
+        if hasattr(person_data, "photo_url") and person_data.photo_url:
+            person_dict["photo_url"] = person_data.photo_url
+
         if include_baptized:
             person_dict["is_baptized"] = person_data.is_baptized or False
 
@@ -561,6 +565,8 @@ class MemberCareService:
             if member:
                 member.pop("_id", None)
                 request["member_info"] = member
+                # Add photo_url at top level for frontend convenience
+                request["member_photo"] = member.get("photo_url") or member.get("photo_thumbnail_url")
 
         # Get assigned staff info
         if request.get("assigned_to_user_id"):
@@ -572,6 +578,32 @@ class MemberCareService:
                 staff.pop("_id", None)
                 request["assigned_to_info"] = staff
 
+        # Enrich child_dedication_data with photos for father and mother
+        if request.get("child_dedication_data"):
+            cd_data = request["child_dedication_data"]
+            for person_key in ["father", "mother"]:
+                person = cd_data.get(person_key)
+                if person and person.get("member_id") and not person.get("photo_url"):
+                    member = await self.db.members.find_one(
+                        {"id": person["member_id"]},
+                        {"photo_url": 1, "photo_thumbnail_url": 1}
+                    )
+                    if member:
+                        person["photo_url"] = member.get("photo_url") or member.get("photo_thumbnail_url")
+
+        # Enrich holy_matrimony_data with photos for person_a and person_b
+        if request.get("holy_matrimony_data"):
+            hm_data = request["holy_matrimony_data"]
+            for person_key in ["person_a", "person_b"]:
+                person = hm_data.get(person_key)
+                if person and person.get("member_id") and not person.get("photo_url"):
+                    member = await self.db.members.find_one(
+                        {"id": person["member_id"]},
+                        {"photo_url": 1, "photo_thumbnail_url": 1}
+                    )
+                    if member:
+                        person["photo_url"] = member.get("photo_url") or member.get("photo_thumbnail_url")
+
         return request
 
     async def _notify_staff(
@@ -579,43 +611,54 @@ class MemberCareService:
         church_id: str,
         request: Dict[str, Any],
     ) -> None:
-        """Send WhatsApp notification to staff about new request."""
+        """Send WhatsApp notification to church admin about new request."""
         try:
+            from services.whatsapp_service import send_member_care_confirmation
+
             # Get church settings for notification config
             church_settings = await self.db.church_settings.find_one(
                 {"church_id": church_id},
-                {"member_care_settings": 1, "church_name": 1}
+                {"member_care_settings": 1}
             )
 
-            if not church_settings:
-                return
-
-            member_care_settings = church_settings.get("member_care_settings", {})
+            member_care_settings = church_settings.get("member_care_settings", {}) if church_settings else {}
             if not member_care_settings.get("notify_on_new_request", True):
                 return
 
-            # Get recipient (default assigned user or church admin)
+            # Get church name
+            church = await self.db.churches.find_one(
+                {"id": church_id},
+                {"name": 1}
+            )
+            church_name = church.get("name", "Your Church") if church else "Your Church"
+
+            # Get all church admins to notify
+            admin_phones = []
+
+            # 1. Get default assigned user if set
             recipient_user_id = member_care_settings.get("default_assigned_user_id")
-            if not recipient_user_id:
-                # Get church admin
-                admin = await self.db.users.find_one(
-                    {"church_id": church_id, "role": {"$in": ["admin", "super_admin"]}},
-                    {"id": 1, "phone": 1, "full_name": 1}
-                )
-                if admin and admin.get("phone"):
-                    recipient_phone = admin["phone"]
-                else:
-                    return
-            else:
+            if recipient_user_id:
                 staff = await self.db.users.find_one(
                     {"id": recipient_user_id},
                     {"phone": 1}
                 )
-                if not staff or not staff.get("phone"):
-                    return
-                recipient_phone = staff["phone"]
+                if staff and staff.get("phone"):
+                    admin_phones.append(staff["phone"])
 
-            # Build notification message
+            # 2. Always get church admin(s) as well
+            admin_cursor = self.db.users.find(
+                {"church_id": church_id, "role": {"$in": ["admin", "super_admin"]}},
+                {"phone": 1}
+            )
+            async for admin in admin_cursor:
+                if admin.get("phone") and admin["phone"] not in admin_phones:
+                    admin_phones.append(admin["phone"])
+
+            if not admin_phones:
+                logger.warning(f"No admin phones found for church {church_id}")
+                return
+
+            # Build request type label
             request_type_labels = {
                 "accept_jesus": "Accept Jesus / Komitmen",
                 "baptism": "Baptism / Baptisan",
@@ -623,24 +666,50 @@ class MemberCareService:
                 "holy_matrimony": "Holy Matrimony / Pernikahan",
             }
 
-            church_name = church_settings.get("church_name", "Church")
             request_type = request.get("request_type", "")
             type_label = request_type_labels.get(request_type, request_type)
             requester_name = request.get("full_name", "Unknown")
 
-            message = f"""*{church_name}*
-New Member Care Request
+            # Build details based on request type
+            details = ""
+            if request_type == "accept_jesus":
+                accept_data = request.get("accept_jesus_data", {})
+                details = f"Commitment: {accept_data.get('commitment_type', '-')}"
+            elif request_type == "baptism":
+                baptism_data = request.get("baptism_data", {})
+                details = f"Preferred Date: {baptism_data.get('preferred_date', 'Not specified')}"
+            elif request_type == "child_dedication":
+                child_data = request.get("child_dedication_data", {})
+                child = child_data.get("child", {})
+                details = f"Child: {child.get('name', '-')} ({child.get('gender', '-')})"
+            elif request_type == "holy_matrimony":
+                matrimony_data = request.get("holy_matrimony_data", {})
+                person_a = matrimony_data.get("person_a", {})
+                person_b = matrimony_data.get("person_b", {})
+                details = f"Couple: {person_a.get('name', '-')} & {person_b.get('name', '-')}"
 
-Type: {type_label}
-From: {requester_name}
-Phone: {request.get('phone', '-')}
+            variables = {
+                "church_name": church_name,
+                "request_type": type_label,
+                "requester_name": requester_name,
+                "requester_phone": request.get("phone", "-"),
+                "details": details,
+            }
 
-Please check the admin dashboard for details."""
-
-            # Import WhatsApp service and send
-            # Note: This will be implemented to use existing WhatsApp service
-            # For now, just log and mark as notified
-            logger.info(f"Would send WhatsApp notification to {recipient_phone}: {message[:100]}...")
+            # Send to all admin phones
+            for phone in admin_phones:
+                try:
+                    await send_member_care_confirmation(
+                        db=self.db,
+                        church_id=church_id,
+                        template_type=WhatsAppTemplateType.NEW_REQUEST_ADMIN_NOTIFICATION.value,
+                        phone_number=phone,
+                        variables=variables,
+                        language="id",  # Default to Indonesian for admin notifications
+                    )
+                    logger.info(f"Sent admin notification to {phone} for request {request['id']}")
+                except Exception as e:
+                    logger.error(f"Failed to send admin notification to {phone}: {e}")
 
             # Update request with notification status
             await self.db[self.COLLECTION_NAME].update_one(

@@ -10,16 +10,14 @@
  */
 
 import React, { memo } from 'react';
-import { View, ImageBackground, Pressable, Image } from 'react-native';
+import { View, ImageBackground, Pressable } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ExploreColors, ExploreShadows } from '@/constants/explore/designSystem';
 import type { BibleFigureOfTheDay } from '@/types/explore';
 import { User, BookOpen, ChevronRight } from 'lucide-react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { Text } from '@/components/ui/text';
-
-// Animated Image for shared element transitions (Reanimated 4+)
-const AnimatedImage = Animated.createAnimatedComponent(Image);
+import { AnimatedImage, sharedTags } from '@/utils/sharedTransitions';
 
 const CARD_HEIGHT = 200;
 
@@ -119,10 +117,6 @@ export const BibleFigureCard = memo(function BibleFigureCard({
   }
 
   // Full variant with image
-  // Uses Reanimated 4's sharedTransitionTag for smooth hero transitions
-  const imageTag = sharedTransitionTag ? `${sharedTransitionTag}-image` : undefined;
-  const nameTag = sharedTransitionTag ? `${sharedTransitionTag}-name` : undefined;
-
   return (
     <AnimatedPressable
       onPress={onPress}
@@ -132,12 +126,21 @@ export const BibleFigureCard = memo(function BibleFigureCard({
       style={[{ ...ExploreShadows.level2, height: CARD_HEIGHT }, animatedStyle]}
       testID="bible-figure-card"
     >
-      {/* Background Image with shared element transition */}
+      {/* Background Image - Shared Element Transition */}
       <AnimatedImage
         source={{ uri: imageUrl }}
-        className="absolute inset-0 w-full h-full rounded-2xl"
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          width: '100%',
+          height: '100%',
+          borderRadius: 16,
+        }}
         resizeMode="cover"
-        sharedTransitionTag={imageTag}
+        sharedTransitionTag={sharedTransitionTag || sharedTags.figureImage(figure.id)}
       />
 
       {/* Gradient Overlay */}
@@ -158,7 +161,6 @@ export const BibleFigureCard = memo(function BibleFigureCard({
               textShadowOffset: { width: 0, height: 1 },
               textShadowRadius: 3,
             }}
-            sharedTransitionTag={nameTag}
           >
             {name}
           </Animated.Text>

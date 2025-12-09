@@ -91,8 +91,8 @@ const COLORS = {
 function FloatingOrb({ delay = 0, size = 200, top, left, opacity = 0.15 }: {
   delay?: number;
   size?: number;
-  top?: string | number;
-  left?: string | number;
+  top?: number;
+  left?: number;
   opacity?: number;
 }) {
   const animation = useSharedValue(0);

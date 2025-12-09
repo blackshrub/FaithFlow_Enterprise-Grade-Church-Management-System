@@ -108,6 +108,7 @@ const MemberSearchSelect = ({
       name: currentMember.full_name,
       phone: currentMember.phone_whatsapp || currentMember.phone || '',
       member_id: currentMember.id,
+      photo_url: currentMember.photo_url || '', // Include member's photo
       is_baptized: value?.is_baptized || false,
       mode: 'self',
     });

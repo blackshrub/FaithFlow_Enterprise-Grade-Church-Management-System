@@ -118,8 +118,8 @@ const QuestionIcons: Record<string, typeof Heart> = {
  * Floating Orb for background ambiance
  */
 function FloatingOrb({ top, left, size = 200, opacity = 0.1 }: {
-  top?: string | number;
-  left?: string | number;
+  top?: number;
+  left?: number;
   size?: number;
   opacity?: number;
 }) {

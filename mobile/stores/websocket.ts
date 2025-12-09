@@ -53,8 +53,8 @@ interface WebSocketStore {
   // Internal
   _ws: WebSocket | null;
   _reconnectAttempt: number;
-  _reconnectTimeout: NodeJS.Timeout | null;
-  _heartbeatInterval: NodeJS.Timeout | null;
+  _reconnectTimeout: ReturnType<typeof setTimeout> | null;
+  _heartbeatInterval: ReturnType<typeof setInterval> | null;
 
   // Actions
   connect: () => void;
@@ -66,7 +66,7 @@ interface WebSocketStore {
   _handleOpen: () => void;
   _handleMessage: (event: WebSocketMessageEvent) => void;
   _handleClose: (event: WebSocketCloseEvent) => void;
-  _handleError: (event: WebSocketErrorEvent) => void;
+  _handleError: (event: Event) => void;
   _cleanup: () => void;
   _scheduleReconnect: () => void;
 }
@@ -205,7 +205,7 @@ export const useWebSocketStore = create<WebSocketStore>()(
     },
 
     _handleError: (event) => {
-      console.error('[WS] Error:', event.message);
+      console.error('[WS] Error:', event);
       // onclose will be called after error
     },
 

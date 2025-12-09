@@ -1,10 +1,12 @@
 /**
- * EventsHeader - Gradient Header with Stats & Tabs
+ * EventsHeader - Gradient Header with Clickable Stat Cards
  *
  * Premium gradient header extracted from Events screen.
+ * Standardized to match Explore screen header for consistent UX.
+ *
  * Features:
  * - Collapsible stats row on scroll (using shared today-motion)
- * - Tab navigation (upcoming, my RSVPs, attended)
+ * - Clickable stat cards that filter events
  * - Calendar button
  * - Shared motion architecture with TodayScreen
  *
@@ -18,18 +20,14 @@ import Animated, { type SharedValue } from 'react-native-reanimated';
 import { Calendar, CalendarDays, Heart, CheckCircle } from 'lucide-react-native';
 import type { TFunction } from 'i18next';
 
-import { spacing } from '@/constants/spacing';
 import {
   useTodayHeaderMotion,
-  useEventsCollapsibleHeader,
+  useTodayCollapsibleHeader,
   todayListItemMotion,
 } from '@/components/motion/today-motion';
 
-// Local palette - for icon colors only
+// Local palette - matching Explore screen colors
 const Colors = {
-  gradient: {
-    start: '#1a1a2e',
-  },
   accent: {
     primary: '#d4af37',
   },
@@ -65,132 +63,175 @@ export const EventsHeader: React.FC<EventsHeaderProps> = React.memo(
     scrollY,
     focusKey = 0,
   }) => {
-    // 1) Shared header enter animation from today-motion
+    // Shared header enter animation from today-motion
     const { headerEnterStyle } = useTodayHeaderMotion();
 
-    // 2) Shared collapsible header from today-motion (Events-specific variant)
+    // Shared collapsible header from today-motion (same as Explore)
     const {
       statsRowAnimatedStyle,
-      headerTopAnimatedStyle,
+      greetingAnimatedStyle: titleRowAnimatedStyle,
       headerPaddingAnimatedStyle,
-    } = useEventsCollapsibleHeader(scrollY, spacing);
+    } = useTodayCollapsibleHeader(scrollY);
 
     return (
       <LinearGradient
         colors={['#1a1a2e', '#16213e', '#0f3460']}
         className="overflow-hidden"
-        style={{ paddingTop: topInset + 16 }}
+        style={{ paddingTop: topInset + 4 }}
       >
-        {/* Animated inner content only (no entering prop) */}
+        {/* Animated content wrapper - matching Explore pattern */}
         <Animated.View
           className="px-5"
-          style={[headerPaddingAnimatedStyle, headerEnterStyle]}
+          style={[headerEnterStyle, headerPaddingAnimatedStyle]}
         >
-          {/* Title + Calendar - stagger index 0 */}
+          {/* Title + Calendar - stagger index 0, matching Explore layout */}
           <Animated.View
             key={`header-top-${focusKey}`}
             entering={todayListItemMotion(0)}
-            className="flex-row justify-between items-start"
-            style={headerTopAnimatedStyle}
+            style={titleRowAnimatedStyle}
+            className="flex-row justify-between items-start mb-5"
           >
+            {/* Title section - matching Explore */}
             <View>
               <Text
-                className="text-[28px] font-bold text-white"
+                className="text-[32px] font-bold text-white mb-1"
                 style={{ letterSpacing: -0.5 }}
               >
                 {t('events.title')}
               </Text>
-              <Text className="text-[15px] text-white/70 mt-1">
-                {t('events.subtitle')}
-              </Text>
+              <View className="flex-row items-center gap-1.5">
+                <CalendarDays size={14} color={Colors.accent.primary} />
+                <Text className="text-[13px] text-white/60 font-medium">
+                  {t('events.subtitle')}
+                </Text>
+              </View>
             </View>
+
+            {/* Calendar button - matching Explore's language toggle style */}
             <Pressable
               onPress={onPressCalendar}
-              className="w-11 h-11 rounded-full bg-white/15 items-center justify-center active:scale-95 active:opacity-90"
+              className="flex-row items-center gap-2 bg-white/15 px-4 py-2.5 rounded-full active:scale-95 active:opacity-90 mt-1"
             >
-              <Calendar size={22} color={Colors.white} />
+              <Calendar size={16} color={Colors.white} />
             </Pressable>
           </Animated.View>
 
-          {/* Stats Row - collapsible - stagger index 1 */}
+          {/* Stats row - Collapsible, matching Explore's single-container style */}
           <Animated.View
             key={`stats-row-${focusKey}`}
             entering={todayListItemMotion(1)}
-            className="flex-row items-center rounded-2xl py-3 px-4 mb-4 border border-white/[0.08]"
-            style={[{ backgroundColor: 'rgba(255,255,255,0.08)' }, statsRowAnimatedStyle]}
+            style={statsRowAnimatedStyle}
+            className="flex-row items-center rounded-2xl py-4 px-6"
           >
-            <View className="flex-1 flex-row items-center gap-2">
+            {/* Background - matching Explore */}
+            <View
+              className="absolute inset-0 rounded-2xl"
+              style={{
+                backgroundColor: 'rgba(255,255,255,0.06)',
+                borderWidth: 1,
+                borderColor: 'rgba(255,255,255,0.08)',
+              }}
+            />
+
+            {/* Upcoming */}
+            <Pressable
+              onPress={() => onTabChange('upcoming')}
+              className="flex-1 flex-row items-center gap-2.5 active:scale-95 active:opacity-90"
+            >
               <View
-                className="w-9 h-9 rounded-[10px] items-center justify-center"
-                style={{ backgroundColor: 'rgba(212,175,55,0.2)' }}
+                className="w-10 h-10 rounded-xl items-center justify-center"
+                style={{
+                  backgroundColor: activeTab === 'upcoming'
+                    ? 'rgba(255,255,255,0.25)'
+                    : 'rgba(212,175,55,0.2)',
+                }}
               >
-                <CalendarDays size={18} color={Colors.accent.primary} />
+                <CalendarDays
+                  size={20}
+                  color={activeTab === 'upcoming' ? Colors.white : Colors.accent.primary}
+                />
               </View>
-              <View>
-                <Text className="text-[18px] font-bold text-white">{upcomingCount}</Text>
-                <Text className="text-[11px] text-white/60 font-medium">{t('events.upcoming')}</Text>
-              </View>
-            </View>
-
-            <View className="w-px h-7 bg-white/15 mx-2" />
-
-            <View className="flex-1 flex-row items-center gap-2">
-              <View
-                className="w-9 h-9 rounded-[10px] items-center justify-center"
-                style={{ backgroundColor: 'rgba(212,175,55,0.2)' }}
-              >
-                <Heart size={18} color={Colors.accent.primary} />
-              </View>
-              <View>
-                <Text className="text-[18px] font-bold text-white">{rsvpCount}</Text>
-                <Text className="text-[11px] text-white/60 font-medium">{t('events.myRSVPs')}</Text>
-              </View>
-            </View>
-
-            <View className="w-px h-7 bg-white/15 mx-2" />
-
-            <View className="flex-1 flex-row items-center gap-2">
-              <View
-                className="w-9 h-9 rounded-[10px] items-center justify-center"
-                style={{ backgroundColor: 'rgba(212,175,55,0.2)' }}
-              >
-                <CheckCircle size={18} color={Colors.accent.primary} />
-              </View>
-              <View>
-                <Text className="text-[18px] font-bold text-white">{attendedCount}</Text>
-                <Text className="text-[11px] text-white/60 font-medium">{t('events.attended')}</Text>
-              </View>
-            </View>
-          </Animated.View>
-
-          {/* Tabs - stagger index 2 */}
-          <Animated.View
-            key={`tabs-row-${focusKey}`}
-            entering={todayListItemMotion(2)}
-            className="flex-row gap-2"
-          >
-            {(['upcoming', 'my_rsvps', 'attended'] as EventsTab[]).map((tab) => {
-              const isActive = activeTab === tab;
-              return (
-                <Pressable
-                  key={tab}
-                  onPress={() => onTabChange(tab)}
-                  className={`flex-1 py-3 rounded-xl items-center ${
-                    isActive ? 'bg-white' : 'bg-white/10'
+              <View className="gap-0.5">
+                <Text className="text-[18px] font-bold text-white leading-tight">
+                  {upcomingCount}
+                </Text>
+                <Text
+                  className={`text-[11px] font-medium ${
+                    activeTab === 'upcoming' ? 'text-white/90' : 'text-white/60'
                   }`}
                 >
-                  <Text
-                    className={`text-[13px] font-semibold ${
-                      isActive ? 'text-[#1a1a2e]' : 'text-white/80'
-                    }`}
-                  >
-                    {tab === 'upcoming' && t('events.upcoming')}
-                    {tab === 'my_rsvps' && t('events.myRSVPs')}
-                    {tab === 'attended' && t('events.attended')}
-                  </Text>
-                </Pressable>
-              );
-            })}
+                  {t('events.upcoming')}
+                </Text>
+              </View>
+            </Pressable>
+
+            <View className="w-px h-8 bg-white/15 mx-2" />
+
+            {/* My RSVPs */}
+            <Pressable
+              onPress={() => onTabChange('my_rsvps')}
+              className="flex-1 flex-row items-center gap-2.5 active:scale-95 active:opacity-90"
+            >
+              <View
+                className="w-10 h-10 rounded-xl items-center justify-center"
+                style={{
+                  backgroundColor: activeTab === 'my_rsvps'
+                    ? 'rgba(255,255,255,0.25)'
+                    : 'rgba(212,175,55,0.2)',
+                }}
+              >
+                <Heart
+                  size={20}
+                  color={activeTab === 'my_rsvps' ? Colors.white : Colors.accent.primary}
+                />
+              </View>
+              <View className="gap-0.5">
+                <Text className="text-[18px] font-bold text-white leading-tight">
+                  {rsvpCount}
+                </Text>
+                <Text
+                  className={`text-[11px] font-medium ${
+                    activeTab === 'my_rsvps' ? 'text-white/90' : 'text-white/60'
+                  }`}
+                >
+                  {t('events.myRSVPs')}
+                </Text>
+              </View>
+            </Pressable>
+
+            <View className="w-px h-8 bg-white/15 mx-2" />
+
+            {/* Attended */}
+            <Pressable
+              onPress={() => onTabChange('attended')}
+              className="flex-1 flex-row items-center gap-2.5 active:scale-95 active:opacity-90"
+            >
+              <View
+                className="w-10 h-10 rounded-xl items-center justify-center"
+                style={{
+                  backgroundColor: activeTab === 'attended'
+                    ? 'rgba(255,255,255,0.25)'
+                    : 'rgba(212,175,55,0.2)',
+                }}
+              >
+                <CheckCircle
+                  size={20}
+                  color={activeTab === 'attended' ? Colors.white : Colors.accent.primary}
+                />
+              </View>
+              <View className="gap-0.5">
+                <Text className="text-[18px] font-bold text-white leading-tight">
+                  {attendedCount}
+                </Text>
+                <Text
+                  className={`text-[11px] font-medium ${
+                    activeTab === 'attended' ? 'text-white/90' : 'text-white/60'
+                  }`}
+                >
+                  {t('events.attended')}
+                </Text>
+              </View>
+            </Pressable>
           </Animated.View>
         </Animated.View>
       </LinearGradient>

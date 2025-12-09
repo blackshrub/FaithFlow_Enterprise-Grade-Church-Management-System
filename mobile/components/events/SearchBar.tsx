@@ -14,11 +14,13 @@ import { Search, X } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { Icon } from '@/components/ui/icon';
 import { colors } from '@/constants/theme';
-import { useEventFiltersStore } from '@/stores/eventFilters';
+import { useSearchTerm, useEventFilterActions } from '@/stores/eventFilters';
 
 export function SearchBar() {
   const { t } = useTranslation();
-  const { searchTerm, setSearchTerm } = useEventFiltersStore();
+  // Granular selectors for performance - prevents re-render on unrelated filter changes
+  const searchTerm = useSearchTerm();
+  const { setSearchTerm } = useEventFilterActions();
   const [localValue, setLocalValue] = useState(searchTerm);
   const isTypingRef = useRef(false);
 

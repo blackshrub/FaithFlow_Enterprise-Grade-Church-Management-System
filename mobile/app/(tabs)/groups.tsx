@@ -31,7 +31,7 @@ import Animated, {
   FadeOut,
   SlideInRight,
 } from 'react-native-reanimated';
-import { withPremiumMotionV10 } from '@/hoc';
+import { useFocusKey } from '@/hooks/useFocusAnimation';
 import {
   Search,
   X,
@@ -45,40 +45,11 @@ import { FlashList } from '@shopify/flash-list';
 import { Image } from 'expo-image';
 
 import { Icon } from '@/components/ui/icon';
+import { communityColors, colors } from '@/constants/theme';
 
 import { useMyCommunities, usePrefetchCommunity } from '@/hooks/useCommunities';
 import { useAuthStore } from '@/stores/auth';
 import type { CommunityWithStatus } from '@/types/communities';
-
-// =============================================================================
-// DESIGN TOKENS - World-Class UI/UX Standards
-// =============================================================================
-
-// Brand Colors (WhatsApp-inspired but distinctive)
-const COLORS = {
-  // Primary brand
-  primary: '#075E54',
-  primaryLight: '#128C7E',
-  accent: '#25D366',
-  accentBlue: '#34B7F1',
-
-  // Neutrals - iOS/Android optimized
-  white: '#FFFFFF',
-  background: '#FFFFFF',
-  surface: '#F7F7F7',
-  border: '#E8E8E8',
-  divider: '#EBEBEB',
-
-  // Text hierarchy
-  textPrimary: '#1A1A1A',
-  textSecondary: '#65676B',
-  textTertiary: '#8A8D91',
-  textOnPrimary: '#FFFFFF',
-
-  // States
-  pressed: '#F2F3F5',
-  ripple: 'rgba(0, 0, 0, 0.08)',
-};
 
 // =============================================================================
 // COMMUNITY LIST ITEM
@@ -144,11 +115,10 @@ const CommunityItem = memo(({ community, onPress, onPressIn }: CommunityItemProp
     <Pressable
       onPress={onPress}
       onPressIn={onPressIn}
-      android_ripple={{ color: COLORS.ripple, borderless: false }}
-      className="flex-row items-start pr-4 bg-white relative"
-      style={[
-        { minHeight: 84, paddingVertical: 14, paddingLeft: 20 },
-        ({ pressed }: { pressed: boolean }) => Platform.OS === 'ios' && pressed ? { backgroundColor: COLORS.pressed } : undefined,
+      android_ripple={{ color: communityColors.ripple, borderless: false }}
+      className="flex-row items-start pr-5 pl-5 py-3.5 min-h-[80px] bg-white relative"
+      style={({ pressed }) => [
+        Platform.OS === 'ios' && pressed && { backgroundColor: communityColors.pressed },
       ]}
     >
       {/* Avatar - 64pt for better visual weight */}
@@ -164,8 +134,8 @@ const CommunityItem = memo(({ community, onPress, onPressIn }: CommunityItemProp
             placeholderContentFit="cover"
           />
         ) : (
-          <View className="w-16 h-16 rounded-full items-center justify-center" style={{ backgroundColor: COLORS.primaryLight }}>
-            <Text className="text-2xl font-semibold tracking-wide" style={{ color: COLORS.textOnPrimary }}>
+          <View className="w-16 h-16 rounded-full items-center justify-center" style={{ backgroundColor: communityColors.light }}>
+            <Text className="text-2xl font-semibold tracking-wide" style={{ color: communityColors.text.onPrimary }}>
               {community.name.substring(0, 2).toUpperCase()}
             </Text>
           </View>
@@ -178,14 +148,14 @@ const CommunityItem = memo(({ community, onPress, onPressIn }: CommunityItemProp
         <View className="flex-row justify-between items-center mb-1">
           <Text
             className={`flex-1 text-[17px] mr-3 ${hasUnread ? 'font-semibold' : 'font-medium'}`}
-            style={{ color: COLORS.textPrimary }}
+            style={{ color: communityColors.text.primary }}
             numberOfLines={1}
           >
             {community.name}
           </Text>
           <Text
             className={`text-[13px] ${hasUnread ? 'font-semibold' : ''}`}
-            style={{ color: hasUnread ? COLORS.primaryLight : COLORS.textSecondary }}
+            style={{ color: hasUnread ? communityColors.light : communityColors.text.secondary }}
           >
             {formatTime(community.last_message?.created_at)}
           </Text>
@@ -196,11 +166,11 @@ const CommunityItem = memo(({ community, onPress, onPressIn }: CommunityItemProp
           {/* Message status + Preview */}
           <View className="flex-1 flex-row items-start mr-2">
             {(community.my_role === 'leader' || community.my_role === 'admin') && community.last_message && (
-              <Icon as={CheckCheck} size="md" style={{ color: COLORS.accentBlue, marginRight: 4, marginTop: 1 }} />
+              <Icon as={CheckCheck} size="md" style={{ color: communityColors.status.read, marginRight: 4, marginTop: 1 }} />
             )}
             <Text
               className={`flex-1 text-[15px] leading-[20px] ${hasUnread ? 'font-medium' : ''}`}
-              style={{ color: hasUnread ? COLORS.textPrimary : COLORS.textSecondary }}
+              style={{ color: hasUnread ? communityColors.text.primary : communityColors.text.secondary }}
               numberOfLines={2}
             >
               {getLastMessagePreview() || t('communities.noMessages', 'No messages yet')}
@@ -209,8 +179,8 @@ const CommunityItem = memo(({ community, onPress, onPressIn }: CommunityItemProp
 
           {/* Unread badge */}
           {hasUnread && (
-            <View className="rounded-full min-w-[22px] h-[22px] items-center justify-center px-1.5" style={{ backgroundColor: COLORS.primaryLight }}>
-              <Text className="text-[13px] font-bold" style={{ color: COLORS.textOnPrimary }}>
+            <View className="rounded-full min-w-[22px] h-[22px] items-center justify-center px-1.5" style={{ backgroundColor: communityColors.light }}>
+              <Text className="text-[13px] font-bold" style={{ color: communityColors.text.onPrimary }}>
                 {(community.unread_count ?? 0) > 99 ? '99+' : community.unread_count}
               </Text>
             </View>
@@ -221,7 +191,7 @@ const CommunityItem = memo(({ community, onPress, onPressIn }: CommunityItemProp
       {/* Divider - starts after avatar (left: 20 padding + 64 avatar = 84) */}
       <View
         className="absolute bottom-0 right-0 z-10"
-        style={{ left: 84, height: 1, backgroundColor: COLORS.divider }}
+        style={{ left: 84, height: 1, backgroundColor: communityColors.divider }}
       />
     </Pressable>
   );
@@ -241,18 +211,18 @@ const EmptyState = memo(() => {
     <View className="flex-1 items-center justify-center px-8">
       <Animated.View entering={FadeIn.delay(100).duration(400)}>
         <View className="w-[100px] h-[100px] rounded-full items-center justify-center mb-6" style={{ backgroundColor: '#E8F5E9' }}>
-          <Icon as={MessageCircle} size="3xl" color={COLORS.primary} />
+          <Icon as={MessageCircle} size="3xl" color={communityColors.dark} />
         </View>
       </Animated.View>
 
       <Animated.View entering={FadeIn.delay(200).duration(400)}>
-        <Text className="text-xl font-semibold text-center mb-2" style={{ color: COLORS.textPrimary }}>
+        <Text className="text-xl font-semibold text-center mb-2" style={{ color: communityColors.text.primary }}>
           {t('communities.noCommunities', 'No Communities Yet')}
         </Text>
       </Animated.View>
 
       <Animated.View entering={FadeIn.delay(300).duration(400)}>
-        <Text className="text-[15px] text-center leading-[22px] mb-6" style={{ color: COLORS.textSecondary }}>
+        <Text className="text-[15px] text-center leading-[22px] mb-6" style={{ color: communityColors.text.secondary }}>
           {t('communities.noCommunitiesDesc', 'Join a community to connect with others and grow together in faith.')}
         </Text>
       </Animated.View>
@@ -264,9 +234,9 @@ const EmptyState = memo(() => {
             router.push('/community/discover' as any);
           }}
           className="px-6 py-3.5 rounded-3xl min-h-[48px] items-center justify-center active:opacity-90"
-          style={{ backgroundColor: COLORS.primary }}
+          style={{ backgroundColor: communityColors.dark }}
         >
-          <Text className="text-base font-semibold" style={{ color: COLORS.textOnPrimary }}>
+          <Text className="text-base font-semibold" style={{ color: communityColors.text.onPrimary }}>
             {t('communities.discoverCommunities', 'Discover Communities')}
           </Text>
         </Pressable>
@@ -295,7 +265,7 @@ const SearchBar = memo(({ value, onChangeText, onClose }: SearchBarProps) => {
       entering={SlideInRight.duration(200)}
       exiting={FadeOut.duration(150)}
       className="flex-row items-center h-14 px-2"
-      style={{ backgroundColor: COLORS.primary }}
+      style={{ backgroundColor: communityColors.dark }}
     >
       {/* Back button - 44pt touch target */}
       <Pressable
@@ -303,7 +273,7 @@ const SearchBar = memo(({ value, onChangeText, onClose }: SearchBarProps) => {
         className="w-11 h-11 items-center justify-center"
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
       >
-        <Icon as={ArrowLeft} size="lg" color={COLORS.textOnPrimary} />
+        <Icon as={ArrowLeft} size="lg" color={communityColors.text.onPrimary} />
       </Pressable>
 
       {/* Search input */}
@@ -313,7 +283,7 @@ const SearchBar = memo(({ value, onChangeText, onClose }: SearchBarProps) => {
         placeholder={t('communities.search', 'Search...')}
         placeholderTextColor="rgba(255,255,255,0.6)"
         className="flex-1 text-[17px] py-2 px-2"
-        style={{ color: COLORS.textOnPrimary }}
+        style={{ color: communityColors.text.onPrimary }}
         autoFocus
         returnKeyType="search"
         autoCapitalize="none"
@@ -328,7 +298,7 @@ const SearchBar = memo(({ value, onChangeText, onClose }: SearchBarProps) => {
           className="w-11 h-11 items-center justify-center"
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
-          <Icon as={X} size="md" color={COLORS.textOnPrimary} />
+          <Icon as={X} size="md" color={communityColors.text.onPrimary} />
         </Pressable>
       )}
     </Animated.View>
@@ -347,17 +317,17 @@ const LoadingSkeleton = memo(() => {
 
   return (
     <View className="flex-1 bg-white">
-      <StatusBar barStyle="dark-content" backgroundColor={COLORS.white} />
+      <StatusBar barStyle="dark-content" backgroundColor={colors.white} />
       {/* Header skeleton */}
-      <View style={{ paddingTop: insets.top, backgroundColor: COLORS.white }}>
-        <View className="flex-row items-center justify-between pr-4 py-2" style={{ paddingLeft: 20 }}>
-          <Text className="text-[34px] font-bold" style={{ color: COLORS.textPrimary, letterSpacing: -0.5 }}>
+      <View style={{ paddingTop: insets.top, backgroundColor: colors.white }}>
+        <View className="flex-row items-center justify-between px-5 py-2">
+          <Text className="text-[34px] font-bold" style={{ color: communityColors.text.primary, letterSpacing: -0.5 }}>
             {t('tabs.communities', 'Community')}
           </Text>
-          <View className="w-10 h-10 rounded-full" style={{ backgroundColor: COLORS.surface }} />
+          <View className="w-10 h-10 rounded-full" style={{ backgroundColor: communityColors.background.surface }} />
         </View>
-        <View className="pr-4 pb-2" style={{ paddingLeft: 20 }}>
-          <View className="rounded-xl" style={{ backgroundColor: COLORS.surface, height: 36 }} />
+        <View className="px-5 pb-2">
+          <View className="rounded-xl" style={{ backgroundColor: communityColors.background.surface, height: 36 }} />
         </View>
       </View>
       <View className="flex-1">
@@ -365,14 +335,13 @@ const LoadingSkeleton = memo(() => {
           <Animated.View
             key={i}
             entering={FadeIn.delay(i * 80).duration(300)}
-            className="flex-row pr-4 items-start"
-            style={{ minHeight: 84, paddingVertical: 14, paddingLeft: 20 }}
+            className="flex-row px-5 py-3.5 min-h-[80px] items-start"
           >
-            <View className="w-16 h-16 rounded-full mr-3" style={{ backgroundColor: COLORS.surface }} />
+            <View className="w-16 h-16 rounded-full mr-3" style={{ backgroundColor: communityColors.background.surface }} />
             <View className="flex-1">
-              <View className="h-[18px] w-[55%] rounded mb-2" style={{ backgroundColor: COLORS.surface }} />
-              <View className="h-[14px] w-[85%] rounded mb-1" style={{ backgroundColor: COLORS.surface }} />
-              <View className="h-[14px] w-[60%] rounded" style={{ backgroundColor: COLORS.surface }} />
+              <View className="h-[18px] w-[55%] rounded mb-2" style={{ backgroundColor: communityColors.background.surface }} />
+              <View className="h-[14px] w-[85%] rounded mb-1" style={{ backgroundColor: communityColors.background.surface }} />
+              <View className="h-[14px] w-[60%] rounded" style={{ backgroundColor: communityColors.background.surface }} />
             </View>
           </Animated.View>
         ))}
@@ -392,6 +361,9 @@ function CommunityScreen() {
   const router = useRouter();
   const { member } = useAuthStore();
   const insets = useSafeAreaInsets();
+
+  // Focus key - triggers child animation replay on tab focus (no container opacity flash)
+  const focusKey = useFocusKey();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [refreshing, setRefreshing] = useState(false);
@@ -441,10 +413,13 @@ function CommunityScreen() {
     [prefetchCommunity, member?.church_id]
   );
 
-  // Render item
+  // Render item with focusKey for re-triggering animations
   const renderItem = useCallback(
     ({ item, index }: { item: CommunityWithStatus; index: number }) => (
-      <Animated.View entering={FadeInDown.delay(Math.min(index * 40, 200)).duration(300)}>
+      <Animated.View
+        key={`community-${item.id}-${focusKey}`}
+        entering={FadeInDown.delay(Math.min(index * 40, 200)).duration(300)}
+      >
         <CommunityItem
           community={item}
           onPress={() => handleOpenCommunity(item)}
@@ -452,7 +427,7 @@ function CommunityScreen() {
         />
       </Animated.View>
     ),
-    [handleOpenCommunity, handlePrefetch]
+    [handleOpenCommunity, handlePrefetch, focusKey]
   );
 
   // Loading skeleton
@@ -462,42 +437,42 @@ function CommunityScreen() {
 
   return (
     <View className="flex-1 bg-white">
-      <StatusBar barStyle="dark-content" backgroundColor={COLORS.white} />
+      <StatusBar barStyle="dark-content" backgroundColor={colors.white} />
 
       {/* Header - WhatsApp iOS style with white background */}
-      <View style={{ paddingTop: insets.top, backgroundColor: COLORS.white }}>
+      <View style={{ paddingTop: insets.top, backgroundColor: colors.white }}>
         {/* Title row */}
-        <View className="flex-row items-center justify-between pr-4 py-2" style={{ paddingLeft: 20 }}>
-          <Text className="text-[34px] font-bold" style={{ color: COLORS.textPrimary, letterSpacing: -0.5 }}>
+        <View className="flex-row items-center justify-between px-5 py-2">
+          <Text className="text-[34px] font-bold" style={{ color: communityColors.text.primary, letterSpacing: -0.5 }}>
             {t('tabs.communities', 'Community')}
           </Text>
           <Pressable
             onPress={() => router.push('/community/discover')}
             className="w-10 h-10 items-center justify-center rounded-full"
-            style={{ backgroundColor: COLORS.surface }}
+            style={{ backgroundColor: communityColors.background.surface }}
           >
-            <Icon as={Compass} size="md" color={COLORS.primary} />
+            <Icon as={Compass} size="md" color={communityColors.dark} />
           </Pressable>
         </View>
 
         {/* Search bar - always visible */}
-        <View className="pr-4 pb-2" style={{ paddingLeft: 20 }}>
+        <View className="px-5 pb-2">
           <View
             className="flex-row items-center rounded-xl px-3"
-            style={{ backgroundColor: COLORS.surface, height: 36 }}
+            style={{ backgroundColor: communityColors.background.surface, height: 36 }}
           >
-            <Icon as={Search} size="md" color={COLORS.textTertiary} />
+            <Icon as={Search} size="md" color={communityColors.text.tertiary} />
             <TextInput
               value={searchQuery}
               onChangeText={setSearchQuery}
               placeholder={t('communities.searchPlaceholder', 'Search')}
-              placeholderTextColor={COLORS.textTertiary}
+              placeholderTextColor={communityColors.text.tertiary}
               className="flex-1 ml-2 text-[17px]"
-              style={{ color: COLORS.textPrimary, paddingVertical: 0 }}
+              style={{ color: communityColors.text.primary, paddingVertical: 0 }}
             />
             {searchQuery.length > 0 && (
               <Pressable onPress={() => setSearchQuery('')}>
-                <Icon as={X} size="md" color={COLORS.textTertiary} />
+                <Icon as={X} size="md" color={communityColors.text.tertiary} />
               </Pressable>
             )}
           </View>
@@ -524,14 +499,14 @@ function CommunityScreen() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={handleRefresh}
-              tintColor={COLORS.primary}
-              colors={[COLORS.primary]}
+              tintColor={communityColors.dark}
+              colors={[communityColors.dark]}
             />
           }
           ListEmptyComponent={
             searchQuery ? (
               <View className="flex-1 items-center justify-center py-16 px-6">
-                <Text className="text-[15px] text-center" style={{ color: COLORS.textSecondary }}>
+                <Text className="text-[15px] text-center" style={{ color: communityColors.text.secondary }}>
                   {t('communities.noResults', 'No communities found for "{{query}}"', { query: searchQuery })}
                 </Text>
               </View>
@@ -544,7 +519,7 @@ function CommunityScreen() {
   );
 }
 
-// Memoize and apply Premium Motion HOC
+// Memoize screen for performance
 const MemoizedCommunityScreen = memo(CommunityScreen);
 MemoizedCommunityScreen.displayName = 'CommunityScreen';
-export default withPremiumMotionV10(MemoizedCommunityScreen);
+export default MemoizedCommunityScreen;

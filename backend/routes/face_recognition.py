@@ -113,14 +113,15 @@ async def generate_embedding(
         if request.member_id:
             church_id = get_session_church_id_from_user(current_user)
             await db.members.update_one(
-                {"_id": request.member_id, "church_id": church_id},
+                {"id": request.member_id, "church_id": church_id},
                 {
                     "$set": {
                         "face_descriptors": [{
                             "descriptor": result['embedding'],
                             "model": result['model'],
                             "confidence": result['face_confidence']
-                        }]
+                        }],
+                        "has_face_descriptors": True
                     }
                 }
             )
@@ -269,12 +270,12 @@ async def regenerate_descriptors(
         if request.member_ids:
             await db.members.update_many(
                 {"id": {"$in": request.member_ids}, "church_id": church_id},
-                {"$set": {"face_descriptors": []}}
+                {"$set": {"face_descriptors": [], "has_face_descriptors": False}}
             )
         else:
             await db.members.update_many(
                 {"church_id": church_id},
-                {"$set": {"face_descriptors": []}}
+                {"$set": {"face_descriptors": [], "has_face_descriptors": False}}
             )
 
     # Process in background
@@ -305,7 +306,8 @@ async def regenerate_descriptors(
                                     "descriptor": result['embedding'],
                                     "model": result['model'],
                                     "confidence": result['face_confidence']
-                                }]
+                                }],
+                                "has_face_descriptors": True
                             }
                         }
                     )
@@ -365,14 +367,15 @@ async def bulk_update_descriptors(
 
         try:
             result = await db.members.update_one(
-                {"_id": member_id, "church_id": church_id},
+                {"id": member_id, "church_id": church_id},
                 {
                     "$set": {
                         "face_descriptors": [{
                             "descriptor": embedding,
                             "model": "FaceNet512",
                             "source": "backend"
-                        }]
+                        }],
+                        "has_face_descriptors": True
                     }
                 }
             )

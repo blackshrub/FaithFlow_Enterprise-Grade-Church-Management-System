@@ -213,6 +213,79 @@ export function useSubmitPrayerRequest() {
   });
 }
 
+// ==================== MEMBER CARE (Request Forms) ====================
+
+/**
+ * Hook to fetch guided prayer text
+ */
+export function useGuidedPrayer(churchId, options = {}) {
+  return useQuery({
+    queryKey: [...kioskKeys.all, 'guidedPrayer', churchId],
+    queryFn: () => kioskApi.getGuidedPrayer(churchId),
+    enabled: !!churchId,
+    staleTime: 30 * 60 * 1000, // 30 minutes - prayers don't change often
+    ...options,
+  });
+}
+
+/**
+ * Mutation hook for Accept Jesus submission
+ */
+export function useSubmitAcceptJesus() {
+  return useMutation({
+    mutationFn: (data) => kioskApi.submitAcceptJesus(data),
+  });
+}
+
+/**
+ * Mutation hook for Baptism submission
+ */
+export function useSubmitBaptism() {
+  return useMutation({
+    mutationFn: (data) => kioskApi.submitBaptism(data),
+  });
+}
+
+/**
+ * Mutation hook for Child Dedication submission
+ */
+export function useSubmitChildDedication() {
+  return useMutation({
+    mutationFn: (data) => kioskApi.submitChildDedication(data),
+  });
+}
+
+/**
+ * Mutation hook for Holy Matrimony submission
+ */
+export function useSubmitHolyMatrimony() {
+  return useMutation({
+    mutationFn: (data) => kioskApi.submitHolyMatrimony(data),
+  });
+}
+
+/**
+ * Mutation hook for uploading child photo
+ */
+export function useUploadChildPhoto() {
+  return useMutation({
+    mutationFn: ({ photoBase64, churchId }) => kioskApi.uploadChildPhoto(photoBase64, churchId),
+  });
+}
+
+/**
+ * Hook to search members for selection (spouse/partner)
+ */
+export function useSearchMembers(query, churchId, options = {}) {
+  return useQuery({
+    queryKey: [...kioskKeys.all, 'memberSearch', query, churchId],
+    queryFn: () => kioskApi.searchMembersForSelection(query, churchId),
+    enabled: !!churchId && !!query && query.length >= 3,
+    staleTime: 1 * 60 * 1000, // 1 minute
+    ...options,
+  });
+}
+
 // ==================== MEMBER LOOKUP & AUTH ====================
 
 /**

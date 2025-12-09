@@ -106,6 +106,7 @@ export function BiometricLockScreen({ onAuthenticated }: BiometricLockScreenProp
       }, 500);
       return () => clearTimeout(timer);
     }
+    return undefined;
   }, [isLocked]);
 
   if (!isLocked) {
@@ -134,9 +135,8 @@ export function BiometricLockScreen({ onAuthenticated }: BiometricLockScreenProp
       >
         {/* Lock Icon */}
         <Animated.View
-          style={iconAnimatedStyle}
+          style={[iconAnimatedStyle, { backgroundColor: PRIMARY_COLOR + '30' }]}
           className="w-24 h-24 rounded-full items-center justify-center mb-6"
-          backgroundColor={PRIMARY_COLOR + '30'}
         >
           <Lock size={48} color={PRIMARY_COLOR} />
         </Animated.View>

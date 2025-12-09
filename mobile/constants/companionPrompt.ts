@@ -177,6 +177,12 @@ export const COMPANION_GREETINGS = {
     fromDevotion: "How was today's devotion? I'd love to hear your thoughts or help you dig deeper into what you've read.",
     morning: "Good morning! As you start your day, is there anything you'd like to reflect on or pray about together?",
     evening: "Good evening. As the day winds down, would you like to share what's been on your heart, or perhaps end the day with prayer?",
+    // Feature 4: New contextual companion greetings
+    devotion_reflection: "I see you're reflecting on today's devotion. What thoughts or questions came to mind as you read?",
+    bible_study_lesson: "Welcome to this Bible study lesson! I'm here to help you explore the Scripture more deeply. What stood out to you?",
+    journey_day: "Welcome to today's spiritual journey! I'm here to walk alongside you through this day's reflection.",
+    verse_meditation: "I see you're meditating on this verse. Let's explore its meaning together. What does this passage speak to you?",
+    quiz_explanation: "Great job on the quiz! I'm here to help explain any questions you're curious about. What would you like to understand better?",
   },
   id: {
     default: "Halo! Saya di sini untuk menemani perjalanan imanmu. Apakah kamu punya pertanyaan tentang Alkitab, butuh dorongan semangat, atau ingin mendalami topik teologi, saya siap membantu. Apa yang ada di hatimu hari ini?",
@@ -184,6 +190,12 @@ export const COMPANION_GREETINGS = {
     fromDevotion: "Bagaimana renungan hari ini? Saya ingin mendengar pikiranmu atau membantu mendalami apa yang sudah kamu baca.",
     morning: "Selamat pagi! Saat memulai harimu, adakah sesuatu yang ingin kamu renungkan atau doakan bersama?",
     evening: "Selamat malam. Di penghujung hari ini, maukah kamu berbagi apa yang ada di hatimu, atau mungkin mengakhiri hari dengan doa?",
+    // Feature 4: New contextual companion greetings
+    devotion_reflection: "Saya lihat kamu sedang merenungkan renungan hari ini. Apa pikiran atau pertanyaan yang muncul saat kamu membaca?",
+    bible_study_lesson: "Selamat datang di pelajaran Alkitab ini! Saya di sini untuk membantu menggali Firman lebih dalam. Apa yang menarik perhatianmu?",
+    journey_day: "Selamat datang di perjalanan rohani hari ini! Saya di sini untuk menemanimu melalui renungan hari ini.",
+    verse_meditation: "Saya lihat kamu sedang merenungkan ayat ini. Mari kita jelajahi maknanya bersama. Apa yang ayat ini sampaikan padamu?",
+    quiz_explanation: "Bagus sekali kuis-nya! Saya di sini untuk membantu menjelaskan pertanyaan yang ingin kamu pahami lebih baik.",
   },
 };
 

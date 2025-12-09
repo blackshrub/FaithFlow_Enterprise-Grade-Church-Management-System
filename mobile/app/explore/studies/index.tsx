@@ -372,12 +372,11 @@ function StudyCard({ study, progress, onPress, contentLanguage, index }: StudyCa
           <View className="h-[160px] relative">
           {study.cover_image_url ? (
             <>
-              {/* Background Image with shared element transition */}
+              {/* Background Image */}
               <AnimatedImage
                 source={{ uri: study.cover_image_url }}
                 className="absolute inset-0 w-full h-full"
                 resizeMode="cover"
-                sharedTransitionTag={`study-${study.id}-image`}
               />
               {/* Gradient overlay - absolute to cover entire image */}
               <LinearGradient
@@ -433,7 +432,6 @@ function StudyCard({ study, progress, onPress, contentLanguage, index }: StudyCa
             className="text-[17px] font-bold leading-[22px]"
             style={{ color: ExploreColors.neutral[900] }}
             numberOfLines={2}
-            sharedTransitionTag={`study-${study.id}-title`}
           >
             {title}
           </Animated.Text>

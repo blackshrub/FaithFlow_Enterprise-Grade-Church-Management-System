@@ -69,7 +69,7 @@ import {
 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 
-import { colors, borderRadius, shadows, spacing } from '@/constants/theme';
+import { colors, borderRadius, shadows, spacing, communityColors } from '@/constants/theme';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -201,14 +201,14 @@ export const SendButton = React.memo(({ onPress, disabled, isSending }: SendButt
       onPress={handlePress}
       disabled={disabled || isSending}
       className="w-11 h-11 rounded-[22px] items-center justify-center mb-1"
-      style={[{ backgroundColor: '#128C7E' }, animatedStyle]}
+      style={[{ backgroundColor: communityColors.light }, animatedStyle]}
     >
       {isSending ? (
         <Animated.View style={{ transform: [{ rotate: '360deg' }] }}>
-          <Clock size={20} color="#fff" />
+          <Clock size={20} color={colors.white} />
         </Animated.View>
       ) : (
-        <Send size={20} color="#fff" />
+        <Send size={20} color={colors.white} />
       )}
     </AnimatedPressable>
   );
@@ -284,11 +284,11 @@ export const ScrollToBottomFAB = React.memo(({
           elevation: 4,
         }}
       >
-        <ArrowDown size={16} color="#4b5563" />
+        <ArrowDown size={16} color={communityColors.text.secondary} />
         {newMessageCount > 0 && (
           <Animated.View
-            className="absolute -top-1.5 -right-1.5 bg-[#25D366] rounded-xl min-w-[24px] h-6 items-center justify-center px-1.5"
-            style={badgeStyle}
+            className="absolute -top-1.5 -right-1.5 rounded-xl min-w-[24px] h-6 items-center justify-center px-1.5"
+            style={[{ backgroundColor: communityColors.accent }, badgeStyle]}
           >
             <Text className="text-white text-xs font-bold">
               {newMessageCount > 99 ? '99+' : newMessageCount}
@@ -338,20 +338,20 @@ export const MessageStatusIndicator = React.memo(({
       case 'sending':
         return (
           <Animated.View style={{ opacity: 0.7 }}>
-            <Clock size={12} color="#8696a0" />
+            <Clock size={12} color={communityColors.status.sent} />
           </Animated.View>
         );
       case 'sent':
         // WhatsApp gray tick
-        return <Check size={12} color="#8696a0" />;
+        return <Check size={12} color={communityColors.status.sent} />;
       case 'delivered':
         // WhatsApp gray double tick
-        return <CheckCheck size={12} color="#8696a0" />;
+        return <CheckCheck size={12} color={communityColors.status.delivered} />;
       case 'read':
         // WhatsApp blue double tick
-        return <CheckCheck size={12} color="#53bdeb" />;
+        return <CheckCheck size={12} color={communityColors.status.read} />;
       case 'failed':
-        return <AlertCircle size={12} color="#ef4444" />;
+        return <AlertCircle size={12} color={colors.error[500]} />;
       default:
         return null;
     }
@@ -401,13 +401,13 @@ export const ConnectionBanner = React.memo(({ status }: ConnectionBannerProps) =
         return {
           icon: Wifi,
           text: 'Connecting...',
-          bgColor: '#f59e0b', // WhatsApp yellow
+          bgColor: colors.amber[500], // WhatsApp yellow
         };
       case 'disconnected':
         return {
           icon: WifiOff,
           text: 'Waiting for network...',
-          bgColor: '#6b7280', // Gray
+          bgColor: colors.gray[500], // Gray
         };
       default:
         return null;
@@ -422,7 +422,7 @@ export const ConnectionBanner = React.memo(({ status }: ConnectionBannerProps) =
       style={[{ backgroundColor: config.bgColor }, animatedStyle]}
     >
       <View style={{ opacity: status === 'connecting' ? 0.7 : 1, marginRight: 8 }}>
-        {status === 'connecting' ? <Wifi size={16} color="#fff" /> : <WifiOff size={16} color="#fff" />}
+        {status === 'connecting' ? <Wifi size={16} color={colors.white} /> : <WifiOff size={16} color={colors.white} />}
       </View>
       <Text className="text-white text-sm flex-1">{config.text}</Text>
     </Animated.View>
@@ -511,7 +511,7 @@ export const SwipeToReplyWrapper = React.memo(({
             className="w-8 h-8 rounded-2xl items-center justify-center"
             style={{ backgroundColor: colors.primary[500] }}
           >
-            <Reply size={16} color="#fff" />
+            <Reply size={16} color={colors.white} />
           </View>
         </Animated.View>
 
@@ -578,7 +578,7 @@ export const DoubleTapReaction = React.memo(({
           style={heartStyle}
           pointerEvents="none"
         >
-          <Heart size={48} color="#ef4444" fill="#ef4444" />
+          <Heart size={48} color={colors.error[500]} fill={colors.error[500]} />
         </Animated.View>
       </View>
     </GestureDetector>
@@ -643,13 +643,13 @@ export const UnreadDivider = React.memo(({ count }: UnreadDividerProps) => {
       entering={SlideInRight.duration(200)}
       className="flex-row items-center my-3 px-4"
     >
-      <View className="flex-1 h-px bg-[#25D366]" />
-      <View className="bg-[#25D366] px-3 py-1 rounded mx-2">
+      <View className="flex-1 h-px" style={{ backgroundColor: communityColors.accent }} />
+      <View className="px-3 py-1 rounded mx-2" style={{ backgroundColor: communityColors.accent }}>
         <Text className="text-[11px] text-white font-semibold tracking-wide">
           {count} UNREAD {count === 1 ? 'MESSAGE' : 'MESSAGES'}
         </Text>
       </View>
-      <View className="flex-1 h-px bg-[#25D366]" />
+      <View className="flex-1 h-px" style={{ backgroundColor: communityColors.accent }} />
     </Animated.View>
   );
 });
@@ -700,7 +700,7 @@ export const AttachmentButton = React.memo(({ onPress }: AttachmentButtonProps) 
       className="p-2"
       style={animatedStyle}
     >
-      <Plus size={22} color="#54656F" />
+      <Plus size={22} color={communityColors.text.secondary} />
     </AnimatedPressable>
   );
 });

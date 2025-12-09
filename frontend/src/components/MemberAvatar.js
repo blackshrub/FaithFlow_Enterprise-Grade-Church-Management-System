@@ -77,24 +77,13 @@ function getMemberPhotoSrc(member, photo) {
   return null;
 }
 
-export default function MemberAvatar({ member, name, photo, firstName, lastName, size = 'md', className = '' }) {
+export default function MemberAvatar({ member, name, photo, photoUrl, firstName, lastName, size = 'md', className = '' }) {
   const [imageError, setImageError] = useState(false);
 
   // Get the best available photo source early (needed for useEffect dependency)
-  const photoSrc = getMemberPhotoSrc(member, photo);
+  // Support both 'photo' and 'photoUrl' props for flexibility
+  const photoSrc = getMemberPhotoSrc(member, photo || photoUrl);
 
-  // Debug logging (remove in production)
-  useEffect(() => {
-    if (member?.full_name) {
-      console.log('[MemberAvatar] Debug:', {
-        name: member.full_name,
-        photo_url: member.photo_url,
-        photo_base64: member.photo_base64 ? 'yes' : 'no',
-        photoSrc: photoSrc ? photoSrc.substring(0, 50) + '...' : 'null',
-        imageError
-      });
-    }
-  }, [member?.full_name, member?.photo_url, member?.photo_base64, photoSrc, imageError]);
 
   // Reset error state when photo source changes
   useEffect(() => {

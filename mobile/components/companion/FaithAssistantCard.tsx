@@ -82,27 +82,25 @@ interface FaithAssistantCardProps {
   onBeforeNavigate?: () => void;
 }
 
-function FaithAssistantCardComponent({ variant = 'featured', onPress, onBeforeNavigate }: FaithAssistantCardProps) {
-  const router = useRouter();
-  const { t } = useTranslation();
-  const setEntryContext = useCompanionStore((s) => s.setEntryContext);
-
-  // Flowing glow animation for button variant
+/**
+ * Button variant with flowing glow animation
+ * Separated to avoid animation initialization overhead for other variants
+ */
+function ButtonVariant({ onPress, t }: { onPress: () => void; t: (key: string, fallback: string) => string }) {
+  // Flowing glow animation - only initialized for button variant
   const glowProgress = useSharedValue(0);
 
   useEffect(() => {
-    if (variant === 'button') {
-      // Start flowing animation
-      glowProgress.value = withRepeat(
-        withTiming(1, {
-          duration: 2500,
-          easing: Easing.inOut(Easing.ease),
-        }),
-        -1, // Infinite repeat
-        true // Reverse
-      );
-    }
-  }, [variant]);
+    // Start flowing animation
+    glowProgress.value = withRepeat(
+      withTiming(1, {
+        duration: 2500,
+        easing: Easing.inOut(Easing.ease),
+      }),
+      -1, // Infinite repeat
+      true // Reverse
+    );
+  }, []);
 
   const glowAnimatedStyle = useAnimatedStyle(() => {
     const translateX = interpolate(glowProgress.value, [0, 1], [-100, 350]);
@@ -119,6 +117,56 @@ function FaithAssistantCardComponent({ variant = 'featured', onPress, onBeforeNa
       transform: [{ scale }],
     };
   });
+
+  return (
+    <Animated.View style={pulseAnimatedStyle}>
+      <Pressable
+        onPress={onPress}
+        className="rounded-2xl overflow-hidden active:opacity-90 active:scale-[0.98]"
+      >
+        <LinearGradient
+          colors={[...Colors.gradient.primary]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          className="relative overflow-hidden"
+          style={{ paddingVertical: 14, paddingHorizontal: 16 }}
+        >
+          {/* Flowing glow effect */}
+          <Animated.View
+            className="absolute top-0 left-0 w-[100px] h-full bg-white/35 -skew-x-[20deg]"
+            style={glowAnimatedStyle}
+          />
+
+          {/* Content */}
+          <View className="flex-row items-center gap-3.5 z-[1]">
+            <View className="w-11 h-11 rounded-xl bg-white/25 items-center justify-center relative">
+              <MessageCircle size={22} color={Colors.white} strokeWidth={2} />
+              <View className="absolute -top-1 -right-1 bg-white/90 rounded-lg p-0.5">
+                <Sparkles size={10} color={Colors.accent.gold} fill={Colors.accent.gold} />
+              </View>
+            </View>
+            <View className="flex-1 gap-0.5">
+              <Text className="text-[15px] font-bold text-white tracking-tight">
+                {t('companion.title', 'Faith Assistant')}
+              </Text>
+              <Text className="text-[12px] font-medium text-white/85">
+                {t('companion.buttonDesc', 'Chat with your spiritual companion')}
+              </Text>
+            </View>
+            <View className="w-9 h-9 rounded-full bg-white/25 items-center justify-center">
+              <ChevronRight size={20} color={Colors.white} strokeWidth={2.5} />
+            </View>
+          </View>
+        </LinearGradient>
+      </Pressable>
+    </Animated.View>
+  );
+}
+
+function FaithAssistantCardComponent({ variant = 'featured', onPress, onBeforeNavigate }: FaithAssistantCardProps) {
+  const router = useRouter();
+  const { t } = useTranslation();
+  const setEntryContext = useCompanionStore((s) => s.setEntryContext);
 
   const handlePress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -140,51 +188,9 @@ function FaithAssistantCardComponent({ variant = 'featured', onPress, onBeforeNa
   };
 
   // Button variant - full width with flowing glow animation
-  // Uses Pressable instead of Gluestack Button to allow custom height (Gluestack has fixed h-14)
+  // Delegated to separate component to avoid animation overhead for other variants
   if (variant === 'button') {
-    return (
-      <Animated.View style={pulseAnimatedStyle}>
-        <Pressable
-          onPress={handlePress}
-          className="rounded-2xl overflow-hidden active:opacity-90 active:scale-[0.98]"
-        >
-          <LinearGradient
-            colors={[...Colors.gradient.primary]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            className="relative overflow-hidden"
-            style={{ paddingVertical: 14, paddingHorizontal: 16 }}
-          >
-            {/* Flowing glow effect */}
-            <Animated.View
-              className="absolute top-0 left-0 w-[100px] h-full bg-white/35 -skew-x-[20deg]"
-              style={glowAnimatedStyle}
-            />
-
-            {/* Content */}
-            <View className="flex-row items-center gap-3.5 z-[1]">
-              <View className="w-11 h-11 rounded-xl bg-white/25 items-center justify-center relative">
-                <MessageCircle size={22} color={Colors.white} strokeWidth={2} />
-                <View className="absolute -top-1 -right-1 bg-white/90 rounded-lg p-0.5">
-                  <Sparkles size={10} color={Colors.accent.gold} fill={Colors.accent.gold} />
-                </View>
-              </View>
-              <View className="flex-1 gap-0.5">
-                <Text className="text-[15px] font-bold text-white tracking-tight">
-                  {t('companion.title', 'Faith Assistant')}
-                </Text>
-                <Text className="text-[12px] font-medium text-white/85">
-                  {t('companion.buttonDesc', 'Chat with your spiritual companion')}
-                </Text>
-              </View>
-              <View className="w-9 h-9 rounded-full bg-white/25 items-center justify-center">
-                <ChevronRight size={20} color={Colors.white} strokeWidth={2.5} />
-              </View>
-            </View>
-          </LinearGradient>
-        </Pressable>
-      </Animated.View>
-    );
+    return <ButtonVariant onPress={handlePress} t={t} />;
   }
 
   // Compact variant - matches QuickCard height/style in Explore screen

@@ -122,7 +122,7 @@ function generateCacheKey(
  * This ensures same content gets same key for the day
  */
 export function generateDailyCacheKey(
-  contentType: 'devotion' | 'verse' | 'figure',
+  contentType: 'devotion' | 'verse' | 'figure' | 'general',
   contentId: string,
   voice: string,
   model: string,

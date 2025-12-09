@@ -30,7 +30,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
-import { withPremiumMotionV10 } from '@/hoc';
+import { useFocusKey } from '@/hooks/useFocusAnimation';
 import * as Haptics from 'expo-haptics';
 import * as Clipboard from 'expo-clipboard';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -208,8 +208,8 @@ function GiveScreen() {
   const scrollRef = useRef<Animated.ScrollView>(null);
   const otherPurposeInputRef = useRef<TextInput>(null);
 
-  // Focus key for animations - kept static to avoid replaying on tab switch
-  const focusKey = 0;
+  // Focus key - triggers child animation replay on tab focus (no container opacity flash)
+  const focusKey = useFocusKey();
 
   // State
   const [step, setStep] = useState<Step>('choose');
@@ -422,57 +422,109 @@ function GiveScreen() {
         <LinearGradient
           colors={[Colors.gradient.start, Colors.gradient.mid, Colors.gradient.end]}
           className="overflow-hidden"
-          style={{ paddingTop: insets.top + 16, paddingBottom: showBackButton ? 12 : 16 }}
+          style={{ paddingTop: insets.top + 4 }}
         >
-          <Animated.View style={headerEnterStyle}>
+          {/* Animated content wrapper - matching Explore pattern with paddingBottom on inner view */}
+          <Animated.View
+            style={[headerEnterStyle, { paddingBottom: showBackButton ? 12 : 28 }]}
+            className="px-5"
+          >
             {/* Compact header row on main view */}
             {!showBackButton ? (
-              <View className="px-5">
-                {/* Title row with history button - stagger index 0 */}
-                <Animated.View key={`title-${focusKey}`} entering={todayListItemMotion(0)} className="flex-row justify-between items-start mb-4">
-                  <View className="flex-1">
-                    <Text className="text-[28px] font-bold text-white" style={{ letterSpacing: -0.5 }}>
+              <>
+                {/* Title row with history button - stagger index 0, matching Explore layout */}
+                {/* marginBottom: 24 matches GREETING_MARGIN_EXPANDED from today-motion */}
+                <Animated.View
+                  key={`title-${focusKey}`}
+                  entering={todayListItemMotion(0)}
+                  style={{ marginBottom: 24 }}
+                  className="flex-row justify-between items-start"
+                >
+                  {/* Title section - matching Explore */}
+                  <View>
+                    <Text
+                      className="text-[32px] font-bold text-white mb-1"
+                      style={{ letterSpacing: -0.5 }}
+                    >
                       {t('give.title')}
                     </Text>
-                    <Text className="text-[15px] text-white/70 mt-1">
-                      {t('give.subtitle')}
-                    </Text>
+                    <View className="flex-row items-center gap-1.5">
+                      <HandHeart size={14} color={Colors.accent.gold} />
+                      <Text className="text-[13px] text-white/60 font-medium">
+                        {t('give.subtitle')}
+                      </Text>
+                    </View>
                   </View>
+
+                  {/* History button - matching Explore's language toggle style */}
                   <Pressable
                     onPress={() => setShowHistory(true)}
-                    className="w-11 h-11 rounded-full bg-white/10 items-center justify-center"
+                    className="flex-row items-center gap-2 bg-white/15 px-4 py-2.5 rounded-full active:scale-95 active:opacity-90 mt-1"
                   >
-                    <History size={20} color={Colors.white} />
+                    <History size={16} color={Colors.white} />
                   </Pressable>
                 </Animated.View>
 
-                {/* Stats cards - stagger index 1 */}
-                <Animated.View key={`stats-${focusKey}`} entering={todayListItemMotion(1)} className="flex-row gap-3">
-                  <View className="flex-1 flex-row items-center gap-2.5 bg-white/10 rounded-[18px] py-3 px-3 border border-white/10">
-                    <View className="w-9 h-9 rounded-[10px] items-center justify-center" style={{ backgroundColor: 'rgba(212,175,55,0.2)' }}>
-                      <TrendingUp size={16} color={Colors.accent.gold} />
+                {/* Stats row - Unified container with dividers, matching Explore/Events */}
+                {/* height: 64 matches STATS_ROW_HEIGHT from today-motion */}
+                <Animated.View
+                  key={`stats-${focusKey}`}
+                  entering={todayListItemMotion(1)}
+                  style={{ height: 64, overflow: 'hidden' }}
+                  className="flex-row items-center rounded-2xl py-4 px-6"
+                >
+                  {/* Background - matching Explore */}
+                  <View
+                    className="absolute inset-0 rounded-2xl"
+                    style={{
+                      backgroundColor: 'rgba(255,255,255,0.06)',
+                      borderWidth: 1,
+                      borderColor: 'rgba(255,255,255,0.08)',
+                    }}
+                  />
+
+                  {/* Total Given */}
+                  <View className="flex-1 flex-row items-center gap-2.5">
+                    <View
+                      className="w-10 h-10 rounded-xl items-center justify-center"
+                      style={{ backgroundColor: 'rgba(212,175,55,0.2)' }}
+                    >
+                      <TrendingUp size={20} color={Colors.accent.gold} />
                     </View>
-                    <View className="flex-1">
-                      <Text className="text-[15px] font-bold text-white">
+                    <View className="gap-0.5">
+                      <Text className="text-[18px] font-bold text-white leading-tight">
                         {formatCurrency(stats.totalGiven)}
                       </Text>
-                      <Text className="text-[11px] text-white/60 mt-0.5">{t('give.totalGiven')}</Text>
+                      <Text className="text-[11px] font-medium text-white/60">
+                        {t('give.totalGiven')}
+                      </Text>
                     </View>
                   </View>
-                  <View className="flex-1 flex-row items-center gap-2.5 bg-white/10 rounded-[18px] py-3 px-3 border border-white/10">
-                    <View className="w-9 h-9 rounded-[10px] items-center justify-center" style={{ backgroundColor: 'rgba(212,175,55,0.2)' }}>
-                      <Calendar size={16} color={Colors.accent.gold} />
+
+                  <View className="w-px h-8 bg-white/15 mx-2" />
+
+                  {/* Total Transactions */}
+                  <View className="flex-1 flex-row items-center gap-2.5">
+                    <View
+                      className="w-10 h-10 rounded-xl items-center justify-center"
+                      style={{ backgroundColor: 'rgba(212,175,55,0.2)' }}
+                    >
+                      <Calendar size={20} color={Colors.accent.gold} />
                     </View>
-                    <View className="flex-1">
-                      <Text className="text-[15px] font-bold text-white">{stats.totalTransactions}</Text>
-                      <Text className="text-[11px] text-white/60 mt-0.5">{t('give.transactions')}</Text>
+                    <View className="gap-0.5">
+                      <Text className="text-[18px] font-bold text-white leading-tight">
+                        {stats.totalTransactions}
+                      </Text>
+                      <Text className="text-[11px] font-medium text-white/60">
+                        {t('give.transactions')}
+                      </Text>
                     </View>
                   </View>
                 </Animated.View>
-              </View>
+              </>
             ) : (
               /* Compact header with centered title for steps 2-4 */
-              <View className="flex-row items-center justify-between px-5 py-3">
+              <View className="flex-row items-center justify-between py-3">
                 <Pressable onPress={showHistory ? () => setShowHistory(false) : goBack} className="w-11 h-11 rounded-full bg-white/10 items-center justify-center">
                   <ArrowLeft size={24} color={Colors.white} />
                 </Pressable>
@@ -1168,7 +1220,7 @@ function GiveScreen() {
   };
 
   return (
-    <Animated.View className="flex-1 bg-neutral-50">
+    <View className="flex-1 bg-neutral-50">
       {renderHeader()}
 
       {/* Step indicator (when not on choose step or history) */}
@@ -1247,11 +1299,11 @@ function GiveScreen() {
 
       {/* Sticky footer for amount step */}
       {renderAmountStepFooter()}
-    </Animated.View>
+    </View>
   );
 }
 
-// Memoize screen + Apply Premium Motion V10 Ultra HOC for production-grade transitions
+// Memoize screen for performance
 const MemoizedGiveScreen = memo(GiveScreen);
 MemoizedGiveScreen.displayName = 'GiveScreen';
-export default withPremiumMotionV10(MemoizedGiveScreen);
+export default MemoizedGiveScreen;

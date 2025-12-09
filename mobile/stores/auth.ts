@@ -35,6 +35,10 @@ interface AuthState {
   isLoading: boolean;
   isAuthenticated: boolean;
 
+  // Derived church context
+  churchId: string | null;
+  sessionChurchId: string | null;
+
   // Actions
   setToken: (token: string) => Promise<void>;
   setMember: (member: Member) => Promise<void>;  // Fixed: should be async
@@ -52,6 +56,8 @@ export const useAuthStore = create<AuthState>((set) => ({
   member: null,
   isLoading: true,
   isAuthenticated: false,
+  churchId: null,
+  sessionChurchId: null,
 
   setToken: async (token: string) => {
     await SecureStore.setItemAsync(TOKEN_KEY, token);
@@ -61,7 +67,11 @@ export const useAuthStore = create<AuthState>((set) => ({
   setMember: async (member: Member) => {
     // Fix: Await SecureStore operation to ensure data persistence before state update
     await SecureStore.setItemAsync(MEMBER_KEY, JSON.stringify(member));
-    set({ member });
+    set({
+      member,
+      churchId: member.church_id,
+      sessionChurchId: member.church_id,
+    });
   },
 
   login: async (token: string, member: Member) => {
@@ -70,6 +80,8 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({
       token,
       member,
+      churchId: member.church_id,
+      sessionChurchId: member.church_id,
       isAuthenticated: true,
       isLoading: false,
     });
@@ -107,6 +119,8 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({
       token: demoToken,
       member: demoMember,
+      churchId: demoMember.church_id,
+      sessionChurchId: demoMember.church_id,
       isAuthenticated: true,
       isLoading: false,
     });
@@ -118,6 +132,8 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({
       token: null,
       member: null,
+      churchId: null,
+      sessionChurchId: null,
       isAuthenticated: false,
       isLoading: false,
     });
@@ -132,6 +148,8 @@ export const useAuthStore = create<AuthState>((set) => ({
       set({
         token,
         member,
+        churchId: member?.church_id ?? null,
+        sessionChurchId: member?.church_id ?? null,
         isAuthenticated: !!token,
         isLoading: false,
       });

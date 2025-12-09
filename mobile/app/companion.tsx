@@ -183,6 +183,7 @@ const TypingIndicator = memo(({ showMessage = false, language = 'en' }: TypingIn
       }, 3000);
       return () => clearInterval(interval);
     }
+    return undefined;
   }, [showMessage, language]);
 
   const dotStyle1 = useAnimatedStyle(() => ({

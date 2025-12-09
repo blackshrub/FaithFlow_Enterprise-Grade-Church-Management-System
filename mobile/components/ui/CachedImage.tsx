@@ -137,9 +137,7 @@ export function MemberAvatar({
       styles.initialsContainer,
       { width: sizeValue, height: sizeValue, borderRadius: sizeValue / 2 }
     ]}>
-      <View style={styles.initialsText}>
-        {/* Would use Text here but keeping simple */}
-      </View>
+      {/* Would use Text here but keeping simple */}
     </View>
   ) : null;
 

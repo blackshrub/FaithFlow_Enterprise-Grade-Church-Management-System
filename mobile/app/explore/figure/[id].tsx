@@ -31,9 +31,7 @@ import { BibleFigureSkeleton } from '@/components/explore/LoadingSkeleton';
 import { AudioPlayButton } from '@/components/explore/AudioPlayButton';
 import Animated, { SlideInRight } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
-
-// Animated Image for shared element transitions (Reanimated 4+)
-const AnimatedImage = Animated.createAnimatedComponent(Image);
+import { AnimatedImage, sharedTags } from '@/utils/sharedTransitions';
 
 export default function BibleFigureScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -145,28 +143,29 @@ export default function BibleFigureScreen() {
           {/* Hero Image with Name Overlay - Shared Element Transition */}
           {figure.image_url && (
             <View className="relative w-full h-[320px]">
-              {/* Shared Element: Image transitions from card */}
+              {/* Image - Shared Element Transition */}
               <AnimatedImage
                 source={{ uri: figure.image_url }}
-                className="w-full h-full"
+                style={{
+                  width: '100%',
+                  height: '100%',
+                }}
                 resizeMode="cover"
+                sharedTransitionTag={sharedTags.figureImage(figure.id)}
                 accessibilityLabel={
                   contentLanguage === 'en'
                     ? `Portrait image of ${name}`
                     : `Gambar potret ${name}`
                 }
-                accessibilityIgnoresInvertColors={true}
-                sharedTransitionTag={`figure-${id}-image`}
               />
               <View
                 className="absolute bottom-0 left-0 right-0 p-6 pt-8"
                 style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)' }}
               >
-                {/* Shared Element: Name transitions from card */}
+                {/* Name */}
                 <Animated.Text
                   className="text-[32px] leading-[40px] font-bold text-white mb-1"
                   accessibilityRole="header"
-                  sharedTransitionTag={`figure-${id}-name`}
                 >
                   {name}
                 </Animated.Text>

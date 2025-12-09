@@ -55,9 +55,7 @@ import { QuickAskInput } from '@/components/companion/QuickAskInput';
 import { profileApi } from '@/services/api/explore';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
-
-// Animated Image for shared element transitions (Reanimated 4+)
-const AnimatedImage = Animated.createAnimatedComponent(Image);
+import { AnimatedImage, sharedTags } from '@/utils/sharedTransitions';
 
 export default function BibleStudyReaderScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -202,15 +200,23 @@ export default function BibleStudyReaderScreen() {
       <SafeAreaView className="flex-1 bg-white" edges={['top']}>
         <ScrollView className="flex-1" contentContainerClassName="pb-6" showsVerticalScrollIndicator={false}>
           {/* Hero Section with shared element transition */}
-          <Animated.View entering={FadeIn.duration(400)} className="relative h-[280px]">
-            {/* Background Image with shared element transition */}
+          <View className="relative h-[280px]">
+            {/* Background Image - Shared Element Transition */}
             <AnimatedImage
               source={{
                 uri: study.cover_image_url || 'https://images.unsplash.com/photo-1504052434569-70ad5836ab65?w=800',
               }}
-              className="absolute inset-0 w-full h-full"
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                width: '100%',
+                height: '100%',
+              }}
               resizeMode="cover"
-              sharedTransitionTag={`study-${id}-image`}
+              sharedTransitionTag={sharedTags.studyImage(study.id)}
             />
             <LinearGradient
               colors={['rgba(0,0,0,0.3)', 'rgba(0,0,0,0.85)']}
@@ -248,13 +254,12 @@ export default function BibleStudyReaderScreen() {
                     textShadowOffset: { width: 0, height: 2 },
                     textShadowRadius: 4,
                   }}
-                  sharedTransitionTag={`study-${id}-title`}
                 >
                   {studyTitle}
                 </Animated.Text>
               </View>
             </LinearGradient>
-          </Animated.View>
+          </View>
 
           <Animated.View entering={FadeInDown.duration(500).delay(200)} className="px-5 pt-6">
             {/* Introduction */}

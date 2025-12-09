@@ -106,9 +106,9 @@
       "expo-audio",
       "expo-asset"
     ],
+    "newArchEnabled": true,
     "experiments": {
-      "typedRoutes": true,
-      "turboModules": true
+      "typedRoutes": true
     },
     "extra": {
       "router": {

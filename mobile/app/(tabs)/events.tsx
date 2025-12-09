@@ -21,7 +21,6 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useRouter } from 'expo-router';
-import { withPremiumMotionV10 } from '@/hoc';
 import { PMotionV10 } from '@/components/motion/premium-motion';
 import {
   Filter,
@@ -69,6 +68,7 @@ import { EventsHeader, type EventsTab } from '@/components/events/EventsHeader';
 
 // Shared motion from today-motion module
 import { todayListItemMotion } from '@/components/motion/today-motion';
+import { useFocusKey } from '@/hooks/useFocusAnimation';
 import { getErrorMessage } from '@/utils/errorHelpers';
 
 // Custom colors not in tailwind
@@ -97,8 +97,8 @@ function EventsScreen() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
-  // Focus key for animations - kept static to avoid replaying on tab switch
-  const focusKey = 0;
+  // Focus key - triggers child animation replay on tab focus (no container opacity flash)
+  const focusKey = useFocusKey();
 
   // Track previous tab for Shared Axis X direction
   const prevTabRef = useRef<Tab>('upcoming');
@@ -722,7 +722,7 @@ function EventsScreen() {
   );
 }
 
-// Memoize screen + Apply Premium Motion V10 Ultra HOC for production-grade transitions
+// Memoize screen for performance
 const MemoizedEventsScreen = memo(EventsScreen);
 MemoizedEventsScreen.displayName = 'EventsScreen';
-export default withPremiumMotionV10(MemoizedEventsScreen);
+export default MemoizedEventsScreen;

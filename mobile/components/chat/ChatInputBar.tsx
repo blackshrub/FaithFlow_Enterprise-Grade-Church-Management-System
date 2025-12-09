@@ -42,36 +42,37 @@ import {
   Mic,
 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
+import { communityColors, colors } from '@/constants/theme';
 
 // =============================================================================
-// CONSTANTS - WhatsApp iOS Exact Colors
+// CONSTANTS - Chat-specific semantic aliases to communityColors
 // =============================================================================
 
-const COLORS = {
+const CHAT_COLORS = {
   // Bar background - lighter beige (matches chat screen and header)
-  barBg: '#F5F2EC',
+  barBg: communityColors.background.chat,
 
   // Input field
-  inputBg: '#FFFFFF',
-  inputBorder: '#E4E6EB',
-  inputBorderFocused: '#25D366',
+  inputBg: communityColors.background.input,
+  inputBorder: communityColors.inputBorder,
+  inputBorderFocused: communityColors.inputBorderFocused,
 
   // Text
-  textPrimary: '#111B21',
-  textPlaceholder: '#8696A0',
+  textPrimary: communityColors.text.primary,
+  textPlaceholder: communityColors.text.tertiary,
 
   // Icons - all grey outline style
-  iconGrey: '#54656F',
-  iconActive: '#128C7E',
+  iconGrey: communityColors.text.secondary,
+  iconActive: communityColors.light,
 
   // Buttons - dark green for send (matches community screen)
-  buttonGreen: '#075E54',
+  buttonGreen: communityColors.dark,
 
   // Reply
-  replyBorder: '#25D366',
-  replyBg: '#FFFFFF',
-  replySender: '#25D366',
-  replyText: '#667781',
+  replyBorder: communityColors.accent,
+  replyBg: colors.white,
+  replySender: communityColors.accent,
+  replyText: communityColors.text.secondary,
 };
 
 // Spring configs for smooth animations
@@ -153,7 +154,7 @@ const IconButton = memo(({ onPress, icon, disabled, isSending }: IconButtonProps
 
   // Send button is green filled, others are grey outline
   const isSendButton = icon === 'send';
-  const iconColor = isSendButton ? '#FFFFFF' : COLORS.iconGrey;
+  const iconColor = isSendButton ? colors.white : CHAT_COLORS.iconGrey;
   const iconSize = 26; // Larger icons for plus, camera, mic
   const strokeWidth = 2; // Clean outline icons
 
@@ -198,7 +199,7 @@ const IconButton = memo(({ onPress, icon, disabled, isSending }: IconButtonProps
       disabled={disabled || isSending}
       className="w-11 h-11 rounded-full items-center justify-center"
       style={[
-        isSendButton ? { backgroundColor: COLORS.buttonGreen } : undefined,
+        isSendButton ? { backgroundColor: CHAT_COLORS.buttonGreen } : undefined,
         animatedStyle,
       ]}
     >
@@ -247,7 +248,7 @@ const EmojiButton = memo(({ onPress }: InlineIconButtonProps) => {
       style={animatedStyle}
       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
     >
-      <Smile size={22} color={COLORS.iconGrey} strokeWidth={2} />
+      <Smile size={22} color={CHAT_COLORS.iconGrey} strokeWidth={2} />
     </AnimatedPressable>
   );
 });
@@ -269,24 +270,24 @@ const ReplyPreview = memo(({ senderName, preview, onClose }: ReplyPreviewProps) 
     entering={FadeIn.duration(150)}
     exiting={FadeOut.duration(100)}
     className="mx-2 mt-2 rounded-xl overflow-hidden"
-    style={{ backgroundColor: COLORS.replyBg }}
+    style={{ backgroundColor: CHAT_COLORS.replyBg }}
   >
     <View className="flex-row items-center">
       {/* Green accent bar */}
       <View
         className="w-1 self-stretch"
-        style={{ backgroundColor: COLORS.replyBorder }}
+        style={{ backgroundColor: CHAT_COLORS.replyBorder }}
       />
       <View className="flex-1 px-3 py-2.5">
         <Text
           className="text-[13px] font-semibold"
-          style={{ color: COLORS.replySender }}
+          style={{ color: CHAT_COLORS.replySender }}
         >
           {senderName}
         </Text>
         <Text
           className="text-[13px] mt-0.5"
-          style={{ color: COLORS.replyText }}
+          style={{ color: CHAT_COLORS.replyText }}
           numberOfLines={1}
         >
           {preview}
@@ -297,7 +298,7 @@ const ReplyPreview = memo(({ senderName, preview, onClose }: ReplyPreviewProps) 
         className="p-2.5 mr-1"
         hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
       >
-        <X size={18} color={COLORS.iconGrey} />
+        <X size={18} color={CHAT_COLORS.iconGrey} />
       </Pressable>
     </View>
   </Animated.View>
@@ -446,7 +447,7 @@ export const ChatInputBar = memo(
       }));
 
       return (
-        <View style={{ backgroundColor: COLORS.barBg }}>
+        <View style={{ backgroundColor: CHAT_COLORS.barBg }}>
           {/* Reply preview */}
           {replyingTo && (
             <ReplyPreview
@@ -472,9 +473,9 @@ export const ChatInputBar = memo(
             <View
               className="flex-1 flex-row items-center rounded-[20px]"
               style={{
-                backgroundColor: COLORS.inputBg,
+                backgroundColor: CHAT_COLORS.inputBg,
                 borderWidth: 0.5,
-                borderColor: COLORS.inputBorder,
+                borderColor: CHAT_COLORS.inputBorder,
                 minHeight: 32,
                 maxHeight: 100,
               }}
@@ -491,7 +492,7 @@ export const ChatInputBar = memo(
                 onBlur={() => setIsFocused(false)}
                 className="flex-1 text-[18px]"
                 style={{
-                  color: COLORS.textPrimary,
+                  color: CHAT_COLORS.textPrimary,
                   paddingTop: 1,
                   paddingBottom: 1,
                   paddingLeft: 12,
@@ -499,8 +500,8 @@ export const ChatInputBar = memo(
                   maxHeight: 80,
                   lineHeight: 24,
                 }}
-                cursorColor={COLORS.iconActive}
-                selectionColor={COLORS.iconActive + '40'}
+                cursorColor={CHAT_COLORS.iconActive}
+                selectionColor={CHAT_COLORS.iconActive + '40'}
               />
 
               {/* Emoji/sticker button inside right */}

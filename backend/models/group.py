@@ -58,6 +58,9 @@ class Group(GroupBase):
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
+    # Computed fields from aggregation
+    members_count: Optional[int] = Field(None, description="Computed: number of members in the group")
+
     class Config:
         json_schema_extra = {
             "example": {

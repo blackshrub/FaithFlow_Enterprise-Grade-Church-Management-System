@@ -10,17 +10,15 @@
  */
 
 import React, { memo } from 'react';
-import { View, Image, Pressable } from 'react-native';
+import { View, Pressable } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ExploreColors, ExploreShadows } from '@/constants/explore/designSystem';
-import type { DailyDevotion } from '@/types/explore';
+import type { DailyDevotion, MultilingualText } from '@/types/explore';
 import { Clock, BookOpen, CheckCircle } from 'lucide-react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { AudioPlayButton } from './AudioPlayButton';
 import { Text } from '@/components/ui/text';
-
-// Animated Image for shared element transitions (Reanimated 4+)
-const AnimatedImage = Animated.createAnimatedComponent(Image);
+import { AnimatedImage, sharedTags } from '@/utils/sharedTransitions';
 
 const CARD_HEIGHT = 220;
 
@@ -58,10 +56,11 @@ export const DailyDevotionCard = memo(function DailyDevotionCard({
     : null;
 
   // Build text for TTS (title + verse text for preview)
-  const ttsText = [
-    title,
-    devotion.main_verse?.text?.[language] || devotion.main_verse?.text?.en,
-  ].filter(Boolean).join('. ');
+  const verseText = devotion.main_verse?.text;
+  const verseTextDisplay = typeof verseText === 'string'
+    ? verseText
+    : (verseText as MultilingualText)?.[language] || (verseText as MultilingualText)?.en;
+  const ttsText = [title, verseTextDisplay].filter(Boolean).join('. ');
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
@@ -75,10 +74,6 @@ export const DailyDevotionCard = memo(function DailyDevotionCard({
     scale.value = withSpring(1, { damping: 15, stiffness: 300 });
   };
 
-  // Shared element transition tags (Reanimated 4+)
-  const imageTag = sharedTransitionTag ? `${sharedTransitionTag}-image` : undefined;
-  const titleTag = sharedTransitionTag ? `${sharedTransitionTag}-title` : undefined;
-
   return (
     <AnimatedPressable
       onPress={onPress}
@@ -88,12 +83,21 @@ export const DailyDevotionCard = memo(function DailyDevotionCard({
       style={[{ ...ExploreShadows.level2, height: CARD_HEIGHT }, animatedStyle]}
       testID="daily-devotion-card"
     >
-      {/* Background Image with shared element transition */}
+      {/* Background Image - Shared Element Transition */}
       <AnimatedImage
         source={{ uri: imageUrl }}
-        className="absolute inset-0 w-full h-full rounded-2xl"
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          width: '100%',
+          height: '100%',
+          borderRadius: 16,
+        }}
         resizeMode="cover"
-        sharedTransitionTag={imageTag}
+        sharedTransitionTag={sharedTransitionTag || sharedTags.devotionImage(devotion.id)}
       />
 
       {/* Gradient Overlay */}
@@ -113,7 +117,7 @@ export const DailyDevotionCard = memo(function DailyDevotionCard({
 
       {/* Content Overlay */}
       <View className="flex-1 justify-end p-5 gap-1.5">
-        {/* Title with shared element transition */}
+        {/* Title */}
         <Animated.Text
           className="text-[22px] font-bold text-white leading-7"
           style={{
@@ -122,7 +126,6 @@ export const DailyDevotionCard = memo(function DailyDevotionCard({
             textShadowRadius: 3,
           }}
           numberOfLines={2}
-          sharedTransitionTag={titleTag}
         >
           {title}
         </Animated.Text>

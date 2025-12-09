@@ -22,6 +22,7 @@ export function buildContext(
 ): Message[] {
   // Add intent-specific context hints
   const intentHints: Record<Intent, string> = {
+    simple: '', // Short responses, no special mode needed
     pastoral: '\n\n[MODE: PASTORAL - Be gentle, empathetic, validate feelings first]',
     scholarly: '\n\n[MODE: SCHOLARLY - Be precise, cite Scripture, use theological terms]',
     devotional: '\n\n[MODE: DEVOTIONAL - Be warm, prayerful, encouraging]',

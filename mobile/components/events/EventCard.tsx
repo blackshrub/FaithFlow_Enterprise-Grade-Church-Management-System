@@ -14,7 +14,7 @@
 import React, { memo, useMemo, useCallback } from 'react';
 import { View, Text, Pressable } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Image } from 'expo-image';
+import { AnimatedImage, sharedTags } from '@/utils/sharedTransitions';
 import {
   Calendar,
   MapPin,
@@ -150,14 +150,14 @@ function EventCardComponent({
           style={{ borderTopLeftRadius: radius.card, borderTopRightRadius: radius.card }}
         >
           {event.event_photo ? (
-            <Image
+            <AnimatedImage
               source={{ uri: event.event_photo }}
-              className="w-full h-full"
-              contentFit="cover"
-              cachePolicy="memory-disk"
-              transition={200}
-              placeholder="L6PZfSi_.AyE_3t7t7R**0o#DgR4"
-              placeholderContentFit="cover"
+              style={{
+                width: '100%',
+                height: '100%',
+              }}
+              resizeMode="cover"
+              sharedTransitionTag={sharedTags.eventImage(event.id)}
             />
           ) : (
             <LinearGradient

@@ -11,7 +11,7 @@
 import { create } from 'zustand';
 import { useShallow } from 'zustand/shallow';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { storage } from '@/lib/storage';
+import { mmkvStorage } from '@/lib/storage';
 import type { OnboardingQuestion, OnboardingResponse, UserProfile } from '@/services/api/explore';
 
 interface OnboardingState {
@@ -96,7 +96,7 @@ export const useOnboardingStore = create<OnboardingState>()(
     }),
     {
       name: 'onboarding-storage',
-      storage: createJSONStorage(() => storage),
+      storage: createJSONStorage(() => mmkvStorage),
       partialize: (state) => ({
         hasCompletedOnboarding: state.hasCompletedOnboarding,
         hasSkippedOnboarding: state.hasSkippedOnboarding,

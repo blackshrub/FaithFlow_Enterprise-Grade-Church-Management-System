@@ -107,6 +107,20 @@ export const colors = {
     900: '#831843',
   },
 
+  // Purple - Spiritual Purple (Prayer, Spirituality)
+  purple: {
+    50: '#faf5ff',
+    100: '#f3e8ff',
+    200: '#e9d5ff',
+    300: '#d8b4fe',
+    400: '#c084fc',
+    500: '#a855f7',
+    600: '#9333ea',
+    700: '#7e22ce',
+    800: '#6b21a8',
+    900: '#581c87',
+  },
+
   // Blue - Standard Blue (Info, Links, Actions)
   blue: {
     50: '#eff6ff',
@@ -201,6 +215,95 @@ export const colors = {
     tertiary: '#9ca3af',
     inverse: '#ffffff',
   },
+};
+
+/**
+ * Community/Chat Colors (WhatsApp-inspired)
+ *
+ * Centralized color palette for all community and chat screens.
+ * Maintains familiar messaging UX while staying consistent.
+ */
+export const communityColors = {
+  // Primary brand (WhatsApp-inspired teal)
+  primary: {
+    50: '#E7F5F3',
+    100: '#C5E8E3',
+    200: '#9DD9D0',
+    300: '#6EC7BA',
+    400: '#3DB5A5',
+    500: '#128C7E', // Main brand color
+    600: '#0E7168',
+    700: '#0A5651',
+    800: '#073C39',
+    900: '#042321',
+  },
+  // Accent green (for active states, badges, online indicators)
+  accent: '#25D366',
+  // Dark teal (for headers, primary actions, FAB)
+  dark: '#075E54',
+  // Light teal for hover/pressed states
+  light: '#128C7E',
+
+  // Message bubbles
+  bubble: {
+    outgoing: '#DCF8C6', // Light green for sent messages
+    incoming: '#FFFFFF', // White for received
+    system: '#FFF3CD', // Yellow for system messages
+  },
+
+  // Status indicators
+  status: {
+    online: '#25D366',
+    typing: '#25D366',
+    read: '#53BDEB', // Blue double-check
+    delivered: '#8696A0',
+    sent: '#8696A0',
+  },
+
+  // Semantic colors for community context
+  unreadBadge: '#25D366',
+  mentionBadge: '#1B8755',
+
+  // Backgrounds
+  background: {
+    chat: '#F5F2EC', // Beige chat background
+    header: '#FFFFFF', // Standard white header
+    surface: '#F7F7F7', // Elevated surface / cards
+    input: '#FFFFFF', // Input field background
+    pressed: '#F2F3F5', // Pressed state
+  },
+
+  // Text in community context
+  text: {
+    primary: '#1A1A1A',
+    secondary: '#667781',
+    tertiary: '#8696A0',
+    onPrimary: '#FFFFFF',
+    senderName: '#06CF9C',
+    link: '#53BDEB',
+  },
+
+  // Borders and dividers
+  border: '#E8E8E8',
+  divider: '#EBEBEB',
+  inputBorder: '#E4E6EB',
+  inputBorderFocused: '#25D366',
+
+  // Interactive states
+  pressed: '#F2F3F5',
+  ripple: 'rgba(0, 0, 0, 0.08)',
+
+  // Category badge colors
+  category: {
+    general: '#075E54',
+    ministry: '#6366F1',
+    activity: '#22C55E',
+    support: '#F59E0B',
+    announcement: '#EF4444',
+  },
+
+  // Doodle pattern for chat background
+  doodle: '#D5D0C8',
 };
 
 export const typography = {
@@ -438,6 +541,7 @@ export const readingThemes = {
 
 export default {
   colors,
+  communityColors,
   typography,
   spacing,
   borderRadius,

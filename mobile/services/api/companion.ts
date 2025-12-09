@@ -18,6 +18,8 @@ import {
   getConversationLength,
   buildContextSummary,
 } from '@/services/ai';
+import type { AIError } from '@/services/ai/errorHandler';
+import type { Intent } from '@/services/ai/intentClassifier';
 
 export interface ChatRequest {
   messages: Array<{
@@ -143,7 +145,8 @@ export function sendCompanionMessageStream(
     .pop()?.content || '';
 
   let fullText = '';
-  let eventSource: EventSource | null = null;
+  // react-native-sse has different API than browser EventSource - use any for compatibility
+  let eventSource: any = null;
   let isCancelled = false;
 
   // Track user message in session memory

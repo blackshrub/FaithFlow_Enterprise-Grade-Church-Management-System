@@ -275,7 +275,7 @@ function PlanCard({
       >
         {/* Cover Image with Gradient Overlay and Shared Element Transition */}
         <View style={{ height: 180, borderTopLeftRadius: 16, borderTopRightRadius: 16, overflow: 'hidden' }}>
-          {/* Background Image with shared element transition */}
+          {/* Background Image */}
           <AnimatedImage
             source={{
               uri:
@@ -284,7 +284,6 @@ function PlanCard({
             }}
             style={{ position: 'absolute', width: '100%', height: '100%' }}
             resizeMode="cover"
-            sharedTransitionTag={`devotion-${plan.id}-image`}
           />
           <LinearGradient
             colors={['transparent', 'rgba(0,0,0,0.8)']}
@@ -339,7 +338,7 @@ function PlanCard({
               )}
             </View>
 
-            {/* Title on Image with shared element transition */}
+            {/* Title on Image */}
             <View className="mt-auto">
               <Animated.Text
                 numberOfLines={2}
@@ -350,7 +349,6 @@ function PlanCard({
                   textShadowOffset: { width: 0, height: 1 },
                   textShadowRadius: 4,
                 }}
-                sharedTransitionTag={`devotion-${plan.id}-title`}
               >
                 {title}
               </Animated.Text>

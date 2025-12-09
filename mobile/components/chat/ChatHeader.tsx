@@ -20,25 +20,19 @@ import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
 
 import { PMotionV10 } from '@/components/motion/premium-motion';
+import { communityColors, colors } from '@/constants/theme';
 
 // =============================================================================
-// CONSTANTS - WhatsApp iOS Colors (Modern)
+// CONSTANTS - Chat-specific semantic aliases to communityColors
 // =============================================================================
 
-const COLORS = {
-  // Background - lighter beige (matches chat background)
-  headerBg: '#F5F2EC',
-
-  // Text
-  textPrimary: '#000000',
-  textSecondary: '#667781',
-  typingGreen: '#25D366',
-
-  // Icons - dark grey like WhatsApp
-  iconColor: '#54656F',
-
-  // Borders
-  borderColor: '#D1D7DB',
+const CHAT_COLORS = {
+  headerBg: communityColors.background.chat,
+  textPrimary: communityColors.text.primary,
+  textSecondary: communityColors.text.secondary,
+  typingGreen: communityColors.status.typing,
+  iconColor: communityColors.text.secondary,
+  borderColor: communityColors.border,
 };
 
 // =============================================================================
@@ -78,9 +72,9 @@ export const ChatHeader = memo(
         entering={PMotionV10.subtleSlide('right')}
         exiting={PMotionV10.screenFadeOut}
         style={{
-          backgroundColor: COLORS.headerBg,
+          backgroundColor: CHAT_COLORS.headerBg,
           borderBottomWidth: 0.5,
-          borderBottomColor: COLORS.borderColor,
+          borderBottomColor: CHAT_COLORS.borderColor,
         }}
       >
         <View className="flex-row items-center" style={{ height: 56 }}>
@@ -94,7 +88,7 @@ export const ChatHeader = memo(
             style={{ height: 56, width: 44, paddingLeft: 4 }}
             hitSlop={{ top: 8, bottom: 8, left: 12, right: 8 }}
           >
-            <ChevronLeft size={28} color={COLORS.iconColor} strokeWidth={2} />
+            <ChevronLeft size={28} color={CHAT_COLORS.iconColor} strokeWidth={2} />
           </Pressable>
 
           {/* Avatar + Info - tappable together, indented ~20px from chevron */}
@@ -117,11 +111,11 @@ export const ChatHeader = memo(
             ) : (
               <View
                 className="w-11 h-11 rounded-full items-center justify-center"
-                style={{ backgroundColor: '#128C7E' }}
+                style={{ backgroundColor: communityColors.light }}
               >
                 <Text
                   className="text-[15px] font-semibold"
-                  style={{ color: '#FFFFFF' }}
+                  style={{ color: colors.white }}
                 >
                   {communityName?.substring(0, 2).toUpperCase() || '??'}
                 </Text>
@@ -132,7 +126,7 @@ export const ChatHeader = memo(
             <View className="ml-3 flex-1">
               <Text
                 className="text-[17px] font-semibold"
-                style={{ color: COLORS.textPrimary }}
+                style={{ color: CHAT_COLORS.textPrimary }}
                 numberOfLines={1}
               >
                 {communityName || 'Community'}
@@ -140,14 +134,14 @@ export const ChatHeader = memo(
               {typingText ? (
                 <Text
                   className="text-[13px]"
-                  style={{ color: COLORS.typingGreen }}
+                  style={{ color: CHAT_COLORS.typingGreen }}
                 >
                   {typingText}
                 </Text>
               ) : (
                 <Text
                   className="text-[13px]"
-                  style={{ color: COLORS.textSecondary }}
+                  style={{ color: CHAT_COLORS.textSecondary }}
                 >
                   {t('chat.memberCount', '{{count}} members', { count: memberCount || 0 })}
                 </Text>
@@ -166,7 +160,7 @@ export const ChatHeader = memo(
               className="p-2.5"
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
-              <Video size={27} color={COLORS.iconColor} strokeWidth={1.5} />
+              <Video size={27} color={CHAT_COLORS.iconColor} strokeWidth={1.5} />
             </Pressable>
 
             {/* Voice call button */}
@@ -178,7 +172,7 @@ export const ChatHeader = memo(
               className="p-2.5"
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
-              <Phone size={22} color={COLORS.iconColor} />
+              <Phone size={22} color={CHAT_COLORS.iconColor} />
             </Pressable>
           </View>
         </View>

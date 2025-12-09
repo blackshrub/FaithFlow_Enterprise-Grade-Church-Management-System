@@ -24,6 +24,7 @@
 import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import {
   View,
+  Text,
   KeyboardAvoidingView,
   Platform,
   Alert,
@@ -98,20 +99,19 @@ import { useNavigationStore } from '@/stores/navigation';
 import { uploadMedia, UploadProgressCallback } from '@/services/mediaUpload';
 import { getThreadById } from '@/mock/community-mockdata';
 import type { CommunityMessage, CommunityThread } from '@/types/communities';
+import { communityColors, colors } from '@/constants/theme';
 
 // =============================================================================
 // CONSTANTS
 // =============================================================================
 
-// WhatsApp iOS exact colors - lighter beige like real WhatsApp
-const COLORS = {
-  // Background - exact WhatsApp light beige (lighter than before)
-  headerBg: '#F5F2EC',
-  chatBg: '#F5F2EC',
-  // Loading
-  primary: '#128C7E',
+// WhatsApp iOS exact colors - now from centralized theme
+const CHAT_COLORS = {
+  headerBg: communityColors.background.chat,
+  chatBg: communityColors.background.chat,
+  primary: communityColors.primary[500],
 };
-const PRIMARY_500 = '#128C7E';
+const PRIMARY_500 = communityColors.primary[500];
 
 // =============================================================================
 // CHAT BACKGROUND COMPONENT - WhatsApp-style SVG Doodle Pattern
@@ -371,7 +371,7 @@ const ChatBackground = React.memo(({ children }: { children: React.ReactNode }) 
   }, [cols, rows]);
 
   return (
-    <View className="flex-1" style={{ backgroundColor: COLORS.chatBg }}>
+    <View className="flex-1" style={{ backgroundColor: CHAT_COLORS.chatBg }}>
       {/* SVG Pattern Layer - absolute positioned behind content */}
       <View
         className="absolute inset-0"
@@ -995,18 +995,18 @@ function CommunityChatScreen() {
   // Loading state - iOS style (matches ChatHeader layout)
   if (isLoadingCommunity || (isLoadingMessages && messages.length === 0)) {
     return (
-      <SafeAreaView className="flex-1" style={{ backgroundColor: COLORS.headerBg }} edges={['top']}>
+      <SafeAreaView className="flex-1" style={{ backgroundColor: CHAT_COLORS.headerBg }} edges={['top']}>
         {/* Header skeleton - matches ChatHeader styling exactly */}
         <View
           className="flex-row items-center"
           style={{ height: 56, borderBottomColor: '#D1D7DB', borderBottomWidth: 0.5 }}
         >
           {/* Back chevron area */}
-          <View style={{ width: 44, paddingLeft: 4, alignItems: 'center', justifyContent: 'center' }}>
+          <View className="w-11 pl-1 items-center justify-center">
             <Skeleton className="w-7 h-7 rounded" isLoaded={false} />
           </View>
           {/* Avatar - marginLeft: 20, w-11 h-11 */}
-          <View style={{ marginLeft: 20 }}>
+          <View className="ml-5">
             <Skeleton className="w-11 h-11 rounded-full" isLoaded={false} />
           </View>
           {/* Title + subtitle */}
@@ -1038,7 +1038,7 @@ function CommunityChatScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1" style={{ backgroundColor: COLORS.headerBg }} edges={['top']}>
+    <SafeAreaView className="flex-1" style={{ backgroundColor: CHAT_COLORS.headerBg }} edges={['top']}>
       {/* Header - iOS style white background */}
       <ChatHeader
         communityName={thread ? thread.name : (community?.name || 'Community')}
@@ -1112,7 +1112,7 @@ function CommunityChatScreen() {
           />
         ) : (
           <View
-            className="flex-row items-center justify-center py-4 px-6"
+            className="flex-row items-center justify-center py-4 px-5"
             style={{ backgroundColor: '#F5F5F5', borderTopWidth: 0.5, borderTopColor: '#E0E0E0' }}
           >
             <Text className="text-[14px] text-center" style={{ color: '#8E8E93' }}>

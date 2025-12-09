@@ -61,6 +61,10 @@ class MemberBase(BaseModel):
         None,
         description="When the last face photo was captured (for monthly capture logic)"
     )
+    has_face_descriptors: Optional[bool] = Field(
+        None,
+        description="Computed field: True if member has at least one valid face descriptor"
+    )
 
     @field_validator('email', mode='before')
     @classmethod

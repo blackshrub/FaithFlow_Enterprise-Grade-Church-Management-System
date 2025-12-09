@@ -46,8 +46,8 @@ import {
 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Image } from 'expo-image';
 import QRCodeSVG from 'react-native-qrcode-svg';
+import { AnimatedImage, sharedTags } from '@/utils/sharedTransitions';
 
 import { Text } from '@/components/ui/text';
 import { Heading } from '@/components/ui/heading';
@@ -261,9 +261,9 @@ function EventDetailScreen() {
           overflow: 'hidden',
         }}
       >
-        {/* Event Photo Background */}
+        {/* Event Photo Background - Shared Element Transition */}
         {event.event_photo ? (
-          <Image
+          <AnimatedImage
             source={{ uri: event.event_photo }}
             style={{
               position: 'absolute',
@@ -272,7 +272,8 @@ function EventDetailScreen() {
               right: 0,
               bottom: 0,
             }}
-            contentFit="cover"
+            resizeMode="cover"
+            sharedTransitionTag={sharedTags.eventImage(event.id)}
           />
         ) : null}
 

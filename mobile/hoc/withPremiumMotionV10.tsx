@@ -232,8 +232,9 @@ export function withPremiumMotionV10<P extends object>(
 
     // Set initial values based on animation type
     useEffect(() => {
-      // Sample frame timing on mount for low-perf detection
-      if (enableLowPerfDetection) {
+      // Skip frame timing sampling for screens that don't animate (e.g., tab screens)
+      // This reduces CPU overhead on navigation
+      if (enableLowPerfDetection && !shouldSkip) {
         sampleFrameTiming();
       }
 

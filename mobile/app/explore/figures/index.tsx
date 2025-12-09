@@ -339,7 +339,6 @@ function FigureGridCard({ figure, onPress, contentLanguage, index }: FigureCardP
             source={{ uri: figure.image_url }}
             style={{ width: '100%', height: 160 }}
             resizeMode="cover"
-            sharedTransitionTag={`figure-${figure.id}-image`}
           />
         ) : (
           <View
@@ -362,7 +361,6 @@ function FigureGridCard({ figure, onPress, contentLanguage, index }: FigureCardP
               fontSize: 16,
               marginBottom: 2,
             }}
-            sharedTransitionTag={`figure-${figure.id}-name`}
           >
             {name}
           </Animated.Text>
@@ -395,7 +393,6 @@ function FigureListCard({ figure, onPress, contentLanguage, index }: FigureCardP
               source={{ uri: figure.image_url }}
               style={{ width: 80, height: 80, borderRadius: 40 }}
               resizeMode="cover"
-              sharedTransitionTag={`figure-${figure.id}-image`}
             />
           ) : (
             <View
@@ -413,7 +410,6 @@ function FigureListCard({ figure, onPress, contentLanguage, index }: FigureCardP
           <View className="flex-1" style={{ gap: 4 }}>
             <Animated.Text
               style={{ ...ExploreTypography.h4, color: ExploreColors.neutral[900] }}
-              sharedTransitionTag={`figure-${figure.id}-name`}
             >
               {name}
             </Animated.Text>

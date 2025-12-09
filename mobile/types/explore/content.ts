@@ -74,6 +74,7 @@ export interface DailyDevotion {
   // Metadata
   reading_time_minutes: number;
   tags: string[];
+  topics?: string[];
   image_url?: string;
 
   // AI generation
@@ -114,6 +115,9 @@ export interface VerseOfTheDay {
   // Visual
   background_image_url?: string;
   background_color?: string;
+
+  // Themes for personalization
+  themes?: string[];
 
   // AI generation
   ai_generated: boolean;
@@ -351,6 +355,7 @@ export interface BibleStudy {
   // Categorization
   categories: string[];
   category?: string; // Primary category (old_testament, new_testament, topical)
+  topics?: string[];
   difficulty: DifficultyLevel;
   series_id?: string;
   series_order?: number;

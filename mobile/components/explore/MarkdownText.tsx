@@ -11,25 +11,30 @@
  * - "quoted text" emphasis
  */
 
-import React from 'react';
+import React, { memo, useMemo } from 'react';
 import { Text, View, TextStyle, ViewStyle } from 'react-native';
 import { ExploreColors, ExploreTypography, ExploreSpacing } from '@/constants/explore/designSystem';
 
-interface MarkdownTextProps {
+export interface MarkdownTextProps {
   children: string | null | undefined;
   style?: TextStyle;
   containerStyle?: ViewStyle;
+  /** NativeWind className - applied to outer View container. For text styling, use style prop. */
+  className?: string;
 }
 
-export function MarkdownText({ children, style, containerStyle }: MarkdownTextProps) {
-  // Handle null, undefined, or non-string children
-  if (!children || typeof children !== 'string') return null;
+export const MarkdownText = memo(function MarkdownText({ children, style, containerStyle, className }: MarkdownTextProps) {
+  // Memoize parsed paragraphs to avoid expensive regex on every render
+  const paragraphs = useMemo(() => {
+    if (!children || typeof children !== 'string') return null;
+    return children.split(/\n\n+/);
+  }, [children]);
 
-  // Split content into paragraphs
-  const paragraphs = children.split(/\n\n+/);
+  // Handle null, undefined, or non-string children
+  if (!paragraphs) return null;
 
   return (
-    <View style={containerStyle}>
+    <View style={containerStyle} className={className}>
       {paragraphs.map((paragraph, pIndex) => {
         const trimmedParagraph = paragraph.trim();
         if (!trimmedParagraph) return null;
@@ -191,7 +196,9 @@ export function MarkdownText({ children, style, containerStyle }: MarkdownTextPr
       })}
     </View>
   );
-}
+});
+
+MarkdownText.displayName = 'MarkdownText';
 
 // Parse inline markdown: **bold**, *italic*, "quotes"
 function renderInlineMarkdown(text: string): React.ReactNode[] {

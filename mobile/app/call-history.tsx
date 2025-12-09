@@ -407,7 +407,7 @@ export default function CallHistoryScreen() {
           <FlashList
             data={filteredCalls}
             keyExtractor={(item: CallHistoryItem) => item.call_id}
-            renderItem={({ item }) => (
+            renderItem={({ item }: { item: CallHistoryItem }) => (
               <CallItem
                 item={item}
                 onPress={() => {

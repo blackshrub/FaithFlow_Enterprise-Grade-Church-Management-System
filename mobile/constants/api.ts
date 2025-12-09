@@ -209,7 +209,7 @@ export const CACHE_TIMES = {
   GROUPS: 1000 * 60 * 5, // 5 minutes (legacy)
   COMMUNITIES: 1000 * 60 * 5, // 5 minutes
   COMMUNITY_MESSAGES: 1000 * 30, // 30 seconds (real-time via MQTT)
-  PRAYER: 1000 * 60 * 3, // 3 minutes
+  PRAYER: 1000 * 60 * 5, // 5 minutes (unified with other Today screen data)
   PROFILE: 1000 * 60 * 30, // 30 minutes
   MEMBERS: 1000 * 60 * 10, // 10 minutes
   SUBGROUPS: 1000 * 60 * 5, // 5 minutes

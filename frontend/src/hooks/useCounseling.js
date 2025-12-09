@@ -219,6 +219,19 @@ export const useTimeSlots = (filters = {}) => {
 
 // ==================== APPOINTMENTS ====================
 
+export const usePendingAppointmentsCount = () => {
+  const sessionChurchId = useSessionChurchId();
+  return useQuery({
+    queryKey: ['appointments-pending-count', sessionChurchId],
+    queryFn: async () => {
+      const response = await api.get('/v1/counseling/appointments/pending-count');
+      return response.data;
+    },
+    enabled: !!sessionChurchId,
+    refetchInterval: 60000, // Refresh every minute
+  });
+};
+
 export const useAppointments = (filters = {}) => {
   const sessionChurchId = useSessionChurchId();
   return useQuery({

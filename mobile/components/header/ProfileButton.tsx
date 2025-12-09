@@ -27,7 +27,8 @@ interface ProfileButtonProps {
 
 export function ProfileButton({ size = 36, showBorder = true }: ProfileButtonProps) {
   const router = useRouter();
-  const { member } = useAuthStore();
+  // Selective subscription - only re-render when member changes
+  const member = useAuthStore((state) => state.member);
 
   const handlePress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);

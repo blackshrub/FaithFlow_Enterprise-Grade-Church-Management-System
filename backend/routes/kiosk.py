@@ -2879,10 +2879,15 @@ async def search_members_for_selection(
         raise HTTPException(status_code=500, detail="Search failed")
 
 
+class ChildPhotoUpload(BaseModel):
+    """Request body for child photo upload"""
+    photo_base64: str
+    church_id: str
+
+
 @router.post("/member-care/upload-child-photo")
 async def upload_child_photo(
-    church_id: str = Query(..., description="Church ID"),
-    photo_base64: str = Query(..., description="Base64 encoded photo"),
+    data: ChildPhotoUpload,
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     """
@@ -2895,6 +2900,10 @@ async def upload_child_photo(
         from services.seaweedfs_service import SeaweedFSService, StorageCategory
         import base64
 
+        # Extract from data model
+        photo_base64 = data.photo_base64
+        church_id = data.church_id
+
         # Decode base64
         if photo_base64.startswith("data:"):
             # Remove data URL prefix
@@ -2905,13 +2914,15 @@ async def upload_child_photo(
         # Upload to SeaweedFS
         seaweed_service = SeaweedFSService()
         result = await seaweed_service.upload_by_category(
-            file_content=photo_bytes,
-            filename=f"child_photo_{uuid.uuid4()}.jpg",
+            content=photo_bytes,
+            file_name=f"child_photo_{uuid.uuid4()}.jpg",
+            mime_type="image/jpeg",
             category=StorageCategory.MEMBER_DOCUMENT,
             church_id=church_id,
         )
 
-        if not result.get("success"):
+        # upload_by_category returns: url, fid, thumbnail_url (not success)
+        if not result.get("url"):
             raise HTTPException(status_code=500, detail="Failed to upload photo")
 
         return {

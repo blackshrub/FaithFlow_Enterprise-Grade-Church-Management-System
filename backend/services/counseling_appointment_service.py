@@ -110,9 +110,12 @@ class CounselingAppointmentService:
             f"Member {member_id} requested appointment on {slot['date']} at {slot['start_time']}",
             {"appointment_id": appointment_id, "member_id": member_id}
         )
-        
+
+        # Send WhatsApp notifications to admins, counselor, and member
+        await self._notify_appointment_created(church_id, appointment)
+
         logger.info(f"Appointment {appointment_id} created by member {member_id}")
-        
+
         return appointment
     
     async def create_appointment_from_staff(
@@ -197,7 +200,10 @@ class CounselingAppointmentService:
             f"Staff {staff_id} created appointment for member {member_id} on {slot['date']}",
             {"appointment_id": appointment_id, "staff_id": staff_id, "member_id": member_id}
         )
-        
+
+        # Send WhatsApp notifications to admins, counselor, and member
+        await self._notify_appointment_created(church_id, appointment)
+
         return appointment
     
     async def approve_appointment(
@@ -426,3 +432,131 @@ class CounselingAppointmentService:
             })
         except Exception as e:
             logger.error(f"Failed to log audit: {e}")
+
+    async def _notify_appointment_created(
+        self,
+        church_id: str,
+        appointment: dict
+    ):
+        """
+        Send WhatsApp notifications when a new appointment is created.
+        - Notifies all church admins
+        - Notifies the assigned counselor
+        - Sends confirmation to the member
+        """
+        try:
+            from services.whatsapp_service import send_member_care_confirmation
+            from models.whatsapp_template import WhatsAppTemplateType
+
+            # Get church name
+            church = await self.db.churches.find_one(
+                {"id": church_id},
+                {"name": 1}
+            )
+            church_name = church.get("name", "Your Church") if church else "Your Church"
+
+            # Get member info
+            member = await self.db.members.find_one(
+                {"id": appointment["member_id"]},
+                {"full_name": 1, "phone_whatsapp": 1, "phone": 1}
+            )
+            member_name = member.get("full_name", "Member") if member else "Member"
+            member_phone = member.get("phone_whatsapp") or member.get("phone") if member else None
+
+            # Get counselor info
+            counselor = await self.db.counseling_counselors.find_one(
+                {"id": appointment["counselor_id"]},
+                {"name": 1, "phone": 1, "user_id": 1}
+            )
+            counselor_name = counselor.get("name", "Counselor") if counselor else "Counselor"
+            counselor_phone = counselor.get("phone") if counselor else None
+
+            # Format date and time
+            appointment_date = appointment.get("date", "")
+            appointment_time = f"{appointment.get('start_time', '')} - {appointment.get('end_time', '')}"
+
+            # Appointment type label
+            type_labels = {
+                "counseling": "Counseling / Konseling",
+                "prayer": "Prayer / Doa",
+            }
+            appointment_type = type_labels.get(appointment.get("type", "counseling"), appointment.get("type", ""))
+
+            # Urgency label
+            urgency_labels = {
+                "normal": "Normal",
+                "urgent": "Urgent / Mendesak",
+            }
+            urgency = urgency_labels.get(appointment.get("urgency", "normal"), "Normal")
+
+            # Build variables for admin notification
+            admin_variables = {
+                "church_name": church_name,
+                "member_name": member_name,
+                "member_phone": member_phone or "-",
+                "appointment_type": appointment_type,
+                "topic": appointment.get("topic", "-"),
+                "date": appointment_date,
+                "time": appointment_time,
+                "counselor_name": counselor_name,
+                "urgency": urgency,
+            }
+
+            # Collect admin phones to notify
+            admin_phones = set()
+
+            # 1. Notify assigned counselor
+            if counselor_phone:
+                admin_phones.add(counselor_phone)
+
+            # 2. Notify all church admins
+            admin_cursor = self.db.users.find(
+                {"church_id": church_id, "role": {"$in": ["admin", "super_admin"]}},
+                {"phone": 1}
+            )
+            async for admin in admin_cursor:
+                if admin.get("phone"):
+                    admin_phones.add(admin["phone"])
+
+            # Send to all admins/counselors
+            for phone in admin_phones:
+                try:
+                    await send_member_care_confirmation(
+                        db=self.db,
+                        church_id=church_id,
+                        template_type=WhatsAppTemplateType.COUNSELING_APPOINTMENT_ADMIN_NOTIFICATION.value,
+                        phone_number=phone,
+                        variables=admin_variables,
+                        language="id",
+                    )
+                    logger.info(f"Sent counseling admin notification to {phone}")
+                except Exception as e:
+                    logger.error(f"Failed to send counseling admin notification to {phone}: {e}")
+
+            # 3. Send confirmation to member
+            if member_phone:
+                member_variables = {
+                    "church_name": church_name,
+                    "name": member_name,
+                    "appointment_type": appointment_type,
+                    "topic": appointment.get("topic", "-"),
+                    "date": appointment_date,
+                    "time": appointment_time,
+                    "counselor_name": counselor_name,
+                }
+                try:
+                    await send_member_care_confirmation(
+                        db=self.db,
+                        church_id=church_id,
+                        template_type=WhatsAppTemplateType.COUNSELING_APPOINTMENT_MEMBER_CONFIRMATION.value,
+                        phone_number=member_phone,
+                        variables=member_variables,
+                        language="id",
+                    )
+                    logger.info(f"Sent counseling confirmation to member {member_phone}")
+                except Exception as e:
+                    logger.error(f"Failed to send counseling confirmation to member: {e}")
+
+        except Exception as e:
+            logger.error(f"Failed to send appointment notifications: {e}")
+            # Don't raise - notification failure shouldn't block the appointment

@@ -51,6 +51,7 @@ const DEFAULT_OPTIONS: Omit<Required<TTSOptions>, 'onPlaybackStart'> = {
   speakingRate: DEFAULT_TTS_SETTINGS.speakingRate,
   pitch: DEFAULT_TTS_SETTINGS.pitch,
   audioEncoding: DEFAULT_TTS_SETTINGS.audioEncoding,
+  language: 'en', // Default to English, will be auto-detected if not provided
 };
 
 // Audio state

@@ -384,8 +384,8 @@ export default function CommunitySearchScreen() {
         {showResults && !isLoading && (
           <FlashList
             data={searchResults}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
+            keyExtractor={(item: CommunityMessage) => item.id}
+            renderItem={({ item }: { item: CommunityMessage }) => (
               <SearchResultItem
                 message={item}
                 query={debouncedQuery}

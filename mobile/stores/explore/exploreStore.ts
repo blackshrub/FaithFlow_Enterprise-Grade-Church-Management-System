@@ -7,6 +7,7 @@
 
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
+import { useShallow } from 'zustand/shallow';
 import { mmkvStorage } from '@/lib/storage';
 import type { Language } from '@/types/explore';
 
@@ -114,3 +115,32 @@ export const useExploreStore = create<ExploreStore>()(
     }
   )
 );
+
+// Granular selectors - prevent cascading re-renders
+export const useContentLanguage = () => useExploreStore((s) => s.contentLanguage);
+export const useActiveContent = () =>
+  useExploreStore(
+    useShallow((s) => ({
+      activeContentId: s.activeContentId,
+      activeContentType: s.activeContentType,
+    }))
+  );
+export const useShowCelebration = () => useExploreStore((s) => s.showCelebration);
+export const useCelebrationType = () => useExploreStore((s) => s.celebrationType);
+export const useCelebrationData = () => useExploreStore((s) => s.celebrationData);
+
+// Actions selector - never causes re-renders since actions are stable
+export const useExploreActions = () =>
+  useExploreStore(
+    useShallow((s) => ({
+      setContentLanguage: s.setContentLanguage,
+      setActiveContent: s.setActiveContent,
+      clearActiveContent: s.clearActiveContent,
+      startReading: s.startReading,
+      endReading: s.endReading,
+      markContentComplete: s.markContentComplete,
+      isContentCompleted: s.isContentCompleted,
+      triggerCelebration: s.triggerCelebration,
+      closeCelebration: s.closeCelebration,
+    }))
+  );

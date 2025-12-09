@@ -20,7 +20,7 @@
  * </PremiumCard3>
  */
 
-import React from 'react';
+import React, { memo } from 'react';
 import { View, Pressable } from 'react-native';
 import type { ViewStyle } from 'react-native';
 import Animated, {
@@ -70,7 +70,7 @@ export interface PremiumCard3Props {
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-export function PremiumCard3({
+export const PremiumCard3 = memo(function PremiumCard3({
   children,
   selected = false,
   onPress,
@@ -207,7 +207,9 @@ export function PremiumCard3({
       </View>
     </AnimatedPressable>
   );
-}
+});
+
+PremiumCard3.displayName = 'PremiumCard3';
 
 // Legacy export for backward compatibility
 export const PremiumCard2 = PremiumCard3;
