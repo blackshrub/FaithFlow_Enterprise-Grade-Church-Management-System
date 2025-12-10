@@ -98,11 +98,11 @@ export const useModalHost = create<ModalHostState>((set, get) => ({
   current: null,
   queue: [],
 
-  open: (type, props) => {
+  open: <T extends ModalType>(type: T, props?: ModalPayloads[T]) => {
     set({
       current: {
         type,
-        props: props as any,
+        props,
       },
     });
   },

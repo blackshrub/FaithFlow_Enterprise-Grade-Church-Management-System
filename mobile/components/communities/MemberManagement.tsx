@@ -183,6 +183,9 @@ export function MemberCard({
       onPress={onPress}
       className="py-3 px-4 bg-white"
       style={({ pressed }) => pressed && { backgroundColor: colors.gray[50] }}
+      accessible
+      accessibilityRole="button"
+      accessibilityLabel={`${member.name}, ${ROLE_CONFIG[member.role].label}${isCurrentUser ? ', You' : ''}${showManageButton ? ', tap to manage' : ''}`}
     >
       <HStack space="md" className="items-center">
         {/* Avatar with online indicator */}
@@ -323,6 +326,9 @@ export function RolePickerSheet({
                     borderColor: colors.primary[500],
                   },
                 ]}
+                accessible
+                accessibilityRole="button"
+                accessibilityLabel={`${config.label}${isSelected ? ', selected' : ''}`}
               >
                 <View
                   className="items-center justify-center"
@@ -538,6 +544,9 @@ export function MemberManagementSheet({
                   onMessage(member.member_id);
                   onClose();
                 }}
+                accessible
+                accessibilityRole="button"
+                accessibilityLabel={`Send message to ${member.name}`}
               >
                 <View
                   className="items-center justify-center mr-3"
@@ -559,6 +568,9 @@ export function MemberManagementSheet({
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   setShowRolePicker(true);
                 }}
+                accessible
+                accessibilityRole="button"
+                accessibilityLabel={`Change role for ${member.name}. Current role: ${roleConfig.label}`}
               >
                 <View
                   className="items-center justify-center mr-3"
@@ -580,6 +592,9 @@ export function MemberManagementSheet({
                 className="flex-row items-center py-3.5"
                 style={{ borderBottomWidth: 1, borderBottomColor: colors.gray[100] }}
                 onPress={handleKick}
+                accessible
+                accessibilityRole="button"
+                accessibilityLabel={`Remove ${member.name} from community`}
               >
                 <View
                   className="items-center justify-center mr-3"
@@ -597,6 +612,9 @@ export function MemberManagementSheet({
                 className="flex-row items-center py-3.5"
                 style={{ borderBottomWidth: 1, borderBottomColor: colors.gray[100] }}
                 onPress={handleBan}
+                accessible
+                accessibilityRole="button"
+                accessibilityLabel={`Ban ${member.name} from community`}
               >
                 <View
                   className="items-center justify-center mr-3"

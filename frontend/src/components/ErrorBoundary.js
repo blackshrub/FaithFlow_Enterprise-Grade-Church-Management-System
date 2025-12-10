@@ -2,6 +2,7 @@ import React from 'react';
 import { AlertTriangle } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { withTranslation } from 'react-i18next';
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -18,6 +19,8 @@ class ErrorBoundary extends React.Component {
   }
 
   render() {
+    const { t } = this.props;
+
     if (this.state.hasError) {
       return (
         <div className="min-h-screen flex items-center justify-center p-6 bg-gray-50">
@@ -25,12 +28,12 @@ class ErrorBoundary extends React.Component {
             <CardHeader>
               <div className="flex items-center space-x-3">
                 <AlertTriangle className="w-8 h-8 text-red-600" />
-                <CardTitle className="text-xl">Terjadi Kesalahan</CardTitle>
+                <CardTitle className="text-xl">{t('common.errorOccurred', 'An Error Occurred')}</CardTitle>
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-gray-600">
-                Maaf, terjadi kesalahan yang tidak terduga. Silakan refresh halaman atau hubungi administrator jika masalah berlanjut.
+                {t('common.errorMessage', 'Sorry, an unexpected error occurred. Please refresh the page or contact administrator if the problem persists.')}
               </p>
               {this.state.error && (
                 <div className="p-3 bg-red-50 border border-red-200 rounded text-sm">
@@ -39,14 +42,14 @@ class ErrorBoundary extends React.Component {
               )}
               <div className="flex space-x-2">
                 <Button onClick={() => window.location.reload()} className="flex-1">
-                  Refresh Halaman
+                  {t('common.refreshPage', 'Refresh Page')}
                 </Button>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   onClick={() => this.setState({ hasError: false, error: null })}
                   className="flex-1"
                 >
-                  Coba Lagi
+                  {t('common.tryAgain', 'Try Again')}
                 </Button>
               </div>
             </CardContent>
@@ -59,4 +62,4 @@ class ErrorBoundary extends React.Component {
   }
 }
 
-export default ErrorBoundary;
+export default withTranslation()(ErrorBoundary);

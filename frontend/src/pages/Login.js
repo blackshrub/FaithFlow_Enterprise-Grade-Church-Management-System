@@ -91,7 +91,7 @@ export default function Login() {
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
             {error && (
-              <Alert variant="destructive">
+              <Alert variant="destructive" data-testid="error-alert">
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
@@ -102,7 +102,7 @@ export default function Login() {
                 onValueChange={setSelectedChurch}
                 disabled={loading || churches.length === 0}
               >
-                <SelectTrigger id="church">
+                <SelectTrigger id="church" data-testid="church-select">
                   <SelectValue placeholder={t('auth.selectChurch')} />
                 </SelectTrigger>
                 <SelectContent>
@@ -118,6 +118,7 @@ export default function Login() {
               <Label htmlFor="email">{t('auth.email')}</Label>
               <Input
                 id="email"
+                data-testid="email-input"
                 type="text"
                 placeholder="admin@gkbjtamankencana.org or API username"
                 value={email}
@@ -130,6 +131,7 @@ export default function Login() {
               <Label htmlFor="password">{t('auth.password')}</Label>
               <Input
                 id="password"
+                data-testid="password-input"
                 type="password"
                 placeholder="••••••••"
                 value={password}
@@ -144,6 +146,7 @@ export default function Login() {
               type="submit"
               className="w-full"
               disabled={loading || !selectedChurch}
+              data-testid="login-button"
             >
               {loading ? (
                 <>

@@ -145,6 +145,9 @@ export const GiveHeader = memo(function GiveHeader({
                 </View>
                 <Pressable
                   onPress={handleHistoryPress}
+                  accessible
+                  accessibilityRole="button"
+                  accessibilityLabel={t('give.history')}
                   className="w-11 h-11 rounded-full bg-white/10 items-center justify-center active:scale-95 active:opacity-90"
                 >
                   <MemoIcon icon={History} size={20} color={Colors.white} />
@@ -169,6 +172,9 @@ export const GiveHeader = memo(function GiveHeader({
             <View className="flex-row items-center justify-between px-5 py-3">
               <Pressable
                 onPress={handleBackPress}
+                accessible
+                accessibilityRole="button"
+                accessibilityLabel="Go back"
                 className="w-11 h-11 rounded-full bg-white/10 items-center justify-center active:scale-95"
               >
                 <MemoIcon icon={ArrowLeft} size={24} color={Colors.white} />
@@ -185,6 +191,9 @@ export const GiveHeader = memo(function GiveHeader({
 
               <Pressable
                 onPress={handleHistoryPress}
+                accessible
+                accessibilityRole="button"
+                accessibilityLabel={showHistory ? t('give.hideHistory') : t('give.showHistory')}
                 className={`w-11 h-11 rounded-full items-center justify-center active:scale-95 ${
                   showHistory ? 'bg-white' : 'bg-white/10'
                 }`}

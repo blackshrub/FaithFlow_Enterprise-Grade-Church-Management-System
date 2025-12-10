@@ -7,7 +7,23 @@
  * Usage: Import and merge with real events in CalendarModal or events screen
  */
 
-import type { EventWithMemberStatus } from '@/types/events';
+import type { EventWithMemberStatus, EventRSVP, EventAttendance } from '@/types/events';
+
+// Mock RSVP object for events where user has RSVP'd
+const createMockRSVP = (): EventRSVP => ({
+  member_id: 'mock-member-1',
+  member_name: 'Test User',
+  timestamp: new Date().toISOString(),
+  status: 'confirmed',
+  confirmation_code: 'MOCK-CONF-123',
+});
+
+// Mock Attendance object for events user has attended
+const createMockAttendance = (): EventAttendance => ({
+  member_id: 'mock-member-1',
+  member_name: 'Test User',
+  check_in_time: new Date().toISOString(),
+});
 
 // Get dates for the current month
 const now = new Date();
@@ -61,8 +77,8 @@ export const mockCalendarEvents: EventWithMemberStatus[] = [
     can_rsvp: false,
     max_attendees: 200,
     current_attendees: 150,
-    my_rsvp: false, // No RSVP = upcoming
-    my_attendance: false,
+    my_rsvp: null, // No RSVP = upcoming
+    my_attendance: null,
     church_id: 'mock-church',
     created_at: createFutureDate(1),
     updated_at: createFutureDate(1),
@@ -82,8 +98,8 @@ export const mockCalendarEvents: EventWithMemberStatus[] = [
     can_rsvp: true,
     max_attendees: 50,
     current_attendees: 30,
-    my_rsvp: false, // No RSVP = upcoming
-    my_attendance: false,
+    my_rsvp: null, // No RSVP = upcoming
+    my_attendance: null,
     church_id: 'mock-church',
     created_at: createFutureDate(1),
     updated_at: createFutureDate(1),
@@ -103,8 +119,8 @@ export const mockCalendarEvents: EventWithMemberStatus[] = [
     can_rsvp: false,
     max_attendees: 30,
     current_attendees: 25,
-    my_rsvp: true, // Has RSVP = rsvp status
-    my_attendance: false,
+    my_rsvp: createMockRSVP(), // Has RSVP = rsvp status
+    my_attendance: null,
     church_id: 'mock-church',
     created_at: createFutureDate(1),
     updated_at: createFutureDate(1),
@@ -124,8 +140,8 @@ export const mockCalendarEvents: EventWithMemberStatus[] = [
     can_rsvp: false,
     max_attendees: 40,
     current_attendees: 20,
-    my_rsvp: false, // No RSVP = upcoming
-    my_attendance: false,
+    my_rsvp: null, // No RSVP = upcoming
+    my_attendance: null,
     church_id: 'mock-church',
     created_at: createFutureDate(1),
     updated_at: createFutureDate(1),
@@ -145,8 +161,8 @@ export const mockCalendarEvents: EventWithMemberStatus[] = [
     can_rsvp: false,
     max_attendees: 25,
     current_attendees: 20,
-    my_rsvp: true, // Has RSVP = rsvp status
-    my_attendance: false,
+    my_rsvp: createMockRSVP(), // Has RSVP = rsvp status
+    my_attendance: null,
     church_id: 'mock-church',
     created_at: createFutureDate(1),
     updated_at: createFutureDate(1),
@@ -167,8 +183,8 @@ export const mockCalendarEvents: EventWithMemberStatus[] = [
     can_rsvp: false,
     max_attendees: 60,
     current_attendees: 55,
-    my_rsvp: true,
-    my_attendance: true, // PAST + attendance = attended status
+    my_rsvp: createMockRSVP(),
+    my_attendance: createMockAttendance(), // PAST + attendance = attended status
     church_id: 'mock-church',
     created_at: createFutureDate(1),
     updated_at: createFutureDate(1),
@@ -188,8 +204,8 @@ export const mockCalendarEvents: EventWithMemberStatus[] = [
     can_rsvp: false,
     max_attendees: 100,
     current_attendees: 80,
-    my_rsvp: true, // Has RSVP = rsvp status
-    my_attendance: false,
+    my_rsvp: createMockRSVP(), // Has RSVP = rsvp status
+    my_attendance: null,
     church_id: 'mock-church',
     created_at: createFutureDate(1),
     updated_at: createFutureDate(1),
@@ -209,8 +225,8 @@ export const mockCalendarEvents: EventWithMemberStatus[] = [
     can_rsvp: false,
     max_attendees: 40,
     current_attendees: 35,
-    my_rsvp: true, // Has RSVP = rsvp status
-    my_attendance: false,
+    my_rsvp: createMockRSVP(), // Has RSVP = rsvp status
+    my_attendance: null,
     church_id: 'mock-church',
     created_at: createFutureDate(1),
     updated_at: createFutureDate(1),
@@ -231,8 +247,8 @@ export const mockCalendarEvents: EventWithMemberStatus[] = [
     can_rsvp: false,
     max_attendees: 35,
     current_attendees: 30,
-    my_rsvp: true,
-    my_attendance: true, // PAST + attendance = attended status
+    my_rsvp: createMockRSVP(),
+    my_attendance: createMockAttendance(), // PAST + attendance = attended status
     church_id: 'mock-church',
     created_at: createFutureDate(1),
     updated_at: createFutureDate(1),

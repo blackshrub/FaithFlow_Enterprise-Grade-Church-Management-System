@@ -95,8 +95,8 @@ async def send_whatsapp_message(
                 logger.info(f"📷 Decoded image binary, size={len(image_binary)} bytes")
             except Exception as e:
                 logger.error(f"Failed to decode base64 image: {e}")
-                # Fall back to text-only message
-                image_binary = None
+                # Raise error instead of silently falling back - caller should know about the failure
+                raise ValueError(f"Invalid base64 image data: {e}") from e
 
             if image_binary:
                 # Use /send/image endpoint with multipart/form-data

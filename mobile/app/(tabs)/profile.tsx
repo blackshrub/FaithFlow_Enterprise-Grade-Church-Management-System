@@ -62,6 +62,8 @@ import { useGivingSummary } from '@/hooks/useGiving';
 import { usePrayerRequests } from '@/hooks/usePrayer';
 import { useAttendedEvents } from '@/hooks/useEvents';
 import { showSuccessToast } from '@/components/ui/Toast';
+import { formatCompactCurrency } from '@/utils/currencyFormat';
+import { replaceTo } from '@/utils/navigation';
 
 const SCREEN_KEY = 'profile-screen';
 
@@ -101,18 +103,17 @@ function ProfileScreen() {
   );
   const attendedEventsCount = useMemo(() => attendedEvents?.length || 0, [attendedEvents]);
 
-  const formatCurrency = useCallback((amount: number) => {
-    if (amount >= 1000000) return `Rp ${(amount / 1000000).toFixed(1)}M`;
-    if (amount >= 1000) return `Rp ${(amount / 1000).toFixed(0)}K`;
-    return `Rp ${amount}`;
-  }, []);
+  // DATA FIX: Use shared currency formatter utility
+  const formatCurrency = formatCompactCurrency;
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     await Promise.all([refetchGiving(), refetchPrayer(), refetchAttended()]);
     setRefreshing(false);
-  }, [refetchGiving, refetchPrayer, refetchAttended]);
+    // UX FIX: Show feedback when refresh completes
+    showSuccessToast(t('common.refreshed', 'Refreshed'), t('common.dataUpdated', 'Data updated'));
+  }, [refetchGiving, refetchPrayer, refetchAttended, t]);
 
   const getInitials = useCallback((name: string) => {
     if (!name) return 'U';
@@ -131,8 +132,8 @@ function ProfileScreen() {
     setShowLogoutDialog(false);
     logout();
     showSuccessToast(t('profile.logoutSuccess'), t('profile.logoutSuccessDesc'));
-    router.replace('/(auth)/login');
-  }, [logout, t, router]);
+    replaceTo('/(auth)/login');
+  }, [logout, t]);
 
   const handleLogoutCancel = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -167,14 +168,23 @@ function ProfileScreen() {
   // Render menu item - iOS Settings style with NativeWind
   const renderMenuItem = (item: MenuItem, _index: number, isFirst: boolean, isLast: boolean) => {
     const IconComponent = item.icon;
+
+    const handlePress = () => {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      if (item.route) {
+        // Note: Not implemented yet - would use navigateTo when routes are available
+        console.log('Navigate to:', item.route);
+      }
+    };
+
     return (
       <Pressable
         key={item.label}
-        onPress={() => {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          if (item.route) router.push(item.route as any);
-        }}
+        onPress={handlePress}
         className="active:bg-background-100 px-4 min-h-[52px] justify-center"
+        accessible
+        accessibilityRole="button"
+        accessibilityLabel={item.label}
       >
         <View className="flex-row items-center py-3">
           {/* Icon container - iOS Settings style with colored background */}
@@ -241,7 +251,11 @@ function ProfileScreen() {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               router.back();
             }}
-            className="w-10 h-10 rounded-full items-center justify-center mr-2 active:opacity-70"
+            className="w-11 h-11 rounded-full items-center justify-center mr-2 active:opacity-70"
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            accessible
+            accessibilityRole="button"
+            accessibilityLabel={t('common.back', 'Go back')}
           >
             <ChevronLeft size={24} color="#171717" />
           </Pressable>
@@ -265,8 +279,14 @@ function ProfileScreen() {
           className="mb-5"
         >
           <Pressable
-            onPress={() => router.push('/profile/edit')}
+            onPress={() => {
+              // Note: Not implemented yet - would use navigateTo('/profile/edit') when route exists
+              console.log('Navigate to: /profile/edit');
+            }}
             className="flex-row items-center bg-white rounded-xl p-4 active:bg-background-100"
+            accessible
+            accessibilityRole="button"
+            accessibilityLabel={t('profile.editProfile', `Edit profile - ${member?.full_name || 'Guest User'}`)}
           >
             <LinearGradient
               colors={['#4F46E5', '#6366F1']}
@@ -342,6 +362,9 @@ function ProfileScreen() {
             <Pressable
               onPress={handleLogoutPress}
               className="bg-white active:bg-background-100 px-4 py-4 min-h-[56px] rounded-xl"
+              accessible
+              accessibilityRole="button"
+              accessibilityLabel={t('profile.logout', 'Log Out')}
             >
               <View className="flex-row items-center">
                 <View className="w-[30px] h-[30px] rounded-[7px] items-center justify-center mr-3 bg-error-100">

@@ -289,7 +289,11 @@ export function VideoTrack({
 
   return (
     <LKVideoTrack
-      trackRef={{ participant, publication: trackPublication, source: trackPublication.source } as any}
+      trackRef={{
+        participant: participant as RemoteParticipant | LocalParticipant,
+        publication: trackPublication as TrackPublication,
+        source: trackPublication.source
+      }}
       style={StyleSheet.flatten([{ flex: 1, backgroundColor: '#000' }, style])}
       mirror={mirror}
       objectFit={objectFit}
@@ -465,7 +469,8 @@ export function useLocalTracks() {
     const videoTrack = localParticipant.getTrackPublication(Track.Source.Camera);
     if (videoTrack?.track && 'switchCamera' in videoTrack.track) {
       // switchCamera is available on LocalVideoTrack in React Native
-      await (videoTrack.track as any).switchCamera();
+      type LocalVideoTrack = typeof videoTrack.track & { switchCamera: () => Promise<void> };
+      await (videoTrack.track as LocalVideoTrack).switchCamera();
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
   }, [localParticipant]);

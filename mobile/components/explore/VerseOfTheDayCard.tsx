@@ -74,6 +74,9 @@ export const VerseOfTheDayCard = memo(function VerseOfTheDayCard({
       className="rounded-2xl overflow-hidden bg-white"
       style={[{ ...ExploreShadows.level1 }, animatedStyle]}
       testID="verse-of-the-day-card"
+      accessible
+      accessibilityRole="button"
+      accessibilityLabel={`Verse of the Day: ${verseText ? `${verseText} ${referenceText}` : 'Tap to read today\'s verse'}`}
     >
       {/* Gradient Background */}
       <LinearGradient
@@ -148,6 +151,9 @@ export const VerseOfTheDayCard = memo(function VerseOfTheDayCard({
                 }}
                 className="p-2 bg-white/80 rounded-[20px]"
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                accessible
+                accessibilityRole="button"
+                accessibilityLabel="Share verse of the day"
               >
                 <Share2 size={18} color={ExploreColors.spiritual[500]} />
               </Pressable>

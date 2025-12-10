@@ -212,6 +212,9 @@ function ProfileEditScreen() {
     <Pressable
       onPress={onPress}
       disabled={!editable || !onPress}
+      accessible
+      accessibilityRole="button"
+      accessibilityLabel={`${label}${value ? `: ${value}` : ''}`}
       className="active:bg-background-100 px-4 min-h-[52px] justify-center"
     >
       <View className="flex-row items-center py-3">
@@ -333,6 +336,9 @@ function ProfileEditScreen() {
                   onSelect(option.value);
                   onClose();
                 }}
+                accessible
+                accessibilityRole="button"
+                accessibilityLabel={`${option.label}${selectedValue === option.value ? ', selected' : ''}`}
                 className={`flex-row items-center justify-between py-3 px-3 rounded-xl ${selectedValue === option.value ? 'bg-primary-50' : ''}`}
               >
                 <GText className={selectedValue === option.value ? 'text-primary-600 font-semibold' : ''}>
@@ -369,6 +375,9 @@ function ProfileEditScreen() {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               router.back();
             }}
+            accessible
+            accessibilityRole="button"
+            accessibilityLabel={t('common.back', 'Go back')}
             className="w-10 h-10 rounded-full items-center justify-center active:opacity-70"
           >
             <ChevronLeft size={24} color="#171717" />
@@ -379,6 +388,9 @@ function ProfileEditScreen() {
           <Pressable
             onPress={handleSave}
             disabled={saving}
+            accessible
+            accessibilityRole="button"
+            accessibilityLabel={t('common.save', 'Save profile changes')}
             className="px-3 py-2 active:opacity-70"
           >
             {saving ? (

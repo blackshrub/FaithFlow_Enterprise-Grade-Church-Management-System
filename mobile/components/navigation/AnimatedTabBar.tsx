@@ -124,8 +124,11 @@ export function AnimatedTabBar({ navigation, state }: BottomTabBarProps) {
 
     // Don't navigate if already on this tab
     if (tab.screenName !== currentRoute) {
-      // Use jumpTo for instant tab switching (recommended for bottom tabs)
-      navigation.jumpTo(tab.screenName);
+      // Use navigate for tab switching
+      // Note: jumpTo is available at runtime but not in NavigationHelpers type
+      // Type-safe approach: use navigate with explicit screen name
+      const navWithJumpTo = navigation as { jumpTo?: (screen: string) => void };
+      navWithJumpTo.jumpTo?.(tab.screenName) ?? navigation.navigate(tab.screenName);
     }
   };
 
@@ -139,6 +142,11 @@ export function AnimatedTabBar({ navigation, state }: BottomTabBarProps) {
         onPressIn={() => handleTabPress(tab)}
         className="items-center justify-center py-2 px-3 relative"
         style={{ minWidth: touchTargets.comfortable }}
+        accessible
+        accessibilityRole="tab"
+        accessibilityLabel={t(tab.label)}
+        accessibilityState={{ selected: isActive }}
+        accessibilityHint={`Navigate to ${t(tab.label)} tab`}
       >
         {/* Active indicator at top */}
         {isActive && (
@@ -161,7 +169,7 @@ export function AnimatedTabBar({ navigation, state }: BottomTabBarProps) {
           className="mt-0.5 text-[10px] font-medium"
           style={{ color: isActive ? colors.primary[500] : colors.gray[500] }}
         >
-          {t(tab.label as any)}
+          {t(tab.label)}
         </Text>
       </Pressable>
     );

@@ -80,8 +80,8 @@ export default function DailyQuizScreen() {
     setSelectedOption(optionIndex);
 
     // Immediately check the answer
-    const correctIndex = (currentQuestion as any).correct_answer_index ?? currentQuestion.correct_answer;
-    const isCorrect = optionIndex === correctIndex;
+    const correctIndex = currentQuestion.correct_answer_index ?? currentQuestion.correct_answer;
+    const isCorrect = optionIndex === (typeof correctIndex === 'number' ? correctIndex : 0);
 
     // Provide haptic feedback based on correctness
     if (isCorrect) {
@@ -158,17 +158,24 @@ export default function DailyQuizScreen() {
     );
   }
 
-  const questionText = currentQuestion.question[contentLanguage] || currentQuestion.question.en;
-  // Options can be either array of {en, id} objects OR {en: string[], id: string[]}
+  const questionText = currentQuestion.question[contentLanguage as keyof typeof currentQuestion.question] || currentQuestion.question.en;
+
+  // Options can be either array of MultilingualText objects OR array of strings
   const rawOptions = currentQuestion.options;
-  const options = Array.isArray(rawOptions) && rawOptions.length > 0
-    ? (typeof rawOptions[0] === 'object' && 'en' in rawOptions[0]
-        ? rawOptions.map((opt: any) => opt[contentLanguage] || opt.en)
-        : rawOptions)
-    : (rawOptions as any)?.[contentLanguage] || (rawOptions as any)?.en || [];
+  const options: string[] = Array.isArray(rawOptions) && rawOptions.length > 0
+    ? (typeof rawOptions[0] === 'object' && rawOptions[0] !== null && 'en' in rawOptions[0]
+        ? rawOptions.map((opt) =>
+            typeof opt === 'object' && opt !== null
+              ? (opt[contentLanguage as keyof typeof opt] || opt.en || '') as string
+              : String(opt)
+          )
+        : rawOptions.map(opt => String(opt)))
+    : [];
+
   const explanation =
-    currentQuestion.explanation?.[contentLanguage] || currentQuestion.explanation?.en;
-  const correctAnswerIndex = (currentQuestion as any).correct_answer_index ?? currentQuestion.correct_answer;
+    currentQuestion.explanation?.[contentLanguage as keyof typeof currentQuestion.explanation] || currentQuestion.explanation?.en;
+  const correctAnswerIndex = currentQuestion.correct_answer_index ?? currentQuestion.correct_answer;
+  const correctAnswerIndexNum = typeof correctAnswerIndex === 'number' ? correctAnswerIndex : 0;
 
   const currentAnswer = progress.answers.find(
     (a) => a.questionId === (currentQuestion.id || `q${progress.currentQuestionIndex}`)
@@ -304,7 +311,7 @@ export default function DailyQuizScreen() {
           <View className="mb-6">
             {options.map((option: string, index: number) => {
               const isSelected = selectedOption === index;
-              const isCorrectOption = index === correctAnswerIndex;
+              const isCorrectOption = index === correctAnswerIndexNum;
               const showCorrect = isAnswerChecked && isCorrectOption;
               const showIncorrect = isAnswerChecked && isSelected && !isCorrectOption;
 

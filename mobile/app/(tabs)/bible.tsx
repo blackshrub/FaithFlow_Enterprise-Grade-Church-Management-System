@@ -411,14 +411,14 @@ function BibleScreen() {
         const verseText = verseCount === 1 ? t('bible.verse') : t('bible.verses');
 
         showSuccessToast(
-          '✓ Shared Successfully',
-          `${verseCount} ${verseText} shared`
+          `✓ ${t('bible.share.success')}`,
+          t('bible.share.successDesc', { count: verseCount, verseText })
         );
       }
       // Keep selection active - don't clear
     } catch (error) {
       console.error('Error sharing verses:', error);
-      showErrorToast('Share Failed', 'Could not share verses');
+      showErrorToast(t('bible.share.failed'), t('bible.share.failedDesc'));
     }
   };
 
@@ -481,7 +481,7 @@ function BibleScreen() {
           removeBookmark(existing.id);
         }
       });
-      showInfoToast('Bookmark Removed');
+      showInfoToast(t('bible.bookmarkRemoved'));
     } else {
       // Combine selected verses into a single bookmark with verse range
       if (selectedVerses.length === 0) return;
@@ -521,8 +521,8 @@ function BibleScreen() {
       const verseText = verseCount === 1 ? t('bible.verse') : t('bible.verses');
 
       showSuccessToast(
-        'Bookmark Added',
-        `${verseCount} ${verseText} bookmarked`
+        t('bible.bookmarkAdded'),
+        t('bible.bookmarksAdded', { count: verseCount, verseText })
       );
     }
     // Keep selection active - don't clear
@@ -580,7 +580,7 @@ function BibleScreen() {
       note: note.trim() || undefined,
     });
 
-    showSuccessToast('Note Saved');
+    showSuccessToast(t('bible.noteSaved'));
   };
 
   /**
@@ -705,6 +705,9 @@ function BibleScreen() {
                 flexDirection: 'row',
                 alignItems: 'center',
               }}
+              accessible
+              accessibilityRole="button"
+              accessibilityLabel={t('bible.selectBook', `Select book and chapter - Currently ${displayBookName} ${currentChapter}`)}
             >
               <Icon as={BookOpen} size="sm" className="text-gray-700" />
               <Text className="text-gray-900 font-medium text-sm" style={{ marginLeft: 6 }}>
@@ -727,6 +730,9 @@ function BibleScreen() {
                 flexDirection: 'row',
                 alignItems: 'center',
               }}
+              accessible
+              accessibilityRole="button"
+              accessibilityLabel={t('bible.selectVersion', `Select Bible version - Currently ${currentVersion}`)}
             >
               <Icon as={Languages} size="sm" className="text-primary-600" />
               <Text className="text-primary-600 font-medium text-sm" style={{ marginLeft: 6 }}>{currentVersion}</Text>
@@ -750,6 +756,9 @@ function BibleScreen() {
                 borderRadius: 8,
                 backgroundColor: colors.gray[100],
               }}
+              accessible
+              accessibilityRole="button"
+              accessibilityLabel={t('bible.search', 'Search Bible')}
             >
               <Icon as={Search} size="sm" className="text-gray-700" />
             </Pressable>
@@ -769,6 +778,9 @@ function BibleScreen() {
                 borderRadius: 8,
                 backgroundColor: colors.gray[100],
               }}
+              accessible
+              accessibilityRole="button"
+              accessibilityLabel={t('bible.bookmarks', 'View bookmarks')}
             >
               <Icon as={BookmarkIcon} size="sm" className="text-gray-700" />
             </Pressable>
@@ -788,6 +800,9 @@ function BibleScreen() {
                 borderRadius: 8,
                 backgroundColor: colors.gray[100],
               }}
+              accessible
+              accessibilityRole="button"
+              accessibilityLabel={t('bible.preferences', 'Reading preferences')}
             >
               <Icon as={Type} size="sm" className="text-gray-700" />
             </Pressable>
@@ -804,7 +819,7 @@ function BibleScreen() {
         >
           <ActivityIndicator size="large" color={colors.primary[500]} />
           <Text className="mt-4" style={{ color: currentTheme.verseNumber }}>
-            Loading chapter...
+            {t('bible.loading')}
           </Text>
         </View>
       ) : preferences.readingMode === 'scroll' || preferences.readingMode === 'continuous' ? (
@@ -842,7 +857,7 @@ function BibleScreen() {
           style={{ backgroundColor: currentTheme.background }}
         >
           <Text className="text-center" style={{ color: currentTheme.verseNumber }}>
-            Chapter not found. Please select another chapter.
+            {t('bible.chapterNotFound')}
           </Text>
         </View>
       )}

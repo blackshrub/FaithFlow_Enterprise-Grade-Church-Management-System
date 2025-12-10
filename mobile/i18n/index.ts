@@ -9,6 +9,7 @@ import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import * as Localization from 'expo-localization';
 import { mmkv } from '@/lib/storage';
+import { logError } from '@/utils/errorHelpers';
 
 // Import translation files
 import en from '../locales/en.json';
@@ -28,7 +29,7 @@ const getInitialLanguage = (): string => {
     const deviceLanguage = Localization.getLocales()[0]?.languageCode || 'en';
     return ['en', 'id'].includes(deviceLanguage) ? deviceLanguage : 'id'; // Default to Indonesian
   } catch (error) {
-    console.error('Error getting initial language:', error);
+    logError('i18n', 'getInitialLanguage', error, 'warning');
     return 'id'; // Default to Indonesian
   }
 };
@@ -38,7 +39,7 @@ export const saveLanguage = (language: string): void => {
   try {
     mmkv.setString(LANGUAGE_STORAGE_KEY, language);
   } catch (error) {
-    console.error('Error saving language:', error);
+    logError('i18n', 'saveLanguage', error, 'warning');
   }
 };
 

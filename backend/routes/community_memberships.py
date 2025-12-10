@@ -37,7 +37,7 @@ async def list_community_members(
         query["status"] = "active"  # Default: show only active members
 
     cursor = db.community_memberships.find(query, {"_id": 0})
-    memberships = await cursor.to_list(length=None)
+    memberships = await cursor.to_list(length=5000)  # Limit to prevent DoS
 
     # Join member basic info for convenience
     member_ids = [m["member_id"] for m in memberships]

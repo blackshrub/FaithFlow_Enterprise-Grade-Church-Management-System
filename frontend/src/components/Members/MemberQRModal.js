@@ -79,6 +79,7 @@ function MemberQRModal({ member, onClose, isLoading }) {
                   src={member.personal_qr_code}
                   alt="Personal QR Code"
                   className="w-64 h-64"
+                  data-testid="qr-code-image"
                 />
               </div>
 
@@ -98,6 +99,7 @@ function MemberQRModal({ member, onClose, isLoading }) {
                   onClick={handleDownload}
                   variant="outline"
                   className="flex-1"
+                  data-testid="download-qr-button"
                 >
                   <Download className="h-4 w-4 mr-2" />
                   {t('members.downloadQR')}

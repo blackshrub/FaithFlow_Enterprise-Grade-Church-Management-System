@@ -153,7 +153,7 @@ async def delete_status(
             detail=f"Cannot delete: {rules_count} rule(s) reference this status"
         )
     
-    await db.member_statuses.delete_one({"id": status_id})
+    await db.member_statuses.delete_one({"id": status_id, "church_id": status_obj.get('church_id')})
     return None
 
 
@@ -259,9 +259,9 @@ async def update_rule(
             human_readable = RuleEngineService.translate_rule_to_human(merged_rule, statuses_map)
             update_data['human_readable'] = human_readable
         
-        await db.member_status_rules.update_one({"id": rule_id}, {"$set": update_data})
-    
-    updated = await db.member_status_rules.find_one({"id": rule_id}, {"_id": 0})
+        await db.member_status_rules.update_one({"id": rule_id, "church_id": rule.get('church_id')}, {"$set": update_data})
+
+    updated = await db.member_status_rules.find_one({"id": rule_id, "church_id": rule.get('church_id')}, {"_id": 0})
     if isinstance(updated.get('created_at'), str):
         updated['created_at'] = datetime.fromisoformat(updated['created_at'])
     if isinstance(updated.get('updated_at'), str):
@@ -284,7 +284,7 @@ async def delete_rule(
     if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') != rule.get('church_id'):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
     
-    await db.member_status_rules.delete_one({"id": rule_id})
+    await db.member_status_rules.delete_one({"id": rule_id, "church_id": rule.get('church_id')})
     return None
 
 

@@ -200,6 +200,9 @@ const MessageBubble = React.memo(
         }}
         delayLongPress={500}
         className={`my-0.5 px-4 ${isOwnMessage ? 'items-end' : 'items-start'}`}
+        accessible
+        accessibilityRole="button"
+        accessibilityLabel={`Message from ${message.sender?.name || message.sender_name || 'Unknown'}: ${message.text || 'Media message'}`}
       >
         <View style={{ maxWidth: '80%' }}>
           {showSender && !isOwnMessage && (message.sender?.name || message.sender_name) && (
@@ -282,6 +285,9 @@ const MessageBubble = React.memo(
                 <Pressable
                   onPress={() => onReadReceiptPress(message)}
                   hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                  accessible
+                  accessibilityRole="button"
+                  accessibilityLabel="View read receipts"
                 >
                   <MessageStatusIndicator
                     status={getMessageStatus()}
@@ -1016,6 +1022,9 @@ export default function SubgroupChatScreen() {
               router.back();
             }}
             className="active:opacity-70"
+            accessible
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
           >
             <Icon as={ArrowLeft} size="lg" style={{ color: '#FFFFFF' }} />
           </Pressable>
@@ -1049,6 +1058,9 @@ export default function SubgroupChatScreen() {
               setShowMenu(true);
             }}
             className="active:opacity-70 p-2"
+            accessible
+            accessibilityRole="button"
+            accessibilityLabel="Open menu"
           >
             <Icon as={MoreVertical} size="md" style={{ color: '#FFFFFF' }} />
           </Pressable>
@@ -1145,7 +1157,7 @@ export default function SubgroupChatScreen() {
                   {replyingTo.text || 'Media'}
                 </Text>
               </View>
-              <Pressable onPress={() => setReplyingTo(null)} className="p-2">
+              <Pressable onPress={() => setReplyingTo(null)} className="p-2" accessible accessibilityRole="button" accessibilityLabel="Cancel reply">
                 <Icon as={X} size="sm" className="text-gray-500" />
               </Pressable>
             </HStack>
@@ -1404,6 +1416,9 @@ export default function SubgroupChatScreen() {
               setTimeout(() => setShowDisappearingSettings(true), 300);
             }}
             className="flex-row items-center px-2 py-3 rounded-lg active:bg-gray-100"
+            accessible
+            accessibilityRole="button"
+            accessibilityLabel="Disappearing messages settings"
           >
             <View
               className="w-10 h-10 rounded-full items-center justify-center mr-3"
@@ -1435,6 +1450,9 @@ export default function SubgroupChatScreen() {
               );
             }}
             className="flex-row items-center px-2 py-3 rounded-lg active:bg-gray-100"
+            accessible
+            accessibilityRole="button"
+            accessibilityLabel="Subgroup info"
           >
             <View
               className="w-10 h-10 rounded-full items-center justify-center mr-3"
@@ -1456,6 +1474,9 @@ export default function SubgroupChatScreen() {
               router.replace(`/community/${communityId}/chat`);
             }}
             className="flex-row items-center px-2 py-3 rounded-lg active:bg-gray-100"
+            accessible
+            accessibilityRole="button"
+            accessibilityLabel="Back to main chat"
           >
             <View
               className="w-10 h-10 rounded-full items-center justify-center mr-3"

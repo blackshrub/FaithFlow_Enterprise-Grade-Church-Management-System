@@ -52,6 +52,9 @@ function GivingPromptComponent({ givingSummary }: GivingPromptProps) {
           shadowRadius: 12,
           elevation: 4,
         }}
+        accessible
+        accessibilityRole="button"
+        accessibilityLabel="Continue your generosity, navigate to giving"
       >
         <View className="flex-row items-center gap-3.5">
           <View

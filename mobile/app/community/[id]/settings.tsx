@@ -73,6 +73,7 @@ import { useCommunity, useUpdateCommunitySettings, useDeleteCommunity, useArchiv
 import { useAuthStore } from '@/stores/auth';
 import { colors, spacing, borderRadius, shadows } from '@/constants/theme';
 import type { CommunitySettings } from '@/types/communities';
+import { goBack, navigateTo, replaceTo } from '@/utils/navigation';
 
 // =============================================================================
 // SETTING SECTION COMPONENT
@@ -137,6 +138,9 @@ function SettingRow({
       disabled={!onPress || disabled}
       className={`px-4 py-3 active:bg-gray-50 ${!isLast ? 'border-b border-gray-100' : ''}`}
       style={{ opacity: disabled ? 0.5 : 1 }}
+      accessible
+      accessibilityRole="button"
+      accessibilityLabel={`${label}${description ? `, ${description}` : ''}`}
     >
       <HStack space="md" className="items-center">
         {icon && (
@@ -159,7 +163,7 @@ function SettingRow({
           ) : value
         )}
         {onPress && showChevron && (
-          <Icon as={ChevronRight} size="sm" className="text-gray-400" />
+          <Icon as={ChevronRight} size="sm" className="text-gray-500" />
         )}
       </HStack>
     </Pressable>
@@ -271,6 +275,9 @@ function SelectRow({
         className="px-4 py-3 active:bg-gray-50"
         disabled={disabled}
         style={{ opacity: disabled ? 0.5 : 1 }}
+        accessible
+        accessibilityRole="button"
+        accessibilityLabel={`${label}, ${currentOption?.label}${description ? `, ${description}` : ''}`}
       >
         <HStack space="md" className="items-center">
           {icon && (
@@ -304,6 +311,9 @@ function SelectRow({
                 setExpanded(false);
               }}
               className="py-2.5 flex-row items-center justify-between"
+              accessible
+              accessibilityRole="button"
+              accessibilityLabel={option.label}
             >
               <Text
                 className={`${
@@ -421,7 +431,7 @@ export default function CommunitySettingsScreen() {
               onSuccess: () => {
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                 Alert.alert('Success', 'Community has been deleted.');
-                router.replace('/(tabs)/groups');
+                replaceTo('/(tabs)/groups');
               },
               onError: (error: any) => {
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
@@ -461,9 +471,12 @@ export default function CommunitySettingsScreen() {
             <Pressable
               onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                router.back();
+                goBack();
               }}
               className="active:opacity-70"
+              accessible
+              accessibilityRole="button"
+              accessibilityLabel="Go back"
             >
               <Icon as={ArrowLeft} size="lg" className="text-gray-800" />
             </Pressable>
@@ -487,7 +500,7 @@ export default function CommunitySettingsScreen() {
           <Button
             variant="solid"
             action="primary"
-            onPress={() => router.back()}
+            onPress={() => goBack()}
             className="mt-4"
           >
             <ButtonText>Go Back</ButtonText>
@@ -515,15 +528,18 @@ export default function CommunitySettingsScreen() {
                       {
                         text: 'Discard',
                         style: 'destructive',
-                        onPress: () => router.back(),
+                        onPress: () => goBack(),
                       },
                     ]
                   );
                 } else {
-                  router.back();
+                  goBack();
                 }
               }}
               className="active:opacity-70"
+              accessible
+              accessibilityRole="button"
+              accessibilityLabel="Go back"
             >
               <Icon as={ArrowLeft} size="lg" className="text-gray-800" />
             </Pressable>
@@ -596,7 +612,7 @@ export default function CommunitySettingsScreen() {
               { value: 'all_members', label: 'All Members' },
               { value: 'leaders_only', label: 'Leaders Only' },
             ]}
-            onValueChange={(value) => updateSetting('who_can_send_messages', value as any)}
+            onValueChange={(value) => updateSetting('who_can_send_messages', value as 'all_members' | 'leaders_only')}
           />
           <ToggleRow
             label="Allow Media Sharing"
@@ -637,7 +653,7 @@ export default function CommunitySettingsScreen() {
               { value: 'all_members', label: 'All Members' },
               { value: 'leaders_only', label: 'Leaders Only' },
             ]}
-            onValueChange={(value) => updateSetting('who_can_announce', value as any)}
+            onValueChange={(value) => updateSetting('who_can_announce', value as 'leaders_only' | 'all_members')}
           />
           <ToggleRow
             label="Allow Replies"
@@ -707,21 +723,21 @@ export default function CommunitySettingsScreen() {
             description={`${community?.member_count} members`}
             icon={Users}
             iconColor={colors.success[500]}
-            onPress={() => router.push(`/community/${communityId}/members` as any)}
+            onPress={() => navigateTo(`/community/${communityId}/members`)}
           />
           <SettingRow
             label="Manage Leaders"
             description="Add or remove community leaders"
             icon={Crown}
             iconColor={colors.warning[500]}
-            onPress={() => router.push(`/community/${communityId}/leaders` as any)}
+            onPress={() => navigateTo(`/community/${communityId}/leaders`)}
           />
           <SettingRow
             label="Pending Requests"
             description="Review join requests"
             icon={UserPlus}
             iconColor={colors.info[500]}
-            onPress={() => router.push(`/community/${communityId}/requests` as any)}
+            onPress={() => navigateTo(`/community/${communityId}/requests`)}
             isLast
           />
         </SettingSection>

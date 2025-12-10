@@ -146,6 +146,9 @@ export function CreateSubgroupModal({
             <Pressable
               onPress={handleClose}
               className="p-2 active:opacity-70"
+              accessible
+              accessibilityRole="button"
+              accessibilityLabel="Close create sub-group modal"
             >
               <Icon as={X} size="md" className="text-gray-500" />
             </Pressable>

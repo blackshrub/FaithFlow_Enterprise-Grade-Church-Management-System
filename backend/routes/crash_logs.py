@@ -19,6 +19,8 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 from typing import Optional, List
 from datetime import datetime, timedelta
 import uuid
+import re
+import logging
 
 from models.crash_log import (
     CrashLog,
@@ -28,7 +30,25 @@ from models.crash_log import (
 )
 from utils.dependencies import get_db, get_current_user, require_admin
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter(prefix="/api/crash-logs", tags=["Crash Logs"])
+
+
+def sanitize_regex_pattern(pattern: str, max_length: int = 100) -> str:
+    """
+    Sanitize a user-provided regex pattern to prevent ReDoS attacks.
+
+    - Limits pattern length
+    - Escapes special regex characters
+    - Returns a safe literal match pattern
+    """
+    if not pattern:
+        return ""
+    # Truncate to max length
+    pattern = pattern[:max_length]
+    # Escape all regex special characters to make it a literal match
+    return re.escape(pattern)
 
 
 # =============================================================================
@@ -47,10 +67,23 @@ async def report_crash(
     This endpoint is public (no auth required) to ensure crashes can be
     reported even when the auth system itself is broken.
     """
+    # Validate church_id exists if provided (prevents polluting other churches' analytics)
+    crash_dict = crash_data.model_dump(mode='json')
+    user_context = crash_dict.get("user_context", {})
+    church_id = user_context.get("church_id") if user_context else None
+
+    if church_id:
+        church = await db.churches.find_one({"id": church_id}, {"_id": 0, "id": 1})
+        if not church:
+            logger.warning(f"Crash report with invalid church_id: {church_id}")
+            # Don't reject - just clear the church_id to prevent pollution
+            if "user_context" in crash_dict and crash_dict["user_context"]:
+                crash_dict["user_context"]["church_id"] = None
+
     # Generate crash log entry
     crash_log = CrashLog(
         id=f"crash_{uuid.uuid4()}",
-        **crash_data.model_dump(mode='json'),
+        **crash_dict,
         timestamp=datetime.utcnow(),
         reported_at=datetime.utcnow(),
         ip_address=request.client.host if request.client else None,
@@ -109,9 +142,10 @@ async def list_crash_logs(
     if screen_name:
         query["screen_name"] = screen_name
 
-    # Error type filter
+    # Error type filter (sanitized to prevent ReDoS)
     if error_type:
-        query["error_type"] = {"$regex": error_type, "$options": "i"}
+        safe_pattern = sanitize_regex_pattern(error_type)
+        query["error_type"] = {"$regex": safe_pattern, "$options": "i"}
 
     # Church filter
     if church_id:
@@ -298,12 +332,17 @@ async def update_crash_log(
         update_fields["resolved_at"] = datetime.utcnow()
         update_fields["resolved_by"] = current_user.get("id") or current_user.get("email")
 
+    # Build update query with church_id filter for non-super-admins
+    update_query = {"id": crash_id}
+    if current_user.get('role') != 'super_admin':
+        update_query["user_context.church_id"] = current_user.get('session_church_id')
+
     await db.crash_logs.update_one(
-        {"id": crash_id},
+        update_query,
         {"$set": update_fields}
     )
 
-    updated = await db.crash_logs.find_one({"id": crash_id}, {"_id": 0})
+    updated = await db.crash_logs.find_one(update_query, {"_id": 0})
     return updated
 
 
@@ -317,7 +356,12 @@ async def delete_crash_log(
     Delete a crash log.
     Admin only.
     """
-    result = await db.crash_logs.delete_one({"id": crash_id})
+    # Build delete query with church_id filter for non-super-admins
+    delete_query = {"id": crash_id}
+    if current_user.get('role') != 'super_admin':
+        delete_query["user_context.church_id"] = current_user.get('session_church_id')
+
+    result = await db.crash_logs.delete_one(delete_query)
 
     if result.deleted_count == 0:
         raise HTTPException(

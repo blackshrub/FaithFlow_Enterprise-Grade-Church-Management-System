@@ -13,6 +13,7 @@ const { defineConfig, devices } = require('@playwright/test');
 
 module.exports = defineConfig({
   testDir: './e2e',
+  testMatch: '**/*.spec.cjs',
 
   // Maximum time one test can run
   timeout: 30 * 1000,
@@ -44,7 +45,12 @@ module.exports = defineConfig({
   // Shared settings for all the projects below
   use: {
     // Base URL to use in actions like `await page.goto('/')`
-    baseURL: process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:3000',
+    // flow.gkbj.org is mapped to 127.0.0.1 in /etc/hosts
+    // Traefik routes based on Host header to reach the frontend
+    baseURL: process.env.PLAYWRIGHT_BASE_URL || 'https://flow.gkbj.org',
+
+    // Ignore HTTPS errors for self-signed certificates
+    ignoreHTTPSErrors: true,
 
     // Collect trace when retrying the failed test
     trace: 'on-first-retry',
@@ -88,11 +94,5 @@ module.exports = defineConfig({
     },
   ],
 
-  // Run your local dev server before starting the tests
-  webServer: {
-    command: 'yarn start',
-    url: 'http://localhost:3000',
-    reuseExistingServer: !process.env.CI,
-    timeout: 120 * 1000,
-  },
+  // No webServer config needed - using existing Docker containers
 });

@@ -250,6 +250,9 @@ export function DisappearingMessagesSettings({
           {DURATION_OPTIONS.map((option) => (
             <Pressable
               key={option.value}
+              accessible
+              accessibilityRole="button"
+              accessibilityLabel={`Set disappearing messages to ${option.label}${currentDuration === option.value ? ', selected' : ''}`}
               className={`flex-row items-center py-4 px-3 rounded-xl mb-2 ${
                 currentDuration === option.value ? 'bg-green-50' : 'bg-gray-50'
               } ${!isAdmin ? 'opacity-60' : ''}`}
@@ -301,6 +304,9 @@ export function DisappearingBadge({ duration, onPress }: DisappearingBadgeProps)
   return (
     <Pressable
       onPress={onPress}
+      accessible
+      accessibilityRole="button"
+      accessibilityLabel={`Disappearing messages enabled: ${getDurationLabel(duration)}`}
       className="w-5 h-5 rounded-full items-center justify-center ml-1"
       style={{ backgroundColor: 'rgba(255,255,255,0.2)' }}
     >

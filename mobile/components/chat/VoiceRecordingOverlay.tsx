@@ -332,6 +332,9 @@ export function VoiceRecordingOverlay({
         {/* Cancel button */}
         <Pressable
           onPress={handleCancel}
+          accessible
+          accessibilityRole="button"
+          accessibilityLabel="Cancel voice recording"
           className="flex-row items-center justify-center gap-2 py-3.5 px-5 rounded-2xl min-w-[100px] active:opacity-70"
           style={{ backgroundColor: Colors.recordingLight }}
           disabled={isProcessing}
@@ -346,6 +349,9 @@ export function VoiceRecordingOverlay({
         <Animated.View style={[{ flex: 1 }, sendButtonAnimatedStyle]}>
           <Pressable
             onPress={handleSend}
+            accessible
+            accessibilityRole="button"
+            accessibilityLabel={isProcessing ? 'Processing voice message' : `Send voice message, ${formatDuration(recordingDuration)}`}
             className={`flex-row items-center justify-center py-4 px-8 rounded-2xl ${
               isProcessing ? 'bg-gray-500' : 'bg-[#DA7756]'
             } active:opacity-90`}

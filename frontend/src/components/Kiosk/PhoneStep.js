@@ -114,6 +114,7 @@ const PhoneStep = ({ onMemberFound, onMemberNotFound, onError, churchId }) => {
             inputMode="numeric"
             pattern="[0-9]*"
             data-kiosk-phone="true"
+            data-testid="phone-input"
             aria-label={t('phone.label')}
             value={phone}
             onChange={(e) => {
@@ -148,6 +149,7 @@ const PhoneStep = ({ onMemberFound, onMemberNotFound, onError, churchId }) => {
 
         {/* Continue Button */}
         <Button
+          data-testid="send-otp-button"
           onClick={handleContinue}
           disabled={loading || !phone}
           className="w-full h-12 sm:h-14 lg:h-16 text-base sm:text-lg lg:text-xl rounded-xl"

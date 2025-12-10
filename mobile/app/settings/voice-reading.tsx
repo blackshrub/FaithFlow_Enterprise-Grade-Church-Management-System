@@ -47,6 +47,7 @@ import {
   type ReadingTheme,
 } from '@/stores/readingPreferences';
 import { speakText } from '@/services/voice/speechService';
+import { useRequireAuth } from '@/hooks/useRequireAuth';
 
 // Colors
 const Colors = {
@@ -97,6 +98,9 @@ export default function VoiceReadingSettings() {
   const { t } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+
+  // SEC-M7: Route protection
+  useRequireAuth();
 
   // Voice settings
   const voiceSettings = useVoiceSettingsStore();
@@ -197,6 +201,9 @@ export default function VoiceReadingSettings() {
               router.back();
             }}
             className="w-10 h-10 rounded-full items-center justify-center active:opacity-70"
+            accessible
+            accessibilityRole="button"
+            accessibilityLabel="Back"
           >
             <ChevronLeft size={24} color={Colors.neutral[900]} />
           </Pressable>
@@ -245,7 +252,13 @@ export default function VoiceReadingSettings() {
                 autoCapitalize="none"
                 autoCorrect={false}
               />
-              <Pressable onPress={() => setShowApiKey(!showApiKey)} className="p-2">
+              <Pressable
+                onPress={() => setShowApiKey(!showApiKey)}
+                className="p-2"
+                accessible
+                accessibilityRole="button"
+                accessibilityLabel={showApiKey ? "Hide API key" : "Show API key"}
+              >
                 <Eye size={20} color={Colors.neutral[500]} />
               </Pressable>
             </View>
@@ -255,6 +268,9 @@ export default function VoiceReadingSettings() {
                 onPress={handleRefreshApiKey}
                 className="flex-row items-center gap-1.5 py-2 px-4 rounded-lg"
                 style={{ backgroundColor: Colors.primary }}
+                accessible
+                accessibilityRole="button"
+                accessibilityLabel="Refresh API key from server"
               >
                 <Check size={16} color={Colors.white} />
                 <Text className="font-semibold" style={{ color: Colors.white }}>Refresh</Text>
@@ -265,6 +281,9 @@ export default function VoiceReadingSettings() {
                   onPress={handleClearCache}
                   className="flex-row items-center gap-1.5 py-2 px-4 rounded-lg"
                   style={{ backgroundColor: Colors.neutral[100] }}
+                  accessible
+                  accessibilityRole="button"
+                  accessibilityLabel="Clear cached API key"
                 >
                   <Trash2 size={16} color={Colors.error} />
                   <Text className="font-semibold" style={{ color: Colors.error }}>Clear Cache</Text>
@@ -296,6 +315,9 @@ export default function VoiceReadingSettings() {
                       ? Colors.primary
                       : 'transparent',
                   }}
+                  accessible
+                  accessibilityRole="button"
+                  accessibilityLabel={`Select ${voice.label} voice, ${voice.description}${voiceSettings.getEffectiveVoice() === voice.value ? ', selected' : ''}`}
                 >
                   <Text
                     className="text-sm font-semibold"
@@ -323,6 +345,9 @@ export default function VoiceReadingSettings() {
                 backgroundColor: Colors.primary,
                 opacity: isTestingVoice ? 0.6 : 1,
               }}
+              accessible
+              accessibilityRole="button"
+              accessibilityLabel={isTestingVoice ? "Testing voice" : "Test voice"}
             >
               <Play size={18} color={Colors.white} />
               <Text className="font-semibold" style={{ color: Colors.white }}>
@@ -364,6 +389,9 @@ export default function VoiceReadingSettings() {
                       ? Colors.primary
                       : 'transparent',
                   }}
+                  accessible
+                  accessibilityRole="button"
+                  accessibilityLabel={`${option.label} font size${readingPrefs.fontSize === option.value ? ', selected' : ''}`}
                 >
                   <Text
                     className="font-semibold"
@@ -405,6 +433,9 @@ export default function VoiceReadingSettings() {
                       ? Colors.primary
                       : Colors.neutral[200],
                   }}
+                  accessible
+                  accessibilityRole="button"
+                  accessibilityLabel={`${option.label} reading theme${readingPrefs.theme === option.value ? ', selected' : ''}`}
                 >
                   <Text className="text-2xl font-semibold" style={{ color: option.colors.text }}>
                     Aa

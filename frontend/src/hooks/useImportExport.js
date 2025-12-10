@@ -17,11 +17,13 @@ export const useImportTemplates = () => {
 
 export const useCreateTemplate = () => {
   const queryClient = useQueryClient();
-  
+  const { church } = useAuth();
+
   return useMutation({
     mutationFn: (templateData) => importExportAPI.createTemplate(templateData).then(res => res.data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['import-templates'] });
+      // CRITICAL: Include church_id for multi-tenant cache isolation
+      queryClient.invalidateQueries({ queryKey: ['import-templates', church?.id] });
       toast.success('Template saved successfully');
     },
     onError: (error) => {

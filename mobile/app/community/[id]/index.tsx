@@ -25,6 +25,7 @@ import {
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { navigateTo } from '@/utils/navigation';
 import Animated, {
   FadeIn,
   FadeInDown,
@@ -48,9 +49,11 @@ import { communityColors, colors } from '@/constants/theme';
 
 import { withPremiumMotionV10 } from '@/hoc';
 
-import { useCommunity } from '@/hooks/useCommunities';
+import { useCommunity, useCreateSubgroup } from '@/hooks/useCommunities';
 import { getThreadsForCommunity } from '@/mock/community-mockdata';
 import type { CommunityThread } from '@/types/communities';
+import { Input, InputField } from '@/components/ui/input';
+import { Textarea, TextareaInput } from '@/components/ui/textarea';
 
 // =============================================================================
 // MENU SHEET
@@ -80,6 +83,9 @@ const MenuSheet = memo(({ visible, onClose, onInfo, onSettings, isLeader }: Menu
         className="flex-1"
         style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
         onPress={onClose}
+        accessible
+        accessibilityRole="button"
+        accessibilityLabel="Close menu"
       >
         <Animated.View
           entering={FadeInUp.duration(200)}
@@ -103,6 +109,9 @@ const MenuSheet = memo(({ visible, onClose, onInfo, onSettings, isLeader }: Menu
             }}
             className="flex-row items-center px-4 py-3.5"
             style={({ pressed }) => pressed && { backgroundColor: communityColors.pressed }}
+            accessible
+            accessibilityRole="button"
+            accessibilityLabel={t('communities.info.title', 'Community Info')}
           >
             <Info size={20} color={communityColors.text.tertiary} />
             <Text className="text-[16px] ml-3" style={{ color: communityColors.text.primary }}>
@@ -123,6 +132,9 @@ const MenuSheet = memo(({ visible, onClose, onInfo, onSettings, isLeader }: Menu
               }}
               className="flex-row items-center px-4 py-3.5"
               style={({ pressed }) => pressed && { backgroundColor: communityColors.pressed }}
+              accessible
+              accessibilityRole="button"
+              accessibilityLabel={t('communities.settings', 'Community Settings')}
             >
               <Settings size={20} color={communityColors.text.tertiary} />
               <Text className="text-[16px] ml-3" style={{ color: communityColors.text.primary }}>
@@ -206,6 +218,9 @@ const ThreadItem = memo(({ thread, onPress, isAnnouncement = false }: ThreadItem
         pressed && Platform.OS === 'ios' ? { backgroundColor: communityColors.pressed } : undefined,
       ]}
       android_ripple={{ color: 'rgba(0,0,0,0.1)' }}
+      accessible
+      accessibilityRole="button"
+      accessibilityLabel={`${thread.name}${hasUnread ? `, ${thread.unread_count} unread ${thread.unread_count === 1 ? 'message' : 'messages'}` : ''}`}
     >
       {/* Avatar - 56px */}
       <View className="mr-3">
@@ -306,6 +321,127 @@ const SectionHeader = memo(({ title }: { title: string }) => (
 SectionHeader.displayName = 'SectionHeader';
 
 // =============================================================================
+// CREATE GROUP MODAL
+// =============================================================================
+
+interface CreateGroupModalProps {
+  visible: boolean;
+  onClose: () => void;
+  onSubmit: (name: string, description?: string) => void;
+  isLoading: boolean;
+}
+
+const CreateGroupModal = memo(({ visible, onClose, onSubmit, isLoading }: CreateGroupModalProps) => {
+  const { t } = useTranslation();
+  const [groupName, setGroupName] = useState('');
+  const [groupDescription, setGroupDescription] = useState('');
+
+  const handleSubmit = useCallback(() => {
+    if (!groupName.trim()) return;
+    onSubmit(groupName.trim(), groupDescription.trim() || undefined);
+  }, [groupName, groupDescription, onSubmit]);
+
+  const handleClose = useCallback(() => {
+    setGroupName('');
+    setGroupDescription('');
+    onClose();
+  }, [onClose]);
+
+  if (!visible) return null;
+
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      onRequestClose={handleClose}
+    >
+      <Pressable
+        className="flex-1 justify-center items-center"
+        style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
+        onPress={handleClose}
+        accessible={false}
+      >
+        <Pressable
+          onPress={(e) => e.stopPropagation()}
+        >
+          <Animated.View
+            entering={FadeIn.duration(200)}
+            exiting={FadeOut.duration(150)}
+            className="bg-white rounded-2xl mx-5 p-5 w-[90%] max-w-[400px]"
+          >
+          {/* Header */}
+          <Text className="text-xl font-bold text-gray-900 mb-4">
+            {t('communities.createGroup', 'Create New Group')}
+          </Text>
+
+          {/* Group Name Input */}
+          <View className="mb-4">
+            <Text className="text-sm font-medium text-gray-700 mb-2">
+              {t('communities.groupName', 'Group Name')}
+            </Text>
+            <Input variant="outline" size="md">
+              <InputField
+                placeholder={t('communities.groupNamePlaceholder', 'Enter group name')}
+                value={groupName}
+                onChangeText={setGroupName}
+                autoCapitalize="words"
+                autoFocus
+              />
+            </Input>
+          </View>
+
+          {/* Description Input */}
+          <View className="mb-6">
+            <Text className="text-sm font-medium text-gray-700 mb-2">
+              {t('communities.description', 'Description')} ({t('common.optional', 'optional')})
+            </Text>
+            <Textarea size="md">
+              <TextareaInput
+                placeholder={t('communities.descriptionPlaceholder', 'What is this group about?')}
+                value={groupDescription}
+                onChangeText={setGroupDescription}
+                multiline
+                numberOfLines={3}
+              />
+            </Textarea>
+          </View>
+
+          {/* Buttons */}
+          <View className="flex-row gap-3">
+            <Button
+              variant="outline"
+              size="md"
+              className="flex-1"
+              onPress={handleClose}
+              isDisabled={isLoading}
+            >
+              <ButtonText>{t('common.cancel', 'Cancel')}</ButtonText>
+            </Button>
+            <Button
+              size="md"
+              className="flex-1"
+              style={{ backgroundColor: communityColors.accent }}
+              onPress={handleSubmit}
+              isDisabled={!groupName.trim() || isLoading}
+            >
+              {isLoading ? (
+                <ButtonText>{t('common.creating', 'Creating...')}</ButtonText>
+              ) : (
+                <ButtonText>{t('common.create', 'Create')}</ButtonText>
+              )}
+            </Button>
+          </View>
+        </Animated.View>
+        </Pressable>
+      </Pressable>
+    </Modal>
+  );
+});
+
+CreateGroupModal.displayName = 'CreateGroupModal';
+
+// =============================================================================
 // LOADING SKELETON
 // =============================================================================
 
@@ -366,9 +502,13 @@ function CommunityThreadsScreen() {
 
   const [refreshing, setRefreshing] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [showCreateGroupModal, setShowCreateGroupModal] = useState(false);
 
   // Fetch community details
   const { data: community, isLoading, refetch } = useCommunity(id);
+
+  // Create subgroup mutation
+  const createSubgroupMutation = useCreateSubgroup();
 
   // Get threads for this community
   const threads = useMemo(() => {
@@ -393,9 +533,9 @@ function CommunityThreadsScreen() {
   const handleThreadPress = useCallback(
     (thread: CommunityThread) => {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      router.push(`/community/${id}/chat?thread_id=${thread.id}` as any);
+      navigateTo(`/community/${id}/chat?thread_id=${thread.id}`);
     },
-    [router, id]
+    [id]
   );
 
   const handleBack = useCallback(() => {
@@ -409,17 +549,38 @@ function CommunityThreadsScreen() {
   }, []);
 
   const handleInfo = useCallback(() => {
-    router.push(`/community/${id}/info` as any);
-  }, [router, id]);
+    navigateTo(`/community/${id}/info`);
+  }, [id]);
 
   const handleSettings = useCallback(() => {
-    router.push(`/community/${id}/settings` as any);
-  }, [router, id]);
+    navigateTo(`/community/${id}/settings`);
+  }, [id]);
 
   const handleAddGroup = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    // TODO: Implement create thread/group
+    setShowCreateGroupModal(true);
   }, []);
+
+  const handleCreateGroup = useCallback(
+    (name: string, description?: string) => {
+      if (!id) return;
+      createSubgroupMutation.mutate(
+        { communityId: id, name, description },
+        {
+          onSuccess: (newSubgroup) => {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            setShowCreateGroupModal(false);
+            refetch(); // Refresh the threads list
+          },
+          onError: (error) => {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+            console.error('Failed to create group:', error);
+          },
+        }
+      );
+    },
+    [id, createSubgroupMutation, refetch]
+  );
 
   const isLeader = community?.my_role === 'admin' || community?.my_role === 'leader';
 
@@ -440,6 +601,9 @@ function CommunityThreadsScreen() {
             onPress={handleBack}
             className="w-10 h-10 items-center justify-center"
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            accessible
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
           >
             <ChevronLeft size={28} color={communityColors.text.primary} strokeWidth={1.5} />
           </Pressable>
@@ -449,6 +613,9 @@ function CommunityThreadsScreen() {
             onPress={handleMenu}
             className="w-10 h-10 items-center justify-center"
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            accessible
+            accessibilityRole="button"
+            accessibilityLabel="Open menu"
           >
             <MoreHorizontal size={24} color={communityColors.text.primary} />
           </Pressable>
@@ -567,6 +734,14 @@ function CommunityThreadsScreen() {
         onInfo={handleInfo}
         onSettings={handleSettings}
         isLeader={isLeader}
+      />
+
+      {/* Create Group Modal */}
+      <CreateGroupModal
+        visible={showCreateGroupModal}
+        onClose={() => setShowCreateGroupModal(false)}
+        onSubmit={handleCreateGroup}
+        isLoading={createSubgroupMutation.isPending}
       />
     </SafeAreaView>
   );

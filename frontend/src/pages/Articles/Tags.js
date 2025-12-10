@@ -105,8 +105,8 @@ export default function Tags() {
               <Input id="tag-name" name="tag-name" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required />
             </div>
             <div className="flex justify-end space-x-2">
-              <Button type="button" variant="outline" onClick={() => setShowModal(false)}>{t('common.cancel')}</Button>
-              <Button type="submit">{t('common.save')}</Button>
+              <Button type="button" variant="outline" onClick={() => setShowModal(false)} disabled={createMutation.isPending || updateMutation.isPending}>{t('common.cancel')}</Button>
+              <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending}>{t('common.save')}</Button>
             </div>
           </form>
         </DialogContent>

@@ -499,7 +499,12 @@ export default function GroupsScreen() {
       >
         <HStack className="items-center justify-between">
           <HStack className="items-center" space="md">
-            <Pressable onPress={() => router.back()}>
+            <Pressable
+              onPress={() => router.back()}
+              accessible
+              accessibilityRole="button"
+              accessibilityLabel={t('common.back', 'Go back')}
+            >
               <Icon as={ChevronLeft} size="xl" style={{ color: '#ffffff' }} />
             </Pressable>
             <VStack>
@@ -512,7 +517,12 @@ export default function GroupsScreen() {
             </VStack>
           </HStack>
 
-          <Pressable onPress={() => router.push('/groups/new')}>
+          <Pressable
+            onPress={() => router.push('/groups/new')}
+            accessible
+            accessibilityRole="button"
+            accessibilityLabel={t('groups.createNew', 'Create new group')}
+          >
             <View
               style={{
                 width: 48,
@@ -530,7 +540,14 @@ export default function GroupsScreen() {
 
         {/* Tabs */}
         <HStack space="xs">
-          <Pressable onPress={() => handleTabChange('all')} style={{ flex: 1 }}>
+          <Pressable
+            onPress={() => handleTabChange('all')}
+            accessible
+            accessibilityRole="button"
+            accessibilityLabel={t('groups.allGroups', 'All groups')}
+            accessibilityState={{ selected: activeTab === 'all' }}
+            style={{ flex: 1 }}
+          >
             <View
               style={{
                 paddingVertical: spacing.sm,
@@ -548,7 +565,14 @@ export default function GroupsScreen() {
             </View>
           </Pressable>
 
-          <Pressable onPress={() => handleTabChange('my')} style={{ flex: 1 }}>
+          <Pressable
+            onPress={() => handleTabChange('my')}
+            accessible
+            accessibilityRole="button"
+            accessibilityLabel={t('groups.myGroups', 'My groups')}
+            accessibilityState={{ selected: activeTab === 'my' }}
+            style={{ flex: 1 }}
+          >
             <View
               style={{
                 paddingVertical: spacing.sm,

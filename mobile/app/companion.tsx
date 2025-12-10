@@ -494,6 +494,10 @@ const MessageBubble = memo(({ message, isStreaming, isLast, language }: MessageB
           onLongPress={handleLongPress}
           onPress={showActions ? handleDismissActions : undefined}
           delayLongPress={400}
+          accessible
+          accessibilityRole="button"
+          accessibilityLabel={`${isUser ? 'You' : 'Faith Assistant'}: ${message.content}`}
+          accessibilityHint={language === 'id' ? 'Tekan lama untuk opsi lainnya' : 'Long press for more options'}
           className={`rounded-[20px] px-4 py-3 ${isUser ? 'rounded-br-[6px]' : 'rounded-bl-[6px] border'}`}
           style={{
             backgroundColor: isUser ? Colors.userBubble : readingStyles.colors.background,
@@ -549,6 +553,14 @@ const MessageBubble = memo(({ message, isStreaming, isLast, language }: MessageB
             {!isUser && canSpeakMessage && (
               <Pressable
                 onPress={handleSpeak}
+                accessible
+                accessibilityRole="button"
+                accessibilityLabel={
+                  ttsState === 'loading' ? (language === 'id' ? 'Memuat audio' : 'Loading audio') :
+                  ttsState === 'playing' ? (language === 'id' ? 'Jeda audio' : 'Pause audio') :
+                  ttsState === 'paused' ? (language === 'id' ? 'Lanjutkan audio' : 'Resume audio') :
+                  (language === 'id' ? 'Dengarkan pesan' : 'Listen to message')
+                }
                 className="flex-row items-center gap-1 py-1 px-2 rounded-lg"
                 style={{
                   backgroundColor: ttsState === 'playing' || ttsState === 'loading' ? `${Colors.primary}15` : Colors.surface,
@@ -591,6 +603,9 @@ const MessageBubble = memo(({ message, isStreaming, isLast, language }: MessageB
             {showActions && (
               <Pressable
                 onPress={handleCopy}
+                accessible
+                accessibilityRole="button"
+                accessibilityLabel={copied ? (language === 'id' ? 'Tersalin' : 'Copied') : (language === 'id' ? 'Salin pesan' : 'Copy message')}
                 className="flex-row items-center gap-1 py-1 px-2 rounded-lg"
                 style={{ backgroundColor: Colors.surface }}
               >
@@ -642,6 +657,9 @@ const StarterCard = memo(({ icon, title, description, onPress, index }: StarterC
   <Animated.View entering={webSafeEntering(FadeInUp.delay(index * 100).duration(400))}>
     <Pressable
       onPress={onPress}
+      accessible
+      accessibilityRole="button"
+      accessibilityLabel={`${title}: ${description}`}
       className="flex-col items-center justify-center rounded-2xl p-4 border w-full active:opacity-80"
       style={{ backgroundColor: Colors.surface, borderColor: Colors.border }}
     >
@@ -854,6 +872,9 @@ function CompanionScreen() {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             router.back();
           }}
+          accessible
+          accessibilityRole="button"
+          accessibilityLabel={t('common.back', 'Go back')}
           className="w-12 h-12 rounded-full items-center justify-center active:opacity-70"
           style={{ backgroundColor: 'transparent' }}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
@@ -873,6 +894,9 @@ function CompanionScreen() {
         <View className="flex-row items-center gap-1">
           <Pressable
             onPress={handleNewChat}
+            accessible
+            accessibilityRole="button"
+            accessibilityLabel={language === 'id' ? 'Percakapan baru' : 'New conversation'}
             className="w-12 h-12 rounded-full items-center justify-center active:opacity-70"
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
@@ -883,6 +907,9 @@ function CompanionScreen() {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               setShowSettings(true);
             }}
+            accessible
+            accessibilityRole="button"
+            accessibilityLabel={language === 'id' ? 'Pengaturan' : 'Settings'}
             className="w-12 h-12 rounded-full items-center justify-center active:opacity-70"
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
@@ -989,6 +1016,9 @@ function CompanionScreen() {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                   setShowVoiceChat(true);
                 }}
+                accessible
+                accessibilityRole="button"
+                accessibilityLabel={language === 'id' ? 'Obrolan suara' : 'Voice chat'}
                 className="w-11 h-11 rounded-full items-center justify-center border-[1.5px]"
                 style={{ backgroundColor: `${Colors.primary}15`, borderColor: Colors.primary }}
                 disabled={isLoading || isStreaming}
@@ -1006,6 +1036,9 @@ function CompanionScreen() {
             <Pressable
               onPress={handleSend}
               disabled={!inputText.trim() || isLoading || isStreaming}
+              accessible
+              accessibilityRole="button"
+              accessibilityLabel={t('companion.send', 'Send message')}
               className="w-11 h-11 rounded-full items-center justify-center border"
               style={{
                 backgroundColor: inputText.trim() && !isLoading && !isStreaming ? Colors.surfaceAlt : Colors.surfaceAlt,
@@ -1063,6 +1096,10 @@ function CompanionScreen() {
                   <Pressable
                     key={item.key}
                     onPress={() => setFontSize(item.key)}
+                    accessible
+                    accessibilityRole="button"
+                    accessibilityLabel={item.label}
+                    accessibilityState={{ selected: fontSize === item.key }}
                     className="py-2.5 px-3 rounded-[10px] items-center justify-center min-w-[80px] border"
                     style={{
                       backgroundColor: fontSize === item.key ? `${Colors.primary}15` : Colors.surfaceAlt,
@@ -1090,6 +1127,10 @@ function CompanionScreen() {
                   <Pressable
                     key={themeOpt}
                     onPress={() => setTheme(themeOpt)}
+                    accessible
+                    accessibilityRole="button"
+                    accessibilityLabel={themeOpt === 'light' ? (language === 'id' ? 'Terang' : 'Light') : themeOpt === 'sepia' ? 'Sepia' : (language === 'id' ? 'Gelap' : 'Dark')}
+                    accessibilityState={{ selected: readingTheme === themeOpt }}
                     className="py-2.5 px-4 rounded-[10px] items-center justify-center min-w-[48px] border"
                     style={{
                       backgroundColor: themeOpt === 'light' ? '#FFFFFF' : themeOpt === 'sepia' ? '#F5F0E6' : '#1A1A1A',
@@ -1123,6 +1164,10 @@ function CompanionScreen() {
                   <Pressable
                     key={item.value}
                     onPress={() => setLineHeight(item.value)}
+                    accessible
+                    accessibilityRole="button"
+                    accessibilityLabel={item.label}
+                    accessibilityState={{ selected: lineHeight === item.value }}
                     className="py-2.5 px-3 rounded-[10px] items-center justify-center min-w-[80px] border"
                     style={{
                       backgroundColor: lineHeight === item.value ? `${Colors.primary}15` : Colors.surfaceAlt,

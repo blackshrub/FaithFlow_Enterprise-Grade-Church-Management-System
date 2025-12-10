@@ -29,6 +29,7 @@ import { ArrowLeft, Cross, Check, Heart } from 'lucide-react-native';
 import { Button, ButtonText, ButtonSpinner } from '@/components/ui/button';
 import { GuidedPrayerDisplay, SuccessScreen } from '@/components/requests';
 import { useAuthStore } from '@/stores/auth';
+import { useRequireAuth } from '@/hooks/useRequireAuth';
 import api from '@/services/api';
 
 type CommitmentType = 'first_time' | 'recommitment';
@@ -36,6 +37,9 @@ type CommitmentType = 'first_time' | 'recommitment';
 export default function AcceptJesusScreen() {
   const { t, i18n } = useTranslation();
   const router = useRouter();
+
+  // SEC-M7: Route protection
+  useRequireAuth();
   const { member, churchId } = useAuthStore();
 
   const [commitmentType, setCommitmentType] = useState<CommitmentType>('first_time');
@@ -59,6 +63,15 @@ export default function AcceptJesusScreen() {
   }, [churchId, i18n.language]);
 
   const handleSubmit = useCallback(async () => {
+    // Validation: Ensure member is logged in
+    if (!member?.id || !churchId) {
+      Alert.alert(
+        t('common.error', 'Error'),
+        t('requests.loginRequired', 'Please log in to submit a request.')
+      );
+      return;
+    }
+
     if (!prayerRead) {
       Alert.alert(
         t('requests.acceptJesus.confirmRequired', 'Confirmation Required'),
@@ -132,6 +145,9 @@ export default function AcceptJesusScreen() {
           <Pressable
             onPress={() => router.back()}
             className="w-10 h-10 rounded-full bg-gray-100 items-center justify-center"
+            accessible
+            accessibilityRole="button"
+            accessibilityLabel={t('common.back', 'Go back')}
           >
             <ArrowLeft size={20} color="#374151" />
           </Pressable>
@@ -176,6 +192,9 @@ export default function AcceptJesusScreen() {
                   ? 'border-amber-500 bg-amber-50'
                   : 'border-gray-200 bg-white'
               }`}
+              accessible
+              accessibilityRole="button"
+              accessibilityLabel={t('requests.acceptJesus.firstTime', 'First Time Decision')}
             >
               <Text
                 className={`text-center font-medium ${
@@ -192,6 +211,9 @@ export default function AcceptJesusScreen() {
                   ? 'border-amber-500 bg-amber-50'
                   : 'border-gray-200 bg-white'
               }`}
+              accessible
+              accessibilityRole="button"
+              accessibilityLabel={t('requests.acceptJesus.recommitment', 'Recommitment')}
             >
               <Text
                 className={`text-center font-medium ${
@@ -222,6 +244,9 @@ export default function AcceptJesusScreen() {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               }}
               className="flex-row items-center p-4 bg-gray-50 rounded-xl"
+              accessible
+              accessibilityRole="button"
+              accessibilityLabel={t('requests.acceptJesus.confirmPrayer', 'I have read and prayed this prayer from my heart')}
             >
               <View
                 className={`w-6 h-6 rounded-md mr-3 items-center justify-center ${

@@ -214,7 +214,7 @@ async def delete_prayer_request(
             detail={"error_code": "NOT_FOUND", "message": "Prayer request not found"}
         )
     
-    await db.prayer_requests.delete_one({"id": request_id})
+    await db.prayer_requests.delete_one({"id": request_id, "church_id": church_id})
 
     await audit_service.log_action(
         db=db, church_id=church_id, user_id=user_id,

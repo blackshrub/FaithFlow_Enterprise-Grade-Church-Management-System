@@ -20,6 +20,7 @@ import {
   Platform,
 } from 'react-native';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Constants from 'expo-constants';
@@ -110,6 +111,7 @@ type LayoutMode = 'grid' | 'speaker';
 // =============================================================================
 
 function CallScreenContent() {
+  const { t } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
@@ -192,17 +194,17 @@ function CallScreenContent() {
 
   // Get the other participant's info
   const getOtherParticipantInfo = useCallback(() => {
-    if (!currentCall) return { name: 'Unknown', avatar: null };
+    if (!currentCall) return { name: t('call.unknown'), avatar: null };
 
     const otherParticipant = currentCall.participants.find(
       p => p.role === (uiState === 'outgoing' ? 'callee' : 'caller')
     ) || currentCall.participants[0];
 
     return {
-      name: otherParticipant?.member_name || 'Unknown',
+      name: otherParticipant?.member_name || t('call.unknown'),
       avatar: otherParticipant?.member_avatar,
     };
-  }, [currentCall, uiState]);
+  }, [currentCall, uiState, t]);
 
   const otherParticipant = getOtherParticipantInfo();
 
@@ -379,7 +381,7 @@ function CallScreenContent() {
 
             {/* Connection status */}
             {connectionState === ConnectionState.Reconnecting && (
-              <Text className="text-sm" style={{ color: colors.warning[400] }}>Reconnecting...</Text>
+              <Text className="text-sm" style={{ color: colors.warning[400] }}>{t('call.reconnecting')}</Text>
             )}
 
             {/* Layout toggle (video calls only) */}
@@ -388,6 +390,9 @@ function CallScreenContent() {
                 onPress={handleLayoutChange}
                 className="p-2 rounded-full"
                 style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)' }}
+                accessible
+                accessibilityRole="button"
+                accessibilityLabel={t('call.toggleLayout')}
               >
                 <Grid size={20} color={colors.white} />
               </Pressable>
@@ -399,6 +404,9 @@ function CallScreenContent() {
                 onPress={toggleScreenShare}
                 className="p-2 rounded-full"
                 style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)' }}
+                accessible
+                accessibilityRole="button"
+                accessibilityLabel={t('call.toggleScreenShare')}
               >
                 {isScreenSharing ? (
                   <ScreenShareOff size={20} color={colors.error[500]} />
@@ -431,9 +439,9 @@ function CallScreenContent() {
             className="absolute inset-0 items-center justify-center z-[100]"
             style={{ backgroundColor: 'rgba(0, 0, 0, 0.7)' }}
           >
-            <Text className="text-white text-[28px] font-bold mb-2">Call Ended</Text>
+            <Text className="text-white text-[28px] font-bold mb-2">{t('call.callEnded')}</Text>
             <Text className="text-lg" style={{ color: 'rgba(255, 255, 255, 0.7)' }}>
-              Duration: {callDuration.formatted}
+              {t('call.duration', { time: callDuration.formatted })}
             </Text>
           </Animated.View>
         )}
@@ -462,6 +470,7 @@ function CallScreenContent() {
 // =============================================================================
 
 export default function CallScreen() {
+  const { t } = useTranslation();
   const { id: callId } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -484,17 +493,20 @@ export default function CallScreen() {
           >
             <View className="flex-1 justify-center items-center px-10">
               <Text className="text-white text-2xl font-bold mb-4 text-center">
-                Calling Not Available
+                {t('call.notAvailable')}
               </Text>
               <Text className="text-base text-center mb-8" style={{ color: 'rgba(255,255,255,0.7)' }}>
-                Voice/video calls require a development build. They are not supported in Expo Go.
+                {t('call.notAvailableDesc')}
               </Text>
               <Pressable
                 onPress={() => router.back()}
                 className="rounded-xl px-8 py-4"
                 style={{ backgroundColor: colors.primary[500] }}
+                accessible
+                accessibilityRole="button"
+                accessibilityLabel={t('call.goBack')}
               >
-                <Text className="text-white text-base font-semibold">Go Back</Text>
+                <Text className="text-white text-base font-semibold">{t('call.goBack')}</Text>
               </Pressable>
             </View>
           </LinearGradient>
@@ -547,7 +559,7 @@ export default function CallScreen() {
             className="flex-1"
           >
             <View className="flex-1 items-center justify-center">
-              <Text className="text-white text-lg">Connecting...</Text>
+              <Text className="text-white text-lg">{t('call.connecting')}</Text>
             </View>
           </LinearGradient>
         </View>

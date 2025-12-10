@@ -110,7 +110,7 @@ function PrayerCardComponent({
                 <User size={16} color={Colors.neutral[400]} />
               </View>
               <View>
-                <Text className="text-[15px] font-semibold text-neutral-800">
+                <Text className="text-[15px] font-semibold text-neutral-800" numberOfLines={1}>
                   {request.is_anonymous ? 'Anonymous' : request.member_name}
                 </Text>
                 <Text className="text-[13px] text-neutral-500 mt-0.5">
@@ -129,7 +129,7 @@ function PrayerCardComponent({
           </View>
 
           {/* Title */}
-          <Text className="text-lg font-bold text-neutral-900 mb-2 tracking-tight">
+          <Text className="text-lg font-bold text-neutral-900 mb-2 tracking-tight" numberOfLines={2}>
             {request.title}
           </Text>
 
@@ -166,6 +166,9 @@ function PrayerCardComponent({
                   <Pressable
                     onPress={handleMarkAnswered}
                     disabled={isMarking}
+                    accessible
+                    accessibilityRole="button"
+                    accessibilityLabel="Mark prayer request as answered"
                     className="flex-row items-center gap-1.5 border-[1.5px] border-[#7FB685] px-3.5 py-2 rounded-xl active:scale-[0.97] active:opacity-90"
                   >
                     <Sparkles size={16} color={Colors.accent.sage} />

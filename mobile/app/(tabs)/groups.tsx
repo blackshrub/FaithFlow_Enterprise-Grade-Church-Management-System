@@ -50,6 +50,7 @@ import { communityColors, colors } from '@/constants/theme';
 import { useMyCommunities, usePrefetchCommunity } from '@/hooks/useCommunities';
 import { useAuthStore } from '@/stores/auth';
 import type { CommunityWithStatus } from '@/types/communities';
+import { navigateTo } from '@/utils/navigation';
 
 // =============================================================================
 // COMMUNITY LIST ITEM
@@ -120,6 +121,9 @@ const CommunityItem = memo(({ community, onPress, onPressIn }: CommunityItemProp
       style={({ pressed }) => [
         Platform.OS === 'ios' && pressed && { backgroundColor: communityColors.pressed },
       ]}
+      accessible
+      accessibilityRole="button"
+      accessibilityLabel={`${community.name} - ${getLastMessagePreview() || t('communities.noMessages', 'No messages yet')}${hasUnread ? ` - ${community.unread_count} unread` : ''}`}
     >
       {/* Avatar - 64pt for better visual weight */}
       <View className="mr-3">
@@ -231,10 +235,13 @@ const EmptyState = memo(() => {
         <Pressable
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-            router.push('/community/discover' as any);
+            navigateTo('/community/discover');
           }}
           className="px-6 py-3.5 rounded-3xl min-h-[48px] items-center justify-center active:opacity-90"
           style={{ backgroundColor: communityColors.dark }}
+          accessible
+          accessibilityRole="button"
+          accessibilityLabel={t('communities.discoverCommunities', 'Discover Communities')}
         >
           <Text className="text-base font-semibold" style={{ color: communityColors.text.onPrimary }}>
             {t('communities.discoverCommunities', 'Discover Communities')}
@@ -272,6 +279,9 @@ const SearchBar = memo(({ value, onChangeText, onClose }: SearchBarProps) => {
         onPress={onClose}
         className="w-11 h-11 items-center justify-center"
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        accessible
+        accessibilityRole="button"
+        accessibilityLabel={t('common.back', 'Go back')}
       >
         <Icon as={ArrowLeft} size="lg" color={communityColors.text.onPrimary} />
       </Pressable>
@@ -297,6 +307,9 @@ const SearchBar = memo(({ value, onChangeText, onClose }: SearchBarProps) => {
           onPress={() => onChangeText('')}
           className="w-11 h-11 items-center justify-center"
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          accessible
+          accessibilityRole="button"
+          accessibilityLabel={t('common.clear', 'Clear search')}
         >
           <Icon as={X} size="md" color={communityColors.text.onPrimary} />
         </Pressable>
@@ -401,9 +414,9 @@ function CommunityScreen() {
     (community: CommunityWithStatus) => {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       // Navigate to community threads list (WhatsApp Communities style)
-      router.push(`/community/${community.id}` as any);
+      navigateTo(`/community/${community.id}`);
     },
-    [router]
+    []
   );
 
   const handlePrefetch = useCallback(
@@ -450,6 +463,9 @@ function CommunityScreen() {
             onPress={() => router.push('/community/discover')}
             className="w-10 h-10 items-center justify-center rounded-full"
             style={{ backgroundColor: communityColors.background.surface }}
+            accessible
+            accessibilityRole="button"
+            accessibilityLabel={t('communities.discover', 'Discover communities')}
           >
             <Icon as={Compass} size="md" color={communityColors.dark} />
           </Pressable>
@@ -471,7 +487,7 @@ function CommunityScreen() {
               style={{ color: communityColors.text.primary, paddingVertical: 0 }}
             />
             {searchQuery.length > 0 && (
-              <Pressable onPress={() => setSearchQuery('')}>
+              <Pressable onPress={() => setSearchQuery('')} accessible accessibilityRole="button" accessibilityLabel={t('common.clear', 'Clear search')}>
                 <Icon as={X} size="md" color={communityColors.text.tertiary} />
               </Pressable>
             )}

@@ -148,6 +148,9 @@ function TodayHeaderComponent({
           <Pressable
             onPress={handlePrayerPress}
             className="flex-1 flex-row items-center gap-2"
+            accessible
+            accessibilityRole="button"
+            accessibilityLabel={`${activePrayers} active prayers, tap to view`}
           >
             <Heart size={18} color={Colors.accent.primary} />
             <Text className="text-[22px] font-bold text-white">{activePrayers}</Text>
@@ -164,6 +167,9 @@ function TodayHeaderComponent({
           <Pressable
             onPress={handleEventsPress}
             className="flex-1 flex-row items-center gap-2"
+            accessible
+            accessibilityRole="button"
+            accessibilityLabel={`${upcomingCount} upcoming events, tap to view`}
           >
             <Calendar size={18} color={Colors.accent.primary} />
             <Text className="text-[22px] font-bold text-white">{upcomingCount}</Text>

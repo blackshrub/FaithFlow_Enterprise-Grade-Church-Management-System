@@ -1,11 +1,22 @@
 /**
- * Today Screen - Premium World-Class Redesign
+ * Today Screen - Premium World-Class Redesign v2
  *
  * Design Philosophy: "Elegant simplicity, spiritual clarity"
+ * Following world-class UX principles with conditional visibility.
+ *
+ * Structure:
+ * 1. Header with greeting and QR button
+ * 2. Latest Sermon (YouTube) - HIDDEN if no sermon URL
+ * 3. Start Your Day carousel (Devotion + Verse)
+ * 4. Faith Assistant
+ * 5. Coming Up carousel - HIDDEN if no events
+ * 6. Church News carousel - HIDDEN if no articles
+ * 7. Instagram section - HIDDEN if no instagram_handle
+ * 8. How Can We Help grid
+ * 9. Grow in Faith section
  *
  * NOTE: This file is named today.tsx (not index.tsx) to work around
- * Expo Router navigation lag with index routes. The index.tsx file
- * redirects here.
+ * Expo Router navigation lag with index routes.
  *
  * Styling Strategy:
  * - NativeWind (className) for all layout and styling
@@ -18,9 +29,9 @@ import {
   RefreshControl,
   StatusBar,
   View,
-  Text,
   Pressable,
 } from 'react-native';
+import { Text } from '@/components/ui/text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useRouter } from 'expo-router';
@@ -30,36 +41,39 @@ import { PMotion } from '@/components/motion/premium-motion';
 import {
   useTodayHeaderMotion,
   useTodayCollapsibleHeader,
-  todayListItemMotion,
 } from '@/components/motion/today-motion';
 import { useFocusKey } from '@/hooks/useFocusAnimation';
 import {
-  BookOpen,
-  Calendar,
   Heart,
-  Users,
-  ChevronRight,
-  Compass,
+  Calendar,
   Sun,
   Moon,
   CloudSun,
   Sunset,
-  Quote,
-  ArrowRight,
-  Cross,
-  Droplets,
-  Baby,
-  Gem,
+  QrCode,
 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 
-import { ProfileButton } from '@/components/header';
+import { ProfileButton, NotificationBell } from '@/components/header';
 import { useAuthStore } from '@/stores/auth';
-import { useGivingSummary } from '@/hooks/useGiving';
 import { usePrayerRequests } from '@/hooks/usePrayer';
-import { useUpcomingEvents } from '@/hooks/useEvents';
-import { PremiumCard2 } from '@/components/ui/premium-card';
+import { useUpcomingEvents, useRSVP } from '@/hooks/useEvents';
 import { FaithAssistantCard } from '@/components/companion';
+
+// New Today screen components
+import { LatestSermonCard } from '@/components/today/LatestSermonCard';
+import { StartYourDayCarousel } from '@/components/today/StartYourDayCarousel';
+import { ComingUpCarousel } from '@/components/today/ComingUpCarousel';
+import { ChurchNewsSection } from '@/components/today/ChurchNewsSection';
+import { InstagramSection } from '@/components/today/InstagramSection';
+import { HowCanWeHelpGrid } from '@/components/today/HowCanWeHelpGrid';
+import { GrowInFaithSection } from '@/components/today/GrowInFaithSection';
+
+// Data hooks
+import { useLatestSermon, useInstagramPosts, shouldShowSermonSection } from '@/hooks/useStaticMedia';
+import { useFeaturedArticles, shouldShowArticlesSection } from '@/hooks/useArticles';
+import { useExploreHomeMock } from '@/hooks/explore/useExploreMock';
+import { useMemberQRStore } from '@/stores/memberQR';
 
 // Premium monochrome palette - custom colors not in tailwind
 const Colors = {
@@ -75,97 +89,6 @@ const Colors = {
     light: '#E8D5A8',
     dark: '#9A7B3D',
   },
-};
-
-// Quick action definitions with i18n keys
-const QUICK_ACTIONS = [
-  {
-    id: 'bible',
-    icon: BookOpen,
-    labelKey: 'today.quickActions.bible',
-    defaultLabel: 'Bible',
-    route: '/(tabs)/bible',
-    descKey: 'today.quickActions.bibleDesc',
-    defaultDesc: 'Read Scripture',
-  },
-  {
-    id: 'explore',
-    icon: Compass,
-    labelKey: 'today.quickActions.explore',
-    defaultLabel: 'Explore',
-    route: '/(tabs)/explore',
-    descKey: 'today.quickActions.exploreDesc',
-    defaultDesc: 'Devotions & Studies',
-  },
-  {
-    id: 'events',
-    icon: Calendar,
-    labelKey: 'today.quickActions.events',
-    defaultLabel: 'Events',
-    route: '/(tabs)/events',
-    descKey: 'today.quickActions.eventsDesc',
-    defaultDesc: 'Upcoming Activities',
-  },
-  {
-    id: 'community',
-    icon: Users,
-    labelKey: 'today.quickActions.community',
-    defaultLabel: 'Community',
-    route: '/(tabs)/groups',
-    descKey: 'today.quickActions.communityDesc',
-    defaultDesc: 'Connect with Others',
-  },
-];
-
-// Request types for "I want to..." section
-const REQUEST_TYPES = [
-  {
-    id: 'accept-jesus',
-    icon: Cross,
-    labelKey: 'requests.acceptJesus.title',
-    defaultLabel: 'Accept Jesus',
-    descKey: 'requests.acceptJesus.desc',
-    defaultDesc: 'Make a commitment',
-    route: '/requests/accept-jesus',
-    gradient: ['#F59E0B', '#D97706'] as [string, string],
-  },
-  {
-    id: 'baptism',
-    icon: Droplets,
-    labelKey: 'requests.baptism.title',
-    defaultLabel: 'Be Baptized',
-    descKey: 'requests.baptism.desc',
-    defaultDesc: 'Public declaration of faith',
-    route: '/requests/baptism',
-    gradient: ['#3B82F6', '#2563EB'] as [string, string],
-  },
-  {
-    id: 'child-dedication',
-    icon: Baby,
-    labelKey: 'requests.childDedication.title',
-    defaultLabel: 'Dedicate My Child',
-    descKey: 'requests.childDedication.desc',
-    defaultDesc: 'Commit your child to God',
-    route: '/requests/child-dedication',
-    gradient: ['#EC4899', '#DB2777'] as [string, string],
-  },
-  {
-    id: 'matrimony',
-    icon: Gem,
-    labelKey: 'requests.matrimony.title',
-    defaultLabel: 'Get Married',
-    descKey: 'requests.matrimony.desc',
-    defaultDesc: 'Holy matrimony request',
-    route: '/requests/holy-matrimony',
-    gradient: ['#D4AF37', '#B8860B'] as [string, string],
-  },
-];
-
-// Sample verse data (would come from API)
-const DAILY_VERSE = {
-  text: '"For I know the plans I have for you," declares the Lord, "plans to prosper you and not to harm you, plans to give you hope and a future."',
-  reference: 'Jeremiah 29:11',
-  theme: 'Hope',
 };
 
 // Custom hook for time-based greeting - prevents mount layout stutter
@@ -191,14 +114,19 @@ function TodayScreen() {
   const insets = useSafeAreaInsets();
   const { member } = useAuthStore();
   const [refreshing, setRefreshing] = React.useState(false);
+  const memberQRStore = useMemberQRStore();
 
   // Focus key - triggers child animation replay on tab focus (no container opacity flash)
   const focusKey = useFocusKey();
 
   // Data hooks
-  const { data: givingSummary, refetch: refetchGiving } = useGivingSummary();
   const { data: prayerRequests, refetch: refetchPrayer } = usePrayerRequests();
-  const { data: upcomingEvents, refetch: refetchEvents } = useUpcomingEvents();
+  const { data: upcomingEvents = [], refetch: refetchEvents } = useUpcomingEvents();
+  const { data: latestSermon, refetch: refetchSermon } = useLatestSermon();
+  const { data: instagramData, refetch: refetchInstagram } = useInstagramPosts(3);
+  const { data: articles = [], refetch: refetchArticles } = useFeaturedArticles(5);
+  const { data: exploreHome, refetch: refetchExplore } = useExploreHomeMock();
+  const rsvpMutation = useRSVP();
 
   // Time-based greeting (extracted to hook to prevent mount layout stutter)
   const greeting = useGreeting();
@@ -222,12 +150,52 @@ function TodayScreen() {
     [upcomingEvents]
   );
 
+  // Visibility flags for conditional sections
+  const showSermonSection = shouldShowSermonSection(latestSermon);
+  const showEventsSection = upcomingEvents.length > 0;
+  const showNewsSection = shouldShowArticlesSection(articles);
+  const showInstagramSection = !!(instagramData?.church?.handle);
+
+  // Member profile context for HowCanWeHelpGrid
+  const memberContext = useMemo(() => ({
+    isBaptized: !!member?.baptism_date,
+    maritalStatus: member?.marital_status || null,
+    hasUpcomingEvents: upcomingEvents.length > 0,
+  }), [member?.baptism_date, member?.marital_status, upcomingEvents.length]);
+
   // Refresh handler
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await Promise.all([refetchGiving(), refetchPrayer(), refetchEvents()]);
+    await Promise.all([
+      refetchPrayer(),
+      refetchEvents(),
+      refetchSermon(),
+      refetchInstagram(),
+      refetchArticles(),
+      refetchExplore(),
+    ]);
     setRefreshing(false);
-  }, [refetchGiving, refetchPrayer, refetchEvents]);
+  }, [refetchPrayer, refetchEvents, refetchSermon, refetchInstagram, refetchArticles, refetchExplore]);
+
+  // RSVP handler
+  const handleRSVP = useCallback(async (eventId: string) => {
+    if (!member?.id) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    try {
+      await rsvpMutation.mutateAsync({
+        eventId,
+        member_id: member.id,
+      });
+    } catch (error) {
+      console.error('RSVP failed:', error);
+    }
+  }, [member?.id, rsvpMutation]);
+
+  // QR button handler
+  const handleQRPress = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    memberQRStore.open();
+  }, [memberQRStore]);
 
   // Get first name
   const firstName = useMemo(() => {
@@ -263,25 +231,46 @@ function TodayScreen() {
         className="overflow-hidden"
         style={{ paddingTop: insets.top + 8 }}
       >
-        {/* Animated content wrapper - using shared headerEnterStyle */}
+        {/* Animated content wrapper - using shared headerEnterStyle for container opacity */}
         <Animated.View className="px-5" style={[headerPaddingAnimatedStyle, headerEnterStyle]}>
-          {/* Top row: Date + Profile - Premium Motion v2 stagger */}
-          <Animated.View
+          {/* Top row: Date + QR + Profile
+              NOTE: Children use View instead of Animated.View with entering= to avoid
+              "opacity may be overwritten by layout animation" warning.
+              Parent headerEnterStyle already handles enter animation. */}
+          <View
             key={`header-top-${focusKey}`}
-            entering={PMotion.sectionStagger(0)}
             className="flex-row justify-between items-center mb-4"
           >
             <View className="flex-row items-center gap-2">
               <GreetingIcon size={16} color={Colors.accent.primary} />
               <Text className="text-sm text-neutral-400 font-medium">{currentDate}</Text>
             </View>
-            <ProfileButton size={44} />
-          </Animated.View>
+            <View className="flex-row items-center gap-3">
+              {/* Notification Bell */}
+              <NotificationBell
+                size={44}
+                color={Colors.accent.primary}
+                backgroundColor="rgba(255,255,255,0.08)"
+              />
+              {/* QR Button */}
+              <Pressable
+                onPress={handleQRPress}
+                className="w-11 h-11 rounded-full items-center justify-center"
+                style={{ backgroundColor: 'rgba(255,255,255,0.08)' }}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                accessible
+                accessibilityRole="button"
+                accessibilityLabel={t('today.showQR', 'Show member QR code')}
+              >
+                <QrCode size={20} color={Colors.accent.primary} />
+              </Pressable>
+              <ProfileButton size={44} />
+            </View>
+          </View>
 
-          {/* Greeting - staggered entry */}
+          {/* Greeting - uses greetingAnimatedStyle for collapsible margin only (no opacity) */}
           <Animated.View
             key={`greeting-${focusKey}`}
-            entering={PMotion.sectionStagger(1)}
             className="mb-6"
             style={greetingAnimatedStyle}
           >
@@ -294,10 +283,9 @@ function TodayScreen() {
             </Text>
           </Animated.View>
 
-          {/* Stats row - Collapsible with staggered entry */}
+          {/* Stats row - Collapsible (statsRowAnimatedStyle handles opacity for collapse) */}
           <Animated.View
             key={`stats-${focusKey}`}
-            entering={PMotion.sectionStagger(2)}
             className="flex-row items-center rounded-2xl py-4 px-6"
             style={[
               {
@@ -311,6 +299,9 @@ function TodayScreen() {
             <Pressable
               onPress={() => router.push('/prayer')}
               className="flex-1 flex-row items-center gap-2"
+              accessible
+              accessibilityRole="button"
+              accessibilityLabel={t('today.stats.viewPrayers', `View ${activePrayers} prayers`)}
             >
               <Heart size={18} color={Colors.accent.primary} />
               <Text className="text-[22px] font-bold text-white">{activePrayers}</Text>
@@ -325,6 +316,9 @@ function TodayScreen() {
             <Pressable
               onPress={() => router.push('/(tabs)/events')}
               className="flex-1 flex-row items-center gap-2"
+              accessible
+              accessibilityRole="button"
+              accessibilityLabel={t('today.stats.viewEvents', `View ${upcomingCount} upcoming events`)}
             >
               <Calendar size={18} color={Colors.accent.primary} />
               <Text className="text-[22px] font-bold text-white">{upcomingCount}</Text>
@@ -336,313 +330,6 @@ function TodayScreen() {
     );
   };
 
-  // Render verse card - Premium Motion v2: soft scale for featured content
-  const renderVerseCard = () => (
-    <Animated.View
-      key={`verse-${focusKey}`}
-      entering={PMotion.softScaleEnter}
-      className="mb-6"
-    >
-      <View className="flex-row items-center gap-2 mb-3">
-        <Quote size={16} color={Colors.accent.dark} />
-        <Text
-          className="text-[13px] font-semibold text-typography-500 uppercase"
-          style={{ letterSpacing: 1 }}
-        >
-          {t('today.verseOfTheDay', 'Verse of the Day')}
-        </Text>
-      </View>
-
-      {/* Shadow wrapper - separate from overflow:hidden to prevent shadow clipping */}
-      <View
-        style={{
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 8 },
-          shadowOpacity: 0.12,
-          shadowRadius: 16,
-          elevation: 5,
-          borderRadius: 20,
-        }}
-      >
-        <View className="rounded-[20px] overflow-hidden">
-          <LinearGradient
-            colors={['#1a1a1a', '#252525']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={{ padding: 24, position: 'relative' }}
-          >
-            {/* Gold accent bar - all inline styles for absolute positioning */}
-            <View
-              style={{
-                position: 'absolute',
-                left: 0,
-                top: 24,
-                bottom: 24,
-                width: 3,
-                backgroundColor: Colors.accent.primary,
-                borderRadius: 2,
-              }}
-            />
-
-            <Text
-              className="text-lg font-medium text-white italic mb-4 pl-4"
-              style={{ lineHeight: 28 }}
-            >
-              {DAILY_VERSE.text}
-            </Text>
-
-            <View className="flex-row justify-between items-center pl-4">
-              <Text
-                className="text-sm font-semibold"
-                style={{ color: Colors.accent.light }}
-              >
-                {DAILY_VERSE.reference}
-              </Text>
-              <View
-                className="px-2.5 py-1 rounded-xl"
-                style={{ backgroundColor: 'rgba(201,169,98,0.2)' }}
-              >
-                <Text
-                  className="text-xs font-semibold"
-                  style={{ color: Colors.accent.primary }}
-                >
-                  {DAILY_VERSE.theme}
-                </Text>
-              </View>
-            </View>
-          </LinearGradient>
-        </View>
-      </View>
-    </Animated.View>
-  );
-
-  // Render quick actions - Premium Motion v2: card stagger for list items
-  const renderQuickActions = () => (
-    <Animated.View
-      key={`quick-actions-${focusKey}`}
-      entering={PMotion.sectionStagger(4)}
-      className="mb-6"
-    >
-      <Text
-        className="text-xl font-bold text-typography-900 mb-4"
-        style={{ letterSpacing: -0.3 }}
-      >
-        {t('today.quickAccess', 'Quick Access')}
-      </Text>
-
-      <View className="gap-3">
-        {QUICK_ACTIONS.map((action, index) => {
-          const ActionIcon = action.icon;
-          return (
-            <Animated.View
-              key={`${action.id}-${focusKey}`}
-              entering={todayListItemMotion(index)}
-            >
-              <PremiumCard2
-                onPress={() => router.push(action.route as any)}
-                innerStyle={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}
-              >
-                <View className="w-12 h-12 rounded-[14px] bg-background-100 items-center justify-center">
-                  <ActionIcon size={24} color="#262626" />
-                </View>
-                <View className="flex-1">
-                  <Text className="text-base font-semibold text-typography-900">
-                    {t(action.labelKey, action.defaultLabel)}
-                  </Text>
-                  <Text className="text-[13px] text-typography-500 mt-0.5">
-                    {t(action.descKey, action.defaultDesc)}
-                  </Text>
-                </View>
-                <ChevronRight size={18} color="#A3A3A3" />
-              </PremiumCard2>
-            </Animated.View>
-          );
-        })}
-      </View>
-    </Animated.View>
-  );
-
-  // Render giving prompt - Premium Motion v2: section stagger
-  const renderGivingPrompt = () => {
-    if (!givingSummary) return null;
-
-    return (
-      <Animated.View
-        key={`giving-${focusKey}`}
-        entering={PMotion.sectionStagger(5)}
-        className="mb-6"
-      >
-        <Pressable
-          onPress={() => router.push('/(tabs)/give')}
-          className="flex-row items-center justify-between rounded-2xl p-5 active:opacity-90"
-          style={{
-            backgroundColor: Colors.accent.dark,
-            shadowColor: Colors.accent.dark,
-            shadowOffset: { width: 0, height: 6 },
-            shadowOpacity: 0.3,
-            shadowRadius: 12,
-            elevation: 4,
-          }}
-        >
-          <View className="flex-row items-center gap-3.5">
-            <View
-              className="w-11 h-11 rounded-xl items-center justify-center"
-              style={{ backgroundColor: 'rgba(255,255,255,0.2)' }}
-            >
-              <Heart size={20} color="#FFFFFF" fill="#FFFFFF" />
-            </View>
-            <View>
-              <Text className="text-base font-semibold text-white">
-                {t('today.giving.title', 'Continue Your Generosity')}
-              </Text>
-              <Text
-                className="text-[13px] mt-0.5"
-                style={{ color: 'rgba(255,255,255,0.7)' }}
-              >
-                {t('today.giving.subtitle', 'Your giving makes a difference')}
-              </Text>
-            </View>
-          </View>
-          <ArrowRight size={20} color="#FFFFFF" />
-        </Pressable>
-      </Animated.View>
-    );
-  };
-
-  // Render upcoming highlight
-  const renderUpcomingHighlight = () => {
-    if (!upcomingEvents || upcomingEvents.length === 0) return null;
-
-    const nextEvent = upcomingEvents[0];
-    const eventDate = new Date(nextEvent.event_date || nextEvent.sessions?.[0]?.date || new Date());
-
-    return (
-      <Animated.View
-        key={`upcoming-${focusKey}`}
-        entering={PMotion.sectionStagger(6)}
-        className="mb-6"
-      >
-        <View className="flex-row justify-between items-center mb-4">
-          <Text
-            className="text-xl font-bold text-typography-900"
-            style={{ letterSpacing: -0.3 }}
-          >
-            {t('today.comingUp', 'Coming Up')}
-          </Text>
-          <Pressable onPress={() => router.push('/(tabs)/events')}>
-            <Text
-              className="text-sm font-semibold"
-              style={{ color: Colors.accent.dark }}
-            >
-              {t('common.seeAll', 'See All')}
-            </Text>
-          </Pressable>
-        </View>
-
-        <PremiumCard2
-          onPress={() => router.push(`/events/${nextEvent.id}` as any)}
-          innerStyle={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}
-        >
-          <View className="w-14 h-[60px] rounded-xl bg-background-100 items-center justify-center">
-            <Text className="text-2xl font-bold text-typography-900">
-              {eventDate.getDate()}
-            </Text>
-            <Text
-              className="text-[11px] font-semibold text-typography-500"
-              style={{ letterSpacing: 0.5 }}
-            >
-              {eventDate.toLocaleDateString('en-US', { month: 'short' }).toUpperCase()}
-            </Text>
-          </View>
-          <View className="flex-1">
-            <Text className="text-base font-semibold text-typography-900" numberOfLines={1}>
-              {nextEvent.name}
-            </Text>
-            <Text className="text-sm text-typography-500 mt-1">
-              {eventDate.toLocaleTimeString('en-US', {
-                hour: 'numeric',
-                minute: '2-digit',
-                hour12: true,
-              })}
-            </Text>
-          </View>
-          <ChevronRight size={20} color="#A3A3A3" />
-        </PremiumCard2>
-      </Animated.View>
-    );
-  };
-
-  // Render "I want to..." request cards section
-  const renderRequestSection = () => (
-    <Animated.View
-      key={`requests-${focusKey}`}
-      entering={PMotion.sectionStagger(7)}
-      className="mb-6"
-    >
-      <Text
-        className="text-xl font-bold text-typography-900 mb-4"
-        style={{ letterSpacing: -0.3 }}
-      >
-        {t('requests.sectionTitle', 'I want to...')}
-      </Text>
-
-      <View className="flex-row flex-wrap justify-between">
-        {REQUEST_TYPES.map((request, index) => {
-          const RequestIcon = request.icon;
-          return (
-            <Animated.View
-              key={`${request.id}-${focusKey}`}
-              entering={todayListItemMotion(index)}
-              style={{ width: '48%', marginBottom: 12 }}
-            >
-              <Pressable
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  router.push(request.route as any);
-                }}
-                className="rounded-2xl overflow-hidden active:opacity-90"
-                style={{
-                  shadowColor: request.gradient[0],
-                  shadowOffset: { width: 0, height: 4 },
-                  shadowOpacity: 0.25,
-                  shadowRadius: 8,
-                  elevation: 4,
-                }}
-              >
-                <LinearGradient
-                  colors={request.gradient}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={{ padding: 16, minHeight: 130 }}
-                >
-                  {/* Icon */}
-                  <View
-                    className="w-11 h-11 rounded-full items-center justify-center mb-3"
-                    style={{ backgroundColor: 'rgba(255,255,255,0.9)' }}
-                  >
-                    <RequestIcon size={22} color={request.gradient[0]} strokeWidth={2} />
-                  </View>
-
-                  {/* Text */}
-                  <Text className="text-base font-semibold text-white" numberOfLines={1}>
-                    {t(request.labelKey, request.defaultLabel)}
-                  </Text>
-                  <Text
-                    className="text-[12px] mt-1"
-                    style={{ color: 'rgba(255,255,255,0.85)' }}
-                    numberOfLines={2}
-                  >
-                    {t(request.descKey, request.defaultDesc)}
-                  </Text>
-                </LinearGradient>
-              </Pressable>
-            </Animated.View>
-          );
-        })}
-      </View>
-    </Animated.View>
-  );
-
   return (
     <View className="flex-1 bg-background-100">
       {/* StatusBar at top level - no container animation prevents flicker */}
@@ -651,7 +338,7 @@ function TodayScreen() {
 
       <Animated.ScrollView
         className="flex-1"
-        contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 24 }}
+        contentContainerStyle={{ paddingTop: 24 }}
         showsVerticalScrollIndicator={false}
         onScroll={handleScrollEvent}
         scrollEventThrottle={16}
@@ -659,21 +346,60 @@ function TodayScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
-        {renderVerseCard()}
+        {/* 1. Latest Sermon (YouTube) - HIDDEN if no sermon URL */}
+        {showSermonSection && latestSermon && (
+          <LatestSermonCard sermon={latestSermon} focusKey={focusKey} />
+        )}
 
-        {/* Faith Assistant - Premium entry point */}
+        {/* 2. Start Your Day carousel (Devotion + Verse) */}
+        <StartYourDayCarousel
+          devotion={exploreHome?.daily_devotion || null}
+          verse={exploreHome?.verse_of_the_day || null}
+          focusKey={focusKey}
+        />
+
+        {/* 3. Faith Assistant - Premium entry point */}
         <Animated.View
           key={`faith-assistant-${focusKey}`}
           entering={PMotion.sectionStagger(3)}
-          className="mb-6"
+          className="mb-6 px-5"
         >
           <FaithAssistantCard variant="featured" />
         </Animated.View>
 
-        {renderQuickActions()}
-        {renderRequestSection()}
-        {renderGivingPrompt()}
-        {renderUpcomingHighlight()}
+        {/* 4. Coming Up carousel - HIDDEN if no events */}
+        {showEventsSection && (
+          <ComingUpCarousel
+            events={upcomingEvents}
+            onRSVP={handleRSVP}
+            focusKey={focusKey}
+          />
+        )}
+
+        {/* 5. Church News carousel - HIDDEN if no articles */}
+        {showNewsSection && (
+          <ChurchNewsSection articles={articles} focusKey={focusKey} />
+        )}
+
+        {/* 6. Instagram section - HIDDEN if no instagram_handle */}
+        {showInstagramSection && instagramData && (
+          <InstagramSection
+            posts={instagramData.posts}
+            church={instagramData.church}
+            focusKey={focusKey}
+          />
+        )}
+
+        {/* 7. How Can We Help grid */}
+        <HowCanWeHelpGrid
+          isBaptized={memberContext.isBaptized}
+          maritalStatus={memberContext.maritalStatus}
+          hasUpcomingEvents={memberContext.hasUpcomingEvents}
+          focusKey={focusKey}
+        />
+
+        {/* 8. Grow in Faith section */}
+        <GrowInFaithSection focusKey={focusKey} />
 
         {/* Bottom spacing for tab bar */}
         <View className="h-[120px]" />

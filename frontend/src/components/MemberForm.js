@@ -342,6 +342,7 @@ export default function MemberForm({ formData, setFormData, member = null }) {
           <Label htmlFor="first_name">{t('members.firstName')} *</Label>
           <Input
             id="first_name"
+            data-testid="firstname-input"
             value={formData.first_name || ''}
             onChange={(e) => handleChange('first_name', e.target.value)}
             required
@@ -351,6 +352,7 @@ export default function MemberForm({ formData, setFormData, member = null }) {
           <Label htmlFor="last_name">{t('members.lastName')} *</Label>
           <Input
             id="last_name"
+            data-testid="lastname-input"
             value={formData.last_name || ''}
             onChange={(e) => handleChange('last_name', e.target.value)}
             required
@@ -360,6 +362,7 @@ export default function MemberForm({ formData, setFormData, member = null }) {
           <Label htmlFor="phone_whatsapp">{t('members.phone')} *</Label>
           <Input
             id="phone_whatsapp"
+            data-testid="phone-input"
             placeholder={t('members.phonePlaceholder')}
             value={formData.phone_whatsapp || ''}
             onChange={(e) => handleChange('phone_whatsapp', e.target.value)}
@@ -370,6 +373,7 @@ export default function MemberForm({ formData, setFormData, member = null }) {
           <Label htmlFor="date_of_birth">{t('members.dateOfBirth')}</Label>
           <Input
             id="date_of_birth"
+            data-testid="dob-input"
             type="date"
             value={formData.date_of_birth || ''}
             onChange={(e) => handleChange('date_of_birth', e.target.value)}
@@ -378,7 +382,7 @@ export default function MemberForm({ formData, setFormData, member = null }) {
         <div className="space-y-2">
           <Label htmlFor="gender">{t('members.gender')}</Label>
           <Select value={formData.gender || undefined} onValueChange={(value) => handleChange('gender', value)}>
-            <SelectTrigger>
+            <SelectTrigger data-testid="gender-select">
               <SelectValue placeholder={t('members.selectGender')} />
             </SelectTrigger>
             <SelectContent>

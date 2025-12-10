@@ -34,12 +34,17 @@ async def verify_ws_token(token: str) -> dict:
 async def websocket_endpoint(
     websocket: WebSocket,
     church_id: str,
-    token: str = Query(...)
+    token: Optional[str] = Query(None)  # Optional - prefer header/first-message auth
 ):
     """
     Main WebSocket endpoint for real-time updates.
 
-    Connect with: ws://host/ws/{church_id}?token=JWT_TOKEN
+    Authentication (in order of preference):
+    1. Sec-WebSocket-Protocol header with "auth." prefix (most secure)
+    2. First message after connect: {"type": "auth", "token": "JWT_TOKEN"}
+    3. Query param ?token=JWT (deprecated - logged in URLs)
+
+    Connect with: ws://host/ws/{church_id}
 
     Message types received:
     - attendance:update - Live attendance counts
@@ -52,12 +57,48 @@ async def websocket_endpoint(
     - {"type": "ping"} - Heartbeat
     - {"type": "subscribe", "events": ["attendance:update"]} - Subscribe to specific events
     """
-    # Verify token
-    try:
-        payload = await verify_ws_token(token)
-    except HTTPException:
-        await websocket.close(code=4001, reason="Authentication failed")
-        return
+    # Try to get token from Sec-WebSocket-Protocol header first (most secure)
+    # Format: "auth.JWT_TOKEN" in Sec-WebSocket-Protocol
+    subprotocols = websocket.headers.get("sec-websocket-protocol", "").split(",")
+    header_token = None
+    for proto in subprotocols:
+        proto = proto.strip()
+        if proto.startswith("auth."):
+            header_token = proto[5:]  # Remove "auth." prefix
+            break
+
+    # Accept connection first if using header auth
+    if header_token:
+        await websocket.accept(subprotocol=f"auth.{header_token[:20]}...")  # Truncated for response
+        try:
+            payload = await verify_ws_token(header_token)
+        except HTTPException:
+            await websocket.close(code=4001, reason="Authentication failed")
+            return
+    elif token:
+        # Fallback to query param (deprecated but still supported for backwards compat)
+        await websocket.accept()
+        try:
+            payload = await verify_ws_token(token)
+        except HTTPException:
+            await websocket.close(code=4001, reason="Authentication failed")
+            return
+    else:
+        # No token provided - wait for first message auth
+        await websocket.accept()
+        try:
+            # Wait for auth message (with timeout handled by client)
+            first_msg = await websocket.receive_json()
+            if first_msg.get("type") != "auth" or not first_msg.get("token"):
+                await websocket.close(code=4001, reason="Authentication required")
+                return
+            payload = await verify_ws_token(first_msg["token"])
+        except HTTPException:
+            await websocket.close(code=4001, reason="Authentication failed")
+            return
+        except Exception:
+            await websocket.close(code=4001, reason="Authentication required")
+            return
 
     # Verify church access
     session_church_id = payload.get("session_church_id")

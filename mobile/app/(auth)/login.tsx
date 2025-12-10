@@ -51,6 +51,7 @@ import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import { Fingerprint, Scan, Sparkles, BookOpen, Users, Heart, ChevronRight, Calendar, Gift, Compass, Bot, MoreHorizontal } from 'lucide-react-native';
 
+import { useTranslation } from "react-i18next";
 import { Button, ButtonText, ButtonSpinner } from "@/components/ui/button";
 import { PhoneInput } from "@/components/forms/PhoneInput";
 import { useSendOTP } from "@/hooks/useAuth";
@@ -163,6 +164,7 @@ function FeatureBadge({ icon: Icon, label, delay }: {
 }
 
 export default function LoginScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
   const [phone, setPhone] = useState("");
   const [phoneError, setPhoneError] = useState("");
@@ -200,7 +202,7 @@ export default function LoginScreen() {
   const handleBiometricLogin = async () => {
     setIsBiometricLoading(true);
     try {
-      const success = await authenticate('Login with ' + biometricName);
+      const success = await authenticate(t('auth.loginWith', { biometric: biometricName }));
       if (success) {
         router.replace("/(tabs)");
       }
@@ -209,13 +211,27 @@ export default function LoginScreen() {
     }
   };
 
+  /**
+   * SEC FIX: Improved phone validation with format checking
+   */
   const validatePhone = (): boolean => {
     if (!phone) {
-      setPhoneError("Phone number is required");
+      setPhoneError(t('auth.phoneRequired'));
       return false;
     }
+    // Check length (Indonesian numbers: 9-13 digits after country code)
     if (phone.length < 9 || phone.length > 13) {
-      setPhoneError("Invalid phone number");
+      setPhoneError(t('auth.phoneLengthError'));
+      return false;
+    }
+    // SEC FIX: Validate numeric format - must contain only digits
+    if (!/^\d+$/.test(phone)) {
+      setPhoneError(t('auth.phoneDigitsOnly'));
+      return false;
+    }
+    // SEC FIX: Indonesian mobile numbers start with 8
+    if (!phone.startsWith('8')) {
+      setPhoneError(t('auth.phoneStartsWith8'));
       return false;
     }
     setPhoneError("");
@@ -315,29 +331,29 @@ export default function LoginScreen() {
                   className="text-4xl font-bold text-center"
                   style={{ color: COLORS.textWhite, letterSpacing: -0.5 }}
                 >
-                  FaithFlow
+                  {t('app.name')}
                 </Text>
                 <Text
                   className="text-base text-center mt-1.5"
                   style={{ color: COLORS.textWhiteMuted }}
                 >
-                  Your spiritual journey, elevated
+                  {t('auth.tagline')}
                 </Text>
               </Animated.View>
 
               {/* Feature Badges - Two rows */}
               <View className="mt-6 mb-2 gap-3">
                 <View className="flex-row justify-center gap-2 flex-wrap">
-                  <FeatureBadge icon={BookOpen} label="Read Bible" delay={400} />
-                  <FeatureBadge icon={Users} label="Join Community" delay={450} />
-                  <FeatureBadge icon={Calendar} label="Attend Events" delay={500} />
-                  <FeatureBadge icon={Gift} label="Give Faithfully" delay={550} />
+                  <FeatureBadge icon={BookOpen} label={t('auth.features.readBible')} delay={400} />
+                  <FeatureBadge icon={Users} label={t('auth.features.joinCommunity')} delay={450} />
+                  <FeatureBadge icon={Calendar} label={t('auth.features.attendEvents')} delay={500} />
+                  <FeatureBadge icon={Gift} label={t('auth.features.giveFaithfully')} delay={550} />
                 </View>
                 <View className="flex-row justify-center gap-2 flex-wrap">
-                  <FeatureBadge icon={Heart} label="Join in Prayer" delay={600} />
-                  <FeatureBadge icon={Compass} label="Explore Faith" delay={650} />
-                  <FeatureBadge icon={Bot} label="Faith Assistant" delay={700} />
-                  <FeatureBadge icon={MoreHorizontal} label="And more..." delay={750} />
+                  <FeatureBadge icon={Heart} label={t('auth.features.prayTogether')} delay={600} />
+                  <FeatureBadge icon={Compass} label={t('auth.features.exploreMore')} delay={650} />
+                  <FeatureBadge icon={Bot} label={t('auth.features.faithAssistant')} delay={700} />
+                  <FeatureBadge icon={MoreHorizontal} label={t('auth.features.andMore')} delay={750} />
                 </View>
               </View>
             </Animated.View>

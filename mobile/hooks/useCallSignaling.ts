@@ -13,6 +13,7 @@ import {
   cleanupCallSignaling,
   callSignalingService,
 } from '@/services/callSignaling';
+import { logError } from '@/utils/errorHelpers';
 
 /**
  * Hook that manages call signaling connection based on auth state.
@@ -34,7 +35,7 @@ export function useCallSignalingInit(): void {
             await initializeCallSignaling(member.church_id, member.id, token);
             console.log('[useCallSignaling] Call signaling connected');
           } catch (error) {
-            console.error('[useCallSignaling] Failed to connect:', error);
+            logError('CallSignaling', 'initialize', error, 'warning');
             isInitialized.current = false;
           }
         }

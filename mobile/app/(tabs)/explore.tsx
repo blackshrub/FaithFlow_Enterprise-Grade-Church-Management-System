@@ -216,8 +216,8 @@ function ExploreScreen() {
       {
         devotionCompleted: homeData?.daily_devotion?.completed ?? false,
         devotionTitle,
-        quizzesCompleted: 0, // TODO: Track from progress
-        versesRead: 0, // TODO: Track from progress
+        quizzesCompleted: progressData?.total_quizzes_completed ?? 0,
+        versesRead: progressData?.total_verses_read ?? 0,
         totalActivities: 3,
       }
     );
@@ -230,21 +230,37 @@ function ExploreScreen() {
     } catch (e) {
       // Haptics may not be available
     }
-    const studyList = bibleStudies?.map(study => ({
-      id: study.id,
-      title: typeof study.title === 'string' ? study.title : study.title?.[contentLanguage] || study.title?.en || '',
-      description: typeof study.description === 'string' ? study.description : study.description?.[contentLanguage] || study.description?.en || '',
-      totalDays: study.lesson_count || study.lessons?.length || 7,
-      completedDays: 0, // TODO: Track from progress
-      isActive: false,
-    })) || [];
+    // Get completed content IDs from progress
+    const completedContentIds = progressData?.content_progress?.map((a: { content_id: string }) => a.content_id) || [];
+
+    const studyList = bibleStudies?.map(study => {
+      // Calculate completed days by checking if any lessons were completed
+      const studyLessons = study.lessons || [];
+      const completedLessons = studyLessons.filter(lesson =>
+        completedContentIds.includes(lesson.id)
+      ).length;
+
+      return {
+        id: study.id,
+        title: typeof study.title === 'string' ? study.title : study.title?.[contentLanguage] || study.title?.en || '',
+        description: typeof study.description === 'string' ? study.description : study.description?.[contentLanguage] || study.description?.en || '',
+        totalDays: study.lesson_count || study.lessons?.length || 7,
+        completedDays: completedLessons,
+        isActive: completedLessons > 0 && completedLessons < (study.lesson_count || studyLessons.length),
+      };
+    }) || [];
+
+    // Count completed studies (all lessons done)
+    const completedStudies = studyList.filter(s =>
+      s.completedDays > 0 && s.completedDays >= s.totalDays
+    ).length;
 
     overlay.showBottomSheet(
       (props) => <StudiesModal {...props} />,
       {
         studies: studyList,
         totalStudies: studyList.length,
-        completedStudies: 0, // TODO: Track from progress
+        completedStudies: progressData?.total_studies_completed ?? completedStudies,
       }
     );
   };
@@ -300,6 +316,9 @@ function ExploreScreen() {
           <Pressable
             onPress={handleLanguageToggle}
             className="flex-row items-center gap-2 bg-white/15 px-4 py-2.5 rounded-full active:scale-95 active:opacity-90 mt-1"
+            accessible
+            accessibilityRole="button"
+            accessibilityLabel={t('explore.toggleLanguage', `Change language - Currently ${contentLanguage.toUpperCase()}`)}
           >
             <Globe size={16} color={Colors.white} />
             <Text className="text-[13px] font-semibold text-white">{contentLanguage.toUpperCase()}</Text>
@@ -321,6 +340,9 @@ function ExploreScreen() {
           <Pressable
             onPress={handleStreakPress}
             className="flex-1 flex-row items-center gap-2.5 active:scale-95 active:opacity-90"
+            accessible
+            accessibilityRole="button"
+            accessibilityLabel={t('explore.streak.view', `View streak details - ${currentStreak ?? 0} day streak`)}
           >
             <View className="w-10 h-10 rounded-xl items-center justify-center" style={{ backgroundColor: 'rgba(212,175,55,0.2)' }}>
               <Flame size={20} color={Colors.streak} fill={Colors.streak} />
@@ -337,6 +359,9 @@ function ExploreScreen() {
           <Pressable
             onPress={handleCompletedTodayPress}
             className="flex-1 flex-row items-center gap-2.5 active:scale-95 active:opacity-90"
+            accessible
+            accessibilityRole="button"
+            accessibilityLabel={t('explore.completedToday.view', `View completed activities - ${homeData?.daily_devotion?.completed ? 1 : 0} completed today`)}
           >
             <View className="w-10 h-10 rounded-xl items-center justify-center" style={{ backgroundColor: 'rgba(212,175,55,0.2)' }}>
               <Sparkles size={20} color={Colors.accent.gold} />
@@ -355,6 +380,9 @@ function ExploreScreen() {
           <Pressable
             onPress={handleStudiesPress}
             className="flex-1 flex-row items-center gap-2.5 active:scale-95 active:opacity-90"
+            accessible
+            accessibilityRole="button"
+            accessibilityLabel={t('explore.studies.view', `View Bible studies - ${bibleStudies?.length || 0} studies available`)}
           >
             <View className="w-10 h-10 rounded-xl items-center justify-center" style={{ backgroundColor: 'rgba(212,175,55,0.2)' }}>
               <BookOpen size={20} color={Colors.accent.gold} />
@@ -505,6 +533,9 @@ function ExploreScreen() {
                   router.push('/explore/studies');
                 }}
                 className="flex-row items-center gap-1 active:scale-95 active:opacity-90"
+                accessible
+                accessibilityRole="button"
+                accessibilityLabel={t('explore.viewAll', 'View all Bible studies')}
               >
                 <Text className="text-sm font-semibold" style={{ color: Colors.accent.goldDark }}>
                   {t('explore.viewAll', 'View All')}
@@ -674,6 +705,9 @@ function BibleStudyCard({ study, onPress, contentLanguage }: BibleStudyCardProps
       <Pressable
         onPress={onPress}
         className="flex-1 overflow-hidden rounded-[20px] active:scale-[0.97] active:opacity-95"
+        accessible
+        accessibilityRole="button"
+        accessibilityLabel={`View Bible study - ${title}`}
       >
         {/* Background Image - Shared Element Transition */}
         <AnimatedImage
@@ -776,6 +810,9 @@ function QuickCard({ title, desc, icon, gradient, onPress }: QuickCardProps) {
         shadowRadius: 16,
         elevation: 8,
       }}
+      accessible
+      accessibilityRole="button"
+      accessibilityLabel={`${title} - ${desc}`}
     >
       <LinearGradient
         colors={gradient}

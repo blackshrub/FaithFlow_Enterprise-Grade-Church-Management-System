@@ -2,15 +2,31 @@ from passlib.context import CryptContext
 from jose import JWTError, jwt
 from datetime import datetime, timedelta, timezone
 import os
+import logging
 from typing import Optional
+
+logger = logging.getLogger(__name__)
 
 # Password hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-# JWT settings
-SECRET_KEY = os.environ.get('JWT_SECRET_KEY', 'your-secret-key-change-this-in-production')
+# JWT settings - SECURITY: No hardcoded fallback secrets
+SECRET_KEY = os.environ.get('JWT_SECRET_KEY') or os.environ.get('JWT_SECRET')
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 24 hours
+
+# Validate JWT secret at module load
+if not SECRET_KEY:
+    raise RuntimeError(
+        "CRITICAL: JWT_SECRET_KEY or JWT_SECRET environment variable must be set. "
+        "Generate a secure 64+ character random string for production."
+    )
+
+if len(SECRET_KEY) < 32:
+    logger.warning(
+        "JWT secret key is shorter than recommended (32+ characters). "
+        "Consider using a longer secret for better security."
+    )
 
 
 def hash_password(password: str) -> str:

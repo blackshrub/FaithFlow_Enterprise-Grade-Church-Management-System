@@ -46,6 +46,7 @@ import { useAuthStore } from '@/stores/auth';
 import { colors, spacing, borderRadius, shadows } from '@/constants/theme';
 import type { CommunitySubgroup } from '@/types/communities';
 import { CreateSubgroupModal } from '@/components/communities/CreateSubgroupModal';
+import { goBack, navigateTo } from '@/utils/navigation';
 
 // =============================================================================
 // SUB-GROUP CARD
@@ -84,6 +85,9 @@ function SubgroupCard({ subgroup, onPress }: SubgroupCardProps) {
         onPress();
       }}
       className="active:opacity-80"
+      accessible
+      accessibilityRole="button"
+      accessibilityLabel={`Open ${subgroup.name} subgroup`}
     >
       <View
         className="mx-4 my-2 p-4 rounded-xl bg-white"
@@ -130,7 +134,7 @@ function SubgroupCard({ subgroup, onPress }: SubgroupCardProps) {
                   {subgroup.last_message.text_preview}
                 </Text>
               ) : (
-                <Text className="text-gray-400 text-sm italic">
+                <Text className="text-gray-600 text-sm italic">
                   No messages yet
                 </Text>
               )}
@@ -151,7 +155,7 @@ function SubgroupCard({ subgroup, onPress }: SubgroupCardProps) {
 
             {/* Member count */}
             <HStack space="xs" className="items-center">
-              <Icon as={Users} size="xs" className="text-gray-400" />
+              <Icon as={Users} size="xs" className="text-gray-500" />
               <Text className="text-gray-500 text-xs">
                 {subgroup.member_count} members
               </Text>
@@ -201,7 +205,7 @@ export default function SubgroupsListScreen() {
   }, [community, member]);
 
   const handleSubgroupPress = (subgroup: CommunitySubgroup) => {
-    router.push(`/community/${communityId}/subgroups/${subgroup.id}` as any);
+    navigateTo(`/community/${communityId}/subgroups/${subgroup.id}`);
   };
 
   const handleCreateSubgroup = () => {
@@ -240,9 +244,12 @@ export default function SubgroupsListScreen() {
           <Pressable
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              router.back();
+              goBack();
             }}
             className="active:opacity-70"
+            accessible
+            accessibilityRole="button"
+            accessibilityLabel={t('common.back', 'Go back')}
           >
             <Icon as={ArrowLeft} size="lg" className="text-gray-800" />
           </Pressable>
@@ -300,7 +307,7 @@ export default function SubgroupsListScreen() {
             className="w-20 h-20 rounded-full items-center justify-center mb-4"
             style={{ backgroundColor: colors.gray[100] }}
           >
-            <Icon as={MessageSquare} size="2xl" className="text-gray-400" />
+            <Icon as={MessageSquare} size="2xl" className="text-gray-500" />
           </View>
           <Text className="text-gray-600 text-center text-lg font-medium">
             {t('communities.subgroups.noSubgroups', 'No sub-groups yet')}

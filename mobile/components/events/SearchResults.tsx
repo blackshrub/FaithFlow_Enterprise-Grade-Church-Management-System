@@ -53,7 +53,7 @@ export function SearchResults({ groupedResults, counts }: SearchResultsProps) {
   const [activeTab, setActiveTab] = useState<FilterTab>('all');
 
   const handleEventPress = (eventId: string) => {
-    router.push(`/events/${eventId}` as any);
+    router.push(`/events/${eventId}` as `/events/${string}`);
   };
 
   const handleTabChange = (tab: FilterTab) => {
@@ -144,6 +144,9 @@ export function SearchResults({ groupedResults, counts }: SearchResultsProps) {
         <Pressable
           onPress={() => handleEventPress(event.id)}
           className="active:opacity-70"
+          accessible
+          accessibilityRole="button"
+          accessibilityLabel={`${event.title} on ${format(eventDate, 'MMM d, yyyy')}`}
         >
           <View
             className="p-4 rounded-2xl bg-white border border-gray-100"
@@ -196,7 +199,14 @@ export function SearchResults({ groupedResults, counts }: SearchResultsProps) {
       <View style={{ paddingHorizontal: 16, paddingVertical: 12 }}>
         <HStack space="xs">
           {/* All Tab */}
-          <Pressable onPress={() => handleTabChange('all')} style={{ flex: 1 }}>
+          <Pressable
+            onPress={() => handleTabChange('all')}
+            style={{ flex: 1 }}
+            accessible
+            accessibilityRole="button"
+            accessibilityLabel={`${t('events.all')} (${counts.total})`}
+            accessibilityState={{ selected: activeTab === 'all' }}
+          >
             <View
               style={{
                 paddingVertical: 10,
@@ -227,7 +237,14 @@ export function SearchResults({ groupedResults, counts }: SearchResultsProps) {
           </Pressable>
 
           {/* Upcoming Tab */}
-          <Pressable onPress={() => handleTabChange('upcoming')} style={{ flex: 1 }}>
+          <Pressable
+            onPress={() => handleTabChange('upcoming')}
+            style={{ flex: 1 }}
+            accessible
+            accessibilityRole="button"
+            accessibilityLabel={`${t('events.upcoming')} (${counts.upcoming})`}
+            accessibilityState={{ selected: activeTab === 'upcoming' }}
+          >
             <View
               style={{
                 paddingVertical: 10,
@@ -258,7 +275,14 @@ export function SearchResults({ groupedResults, counts }: SearchResultsProps) {
           </Pressable>
 
           {/* RSVP'd Tab */}
-          <Pressable onPress={() => handleTabChange('rsvp')} style={{ flex: 1 }}>
+          <Pressable
+            onPress={() => handleTabChange('rsvp')}
+            style={{ flex: 1 }}
+            accessible
+            accessibilityRole="button"
+            accessibilityLabel={`${t('events.myRSVPs')} (${counts.rsvp})`}
+            accessibilityState={{ selected: activeTab === 'rsvp' }}
+          >
             <View
               style={{
                 paddingVertical: 10,
@@ -289,7 +313,14 @@ export function SearchResults({ groupedResults, counts }: SearchResultsProps) {
           </Pressable>
 
           {/* Attended Tab */}
-          <Pressable onPress={() => handleTabChange('attended')} style={{ flex: 1 }}>
+          <Pressable
+            onPress={() => handleTabChange('attended')}
+            style={{ flex: 1 }}
+            accessible
+            accessibilityRole="button"
+            accessibilityLabel={`${t('events.attended')} (${counts.attended})`}
+            accessibilityState={{ selected: activeTab === 'attended' }}
+          >
             <View
               style={{
                 paddingVertical: 10,

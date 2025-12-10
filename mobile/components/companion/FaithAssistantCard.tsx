@@ -122,6 +122,9 @@ function ButtonVariant({ onPress, t }: { onPress: () => void; t: (key: string, f
     <Animated.View style={pulseAnimatedStyle}>
       <Pressable
         onPress={onPress}
+        accessible
+        accessibilityRole="button"
+        accessibilityLabel={t('companion.title', 'Faith Assistant')}
         className="rounded-2xl overflow-hidden active:opacity-90 active:scale-[0.98]"
       >
         <LinearGradient
@@ -199,6 +202,9 @@ function FaithAssistantCardComponent({ variant = 'featured', onPress, onBeforeNa
     return (
       <Pressable
         onPress={handlePress}
+        accessible
+        accessibilityRole="button"
+        accessibilityLabel={t('companion.title', 'Faith Assistant')}
         className="rounded-2xl overflow-hidden active:opacity-90 active:scale-[0.98]"
       >
         <LinearGradient

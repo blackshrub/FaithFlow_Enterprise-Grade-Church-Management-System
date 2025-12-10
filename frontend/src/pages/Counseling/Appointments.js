@@ -203,7 +203,7 @@ const AppointmentsListPage = () => {
       <Card>
         <CardContent className="pt-6">
           {isLoading ? (
-            <div className="text-center py-8 text-gray-500">Loading...</div>
+            <div className="text-center py-8 text-gray-500">{t('common.loading')}</div>
           ) : appointments.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               {t('counseling.no_appointments')}

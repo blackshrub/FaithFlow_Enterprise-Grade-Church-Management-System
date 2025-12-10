@@ -70,6 +70,9 @@ export const EventsErrorState = memo(function EventsErrorState({
           paddingVertical: spacing.sm,
           borderRadius: radius.xl,
         }}
+        accessible
+        accessibilityRole="button"
+        accessibilityLabel={t('common.retry')}
       >
         <Text className="text-[15px] font-semibold text-white">
           {t('common.retry')}

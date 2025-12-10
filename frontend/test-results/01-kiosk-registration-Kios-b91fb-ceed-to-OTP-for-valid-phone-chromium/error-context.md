@@ -1,0 +1,49 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - img [ref=e7]
+          - generic [ref=e11]: GKBJ TAMAN KENCANA
+        - button "Back" [ref=e12] [cursor=pointer]:
+          - img
+          - generic [ref=e13]: Back
+        - button "Back to Start" [ref=e14] [cursor=pointer]:
+          - img
+          - generic [ref=e15]: Back to Start
+      - generic [ref=e16]:
+        - button "Change church" [ref=e17] [cursor=pointer]:
+          - img
+          - generic [ref=e18]: Change
+        - button "Switch to Indonesian" [ref=e19] [cursor=pointer]:
+          - img
+          - generic [ref=e20]: EN
+    - generic [ref=e23]:
+      - generic [ref=e24]:
+        - heading "Tell us about you" [level=2] [ref=e25]
+        - paragraph [ref=e26]: We did not find your number. Please fill in your basic data.
+      - generic [ref=e27]:
+        - generic [ref=e28]:
+          - text: Phone number
+          - textbox [disabled] [ref=e29]: "+81234567890"
+        - generic [ref=e30]:
+          - generic [ref=e31]: Full name *
+          - textbox [active] [ref=e32]
+        - generic [ref=e33]:
+          - generic [ref=e34]: Gender *
+          - combobox [ref=e35] [cursor=pointer]:
+            - img [ref=e36]
+        - generic [ref=e38]:
+          - generic [ref=e39]: Date of birth *
+          - textbox [ref=e40]
+        - generic [ref=e41]:
+          - text: Your photo
+          - button "Take Photo" [ref=e42] [cursor=pointer]:
+            - img
+            - text: Take Photo
+      - paragraph [ref=e44]: Please fill in all required fields above to continue.
+  - region "Notifications alt+T"
+```

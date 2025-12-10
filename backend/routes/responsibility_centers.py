@@ -172,8 +172,8 @@ async def delete_responsibility_center(
             detail={"error_code": "NOT_FOUND", "message": "Responsibility center not found"}
         )
     
-    await db.responsibility_centers.delete_one({"id": center_id})
-    
+    await db.responsibility_centers.delete_one({"id": center_id, "church_id": church_id})
+
     await audit_service.log_action(
         db=db, church_id=church_id, user_id=user_id,
         action_type="delete", module="responsibility_center",

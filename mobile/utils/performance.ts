@@ -505,7 +505,7 @@ export const getLiteModeQueryOptions = () => {
 // COMMUNITIES-SPECIFIC OPTIMIZATIONS
 // ============================================================================
 
-import type { CommunityMessage } from '@/types/communities';
+import type { CommunityMessage, ChannelType } from '@/types/communities';
 import { InteractionManager } from 'react-native';
 
 /**
@@ -549,7 +549,7 @@ export const createOptimisticMessage = (
   memberName: string,
   memberAvatar: string | undefined,
   communityId: string,
-  channelType: string,
+  channelType: ChannelType,
   subgroupId?: string,
   replyTo?: CommunityMessage | null
 ): CommunityMessage => {
@@ -558,7 +558,7 @@ export const createOptimisticMessage = (
     id: `optimistic-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
     church_id: '',
     community_id: communityId,
-    channel_type: channelType as any,
+    channel_type: channelType,
     subgroup_id: subgroupId,
     sender_member_id: memberId,
     sender_name: memberName,

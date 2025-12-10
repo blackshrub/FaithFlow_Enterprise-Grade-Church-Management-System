@@ -10,10 +10,12 @@
 
 /**
  * Fund - Giving category/purpose
+ *
+ * DATA FIX: Backend may return either `id` or `_id` - use getFundId() helper for consistency
  */
 export interface Fund {
-  _id: string;
-  id?: string; // Alias for _id (for compatibility)
+  _id?: string; // MongoDB ObjectId (may be present)
+  id?: string;  // UUID format (may be present)
   church_id: string;
   name: string;
   description: string;
@@ -24,6 +26,13 @@ export interface Fund {
   display_order: number;
   created_at: string;
   updated_at: string;
+}
+
+/**
+ * Helper to get fund ID regardless of whether backend returns id or _id
+ */
+export function getFundId(fund: Fund): string {
+  return fund.id || fund._id || '';
 }
 
 /**

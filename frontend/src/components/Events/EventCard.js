@@ -15,15 +15,12 @@ function EventCard({ event, category, onEdit }) {
   const [showRSVPManager, setShowRSVPManager] = useState(false);
   const [showSessionsModal, setShowSessionsModal] = useState(false);
   const [showAttendanceModal, setShowAttendanceModal] = useState(false);
+  const [imageError, setImageError] = useState(false);
 
   const handleDelete = async () => {
     if (window.confirm(t('events.event.confirmDelete'))) {
-      try {
-        await deleteMutation.mutateAsync(event.id);
-        toast.success(t('events.event.deleteSuccess'));
-      } catch (error) {
-        toast.error(t('events.event.deleteError'));
-      }
+      // Note: Toasts are handled in useDeleteEvent hook to avoid duplicates
+      await deleteMutation.mutateAsync(event.id);
     }
   };
 
@@ -85,24 +82,15 @@ function EventCard({ event, category, onEdit }) {
   const capacityInfo = getCapacityInfo();
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg hover:shadow-md transition-shadow overflow-hidden flex flex-col h-full">
+    <div className="bg-white border border-gray-200 rounded-lg hover:shadow-md transition-shadow overflow-hidden flex flex-col h-full" data-testid="event-card">
       {/* Event Photo - 2:1 Aspect Ratio */}
       <div className="w-full bg-gradient-to-br from-blue-500 to-purple-600 overflow-hidden relative flex-shrink-0" style={{ aspectRatio: '2/1' }}>
-        {event.event_photo ? (
+        {event.event_photo && !imageError ? (
           <img
             src={event.event_photo}
             alt={event.name}
             className="w-full h-full object-cover"
-            onError={(e) => {
-              e.target.style.display = 'none';
-              e.target.parentElement.innerHTML = `
-                <div class="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-500 to-purple-600">
-                  <svg class="h-20 w-20 text-white opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                </div>
-              `;
-            }}
+            onError={() => setImageError(true)}
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
@@ -141,7 +129,7 @@ function EventCard({ event, category, onEdit }) {
         <div className="flex items-start justify-between mb-3">
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-1">
-              <h3 className="font-semibold text-gray-900 line-clamp-2">{event.name}</h3>
+              <h3 className="font-semibold text-gray-900 line-clamp-2" data-testid="event-name">{event.name}</h3>
               {failedWhatsAppCount > 0 && (
                 <span className="flex-shrink-0 bg-red-100 text-red-800 text-xs font-medium px-2 py-0.5 rounded-full flex items-center gap-1" title={`${failedWhatsAppCount} failed WhatsApp deliveries`}>
                   <MessageCircle className="h-3 w-3" />
@@ -161,10 +149,10 @@ function EventCard({ event, category, onEdit }) {
             </div>
           </div>
           <div className="flex gap-1 ml-2">
-            <Button variant="ghost" size="sm" onClick={() => onEdit(event)}>
+            <Button variant="ghost" size="sm" onClick={() => onEdit(event)} data-testid="edit-event-button">
               <Pencil className="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="sm" onClick={handleDelete}>
+            <Button variant="ghost" size="sm" onClick={handleDelete} data-testid="delete-event-button">
               <Trash2 className="h-4 w-4 text-red-500" />
             </Button>
           </div>
@@ -178,7 +166,7 @@ function EventCard({ event, category, onEdit }) {
         {/* Details */}
         <div className="space-y-2 text-sm flex-1">
           {event.event_type === 'single' && event.event_date && (
-            <div className="flex items-center gap-2 text-gray-600">
+            <div className="flex items-center gap-2 text-gray-600" data-testid="event-date">
               <Calendar className="h-4 w-4" />
               <span>{formatEventDate(event.event_date)}</span>
             </div>
@@ -194,7 +182,7 @@ function EventCard({ event, category, onEdit }) {
           )}
 
           {event.location && (
-            <div className="flex items-center gap-2 text-gray-600">
+            <div className="flex items-center gap-2 text-gray-600" data-testid="event-location">
               <MapPin className="h-4 w-4" />
               <span className="line-clamp-1">{event.location}</span>
             </div>
@@ -351,10 +339,6 @@ function EventCard({ event, category, onEdit }) {
         <RSVPManager event={event} onClose={() => setShowRSVPManager(false)} />
       )}
 
-      {/* Sessions Modal */}
-      {showSessionsModal && (
-        <SessionsModal event={event} onClose={() => setShowSessionsModal(false)} />
-      )}
       {/* Sessions Modal */}
       {showSessionsModal && (
         <SessionsModal event={event} onClose={() => setShowSessionsModal(false)} />

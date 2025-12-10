@@ -27,6 +27,7 @@ import { MQTTProvider } from '@/components/providers/MQTTProvider';
 import { queryClient } from '@/lib/queryClient';
 import { queryPersister, shouldPersistQuery } from '@/lib/storage';
 import { preloadBiblesOffline } from '@/hooks/useBibleOffline';
+import { replaceTo, prefetchRoute } from '@/utils/navigation';
 // MMKV: Zustand stores with persist middleware auto-load from MMKV (sync)
 // No need to manually call loadSettings/loadPreferences anymore
 // DISABLED: Call feature temporarily disabled
@@ -39,9 +40,14 @@ import { BiometricLockScreen } from '@/components/auth/BiometricLockScreen';
 import { useBiometricLock } from '@/hooks/useBiometricLock';
 import { BibleNoteEditorHost } from '@/components/bible/BibleNoteEditorHost';
 import { GrowPanel } from '@/components/grow';
+import { MemberQRSheet } from '@/components/today/MemberQRSheet';
 import { useVoiceSettingsStore } from '@/stores/voiceSettings';
 import { initDeviceCapability } from '@/stores/deviceCapability';
+import { useNetworkStatusStore } from '@/stores/networkStatus';
+import { NetworkStatusBanner } from '@/components/ui/NetworkStatusBanner';
 import * as Updates from 'expo-updates';
+import { authEvents, AUTH_EVENTS } from '@/services/api';
+import { useAuthStore } from '@/stores/auth';
 // Note: We do NOT use CallKit because iOS requires VoIP PushKit for CallKit (we use standard FCM)
 // The in-app IncomingCallOverlay provides a WhatsApp-style UI instead
 
@@ -83,6 +89,43 @@ export default function RootLayout() {
   useEffect(() => {
     initDeviceCapability();
   }, []);
+
+  /**
+   * NETWORK STATUS DETECTION - UX-C2
+   * Global network status monitoring for offline indicator
+   */
+  const initializeNetwork = useNetworkStatusStore((state) => state.initialize);
+  useEffect(() => {
+    const unsubscribe = initializeNetwork();
+    return () => unsubscribe();
+  }, [initializeNetwork]);
+
+  /**
+   * SEC-M1: AUTH SESSION EXPIRED HANDLER
+   * Listen for 401 responses and trigger full logout
+   * This ensures app state is properly reset when token expires
+   */
+  const logout = useAuthStore((state) => state.logout);
+  useEffect(() => {
+    const handleSessionExpired = async (data: { reason: string; message: string }) => {
+      console.log('[Auth] Session expired, logging out:', data.reason);
+      try {
+        // Clear Zustand auth state
+        await logout();
+        // Redirect to login screen
+        replaceTo('/(auth)/login');
+      } catch (error) {
+        console.error('[Auth] Failed to handle session expiry:', error);
+        // Force redirect even if logout fails
+        replaceTo('/(auth)/login');
+      }
+    };
+
+    authEvents.on(AUTH_EVENTS.SESSION_EXPIRED, handleSessionExpired);
+    return () => {
+      authEvents.off(AUTH_EVENTS.SESSION_EXPIRED, handleSessionExpired);
+    };
+  }, [logout]);
 
   /**
    * IMMEDIATE OTA UPDATES
@@ -160,11 +203,11 @@ export default function RootLayout() {
           await new Promise(resolve => setTimeout(resolve, 500));
 
           // Prefetch commonly navigated screens
-          router.prefetch('/events/[id]' as any);
-          router.prefetch('/community/[id]/chat' as any);
-          router.prefetch('/prayer' as any);
-          router.prefetch('/explore/devotion/[id]' as any);
-          router.prefetch('/explore/quiz/[id]' as any);
+          prefetchRoute('/events/[id]');
+          prefetchRoute('/community/[id]/chat');
+          prefetchRoute('/prayer');
+          prefetchRoute('/explore/devotion/[id]');
+          prefetchRoute('/explore/quiz/[id]');
         } catch (e) {
           // Prefetch is optional, don't crash on failure
         }
@@ -317,6 +360,9 @@ export default function RootLayout() {
             {/* Grow Panel - FAB menu overlay for Bible & Explore */}
             <GrowPanel />
 
+            {/* Member QR Sheet - Check-in QR code for events */}
+            <MemberQRSheet />
+
             {/* Toast must be rendered at root level */}
             <Toast />
 
@@ -325,6 +371,9 @@ export default function RootLayout() {
 
             {/* Biometric lock screen overlay */}
             <BiometricLockScreen />
+
+            {/* Network status banner - shows when offline */}
+            <NetworkStatusBanner />
             </>
             )}
           </MQTTProvider>

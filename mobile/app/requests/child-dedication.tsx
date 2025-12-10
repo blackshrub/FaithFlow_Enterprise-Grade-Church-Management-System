@@ -39,6 +39,7 @@ import {
   SuccessScreen,
 } from '@/components/requests';
 import { useAuthStore } from '@/stores/auth';
+import { useRequireAuth } from '@/hooks/useRequireAuth';
 import api from '@/services/api';
 
 interface PersonInfo {
@@ -61,6 +62,9 @@ type Step = typeof STEPS[number];
 export default function ChildDedicationScreen() {
   const { t } = useTranslation();
   const router = useRouter();
+
+  // SEC-M7: Route protection
+  useRequireAuth();
   const { member, churchId } = useAuthStore();
 
   const [currentStep, setCurrentStep] = useState<number>(0);
@@ -180,6 +184,40 @@ export default function ChildDedicationScreen() {
   };
 
   const handleSubmit = useCallback(async () => {
+    // Validation: Ensure member is logged in
+    if (!member?.id || !churchId) {
+      Alert.alert(
+        t('common.error', 'Error'),
+        t('requests.loginRequired', 'Please log in to submit a request.')
+      );
+      return;
+    }
+
+    // Validation: Ensure child info is complete
+    if (!child.name.trim()) {
+      Alert.alert(
+        t('common.error', 'Error'),
+        t('requests.childDedication.childNameRequired', "Please provide the child's name.")
+      );
+      return;
+    }
+
+    if (!child.birth_date) {
+      Alert.alert(
+        t('common.error', 'Error'),
+        t('requests.childDedication.birthDateRequired', "Please provide the child's birth date.")
+      );
+      return;
+    }
+
+    if (!child.gender) {
+      Alert.alert(
+        t('common.error', 'Error'),
+        t('requests.childDedication.genderRequired', "Please select the child's gender.")
+      );
+      return;
+    }
+
     if (!canProceed()) return;
 
     setIsSubmitting(true);
@@ -190,11 +228,12 @@ export default function ChildDedicationScreen() {
       let photoUrl = null;
       if (child.photo_uri) {
         const formData = new FormData();
+        // React Native FormData accepts this specific shape for file uploads
         formData.append('photo', {
           uri: child.photo_uri,
           type: 'image/jpeg',
           name: 'child_photo.jpg',
-        } as any);
+        } as unknown as Blob);
         formData.append('church_id', churchId || '');
 
         const uploadResponse = await api.post('/public/kiosk/member-care/upload-child-photo', formData, {
@@ -385,6 +424,9 @@ export default function ChildDedicationScreen() {
             <Pressable
               onPress={() => setShowDatePicker(true)}
               className="flex-row items-center h-12 px-4 bg-gray-50 rounded-xl border border-gray-200"
+              accessible
+              accessibilityRole="button"
+              accessibilityLabel={t('requests.childDedication.selectBirthDate', 'Select birth date')}
             >
               <Calendar size={20} color="#6B7280" />
               <Text className={`ml-3 flex-1 ${child.birth_date ? 'text-gray-900' : 'text-gray-400'}`}>
@@ -418,6 +460,9 @@ export default function ChildDedicationScreen() {
                     ? 'border-blue-500 bg-blue-50'
                     : 'border-gray-200'
                 }`}
+                accessible
+                accessibilityRole="button"
+                accessibilityLabel={t('requests.form.male', 'Male')}
               >
                 <Text
                   className={`text-center font-medium ${
@@ -434,6 +479,9 @@ export default function ChildDedicationScreen() {
                     ? 'border-pink-500 bg-pink-50'
                     : 'border-gray-200'
                 }`}
+                accessible
+                accessibilityRole="button"
+                accessibilityLabel={t('requests.form.female', 'Female')}
               >
                 <Text
                   className={`text-center font-medium ${
@@ -456,6 +504,9 @@ export default function ChildDedicationScreen() {
               className={`items-center justify-center p-6 rounded-xl border-2 border-dashed ${
                 child.photo_uri ? 'border-pink-300 bg-pink-50' : 'border-gray-300'
               }`}
+              accessible
+              accessibilityRole="button"
+              accessibilityLabel={t('requests.childDedication.takePhoto', 'Take Photo')}
             >
               {child.photo_uri ? (
                 <Image
@@ -494,6 +545,9 @@ export default function ChildDedicationScreen() {
           <Pressable
             onPress={handleBack}
             className="w-10 h-10 rounded-full bg-gray-100 items-center justify-center"
+            accessible
+            accessibilityRole="button"
+            accessibilityLabel={t('common.back', 'Go back')}
           >
             <ArrowLeft size={20} color="#374151" />
           </Pressable>

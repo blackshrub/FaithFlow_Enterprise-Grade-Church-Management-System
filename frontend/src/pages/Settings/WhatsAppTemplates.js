@@ -115,15 +115,16 @@ const TemplateEditor = ({ template, onSave, onUploadAttachment, onRemoveAttachme
 
   const templateMeta = TEMPLATE_TYPES.find((t) => t.id === template?.template_type);
 
+  // CRITICAL: Use ?? for nullish coalescing, and depend on template.id to avoid unnecessary re-renders
   useEffect(() => {
     if (template) {
       setEditedTemplate({
-        message_template_en: template.message_template_en || '',
-        message_template_id: template.message_template_id || '',
+        message_template_en: template.message_template_en ?? '',
+        message_template_id: template.message_template_id ?? '',
         is_active: template.is_active ?? true,
       });
     }
-  }, [template]);
+  }, [template?.id]);
 
   const hasChanges =
     editedTemplate.message_template_en !== template?.message_template_en ||

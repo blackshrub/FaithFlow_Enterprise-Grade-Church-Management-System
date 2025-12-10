@@ -66,6 +66,9 @@ export function GrowPanel() {
         <Pressable
           style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
           onPress={close}
+          accessible
+          accessibilityRole="button"
+          accessibilityLabel="Close grow panel"
         >
           {Platform.OS === 'ios' ? (
             <BlurView

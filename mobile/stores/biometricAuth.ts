@@ -18,6 +18,8 @@ import * as LocalAuthentication from 'expo-local-authentication';
 import * as SecureStore from 'expo-secure-store';
 import { mmkvStorage } from '@/lib/storage';
 import { Platform, AppState, AppStateStatus } from 'react-native';
+import { logError } from '@/utils/errorHelpers';
+import { api } from '@/services/api';
 
 // Secure storage key for biometric credential
 const BIOMETRIC_CREDENTIAL_KEY = 'faithflow_biometric_credential';
@@ -116,7 +118,7 @@ export const useBiometricAuthStore = create<BiometricAuthState>()(
             types: biometricTypes,
           });
         } catch (error) {
-          console.error('[Biometric] Hardware check failed:', error);
+          logError('BiometricAuth', 'checkHardware', error, 'warning');
           set({
             isHardwareSupported: false,
             isEnrolled: false,
@@ -170,7 +172,7 @@ export const useBiometricAuthStore = create<BiometricAuthState>()(
             return false;
           }
         } catch (error) {
-          console.error('[Biometric] Enable failed:', error);
+          logError('BiometricAuth', 'enable', error, 'warning');
           set({ error: 'Failed to enable biometric' });
           return false;
         }
@@ -191,7 +193,7 @@ export const useBiometricAuthStore = create<BiometricAuthState>()(
           });
           console.log('[Biometric] Disabled');
         } catch (error) {
-          console.error('[Biometric] Disable failed:', error);
+          logError('BiometricAuth', 'disable', error, 'warning');
           set({ error: 'Failed to disable biometric' });
         }
       },
@@ -199,6 +201,9 @@ export const useBiometricAuthStore = create<BiometricAuthState>()(
       /**
        * Authenticate user with biometric
        * Returns true if successful
+       *
+       * SECURITY FIX: After successful biometric, refreshes JWT via backend API
+       * to ensure we have a fresh, valid token (not stale/expired).
        */
       authenticate: async (reason?: string) => {
         const { isEnabled, isHardwareSupported, isEnrolled } = get();
@@ -218,6 +223,39 @@ export const useBiometricAuthStore = create<BiometricAuthState>()(
           });
 
           if (result.success) {
+            // SECURITY: Refresh JWT via backend to get fresh token
+            const currentToken = await SecureStore.getItemAsync('auth_token');
+            if (currentToken && currentToken !== 'demo-jwt-token-for-testing') {
+              try {
+                // Call refresh endpoint to get new JWT
+                const response = await api.post('/public/members/refresh-token');
+                if (response.data?.access_token) {
+                  // Store the fresh token
+                  await SecureStore.setItemAsync('auth_token', response.data.access_token);
+                  // Update member data if returned
+                  if (response.data.member) {
+                    await SecureStore.setItemAsync('auth_member', JSON.stringify(response.data.member));
+                  }
+                  console.log('[Biometric] JWT refreshed successfully');
+                }
+              } catch (refreshError: any) {
+                // If refresh fails (401/403), token is invalid - force re-login
+                if (refreshError?.response?.status === 401 || refreshError?.response?.status === 403) {
+                  console.log('[Biometric] Token refresh failed, clearing credentials');
+                  await SecureStore.deleteItemAsync('auth_token');
+                  await SecureStore.deleteItemAsync('auth_member');
+                  set({
+                    isAuthenticating: false,
+                    isEnabled: false,
+                    error: 'Session expired. Please login again.',
+                  });
+                  return false;
+                }
+                // Network error - continue with existing token, backend will validate
+                logError('BiometricAuth', 'refreshToken', refreshError, 'warning');
+              }
+            }
+
             set({
               isAuthenticating: false,
               isLocked: false,
@@ -235,7 +273,7 @@ export const useBiometricAuthStore = create<BiometricAuthState>()(
             return false;
           }
         } catch (error) {
-          console.error('[Biometric] Authentication error:', error);
+          logError('BiometricAuth', 'authenticate', error, 'warning');
           set({
             isAuthenticating: false,
             error: 'Biometric authentication error',

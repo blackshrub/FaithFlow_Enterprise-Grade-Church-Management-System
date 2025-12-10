@@ -17,6 +17,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
+import { useRequireAuth } from '@/hooks/useRequireAuth';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   ChevronLeft,
@@ -71,6 +72,9 @@ export default function CreateGroupScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { member } = useAuthStore();
+
+  // SEC-M7: Route protection
+  useRequireAuth();
 
   // Form state
   const [name, setName] = useState('');
@@ -192,7 +196,13 @@ export default function CreateGroupScreen() {
       {/* Header */}
       <View className="px-6 pt-4 pb-4 bg-white border-b border-gray-200">
         <HStack space="md" className="items-center">
-          <Pressable onPress={() => router.back()} className="active:opacity-60">
+          <Pressable
+            onPress={() => router.back()}
+            accessible
+            accessibilityRole="button"
+            accessibilityLabel={t('common.back', 'Go back')}
+            className="active:opacity-60"
+          >
             <View
               style={{
                 width: 40,
@@ -285,6 +295,10 @@ export default function CreateGroupScreen() {
                           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                           setCategory(cat.value);
                         }}
+                        accessible
+                        accessibilityRole="button"
+                        accessibilityLabel={cat.label}
+                        accessibilityState={{ selected: isSelected }}
                         className="active:opacity-80"
                         style={{ width: '48%' }}
                       >

@@ -176,6 +176,9 @@ function PollOptionRow({
       }}
       disabled={!canVote || isVoting}
       className="relative mb-2"
+      accessible
+      accessibilityRole="button"
+      accessibilityLabel={`Vote for ${option.text}. Currently has ${option.vote_count} votes, ${percentage} percent.${isSelected ? ' Selected.' : ''}${isExpired ? ' Poll ended.' : ''}`}
     >
       <View
         className="rounded-xl overflow-hidden"

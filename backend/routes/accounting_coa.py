@@ -44,7 +44,7 @@ async def list_coa(
         ]
     
     cursor = db.chart_of_accounts.find(query, {"_id": 0}).sort("code", 1)
-    accounts = await cursor.to_list(length=None)
+    accounts = await cursor.to_list(length=1000)  # Limit to prevent DoS
     
     return accounts
 
@@ -247,8 +247,8 @@ async def delete_coa(
         )
     
     # Delete account
-    await db.chart_of_accounts.delete_one({"id": account_id})
-    
+    await db.chart_of_accounts.delete_one({"id": account_id, "church_id": church_id})
+
     # Audit log
     await audit_service.log_action(
         db=db,

@@ -44,14 +44,22 @@ const ChurchSelector = () => {
   
   const handleContinue = () => {
     if (!selectedChurch) return;
-    
+
     const church = churches.find(c => c.id === selectedChurch);
     if (church) {
-      // Store selected church
+      // Store selected church - only store minimal required fields (no sensitive data)
       localStorage.setItem('kiosk_church_id', church.id);
       localStorage.setItem('kiosk_church_name', church.name);
-      localStorage.setItem('kiosk_church_data', JSON.stringify(church));
-      
+      // Only store public display fields needed for kiosk UI
+      const safeChurchData = {
+        id: church.id,
+        name: church.name,
+        logo_url: church.logo_url,
+        primary_color: church.primary_color,
+        timezone: church.timezone,
+      };
+      localStorage.setItem('kiosk_church_data', JSON.stringify(safeChurchData));
+
       // Navigate to kiosk home
       navigate('/kiosk/home');
     }
@@ -122,7 +130,7 @@ const ChurchSelector = () => {
                 {i18n.language === 'en' ? 'Church' : 'Gereja'}
               </Label>
               <Select value={selectedChurch} onValueChange={setSelectedChurch}>
-                <SelectTrigger className="h-12 sm:h-14 lg:h-16 text-base sm:text-lg lg:text-2xl rounded-xl">
+                <SelectTrigger data-testid="church-select" className="h-12 sm:h-14 lg:h-16 text-base sm:text-lg lg:text-2xl rounded-xl">
                   <SelectValue placeholder={i18n.language === 'en' ? 'Select church...' : 'Pilih gereja...'} />
                 </SelectTrigger>
                 <SelectContent>
@@ -137,6 +145,7 @@ const ChurchSelector = () => {
 
             {/* Continue Button */}
             <Button
+              data-testid="continue-button"
               onClick={handleContinue}
               disabled={!selectedChurch}
               className="w-full h-12 sm:h-14 lg:h-16 text-base sm:text-lg lg:text-xl rounded-xl"

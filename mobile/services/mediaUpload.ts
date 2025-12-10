@@ -16,8 +16,34 @@ import type { MediaAttachment } from '@/components/chat/AttachmentPicker';
 import type { MessageMedia } from '@/types/communities';
 
 // =============================================================================
+// GLOBAL TYPE DECLARATIONS
+// =============================================================================
+
+/**
+ * Global auth token storage for media uploads
+ * Set by the auth store when token changes
+ */
+declare global {
+  var __FAITHFLOW_AUTH_TOKEN__: string | null | undefined;
+}
+
+// =============================================================================
 // TYPES
 // =============================================================================
+
+/**
+ * FormData file object for React Native
+ * React Native's FormData polyfill accepts objects with uri/type/name
+ * but TypeScript's lib.dom FormData only accepts string | Blob
+ */
+interface FormDataFile {
+  uri: string;
+  type: string;
+  name: string;
+}
+
+// Type for React Native's FormData.append which accepts file objects
+type RNFormDataAppend = (name: string, value: string | Blob | FormDataFile) => void;
 
 export interface UploadProgress {
   loaded: number;
@@ -153,11 +179,13 @@ export async function uploadMedia(
     const formData = new FormData();
 
     // Append file
-    formData.append('file', {
+    const fileData: FormDataFile = {
       uri: uploadUri,
       type: attachment.mimeType,
       name: attachment.fileName,
-    } as any);
+    };
+    // React Native FormData accepts file objects, cast to bypass web-only types
+    (formData.append as RNFormDataAppend)('file', fileData);
 
     // Append metadata
     formData.append('community_id', communityId);
@@ -311,7 +339,7 @@ function uploadWithProgress(
 function getAuthToken(): string | null {
   // This will be populated by the auth store
   // We use a global variable set by the auth initialization
-  return (global as any).__FAITHFLOW_AUTH_TOKEN__ || null;
+  return globalThis.__FAITHFLOW_AUTH_TOKEN__ || null;
 }
 
 /**
@@ -319,7 +347,7 @@ function getAuthToken(): string | null {
  * Called from auth store when token changes
  */
 export function setMediaUploadAuthToken(token: string | null): void {
-  (global as any).__FAITHFLOW_AUTH_TOKEN__ = token;
+  globalThis.__FAITHFLOW_AUTH_TOKEN__ = token;
 }
 
 // =============================================================================

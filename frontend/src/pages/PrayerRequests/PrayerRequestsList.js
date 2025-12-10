@@ -79,7 +79,7 @@ export default function PrayerRequestsList() {
             <BarChart3 className="w-4 h-4 mr-2" />
             {t('prayerRequests.analytics', 'Analytics')}
           </Button>
-          <Button onClick={() => navigate('/prayer-requests/new')}>
+          <Button onClick={() => navigate('/prayer-requests/new')} data-testid="add-prayer-button">
             <Plus className="w-4 h-4 mr-2" />
             {t('prayerRequests.createRequest')}
           </Button>
@@ -94,6 +94,7 @@ export default function PrayerRequestsList() {
               <Input
                 id="prayer-requests-search"
                 name="prayer-requests-search"
+                data-testid="search-input"
                 aria-label={t('common.search')}
                 placeholder={t('common.search')}
                 value={search}
@@ -103,18 +104,18 @@ export default function PrayerRequestsList() {
             </div>
 
             <Select value={statusFilter} onValueChange={setStatusFilter} name="prayer-status-filter">
-              <SelectTrigger id="prayer-status-filter" aria-label={t('prayerRequests.filters.filterByStatus')}>
+              <SelectTrigger id="prayer-status-filter" data-testid="filter-status" aria-label={t('prayerRequests.filters.filterByStatus')}>
                 <SelectValue placeholder={t('prayerRequests.filters.filterByStatus')} />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">{t('common.all')}</SelectItem>
-                <SelectItem value="new">{t('prayerRequests.statuses.new')}</SelectItem>
+                <SelectItem value="new" data-testid="filter-status-new">{t('prayerRequests.statuses.new')}</SelectItem>
                 <SelectItem value="prayed">{t('prayerRequests.statuses.prayed')}</SelectItem>
               </SelectContent>
             </Select>
 
             <Select value={categoryFilter} onValueChange={setCategoryFilter} name="prayer-category-filter">
-              <SelectTrigger id="prayer-category-filter" aria-label={t('prayerRequests.filters.filterByCategory')}>
+              <SelectTrigger id="prayer-category-filter" data-testid="filter-category" aria-label={t('prayerRequests.filters.filterByCategory')}>
                 <SelectValue placeholder={t('prayerRequests.filters.filterByCategory')} />
               </SelectTrigger>
               <SelectContent>
@@ -167,7 +168,7 @@ export default function PrayerRequestsList() {
               </TableHeader>
               <TableBody>
                 {requests.map((request) => (
-                  <TableRow key={request.id}>
+                  <TableRow key={request.id} data-testid="prayer-request-card">
                     <TableCell className="font-medium">
                       <div className="flex items-center gap-2">
                         {request.title}
@@ -199,6 +200,7 @@ export default function PrayerRequestsList() {
                             variant="outline"
                             size="sm"
                             onClick={() => handleMarkAsPrayed(request.id)}
+                            data-testid="mark-prayed-button"
                           >
                             {t('prayerRequests.actions.markAsPrayed')}
                           </Button>
@@ -207,6 +209,7 @@ export default function PrayerRequestsList() {
                           variant="ghost"
                           size="sm"
                           onClick={() => handleDelete(request.id, request.title)}
+                          data-testid="delete-prayer-button"
                         >
                           {t('common.delete')}
                         </Button>

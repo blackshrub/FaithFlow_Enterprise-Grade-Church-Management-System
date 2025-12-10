@@ -12,6 +12,7 @@
 
 import { Platform } from 'react-native';
 import { Image as RNImage } from 'react-native';
+import { logError } from '@/utils/errorHelpers';
 
 /**
  * Image format priorities by platform
@@ -118,7 +119,7 @@ export const compressBase64Image = async (
     // In production, use expo-image-manipulator to compress
     return dataUri;
   } catch (error) {
-    console.error('Failed to compress image:', error);
+    logError('ImageOptimization', 'compress', error, 'warning');
     return base64Data;
   }
 };
@@ -164,7 +165,7 @@ export const preloadImages = async (uris: string[]): Promise<void> => {
 
     await Promise.all(promises);
   } catch (error) {
-    console.warn('Failed to preload some images:', error);
+    logError('ImageOptimization', 'preload', error, 'warning');
   }
 };
 
@@ -377,6 +378,7 @@ export class ProgressiveImageLoader {
       onFullLoad?.(fullUri);
 
     } catch (error) {
+      logError('ImageOptimization', 'progressiveLoad', error, 'warning');
       imageLoadManager.finishLoading(fullUri, false);
       onError?.(error as Error);
     }
@@ -405,7 +407,7 @@ export const clearImageCache = async (): Promise<void> => {
 
     console.log('Image cache cleared');
   } catch (error) {
-    console.error('Failed to clear image cache:', error);
+    logError('ImageOptimization', 'clearCache', error, 'warning');
   }
 };
 

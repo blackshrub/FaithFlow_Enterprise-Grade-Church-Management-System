@@ -167,8 +167,8 @@ async def delete_category(
             status_code=status.HTTP_403_FORBIDDEN
         )
     
-    await db.article_categories.delete_one({"id": category_id})
-    
+    await db.article_categories.delete_one({"id": category_id, "church_id": church_id})
+
     await audit_service.log_action(
         db=db, church_id=church_id, user_id=user_id,
         action_type="delete", module="article_category",

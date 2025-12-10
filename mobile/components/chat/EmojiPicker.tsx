@@ -76,6 +76,9 @@ export function QuickReactions({
       {QUICK_REACTIONS.map((emoji) => (
         <Pressable
           key={emoji}
+          accessible
+          accessibilityRole="button"
+          accessibilityLabel={`React with ${emoji}`}
           className={`p-2 mx-0.5 rounded-full ${selectedEmoji === emoji ? 'bg-primary-100' : ''}`}
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -86,6 +89,9 @@ export function QuickReactions({
         </Pressable>
       ))}
       <Pressable
+        accessible
+        accessibilityRole="button"
+        accessibilityLabel="Show more emoji reactions"
         className="p-2 mx-0.5 rounded-full"
         onPress={() => {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -233,6 +239,9 @@ export function EmojiPickerSheet({
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   onGifPress?.();
                 }}
+                accessible
+                accessibilityRole="button"
+                accessibilityLabel="Select GIF"
                 className="p-2 rounded-lg"
                 style={{ backgroundColor: colors.gray[100] }}
               >
@@ -247,6 +256,9 @@ export function EmojiPickerSheet({
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               onClose();
             }}
+            accessible
+            accessibilityRole="button"
+            accessibilityLabel="Close emoji picker"
           >
             <Icon as={X} size="md" style={{ color: colors.gray[500] }} />
           </Pressable>
@@ -325,6 +337,9 @@ export function EmojiButton({ onPress, size = 'md' }: EmojiButtonProps) {
         Keyboard.dismiss();
         onPress();
       }}
+      accessible
+      accessibilityRole="button"
+      accessibilityLabel="Open emoji picker"
       className="p-2 rounded-full active:bg-gray-100"
     >
       <Icon as={SmilePlus} size={iconSize} style={{ color: colors.gray[500] }} />
@@ -357,6 +372,9 @@ export function ReactionsDisplay({
       {displayReactions.map((reaction, index) => (
         <Pressable
           key={`${reaction.emoji}-${index}`}
+          accessible
+          accessibilityRole="button"
+          accessibilityLabel={`${reaction.reacted ? 'Remove' : 'Add'} ${reaction.emoji} reaction, ${reaction.count} ${reaction.count === 1 ? 'person' : 'people'}`}
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             onReactionPress(reaction.emoji);

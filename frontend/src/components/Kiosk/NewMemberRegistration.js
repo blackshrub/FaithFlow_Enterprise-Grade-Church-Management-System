@@ -299,6 +299,7 @@ const NewMemberRegistration = ({ phone, onComplete, onError, initialExpiresIn = 
             {t('new_profile.name_label')} *
           </Label>
           <Input
+            data-testid="fullname-input"
             value={formData.full_name}
             onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
             className="h-10 sm:h-12 lg:h-14 text-sm sm:text-base lg:text-xl px-3 sm:px-4 lg:px-6 rounded-xl"
@@ -315,7 +316,7 @@ const NewMemberRegistration = ({ phone, onComplete, onError, initialExpiresIn = 
             value={formData.gender}
             onValueChange={(value) => setFormData({ ...formData, gender: value })}
           >
-            <SelectTrigger className="h-10 sm:h-12 lg:h-14 text-sm sm:text-base lg:text-xl rounded-xl">
+            <SelectTrigger data-testid="gender-select" className="h-10 sm:h-12 lg:h-14 text-sm sm:text-base lg:text-xl rounded-xl">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -331,6 +332,7 @@ const NewMemberRegistration = ({ phone, onComplete, onError, initialExpiresIn = 
             {t('new_profile.birthdate_label')} *
           </Label>
           <Input
+            data-testid="dob-input"
             type="date"
             value={formData.date_of_birth}
             onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })}

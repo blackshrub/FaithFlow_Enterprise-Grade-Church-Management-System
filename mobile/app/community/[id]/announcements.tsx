@@ -22,6 +22,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { navigateTo } from '@/utils/navigation';
 import { FlashList } from '@shopify/flash-list';
 import { Image } from 'expo-image';
 import * as Haptics from 'expo-haptics';
@@ -124,7 +125,12 @@ function AnnouncementCard({
               {formatDate(announcement.created_at)}
             </Text>
           </VStack>
-          <Pressable className="p-2">
+          <Pressable
+            className="p-2"
+            accessible
+            accessibilityRole="button"
+            accessibilityLabel="More options"
+          >
             <Icon as={MoreVertical} size="md" className="text-primary-600" />
           </Pressable>
         </View>
@@ -167,6 +173,9 @@ function AnnouncementCard({
                 className={`px-3 py-1.5 rounded-full flex-row items-center ${
                   hasReacted(emoji) ? 'bg-primary-100' : 'bg-gray-100'
                 }`}
+                accessible
+                accessibilityRole="button"
+                accessibilityLabel={`React with ${emoji}`}
               >
                 <Text className="text-lg mr-1">{emoji}</Text>
                 {reactions[emoji]?.length > 0 && (
@@ -184,6 +193,9 @@ function AnnouncementCard({
               <Pressable
                 onPress={() => setShowReplies(!showReplies)}
                 className="flex-row items-center"
+                accessible
+                accessibilityRole="button"
+                accessibilityLabel={`${showReplies ? 'Hide' : 'Show'} ${announcement.reply_count} ${announcement.reply_count === 1 ? 'reply' : 'replies'}`}
               >
                 <Icon as={MessageCircle} size="sm" className="text-gray-500 mr-1" />
                 <Text className="text-gray-600 text-sm mr-1">
@@ -192,7 +204,7 @@ function AnnouncementCard({
                 <Icon
                   as={showReplies ? ChevronUp : ChevronDown}
                   size="sm"
-                  className="text-gray-400"
+                  className="text-gray-500"
                 />
               </Pressable>
             )}
@@ -207,6 +219,9 @@ function AnnouncementCard({
               onReply();
             }}
             className="px-4 py-3 border-t border-gray-100 flex-row items-center justify-center"
+            accessible
+            accessibilityRole="button"
+            accessibilityLabel="Reply to announcement"
           >
             <Icon as={MessageCircle} size="sm" className="text-primary-600 mr-2" />
             <Text className="text-primary-600 font-medium">Reply to announcement</Text>
@@ -365,7 +380,7 @@ export default function AnnouncementsScreen() {
 
   const handleReply = (announcement: CommunityMessage) => {
     // Navigate to thread view
-    router.push(`/community/${communityId}/announcement/${announcement.id}` as any);
+    navigateTo(`/community/${communityId}/announcement/${announcement.id}`);
   };
 
   // Loading state
@@ -396,6 +411,9 @@ export default function AnnouncementsScreen() {
               router.back();
             }}
             className="active:opacity-70"
+            accessible
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
           >
             <Icon as={ArrowLeft} size="lg" className="text-gray-800" />
           </Pressable>
@@ -472,7 +490,7 @@ export default function AnnouncementsScreen() {
               className="w-20 h-20 rounded-full items-center justify-center mb-4"
               style={{ backgroundColor: colors.gray[100] }}
             >
-              <Icon as={Megaphone} size="2xl" className="text-gray-400" />
+              <Icon as={Megaphone} size="2xl" className="text-gray-500" />
             </View>
             <Text className="text-gray-600 text-center text-lg font-medium">
               No announcements yet

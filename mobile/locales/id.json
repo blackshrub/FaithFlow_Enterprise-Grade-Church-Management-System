@@ -23,13 +23,41 @@
     "searchChurch": "Cari gereja...",
     "phoneRequired": "Nomor WhatsApp wajib diisi",
     "phoneInvalid": "Masukkan nomor WhatsApp yang valid",
+    "phoneLengthError": "Nomor telepon harus 9-13 digit",
+    "phoneDigitsOnly": "Nomor telepon hanya boleh berisi angka",
+    "phoneStartsWith8": "Nomor ponsel Indonesia harus diawali dengan 8",
+    "loginWith": "Masuk dengan {{biometric}}",
+    "tagline": "Perjalanan rohani Anda, lebih bermakna",
+    "features": {
+      "readBible": "Baca Alkitab",
+      "joinCommunity": "Gabung Komunitas",
+      "attendEvents": "Hadiri Acara",
+      "giveFaithfully": "Beri dengan Setia",
+      "prayTogether": "Berdoa Bersama",
+      "exploreMore": "Jelajahi Iman",
+      "faithAssistant": "Asisten Iman",
+      "andMore": "Dan lainnya..."
+    },
     "otpRequired": "Kode OTP wajib diisi",
     "otpInvalid": "OTP harus 6 digit",
     "loginSuccess": "Login berhasil",
     "loginError": "Login gagal. Silakan coba lagi.",
-    "otpSent": "Kode OTP telah dikirim ke WhatsApp Anda",
+    "otpSent": "OTP Terkirim",
+    "otpSentDescription": "Kode OTP baru telah dikirim ke WhatsApp Anda",
     "otpSendError": "Gagal mengirim OTP. Silakan coba lagi.",
     "otpVerifyError": "Kode OTP tidak valid. Silakan coba lagi.",
+    "otpLengthError": "Kode OTP harus {{length}} digit",
+    "otpResendFailed": "Gagal mengirim ulang OTP",
+    "verifyOtp": "Verifikasi OTP",
+    "enterOtpCode": "Masukkan kode {{length}} digit yang dikirim ke",
+    "verify": "Verifikasi",
+    "verifying": "Memverifikasi...",
+    "otpExpiresIn": "Kode akan kadaluarsa dalam {{time}}",
+    "didntReceiveCode": "Tidak menerima kode?",
+    "waitTime": "Tunggu {{time}}",
+    "sending": "Mengirim...",
+    "resendOtp": "Kirim Ulang OTP",
+    "changePhoneNumber": "Ubah nomor telepon",
     "logout": "Keluar",
     "logoutConfirm": "Apakah Anda yakin ingin keluar?",
     "cancel": "Batal",
@@ -51,6 +79,25 @@
     "explore": "Jelajahi",
     "events": "Acara",
     "profile": "Profil"
+  },
+  "call": {
+    "unknown": "Tidak diketahui",
+    "reconnecting": "Menghubungkan ulang...",
+    "callEnded": "Panggilan Berakhir",
+    "duration": "Durasi: {{time}}",
+    "connecting": "Menghubungkan...",
+    "notAvailable": "Panggilan Tidak Tersedia",
+    "notAvailableDesc": "Panggilan suara/video memerlukan build pengembangan. Tidak didukung di Expo Go.",
+    "goBack": "Kembali",
+    "toggleLayout": "Ubah tata letak",
+    "toggleScreenShare": "Berbagi layar",
+    "endCall": "Akhiri panggilan",
+    "mute": "Bisukan",
+    "unmute": "Aktifkan suara",
+    "videoOn": "Nyalakan video",
+    "videoOff": "Matikan video",
+    "speaker": "Speaker",
+    "switchCamera": "Ganti kamera"
   },
   "grow": {
     "title": "Bertumbuh dalam Iman",
@@ -87,6 +134,48 @@
     "noPrayerRequests": "Tidak ada permintaan doa aktif",
     "announcements": "Pengumuman",
     "noAnnouncements": "Tidak ada pengumuman"
+  },
+  "today": {
+    "missedSunday": "Ketinggalan Ibadah?",
+    "watchNow": "Tonton Sekarang",
+    "startYourDay": "Awali Harimu",
+    "comingUp": "Akan Datang",
+    "churchNews": "Berita Gereja",
+    "instagram": {
+      "title": "Ikuti Kami di Instagram",
+      "follow": "Ikuti"
+    },
+    "howCanWeHelp": "Apa yang Bisa Kami Bantu?",
+    "growInFaith": "Bertumbuh dalam Iman",
+    "help": {
+      "prayer": "Permohonan\nDoa",
+      "community": "Bergabung\nKomunitas",
+      "give": "Berikan\nPersembahan",
+      "counseling": "Bicara dengan\nSeseorang",
+      "registerEvent": "Daftar\nAcara",
+      "acceptJesus": "Mulai\nPerjalananmu",
+      "baptism": "Siap untuk\nBaptis?",
+      "childDedication": "Dedikasi\nAnakmu",
+      "matrimony": "Rencanakan\nPernikahanmu"
+    },
+    "bible": "Baca Alkitab",
+    "explore": "Jelajahi Lebih",
+    "qr": {
+      "title": "QR Check-in Anda",
+      "instruction": "Tunjukkan QR ini saat check-in acara"
+    },
+    "stats": {
+      "prayers": "Doa",
+      "events": "Acara"
+    }
+  },
+  "articles": {
+    "title": "Berita Gereja",
+    "minRead": "menit baca",
+    "searchPlaceholder": "Cari artikel...",
+    "noResults": "Artikel tidak ditemukan",
+    "empty": "Belum ada artikel",
+    "noContent": "Konten tidak tersedia."
   },
   "give": {
     "title": "Persembahan",
@@ -299,12 +388,18 @@
     "bookmark": "Tandai",
     "bookmarks": "Penanda",
     "bookmarked": "Ditandai",
+    "bookmarkCount": "{{count}} penanda",
+    "bookmarkCount_plural": "{{count}} penanda",
+    "bookmarkAdded": "Penanda Ditambahkan",
+    "bookmarkRemoved": "Penanda Dihapus",
+    "bookmarksAdded": "{{count}} {{verseText}} ditandai",
     "highlight": "Sorot",
     "removeHighlight": "Hapus Sorotan",
     "copy": "Salin Ayat",
     "share": "Bagikan Ayat",
     "addNote": "Tambah Catatan",
     "notePlaceholder": "Tambahkan pemikiran, refleksi, atau wawasan Anda...",
+    "noteSaved": "Catatan Disimpan",
     "verseCopied": "Ayat Disalin",
     "noteComingSoon": "Fitur catatan segera hadir!",
     "noBookmarks": "Belum ada penanda",
@@ -319,7 +414,59 @@
     "searchMinLength": "Ketik minimal 3 karakter untuk mencari",
     "searching": "Mencari...",
     "resultsFound": "hasil ditemukan",
-    "noResults": "Tidak ada ayat yang cocok dengan pencarian Anda"
+    "noResults": "Tidak ada ayat yang cocok dengan pencarian Anda",
+    "navigation": {
+      "previous": "Sebelumnya",
+      "next": "Selanjutnya",
+      "continueReading": "Lanjutkan Membaca",
+      "nextChapter": "Berikutnya: {{book}} {{chapter}}",
+      "endOfBook": "Akhir dari {{book}}",
+      "selectAnotherBook": "Pilih kitab lain untuk melanjutkan",
+      "chapterIndicator": "Ps {{current}}/{{total}}"
+    },
+    "loading": "Memuat pasal...",
+    "chapterNotFound": "Pasal tidak ditemukan. Silakan pilih pasal lain.",
+    "preferences": {
+      "tapToCycle": "Ketuk untuk mengubah",
+      "textAlignment": "Perataan Teks",
+      "alignLeft": "Kiri",
+      "alignJustify": "Rata",
+      "wordSpacing": "Jarak Kata",
+      "wordSpacingNormal": "Normal",
+      "wordSpacingWide": "Lebar",
+      "wordSpacingWider": "Lebih Lebar",
+      "verseSpacing": "Jarak Ayat",
+      "verseSpacingNone": "Tidak Ada",
+      "verseSpacingSmall": "Kecil",
+      "verseSpacingLarge": "Besar",
+      "displayOptions": "Opsi Tampilan",
+      "showVerseNumbers": "Tampilkan Nomor Ayat",
+      "focusMode": "Mode Fokus",
+      "focusModeDesc": "Sembunyikan header & navigasi otomatis untuk membaca tanpa gangguan",
+      "readingMode": "Mode Baca",
+      "scrollMode": "Gulir",
+      "scrollModeDesc": "Gulir terus menerus antar pasal",
+      "pagedMode": "Per Halaman",
+      "pagedModeDesc": "Pasal demi pasal dengan tombol",
+      "navigationSection": "Navigasi",
+      "showVerseSelector": "Tampilkan Pemilih Ayat",
+      "verseSelectorDesc": "Aktifkan pemilihan ayat saat memilih kitab dan pasal",
+      "bibleFont": "Font Alkitab"
+    },
+    "share": {
+      "success": "Berhasil Dibagikan",
+      "successDesc": "{{count}} {{verseText}} dibagikan",
+      "failed": "Gagal Membagikan",
+      "failedDesc": "Tidak bisa membagikan ayat"
+    },
+    "colors": {
+      "clear": "Hapus",
+      "yellow": "Kuning",
+      "green": "Hijau",
+      "blue": "Biru",
+      "pink": "Merah Muda",
+      "orange": "Oranye"
+    }
   },
   "events": {
     "title": "Acara",
@@ -394,6 +541,10 @@
     "where": "Di mana",
     "capacity": "Kapasitas",
     "confirmationCode": "Kode Konfirmasi",
+    "rsvpConfirmed": "RSVP Dikonfirmasi",
+    "about": "Tentang Acara Ini",
+    "yourTicket": "Tiket Anda",
+    "noRSVPRequired": "RSVP Tidak Diperlukan",
     "status": {
       "attended": "Sudah Hadir",
       "rsvp": "Sudah RSVP",
@@ -577,7 +728,8 @@
       "titleRequired": "Silakan masukkan judul",
       "descriptionRequired": "Silakan deskripsikan permintaan doa Anda",
       "titleTooShort": "Judul harus minimal 5 karakter",
-      "descriptionTooShort": "Deskripsi harus minimal 10 karakter"
+      "descriptionTooShort": "Deskripsi harus minimal 10 karakter",
+      "fixErrors": "Harap perbaiki kesalahan di atas"
     },
     "category": {
       "health": "Kesehatan",
@@ -685,6 +837,8 @@
     "cancel": "Batal",
     "delete": "Hapus",
     "edit": "Edit",
+    "disable": "Nonaktifkan",
+    "enable": "Aktifkan",
     "close": "Tutup",
     "ok": "OK",
     "yes": "Ya",
@@ -1000,6 +1154,48 @@
       "howItWorks": "Cara Kerjanya",
       "howItWorksDescription": "Setelah diaktifkan, saat Anda kembali ke aplikasi setelah 5 detik, Anda akan diminta untuk mengautentikasi dengan biometrik Anda. Ini menjaga keamanan data gereja Anda.",
       "privacyNote": "Data biometrik Anda tidak pernah meninggalkan perangkat Anda. Kami hanya menyimpan token aman untuk memverifikasi identitas Anda."
+    },
+    "notifications": {
+      "title": "Notifikasi",
+      "push": "Notifikasi Push",
+      "pushDesc": "Terima notifikasi di perangkat Anda",
+      "categories": "Kategori Notifikasi",
+      "events": "Pengingat Acara",
+      "eventsDesc": "Pengingat untuk acara mendatang",
+      "prayer": "Pembaruan Doa",
+      "prayerDesc": "Pembaruan permintaan doa Anda",
+      "community": "Pesan Komunitas",
+      "communityDesc": "Pesan dari grup Anda",
+      "info": "Anda dapat mengelola izin notifikasi di pengaturan perangkat."
+    },
+    "language": {
+      "title": "Bahasa",
+      "info": "Mengubah bahasa akan memperbarui semua teks di aplikasi."
+    },
+    "appearance": {
+      "title": "Tampilan",
+      "theme": "Tema",
+      "light": "Terang",
+      "lightDesc": "Selalu gunakan tema terang",
+      "dark": "Gelap",
+      "darkDesc": "Selalu gunakan tema gelap",
+      "system": "Sistem",
+      "systemDesc": "Ikuti pengaturan sistem",
+      "info": "Pilih tampilan FaithFlow di perangkat Anda."
+    },
+    "privacy": {
+      "title": "Privasi & Keamanan",
+      "security": "Keamanan",
+      "privacy": "Privasi",
+      "biometric": "Autentikasi Biometrik",
+      "biometricDesc": "Gunakan Face ID atau sidik jari untuk membuka",
+      "appLock": "Kunci Aplikasi",
+      "appLockDesc": "Minta autentikasi saat membuka aplikasi",
+      "onlineStatus": "Tampilkan Status Online",
+      "onlineStatusDesc": "Izinkan orang lain melihat saat Anda online",
+      "anonymousPrayer": "Doa Anonim Default",
+      "anonymousPrayerDesc": "Jadikan permintaan doa anonim secara default",
+      "info": "Privasi Anda penting. Kami tidak pernah membagikan data pribadi Anda kepada pihak ketiga."
     }
   },
   "errorBoundary": {
@@ -1105,6 +1301,7 @@
   "requests": {
     "sectionTitle": "Saya ingin...",
     "submitError": "Terjadi kesalahan. Silakan coba lagi.",
+    "loginRequired": "Silakan masuk untuk mengirim permintaan.",
     "acceptJesus": {
       "title": "Terima Yesus",
       "desc": "Buat komitmen",
@@ -1165,7 +1362,10 @@
       "successText": "Tim pastoral kami akan menghubungi Anda untuk menjadwalkan upacara penyerahan.",
       "next1": "Kami akan menghubungi Anda dalam 3-5 hari",
       "next2": "Orang tua mungkin perlu menghadiri sesi persiapan",
-      "next3": "Upacara penyerahan biasanya diadakan saat ibadah Minggu"
+      "next3": "Upacara penyerahan biasanya diadakan saat ibadah Minggu",
+      "childNameRequired": "Silakan masukkan nama anak.",
+      "birthDateRequired": "Silakan masukkan tanggal lahir anak.",
+      "genderRequired": "Silakan pilih jenis kelamin anak."
     },
     "matrimony": {
       "title": "Menikah",
@@ -1195,7 +1395,9 @@
       "successText": "Tim pastoral kami akan menghubungi Anda untuk membahas rencana pernikahan Anda.",
       "next1": "Kami akan menghubungi Anda dalam 3-5 hari",
       "next2": "Kedua pasangan mungkin perlu mengikuti konseling pra-nikah",
-      "next3": "Pernikahan di gereja dijadwalkan 3-6 bulan sebelumnya"
+      "next3": "Pernikahan di gereja dijadwalkan 3-6 bulan sebelumnya",
+      "partnerARequired": "Silakan masukkan informasi Pasangan A.",
+      "partnerBRequired": "Silakan masukkan informasi Pasangan B."
     },
     "form": {
       "fullName": "Nama Lengkap",
@@ -1231,6 +1433,33 @@
     "success": {
       "whatNext": "Apa yang terjadi selanjutnya?",
       "backToHome": "Kembali ke Beranda"
+    }
+  },
+  "notifications": {
+    "title": "Notifikasi",
+    "unread": "belum dibaca",
+    "empty": {
+      "title": "Belum Ada Notifikasi",
+      "description": "Saat Anda menerima notifikasi, akan muncul di sini"
+    },
+    "types": {
+      "event": "Acara",
+      "group": "Kelompok",
+      "prayer": "Doa",
+      "devotion": "Renungan",
+      "announcement": "Pengumuman",
+      "giving": "Persembahan",
+      "general": "Umum"
+    },
+    "actions": {
+      "markAllRead": "Tandai semua sudah dibaca",
+      "markRead": "Tandai sudah dibaca"
+    },
+    "time": {
+      "justNow": "Baru saja",
+      "minutesAgo": "{{count}} menit lalu",
+      "hoursAgo": "{{count}} jam lalu",
+      "daysAgo": "{{count}} hari lalu"
     }
   }
 }

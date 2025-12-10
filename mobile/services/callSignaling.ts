@@ -399,7 +399,9 @@ class CallSignalingService {
           break;
 
         default:
-          console.log('[CallSignaling] Unknown signal type:', (payload as any).type);
+          // Type guard for unknown signal types - cast through unknown first
+          const unknownSignal = payload as unknown as { type: string };
+          console.log('[CallSignaling] Unknown signal type:', unknownSignal.type);
       }
 
     } catch (error) {

@@ -140,7 +140,7 @@ function EventCardComponent({
       <PremiumCard3
         onPress={() => {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          router.push(`/events/${event.id}` as any);
+          router.push(`/events/${event.id}` as `/events/${string}`);
         }}
         innerStyle={{ padding: 0, overflow: 'hidden' }}
       >
@@ -316,6 +316,9 @@ function EventCardComponent({
                   gap: spacing.s,
                 }}
                 disabled={isRSVPPending || !event.can_rsvp}
+                accessible
+                accessibilityRole="button"
+                accessibilityLabel={`${t('events.rsvp')} ${t('common.for')} ${event.name}`}
               >
                 <Check size={16} color={Colors.white} />
                 <Text className="text-sm font-bold text-white">{t('events.rsvp')}</Text>
@@ -345,6 +348,9 @@ function EventCardComponent({
                   gap: spacing.s,
                 }}
                 disabled={isCancelPending}
+                accessible
+                accessibilityRole="button"
+                accessibilityLabel={`${t('events.cancelRSVP')} ${t('common.for')} ${event.name}`}
               >
                 <X size={16} color={Colors.error} />
                 <Text className="text-sm font-semibold" style={{ color: Colors.error }}>
@@ -366,6 +372,9 @@ function EventCardComponent({
                     onPress={() => onOpenRating(event, ratingData.rating, ratingData.review)}
                     className="w-9 h-9 items-center justify-center bg-neutral-100"
                     style={{ borderRadius: radius.s }}
+                    accessible
+                    accessibilityRole="button"
+                    accessibilityLabel={`${t('events.editRating')} ${t('common.for')} ${event.name}`}
                   >
                     <Edit3 size={14} color={Colors.neutral[600]} />
                   </Pressable>
@@ -380,6 +389,9 @@ function EventCardComponent({
                     borderRadius: radius.m,
                     gap: spacing.s,
                   }}
+                  accessible
+                  accessibilityRole="button"
+                  accessibilityLabel={`${t('events.rateEvent')} ${event.name}`}
                 >
                   <Star size={16} color={Colors.white} />
                   <Text className="text-sm font-bold text-white">{t('events.rateEvent')}</Text>
@@ -391,6 +403,9 @@ function EventCardComponent({
               onPress={() => onShare(event)}
               className="w-11 h-11 items-center justify-center bg-neutral-100"
               style={{ borderRadius: radius.m }}
+              accessible
+              accessibilityRole="button"
+              accessibilityLabel={`${t('common.share')} ${event.name}`}
             >
               <Share2 size={18} color={Colors.gradient.end} />
             </Pressable>

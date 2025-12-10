@@ -165,11 +165,13 @@ export const useValidateDemographics = () => {
 
 export const useRegenerateDemographics = () => {
   const queryClient = useQueryClient();
+  const { church } = useAuth();
 
   return useMutation({
     mutationFn: () => settingsAPI.regenerateDemographics(),
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['members'] });
+      // CRITICAL: Include church_id for multi-tenant cache isolation
+      queryClient.invalidateQueries({ queryKey: ['members', church?.id] });
       toast.success(data.data?.message || 'Demographics regenerated successfully');
     },
     onError: (error) => {

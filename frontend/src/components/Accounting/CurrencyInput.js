@@ -25,7 +25,8 @@ const CurrencyInput = ({ label, value, onChange, required = false, ...props }) =
   };
 
   // Format value for display (handle 0, null, undefined)
-  const displayValue = (value && value > 0) ? 
+  // CRITICAL: Use explicit check for null/undefined to properly display 0
+  const displayValue = (value != null && value !== '') ?
     new Intl.NumberFormat('id-ID').format(value) : '';
 
   return (

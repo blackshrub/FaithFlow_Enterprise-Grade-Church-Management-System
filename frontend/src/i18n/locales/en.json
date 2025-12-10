@@ -179,7 +179,15 @@
     "noResults": "No results found",
     "copy": "Copy",
     "members": "members",
-    "refresh": "Refresh"
+    "refresh": "Refresh",
+    "view": "View",
+    "actions": "Actions",
+    "male": "Male",
+    "female": "Female",
+    "errorOccurred": "An Error Occurred",
+    "errorMessage": "Sorry, an unexpected error occurred. Please refresh the page or contact administrator if the problem persists.",
+    "refreshPage": "Refresh Page",
+    "tryAgain": "Try Again"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -2968,6 +2976,187 @@
     "error": {
       "loadFailed": "Failed to load requests",
       "updateFailed": "Failed to update request"
+    }
+  },
+  "broadcasts": {
+    "title": "Broadcast Center",
+    "subtitle": "Send push notifications to your congregation",
+    "newCampaign": "New Campaign",
+    "editCampaign": "Edit Campaign",
+    "searchPlaceholder": "Search campaigns...",
+    "status": {
+      "all": "All",
+      "draft": "Drafts",
+      "scheduled": "Scheduled",
+      "sending": "Sending",
+      "sent": "Sent",
+      "cancelled": "Cancelled",
+      "failed": "Failed"
+    },
+    "table": {
+      "title": "Title",
+      "status": "Status",
+      "audience": "Audience",
+      "stats": "Stats",
+      "created": "Created"
+    },
+    "empty": {
+      "title": "No campaigns yet",
+      "description": "Create your first broadcast campaign to reach your congregation"
+    },
+    "form": {
+      "content": "Notification Content",
+      "contentDescription": "Write your notification message",
+      "title": "Title",
+      "titlePlaceholder": "Enter notification title...",
+      "body": "Message",
+      "bodyPlaceholder": "Enter your message to the congregation...",
+      "image": "Rich Media Image (optional)",
+      "uploadImage": "Click to upload an image",
+      "targetAudience": "Target Audience",
+      "targetDescription": "Choose who will receive this notification",
+      "action": "Action on Tap",
+      "actionDescription": "What happens when user taps the notification",
+      "schedule": "Schedule",
+      "audienceEstimateFailed": "Failed to estimate audience"
+    },
+    "audience": {
+      "allMembers": "All Members",
+      "byGroup": "By Cell Group",
+      "byStatus": "By Member Status",
+      "byDemographics": "By Demographics",
+      "customList": "Custom Member List",
+      "selectGroups": "Select Cell Groups",
+      "selectStatus": "Select Member Status",
+      "gender": "Gender",
+      "anyGender": "Any Gender",
+      "ageMin": "Minimum Age",
+      "ageMax": "Maximum Age",
+      "estimatedReach": "Estimated Reach",
+      "membersWithDevices": "members with active devices",
+      "totalMatching": "total matching"
+    },
+    "action": {
+      "none": "Open app only",
+      "article": "Open specific article",
+      "event": "Open specific event",
+      "url": "Open external URL",
+      "urlInput": "Enter URL"
+    },
+    "schedule": {
+      "sendNow": "Send immediately",
+      "scheduleLater": "Schedule for later",
+      "scheduledTime": "Scheduled Date & Time",
+      "minTime": "Must be at least 5 minutes in the future"
+    },
+    "preview": {
+      "title": "Preview",
+      "description": "See how your notification will appear",
+      "darkMode": "Dark",
+      "lightMode": "Light",
+      "lockScreen": "Lock Screen",
+      "homeScreen": "Home",
+      "tips": "Tip: Titles over 50 characters may be truncated on some devices"
+    },
+    "tips": {
+      "title": "Tips for Better Engagement",
+      "titleLength": "Keep titles under 50 characters for best display",
+      "bodyLength": "Body text is truncated on lock screen - put key info first",
+      "personalize": "Use a friendly, personal tone",
+      "testFirst": "Always send a test to yourself before broadcasting"
+    },
+    "actions": {
+      "saveDraft": "Save Draft",
+      "send": "Send Now",
+      "schedule": "Schedule",
+      "cancel": "Cancel",
+      "duplicate": "Duplicate",
+      "testSend": "Test Send"
+    },
+    "analytics": {
+      "totalCampaigns": "Total Campaigns",
+      "totalSent": "Total Sent",
+      "delivered": "Delivered",
+      "deliveryRate": "Delivery Rate",
+      "last30Days": "Last 30 days"
+    },
+    "messages": {
+      "confirmDelete": "Are you sure you want to delete \"{{title}}\"?",
+      "confirmSend": "Send notification to all targeted recipients?",
+      "confirmSendNow": "Send notification to {{count}} members now?",
+      "confirmSchedule": "Schedule this notification for the selected time?",
+      "confirmCancel": "Cancel this scheduled notification?",
+      "saveFirst": "Please save the campaign first"
+    },
+    "validation": {
+      "required": "Title and message are required",
+      "scheduledRequired": "Please select a schedule time"
+    }
+  },
+  "notificationTemplates": {
+    "title": "Notification Templates",
+    "description": "Create reusable templates for push notifications",
+    "create": "Create Template",
+    "edit": "Edit Template",
+    "editorDesc": "Define reusable notification content with variables",
+    "list": "Templates",
+    "listDesc": "Manage your notification templates",
+    "searchPlaceholder": "Search templates...",
+    "categoryFilter": "Category",
+    "allCategories": "All Categories",
+    "noResults": "No templates found matching your filters",
+    "empty": "No templates yet. Create your first one!",
+    "preview": "Preview",
+    "previewTitle": "Notification Preview",
+    "previewDesc": "This is how the notification will appear on devices",
+    "livePreview": "Live Preview",
+    "basicInfo": "Basic Information",
+    "content": "Notification Content",
+    "contentDesc": "Use {{variable_name}} to insert dynamic content",
+    "variables": "Variables",
+    "variablesDesc": "Click to insert into title or body",
+    "tags": "Tags",
+    "tagsDesc": "Add tags to organize and find templates easily",
+    "stats": {
+      "total": "Total Templates",
+      "totalDesc": "All templates in library",
+      "active": "Active Templates",
+      "activeDesc": "Ready to use",
+      "usage": "Total Usage",
+      "usageDesc": "Campaigns created"
+    },
+    "table": {
+      "name": "Name",
+      "category": "Category",
+      "status": "Status",
+      "usage": "Usage",
+      "updated": "Last Updated"
+    },
+    "form": {
+      "name": "Template Name",
+      "namePlaceholder": "e.g., Weekly Reminder",
+      "description": "Description",
+      "descriptionPlaceholder": "Describe when to use this template",
+      "category": "Category",
+      "priority": "Priority",
+      "active": "Template is active",
+      "title": "Title",
+      "titlePlaceholder": "e.g., {{church_name}} Reminder",
+      "body": "Body",
+      "bodyPlaceholder": "e.g., Hi {{first_name}}, don't forget...",
+      "imageUrl": "Image URL (optional)",
+      "tagPlaceholder": "Enter tag name"
+    },
+    "actions": {
+      "view": "View",
+      "edit": "Edit",
+      "duplicate": "Duplicate",
+      "createCampaign": "Create Campaign",
+      "delete": "Delete"
+    },
+    "deleteDialog": {
+      "title": "Delete Template",
+      "description": "Are you sure you want to delete this template? This action cannot be undone."
     }
   }
 }

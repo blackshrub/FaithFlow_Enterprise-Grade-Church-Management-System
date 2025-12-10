@@ -108,7 +108,13 @@ export default function DevotionDetailScreen() {
   return (
     <SafeAreaView className="flex-1 bg-white" edges={['top']}>
       <View className="flex-row justify-between items-center px-3 py-2 border-b border-neutral-100">
-        <Pressable onPress={() => router.back()} className="p-1">
+        <Pressable
+          onPress={() => router.back()}
+          className="p-1"
+          accessible
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
           <ArrowLeft size={24} color={ExploreColors.neutral[900]} />
         </Pressable>
       </View>
@@ -173,10 +179,22 @@ function DailyDevotionView({ devotion, contentLanguage, onBack }: DailyDevotionV
   return (
     <SafeAreaView className="flex-1 bg-white" edges={['top']}>
       <View className="flex-row justify-between items-center px-3 py-2 border-b border-neutral-100">
-        <Pressable onPress={onBack} className="p-1">
+        <Pressable
+          onPress={onBack}
+          className="p-1"
+          accessible
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
           <ArrowLeft size={24} color={ExploreColors.neutral[900]} />
         </Pressable>
-        <Pressable onPress={handleShare} className="p-1">
+        <Pressable
+          onPress={handleShare}
+          className="p-1"
+          accessible
+          accessibilityRole="button"
+          accessibilityLabel="Share devotion"
+        >
           <Share2 size={24} color={ExploreColors.neutral[600]} />
         </Pressable>
       </View>
@@ -410,10 +428,22 @@ function DevotionPlanView({ plan, contentLanguage, onBack }: DevotionPlanViewPro
   return (
     <SafeAreaView className="flex-1 bg-white" edges={['top']}>
       <View className="flex-row justify-between items-center px-3 py-2 border-b border-neutral-100">
-        <Pressable onPress={onBack} className="p-1">
+        <Pressable
+          onPress={onBack}
+          className="p-1"
+          accessible
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
           <ArrowLeft size={24} color={ExploreColors.neutral[900]} />
         </Pressable>
-        <Pressable onPress={handleShare} className="p-1">
+        <Pressable
+          onPress={handleShare}
+          className="p-1"
+          accessible
+          accessibilityRole="button"
+          accessibilityLabel="Share devotion plan"
+        >
           <Share2 size={24} color={ExploreColors.neutral[600]} />
         </Pressable>
       </View>
@@ -515,6 +545,9 @@ function DevotionPlanView({ plan, contentLanguage, onBack }: DevotionPlanViewPro
                           ? ExploreColors.primary[500]
                           : 'transparent',
                       }}
+                      accessible
+                      accessibilityRole="button"
+                      accessibilityLabel={`Day ${dayNum}. ${day.title[contentLanguage] || day.title.en}. ${completed ? 'Completed' : accessible ? 'Available' : 'Locked'}`}
                     >
                       <View
                         className="w-9 h-9 rounded-full items-center justify-center"
@@ -577,6 +610,9 @@ function DevotionPlanView({ plan, contentLanguage, onBack }: DevotionPlanViewPro
             disabled={subscribeToPlan.isPending}
             className="flex-row items-center justify-center gap-2 py-3 rounded-2xl"
             style={{ backgroundColor: ExploreColors.primary[500] }}
+            accessible
+            accessibilityRole="button"
+            accessibilityLabel={contentLanguage === 'en' ? 'Start this devotion plan' : 'Mulai rencana renungan ini'}
           >
             <BookOpen size={20} color="#FFFFFF" />
             <Text className="text-base font-bold text-white">
@@ -592,6 +628,9 @@ function DevotionPlanView({ plan, contentLanguage, onBack }: DevotionPlanViewPro
             onPress={() => setSelectedDay(currentDay)}
             className="flex-row items-center justify-center gap-2 py-3 rounded-2xl"
             style={{ backgroundColor: ExploreColors.primary[500] }}
+            accessible
+            accessibilityRole="button"
+            accessibilityLabel={contentLanguage === 'en' ? `Continue day ${currentDay}` : `Lanjutkan hari ${currentDay}`}
           >
             <Play size={20} color="#FFFFFF" fill="#FFFFFF" />
             <Text className="text-base font-bold text-white">
@@ -646,18 +685,38 @@ function DayContentView({
   return (
     <SafeAreaView className="flex-1 bg-white" edges={['top']}>
       <View className="flex-row justify-between items-center px-3 py-2 border-b border-neutral-100">
-        <Pressable onPress={onBack} className="p-1">
+        <Pressable
+          onPress={onBack}
+          className="p-1"
+          accessible
+          accessibilityRole="button"
+          accessibilityLabel="Go back to plan overview"
+        >
           <ArrowLeft size={24} color={ExploreColors.neutral[900]} />
         </Pressable>
 
         <View className="flex-row items-center gap-2">
-          <Pressable onPress={onPrevDay} disabled={dayNumber === 1} className={`p-1 ${dayNumber === 1 ? 'opacity-50' : ''}`}>
+          <Pressable
+            onPress={onPrevDay}
+            disabled={dayNumber === 1}
+            className={`p-1 ${dayNumber === 1 ? 'opacity-50' : ''}`}
+            accessible
+            accessibilityRole="button"
+            accessibilityLabel="Previous day"
+          >
             <ChevronLeft size={20} color={dayNumber === 1 ? ExploreColors.neutral[300] : ExploreColors.neutral[700]} />
           </Pressable>
           <Text className="text-base font-semibold" style={{ color: ExploreColors.neutral[700] }}>
             {contentLanguage === 'en' ? 'Day' : 'Hari'} {dayNumber}/{totalDays}
           </Text>
-          <Pressable onPress={onNextDay} disabled={dayNumber === totalDays} className={`p-1 ${dayNumber === totalDays ? 'opacity-50' : ''}`}>
+          <Pressable
+            onPress={onNextDay}
+            disabled={dayNumber === totalDays}
+            className={`p-1 ${dayNumber === totalDays ? 'opacity-50' : ''}`}
+            accessible
+            accessibilityRole="button"
+            accessibilityLabel="Next day"
+          >
             <ChevronRight size={20} color={dayNumber === totalDays ? ExploreColors.neutral[300] : ExploreColors.neutral[700]} />
           </Pressable>
         </View>
@@ -810,6 +869,9 @@ function DayContentView({
             disabled={isPending}
             className={`flex-row items-center justify-center gap-2 py-3 rounded-2xl ${isPending ? 'opacity-60' : ''}`}
             style={{ backgroundColor: ExploreColors.success[500] }}
+            accessible
+            accessibilityRole="button"
+            accessibilityLabel={contentLanguage === 'en' ? 'Mark day as complete' : 'Tandai hari selesai'}
           >
             <Check size={20} color="#FFFFFF" />
             <Text className="text-base font-bold text-white">

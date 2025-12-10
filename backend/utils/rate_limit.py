@@ -2,8 +2,89 @@
 from collections import defaultdict
 from datetime import datetime, timedelta
 from fastapi import HTTPException, status, Request
-from typing import Dict, Tuple
+from typing import Dict, Tuple, Optional, Set
 import asyncio
+import ipaddress
+import os
+import logging
+
+logger = logging.getLogger(__name__)
+
+# Trusted proxy IPs (configure via environment)
+# Format: comma-separated list of IPs or CIDR ranges
+TRUSTED_PROXIES_ENV = os.environ.get("TRUSTED_PROXY_IPS", "127.0.0.1,::1")
+TRUSTED_PROXIES: Set[str] = set()
+
+# Parse trusted proxies on module load
+for proxy in TRUSTED_PROXIES_ENV.split(","):
+    proxy = proxy.strip()
+    if proxy:
+        TRUSTED_PROXIES.add(proxy)
+
+
+def _is_trusted_proxy(ip: str) -> bool:
+    """Check if an IP is a trusted proxy."""
+    if ip in TRUSTED_PROXIES:
+        return True
+    try:
+        # Check CIDR ranges
+        ip_obj = ipaddress.ip_address(ip)
+        for trusted in TRUSTED_PROXIES:
+            if "/" in trusted:
+                if ip_obj in ipaddress.ip_network(trusted, strict=False):
+                    return True
+    except ValueError:
+        pass
+    return False
+
+
+def _is_private_ip(ip: str) -> bool:
+    """Check if IP is private/internal (should not be trusted from X-Forwarded-For)."""
+    try:
+        ip_obj = ipaddress.ip_address(ip)
+        return ip_obj.is_private or ip_obj.is_loopback or ip_obj.is_reserved
+    except ValueError:
+        return True  # Invalid IPs are suspicious
+
+
+def get_real_client_ip(request: Request) -> str:
+    """
+    Get the real client IP address, handling proxies securely.
+
+    SECURITY: X-Forwarded-For can be spoofed by clients.
+    We only trust it if the direct connection is from a trusted proxy.
+    """
+    direct_ip = request.client.host if request.client else "unknown"
+
+    # If not coming from a trusted proxy, use direct connection IP
+    if not _is_trusted_proxy(direct_ip):
+        return direct_ip
+
+    # Check X-Forwarded-For header (may contain comma-separated list)
+    forwarded_for = request.headers.get("X-Forwarded-For", "")
+    if forwarded_for:
+        # X-Forwarded-For format: "client, proxy1, proxy2"
+        # The leftmost is the original client (if proxies are honest)
+        ips = [ip.strip() for ip in forwarded_for.split(",")]
+
+        # Walk from right to left, skipping trusted proxies
+        # The first non-trusted IP is the real client
+        for ip in reversed(ips):
+            if not _is_trusted_proxy(ip):
+                # Validate it's not a private IP (which would indicate spoofing)
+                if _is_private_ip(ip):
+                    logger.warning(
+                        f"Suspicious X-Forwarded-For with private IP: {forwarded_for}"
+                    )
+                    return direct_ip
+                return ip
+
+    # Also check X-Real-IP (simpler, single IP)
+    real_ip = request.headers.get("X-Real-IP", "")
+    if real_ip and not _is_private_ip(real_ip):
+        return real_ip
+
+    return direct_ip
 
 
 class RateLimiter:
@@ -109,9 +190,9 @@ async def rate_limit_check(
         window_seconds: Time window in seconds
         key_func: Function to extract key from request (defaults to client IP)
     """
-    # Get unique key (default to IP address)
+    # Get unique key (default to real client IP address)
     if key_func is None:
-        key = request.client.host if request.client else "unknown"
+        key = get_real_client_ip(request)
     else:
         key = key_func(request)
 

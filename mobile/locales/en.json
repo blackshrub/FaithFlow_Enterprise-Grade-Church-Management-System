@@ -23,13 +23,41 @@
     "searchChurch": "Search church...",
     "phoneRequired": "WhatsApp number is required",
     "phoneInvalid": "Please enter a valid WhatsApp number",
+    "phoneLengthError": "Phone number must be 9-13 digits",
+    "phoneDigitsOnly": "Phone number must contain only digits",
+    "phoneStartsWith8": "Indonesian mobile numbers must start with 8",
+    "loginWith": "Login with {{biometric}}",
+    "tagline": "Your spiritual journey, elevated",
+    "features": {
+      "readBible": "Read Bible",
+      "joinCommunity": "Join Community",
+      "attendEvents": "Attend Events",
+      "giveFaithfully": "Give Faithfully",
+      "prayTogether": "Pray Together",
+      "exploreMore": "Explore Faith",
+      "faithAssistant": "Faith Assistant",
+      "andMore": "And more..."
+    },
     "otpRequired": "OTP code is required",
     "otpInvalid": "OTP must be 6 digits",
     "loginSuccess": "Login successful",
     "loginError": "Login failed. Please try again.",
-    "otpSent": "OTP sent to your WhatsApp",
+    "otpSent": "OTP Sent",
+    "otpSentDescription": "A new OTP code has been sent to your WhatsApp",
     "otpSendError": "Failed to send OTP. Please try again.",
     "otpVerifyError": "Invalid OTP. Please try again.",
+    "otpLengthError": "OTP must be {{length}} digits",
+    "otpResendFailed": "Failed to resend OTP",
+    "verifyOtp": "Verify OTP",
+    "enterOtpCode": "Enter the {{length}}-digit code sent to",
+    "verify": "Verify",
+    "verifying": "Verifying...",
+    "otpExpiresIn": "Code expires in {{time}}",
+    "didntReceiveCode": "Didn't receive the code?",
+    "waitTime": "Wait {{time}}",
+    "sending": "Sending...",
+    "resendOtp": "Resend OTP",
+    "changePhoneNumber": "Change phone number",
     "logout": "Logout",
     "logoutConfirm": "Are you sure you want to logout?",
     "cancel": "Cancel",
@@ -51,6 +79,25 @@
     "explore": "Explore",
     "events": "Events",
     "profile": "Profile"
+  },
+  "call": {
+    "unknown": "Unknown",
+    "reconnecting": "Reconnecting...",
+    "callEnded": "Call Ended",
+    "duration": "Duration: {{time}}",
+    "connecting": "Connecting...",
+    "notAvailable": "Calling Not Available",
+    "notAvailableDesc": "Voice/video calls require a development build. They are not supported in Expo Go.",
+    "goBack": "Go Back",
+    "toggleLayout": "Toggle layout",
+    "toggleScreenShare": "Toggle screen share",
+    "endCall": "End call",
+    "mute": "Mute",
+    "unmute": "Unmute",
+    "videoOn": "Turn video on",
+    "videoOff": "Turn video off",
+    "speaker": "Speaker",
+    "switchCamera": "Switch camera"
   },
   "grow": {
     "title": "Grow in Faith",
@@ -87,6 +134,48 @@
     "noPrayerRequests": "No active prayer requests",
     "announcements": "Announcements",
     "noAnnouncements": "No announcements"
+  },
+  "today": {
+    "missedSunday": "Missed Sunday?",
+    "watchNow": "Watch Now",
+    "startYourDay": "Start Your Day",
+    "comingUp": "Coming Up",
+    "churchNews": "Church News",
+    "instagram": {
+      "title": "Follow Us on Instagram",
+      "follow": "Follow"
+    },
+    "howCanWeHelp": "How Can We Help?",
+    "growInFaith": "Grow in Faith",
+    "help": {
+      "prayer": "Prayer\nRequest",
+      "community": "Join\nCommunity",
+      "give": "Give\nOffering",
+      "counseling": "Talk to\nSomeone",
+      "registerEvent": "Register\nfor Event",
+      "acceptJesus": "Start Your\nJourney",
+      "baptism": "Ready for\nBaptism?",
+      "childDedication": "Dedicate\nYour Child",
+      "matrimony": "Plan Your\nWedding"
+    },
+    "bible": "Read Scripture",
+    "explore": "Discover More",
+    "qr": {
+      "title": "Your Check-in QR",
+      "instruction": "Show this QR code at event check-in"
+    },
+    "stats": {
+      "prayers": "Prayers",
+      "events": "Events"
+    }
+  },
+  "articles": {
+    "title": "Church News",
+    "minRead": "min read",
+    "searchPlaceholder": "Search articles...",
+    "noResults": "No articles found",
+    "empty": "No articles yet",
+    "noContent": "Content not available."
   },
   "give": {
     "title": "Give",
@@ -299,12 +388,18 @@
     "bookmark": "Bookmark",
     "bookmarks": "Bookmarks",
     "bookmarked": "Bookmarked",
+    "bookmarkCount": "{{count}} bookmark",
+    "bookmarkCount_plural": "{{count}} bookmarks",
+    "bookmarkAdded": "Bookmark Added",
+    "bookmarkRemoved": "Bookmark Removed",
+    "bookmarksAdded": "{{count}} {{verseText}} bookmarked",
     "highlight": "Highlight",
     "removeHighlight": "Remove Highlight",
     "copy": "Copy Verse",
     "share": "Share Verse",
     "addNote": "Add Note",
     "notePlaceholder": "Add your thoughts, reflections, or insights...",
+    "noteSaved": "Note Saved",
     "verseCopied": "Verse Copied",
     "noteComingSoon": "Note feature coming soon!",
     "noBookmarks": "No bookmarks yet",
@@ -319,7 +414,59 @@
     "searchMinLength": "Type at least 3 characters to search",
     "searching": "Searching...",
     "resultsFound": "results found",
-    "noResults": "No verses found matching your search"
+    "noResults": "No verses found matching your search",
+    "navigation": {
+      "previous": "Previous",
+      "next": "Next",
+      "continueReading": "Continue Reading",
+      "nextChapter": "Next: {{book}} {{chapter}}",
+      "endOfBook": "End of {{book}}",
+      "selectAnotherBook": "Select another book to continue",
+      "chapterIndicator": "Ch {{current}}/{{total}}"
+    },
+    "loading": "Loading chapter...",
+    "chapterNotFound": "Chapter not found. Please select another chapter.",
+    "preferences": {
+      "tapToCycle": "Tap to cycle",
+      "textAlignment": "Text Alignment",
+      "alignLeft": "Left",
+      "alignJustify": "Justify",
+      "wordSpacing": "Word Spacing",
+      "wordSpacingNormal": "Normal",
+      "wordSpacingWide": "Wide",
+      "wordSpacingWider": "Wider",
+      "verseSpacing": "Verse Spacing",
+      "verseSpacingNone": "None",
+      "verseSpacingSmall": "Small",
+      "verseSpacingLarge": "Large",
+      "displayOptions": "Display Options",
+      "showVerseNumbers": "Show Verse Numbers",
+      "focusMode": "Focus Mode",
+      "focusModeDesc": "Auto-hide header & navigation for distraction-free reading",
+      "readingMode": "Reading Mode",
+      "scrollMode": "Scroll",
+      "scrollModeDesc": "Infinite scroll across chapters",
+      "pagedMode": "Paged",
+      "pagedModeDesc": "Chapter-by-chapter with buttons",
+      "navigationSection": "Navigation",
+      "showVerseSelector": "Show Verse Selector",
+      "verseSelectorDesc": "Enable verse selection when choosing book and chapter",
+      "bibleFont": "Bible Font"
+    },
+    "share": {
+      "success": "Shared Successfully",
+      "successDesc": "{{count}} {{verseText}} shared",
+      "failed": "Share Failed",
+      "failedDesc": "Could not share verses"
+    },
+    "colors": {
+      "clear": "Clear",
+      "yellow": "Yellow",
+      "green": "Green",
+      "blue": "Blue",
+      "pink": "Pink",
+      "orange": "Orange"
+    }
   },
   "events": {
     "title": "Events",
@@ -581,7 +728,8 @@
       "titleRequired": "Please enter a title",
       "descriptionRequired": "Please describe your prayer request",
       "titleTooShort": "Title must be at least 5 characters",
-      "descriptionTooShort": "Description must be at least 10 characters"
+      "descriptionTooShort": "Description must be at least 10 characters",
+      "fixErrors": "Please fix the errors above"
     },
     "category": {
       "health": "Health",
@@ -1006,6 +1154,48 @@
       "howItWorks": "How It Works",
       "howItWorksDescription": "After enabling, when you return to the app after 5 seconds, you'll be asked to authenticate with your biometric. This keeps your church data secure.",
       "privacyNote": "Your biometric data never leaves your device. We only store a secure token to verify your identity."
+    },
+    "notifications": {
+      "title": "Notifications",
+      "push": "Push Notifications",
+      "pushDesc": "Receive notifications on your device",
+      "categories": "Notification Categories",
+      "events": "Event Reminders",
+      "eventsDesc": "Reminders for upcoming events",
+      "prayer": "Prayer Updates",
+      "prayerDesc": "Updates on your prayer requests",
+      "community": "Community Messages",
+      "communityDesc": "Messages from your groups",
+      "info": "You can manage notification permissions in your device settings."
+    },
+    "language": {
+      "title": "Language",
+      "info": "Changing the language will update all text in the app."
+    },
+    "appearance": {
+      "title": "Appearance",
+      "theme": "Theme",
+      "light": "Light",
+      "lightDesc": "Always use light theme",
+      "dark": "Dark",
+      "darkDesc": "Always use dark theme",
+      "system": "System",
+      "systemDesc": "Follow system settings",
+      "info": "Choose how FaithFlow looks on your device."
+    },
+    "privacy": {
+      "title": "Privacy & Security",
+      "security": "Security",
+      "privacy": "Privacy",
+      "biometric": "Biometric Authentication",
+      "biometricDesc": "Use Face ID or fingerprint to unlock",
+      "appLock": "App Lock",
+      "appLockDesc": "Require authentication on app open",
+      "onlineStatus": "Show Online Status",
+      "onlineStatusDesc": "Let others see when you are online",
+      "anonymousPrayer": "Default Anonymous Prayer",
+      "anonymousPrayerDesc": "Make prayer requests anonymous by default",
+      "info": "Your privacy matters. We never share your personal data with third parties."
     }
   },
   "errorBoundary": {
@@ -1111,6 +1301,7 @@
   "requests": {
     "sectionTitle": "I want to...",
     "submitError": "Something went wrong. Please try again.",
+    "loginRequired": "Please log in to submit a request.",
     "acceptJesus": {
       "title": "Accept Jesus",
       "desc": "Make a commitment",
@@ -1171,7 +1362,10 @@
       "successText": "Our pastoral team will contact you to schedule the dedication ceremony.",
       "next1": "We will contact you within 3-5 days",
       "next2": "Parents may need to attend a preparation session",
-      "next3": "Dedication ceremonies are usually held during Sunday service"
+      "next3": "Dedication ceremonies are usually held during Sunday service",
+      "childNameRequired": "Please provide the child's name.",
+      "birthDateRequired": "Please provide the child's birth date.",
+      "genderRequired": "Please select the child's gender."
     },
     "matrimony": {
       "title": "Get Married",
@@ -1201,7 +1395,9 @@
       "successText": "Our pastoral team will contact you to discuss your wedding plans.",
       "next1": "We will contact you within 3-5 days",
       "next2": "Both partners may need to attend pre-marital counseling",
-      "next3": "Church weddings are scheduled 3-6 months in advance"
+      "next3": "Church weddings are scheduled 3-6 months in advance",
+      "partnerARequired": "Please provide Partner A information.",
+      "partnerBRequired": "Please provide Partner B information."
     },
     "form": {
       "fullName": "Full Name",
@@ -1237,6 +1433,33 @@
     "success": {
       "whatNext": "What happens next?",
       "backToHome": "Back to Home"
+    }
+  },
+  "notifications": {
+    "title": "Notifications",
+    "unread": "unread",
+    "empty": {
+      "title": "No Notifications Yet",
+      "description": "When you receive notifications, they'll appear here"
+    },
+    "types": {
+      "event": "Event",
+      "group": "Group",
+      "prayer": "Prayer",
+      "devotion": "Devotion",
+      "announcement": "Announcement",
+      "giving": "Giving",
+      "general": "General"
+    },
+    "actions": {
+      "markAllRead": "Mark all as read",
+      "markRead": "Mark as read"
+    },
+    "time": {
+      "justNow": "Just now",
+      "minutesAgo": "{{count}}m ago",
+      "hoursAgo": "{{count}}h ago",
+      "daysAgo": "{{count}}d ago"
     }
   }
 }

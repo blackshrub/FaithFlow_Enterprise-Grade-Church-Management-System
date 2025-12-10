@@ -85,10 +85,11 @@ export default function MemberStatusesTab() {
 
   const openEditDialog = (status) => {
     setSelectedStatus(status);
+    // CRITICAL: Use ?? (nullish coalescing) to preserve falsy values like empty strings and 0
     setFormData({
-      name: status.name || '',
-      description: status.description || '',
-      order: status.display_order || status.order || 0,
+      name: status.name ?? '',
+      description: status.description ?? '',
+      order: status.display_order ?? status.order ?? 0,
       is_active: status.is_active ?? true,
       is_default_for_new: status.is_default_for_new ?? false,
     });

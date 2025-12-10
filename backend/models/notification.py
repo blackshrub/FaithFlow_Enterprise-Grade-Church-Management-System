@@ -75,11 +75,26 @@ class PushNotification(BaseModel):
     data: Optional[Dict[str, Any]] = None  # Custom data payload
     notification_type: Literal[
         "event", "group", "prayer", "devotion",
-        "announcement", "giving", "general"
+        "announcement", "giving", "general", "broadcast"
     ]
     sent_at: datetime = Field(default_factory=datetime.utcnow)
     read_at: Optional[datetime] = None
     is_read: bool = False
+
+    # Campaign reference (for broadcast notifications)
+    campaign_id: Optional[str] = None
+    image_url: Optional[str] = None
+
+    # Deep linking
+    action_type: Optional[Literal["none", "article", "event", "url", "screen"]] = None
+    action_data: Optional[Dict[str, Any]] = None
+
+    # Delivery tracking
+    delivery_status: Literal["pending", "sent", "delivered", "failed"] = "pending"
+    delivery_error: Optional[str] = None
+    delivered_at: Optional[datetime] = None
+    opened_at: Optional[datetime] = None
+    is_opened: bool = False
 
 
 class SendNotificationRequest(BaseModel):

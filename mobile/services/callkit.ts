@@ -12,6 +12,7 @@ import { Platform, AppState, AppStateStatus } from 'react-native';
 import RNCallKeep, { IOptions } from 'react-native-callkeep';
 import { useCallStore } from '@/stores/call';
 import { CallType, CallInviteSignal } from '@/types/call';
+import { logError } from '@/utils/errorHelpers';
 
 // =============================================================================
 // CONFIGURATION
@@ -81,7 +82,7 @@ class CallKitService {
       console.log('[CallKit] Setup complete');
       return true;
     } catch (error) {
-      console.error('[CallKit] Setup failed:', error);
+      logError('CallKit', 'setup', error, 'critical');
       return false;
     }
   }
@@ -138,7 +139,7 @@ class CallKitService {
 
       console.log('[CallKit] Displayed incoming call:', callerName);
     } catch (error) {
-      console.error('[CallKit] Failed to display incoming call:', error);
+      logError('CallKit', 'displayIncomingCall', error, 'warning');
     }
   }
 
@@ -165,7 +166,7 @@ class CallKitService {
 
       console.log('[CallKit] Started outgoing call:', calleeName);
     } catch (error) {
-      console.error('[CallKit] Failed to start call:', error);
+      logError('CallKit', 'startCall', error, 'warning');
     }
   }
 
@@ -178,7 +179,7 @@ class CallKitService {
       RNCallKeep.setCurrentCallActive(uuid);
       console.log('[CallKit] Call connected:', callId);
     } catch (error) {
-      console.error('[CallKit] Failed to report call connected:', error);
+      logError('CallKit', 'reportCallConnected', error, 'warning');
     }
   }
 
@@ -192,7 +193,7 @@ class CallKitService {
       this.activeCallUUID = null;
       console.log('[CallKit] Ended call:', callId);
     } catch (error) {
-      console.error('[CallKit] Failed to end call:', error);
+      logError('CallKit', 'endCall', error, 'warning');
     }
   }
 
@@ -207,7 +208,7 @@ class CallKitService {
       this.activeCallUUID = null;
       console.log('[CallKit] Reported call ended:', callId, 'reason:', reason);
     } catch (error) {
-      console.error('[CallKit] Failed to report call ended:', error);
+      logError('CallKit', 'reportEndCall', error, 'warning');
     }
   }
 
@@ -218,7 +219,7 @@ class CallKitService {
     try {
       RNCallKeep.updateDisplay(callId, callerName, callerNumber || 'FaithFlow');
     } catch (error) {
-      console.error('[CallKit] Failed to update display:', error);
+      logError('CallKit', 'updateDisplay', error, 'warning');
     }
   }
 
@@ -229,7 +230,7 @@ class CallKitService {
     try {
       RNCallKeep.setOnHold(callId, hold);
     } catch (error) {
-      console.error('[CallKit] Failed to set on hold:', error);
+      logError('CallKit', 'setOnHold', error, 'warning');
     }
   }
 
@@ -240,7 +241,7 @@ class CallKitService {
     try {
       RNCallKeep.setMutedCall(callId, muted);
     } catch (error) {
-      console.error('[CallKit] Failed to set muted:', error);
+      logError('CallKit', 'setMuted', error, 'warning');
     }
   }
 
@@ -254,7 +255,7 @@ class CallKitService {
     // Accept call through our call store
     const { acceptCall, incomingCall } = useCallStore.getState();
     if (incomingCall && incomingCall.call_id === callUUID) {
-      acceptCall(callUUID).catch(console.error);
+      acceptCall(callUUID).catch((error) => logError('CallKit', 'handleAnswerCall', error, 'warning'));
     }
   };
 
@@ -265,9 +266,9 @@ class CallKitService {
     const { endCall, rejectCall, currentCall, incomingCall, uiState } = useCallStore.getState();
 
     if (uiState === 'incoming' && incomingCall?.call_id === callUUID) {
-      rejectCall(callUUID, 'rejected').catch(console.error);
+      rejectCall(callUUID, 'rejected').catch((error) => logError('CallKit', 'handleEndCall/reject', error, 'warning'));
     } else if (currentCall?.call_id === callUUID) {
-      endCall('normal').catch(console.error);
+      endCall('normal').catch((error) => logError('CallKit', 'handleEndCall/end', error, 'warning'));
     }
   };
 

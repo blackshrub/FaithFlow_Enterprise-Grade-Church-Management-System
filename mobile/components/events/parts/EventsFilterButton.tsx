@@ -63,6 +63,13 @@ export const EventsFilterButton = memo(function EventsFilterButton({
         shadowRadius: 8,
         elevation: 2,
       }}
+      accessible
+      accessibilityRole="button"
+      accessibilityLabel={
+        selectedCategory && categoryName
+          ? `${t('events.filter')}: ${categoryName}`
+          : t('events.filterByCategory')
+      }
     >
       <MemoIcon icon={Filter} size={18} color={Colors.gradientEnd} />
       <Text className="flex-1 text-[15px] font-semibold text-neutral-800">

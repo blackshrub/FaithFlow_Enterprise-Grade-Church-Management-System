@@ -50,6 +50,7 @@ import { communityColors, colors } from '@/constants/theme';
 import { usePublicCommunities, useJoinCommunity } from '@/hooks/useCommunities';
 import { useAuthStore } from '@/stores/auth';
 import type { CommunityWithStatus } from '@/types/communities';
+import { goBack, navigateTo } from '@/utils/navigation';
 
 type CategoryFilter = 'all' | 'cell_group' | 'ministry_team' | 'activity' | 'support_group';
 
@@ -88,6 +89,9 @@ const CommunityCard = memo(({
       style={({ pressed }) => [
         Platform.OS === 'ios' && pressed && { backgroundColor: communityColors.pressed },
       ]}
+      accessible
+      accessibilityRole="button"
+      accessibilityLabel={`${community.name}, ${community.member_count} members`}
     >
       {/* Avatar */}
       <View className="mr-3">
@@ -173,6 +177,9 @@ const CommunityCard = memo(({
               onPress={onPress}
               className="flex-row items-center px-3 py-1.5 rounded-full"
               style={{ backgroundColor: communityColors.background.surface }}
+              accessible
+              accessibilityRole="button"
+              accessibilityLabel={t('groups.openChat', 'Open Chat')}
             >
               <Text className="text-[13px] font-medium" style={{ color: communityColors.dark }}>
                 {t('groups.openChat', 'Open Chat')}
@@ -198,6 +205,9 @@ const CommunityCard = memo(({
               disabled={isJoining}
               className="flex-row items-center px-4 py-1.5 rounded-full active:opacity-80"
               style={{ backgroundColor: communityColors.accent }}
+              accessible
+              accessibilityRole="button"
+              accessibilityLabel={t('groups.join', 'Join')}
             >
               <Check size={14} color={colors.white} />
               <Text className="text-[13px] font-semibold ml-1.5" style={{ color: colors.white }}>
@@ -300,6 +310,9 @@ const EmptyState = memo(({ searchQuery, onClearSearch }: { searchQuery: string; 
       {searchQuery && (
         <Pressable
           onPress={onClearSearch}
+          accessible
+          accessibilityRole="button"
+          accessibilityLabel={t('communities.discover.empty.clearSearch', 'Clear Search')}
           className="mt-4 px-5 py-2.5 rounded-full active:opacity-80"
           style={{ backgroundColor: communityColors.background.surface }}
         >
@@ -394,7 +407,7 @@ function CommunityDiscoverScreen() {
                   { text: t('common.ok', 'OK'), style: 'cancel' },
                   {
                     text: t('groups.openChat', 'Open Chat'),
-                    onPress: () => router.push(`/community/${community.id}/chat` as any),
+                    onPress: () => navigateTo(`/community/${community.id}/chat`),
                   },
                 ]
               );
@@ -447,12 +460,12 @@ function CommunityDiscoverScreen() {
     const isPending = community.membership_status === 'pending';
 
     if (isMember && !isPending) {
-      router.push(`/community/${community.id}/chat` as any);
+      navigateTo(`/community/${community.id}/chat`);
     } else {
       // Navigate to community preview/info page
-      router.push(`/community/${community.id}/preview` as any);
+      navigateTo(`/community/${community.id}/preview`);
     }
-  }, [router]);
+  }, []);
 
   const renderItem = useCallback(
     ({ item: community, index }: { item: CommunityWithStatus; index: number }) => (
@@ -486,9 +499,12 @@ function CommunityDiscoverScreen() {
           <Pressable
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              router.back();
+              goBack();
             }}
             className="p-2 active:opacity-70"
+            accessible
+            accessibilityRole="button"
+            accessibilityLabel={t('common.back', 'Go back')}
           >
             <ChevronLeft size={28} color="#007AFF" strokeWidth={2} />
           </Pressable>
@@ -513,7 +529,7 @@ function CommunityDiscoverScreen() {
               style={{ color: communityColors.text.primary, paddingVertical: 0 }}
             />
             {searchQuery.length > 0 && (
-              <Pressable onPress={() => setSearchQuery('')}>
+              <Pressable onPress={() => setSearchQuery('')} accessible accessibilityRole="button" accessibilityLabel={t('common.clearSearch', 'Clear search')}>
                 <X size={18} color={communityColors.text.tertiary} />
               </Pressable>
             )}
@@ -540,6 +556,9 @@ function CommunityDiscoverScreen() {
                 style={{
                   backgroundColor: isActive ? communityColors.dark : communityColors.background.surface,
                 }}
+                accessible
+                accessibilityRole="button"
+                accessibilityLabel={`Filter by ${cat.label}`}
               >
                 <Text
                   className="text-[14px] font-medium"

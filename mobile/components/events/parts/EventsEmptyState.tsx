@@ -130,6 +130,9 @@ export const EventsEmptyState = memo(function EventsEmptyState({
           borderRadius: spacing.l,
           gap: spacing.s,
         }}
+        accessible
+        accessibilityRole="button"
+        accessibilityLabel={content.action}
       >
         <Text className="text-[15px] font-semibold text-white">{content.action}</Text>
         <MemoIcon icon={ArrowRight} size={18} color={Colors.white} />

@@ -217,6 +217,10 @@ function PrayerScreen() {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 setFilter(f.key);
               }}
+              accessible
+              accessibilityRole="button"
+              accessibilityLabel={`${f.label} prayers, ${f.count} items`}
+              accessibilityState={{ selected: isActive }}
               className={`flex-row items-center px-3.5 py-2 rounded-[20px] border ${
                 isActive
                   ? 'bg-[#1e3a5f] border-[#1e3a5f]'

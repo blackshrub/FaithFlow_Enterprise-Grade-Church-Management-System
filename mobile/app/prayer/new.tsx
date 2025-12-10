@@ -10,12 +10,14 @@
  * - Complete bilingual support
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { ScrollView, Pressable, Switch } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useRequireAuth } from '@/hooks/useRequireAuth';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   ChevronLeft,
@@ -45,6 +47,8 @@ import {
   FormControlLabelText,
   FormControlHelper,
   FormControlHelperText,
+  FormControlError,
+  FormControlErrorText,
 } from '@/components/ui/form-control';
 import { Spinner } from '@/components/ui/spinner';
 
@@ -57,17 +61,106 @@ import type { PrayerCategory } from '@/types/prayer';
 import { getErrorMessage } from '@/utils/errorHelpers';
 import type { LucideIcon } from 'lucide-react-native';
 
+// UX FIX: Draft storage key for form recovery
+const PRAYER_DRAFT_KEY = 'prayer_request_draft';
+
+interface PrayerDraft {
+  title: string;
+  description: string;
+  category: PrayerCategory;
+  isAnonymous: boolean;
+  savedAt: string;
+}
+
 export default function CreatePrayerRequestScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const queryClient = useQueryClient();
   const { member } = useAuthStore();
 
+  // SEC-M7: Route protection - redirect to login if not authenticated
+  const { isLoading: authLoading } = useRequireAuth();
+
   // Form state
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState<PrayerCategory>('other');
   const [isAnonymous, setIsAnonymous] = useState(false);
+  const [draftLoaded, setDraftLoaded] = useState(false);
+
+  // UX FIX: Inline validation error state (UX-M3)
+  const [titleError, setTitleError] = useState('');
+  const [descriptionError, setDescriptionError] = useState('');
+
+  // UX FIX: Load draft on mount
+  useEffect(() => {
+    const loadDraft = async () => {
+      try {
+        const draftStr = await AsyncStorage.getItem(PRAYER_DRAFT_KEY);
+        if (draftStr) {
+          const draft: PrayerDraft = JSON.parse(draftStr);
+          // Only restore if draft is less than 24 hours old
+          const savedAt = new Date(draft.savedAt).getTime();
+          const now = Date.now();
+          const hoursSinceSave = (now - savedAt) / (1000 * 60 * 60);
+          if (hoursSinceSave < 24) {
+            setTitle(draft.title || '');
+            setDescription(draft.description || '');
+            setCategory(draft.category || 'other');
+            setIsAnonymous(draft.isAnonymous || false);
+          } else {
+            // Draft too old, clear it
+            await AsyncStorage.removeItem(PRAYER_DRAFT_KEY);
+          }
+        }
+      } catch (error) {
+        console.warn('[Prayer] Failed to load draft:', error);
+      } finally {
+        setDraftLoaded(true);
+      }
+    };
+    loadDraft();
+  }, []);
+
+  // UX FIX: Auto-save draft when form values change (debounced)
+  useEffect(() => {
+    if (!draftLoaded) return; // Don't save until we've loaded
+
+    const saveDraft = async () => {
+      // Only save if there's actual content
+      if (!title.trim() && !description.trim()) {
+        // Clear draft if form is empty
+        await AsyncStorage.removeItem(PRAYER_DRAFT_KEY);
+        return;
+      }
+
+      const draft: PrayerDraft = {
+        title,
+        description,
+        category,
+        isAnonymous,
+        savedAt: new Date().toISOString(),
+      };
+      try {
+        await AsyncStorage.setItem(PRAYER_DRAFT_KEY, JSON.stringify(draft));
+      } catch (error) {
+        console.warn('[Prayer] Failed to save draft:', error);
+      }
+    };
+
+    // Debounce save to avoid excessive writes
+    const timeout = setTimeout(saveDraft, 500);
+    return () => clearTimeout(timeout);
+  }, [title, description, category, isAnonymous, draftLoaded]);
+
+  // Helper to clear draft
+  const clearDraft = useCallback(async () => {
+    try {
+      await AsyncStorage.removeItem(PRAYER_DRAFT_KEY);
+    } catch (error) {
+      console.warn('[Prayer] Failed to clear draft:', error);
+    }
+  }, []);
 
   // Categories with icons and colors
   const categories: {
@@ -148,9 +241,12 @@ export default function CreatePrayerRequestScreen() {
       return prayerApi.submitPrayer(data);
     },
     onSuccess: (response) => {
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.PRAYER_REQUESTS });
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.MY_PRAYER_REQUESTS });
+      // DATA-M2 FIX: Use church-scoped query key functions
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.PRAYER_REQUESTS(member?.church_id || '') });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.MY_PRAYER_REQUESTS(member?.church_id || '') });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      // UX FIX: Clear draft on successful submission
+      clearDraft();
 
       // Navigate to resources screen with Prayer Intelligence analysis
       if (response.resources) {
@@ -176,28 +272,46 @@ export default function CreatePrayerRequestScreen() {
     },
   });
 
-  // Handle submit
+  // UX FIX: Clear errors when user starts typing (UX-M3)
+  const handleTitleChange = (value: string) => {
+    setTitle(value);
+    if (titleError) setTitleError('');
+  };
+
+  const handleDescriptionChange = (value: string) => {
+    setDescription(value);
+    if (descriptionError) setDescriptionError('');
+  };
+
+  // Handle submit with inline validation (UX-M3)
   const handleSubmit = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
-    // Validation
+    // Reset errors
+    setTitleError('');
+    setDescriptionError('');
+
+    let hasErrors = false;
+
+    // Validation with inline error display
     if (!title.trim()) {
-      showErrorToast(t('prayer.create.error'), t('prayer.create.titleRequired'));
-      return;
+      setTitleError(t('prayer.create.titleRequired'));
+      hasErrors = true;
+    } else if (title.length < 5) {
+      setTitleError(t('prayer.create.titleTooShort'));
+      hasErrors = true;
     }
 
     if (!description.trim()) {
-      showErrorToast(t('prayer.create.error'), t('prayer.create.descriptionRequired'));
-      return;
+      setDescriptionError(t('prayer.create.descriptionRequired'));
+      hasErrors = true;
+    } else if (description.length < 10) {
+      setDescriptionError(t('prayer.create.descriptionTooShort'));
+      hasErrors = true;
     }
 
-    if (title.length < 5) {
-      showErrorToast(t('prayer.create.error'), t('prayer.create.titleTooShort'));
-      return;
-    }
-
-    if (description.length < 10) {
-      showErrorToast(t('prayer.create.error'), t('prayer.create.descriptionTooShort'));
+    if (hasErrors) {
+      showErrorToast(t('prayer.create.error'), t('prayer.create.fixErrors', 'Please fix the errors above'));
       return;
     }
 
@@ -253,47 +367,65 @@ export default function CreatePrayerRequestScreen() {
                 </Heading>
               </HStack>
 
-              {/* Title */}
-              <FormControl>
+              {/* Title - UX-M3: Inline validation */}
+              <FormControl isInvalid={!!titleError}>
                 <FormControlLabel>
                   <FormControlLabelText>{t('prayer.create.requestTitle')}</FormControlLabelText>
                 </FormControlLabel>
-                <Input>
+                <Input className={titleError ? 'border-red-500' : ''}>
                   <InputField
                     value={title}
-                    onChangeText={setTitle}
+                    onChangeText={handleTitleChange}
                     placeholder={t('prayer.create.titlePlaceholder')}
                     maxLength={100}
+                    accessibilityLabel={t('prayer.create.requestTitle')}
                   />
                 </Input>
-                <FormControlHelper>
-                  <FormControlHelperText>
-                    {title.length}/100 {t('prayer.create.characters')}
-                  </FormControlHelperText>
-                </FormControlHelper>
+                {titleError ? (
+                  <FormControlError>
+                    <FormControlErrorText className="text-red-500">
+                      {titleError}
+                    </FormControlErrorText>
+                  </FormControlError>
+                ) : (
+                  <FormControlHelper>
+                    <FormControlHelperText>
+                      {title.length}/100 {t('prayer.create.characters')}
+                    </FormControlHelperText>
+                  </FormControlHelper>
+                )}
               </FormControl>
 
-              {/* Description */}
-              <FormControl>
+              {/* Description - UX-M3: Inline validation */}
+              <FormControl isInvalid={!!descriptionError}>
                 <FormControlLabel>
                   <FormControlLabelText>
                     {t('prayer.create.requestDescription')}
                   </FormControlLabelText>
                 </FormControlLabel>
-                <Textarea size="lg">
+                <Textarea size="lg" className={descriptionError ? 'border-red-500' : ''}>
                   <TextareaInput
                     value={description}
-                    onChangeText={setDescription}
+                    onChangeText={handleDescriptionChange}
                     placeholder={t('prayer.create.descriptionPlaceholder')}
                     style={{ minHeight: 120 }}
                     maxLength={1000}
+                    accessibilityLabel={t('prayer.create.requestDescription')}
                   />
                 </Textarea>
-                <FormControlHelper>
-                  <FormControlHelperText>
-                    {description.length}/1000 {t('prayer.create.characters')}
-                  </FormControlHelperText>
-                </FormControlHelper>
+                {descriptionError ? (
+                  <FormControlError>
+                    <FormControlErrorText className="text-red-500">
+                      {descriptionError}
+                    </FormControlErrorText>
+                  </FormControlError>
+                ) : (
+                  <FormControlHelper>
+                    <FormControlHelperText>
+                      {description.length}/1000 {t('prayer.create.characters')}
+                    </FormControlHelperText>
+                  </FormControlHelper>
+                )}
               </FormControl>
 
               {/* Anonymous Toggle */}

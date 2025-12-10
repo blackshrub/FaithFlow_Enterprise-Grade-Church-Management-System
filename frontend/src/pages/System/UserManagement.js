@@ -92,13 +92,14 @@ const UserManagement = () => {
 
   const handleOpenEdit = (user) => {
     setEditingUser(user);
+    // CRITICAL: Use ?? (nullish coalescing) to preserve falsy values like empty strings
     setFormData({
-      email: user.email,
-      full_name: user.full_name,
-      phone: user.phone || '',
+      email: user.email ?? '',
+      full_name: user.full_name ?? '',
+      phone: user.phone ?? '',
       password: '',
-      role: user.role,
-      kiosk_pin: user.kiosk_pin || '000000'
+      role: user.role ?? 'staff',
+      kiosk_pin: user.kiosk_pin ?? '000000'
     });
     setIsEditModalOpen(true);
   };
@@ -169,7 +170,7 @@ const UserManagement = () => {
       <Card>
         <CardContent className="pt-6">
           {isLoading ? (
-            <div className="text-center py-8 text-gray-500">Loading...</div>
+            <div className="text-center py-8 text-gray-500">{t('common.loading')}</div>
           ) : users.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               No users found

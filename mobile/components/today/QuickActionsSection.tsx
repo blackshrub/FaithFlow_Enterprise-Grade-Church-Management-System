@@ -79,7 +79,8 @@ function QuickActionsSectionComponent() {
 
   const handlePress = useCallback(
     (route: string) => {
-      router.push(route as any);
+      // Type assertion for dynamic routes - route is validated at definition time
+      router.push(route as never);
     },
     [router]
   );

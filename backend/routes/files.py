@@ -285,7 +285,7 @@ async def get_storage_stats(
             "total_size": {"$sum": "$file_size"}
         }}
     ]
-    seaweedfs_stats = await db.file_metadata.aggregate(pipeline).to_list(None)
+    seaweedfs_stats = await db.file_metadata.aggregate(pipeline).to_list(100)  # Reasonable limit for group results
 
     # Also count file_uploads collection
     uploads_pipeline = [
@@ -296,7 +296,7 @@ async def get_storage_stats(
             "total_size": {"$sum": "$file_size"}
         }}
     ]
-    uploads_stats = await db.file_uploads.aggregate(uploads_pipeline).to_list(None)
+    uploads_stats = await db.file_uploads.aggregate(uploads_pipeline).to_list(100)  # Reasonable limit for group results
 
     # Calculate legacy local storage stats
     legacy_stats = {}

@@ -22,18 +22,18 @@ function EventForm({ event, onClose }) {
   const { data: layouts = [] } = useSeatLayouts();
   const { data: categories = [] } = useEventCategories();
 
-  // Form state
+  // Form state - CRITICAL: Use ?? (nullish coalescing) to preserve falsy values like empty strings
   const [formData, setFormData] = useState({
-    name: event?.name || '',
-    description: event?.description || '',
-    event_type: event?.event_type || 'single',
-    event_category_id: event?.event_category_id || '',
-    location: event?.location || '',
-    event_photo: event?.event_photo || '',
+    name: event?.name ?? '',
+    description: event?.description ?? '',
+    event_type: event?.event_type ?? 'single',
+    event_category_id: event?.event_category_id ?? '',
+    location: event?.location ?? '',
+    event_photo: event?.event_photo ?? '',
     requires_rsvp: event?.requires_rsvp ?? false,
     enable_seat_selection: event?.enable_seat_selection ?? false,
-    seat_layout_id: event?.seat_layout_id || '',
-    seat_capacity: event?.seat_capacity || '',
+    seat_layout_id: event?.seat_layout_id ?? '',
+    seat_capacity: event?.seat_capacity ?? '',
     event_date: event?.event_date ? event.event_date.split('T')[0] : '',
     event_time: event?.event_date ? event.event_date.split('T')[1]?.substring(0, 5) : '',
     event_end_date: event?.event_end_date ? event.event_end_date.split('T')[0] : '',
@@ -134,23 +134,19 @@ function EventForm({ event, onClose }) {
 
       if (isEdit) {
         await updateMutation.mutateAsync({ id: event.id, data: eventData });
-        toast.success(t('events.event.updateSuccess'));
+        // Note: Toast handled in useUpdateEvent hook to avoid duplicates
       } else {
         if (!church?.id) {
           toast.error('Church context not available');
           return;
         }
         await createMutation.mutateAsync({ ...eventData, church_id: church.id });
-        toast.success(t('events.event.createSuccess'));
+        // Note: Toast handled in useCreateEvent hook to avoid duplicates
       }
 
       onClose();
     } catch (error) {
-      toast.error(
-        isEdit
-          ? t('events.event.updateError')
-          : t('events.event.createError')
-      );
+      // Note: Error toast handled in hooks to avoid duplicates
       console.error('Save error:', error);
     }
   };
@@ -208,6 +204,7 @@ function EventForm({ event, onClose }) {
                 <Label htmlFor="name">{t('events.event.eventName')} *</Label>
                 <Input
                   id="name"
+                  data-testid="event-name-input"
                   value={formData.name}
                   onChange={(e) => handleChange('name', e.target.value)}
                   required
@@ -238,6 +235,7 @@ function EventForm({ event, onClose }) {
                 <Label htmlFor="description">{t('events.event.description')}</Label>
                 <Textarea
                   id="description"
+                  data-testid="event-description-input"
                   value={formData.description}
                   onChange={(e) => handleChange('description', e.target.value)}
                   rows={3}
@@ -248,6 +246,7 @@ function EventForm({ event, onClose }) {
                 <Label htmlFor="location">{t('events.event.location')}</Label>
                 <Input
                   id="location"
+                  data-testid="location-input"
                   value={formData.location}
                   onChange={(e) => handleChange('location', e.target.value)}
                 />
@@ -263,6 +262,7 @@ function EventForm({ event, onClose }) {
                     <Label htmlFor="event_date">{t('events.event.eventDate')} *</Label>
                     <Input
                       id="event_date"
+                      data-testid="event-date-input"
                       type="date"
                       value={formData.event_date}
                       onChange={(e) => handleChange('event_date', e.target.value)}
@@ -273,6 +273,7 @@ function EventForm({ event, onClose }) {
                     <Label htmlFor="event_time">{t('events.event.eventTime')}</Label>
                     <Input
                       id="event_time"
+                      data-testid="start-time-input"
                       type="time"
                       value={formData.event_time}
                       onChange={(e) => handleChange('event_time', e.target.value)}
@@ -313,6 +314,7 @@ function EventForm({ event, onClose }) {
                   type="checkbox"
                   id="requires_rsvp"
                   name="requires_rsvp"
+                  data-testid="requires-rsvp-checkbox"
                   checked={formData.requires_rsvp}
                   onChange={(e) => handleChange('requires_rsvp', e.target.checked)}
                   className="w-4 h-4"
@@ -370,6 +372,7 @@ function EventForm({ event, onClose }) {
                       </Label>
                       <Input
                         id="seat_capacity"
+                        data-testid="max-participants-input"
                         type="number"
                         min="1"
                         value={formData.seat_capacity}
@@ -496,6 +499,7 @@ function EventForm({ event, onClose }) {
             <Button
               type="submit"
               disabled={createMutation.isPending || updateMutation.isPending}
+              data-testid={isEdit ? 'save-event-button' : 'submit-event-button'}
             >
               {createMutation.isPending || updateMutation.isPending ? (
                 t('common.loading')

@@ -35,6 +35,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path, Circle, Rect, G } from 'react-native-svg';
 import { useTranslation } from 'react-i18next';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { navigateTo } from '@/utils/navigation';
 import Animated from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { FlashList } from '@shopify/flash-list';
@@ -1048,13 +1049,13 @@ function CommunityChatScreen() {
         onBack={() => {
           // If in a thread, go back to community threads list
           if (thread_id) {
-            router.push(`/community/${id}` as any);
+            navigateTo(`/community/${id}`);
           } else {
             router.back();
           }
         }}
-        onPress={() => router.push(`/community/${id}/info` as any)}
-        onSearch={() => router.push(`/community/${id}/search` as any)}
+        onPress={() => navigateTo(`/community/${id}/info`)}
+        onSearch={() => navigateTo(`/community/${id}/search`)}
         onMenu={() => setShowMenu(true)}
       />
 
@@ -1126,12 +1127,12 @@ function CommunityChatScreen() {
       <ChatMenuSheet
         visible={showMenu}
         onClose={() => setShowMenu(false)}
-        onAnnouncements={() => router.push(`/community/${id}/announcements` as any)}
-        onSubgroups={() => router.push(`/community/${id}/subgroups` as any)}
+        onAnnouncements={() => navigateTo(`/community/${id}/announcements`)}
+        onSubgroups={() => navigateTo(`/community/${id}/subgroups`)}
         onCreatePoll={() => setShowPollModal(true)}
-        onCommunityInfo={() => router.push(`/community/${id}/info` as any)}
+        onCommunityInfo={() => navigateTo(`/community/${id}/info`)}
         onDisappearingMessages={() => setShowDisappearingSettings(true)}
-        onSettings={isLeader ? () => router.push(`/community/${id}/settings` as any) : undefined}
+        onSettings={isLeader ? () => navigateTo(`/community/${id}/settings`) : undefined}
         isLeader={isLeader}
         disappearingDuration={disappearingDuration}
       />

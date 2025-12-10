@@ -74,7 +74,7 @@ async def list_public_communities(
             {"$match": {"community_id": {"$in": community_ids}, "status": "active"}},
             {"$group": {"_id": "$community_id", "count": {"$sum": 1}}},
         ]
-        counts = await db.community_memberships.aggregate(pipeline).to_list(length=None)
+        counts = await db.community_memberships.aggregate(pipeline).to_list(length=500)
         counts_map = {c["_id"]: c["count"] for c in counts}
         for c in communities:
             c["members_count"] = counts_map.get(c["id"], c.get("member_count", 0))
@@ -158,12 +158,12 @@ async def get_public_community_members(
         {"community_id": community_id, "church_id": church_id, "status": "active"}
     )
 
-    # Get member details
+    # Get member details (multi-tenant: filter by church_id)
     member_ids = [m["member_id"] for m in memberships]
     members_map = {}
     if member_ids:
         members_cursor = db.members.find(
-            {"id": {"$in": member_ids}},
+            {"id": {"$in": member_ids}, "church_id": church_id},
             {"_id": 0, "id": 1, "full_name": 1, "photo_base64": 1},
         )
         async for m in members_cursor:

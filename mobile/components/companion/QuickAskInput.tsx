@@ -316,6 +316,9 @@ function QuickAskInputComponent({
             <Animated.View key={index} entering={FadeInUp.delay(index * 50).duration(300)}>
               <Pressable
                 onPress={() => handleSuggestionPress(suggestion.prompt)}
+                accessible
+                accessibilityRole="button"
+                accessibilityLabel={`Ask ${suggestion.label}`}
                 className="flex-row items-center gap-1.5 px-3 py-2 rounded-full border active:scale-95"
                 style={{ borderColor: Colors.primaryLight, backgroundColor: Colors.primaryBg }}
               >
@@ -350,6 +353,9 @@ function QuickAskInputComponent({
           <Pressable
             onPress={handleSubmit}
             disabled={!inputText.trim() || isLoading}
+            accessible
+            accessibilityRole="button"
+            accessibilityLabel="Send message to Faith Assistant"
             className="w-9 h-9 rounded-full items-center justify-center active:scale-95"
             style={{
               backgroundColor: inputText.trim() && !isLoading ? Colors.primary : Colors.surface,

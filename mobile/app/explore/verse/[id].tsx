@@ -130,7 +130,13 @@ export default function VerseOfTheDayScreen() {
     return (
       <SafeAreaView className="flex-1 bg-white" edges={['top']}>
         <View className="flex-row justify-between items-center px-3 py-2 border-b border-neutral-100">
-          <Pressable onPress={() => router.back()} className="p-1">
+          <Pressable
+            onPress={() => router.back()}
+            className="p-1"
+            accessible
+            accessibilityRole="button"
+            accessibilityLabel={contentLanguage === 'en' ? 'Go back' : 'Kembali'}
+          >
             <ArrowLeft size={24} color={ExploreColors.neutral[900]} />
           </Pressable>
         </View>

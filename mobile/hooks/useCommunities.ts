@@ -34,7 +34,8 @@ import {
 } from '@/mock/community-mockdata';
 
 // Flag to use mock data (set to true for development without backend)
-const USE_MOCK_DATA = true;
+// IMPORTANT: Set to false for production - mock data should only be used in demo mode
+const USE_MOCK_DATA = false;
 
 // ============================================================================
 // Communities
@@ -45,10 +46,11 @@ const USE_MOCK_DATA = true;
  * Uses mock data when USE_MOCK_DATA is true
  */
 export function useMyCommunities() {
-  const { member } = useAuthStore();
+  const { member, churchId } = useAuthStore();
 
   return useQuery({
-    queryKey: QUERY_KEYS.MY_COMMUNITIES,
+    // DATA-C1 FIX: Include churchId for multi-tenant cache isolation
+    queryKey: QUERY_KEYS.MY_COMMUNITIES(churchId || ''),
     queryFn: async () => {
       // Use mock data for development
       if (USE_MOCK_DATA) {
@@ -75,7 +77,8 @@ export function useMyCommunities() {
  */
 export function usePublicCommunities(churchId: string) {
   return useQuery({
-    queryKey: [...QUERY_KEYS.COMMUNITIES, churchId],
+    // DATA-C1 FIX: Use church-scoped query key
+    queryKey: QUERY_KEYS.COMMUNITIES(churchId),
     queryFn: async () => {
       // Use mock data for development
       if (USE_MOCK_DATA) {
@@ -98,8 +101,10 @@ export function usePublicCommunities(churchId: string) {
  * Uses mock data when USE_MOCK_DATA is true
  */
 export function useCommunity(communityId: string) {
+  const { churchId } = useAuthStore();
+
   return useQuery({
-    queryKey: QUERY_KEYS.COMMUNITY_DETAIL(communityId),
+    queryKey: QUERY_KEYS.COMMUNITY_DETAIL(churchId || '', communityId),
     queryFn: async () => {
       // Use mock data for development
       if (USE_MOCK_DATA) {
@@ -128,7 +133,7 @@ export function useCommunity(communityId: string) {
  */
 export function useCommunityMembers(churchId: string, communityId: string) {
   return useQuery({
-    queryKey: QUERY_KEYS.COMMUNITY_MEMBERS(communityId),
+    queryKey: QUERY_KEYS.COMMUNITY_MEMBERS(churchId || '', communityId),
     queryFn: async () => {
       // Use mock data for development
       if (USE_MOCK_DATA) {
@@ -151,6 +156,7 @@ export function useCommunityMembers(churchId: string, communityId: string) {
  */
 export function useJoinCommunity() {
   const queryClient = useQueryClient();
+  const { churchId } = useAuthStore();
 
   return useMutation({
     mutationFn: async ({
@@ -169,9 +175,9 @@ export function useJoinCommunity() {
 
     onSuccess: (data, { communityId }) => {
       // Invalidate queries to refresh data
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.COMMUNITIES });
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.MY_COMMUNITIES });
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.COMMUNITY_DETAIL(communityId) });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.COMMUNITIES(churchId || '') });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.MY_COMMUNITIES(churchId || '') });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.COMMUNITY_DETAIL(churchId || '', communityId) });
     },
   });
 }
@@ -181,6 +187,7 @@ export function useJoinCommunity() {
  */
 export function useLeaveCommunity() {
   const queryClient = useQueryClient();
+  const { churchId } = useAuthStore();
 
   return useMutation({
     mutationFn: async (communityId: string) => {
@@ -192,17 +199,17 @@ export function useLeaveCommunity() {
 
     onMutate: async (communityId) => {
       // Cancel outgoing refetches
-      await queryClient.cancelQueries({ queryKey: QUERY_KEYS.MY_COMMUNITIES });
+      await queryClient.cancelQueries({ queryKey: QUERY_KEYS.MY_COMMUNITIES(churchId || '') });
 
       // Snapshot the previous value
       const previousCommunities = queryClient.getQueryData<CommunityWithStatus[]>(
-        QUERY_KEYS.MY_COMMUNITIES
+        QUERY_KEYS.MY_COMMUNITIES(churchId || '')
       );
 
       // Optimistically remove from my communities
       queryClient.setQueryData<CommunityWithStatus[]>(
-        QUERY_KEYS.MY_COMMUNITIES,
-        (old) => old?.filter((c) => c.id !== communityId) ?? []
+        QUERY_KEYS.MY_COMMUNITIES(churchId || ''),
+        (old) => old?.filter((c: CommunityWithStatus) => c.id !== communityId) ?? []
       );
 
       return { previousCommunities };
@@ -211,13 +218,13 @@ export function useLeaveCommunity() {
     onError: (_error, _communityId, context) => {
       // Rollback on error
       if (context?.previousCommunities) {
-        queryClient.setQueryData(QUERY_KEYS.MY_COMMUNITIES, context.previousCommunities);
+        queryClient.setQueryData(QUERY_KEYS.MY_COMMUNITIES(churchId || ''), context.previousCommunities);
       }
     },
 
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.COMMUNITIES });
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.MY_COMMUNITIES });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.COMMUNITIES(churchId || '') });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.MY_COMMUNITIES(churchId || '') });
     },
   });
 }
@@ -227,6 +234,7 @@ export function useLeaveCommunity() {
  */
 export function useDeleteCommunity() {
   const queryClient = useQueryClient();
+  const { churchId } = useAuthStore();
 
   return useMutation({
     mutationFn: async (communityId: string) => {
@@ -236,18 +244,18 @@ export function useDeleteCommunity() {
 
     onMutate: async (communityId) => {
       // Cancel outgoing refetches
-      await queryClient.cancelQueries({ queryKey: QUERY_KEYS.MY_COMMUNITIES });
-      await queryClient.cancelQueries({ queryKey: QUERY_KEYS.COMMUNITIES });
+      await queryClient.cancelQueries({ queryKey: QUERY_KEYS.MY_COMMUNITIES(churchId || '') });
+      await queryClient.cancelQueries({ queryKey: QUERY_KEYS.COMMUNITIES(churchId || '') });
 
       // Snapshot the previous value
       const previousCommunities = queryClient.getQueryData<CommunityWithStatus[]>(
-        QUERY_KEYS.MY_COMMUNITIES
+        QUERY_KEYS.MY_COMMUNITIES(churchId || '')
       );
 
       // Optimistically remove from communities
       queryClient.setQueryData<CommunityWithStatus[]>(
-        QUERY_KEYS.MY_COMMUNITIES,
-        (old) => old?.filter((c) => c.id !== communityId) ?? []
+        QUERY_KEYS.MY_COMMUNITIES(churchId || ''),
+        (old) => old?.filter((c: CommunityWithStatus) => c.id !== communityId) ?? []
       );
 
       return { previousCommunities };
@@ -256,13 +264,13 @@ export function useDeleteCommunity() {
     onError: (_error, _communityId, context) => {
       // Rollback on error
       if (context?.previousCommunities) {
-        queryClient.setQueryData(QUERY_KEYS.MY_COMMUNITIES, context.previousCommunities);
+        queryClient.setQueryData(QUERY_KEYS.MY_COMMUNITIES(churchId || ''), context.previousCommunities);
       }
     },
 
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.COMMUNITIES });
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.MY_COMMUNITIES });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.COMMUNITIES(churchId || '') });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.MY_COMMUNITIES(churchId || '') });
     },
   });
 }
@@ -272,6 +280,7 @@ export function useDeleteCommunity() {
  */
 export function useArchiveCommunity() {
   const queryClient = useQueryClient();
+  const { churchId } = useAuthStore();
 
   return useMutation({
     mutationFn: async (communityId: string) => {
@@ -282,9 +291,9 @@ export function useArchiveCommunity() {
     },
 
     onSuccess: (_, communityId) => {
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.COMMUNITIES });
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.MY_COMMUNITIES });
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.COMMUNITY_DETAIL(communityId) });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.COMMUNITIES(churchId || '') });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.MY_COMMUNITIES(churchId || '') });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.COMMUNITY_DETAIL(churchId || '', communityId) });
     },
   });
 }
@@ -296,14 +305,19 @@ export function useArchiveCommunity() {
 /**
  * Fetch messages with infinite scroll (cursor pagination)
  * Uses mock data when USE_MOCK_DATA is true
+ *
+ * SECURITY FIX: Query key now includes churchId to prevent cross-tenant cache collision
  */
 export function useCommunityMessages(
   communityId: string,
   channelType: 'general' | 'announcement' | 'subgroup' = 'general',
   subgroupId?: string
 ) {
+  const { churchId } = useAuthStore();
+
   return useInfiniteQuery({
-    queryKey: ['community', 'messages', communityId, channelType, subgroupId],
+    // SECURITY: Include churchId in query key to scope cache per church
+    queryKey: ['community', 'messages', churchId, communityId, channelType, subgroupId],
     queryFn: async ({ pageParam }) => {
       // Use mock data for development
       if (USE_MOCK_DATA) {
@@ -349,10 +363,12 @@ import {
 /**
  * Send message with optimistic updates
  * Message appears instantly, then syncs with server
+ *
+ * SECURITY FIX: Uses church-scoped query keys for cache operations
  */
 export function useSendMessage() {
   const queryClient = useQueryClient();
-  const { member } = useAuthStore();
+  const { member, churchId } = useAuthStore();
 
   return useMutation({
     mutationFn: async ({
@@ -381,7 +397,8 @@ export function useSendMessage() {
 
     // Optimistic update - add message immediately
     onMutate: async ({ communityId, channelType, subgroupId, message }) => {
-      const queryKey = ['community', 'messages', communityId, channelType, subgroupId];
+      // SECURITY: Use church-scoped query key
+      const queryKey = ['community', 'messages', churchId, communityId, channelType, subgroupId];
 
       // Cancel any outgoing refetches
       await queryClient.cancelQueries({ queryKey });
@@ -478,10 +495,12 @@ export function useDeleteMessage() {
 
 /**
  * React to message with optimistic updates
+ *
+ * SECURITY FIX: Uses church-scoped query keys for cache operations
  */
 export function useReactToMessage() {
   const queryClient = useQueryClient();
-  const { member } = useAuthStore();
+  const { member, churchId } = useAuthStore();
 
   return useMutation({
     mutationFn: async ({
@@ -507,7 +526,8 @@ export function useReactToMessage() {
 
     // Optimistic update
     onMutate: async ({ messageId, emoji, action, communityId, channelType, subgroupId }) => {
-      const queryKey = ['community', 'messages', communityId, channelType, subgroupId];
+      // SECURITY: Use church-scoped query key
+      const queryKey = ['community', 'messages', churchId, communityId, channelType, subgroupId];
 
       // Cancel outgoing refetches
       await queryClient.cancelQueries({ queryKey });
@@ -583,8 +603,11 @@ export function useSendTyping() {
  * Uses mock data when USE_MOCK_DATA is true
  */
 export function useCommunitySubgroups(communityId: string) {
+  const { churchId } = useAuthStore();
+
   return useQuery({
-    queryKey: ['community', 'subgroups', communityId],
+    // SECURITY: Include churchId to prevent cross-tenant cache collision
+    queryKey: ['community', 'subgroups', churchId, communityId],
     queryFn: async () => {
       // Use mock data for development
       if (USE_MOCK_DATA) {
@@ -626,7 +649,7 @@ export function useCreateSubgroup() {
     },
 
     onSuccess: (data, { communityId }) => {
-      queryClient.invalidateQueries({ queryKey: ['community', 'subgroups', communityId] });
+      queryClient.invalidateQueries({ queryKey: ['community', 'subgroups'] });
     },
   });
 }
@@ -635,8 +658,11 @@ export function useCreateSubgroup() {
  * Get sub-group details
  */
 export function useSubgroupDetails(subgroupId: string) {
+  const { churchId } = useAuthStore();
+
   return useQuery({
-    queryKey: ['subgroup', subgroupId],
+    // SECURITY: Include churchId to prevent cross-tenant cache collision
+    queryKey: ['subgroup', churchId, subgroupId],
     queryFn: async () => {
       const response = await api.get<CommunitySubgroup>(
         `/api/mobile/subgroups/${subgroupId}`
@@ -669,8 +695,8 @@ export function useJoinSubgroup() {
     },
 
     onSuccess: (data, { communityId, subgroupId }) => {
-      queryClient.invalidateQueries({ queryKey: ['community', 'subgroups', communityId] });
-      queryClient.invalidateQueries({ queryKey: ['subgroup', subgroupId] });
+      queryClient.invalidateQueries({ queryKey: ['community', 'subgroups'] });
+      queryClient.invalidateQueries({ queryKey: ['subgroup'] });
     },
   });
 }
@@ -696,8 +722,8 @@ export function useLeaveSubgroup() {
     },
 
     onSuccess: (data, { communityId, subgroupId }) => {
-      queryClient.invalidateQueries({ queryKey: ['community', 'subgroups', communityId] });
-      queryClient.invalidateQueries({ queryKey: ['subgroup', subgroupId] });
+      queryClient.invalidateQueries({ queryKey: ['community', 'subgroups'] });
+      queryClient.invalidateQueries({ queryKey: ['subgroup'] });
     },
   });
 }
@@ -706,8 +732,11 @@ export function useLeaveSubgroup() {
  * Get sub-group members
  */
 export function useSubgroupMembers(subgroupId: string) {
+  const { churchId } = useAuthStore();
+
   return useQuery({
-    queryKey: ['subgroup', 'members', subgroupId],
+    // SECURITY: Include churchId to prevent cross-tenant cache collision
+    queryKey: ['subgroup', 'members', churchId, subgroupId],
     queryFn: async () => {
       const response = await api.get<{ members: CommunityMember[]; total: number }>(
         `/api/mobile/subgroups/${subgroupId}/members`
@@ -725,9 +754,12 @@ export function useSubgroupMembers(subgroupId: string) {
 
 /**
  * Send media message (image, video, document, audio)
+ *
+ * SECURITY FIX: Uses church-scoped query keys for cache operations
  */
 export function useSendMediaMessage() {
   const queryClient = useQueryClient();
+  const { churchId } = useAuthStore();
 
   return useMutation({
     mutationFn: async ({
@@ -773,9 +805,9 @@ export function useSendMediaMessage() {
     },
 
     onSuccess: (data, { communityId, channelType, subgroupId }) => {
-      // Add message to cache
+      // Add message to cache - SECURITY: Use church-scoped key
       queryClient.setQueryData(
-        ['community', 'messages', communityId, channelType, subgroupId],
+        ['community', 'messages', churchId, communityId, channelType, subgroupId],
         (oldData: any) => {
           if (!oldData?.pages?.[0]) return oldData;
 
@@ -803,9 +835,12 @@ import type { CommunityPoll, PollOption } from '@/types/communities';
 
 /**
  * Create poll in community
+ *
+ * SECURITY FIX: Uses church-scoped query keys for cache operations
  */
 export function useCreatePoll() {
   const queryClient = useQueryClient();
+  const { churchId } = useAuthStore();
 
   return useMutation({
     mutationFn: async ({
@@ -854,8 +889,9 @@ export function useCreatePoll() {
     },
 
     onSuccess: (data, { communityId, channelType, subgroupId }) => {
+      // SECURITY: Use church-scoped query key
       queryClient.invalidateQueries({
-        queryKey: ['community', 'messages', communityId, channelType, subgroupId],
+        queryKey: ['community', 'messages', churchId, communityId, channelType, subgroupId],
       });
     },
   });
@@ -863,6 +899,8 @@ export function useCreatePoll() {
 
 /**
  * Vote on poll with optimistic updates
+ *
+ * SECURITY FIX: Uses church-scoped query keys for cache operations
  */
 export function useVotePoll() {
   const queryClient = useQueryClient();
@@ -942,6 +980,7 @@ import type { CommunitySettings } from '@/types/communities';
  */
 export function useUpdateCommunitySettings() {
   const queryClient = useQueryClient();
+  const { churchId } = useAuthStore();
 
   return useMutation({
     mutationFn: async ({
@@ -960,8 +999,8 @@ export function useUpdateCommunitySettings() {
 
     onSuccess: (data, { communityId }) => {
       // Invalidate community detail to refresh settings
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.COMMUNITY_DETAIL(communityId) });
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.MY_COMMUNITIES });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.COMMUNITY_DETAIL(churchId || '', communityId) });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.MY_COMMUNITIES(churchId || '') });
     },
   });
 }
@@ -971,6 +1010,7 @@ export function useUpdateCommunitySettings() {
  */
 export function useUpdateNotificationPreference() {
   const queryClient = useQueryClient();
+  const { churchId } = useAuthStore();
 
   return useMutation({
     mutationFn: async ({
@@ -989,8 +1029,8 @@ export function useUpdateNotificationPreference() {
 
     onSuccess: (_, { communityId }) => {
       // Invalidate community detail to refresh settings
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.COMMUNITY_DETAIL(communityId) });
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.MY_COMMUNITIES });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.COMMUNITY_DETAIL(churchId || '', communityId) });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.MY_COMMUNITIES(churchId || '') });
     },
   });
 }
@@ -1007,8 +1047,11 @@ export function useSearchMessages(
   query: string,
   enabled: boolean = true
 ) {
+  const { churchId } = useAuthStore();
+
   return useQuery({
-    queryKey: ['community', 'search', communityId, query],
+    // SECURITY: Include churchId to prevent cross-tenant cache collision
+    queryKey: ['community', 'search', churchId, communityId, query],
     queryFn: async () => {
       const params = new URLSearchParams();
       params.set('query', query);
@@ -1033,15 +1076,19 @@ export function useSearchMessages(
 /**
  * Prefetch community data for instant navigation
  * Call this when user hovers or is likely to tap on a community
+ *
+ * SECURITY FIX: Uses church-scoped query keys for cache operations
  */
 export function usePrefetchCommunity() {
   const queryClient = useQueryClient();
+  const { churchId: authChurchId } = useAuthStore();
 
   return useCallback(
     (communityId: string, churchId?: string) => {
+      const effectiveChurchId = churchId || authChurchId || '';
       // Prefetch community detail
       queryClient.prefetchQuery({
-        queryKey: QUERY_KEYS.COMMUNITY_DETAIL(communityId),
+        queryKey: QUERY_KEYS.COMMUNITY_DETAIL(effectiveChurchId, communityId),
         queryFn: async () => {
           const response = await api.get<CommunityWithStatus>(
             API_ENDPOINTS.COMMUNITY_DETAIL(communityId)
@@ -1051,9 +1098,9 @@ export function usePrefetchCommunity() {
         staleTime: CACHE_TIMES.COMMUNITIES,
       });
 
-      // Prefetch initial messages
+      // Prefetch initial messages - SECURITY: Use church-scoped key
       queryClient.prefetchInfiniteQuery({
-        queryKey: ['community', 'messages', communityId, 'general', undefined],
+        queryKey: ['community', 'messages', effectiveChurchId, communityId, 'general', undefined],
         queryFn: async () => {
           const response = await api.get<MessageListResponse>(
             `/api/mobile/communities/${communityId}/messages?channel_type=general&limit=50`
@@ -1064,9 +1111,9 @@ export function usePrefetchCommunity() {
         staleTime: CACHE_TIMES.COMMUNITY_MESSAGES,
       });
 
-      // Prefetch subgroups
+      // Prefetch subgroups - SECURITY: Use church-scoped key
       queryClient.prefetchQuery({
-        queryKey: ['community', 'subgroups', communityId],
+        queryKey: ['community', 'subgroups', effectiveChurchId, communityId],
         queryFn: async () => {
           const response = await api.get<{ subgroups: CommunitySubgroup[]; total: number }>(
             `/api/mobile/communities/${communityId}/subgroups`
@@ -1076,13 +1123,15 @@ export function usePrefetchCommunity() {
         staleTime: CACHE_TIMES.SUBGROUPS,
       });
     },
-    [queryClient]
+    [queryClient, authChurchId]
   );
 }
 
 /**
  * Hook to prefetch next page of messages
  * Call this when user scrolls near the bottom
+ *
+ * SECURITY FIX: Uses church-scoped query keys for cache operations
  */
 export function usePrefetchNextMessages(
   communityId: string,
@@ -1090,12 +1139,14 @@ export function usePrefetchNextMessages(
   oldestMessageId?: string
 ) {
   const queryClient = useQueryClient();
+  const { churchId } = useAuthStore();
 
   return useCallback(() => {
     if (!oldestMessageId) return;
 
+    // SECURITY: Use church-scoped query key
     queryClient.prefetchInfiniteQuery({
-      queryKey: ['community', 'messages', communityId, channelType, undefined],
+      queryKey: ['community', 'messages', churchId, communityId, channelType, undefined],
       queryFn: async ({ pageParam }) => {
         const params = new URLSearchParams();
         params.set('channel_type', channelType);
@@ -1110,7 +1161,7 @@ export function usePrefetchNextMessages(
       initialPageParam: oldestMessageId,
       staleTime: CACHE_TIMES.COMMUNITY_MESSAGES,
     });
-  }, [queryClient, communityId, channelType, oldestMessageId]);
+  }, [queryClient, churchId, communityId, channelType, oldestMessageId]);
 }
 
 import { useCallback } from 'react';
@@ -1140,7 +1191,7 @@ export function useStarMessage() {
     },
 
     onSuccess: () => {
-      // Invalidate starred messages query
+      // Invalidate starred messages query (all starred messages for any churchId)
       queryClient.invalidateQueries({ queryKey: ['starred-messages'] });
     },
   });
@@ -1150,10 +1201,11 @@ export function useStarMessage() {
  * Get starred messages
  */
 export function useStarredMessages(communityId?: string) {
-  const { member } = useAuthStore();
+  const { member, churchId } = useAuthStore();
 
   return useQuery({
-    queryKey: ['starred-messages', communityId],
+    // SECURITY: Include churchId to prevent cross-tenant cache collision
+    queryKey: ['starred-messages', churchId, communityId],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (communityId) params.set('community_id', communityId);
@@ -1212,10 +1264,11 @@ export function useForwardMessage() {
  * Get disappearing messages setting for a community
  */
 export function useDisappearingMessagesSetting(communityId: string) {
-  const { member } = useAuthStore();
+  const { member, churchId } = useAuthStore();
 
   return useQuery({
-    queryKey: ['disappearing-messages', communityId],
+    // SECURITY: Include churchId to prevent cross-tenant cache collision
+    queryKey: ['disappearing-messages', churchId, communityId],
     queryFn: async () => {
       const response = await api.get<{
         community_id: string;
@@ -1253,7 +1306,148 @@ export function useSetDisappearingMessages() {
 
     onSuccess: (data, { communityId }) => {
       // Invalidate setting query
-      queryClient.invalidateQueries({ queryKey: ['disappearing-messages', communityId] });
+      queryClient.invalidateQueries({ queryKey: ['disappearing-messages'] });
+    },
+  });
+}
+
+// ============================================================================
+// Member Management (Admin/Leader only)
+// ============================================================================
+
+export type MemberRole = 'admin' | 'leader' | 'member';
+
+/**
+ * Promote a member to a higher role
+ * Admin → can promote to leader
+ * Leader → can promote members
+ */
+export function usePromoteMember() {
+  const queryClient = useQueryClient();
+  const { churchId } = useAuthStore();
+
+  return useMutation({
+    mutationFn: async ({
+      communityId,
+      memberId,
+      newRole,
+    }: {
+      communityId: string;
+      memberId: string;
+      newRole: MemberRole;
+    }) => {
+      const response = await api.patch<{ success: boolean; member: CommunityMember }>(
+        `/api/mobile/communities/${communityId}/members/${memberId}/role`,
+        { role: newRole }
+      );
+      return response.data;
+    },
+
+    onSuccess: (_, { communityId }) => {
+      // Invalidate members query (use church-scoped key)
+      queryClient.invalidateQueries({
+        queryKey: QUERY_KEYS.COMMUNITY_MEMBERS(churchId || '', communityId),
+      });
+    },
+  });
+}
+
+/**
+ * Demote a member to a lower role
+ * Admin → can demote leaders to members
+ * Leader → cannot demote others
+ */
+export function useDemoteMember() {
+  const queryClient = useQueryClient();
+  const { churchId } = useAuthStore();
+
+  return useMutation({
+    mutationFn: async ({
+      communityId,
+      memberId,
+      newRole,
+    }: {
+      communityId: string;
+      memberId: string;
+      newRole: MemberRole;
+    }) => {
+      const response = await api.patch<{ success: boolean; member: CommunityMember }>(
+        `/api/mobile/communities/${communityId}/members/${memberId}/role`,
+        { role: newRole }
+      );
+      return response.data;
+    },
+
+    onSuccess: (_, { communityId }) => {
+      // Invalidate members query (use church-scoped key)
+      queryClient.invalidateQueries({
+        queryKey: QUERY_KEYS.COMMUNITY_MEMBERS(churchId || '', communityId),
+      });
+    },
+  });
+}
+
+/**
+ * Remove a member from the community (kick)
+ * Admin/Leader → can remove members
+ */
+export function useKickMember() {
+  const queryClient = useQueryClient();
+  const { churchId } = useAuthStore();
+
+  return useMutation({
+    mutationFn: async ({
+      communityId,
+      memberId,
+    }: {
+      communityId: string;
+      memberId: string;
+    }) => {
+      const response = await api.delete<{ success: boolean; message: string }>(
+        `/api/mobile/communities/${communityId}/members/${memberId}`
+      );
+      return response.data;
+    },
+
+    onMutate: async ({ communityId, memberId }) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({
+        queryKey: QUERY_KEYS.COMMUNITY_MEMBERS(churchId || '', communityId),
+      });
+
+      // Snapshot previous value
+      const previousMembers = queryClient.getQueryData<CommunityMember[]>(
+        QUERY_KEYS.COMMUNITY_MEMBERS(churchId || '', communityId)
+      );
+
+      // Optimistically remove member
+      queryClient.setQueryData<CommunityMember[]>(
+        QUERY_KEYS.COMMUNITY_MEMBERS(churchId || '', communityId),
+        (old) => old?.filter((m) => m.id !== memberId) ?? []
+      );
+
+      return { previousMembers };
+    },
+
+    onError: (_, { communityId }, context) => {
+      // Rollback on error
+      if (context?.previousMembers) {
+        queryClient.setQueryData(
+          QUERY_KEYS.COMMUNITY_MEMBERS(churchId || '', communityId),
+          context.previousMembers
+        );
+      }
+    },
+
+    onSuccess: (_, { communityId }) => {
+      // Invalidate members queries (use church-scoped keys)
+      queryClient.invalidateQueries({
+        queryKey: QUERY_KEYS.COMMUNITY_MEMBERS(churchId || '', communityId),
+      });
+      // Also update community detail (member count may change)
+      queryClient.invalidateQueries({
+        queryKey: QUERY_KEYS.COMMUNITY_DETAIL(churchId || '', communityId),
+      });
     },
   });
 }

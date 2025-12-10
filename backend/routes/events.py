@@ -168,9 +168,9 @@ async def update_event(
         if update_data.get('event_end_date'):
             update_data['event_end_date'] = update_data['event_end_date'].isoformat() if hasattr(update_data['event_end_date'], 'isoformat') else update_data['event_end_date']
         
-        await db.events.update_one({"id": event_id}, {"$set": update_data})
-    
-    updated_event = await db.events.find_one({"id": event_id}, {"_id": 0})
+        await db.events.update_one({"id": event_id, "church_id": church_id}, {"$set": update_data})
+
+    updated_event = await db.events.find_one({"id": event_id, "church_id": church_id}, {"_id": 0})
     
     # Convert back
     if isinstance(updated_event.get('created_at'), str):
@@ -211,13 +211,15 @@ async def register_rsvp(
     current_user: dict = Depends(get_current_user)
 ):
     """Register RSVP for an event"""
-    
-    event = await db.events.find_one({"id": event_id})
+
+    # Multi-tenant: Filter by session_church_id for tenant isolation
+    church_id = get_session_church_id(current_user)
+    event = await db.events.find_one({"id": event_id, "church_id": church_id})
     if not event:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
     
     # Check if member exists and belongs to same church
-    member = await db.members.find_one({"id": member_id, "church_id": event.get('church_id')})
+    member = await db.members.find_one({"id": member_id, "church_id": church_id})
     if not member:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Member not found in this church")
     
@@ -248,8 +250,8 @@ async def register_rsvp(
         max_capacity = None
         
         if event.get('enable_seat_selection') and event.get('seat_layout_id'):
-            # Get capacity from seat layout
-            layout = await db.seat_layouts.find_one({"id": event.get('seat_layout_id')})
+            # Get capacity from seat layout (multi-tenant: filter by church_id)
+            layout = await db.seat_layouts.find_one({"id": event.get('seat_layout_id'), "church_id": church_id})
             if layout:
                 seat_map = layout.get('seat_map', {})
                 max_capacity = sum(1 for status in seat_map.values() if status == 'available')
@@ -405,22 +407,24 @@ async def retry_whatsapp_notification(
     current_user: dict = Depends(get_current_user)
 ):
     """Retry sending WhatsApp notification for an RSVP"""
-    
-    event = await db.events.find_one({"id": event_id})
+
+    # Multi-tenant: Filter by session_church_id for tenant isolation
+    church_id = get_session_church_id(current_user)
+    event = await db.events.find_one({"id": event_id, "church_id": church_id})
     if not event:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
-    
+
     # Find RSVP
     rsvp = next(
-        (r for r in event.get('rsvp_list', []) 
+        (r for r in event.get('rsvp_list', [])
          if r.get('member_id') == member_id and r.get('session_id') == session_id),
         None
     )
     if not rsvp:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="RSVP not found")
-    
-    # Get member
-    member = await db.members.find_one({"id": member_id})
+
+    # Get member (multi-tenant: filter by church_id)
+    member = await db.members.find_one({"id": member_id, "church_id": church_id})
     if not member or not member.get('phone'):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Member phone number not found")
     
@@ -496,18 +500,20 @@ async def cancel_rsvp(
     current_user: dict = Depends(get_current_user)
 ):
     """Cancel RSVP"""
-    
-    event = await db.events.find_one({"id": event_id})
+
+    # Multi-tenant: Filter by session_church_id for tenant isolation
+    church_id = get_session_church_id(current_user)
+    event = await db.events.find_one({"id": event_id, "church_id": church_id})
     if not event:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
-    
+
     # Build query to remove specific RSVP
     pull_query = {"member_id": member_id}
     if session_id:
         pull_query["session_id"] = session_id
-    
+
     result = await db.events.update_one(
-        {"id": event_id},
+        {"id": event_id, "church_id": church_id},
         {"$pull": {"rsvp_list": pull_query}}
     )
     
@@ -526,13 +532,12 @@ async def get_event_rsvps(
     current_user: dict = Depends(get_current_user)
 ):
     """Get all RSVPs for an event or specific session"""
-    
-    event = await db.events.find_one({"id": event_id}, {"_id": 0})
+
+    # Multi-tenant: Filter by session_church_id for tenant isolation
+    church_id = get_session_church_id(current_user)
+    event = await db.events.find_one({"id": event_id, "church_id": church_id}, {"_id": 0})
     if not event:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
-    
-    if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') != event.get('church_id'):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
     
     all_rsvps = event.get('rsvp_list', [])
     
@@ -557,19 +562,21 @@ async def get_available_seats(
     current_user: dict = Depends(get_current_user)
 ):
     """Get available seats for an event session"""
-    
-    event = await db.events.find_one({"id": event_id}, {"_id": 0})
+
+    # Multi-tenant: Filter by session_church_id for tenant isolation
+    church_id = get_session_church_id(current_user)
+    event = await db.events.find_one({"id": event_id, "church_id": church_id}, {"_id": 0})
     if not event:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
-    
+
     if not event.get('enable_seat_selection'):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Seat selection is not enabled for this event")
-    
+
     if not event.get('seat_layout_id'):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No seat layout configured for this event")
-    
-    # Get seat layout
-    layout = await db.seat_layouts.find_one({"id": event.get('seat_layout_id')}, {"_id": 0})
+
+    # Get seat layout (multi-tenant: filter by church_id)
+    layout = await db.seat_layouts.find_one({"id": event.get('seat_layout_id'), "church_id": church_id}, {"_id": 0})
     if not layout:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Seat layout not found")
     

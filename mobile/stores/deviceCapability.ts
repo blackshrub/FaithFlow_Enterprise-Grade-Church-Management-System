@@ -15,6 +15,7 @@
 import { create } from 'zustand';
 import { Platform } from 'react-native';
 import * as Device from 'expo-device';
+import { logError } from '@/utils/errorHelpers';
 
 // ============================================================================
 // TYPES
@@ -191,7 +192,7 @@ export const useDeviceCapabilityStore = create<DeviceCapabilityStore>((set, get)
         });
       }
     } catch (error) {
-      console.warn('[DeviceCapability] Detection failed:', error);
+      logError('DeviceCapability', 'detectCapabilities', error, 'warning');
       set({ isDetected: true });
     }
   },

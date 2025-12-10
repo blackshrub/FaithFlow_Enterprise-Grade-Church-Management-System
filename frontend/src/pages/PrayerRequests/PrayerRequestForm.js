@@ -35,20 +35,21 @@ export default function PrayerRequestForm() {
   const createMutation = useCreatePrayerRequest();
   const updateMutation = useUpdatePrayerRequest();
 
+  // CRITICAL: Use ?? (nullish coalescing) to preserve falsy values like empty strings and false
   useEffect(() => {
     if (existingRequest) {
       setFormData({
-        member_id: existingRequest.member_id || '',
-        title: existingRequest.title || '',
-        description: existingRequest.description || '',
-        category: existingRequest.category || 'other',
-        status: existingRequest.status || 'new',
-        internal_notes: existingRequest.internal_notes || '',
-        needs_follow_up: existingRequest.needs_follow_up || false,
-        follow_up_notes: existingRequest.follow_up_notes || ''
+        member_id: existingRequest.member_id ?? '',
+        title: existingRequest.title ?? '',
+        description: existingRequest.description ?? '',
+        category: existingRequest.category ?? 'other',
+        status: existingRequest.status ?? 'new',
+        internal_notes: existingRequest.internal_notes ?? '',
+        needs_follow_up: existingRequest.needs_follow_up ?? false,
+        follow_up_notes: existingRequest.follow_up_notes ?? ''
       });
     }
-  }, [existingRequest]);
+  }, [existingRequest?.id]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -173,6 +174,7 @@ export default function PrayerRequestForm() {
                   <Input
                     id="prayer-title"
                     name="prayer-title"
+                    data-testid="title-input"
                     value={formData.title}
                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                     placeholder={t('prayerRequests.requestTitle')}
@@ -185,6 +187,7 @@ export default function PrayerRequestForm() {
                   <Textarea
                     id="prayer-description"
                     name="prayer-description"
+                    data-testid="description-input"
                     value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                     placeholder={t('prayerRequests.description')}
@@ -262,7 +265,7 @@ export default function PrayerRequestForm() {
                 <div>
                   <Label htmlFor="prayer-category">{t('prayerRequests.category')} *</Label>
                   <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })} name="prayer-category">
-                    <SelectTrigger id="prayer-category">
+                    <SelectTrigger id="prayer-category" data-testid="category-select">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -299,7 +302,7 @@ export default function PrayerRequestForm() {
               <Button type="button" variant="outline" onClick={() => navigate('/prayer-requests')}>
                 {t('common.cancel')}
               </Button>
-              <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending}>
+              <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending} data-testid="submit-prayer-button">
                 <Save className="w-4 h-4 mr-2" />
                 {isEdit ? t('common.update') : t('common.save')}
               </Button>

@@ -111,6 +111,9 @@ export const EventsHeader: React.FC<EventsHeaderProps> = React.memo(
             <Pressable
               onPress={onPressCalendar}
               className="flex-row items-center gap-2 bg-white/15 px-4 py-2.5 rounded-full active:scale-95 active:opacity-90 mt-1"
+              accessible
+              accessibilityRole="button"
+              accessibilityLabel={t('events.openCalendar')}
             >
               <Calendar size={16} color={Colors.white} />
             </Pressable>
@@ -137,6 +140,10 @@ export const EventsHeader: React.FC<EventsHeaderProps> = React.memo(
             <Pressable
               onPress={() => onTabChange('upcoming')}
               className="flex-1 flex-row items-center gap-2.5 active:scale-95 active:opacity-90"
+              accessible
+              accessibilityRole="button"
+              accessibilityLabel={`${t('events.upcoming')}: ${upcomingCount}`}
+              accessibilityState={{ selected: activeTab === 'upcoming' }}
             >
               <View
                 className="w-10 h-10 rounded-xl items-center justify-center"
@@ -171,6 +178,10 @@ export const EventsHeader: React.FC<EventsHeaderProps> = React.memo(
             <Pressable
               onPress={() => onTabChange('my_rsvps')}
               className="flex-1 flex-row items-center gap-2.5 active:scale-95 active:opacity-90"
+              accessible
+              accessibilityRole="button"
+              accessibilityLabel={`${t('events.myRSVPs')}: ${rsvpCount}`}
+              accessibilityState={{ selected: activeTab === 'my_rsvps' }}
             >
               <View
                 className="w-10 h-10 rounded-xl items-center justify-center"
@@ -205,6 +216,10 @@ export const EventsHeader: React.FC<EventsHeaderProps> = React.memo(
             <Pressable
               onPress={() => onTabChange('attended')}
               className="flex-1 flex-row items-center gap-2.5 active:scale-95 active:opacity-90"
+              accessible
+              accessibilityRole="button"
+              accessibilityLabel={`${t('events.attended')}: ${attendedCount}`}
+              accessibilityState={{ selected: activeTab === 'attended' }}
             >
               <View
                 className="w-10 h-10 rounded-xl items-center justify-center"

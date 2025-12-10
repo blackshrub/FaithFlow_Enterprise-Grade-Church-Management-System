@@ -286,6 +286,9 @@ export function CelebrationModal() {
               minWidth: 180,
             }}
             onPress={closeCelebration}
+            accessible
+            accessibilityRole="button"
+            accessibilityLabel="Continue and close celebration"
           >
             <Text style={{ ...ExploreTypography.body, color: '#FFFFFF', fontWeight: '600' }}>Continue</Text>
           </Pressable>

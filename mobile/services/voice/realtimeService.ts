@@ -24,8 +24,68 @@ import {
   MediaStream,
   MediaStreamTrack,
 } from '@livekit/react-native-webrtc';
+
+// RTCDataChannel type - The library's type is incomplete, define what we need
+// These methods exist at runtime but aren't in the @livekit/react-native-webrtc types
+interface RTCDataChannelWithEvents {
+  send(data: string | ArrayBuffer): void;
+  close(): void;
+  readonly label: string;
+  readonly readyState: string;
+  addEventListener(
+    type: 'open' | 'close' | 'error' | 'message',
+    listener: (event: Event | MessageEvent) => void
+  ): void;
+}
+type RTCDataChannelType = RTCDataChannelWithEvents | null;
 import { api } from '@/services/api';
 import { API_PREFIX } from '@/constants/api';
+
+// =============================================================================
+// TYPE DECLARATIONS
+// =============================================================================
+
+/**
+ * Extended MediaTrackConstraints for React Native WebRTC
+ * The @livekit/react-native-webrtc types may not include all audio constraints
+ */
+interface ExtendedAudioConstraints {
+  echoCancellation?: boolean;
+  noiseSuppression?: boolean;
+  autoGainControl?: boolean;
+  sampleRate?: number;
+  [key: string]: unknown;
+}
+
+/**
+ * Extended MediaStreamConstraints for getUserMedia
+ * React Native WebRTC's mediaDevices.getUserMedia accepts this shape
+ * but the library's types may be more restrictive
+ */
+interface ExtendedMediaStreamConstraints {
+  audio: ExtendedAudioConstraints | boolean;
+  video: boolean;
+}
+
+// Type for React Native WebRTC's getUserMedia which accepts extended constraints
+type RNGetUserMedia = (constraints: ExtendedMediaStreamConstraints) => Promise<MediaStream>;
+
+/**
+ * RTCTrackEvent interface for React Native WebRTC
+ * The library uses a different event pattern than browser WebRTC
+ */
+interface RTCTrackEvent {
+  track: MediaStreamTrack;
+  streams?: MediaStream[];
+}
+
+/**
+ * Extended RTCPeerConnection with ontrack handler
+ * React Native WebRTC uses a different event handler pattern
+ */
+interface ExtendedRTCPeerConnection extends RTCPeerConnection {
+  ontrack?: ((event: RTCTrackEvent) => void) | null;
+}
 
 // Event types for Realtime API
 export type RealtimeEventType =
@@ -104,8 +164,8 @@ export interface RealtimeCallbacks {
 }
 
 // Connection state
-let peerConnection: RTCPeerConnection | null = null;
-let dataChannel: RTCDataChannel | null = null;
+let peerConnection: ExtendedRTCPeerConnection | null = null;
+let dataChannel: RTCDataChannelType | null = null;
 let localStream: MediaStream | null = null;
 let isConnected = false;
 let currentCallbacks: RealtimeCallbacks | null = null;
@@ -179,16 +239,17 @@ export async function connect(
     );
 
     // 2. Get microphone access
-    // Note: React Native WebRTC types may not include all audio constraints
-    localStream = await mediaDevices.getUserMedia({
+    const constraints: ExtendedMediaStreamConstraints = {
       audio: {
         echoCancellation: true,
         noiseSuppression: true,
         autoGainControl: true,
         sampleRate: 24000,
-      } as any,
+      },
       video: false,
-    });
+    };
+    // Cast getUserMedia to accept extended constraints (RN WebRTC supports these at runtime)
+    localStream = await (mediaDevices.getUserMedia as RNGetUserMedia)(constraints);
 
     // 3. Create peer connection
     peerConnection = new RTCPeerConnection({
@@ -202,8 +263,7 @@ export async function connect(
     }
 
     // 5. Handle incoming audio from AI
-    // Note: React Native WebRTC uses different event handler pattern
-    (peerConnection as any).ontrack = (event: { track: MediaStreamTrack }) => {
+    peerConnection.ontrack = (event: RTCTrackEvent) => {
       console.log('[Realtime] Received remote track');
       if (event.track.kind === 'audio') {
         currentCallbacks?.onRemoteAudioTrack?.(event.track);
@@ -211,9 +271,11 @@ export async function connect(
     };
 
     // 6. Create data channel for events
-    const channel = peerConnection.createDataChannel('oai-events');
-    dataChannel = channel as any;
-    setupDataChannelHandlers(dataChannel as RTCDataChannel, sessionConfig);
+    // Cast to our interface since the library types are incomplete
+    dataChannel = peerConnection.createDataChannel('oai-events') as unknown as RTCDataChannelWithEvents;
+    if (dataChannel) {
+      setupDataChannelHandlers(dataChannel, sessionConfig);
+    }
 
     // 7. Create and set local description
     const offer = await peerConnection.createOffer({
@@ -261,10 +323,11 @@ export async function connect(
  * Setup data channel event handlers
  */
 function setupDataChannelHandlers(
-  dc: RTCDataChannel,
+  dc: RTCDataChannelWithEvents,
   config: RealtimeSessionConfig
 ): void {
-  dc.onopen = () => {
+  // Use addEventListener for event handlers (cross-platform compatibility)
+  dc.addEventListener('open', () => {
     console.log('[Realtime] Data channel opened');
 
     // Send session configuration
@@ -281,27 +344,29 @@ function setupDataChannelHandlers(
     });
 
     currentCallbacks?.onConnected?.();
-  };
+  });
 
-  dc.onclose = () => {
+  dc.addEventListener('close', () => {
     console.log('[Realtime] Data channel closed');
     isConnected = false;
     currentCallbacks?.onDisconnected?.();
-  };
+  });
 
-  dc.onerror = (event) => {
+  dc.addEventListener('error', (event: Event) => {
     console.error('[Realtime] Data channel error:', event);
     currentCallbacks?.onError?.(new Error('Data channel error'));
-  };
+  });
 
-  dc.onmessage = (event) => {
+  dc.addEventListener('message', (event: Event | MessageEvent) => {
     try {
-      const realtimeEvent: RealtimeEvent = JSON.parse(event.data);
+      // MessageEvent has data property
+      const messageEvent = event as MessageEvent;
+      const realtimeEvent: RealtimeEvent = JSON.parse(messageEvent.data);
       handleRealtimeEvent(realtimeEvent);
     } catch (error) {
       console.error('[Realtime] Failed to parse event:', error);
     }
-  };
+  });
 }
 
 /**

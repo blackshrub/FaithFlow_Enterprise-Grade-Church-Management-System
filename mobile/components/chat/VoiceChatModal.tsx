@@ -110,6 +110,9 @@ function UnavailablePlaceholder({
         {/* Close button */}
         <Pressable
           onPress={onClose}
+          accessible
+          accessibilityRole="button"
+          accessibilityLabel="Close voice chat"
           className="absolute top-[60px] right-6 w-12 h-12 rounded-3xl bg-white/10 items-center justify-center z-10"
           hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
         >
@@ -443,6 +446,9 @@ export function VoiceChatModal({
         {/* Close button */}
         <Pressable
           onPress={handleClose}
+          accessible
+          accessibilityRole="button"
+          accessibilityLabel="Close voice chat"
           className="absolute top-[60px] right-6 w-12 h-12 rounded-3xl bg-white/10 items-center justify-center z-10"
           hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
         >
@@ -519,7 +525,16 @@ export function VoiceChatModal({
             )}
 
             {/* Main orb */}
-            <Pressable onPress={handleOrbPress}>
+            <Pressable
+              onPress={handleOrbPress}
+              accessible
+              accessibilityRole="button"
+              accessibilityLabel={
+                state === 'responding' ? 'Tap to interrupt AI response' :
+                state === 'error' ? 'Tap to retry connection' :
+                'Voice chat orb'
+              }
+            >
               <Animated.View
                 className="items-center justify-center"
                 style={[

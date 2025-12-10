@@ -354,6 +354,9 @@ function EventDetailScreen() {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               router.back();
             }}
+            accessible
+            accessibilityRole="button"
+            accessibilityLabel={t('common.back', 'Go back')}
             className="active:scale-95 active:opacity-90"
             style={{
               margin: spacing.lg,
@@ -381,6 +384,9 @@ function EventDetailScreen() {
         >
           <Pressable
             onPress={handleShare}
+            accessible
+            accessibilityRole="button"
+            accessibilityLabel={t('common.share', 'Share event')}
             className="active:scale-95 active:opacity-90"
             style={{
               margin: spacing.lg,

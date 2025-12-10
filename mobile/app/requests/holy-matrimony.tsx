@@ -37,6 +37,7 @@ import {
   SuccessScreen,
 } from '@/components/requests';
 import { useAuthStore } from '@/stores/auth';
+import { useRequireAuth } from '@/hooks/useRequireAuth';
 import api from '@/services/api';
 
 interface PersonInfo {
@@ -52,6 +53,9 @@ type Step = typeof STEPS[number];
 export default function HolyMatrimonyScreen() {
   const { t } = useTranslation();
   const router = useRouter();
+
+  // SEC-M7: Route protection
+  useRequireAuth();
   const { member, churchId } = useAuthStore();
 
   const [currentStep, setCurrentStep] = useState<number>(0);
@@ -129,6 +133,32 @@ export default function HolyMatrimonyScreen() {
   };
 
   const handleSubmit = useCallback(async () => {
+    // Validation: Ensure member is logged in
+    if (!member?.id || !churchId) {
+      Alert.alert(
+        t('common.error', 'Error'),
+        t('requests.loginRequired', 'Please log in to submit a request.')
+      );
+      return;
+    }
+
+    // Validation: Ensure both partners have names and phones
+    if (!partnerA.name.trim() || !partnerA.phone.trim()) {
+      Alert.alert(
+        t('common.error', 'Error'),
+        t('requests.matrimony.partnerARequired', 'Please provide Partner A information.')
+      );
+      return;
+    }
+
+    if (!partnerB.name.trim() || !partnerB.phone.trim()) {
+      Alert.alert(
+        t('common.error', 'Error'),
+        t('requests.matrimony.partnerBRequired', 'Please provide Partner B information.')
+      );
+      return;
+    }
+
     setIsSubmitting(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
@@ -319,6 +349,9 @@ export default function HolyMatrimonyScreen() {
             <Pressable
               onPress={() => setShowDatePicker(true)}
               className="flex-row items-center h-12 px-4 bg-gray-50 rounded-xl border border-gray-200"
+              accessible
+              accessibilityRole="button"
+              accessibilityLabel={t('requests.matrimony.selectDate', 'Select planned date')}
             >
               <Calendar size={20} color="#6B7280" />
               <Text className={`ml-3 flex-1 ${plannedDate ? 'text-gray-900' : 'text-gray-400'}`}>
@@ -385,6 +418,9 @@ export default function HolyMatrimonyScreen() {
           <Pressable
             onPress={handleBack}
             className="w-10 h-10 rounded-full bg-gray-100 items-center justify-center"
+            accessible
+            accessibilityRole="button"
+            accessibilityLabel={t('common.back', 'Go back')}
           >
             <ArrowLeft size={20} color="#374151" />
           </Pressable>

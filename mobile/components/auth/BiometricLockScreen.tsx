@@ -193,6 +193,9 @@ export function BiometricLockScreen({ onAuthenticated }: BiometricLockScreenProp
         {/* Use Different Account */}
         <Pressable
           onPress={handleLogout}
+          accessible
+          accessibilityRole="button"
+          accessibilityLabel="Log out and use different account"
           className="flex-row items-center py-3"
         >
           <LogOut size={16} color="#9CA3AF" />

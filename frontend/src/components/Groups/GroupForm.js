@@ -33,15 +33,16 @@ const groupSchema = z.object({
 export function GroupForm({ initialData, onSubmit, onCancel, isSaving }) {
   const { t } = useTranslation();
 
+  // CRITICAL: Use ?? (nullish coalescing) to preserve falsy values like empty strings
   const form = useForm({
     resolver: zodResolver(groupSchema),
     defaultValues: {
-      name: initialData?.name || '',
-      category: initialData?.category || 'cell_group',
-      description: initialData?.description || '',
-      meeting_schedule: initialData?.meeting_schedule || '',
-      location: initialData?.location || '',
-      leader_member_id: initialData?.leader_member_id || '',
+      name: initialData?.name ?? '',
+      category: initialData?.category ?? 'cell_group',
+      description: initialData?.description ?? '',
+      meeting_schedule: initialData?.meeting_schedule ?? '',
+      location: initialData?.location ?? '',
+      leader_member_id: initialData?.leader_member_id ?? '',
       max_members: initialData?.max_members ?? '',
       is_open_for_join: initialData?.is_open_for_join ?? true,
     },

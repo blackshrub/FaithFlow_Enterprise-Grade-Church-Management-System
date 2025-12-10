@@ -14,6 +14,19 @@ import { Audio } from 'expo-av';
 import * as FileSystem from 'expo-file-system/legacy';
 import { Platform } from 'react-native';
 
+// =============================================================================
+// TYPE DECLARATIONS
+// =============================================================================
+
+/**
+ * Extended Audio.Recording type with internal cleanup method
+ * This is an internal expo-av method used for forced cleanup
+ * Note: Using intersection type to avoid interface extension conflicts
+ */
+type ExtendedRecording = Audio.Recording & {
+  _cleanupForUnloadedRecorder?: () => void;
+};
+
 /**
  * Recording preset for STT with metering enabled for silence detection
  *
@@ -577,8 +590,9 @@ async function cleanupRecording(): Promise<void> {
         // Method 3: Even stopAndUnloadAsync failed, try _cleanupForUnloadedRecorder
         // This is an internal expo-av method that forces cleanup
         try {
-          if (typeof (rec as any)._cleanupForUnloadedRecorder === 'function') {
-            (rec as any)._cleanupForUnloadedRecorder();
+          const extendedRec = rec as ExtendedRecording;
+          if (typeof extendedRec._cleanupForUnloadedRecorder === 'function') {
+            extendedRec._cleanupForUnloadedRecorder();
           }
         } catch {
           // All cleanup attempts exhausted

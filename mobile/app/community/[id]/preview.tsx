@@ -43,6 +43,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useCommunity, useJoinCommunity } from '@/hooks/useCommunities';
 import { useAuthStore } from '@/stores/auth';
 import { communityColors, colors } from '@/constants/theme';
+import { goBack, replaceTo } from '@/utils/navigation';
 
 // =============================================================================
 // CONSTANTS
@@ -116,8 +117,8 @@ function CommunityPreviewScreen() {
 
   const handleBack = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    router.back();
-  }, [router]);
+    goBack();
+  }, []);
 
   const handleJoin = useCallback(() => {
     if (!community) return;
@@ -146,10 +147,10 @@ function CommunityPreviewScreen() {
                 defaultValue: `You have joined ${community.name}.`,
               }),
               [
-                { text: t('common.ok', 'OK'), style: 'cancel', onPress: () => router.back() },
+                { text: t('common.ok', 'OK'), style: 'cancel', onPress: () => goBack() },
                 {
                   text: t('groups.openChat', 'Open Chat'),
-                  onPress: () => router.replace(`/community/${community.id}/chat` as any),
+                  onPress: () => replaceTo(`/community/${community.id}/chat`),
                 },
               ]
             );
@@ -178,7 +179,7 @@ function CommunityPreviewScreen() {
 
   // If already a member, redirect to chat
   if (isMember && !isPending) {
-    router.replace(`/community/${id}/chat` as any);
+    replaceTo(`/community/${id}/chat`);
     return null;
   }
 
@@ -229,6 +230,9 @@ function CommunityPreviewScreen() {
             alignItems: 'center',
             justifyContent: 'center',
           }}
+          accessible
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
         >
           <ChevronLeft size={24} color={colors.white} />
         </Pressable>
@@ -417,6 +421,9 @@ function CommunityPreviewScreen() {
             disabled={joinMutation.isPending}
             className="flex-row items-center justify-center py-4 rounded-full active:opacity-90"
             style={{ backgroundColor: communityColors.accent }}
+            accessible
+            accessibilityRole="button"
+            accessibilityLabel={community?.is_private ? t('groups.requestToJoin', 'Request to Join') : t('groups.join', 'Join Community')}
           >
             {joinMutation.isPending ? (
               <ActivityIndicator color={colors.white} />

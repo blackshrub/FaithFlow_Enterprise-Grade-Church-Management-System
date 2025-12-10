@@ -522,10 +522,10 @@ const AvailabilityPage = () => {
               </div>
             </div>
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setIsRuleFormOpen(false)}>
+              <Button type="button" variant="outline" onClick={() => setIsRuleFormOpen(false)} disabled={createRuleMutation.isPending || updateRuleMutation.isPending}>
                 Cancel
               </Button>
-              <Button type="submit">{editingRule ? 'Update' : 'Create'}</Button>
+              <Button type="submit" disabled={createRuleMutation.isPending || updateRuleMutation.isPending}>{editingRule ? 'Update' : 'Create'}</Button>
             </DialogFooter>
           </form>
         </DialogContent>
@@ -611,10 +611,10 @@ const AvailabilityPage = () => {
               </div>
             </div>
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setIsOverrideFormOpen(false)}>
+              <Button type="button" variant="outline" onClick={() => setIsOverrideFormOpen(false)} disabled={createOverrideMutation.isPending || updateOverrideMutation.isPending}>
                 Cancel
               </Button>
-              <Button type="submit">{editingOverride ? 'Update' : 'Create'}</Button>
+              <Button type="submit" disabled={createOverrideMutation.isPending || updateOverrideMutation.isPending}>{editingOverride ? 'Update' : 'Create'}</Button>
             </DialogFooter>
           </form>
         </DialogContent>
@@ -627,8 +627,8 @@ const AvailabilityPage = () => {
             <DialogTitle>{t('counseling.confirm_delete_rule')}</DialogTitle>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDeleteRuleDialogOpen(false)}>Cancel</Button>
-            <Button variant="destructive" onClick={handleDeleteRule}>Delete</Button>
+            <Button variant="outline" onClick={() => setIsDeleteRuleDialogOpen(false)}>{t('common.cancel')}</Button>
+            <Button variant="destructive" onClick={handleDeleteRule}>{t('common.delete')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -639,8 +639,8 @@ const AvailabilityPage = () => {
             <DialogTitle>{t('counseling.confirm_delete_override')}</DialogTitle>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDeleteOverrideDialogOpen(false)}>Cancel</Button>
-            <Button variant="destructive" onClick={handleDeleteOverride}>Delete</Button>
+            <Button variant="outline" onClick={() => setIsDeleteOverrideDialogOpen(false)}>{t('common.cancel')}</Button>
+            <Button variant="destructive" onClick={handleDeleteOverride}>{t('common.delete')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -72,6 +72,9 @@ export function ProfileButton({ size = 36, showBorder = true }: ProfileButtonPro
           }),
         },
       ]}
+      accessible
+      accessibilityRole="button"
+      accessibilityLabel="View profile"
     >
       {avatarUrl ? (
         <Image

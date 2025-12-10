@@ -1,15 +1,168 @@
 """
 APScheduler Configuration for Background Jobs
+
+This module provides distributed-lock-protected background jobs for:
+- Article publishing
+- Webhook processing
+- Status automation
+- Trash cleanup
+- And many more...
+
+In multi-instance deployments, distributed locks prevent duplicate job execution.
 """
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 from motor.motor_asyncio import AsyncIOMotorDatabase
 import logging
+import asyncio
+import os
+import uuid
 
 logger = logging.getLogger(__name__)
 
 # Global scheduler instance
 scheduler = None
+
+# Instance ID for lock ownership tracking
+INSTANCE_ID = os.getenv("HOSTNAME", str(uuid.uuid4())[:8])
+
+
+class DistributedLock:
+    """
+    Redis-based distributed lock for preventing duplicate job execution.
+
+    Uses SET NX (only set if not exists) with expiration for atomic lock acquisition.
+    Falls back to allowing execution if Redis is unavailable (fail-open for development).
+    """
+
+    def __init__(self, redis_client, lock_name: str, ttl_seconds: int = 300):
+        """
+        Args:
+            redis_client: aioredis client or None
+            lock_name: Unique identifier for the lock
+            ttl_seconds: Lock expiration time (prevents deadlocks if instance crashes)
+        """
+        self.redis = redis_client
+        self.lock_name = f"scheduler_lock:{lock_name}"
+        self.ttl = ttl_seconds
+        self.lock_value = f"{INSTANCE_ID}:{uuid.uuid4()}"
+        self._acquired = False
+
+    async def acquire(self) -> bool:
+        """
+        Try to acquire the distributed lock.
+
+        Returns:
+            True if lock acquired, False if already held by another instance
+        """
+        if self.redis is None:
+            # No Redis - fail open (allow execution) but log warning
+            logger.debug(f"[Lock] No Redis available, allowing {self.lock_name} (single-instance mode)")
+            self._acquired = True
+            return True
+
+        try:
+            # SET NX with expiration - atomic operation
+            result = await self.redis.set(
+                self.lock_name,
+                self.lock_value,
+                ex=self.ttl,
+                nx=True  # Only set if not exists
+            )
+
+            if result:
+                self._acquired = True
+                logger.debug(f"[Lock] Acquired {self.lock_name} by {INSTANCE_ID}")
+                return True
+            else:
+                # Lock held by another instance
+                holder = await self.redis.get(self.lock_name)
+                logger.debug(f"[Lock] {self.lock_name} already held by {holder}, skipping")
+                return False
+
+        except Exception as e:
+            logger.warning(f"[Lock] Redis error acquiring {self.lock_name}: {e}, allowing execution")
+            self._acquired = True
+            return True  # Fail open
+
+    async def release(self):
+        """
+        Release the distributed lock (only if we own it).
+
+        Uses Lua script for atomic check-and-delete to prevent releasing another's lock.
+        """
+        if not self._acquired:
+            return
+
+        if self.redis is None:
+            self._acquired = False
+            return
+
+        try:
+            # Atomic check-and-delete using Lua script
+            lua_script = """
+            if redis.call("get", KEYS[1]) == ARGV[1] then
+                return redis.call("del", KEYS[1])
+            else
+                return 0
+            end
+            """
+            await self.redis.eval(lua_script, 1, self.lock_name, self.lock_value)
+            self._acquired = False
+            logger.debug(f"[Lock] Released {self.lock_name}")
+        except Exception as e:
+            logger.warning(f"[Lock] Error releasing {self.lock_name}: {e}")
+            self._acquired = False
+
+    async def __aenter__(self):
+        """Context manager entry - acquire lock."""
+        return await self.acquire()
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        """Context manager exit - release lock."""
+        await self.release()
+
+
+def with_distributed_lock(lock_name: str, ttl_seconds: int = 300):
+    """
+    Decorator to wrap async job functions with distributed lock.
+
+    Usage:
+        @with_distributed_lock("my_job", ttl_seconds=600)
+        async def my_scheduled_job(db):
+            ...
+
+    Args:
+        lock_name: Unique identifier for this job's lock
+        ttl_seconds: How long the lock should be held (should be > job duration)
+    """
+    def decorator(func):
+        async def wrapper(*args, **kwargs):
+            # Try to get Redis client from server module
+            redis = None
+            try:
+                from server import redis_client
+                redis = redis_client
+            except (ImportError, AttributeError):
+                pass
+
+            lock = DistributedLock(redis, lock_name, ttl_seconds)
+
+            if await lock.acquire():
+                try:
+                    return await func(*args, **kwargs)
+                finally:
+                    await lock.release()
+            else:
+                logger.info(f"[Scheduler] Skipping {lock_name} - already running on another instance")
+                return None
+
+        # Preserve function metadata
+        wrapper.__name__ = func.__name__
+        wrapper.__doc__ = func.__doc__
+        return wrapper
+
+    return decorator
 
 
 def setup_scheduler(db: AsyncIOMotorDatabase):
@@ -59,6 +212,19 @@ def setup_scheduler(db: AsyncIOMotorDatabase):
     # Add job: Run status automation hourly and check which churches need to run
     async def run_status_automation_job():
         """Run status automation for churches scheduled for current hour (respecting timezones)"""
+        # Use distributed lock to prevent duplicate execution across instances
+        redis = None
+        try:
+            from server import redis_client
+            redis = redis_client
+        except (ImportError, AttributeError):
+            pass
+
+        lock = DistributedLock(redis, "status_automation", ttl_seconds=600)
+        if not await lock.acquire():
+            logger.info("[Scheduler] status_automation already running on another instance, skipping")
+            return
+
         try:
             import pytz
             current_utc = datetime.now(timezone.utc)
@@ -113,10 +279,12 @@ def setup_scheduler(db: AsyncIOMotorDatabase):
                     logger.info(f"Automation complete for church {church_id}: {stats}")
                 except Exception as e:
                     logger.error(f"Error running automation for church {church_id}: {e}")
-        
+
         except Exception as e:
             logger.error(f"Error in status automation job: {e}")
-    
+        finally:
+            await lock.release()
+
     # Schedule to run every hour at minute 0
     # Each church's schedule is converted from their local timezone to UTC
     from apscheduler.triggers.cron import CronTrigger
@@ -132,25 +300,57 @@ def setup_scheduler(db: AsyncIOMotorDatabase):
     
     # Add job: Empty trash bin (delete members deleted > 14 days ago)
     async def empty_trash_bin():
-        """Permanently delete members in trash for more than 14 days"""
+        """Permanently delete members in trash for more than 14 days, scoped by church_id for audit trail."""
+        # Use distributed lock to prevent duplicate execution across instances
+        redis = None
+        try:
+            from server import redis_client
+            redis = redis_client
+        except (ImportError, AttributeError):
+            pass
+
+        lock = DistributedLock(redis, "empty_trash_bin", ttl_seconds=300)
+        if not await lock.acquire():
+            logger.info("[Scheduler] empty_trash_bin already running on another instance, skipping")
+            return
+
         try:
             from datetime import timedelta
             cutoff_date = datetime.now(timezone.utc) - timedelta(days=14)
-            
+
             logger.info("Checking trash bin for members older than 14 days")
-            
-            # Find members deleted more than 14 days ago
-            result = await db.members.delete_many({
-                "is_deleted": True,
-                "deleted_at": {"$lt": cutoff_date.isoformat()}
-            })
-            
-            if result.deleted_count > 0:
-                logger.info(f"Permanently deleted {result.deleted_count} member(s) from trash bin (older than 14 days)")
-            
+
+            # Get all churches to process deletions per-church (for audit trail)
+            churches = await db.churches.find({"is_active": True}).to_list(1000)
+
+            total_deleted = 0
+            for church in churches:
+                church_id = church.get("id")
+                if not church_id:
+                    continue
+
+                # Delete per-church for proper audit trail and tenant isolation
+                result = await db.members.delete_many({
+                    "church_id": church_id,
+                    "is_deleted": True,
+                    "deleted_at": {"$lt": cutoff_date.isoformat()}
+                })
+
+                if result.deleted_count > 0:
+                    logger.info(
+                        f"Church {church_id}: Permanently deleted {result.deleted_count} member(s) "
+                        f"from trash bin (older than 14 days)"
+                    )
+                    total_deleted += result.deleted_count
+
+            if total_deleted > 0:
+                logger.info(f"Total permanently deleted: {total_deleted} member(s) from trash bin")
+
         except Exception as e:
             logger.error(f"Error emptying trash bin: {e}")
-    
+        finally:
+            await lock.release()
+
     # Pass async function directly - AsyncIOScheduler will await it properly
     scheduler.add_job(
         func=empty_trash_bin,
@@ -547,7 +747,53 @@ def setup_scheduler(db: AsyncIOMotorDatabase):
         replace_existing=True
     )
 
-    logger.info("APScheduler configured with article publishing, webhook processing, status automation, trash cleanup, counseling slot generation, call cleanup, autonomous Explore content generation, prayer follow-ups, and news context monitoring")
+    # Add job: Process scheduled broadcast campaigns every minute
+    async def process_scheduled_broadcasts():
+        """
+        Process scheduled broadcast campaigns that are due.
+
+        Runs every 60 seconds to:
+        - Find campaigns with status 'scheduled' and scheduled_at <= now
+        - Send notifications to all targeted recipients
+        - Update campaign status to 'sent' or 'failed'
+        """
+        # Use distributed lock to prevent duplicate broadcast sends across instances
+        redis = None
+        try:
+            from server import redis_client
+            redis = redis_client
+        except (ImportError, AttributeError):
+            pass
+
+        lock = DistributedLock(redis, "process_scheduled_broadcasts", ttl_seconds=120)
+        if not await lock.acquire():
+            # Skip silently - this runs every minute so frequent skips are expected
+            return
+
+        try:
+            from services.broadcast_service import get_broadcast_service
+
+            broadcast_service = get_broadcast_service()
+            processed = await broadcast_service.process_scheduled_campaigns(db)
+
+            if processed > 0:
+                logger.info(f"Processed {processed} scheduled broadcast campaign(s)")
+
+        except Exception as e:
+            logger.error(f"Error in scheduled broadcasts job: {e}")
+        finally:
+            await lock.release()
+
+    # Pass async function directly - AsyncIOScheduler will await it properly
+    scheduler.add_job(
+        func=process_scheduled_broadcasts,
+        trigger=IntervalTrigger(seconds=60),  # Every minute
+        id='process_scheduled_broadcasts',
+        name='Process Scheduled Broadcast Campaigns',
+        replace_existing=True
+    )
+
+    logger.info("APScheduler configured with article publishing, webhook processing, status automation, trash cleanup, counseling slot generation, call cleanup, autonomous Explore content generation, prayer follow-ups, news context monitoring, and scheduled broadcasts")
     
     return scheduler
 

@@ -66,7 +66,8 @@ export function RequestCard({
 
   const handlePress = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    router.push(route as any);
+    // Type assertion for dynamic routes - route is validated at definition time
+    router.push(route as never);
   }, [router, route]);
 
   return (

@@ -186,7 +186,7 @@ export function BookmarksModal({
             </Heading>
           </HStack>
           <Text className="text-gray-500 text-sm mt-1">
-            {bookmarks.length} {bookmarks.length === 1 ? 'bookmark' : 'bookmarks'}
+            {t('bible.bookmarkCount', { count: bookmarks.length })}
           </Text>
         </View>
 

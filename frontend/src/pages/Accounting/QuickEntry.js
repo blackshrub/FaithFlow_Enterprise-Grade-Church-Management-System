@@ -278,7 +278,7 @@ export default function QuickEntry() {
 
                 <ResponsibilityCenterSelector
                   label={t('accounting.quickEntry.responsibilityCenter')}
-                  value={expenseData.responsibility_center_id || ''}
+                  value={expenseData.responsibility_center_id ?? ''}
                   onChange={(value) => setExpenseData({...expenseData, responsibility_center_id: value})}
                 />
 

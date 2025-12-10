@@ -33,11 +33,15 @@ import { Input, InputField, InputIcon, InputSlot } from '@/components/ui/input';
 import { Textarea, TextareaInput } from '@/components/ui/textarea';
 import { SuccessScreen } from '@/components/requests';
 import { useAuthStore } from '@/stores/auth';
+import { useRequireAuth } from '@/hooks/useRequireAuth';
 import api from '@/services/api';
 
 export default function BaptismScreen() {
   const { t } = useTranslation();
   const router = useRouter();
+
+  // SEC-M7: Route protection
+  useRequireAuth();
   const { member, churchId } = useAuthStore();
 
   const [preferredDate, setPreferredDate] = useState<Date | null>(null);
@@ -64,6 +68,15 @@ export default function BaptismScreen() {
   };
 
   const handleSubmit = useCallback(async () => {
+    // Validation: Ensure member is logged in
+    if (!member?.id || !churchId) {
+      Alert.alert(
+        t('common.error', 'Error'),
+        t('requests.loginRequired', 'Please log in to submit a request.')
+      );
+      return;
+    }
+
     setIsSubmitting(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
@@ -127,6 +140,9 @@ export default function BaptismScreen() {
           <Pressable
             onPress={() => router.back()}
             className="w-10 h-10 rounded-full bg-gray-100 items-center justify-center"
+            accessible
+            accessibilityRole="button"
+            accessibilityLabel={t('common.back', 'Go back')}
           >
             <ArrowLeft size={20} color="#374151" />
           </Pressable>
@@ -189,6 +205,9 @@ export default function BaptismScreen() {
             <Pressable
               onPress={() => setShowDatePicker(true)}
               className="flex-row items-center h-12 px-4 bg-gray-50 rounded-xl border border-gray-200"
+              accessible
+              accessibilityRole="button"
+              accessibilityLabel={t('requests.baptism.selectDate', 'Select preferred date')}
             >
               <Calendar size={20} color="#6B7280" />
               <Text className={`ml-3 flex-1 ${preferredDate ? 'text-gray-900' : 'text-gray-400'}`}>

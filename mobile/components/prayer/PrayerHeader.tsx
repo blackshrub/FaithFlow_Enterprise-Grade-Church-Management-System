@@ -114,6 +114,9 @@ export const PrayerHeader: React.FC<PrayerHeaderProps> = React.memo(
               <View className="flex-row items-center gap-3">
                 <Pressable
                   onPress={onPressBack}
+                  accessible
+                  accessibilityRole="button"
+                  accessibilityLabel="Go back"
                   className="w-11 h-11 rounded-full bg-white/10 items-center justify-center active:scale-95 active:opacity-90"
                 >
                   <ArrowLeft size={24} color={Colors.white} />
@@ -133,6 +136,9 @@ export const PrayerHeader: React.FC<PrayerHeaderProps> = React.memo(
 
               <Pressable
                 onPress={onPressAdd}
+                accessible
+                accessibilityRole="button"
+                accessibilityLabel="Add new prayer request"
                 className="w-11 h-11 rounded-full items-center justify-center active:scale-95 active:opacity-90"
                 style={{
                   backgroundColor: Colors.accent.primary,
@@ -206,6 +212,9 @@ export const PrayerHeader: React.FC<PrayerHeaderProps> = React.memo(
             >
               <Pressable
                 onPress={() => handleTabPress('all')}
+                accessible
+                accessibilityRole="button"
+                accessibilityLabel="View community prayer requests"
                 className={`flex-1 flex-row items-center justify-center gap-2 py-3 rounded-xl ${
                   activeTab === 'all' ? 'bg-white' : 'bg-white/10'
                 }`}
@@ -225,6 +234,9 @@ export const PrayerHeader: React.FC<PrayerHeaderProps> = React.memo(
 
               <Pressable
                 onPress={() => handleTabPress('my')}
+                accessible
+                accessibilityRole="button"
+                accessibilityLabel="View my prayer requests"
                 className={`flex-1 flex-row items-center justify-center gap-2 py-3 rounded-xl ${
                   activeTab === 'my' ? 'bg-white' : 'bg-white/10'
                 }`}

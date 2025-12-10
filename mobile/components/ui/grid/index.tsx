@@ -134,7 +134,7 @@ const Grid = forwardRef<React.ComponentRef<typeof View>, IGridProps>(
     }, [responsiveNumColumns, children, DEVICE_WIDTH]);
     const childrenWithProps = React.Children.map(children, (child, index) => {
       if (React.isValidElement(child)) {
-        return React.cloneElement(child, { key: index, index: index } as any);
+        return React.cloneElement(child, { key: index, index: index } as React.Attributes & { index: number });
       }
       return child;
     });

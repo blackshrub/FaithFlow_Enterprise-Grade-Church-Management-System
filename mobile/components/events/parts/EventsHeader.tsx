@@ -177,6 +177,9 @@ export const EventsHeader = memo(function EventsHeader({
               onPress={handleCalendarPress}
               className="w-11 h-11 rounded-full items-center justify-center"
               style={{ backgroundColor: 'rgba(255,255,255,0.15)' }}
+              accessible
+              accessibilityRole="button"
+              accessibilityLabel={t('events.openCalendar')}
             >
               <MemoIcon icon={Calendar} size={22} color={Colors.white} />
             </Pressable>
@@ -218,6 +221,10 @@ export const EventsHeader = memo(function EventsHeader({
                     borderRadius: radius.m,
                     backgroundColor: isActive ? Colors.white : 'rgba(255,255,255,0.1)',
                   }}
+                  accessible
+                  accessibilityRole="button"
+                  accessibilityLabel={`${tab.label} ${isActive ? t('common.selected') : ''}`}
+                  accessibilityState={{ selected: isActive }}
                 >
                   <Text
                     className="text-[13px] font-semibold"

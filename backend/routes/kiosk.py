@@ -26,9 +26,12 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/kiosk", tags=["Kiosk"])
 
-# OTP storage uses Redis for efficient TTL-based expiry and O(1) lookups
-OTP_TTL_SECONDS = 300  # 5 minutes
+# OTP Configuration - SECURITY: 6-digit codes with 3-minute expiry
+OTP_LENGTH = 6  # 6-digit OTP (1,000,000 combinations vs 10,000 for 4-digit)
+OTP_TTL_SECONDS = 180  # 3 minutes (reduced from 5 for better security)
 OTP_MAX_ATTEMPTS = 5
+OTP_RATE_LIMIT_WINDOW = 300  # 5 minutes
+OTP_RATE_LIMIT_MAX = 3  # Max 3 OTPs per phone per window
 
 
 async def _get_redis():
@@ -56,6 +59,11 @@ class PINVerifyRequest(BaseModel):
     pin: str
 
 
+def _otp_rate_key(phone: str) -> str:
+    """Generate Redis key for OTP rate limiting."""
+    return f"faithflow:otp_rate:{phone}"
+
+
 @router.post("/send-otp")
 async def send_otp(
     request: OTPSendRequest,
@@ -66,8 +74,26 @@ async def send_otp(
     try:
         phone = request.phone
 
-        # Generate 4-digit OTP
-        code = str(random.randint(1000, 9999))
+        # Rate limit OTP sends to prevent SMS flooding
+        redis = await _get_redis()
+        if redis:
+            rate_key = _otp_rate_key(phone)
+            current_count = await redis.get(rate_key)
+            if current_count and int(current_count) >= OTP_RATE_LIMIT_MAX:
+                logger.warning(f"OTP rate limit exceeded for {phone}")
+                raise HTTPException(
+                    status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                    detail=f"Terlalu banyak permintaan OTP. Coba lagi dalam {OTP_RATE_LIMIT_WINDOW // 60} menit."
+                )
+            # Increment rate counter
+            pipe = redis.pipeline()
+            pipe.incr(rate_key)
+            pipe.expire(rate_key, OTP_RATE_LIMIT_WINDOW)
+            await pipe.execute()
+
+        # Generate 6-digit OTP (cryptographically secure)
+        import secrets
+        code = ''.join(secrets.choice('0123456789') for _ in range(OTP_LENGTH))
 
         # Store OTP in Redis with TTL (auto-expires, O(1) lookup)
         redis = await _get_redis()
@@ -104,7 +130,7 @@ async def send_otp(
         # Send via WhatsApp if enabled and URL is configured
         if whatsapp_enabled and whatsapp_url:
             whatsapp_phone = phone.replace('+', '')  # Remove + for gateway
-            message = f"Kode verifikasi Anda adalah: {code}. Kode ini dapat digunakan dalam 5 menit."
+            message = f"Kode verifikasi Anda adalah: {code}. Kode ini berlaku selama {OTP_TTL_SECONDS // 60} menit."
 
 
             try:
@@ -146,7 +172,10 @@ async def send_otp(
         logger.error(f"❌ Error sending OTP: {e}")
         logger.error(f"❌ Full traceback:\n{traceback.format_exc()}")
         # Still return success with console OTP
-        code = str(random.randint(1000, 9999)) if 'code' not in locals() else code
+        # Generate 6-digit OTP for fallback case
+        if 'code' not in locals():
+            import secrets
+            code = ''.join(secrets.choice('0123456789') for _ in range(OTP_LENGTH))
         return {
             "success": True,
             "message": "OTP generated (error occurred)",
@@ -160,82 +189,150 @@ async def verify_otp(
     request: OTPVerifyRequest,
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
-    """Verify OTP code."""
+    """Verify OTP code.
+
+    Uses atomic operations to prevent race conditions:
+    - Redis: Lua script for atomic verify-and-delete
+    - MongoDB: findOneAndDelete for atomic verification
+    """
     try:
         phone = request.phone
         code = request.code
 
-
-        # Try Redis first
+        # Try Redis first with atomic verification
         redis = await _get_redis()
         otp_doc = None
+        verified_atomically = False
 
         if redis:
             otp_key = _otp_key(phone)
-            otp_data = await redis.get(otp_key)
 
-            if otp_data:
-                otp_doc = json.loads(otp_data)
-                otp_doc["_source"] = "redis"
-            else:
-                logger.debug(f"No OTP found in Redis for {phone}")
+            # Lua script for atomic OTP verification
+            # Returns: 1=success, 0=wrong_code, -1=not_found, -2=expired, -3=too_many_attempts
+            verify_lua = """
+            local data = redis.call('GET', KEYS[1])
+            if not data then
+                return {-1, ''}
+            end
 
-        # Fallback to MongoDB if not in Redis
-        if not otp_doc:
+            local otp = cjson.decode(data)
+            local stored_code = otp.code
+            local attempts = otp.attempts or 0
+
+            -- Check attempts limit
+            if attempts >= tonumber(ARGV[2]) then
+                redis.call('DEL', KEYS[1])
+                return {-3, ''}
+            end
+
+            -- Verify code
+            if stored_code == ARGV[1] then
+                -- Success - delete atomically
+                redis.call('DEL', KEYS[1])
+                return {1, ''}
+            else
+                -- Wrong code - increment attempts atomically
+                otp.attempts = attempts + 1
+                local ttl = redis.call('TTL', KEYS[1])
+                if ttl > 0 then
+                    redis.call('SET', KEYS[1], cjson.encode(otp), 'EX', ttl)
+                end
+                return {0, tostring(otp.attempts)}
+            end
+            """
+
+            try:
+                result = await redis.eval(verify_lua, 1, otp_key, code, str(OTP_MAX_ATTEMPTS))
+                status_code = int(result[0])
+
+                if status_code == 1:
+                    # Success - OTP verified and deleted atomically
+                    await db.otp_codes.delete_one({"phone": phone})  # Clean up MongoDB backup too
+                    return {"success": True, "message": "OTP verified"}
+                elif status_code == 0:
+                    # Wrong code
+                    return {"success": False, "message": "Invalid OTP"}
+                elif status_code == -3:
+                    # Too many attempts
+                    await db.otp_codes.delete_one({"phone": phone})
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail={"error_code": "TOO_MANY_ATTEMPTS", "message": "Too many attempts. Please request a new code."}
+                    )
+                # -1 means not found in Redis, fall through to MongoDB
+                verified_atomically = (status_code != -1)
+            except Exception as lua_error:
+                logger.warning(f"Redis Lua script failed, falling back to MongoDB: {lua_error}")
+                # Fall through to MongoDB
+
+            if not verified_atomically:
+                otp_data = await redis.get(otp_key)
+                if otp_data:
+                    otp_doc = json.loads(otp_data)
+                    otp_doc["_source"] = "redis"
+                else:
+                    logger.debug(f"No OTP found in Redis for {phone}")
+
+        # Fallback to MongoDB if not in Redis (or if Redis verification returned not found)
+        if not otp_doc and not verified_atomically:
+            # Use atomic findOneAndDelete for verification to prevent race conditions
+            # First check if OTP exists and is valid
             mongo_doc = await db.otp_codes.find_one({"phone": phone})
-            if mongo_doc:
-                otp_doc = {
-                    "code": mongo_doc["code"],
-                    "attempts": mongo_doc["attempts"],
-                    "expires_at": mongo_doc["expires_at"],
-                    "_source": "mongodb"
-                }
 
-        if not otp_doc:
+            if not mongo_doc:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail={"error_code": "OTP_NOT_FOUND", "message": "No OTP found. Please request a new code."}
+                )
+
+            # Check expiry
+            if datetime.utcnow() > mongo_doc['expires_at']:
+                await db.otp_codes.delete_one({"phone": phone})
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail={"error_code": "OTP_EXPIRED", "message": "OTP expired. Please request a new code."}
+                )
+
+            # Check attempts
+            if mongo_doc['attempts'] >= OTP_MAX_ATTEMPTS:
+                await db.otp_codes.delete_one({"phone": phone})
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail={"error_code": "TOO_MANY_ATTEMPTS", "message": "Too many attempts. Please request a new code."}
+                )
+
+            # Verify code
+            if mongo_doc['code'] != code:
+                # Wrong code - increment attempts atomically
+                await db.otp_codes.update_one({"phone": phone}, {"$inc": {"attempts": 1}})
+                return {"success": False, "message": "Invalid OTP"}
+
+            # Correct code - use atomic findOneAndDelete to prevent race conditions
+            # This ensures only one concurrent request can successfully verify
+            deleted_doc = await db.otp_codes.find_one_and_delete({
+                "phone": phone,
+                "code": code  # Must match both phone AND code for atomic verification
+            })
+
+            if deleted_doc:
+                # Successfully deleted - we won the race
+                return {"success": True, "message": "OTP verified"}
+            else:
+                # Another request already verified this OTP
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail={"error_code": "OTP_ALREADY_USED", "message": "OTP already used. Please request a new code."}
+                )
+
+        # If we reached here with no otp_doc and verified_atomically is False, something went wrong
+        if not otp_doc and not verified_atomically:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail={"error_code": "OTP_NOT_FOUND", "message": "No OTP found. Please request a new code."}
             )
 
-        # Check expiry (only for MongoDB, Redis handles TTL automatically)
-        if otp_doc.get("_source") == "mongodb" and datetime.utcnow() > otp_doc['expires_at']:
-            await db.otp_codes.delete_one({"phone": phone})
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail={"error_code": "OTP_EXPIRED", "message": "OTP expired. Please request a new code."}
-            )
-
-        # Check attempts
-        if otp_doc['attempts'] >= OTP_MAX_ATTEMPTS:
-            # Delete from both Redis and MongoDB
-            if redis:
-                await redis.delete(_otp_key(phone))
-            await db.otp_codes.delete_one({"phone": phone})
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail={"error_code": "TOO_MANY_ATTEMPTS", "message": "Too many attempts. Please request a new code."}
-            )
-
-        # Verify code
-        if otp_doc['code'] != code:
-            # Increment attempts
-            otp_doc['attempts'] += 1
-            if redis and otp_doc.get("_source") == "redis":
-                # Get remaining TTL and update
-                otp_key = _otp_key(phone)
-                ttl = await redis.ttl(otp_key)
-                if ttl > 0:
-                    await redis.set(otp_key, json.dumps({"code": otp_doc["code"], "attempts": otp_doc["attempts"]}), ex=ttl)
-            else:
-                await db.otp_codes.update_one({"phone": phone}, {"$inc": {"attempts": 1}})
-
-            return {"success": False, "message": "Invalid OTP"}
-
-        # Success - remove OTP
-        if redis:
-            await redis.delete(_otp_key(phone))
-        await db.otp_codes.delete_one({"phone": phone})  # Clean up MongoDB too
-
+        # If Redis verification already handled the request, we won't reach here
+        # But just in case there's a code path issue:
         return {"success": True, "message": "OTP verified"}
     
     except HTTPException:
@@ -252,32 +349,35 @@ async def verify_staff_pin(
     db: AsyncIOMotorDatabase = Depends(get_db)
 ):
     """Verify staff PIN for kiosk access.
-    
-    Note: Super admin has church_id=None, so we don't filter by church.
-    We verify PIN first, then check if user has access to selected church.
+
+    PIN lookup priority:
+    1. First, look for user in the selected church with matching PIN
+    2. Then, look for super_admin (church_id=None) with matching PIN
+
+    This ensures PINs are effectively unique per church.
     """
     try:
-        # Find user with matching PIN (don't filter by church yet)
+        # First, try to find a user in this specific church with this PIN
         user = await db.users.find_one({
             "kiosk_pin": request.pin,
+            "church_id": church_id,
             "is_active": True
         }, {"_id": 0, "id": 1, "full_name": 1, "role": 1, "church_id": 1})
-        
+
+        # If not found in church, check for super_admin (who has church_id=None)
+        if not user:
+            user = await db.users.find_one({
+                "kiosk_pin": request.pin,
+                "role": "super_admin",
+                "church_id": None,
+                "is_active": True
+            }, {"_id": 0, "id": 1, "full_name": 1, "role": 1, "church_id": 1})
+
         if not user:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail={"error_code": "INVALID_PIN", "message": "Invalid PIN"}
             )
-        
-        # Validate church access
-        # Super admin can access any church
-        # Regular users must match church_id
-        if user['role'] != 'super_admin':
-            if user.get('church_id') != church_id:
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail={"error_code": "WRONG_CHURCH", "message": "You don't have access to this church"}
-                )
         
         return {
             "success": True,

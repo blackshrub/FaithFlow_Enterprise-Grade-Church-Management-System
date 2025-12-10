@@ -243,9 +243,9 @@ async def update_group(
 
     update_dict["updated_at"] = datetime.utcnow()
 
-    await db.groups.update_one({"id": group_id}, {"$set": update_dict})
+    await db.groups.update_one({"id": group_id, "church_id": church_id}, {"$set": update_dict})
 
-    updated = await db.groups.find_one({"id": group_id}, {"_id": 0})
+    updated = await db.groups.find_one({"id": group_id, "church_id": church_id}, {"_id": 0})
 
     await audit_service.log_action(
         db=db,
@@ -291,7 +291,7 @@ async def delete_group(
             }
         )
 
-    await db.groups.delete_one({"id": group_id})
+    await db.groups.delete_one({"id": group_id, "church_id": church_id})
 
     await audit_service.log_action(
         db=db,

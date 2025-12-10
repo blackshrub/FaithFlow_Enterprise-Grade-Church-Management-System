@@ -68,6 +68,9 @@ function SearchHeaderComponent({
             shadowRadius: 8,
             elevation: 2,
           }}
+          accessible
+          accessibilityRole="button"
+          accessibilityLabel={selectedCategoryName ? `Filter by ${selectedCategoryName}` : allCategoriesLabel}
         >
           <Filter size={18} color={Colors.gradientEnd} />
           <Text className="flex-1 text-[15px] font-semibold text-neutral-800">

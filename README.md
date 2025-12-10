@@ -767,6 +767,224 @@ A: Yes. Each church has complete data isolation. All API requests are scoped by 
 
 ---
 
+## Recent Updates (v2.0 - December 2024)
+
+### New Product Features
+
+#### Broadcast Campaign System
+Mass communication management for churches:
+
+| Feature | Description |
+|---------|-------------|
+| **Campaign Management** | Create, schedule, and track broadcast campaigns |
+| **Multi-Channel** | WhatsApp, Push Notifications, In-App messages |
+| **Audience Targeting** | Filter by member status, groups, demographics |
+| **Template Library** | Reusable notification templates with variables |
+| **Analytics** | Delivery rates, open rates, engagement tracking |
+| **Scheduling** | Schedule campaigns for optimal delivery times |
+
+#### Mobile Notifications Center
+Complete notification management in mobile app:
+
+| Feature | Description |
+|---------|-------------|
+| **Notification Bell** | Real-time unread count badge in header |
+| **Notification List** | Grouped by date with pull-to-refresh |
+| **Rich Content** | Support for images, deep links, actions |
+| **Mark as Read** | Individual and bulk mark-as-read |
+| **Notification Settings** | Granular control per notification type |
+
+#### Church News & Articles
+Content publishing system in mobile app:
+
+| Feature | Description |
+|---------|-------------|
+| **Article Feed** | Church news with featured images |
+| **Categories** | Organized by topics (News, Events, Devotion) |
+| **Rich Content** | HTML rendering with embedded media |
+| **Share** | Native sharing to social media |
+| **Bookmarks** | Save articles for later reading |
+
+#### Enhanced Today Tab
+Redesigned home screen with premium UX:
+
+| Component | Description |
+|-----------|-------------|
+| **Start Your Day Carousel** | Rotating devotional cards |
+| **Coming Up Carousel** | Upcoming events with quick RSVP |
+| **Latest Sermon Card** | Featured sermon with play button |
+| **Grow in Faith Section** | Curated spiritual content |
+| **How Can We Help Grid** | Quick action shortcuts |
+| **Church News Section** | Recent articles feed |
+| **Instagram Section** | Social media integration |
+
+#### Mobile Settings Screens
+Comprehensive settings in mobile app:
+
+| Screen | Features |
+|--------|----------|
+| **Appearance** | Theme (light/dark/system), accent colors |
+| **Language** | English/Indonesian with instant switching |
+| **Notifications** | Per-type toggle, quiet hours |
+| **Privacy** | Data sharing, analytics opt-out |
+| **Security** | Biometric authentication settings |
+| **Voice Reading** | TTS speed, pitch, voice selection |
+
+#### Member QR Code
+Quick identification system:
+
+| Feature | Description |
+|---------|-------------|
+| **QR Sheet** | Bottom sheet with member QR code |
+| **Quick Access** | One-tap from profile or Today tab |
+| **Event Check-in** | Scan for instant event check-in |
+| **Offline Support** | QR generated locally, works offline |
+
+---
+
+### Technical Features
+
+#### Security Hardening (49-Item Audit)
+Comprehensive security improvements across the stack:
+
+| Category | Items Fixed | Key Improvements |
+|----------|-------------|------------------|
+| **Authentication** | 18 | Fresh JWT after biometric, token expiry validation, route protection |
+| **Data Isolation** | 15 | Church-scoped query keys, cache invalidation, tenant validation |
+| **API Security** | 10 | Rate limiting, input validation, error sanitization |
+| **Mobile Security** | 6 | Certificate pinning prep, secure storage, OTP validation |
+
+**Key Security Features:**
+- `useRequireAuth` hook for route protection on all protected screens
+- Church ID validation on API client interceptor
+- Biometric authentication with fresh JWT fetch
+- Token expiry checking on app initialization
+- WebSocket disconnection on logout
+- Secure storage for sensitive data
+- Phone number validation (format, length, prefix)
+- OTP numeric validation
+
+#### Multi-Tenant Cache Scoping
+Proper data isolation in React Query cache:
+
+```typescript
+// Before (potential cross-tenant collision)
+queryKey: ['community', 'messages', communityId]
+
+// After (properly scoped)
+queryKey: ['community', 'messages', churchId, communityId]
+```
+
+**Scoped Queries:**
+- Community messages
+- Giving history and transactions
+- Prayer requests
+- Event RSVPs
+- Member data
+
+#### Form UX Improvements
+Enhanced form handling across the app:
+
+| Feature | Implementation |
+|---------|----------------|
+| **Draft Saving** | Auto-save to AsyncStorage with 24hr expiry |
+| **Inline Validation** | Real-time error feedback with FormControl |
+| **Loading States** | Disabled buttons with spinners during submission |
+| **Error Recovery** | Retry buttons on failure with clear messaging |
+| **Confirmation Dialogs** | AlertDialog for destructive actions |
+
+#### Network Status Detection
+Global network monitoring:
+
+| Feature | Description |
+|---------|-------------|
+| **NetworkStatusBanner** | Persistent banner when offline |
+| **Auto-Retry** | Automatic retry when connection restored |
+| **Offline Indicators** | Visual feedback throughout the app |
+| **Graceful Degradation** | Offline-capable features continue working |
+
+#### Connection Status in Chat
+Real-time connection feedback:
+
+| Status | Indicator |
+|--------|-----------|
+| **Connected** | Hidden (clean UI) |
+| **Connecting** | Yellow banner with spinner |
+| **Reconnecting** | Orange banner with retry count |
+| **Disconnected** | Red banner with manual retry button |
+
+#### Message Status Indicators
+WhatsApp-style delivery feedback:
+
+| Status | Icon | Description |
+|--------|------|-------------|
+| **Sending** | Clock | Message being sent |
+| **Sent** | Single check | Server received |
+| **Delivered** | Double check | Recipient received |
+| **Read** | Blue double check | Recipient read |
+| **Failed** | Red X | Retry available |
+
+#### Payment Retry Mechanism
+Improved giving flow error handling:
+
+| Scenario | Handling |
+|----------|----------|
+| **Network Error** | Alert with retry button |
+| **Gateway Error** | Clear error message + retry |
+| **Timeout** | Auto-retry once, then manual |
+| **Invalid Response** | Graceful fallback to manual transfer |
+
+#### E2E Test Suite
+Playwright-based end-to-end testing:
+
+| Test File | Coverage |
+|-----------|----------|
+| `01-kiosk-registration.spec.cjs` | New member registration flow |
+| `02-admin-login.spec.cjs` | Admin authentication |
+| `03-member-management.spec.cjs` | CRUD operations |
+| `04-event-rsvp.spec.cjs` | Event registration flow |
+| `05-prayer-requests.spec.cjs` | Prayer submission and management |
+
+**Test Helpers:**
+- Reusable authentication utilities
+- Database seeding/cleanup
+- Screenshot on failure
+- Parallel test execution
+
+#### Database Indexes
+Optimized MongoDB indexes for performance:
+
+```python
+# New indexes added
+db_indexes.py:
+- church_id + created_at (compound)
+- church_id + member_id (compound)
+- church_id + status + created_at (compound)
+- Full-text search indexes for messages
+```
+
+#### Currency Formatting
+Standardized currency display:
+
+```typescript
+// utils/currencyFormat.ts
+formatCurrency(1500000, 'IDR') // "Rp 1.500.000"
+formatCurrency(99.99, 'USD')   // "$99.99"
+```
+
+#### Navigation Utilities
+Centralized navigation helpers:
+
+```typescript
+// utils/navigation.ts
+navigateTo('/events/123')           // Push to stack
+navigateToWithParams('/chat', {id}) // With params
+goBack()                            // Pop stack
+resetToHome()                       // Reset to tabs
+```
+
+---
+
 ## Credits
 
 Built with these amazing technologies:

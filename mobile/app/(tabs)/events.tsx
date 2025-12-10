@@ -419,17 +419,19 @@ function EventsScreen() {
     });
   }, [overlay, handleSubmitRating]);
 
+  // Get event rating from API data - events include my_rating field when fetched from /events/my or /events/attended
   const getEventRating = useCallback((eventId: string): { rated: boolean; rating?: number; review?: string } => {
-    const hash = eventId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    const hasRating = hash % 3 === 0;
-
-    if (hasRating) {
-      const ratings = [7, 8, 9, 6, 10];
-      const rating = ratings[hash % ratings.length];
-      return { rated: true, rating, review: 'Great event! Really enjoyed it.' };
+    // Find the event in allEvents to get its my_rating field
+    const event = allEvents.find((e) => e.id === eventId);
+    if (event?.my_rating) {
+      return {
+        rated: true,
+        rating: event.my_rating.rating,
+        review: event.my_rating.review,
+      };
     }
     return { rated: false };
-  }, []);
+  }, [allEvents]);
 
   // Render event card with shared Today-style motion
   const renderEvent = useCallback(
@@ -553,6 +555,9 @@ function EventsScreen() {
           onPress={content.onAction}
           className="flex-row items-center px-6 py-3 rounded-3xl gap-2"
           style={{ backgroundColor: Colors.gradient.end }}
+          accessible
+          accessibilityRole="button"
+          accessibilityLabel={content.action}
         >
           <Text className="text-[15px] font-semibold text-white">
             {content.action}
@@ -579,6 +584,9 @@ function EventsScreen() {
             onPress={handleRefresh}
             className="px-6 py-3 rounded-[20px]"
             style={{ backgroundColor: Colors.gradient.end }}
+            accessible
+            accessibilityRole="button"
+            accessibilityLabel={t('common.retry')}
           >
             <Text className="text-[15px] font-semibold text-white">
               {t('common.retry')}

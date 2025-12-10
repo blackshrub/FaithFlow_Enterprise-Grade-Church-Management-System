@@ -146,7 +146,7 @@ function Events() {
               </TabsTrigger>
             </TabsList>
           </Tabs>
-          <Button onClick={handleCreate}>
+          <Button onClick={handleCreate} data-testid="add-event-button">
             <Plus className="h-4 w-4 mr-2" />
             {t('events.event.createEvent')}
           </Button>

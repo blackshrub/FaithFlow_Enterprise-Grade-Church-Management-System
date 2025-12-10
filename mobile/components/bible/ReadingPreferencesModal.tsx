@@ -74,21 +74,21 @@ const LINE_HEIGHT_ICONS = {
 
 const THEMES: ThemeType[] = ['light', 'light2', 'light3', 'sepia', 'light4', 'dark', 'dark2', 'dark3'];
 
-const TEXT_ALIGN_OPTIONS: { value: TextAlign; icon: typeof AlignLeft; label: string }[] = [
-  { value: 'left', icon: AlignLeft, label: 'Left' },
-  { value: 'justify', icon: AlignJustify, label: 'Justify' },
+const TEXT_ALIGN_OPTIONS: { value: TextAlign; icon: typeof AlignLeft; labelKey: string }[] = [
+  { value: 'left', icon: AlignLeft, labelKey: 'bible.preferences.alignLeft' },
+  { value: 'justify', icon: AlignJustify, labelKey: 'bible.preferences.alignJustify' },
 ];
 
-const WORD_SPACING_OPTIONS: { value: WordSpacing; label: string }[] = [
-  { value: 'normal', label: 'Normal' },
-  { value: 'wide', label: 'Wide' },
-  { value: 'wider', label: 'Wider' },
+const WORD_SPACING_OPTIONS: { value: WordSpacing; labelKey: string }[] = [
+  { value: 'normal', labelKey: 'bible.preferences.wordSpacingNormal' },
+  { value: 'wide', labelKey: 'bible.preferences.wordSpacingWide' },
+  { value: 'wider', labelKey: 'bible.preferences.wordSpacingWider' },
 ];
 
-const VERSE_SPACING_OPTIONS: { value: VerseSpacing; label: string }[] = [
-  { value: 'none', label: 'None' },
-  { value: 'small', label: 'Small' },
-  { value: 'large', label: 'Large' },
+const VERSE_SPACING_OPTIONS: { value: VerseSpacing; labelKey: string }[] = [
+  { value: 'none', labelKey: 'bible.preferences.verseSpacingNone' },
+  { value: 'small', labelKey: 'bible.preferences.verseSpacingSmall' },
+  { value: 'large', labelKey: 'bible.preferences.verseSpacingLarge' },
 ];
 
 export function ReadingPreferencesModal({
@@ -322,7 +322,7 @@ export function ReadingPreferencesModal({
                     {t(`bible.lineHeights.${preferences.lineHeight}`)}
                   </Text>
                 </HStack>
-                <Text className="text-primary-600 text-xs">Tap to cycle</Text>
+                <Text className="text-primary-600 text-xs">{t('bible.preferences.tapToCycle')}</Text>
               </View>
             </Pressable>
           </VStack>
@@ -331,7 +331,7 @@ export function ReadingPreferencesModal({
           <VStack space="sm">
             <HStack space="sm" className="items-center mb-2">
               <Icon as={AlignLeft} size="md" className="text-gray-600" />
-              <Text className="text-gray-900 font-semibold text-base">Text Alignment</Text>
+              <Text className="text-gray-900 font-semibold text-base">{t('bible.preferences.textAlignment')}</Text>
             </HStack>
 
             <HStack space="sm">
@@ -366,7 +366,7 @@ export function ReadingPreferencesModal({
                           preferences.textAlign === option.value ? '#ffffff' : colors.gray[600],
                       }}
                     >
-                      {option.label}
+                      {t(option.labelKey)}
                     </Text>
                   </View>
                 </Pressable>
@@ -378,7 +378,7 @@ export function ReadingPreferencesModal({
           <VStack space="sm">
             <HStack space="sm" className="items-center mb-2">
               <Icon as={Space} size="md" className="text-gray-600" />
-              <Text className="text-gray-900 font-semibold text-base">Word Spacing</Text>
+              <Text className="text-gray-900 font-semibold text-base">{t('bible.preferences.wordSpacing')}</Text>
             </HStack>
 
             <HStack space="sm">
@@ -404,7 +404,7 @@ export function ReadingPreferencesModal({
                           preferences.wordSpacing === option.value ? '#ffffff' : colors.gray[600],
                       }}
                     >
-                      {option.label}
+                      {t(option.labelKey)}
                     </Text>
                   </View>
                 </Pressable>
@@ -416,7 +416,7 @@ export function ReadingPreferencesModal({
           <VStack space="sm">
             <HStack space="sm" className="items-center mb-2">
               <Icon as={AlignJustify} size="md" className="text-gray-600" />
-              <Text className="text-gray-900 font-semibold text-base">Verse Spacing</Text>
+              <Text className="text-gray-900 font-semibold text-base">{t('bible.preferences.verseSpacing')}</Text>
             </HStack>
 
             <HStack space="sm">
@@ -442,7 +442,7 @@ export function ReadingPreferencesModal({
                           preferences.verseSpacing === option.value ? '#ffffff' : colors.gray[600],
                       }}
                     >
-                      {option.label}
+                      {t(option.labelKey)}
                     </Text>
                   </View>
                 </Pressable>
@@ -452,7 +452,7 @@ export function ReadingPreferencesModal({
 
           {/* Toggle Options */}
           <VStack space="sm">
-            <Text className="text-gray-900 font-semibold text-base mb-2">Display Options</Text>
+            <Text className="text-gray-900 font-semibold text-base mb-2">{t('bible.preferences.displayOptions')}</Text>
 
             {/* Show Verse Numbers Toggle */}
             <Pressable onPress={handleToggleVerseNumbers} className="active:opacity-70">
@@ -468,7 +468,7 @@ export function ReadingPreferencesModal({
                     size="md"
                     className="text-gray-600"
                   />
-                  <Text className="text-gray-900 font-medium">Show Verse Numbers</Text>
+                  <Text className="text-gray-900 font-medium">{t('bible.preferences.showVerseNumbers')}</Text>
                 </HStack>
                 <View
                   className="flex-row items-center justify-end"
@@ -510,8 +510,8 @@ export function ReadingPreferencesModal({
                     className="text-gray-600"
                   />
                   <VStack space="xs" className="flex-1">
-                    <Text className="text-gray-900 font-medium">Focus Mode</Text>
-                    <Text className="text-gray-500 text-xs">Auto-hide header & navigation for distraction-free reading</Text>
+                    <Text className="text-gray-900 font-medium">{t('bible.preferences.focusMode')}</Text>
+                    <Text className="text-gray-500 text-xs">{t('bible.preferences.focusModeDesc')}</Text>
                   </VStack>
                 </HStack>
                 <View
@@ -544,7 +544,7 @@ export function ReadingPreferencesModal({
           <VStack space="sm">
             <HStack space="sm" className="items-center mb-2">
               <Icon as={ScrollText} size="md" className="text-gray-600" />
-              <Text className="text-gray-900 font-semibold text-base">Reading Mode</Text>
+              <Text className="text-gray-900 font-semibold text-base">{t('bible.preferences.readingMode')}</Text>
             </HStack>
 
             <HStack space="sm">
@@ -579,7 +579,7 @@ export function ReadingPreferencesModal({
                         preferences.readingMode === 'scroll' ? '#ffffff' : colors.gray[600],
                     }}
                   >
-                    Scroll
+                    {t('bible.preferences.scrollMode')}
                   </Text>
                   <Text
                     className="text-xs mt-1 text-center"
@@ -588,7 +588,7 @@ export function ReadingPreferencesModal({
                         preferences.readingMode === 'scroll' ? '#ffffff' : colors.gray[500],
                     }}
                   >
-                    Infinite scroll across chapters
+                    {t('bible.preferences.scrollModeDesc')}
                   </Text>
                 </View>
               </Pressable>
@@ -624,7 +624,7 @@ export function ReadingPreferencesModal({
                         preferences.readingMode === 'paged' ? '#ffffff' : colors.gray[600],
                     }}
                   >
-                    Paged
+                    {t('bible.preferences.pagedMode')}
                   </Text>
                   <Text
                     className="text-xs mt-1 text-center"
@@ -633,7 +633,7 @@ export function ReadingPreferencesModal({
                         preferences.readingMode === 'paged' ? '#ffffff' : colors.gray[500],
                     }}
                   >
-                    Chapter-by-chapter with buttons
+                    {t('bible.preferences.pagedModeDesc')}
                   </Text>
                 </View>
               </Pressable>
@@ -642,7 +642,7 @@ export function ReadingPreferencesModal({
 
           {/* Navigation Options */}
           <VStack space="sm">
-            <Text className="text-gray-900 font-semibold text-base mb-2">Navigation</Text>
+            <Text className="text-gray-900 font-semibold text-base mb-2">{t('bible.preferences.navigationSection')}</Text>
 
             {/* Show Verse Selector Toggle */}
             <Pressable onPress={handleToggleVerseSelector} className="active:opacity-70">
@@ -659,8 +659,8 @@ export function ReadingPreferencesModal({
                     className="text-gray-600"
                   />
                   <VStack space="xs" className="flex-1">
-                    <Text className="text-gray-900 font-medium">Show Verse Selector</Text>
-                    <Text className="text-gray-500 text-xs">Enable verse selection when choosing book and chapter</Text>
+                    <Text className="text-gray-900 font-medium">{t('bible.preferences.showVerseSelector')}</Text>
+                    <Text className="text-gray-500 text-xs">{t('bible.preferences.verseSelectorDesc')}</Text>
                   </VStack>
                 </HStack>
                 <View
@@ -695,7 +695,7 @@ export function ReadingPreferencesModal({
             <VStack space="sm">
               <HStack space="sm" className="items-center mb-2">
                 <Icon as={Type} size="md" className="text-gray-600" />
-                <Text className="text-gray-900 font-semibold text-base">Bible Font</Text>
+                <Text className="text-gray-900 font-semibold text-base">{t('bible.preferences.bibleFont')}</Text>
               </HStack>
               <BibleFontSelector version={version} />
             </VStack>

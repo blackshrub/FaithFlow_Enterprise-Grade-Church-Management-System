@@ -200,8 +200,9 @@ export const bottomSheetExit = FadeOutDown.duration(timing.fast)
  * @param delayMs - Delay in milliseconds
  */
 export const withAnimationDelay = <T extends object>(animation: T, delayMs: number) => {
-  if ('delay' in animation && typeof (animation as any).delay === 'function') {
-    return (animation as any).delay(delayMs);
+  type AnimationWithDelay = T & { delay: (ms: number) => T };
+  if ('delay' in animation && typeof (animation as AnimationWithDelay).delay === 'function') {
+    return (animation as AnimationWithDelay).delay(delayMs);
   }
   return animation;
 };

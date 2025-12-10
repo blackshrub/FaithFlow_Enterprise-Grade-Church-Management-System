@@ -264,6 +264,9 @@ export function AttachmentPicker({ visible, onClose, onSelect, onLocationPress }
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               onClose();
             }}
+            accessible
+            accessibilityRole="button"
+            accessibilityLabel="Close attachment picker"
             className="p-2"
           >
             <X size={24} color={colors.gray[500]} />
@@ -277,6 +280,9 @@ export function AttachmentPicker({ visible, onClose, onSelect, onLocationPress }
               <Pressable
                 key={option.label}
                 onPress={option.onPress}
+                accessible
+                accessibilityRole="button"
+                accessibilityLabel={`Attach ${option.label.toLowerCase()}`}
                 className="items-center"
               >
                 <View

@@ -58,6 +58,8 @@ import {
   useTodayContent,
   useCompleteDay,
 } from '@/hooks/explore/useJourney';
+import { useBibleStore } from '@/stores/bibleStore';
+import { getBookNumber } from '@/lib/bibleBookLookup';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -295,6 +297,9 @@ function JourneyTodayScreen() {
   const { data: todayContent, isLoading } = useTodayContent(slug || '');
   const completeDayMutation = useCompleteDay(slug || '');
 
+  // Bible store for navigation
+  const { setCurrentPosition, currentVersion } = useBibleStore();
+
   // Initialize reflection responses array
   useEffect(() => {
     if (todayContent?.content.reflection_questions) {
@@ -346,6 +351,21 @@ function JourneyTodayScreen() {
     setShowCelebration(false);
     router.back();
   };
+
+  // Navigate to Bible reader with specific passage
+  const handleOpenBibleReader = useCallback(() => {
+    const mainScripture = todayContent?.content?.main_scripture;
+    if (mainScripture) {
+      // Set the Bible position to the main scripture
+      setCurrentPosition(
+        currentVersion,
+        mainScripture.book,
+        mainScripture.chapter || 1
+      );
+      // Navigate to Bible tab
+      router.push('/(tabs)/bible');
+    }
+  }, [todayContent, currentVersion, setCurrentPosition, router]);
 
   // Loading state
   if (isLoading) {
@@ -449,9 +469,12 @@ function JourneyTodayScreen() {
               <Pressable
                 onPress={() => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  // TODO: Navigate to Bible reader
+                  handleOpenBibleReader();
                 }}
                 className="flex-row items-center justify-center gap-2 bg-indigo-100 py-3 rounded-xl active:scale-[0.98]"
+                accessible
+                accessibilityRole="button"
+                accessibilityLabel="Open in Bible Reader"
               >
                 <BookOpen size={18} color={Colors.accent.indigo} />
                 <Text className="text-sm font-semibold text-indigo-700">

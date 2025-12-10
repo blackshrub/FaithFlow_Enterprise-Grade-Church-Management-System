@@ -146,7 +146,7 @@ async def delete_api_key(
             detail="Access denied"
         )
 
-    await db.api_keys.delete_one({"id": api_key_id})
+    await db.api_keys.delete_one({"id": api_key_id, "church_id": api_key.get('church_id')})
 
     return None
 

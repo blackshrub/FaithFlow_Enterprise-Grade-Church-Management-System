@@ -111,7 +111,13 @@ export function PhotoCaptureSheet({ onPhotoCapture, onClose }: PhotoCaptureSheet
           <Button onPress={checkPermissions} className="mt-4">
             <ButtonText>{t('requests.photo.grantPermission', 'Grant Permission')}</ButtonText>
           </Button>
-          <Pressable onPress={onClose} style={styles.cancelButton}>
+          <Pressable
+            onPress={onClose}
+            accessible
+            accessibilityRole="button"
+            accessibilityLabel="Cancel photo capture"
+            style={styles.cancelButton}
+          >
             <Text style={styles.cancelButtonText}>{t('common.cancel', 'Cancel')}</Text>
           </Pressable>
         </View>
@@ -160,7 +166,13 @@ export function PhotoCaptureSheet({ onPhotoCapture, onClose }: PhotoCaptureSheet
   return (
     <View style={styles.container}>
       {/* Close button */}
-      <Pressable style={styles.closeButton} onPress={onClose}>
+      <Pressable
+        style={styles.closeButton}
+        onPress={onClose}
+        accessible
+        accessibilityRole="button"
+        accessibilityLabel="Close photo capture"
+      >
         <X size={24} color="#374151" />
       </Pressable>
 
@@ -185,6 +197,9 @@ export function PhotoCaptureSheet({ onPhotoCapture, onClose }: PhotoCaptureSheet
             style={styles.optionButton}
             onPress={handleCameraCapture}
             disabled={isCapturing}
+            accessible
+            accessibilityRole="button"
+            accessibilityLabel="Take photo with camera"
           >
             {isCapturing ? (
               <ActivityIndicator size="small" color="#3B82F6" />
@@ -205,6 +220,9 @@ export function PhotoCaptureSheet({ onPhotoCapture, onClose }: PhotoCaptureSheet
             style={styles.optionButton}
             onPress={handlePickFromGallery}
             disabled={isCapturing}
+            accessible
+            accessibilityRole="button"
+            accessibilityLabel="Choose photo from gallery"
           >
             {isCapturing ? (
               <ActivityIndicator size="small" color="#EC4899" />

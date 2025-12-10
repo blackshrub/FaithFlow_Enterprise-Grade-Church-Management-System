@@ -26,6 +26,7 @@ import {
   DEFAULT_STT_SETTINGS,
   type GoogleTTSVoice,
 } from '@/constants/voice';
+import { logError } from '@/utils/errorHelpers';
 
 // Secure storage keys (for sensitive data only - API key stays in SecureStore)
 const STORAGE_KEYS = {
@@ -116,11 +117,14 @@ export const useVoiceSettingsStore = create<VoiceSettingsState>()(
        * Load settings - from cache first, then refresh from backend
        * In development mode, uses hardcoded API key for immediate testing
        * Note: userPreferences now auto-loaded by Zustand persist (MMKV)
+       *
+       * SECURITY FIX: Dev mode only runs when __DEV__ is true (stripped in production builds)
        */
       loadSettings: async () => {
         try {
-          // In dev mode, use hardcoded key immediately
-          if (DEV_GOOGLE_TTS_API_KEY) {
+          // SECURITY: Only use dev mode in actual development builds
+          // __DEV__ is automatically false in production builds
+          if (__DEV__ && DEV_GOOGLE_TTS_API_KEY) {
             set({
               apiKey: DEV_GOOGLE_TTS_API_KEY,
               isLoaded: true,
@@ -134,7 +138,8 @@ export const useVoiceSettingsStore = create<VoiceSettingsState>()(
                 stt_model: DEFAULT_STT_SETTINGS.model,
               },
             });
-            console.log('[VoiceSettings] DEV MODE: Using hardcoded Google TTS API key');
+            // SECURITY: Don't log that we're using the dev key - avoid exposing presence of key
+            console.log('[VoiceSettings] DEV MODE: Using development voice configuration');
             return;
           }
 
@@ -152,9 +157,12 @@ export const useVoiceSettingsStore = create<VoiceSettingsState>()(
           // Refresh from backend in background
           get().refreshFromBackend();
 
-          console.log('[VoiceSettings] Loaded from cache, API key:', cachedKey ? 'present' : 'not cached');
+          // SEC-H1 FIX: Only log in development mode
+          if (__DEV__) {
+            console.log('[VoiceSettings] Loaded from cache, API key:', cachedKey ? 'present' : 'not cached');
+          }
         } catch (error) {
-          console.error('[VoiceSettings] Failed to load:', error);
+          logError('VoiceSettings', 'load', error, 'warning');
           set({ isLoaded: true, error: 'Failed to load voice settings' });
         }
       },
@@ -183,10 +191,13 @@ export const useVoiceSettingsStore = create<VoiceSettingsState>()(
               apiKey: keyData.api_key,
               isEnabled: true,
             });
-            console.log('[VoiceSettings] API key fetched and cached');
+            // SEC-H1 FIX: Only log in development mode
+            if (__DEV__) {
+              console.log('[VoiceSettings] API key fetched and cached');
+            }
           }
-        } catch (keyError: any) {
-          console.warn('[VoiceSettings] Failed to fetch API key:', keyError.message);
+        } catch (keyError) {
+          logError('VoiceSettings', 'fetchApiKey', keyError, 'warning');
           const cachedKey = await SecureStore.getItemAsync(STORAGE_KEYS.CACHED_API_KEY);
           if (cachedKey) {
             set({ apiKey: cachedKey, isEnabled: true });
@@ -196,15 +207,18 @@ export const useVoiceSettingsStore = create<VoiceSettingsState>()(
         }
       } else {
         set({ isEnabled: false });
-        console.log('[VoiceSettings] Voice disabled or no API key configured');
+        // SEC-H1 FIX: Only log in development mode
+        if (__DEV__) {
+          console.log('[VoiceSettings] Voice disabled or no API key configured');
+        }
       }
 
       set({ isFetching: false });
-    } catch (error: any) {
-      console.error('[VoiceSettings] Failed to refresh from backend:', error);
+    } catch (error) {
+      logError('VoiceSettings', 'refreshFromBackend', error, 'warning');
       set({
         isFetching: false,
-        error: error.message || 'Failed to fetch voice settings',
+        error: 'Failed to fetch voice settings',
       });
 
       const cachedKey = get().apiKey;
@@ -234,7 +248,7 @@ export const useVoiceSettingsStore = create<VoiceSettingsState>()(
       set({ apiKey: null, isEnabled: false });
       console.log('[VoiceSettings] Cache cleared');
     } catch (error) {
-      console.error('[VoiceSettings] Failed to clear cache:', error);
+      logError('VoiceSettings', 'clearCache', error, 'warning');
     }
   },
 

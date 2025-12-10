@@ -1,6 +1,8 @@
 import { create } from "zustand";
 import { useShallow } from "zustand/shallow";
 import * as SecureStore from "expo-secure-store";
+import { logError } from '@/utils/errorHelpers';
+import { useWebSocketStore } from './websocket';
 
 interface Member {
   id: string;
@@ -25,6 +27,7 @@ interface Member {
   church_id: string;
   church_name?: string;
   profile_photo_url?: string; // From API
+  photo_url?: string; // Alias for profile_photo_url
   avatar_url?: string; // Alias for avatar
   is_active?: boolean; // From API
 }
@@ -51,6 +54,39 @@ interface AuthState {
 const TOKEN_KEY = "auth_token";
 const MEMBER_KEY = "auth_member";
 
+// Guard against concurrent initialization calls
+let initializationPromise: Promise<void> | null = null;
+
+/**
+ * SEC-M4 FIX: Minimal member fields to store locally
+ * Only essential fields for auth/display - no sensitive PII
+ */
+interface MinimalMember {
+  id: string;
+  church_id: string;
+  full_name: string;
+  church_name?: string;
+  phone_whatsapp?: string;
+  email?: string;
+  profile_photo_url?: string;
+}
+
+/**
+ * Extract minimal fields from full member object for secure storage
+ * Reduces PII exposure if device is compromised
+ */
+function extractMinimalMember(member: Member): MinimalMember {
+  return {
+    id: member.id,
+    church_id: member.church_id,
+    full_name: member.full_name || member.name || '',
+    church_name: member.church_name,
+    phone_whatsapp: member.phone_whatsapp,
+    email: member.email,
+    profile_photo_url: member.profile_photo_url,
+  };
+}
+
 export const useAuthStore = create<AuthState>((set) => ({
   token: null,
   member: null,
@@ -65,8 +101,10 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   setMember: async (member: Member) => {
-    // Fix: Await SecureStore operation to ensure data persistence before state update
-    await SecureStore.setItemAsync(MEMBER_KEY, JSON.stringify(member));
+    // SEC-M4 FIX: Store only minimal PII in SecureStore
+    const minimalMember = extractMinimalMember(member);
+    await SecureStore.setItemAsync(MEMBER_KEY, JSON.stringify(minimalMember));
+    // Keep full member in memory state for current session
     set({
       member,
       churchId: member.church_id,
@@ -75,8 +113,10 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   login: async (token: string, member: Member) => {
+    // SEC-M4 FIX: Store only minimal PII in SecureStore
+    const minimalMember = extractMinimalMember(member);
     await SecureStore.setItemAsync(TOKEN_KEY, token);
-    await SecureStore.setItemAsync(MEMBER_KEY, JSON.stringify(member));
+    await SecureStore.setItemAsync(MEMBER_KEY, JSON.stringify(minimalMember));
     set({
       token,
       member,
@@ -87,7 +127,17 @@ export const useAuthStore = create<AuthState>((set) => ({
     });
   },
 
+  /**
+   * SECURITY: Demo login is only available in development builds.
+   * In production, this function throws an error to prevent unauthorized access.
+   */
   loginDemo: async () => {
+    // SECURITY: Only allow demo login in development mode
+    if (!__DEV__) {
+      console.error('[Auth] Demo login attempted in production build - blocked');
+      throw new Error('Demo login is not available in production');
+    }
+
     // Demo member data
     const demoMember: Member = {
       id: "demo-member-001",
@@ -127,6 +177,15 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   logout: async () => {
+    // SEC-M9 FIX: Disconnect WebSocket on logout to prevent lingering connections
+    try {
+      const wsStore = useWebSocketStore.getState();
+      wsStore.disconnect();
+    } catch (error) {
+      // Don't fail logout if WebSocket disconnect fails
+      logError('Auth', 'disconnectWebSocket', error, 'warning');
+    }
+
     await SecureStore.deleteItemAsync(TOKEN_KEY);
     await SecureStore.deleteItemAsync(MEMBER_KEY);
     set({
@@ -140,23 +199,58 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   initialize: async () => {
-    try {
-      const token = await SecureStore.getItemAsync(TOKEN_KEY);
-      const memberStr = await SecureStore.getItemAsync(MEMBER_KEY);
-      const member = memberStr ? JSON.parse(memberStr) : null;
-
-      set({
-        token,
-        member,
-        churchId: member?.church_id ?? null,
-        sessionChurchId: member?.church_id ?? null,
-        isAuthenticated: !!token,
-        isLoading: false,
-      });
-    } catch (error) {
-      console.error("Failed to initialize auth:", error);
-      set({ isLoading: false });
+    // Prevent concurrent initialization - return existing promise if already initializing
+    if (initializationPromise) {
+      return initializationPromise;
     }
+
+    initializationPromise = (async () => {
+      try {
+        const token = await SecureStore.getItemAsync(TOKEN_KEY);
+        const memberStr = await SecureStore.getItemAsync(MEMBER_KEY);
+        const member = memberStr ? JSON.parse(memberStr) : null;
+
+        // SEC FIX: Check if JWT is expired before accepting it
+        let isTokenValid = !!token;
+        if (token && token !== 'demo-jwt-token-for-testing') {
+          try {
+            const parts = token.split('.');
+            if (parts.length === 3) {
+              const payload = JSON.parse(atob(parts[1]));
+              const exp = payload.exp;
+              if (exp && Date.now() >= exp * 1000) {
+                // Token expired - clear credentials
+                console.log('[Auth] JWT expired during initialization, clearing credentials');
+                await SecureStore.deleteItemAsync(TOKEN_KEY);
+                await SecureStore.deleteItemAsync(MEMBER_KEY);
+                isTokenValid = false;
+              }
+            }
+          } catch (decodeError) {
+            logError('Auth', 'decodeJWT', decodeError, 'info');
+            // Continue with token - backend will reject if invalid
+          }
+        }
+
+        // Atomic state update to prevent partial state
+        set({
+          token: isTokenValid ? token : null,
+          member: isTokenValid ? member : null,
+          churchId: isTokenValid ? (member?.church_id ?? null) : null,
+          sessionChurchId: isTokenValid ? (member?.church_id ?? null) : null,
+          isAuthenticated: isTokenValid,
+          isLoading: false,
+        });
+      } catch (error) {
+        logError('Auth', 'initialize', error, 'critical');
+        set({ isLoading: false });
+      } finally {
+        // DATA FIX: Remove setTimeout race condition - use flag-based approach
+        initializationPromise = null;
+      }
+    })();
+
+    return initializationPromise;
   },
 }));
 

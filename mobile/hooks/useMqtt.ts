@@ -18,6 +18,7 @@ import { useMQTTStore, TypingUser } from '@/stores/mqtt';
 import { useAuthStore } from '@/stores/auth';
 import type { CommunityMessage, CommunityWithStatus } from '@/types/communities';
 import { QUERY_KEYS } from '@/constants/api';
+import { logError } from '@/utils/errorHelpers';
 
 // Stable empty array reference to prevent infinite re-renders
 const EMPTY_TYPING_USERS: TypingUser[] = [];
@@ -65,7 +66,7 @@ export function useMQTT() {
         });
       } catch (error) {
         // Log error but don't crash - MQTT is optional
-        console.warn('[useMQTT] Connection failed (non-fatal):', error);
+        logError('MQTT', 'connect', error, 'warning');
         setConnectionError((error as Error).message);
       } finally {
         setConnecting(false);
@@ -247,6 +248,7 @@ function handleGlobalMessage(
     return;
   }
 
+  const churchId = topicParts[1];
   const communityId = topicParts[3];
 
   // Handle new messages - update community list
@@ -255,11 +257,11 @@ function handleGlobalMessage(
 
     // Update my communities list with new last message
     queryClient.setQueryData<CommunityWithStatus[]>(
-      QUERY_KEYS.MY_COMMUNITIES,
+      QUERY_KEYS.MY_COMMUNITIES(churchId),
       (oldData) => {
         if (!oldData) return oldData;
 
-        return oldData.map((community) => {
+        return oldData.map((community: CommunityWithStatus) => {
           if (community.id !== communityId) return community;
 
           // Update last message and increment unread (if not from self)

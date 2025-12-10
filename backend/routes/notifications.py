@@ -109,13 +109,23 @@ async def unregister_device_token(
     Unregister device token (mark as inactive).
 
     Called when user logs out from mobile app.
+    Accepts either internal token ID or the actual FCM/Expo push token.
     """
+    from urllib.parse import unquote
+
     church_id = get_session_church_id(current_user)
     member_id = current_user.get("sub")
 
+    # URL decode the token_id in case it's an Expo push token (ExponentPushToken[...])
+    decoded_token = unquote(token_id)
+
+    # Try to find by internal ID first, then by fcm_token
     result = await db.device_tokens.update_one(
         {
-            "id": token_id,
+            "$or": [
+                {"id": decoded_token},
+                {"fcm_token": decoded_token}
+            ],
             "member_id": member_id,
             "church_id": church_id
         },
@@ -128,10 +138,9 @@ async def unregister_device_token(
     )
 
     if result.modified_count == 0:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Device token not found"
-        )
+        # Token might already be inactive or not found - don't fail logout
+        logger.warning(f"Device token not found or already inactive for member {member_id}")
+        return None
 
     logger.info(f"Device token unregistered for member {member_id}")
     return None
@@ -190,7 +199,7 @@ async def update_notification_preferences(
 
     # Build update data (only include non-None fields)
     update_data = {
-        k: v for k, v in prefs_data.dict().items() if v is not None
+        k: v for k, v in prefs_data.model_dump().items() if v is not None
     }
 
     if not update_data:
@@ -250,6 +259,51 @@ async def get_notification_history(
         notif.pop("_id", None)
 
     return notifications
+
+
+@router.get("/unread-count")
+async def get_unread_notification_count(
+    current_user: dict = Depends(get_current_user),
+    db: AsyncIOMotorDatabase = Depends(get_db)
+):
+    """Get count of unread notifications for member."""
+    church_id = get_session_church_id(current_user)
+    member_id = current_user.get("sub")
+
+    count = await db.push_notifications.count_documents({
+        "member_id": member_id,
+        "church_id": church_id,
+        "is_read": False
+    })
+
+    return {"count": count}
+
+
+@router.patch("/history/mark-all-read", status_code=status.HTTP_204_NO_CONTENT)
+async def mark_all_notifications_as_read(
+    current_user: dict = Depends(get_current_user),
+    db: AsyncIOMotorDatabase = Depends(get_db)
+):
+    """Mark all notifications as read for member."""
+    church_id = get_session_church_id(current_user)
+    member_id = current_user.get("sub")
+
+    await db.push_notifications.update_many(
+        {
+            "member_id": member_id,
+            "church_id": church_id,
+            "is_read": False
+        },
+        {
+            "$set": {
+                "is_read": True,
+                "read_at": datetime.utcnow()
+            }
+        }
+    )
+
+    logger.info(f"All notifications marked as read for member {member_id}")
+    return None
 
 
 @router.patch("/history/{notification_id}/read", status_code=status.HTTP_204_NO_CONTENT)

@@ -14,15 +14,26 @@ import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import Constants from 'expo-constants';
-import { router } from 'expo-router';
 import { api } from '@/services/api';
 import { isViewingChat } from '@/stores/navigation';
 import { useCallStore } from '@/stores/call';
 import { CallType, CallSignalType } from '@/types/call';
+import { navigateTo } from '@/utils/navigation';
 
 // =============================================================================
 // TYPES
 // =============================================================================
+
+/**
+ * Additional data fields that may be present in notification payload
+ * Used for incoming calls and other rich notifications
+ */
+export interface NotificationDataPayload {
+  room_name?: string;
+  community_name?: string;
+  livekit_url?: string;
+  [key: string]: string | undefined;
+}
 
 export interface PushNotificationPayload {
   type:
@@ -46,7 +57,7 @@ export interface PushNotificationPayload {
   callerAvatar?: string;
   title: string;
   body: string;
-  data?: Record<string, string>;
+  data?: NotificationDataPayload;
 }
 
 export interface NotificationChannels {
@@ -285,12 +296,12 @@ export async function registerPushToken(
     }
 
     // Register token with backend
+    // Backend expects 'fcm_token' as the key (Expo Push token format: ExponentPushToken[...])
     await api.post('/api/notifications/register-device', {
-      member_id: memberId,
-      church_id: churchId,
-      push_token: pushToken,
+      fcm_token: pushToken,
       device_type: Platform.OS,
       device_name: Device.deviceName,
+      app_version: Constants.expoConfig?.version ?? '1.0.0',
     });
 
     console.log('Push token registered successfully');
@@ -306,9 +317,10 @@ export async function unregisterPushToken(): Promise<boolean> {
     const pushToken = await getExpoPushToken();
     if (!pushToken) return true;
 
-    await api.post('/api/notifications/unregister-device', {
-      push_token: pushToken,
-    });
+    // Backend expects DELETE with token_id in path, but we use token directly
+    // The backend route is DELETE /api/notifications/unregister-device/{token_id}
+    // We encode the token as it may contain special characters
+    await api.delete(`/api/notifications/unregister-device/${encodeURIComponent(pushToken)}`);
 
     return true;
   } catch (error) {
@@ -328,48 +340,48 @@ function handleNotificationNavigation(data: PushNotificationPayload): void {
     case 'reaction':
       if (data.communityId) {
         if (data.subgroupId) {
-          router.push(`/community/${data.communityId}/subgroups/${data.subgroupId}` as any);
+          navigateTo(`/community/${data.communityId}/subgroups/${data.subgroupId}`);
         } else {
-          router.push(`/community/${data.communityId}/chat` as any);
+          navigateTo(`/community/${data.communityId}/chat`);
         }
       }
       break;
 
     case 'community_invite':
       if (data.communityId) {
-        router.push(`/community/${data.communityId}` as any);
+        navigateTo(`/community/${data.communityId}`);
       }
       break;
 
     case 'event_reminder':
       if (data.eventId) {
-        router.push(`/events/${data.eventId}` as any);
+        navigateTo(`/events/${data.eventId}`);
       }
       break;
 
     case 'announcement':
-      router.push('/(tabs)/home' as any);
+      navigateTo('/(tabs)/home');
       break;
 
     case 'prayer_request':
-      router.push('/(tabs)/home' as any);
+      navigateTo('/(tabs)/home');
       break;
 
     case 'incoming_call':
       // Incoming call handled by IncomingCallOverlay via call store
       // Navigation to call screen happens after accepting
       if (data.callId) {
-        router.push(`/call/${data.callId}` as any);
+        navigateTo(`/call/${data.callId}`);
       }
       break;
 
     case 'missed_call':
       // Navigate to call history
-      router.push('/call-history' as any);
+      navigateTo('/call-history');
       break;
 
     default:
-      router.push('/(tabs)/home' as any);
+      navigateTo('/(tabs)/home');
   }
 }
 
@@ -379,6 +391,7 @@ function handleNotificationNavigation(data: PushNotificationPayload): void {
 
 let notificationReceivedListener: Notifications.Subscription | null = null;
 let notificationResponseListener: Notifications.Subscription | null = null;
+let listenersInitialized = false; // Guard against duplicate setup
 
 // =============================================================================
 // ANDROID CALL NOTIFICATION ACTION HANDLERS
@@ -396,7 +409,7 @@ async function handleCallAcceptFromNotification(data: PushNotificationPayload): 
     handleIncomingCall({
       type: CallSignalType.INVITE,
       call_id: data.callId!,
-      room_name: (data.data as any)?.room_name || data.callId!,
+      room_name: data.data?.room_name || data.callId!,
       call_type: data.callType === 'video' ? CallType.VIDEO : CallType.VOICE,
       caller: {
         id: data.callerId || '',
@@ -405,8 +418,8 @@ async function handleCallAcceptFromNotification(data: PushNotificationPayload): 
       },
       callee_ids: [],
       community_id: data.communityId || null,
-      community_name: (data.data as any)?.community_name || null,
-      livekit_url: (data.data as any)?.livekit_url || '',
+      community_name: data.data?.community_name || null,
+      livekit_url: data.data?.livekit_url || '',
       timestamp: new Date().toISOString(),
     });
 
@@ -414,7 +427,7 @@ async function handleCallAcceptFromNotification(data: PushNotificationPayload): 
     await acceptCall(data.callId!);
 
     // Navigate to call screen
-    router.push(`/call/${data.callId}` as any);
+    navigateTo(`/call/${data.callId}`);
   } catch (error) {
     console.error('[Push] Failed to accept call from notification:', error);
   }
@@ -432,7 +445,7 @@ async function handleCallDeclineFromNotification(data: PushNotificationPayload):
     handleIncomingCall({
       type: CallSignalType.INVITE,
       call_id: data.callId!,
-      room_name: (data.data as any)?.room_name || data.callId!,
+      room_name: data.data?.room_name || data.callId!,
       call_type: data.callType === 'video' ? CallType.VIDEO : CallType.VOICE,
       caller: {
         id: data.callerId || '',
@@ -441,8 +454,8 @@ async function handleCallDeclineFromNotification(data: PushNotificationPayload):
       },
       callee_ids: [],
       community_id: data.communityId || null,
-      community_name: (data.data as any)?.community_name || null,
-      livekit_url: (data.data as any)?.livekit_url || '',
+      community_name: data.data?.community_name || null,
+      livekit_url: data.data?.livekit_url || '',
       timestamp: new Date().toISOString(),
     });
 
@@ -454,6 +467,27 @@ async function handleCallDeclineFromNotification(data: PushNotificationPayload):
 }
 
 export function setupNotificationListeners(): () => void {
+  // Guard against duplicate listener registration (prevents memory leak)
+  if (listenersInitialized) {
+    console.log('[Push] Notification listeners already initialized, skipping duplicate setup');
+    return () => {
+      // Return no-op cleanup - actual cleanup happens when first setup's cleanup is called
+    };
+  }
+
+  // Clean up any existing listeners before setting up new ones
+  if (notificationReceivedListener) {
+    notificationReceivedListener.remove();
+    notificationReceivedListener = null;
+  }
+  if (notificationResponseListener) {
+    notificationResponseListener.remove();
+    notificationResponseListener = null;
+  }
+
+  listenersInitialized = true;
+  console.log('[Push] Setting up notification listeners');
+
   // Handle notifications received while app is in foreground
   notificationReceivedListener = Notifications.addNotificationReceivedListener(
     (notification) => {
@@ -471,7 +505,7 @@ export function setupNotificationListeners(): () => void {
         handleIncomingCall({
           type: CallSignalType.INVITE,
           call_id: data.callId,
-          room_name: (data.data as any)?.room_name || data.callId,
+          room_name: data.data?.room_name || data.callId,
           call_type: data.callType === 'video' ? CallType.VIDEO : CallType.VOICE,
           caller: {
             id: data.callerId || '',
@@ -480,8 +514,8 @@ export function setupNotificationListeners(): () => void {
           },
           callee_ids: [],
           community_id: data.communityId || null,
-          community_name: (data.data as any)?.community_name || null,
-          livekit_url: (data.data as any)?.livekit_url || '',
+          community_name: data.data?.community_name || null,
+          livekit_url: data.data?.livekit_url || '',
           timestamp: new Date().toISOString(),
         });
 
@@ -534,7 +568,7 @@ export function setupNotificationListeners(): () => void {
           handleIncomingCall({
             type: CallSignalType.INVITE,
             call_id: data.callId,
-            room_name: (data.data as any)?.room_name || data.callId,
+            room_name: data.data?.room_name || data.callId,
             call_type: data.callType === 'video' ? CallType.VIDEO : CallType.VOICE,
             caller: {
               id: data.callerId || '',
@@ -543,8 +577,8 @@ export function setupNotificationListeners(): () => void {
             },
             callee_ids: [],
             community_id: data.communityId || null,
-            community_name: (data.data as any)?.community_name || null,
-            livekit_url: (data.data as any)?.livekit_url || '',
+            community_name: data.data?.community_name || null,
+            livekit_url: data.data?.livekit_url || '',
             timestamp: new Date().toISOString(),
           });
         }
@@ -561,11 +595,68 @@ export function setupNotificationListeners(): () => void {
 
   // Return cleanup function
   return () => {
+    console.log('[Push] Cleaning up notification listeners');
     if (notificationReceivedListener) {
       notificationReceivedListener.remove();
+      notificationReceivedListener = null;
     }
     if (notificationResponseListener) {
       notificationResponseListener.remove();
+      notificationResponseListener = null;
+    }
+    // Reset flag to allow re-initialization if needed
+    listenersInitialized = false;
+  };
+}
+
+// =============================================================================
+// TOKEN REFRESH LISTENER
+// =============================================================================
+
+let tokenRefreshListener: Notifications.Subscription | null = null;
+
+/**
+ * Set up FCM token refresh listener
+ * CRITICAL: Expo push tokens can change during app updates or token invalidation
+ * This listener ensures the backend always has the current valid token
+ */
+export function setupTokenRefreshListener(
+  memberId: string,
+  churchId: string
+): () => void {
+  // Clean up existing listener if any
+  if (tokenRefreshListener) {
+    tokenRefreshListener.remove();
+    tokenRefreshListener = null;
+  }
+
+  // Listen for token changes
+  tokenRefreshListener = Notifications.addPushTokenListener(async (tokenData) => {
+    console.log('[Push] Token refreshed, updating backend');
+
+    try {
+      // Register the new token with backend
+      await api.post('/api/notifications/register-device', {
+        fcm_token: tokenData.data,
+        device_type: Platform.OS,
+        device_name: Device.deviceName,
+        app_version: Constants.expoConfig?.version ?? '1.0.0',
+      });
+
+      console.log('[Push] New token registered successfully');
+    } catch (error) {
+      console.error('[Push] Failed to register refreshed token:', error);
+    }
+  });
+
+  console.log('[Push] Token refresh listener set up');
+
+  // Return cleanup function
+  return () => {
+    if (tokenRefreshListener) {
+      tokenRefreshListener.remove();
+      tokenRefreshListener = null;
+      console.log('[Push] Token refresh listener cleaned up');
     }
   };
 }

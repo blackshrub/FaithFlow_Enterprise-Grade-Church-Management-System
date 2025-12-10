@@ -34,6 +34,14 @@ export default function SelectChurchScreen() {
   );
 
   const handleSelectChurch = async (churchId: string) => {
+    // SEC-M3 FIX: Validate churchId is in the valid list before proceeding
+    const validChurch = MOCK_CHURCHES.find(c => c.id === churchId);
+    if (!validChurch) {
+      console.error('[SelectChurch] Invalid church ID attempted:', churchId);
+      showErrorToast('Error', 'Invalid church selection');
+      return;
+    }
+
     setSelectedChurch(churchId);
 
     try {
@@ -104,6 +112,9 @@ export default function SelectChurchScreen() {
                     onPress={() => handleSelectChurch(church.id)}
                     disabled={sendOTP.isPending}
                     className="p-4"
+                    accessible
+                    accessibilityRole="button"
+                    accessibilityLabel={`Select ${church.name} church in ${church.location}`}
                   >
                     <VStack space="xs" className="flex-row items-center justify-between">
                       <VStack space="xs" className="flex-1">

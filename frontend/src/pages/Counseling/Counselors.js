@@ -193,7 +193,7 @@ const CounselorsPage = () => {
       <Card>
         <CardContent className="pt-6">
           {isLoading ? (
-            <div className="text-center py-8 text-gray-500">Loading...</div>
+            <div className="text-center py-8 text-gray-500">{t('common.loading')}</div>
           ) : filteredCounselors.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               {showInactive ? t('counseling.no_counselors') : 'No active counselors. Toggle "Show Inactive" to see all.'}

@@ -486,10 +486,10 @@ async def update_church_content(
     updates["updated_by"] = current_user["id"]
     updates["updated_at"] = datetime.now()
 
-    await collection.update_one({"id": content_id}, {"$set": updates})
+    await collection.update_one({"id": content_id, "church_id": church_id}, {"$set": updates})
 
     # Return updated
-    content = await collection.find_one({"id": content_id})
+    content = await collection.find_one({"id": content_id, "church_id": church_id})
     content.pop("_id", None)
     return {"status": "success", "content": content}
 

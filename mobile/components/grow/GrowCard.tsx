@@ -58,6 +58,9 @@ export function GrowCard({ type, title, subtitle, delay = 0 }: GrowCardProps) {
     <View className="flex-1 min-h-[140px]">
       <Pressable
         onPress={handlePress}
+        accessible
+        accessibilityRole="button"
+        accessibilityLabel={`Open ${title} - ${subtitle}`}
         className="flex-1 min-h-[140px] rounded-2xl overflow-hidden active:opacity-90 active:scale-[0.98]"
         style={{ ...shadows.lg }}
       >

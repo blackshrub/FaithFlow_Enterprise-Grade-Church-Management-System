@@ -219,8 +219,8 @@ export function sendCompanionMessageStream(
 
             // Create minimal metadata for compatibility
             const metadata: AIResponseMetadata = {
-              intent: 'general_faith' as any,
-              persona: 'adult' as any,
+              intent: 'general_faith',
+              persona: 'adult',
               model: 'claude-sonnet-4-5-20250929',
               modelTier: 'balanced',
               temperature: 0.4,
@@ -246,24 +246,26 @@ export function sendCompanionMessageStream(
         if (isCancelled) return;
 
         console.error('[Faith Assistant] SSE error:', event);
-        const error = {
-          type: 'stream' as const,
+        const error: AIError = {
+          type: 'network',
           message: event.message || 'Stream connection error',
+          messageId: 'ai.error.stream',
           retryable: true,
           originalError: new Error(event.message || 'Stream error'),
         };
-        callbacks.onError?.(error as any);
+        callbacks.onError?.(error);
         eventSource?.close();
       });
     } catch (error: any) {
       console.error('[Faith Assistant] Stream setup error:', error);
-      const aiError = {
-        type: 'network' as const,
+      const aiError: AIError = {
+        type: 'network',
         message: error.message || 'Failed to connect to server',
+        messageId: 'ai.error.network',
         retryable: true,
         originalError: error,
       };
-      callbacks.onError?.(aiError as any);
+      callbacks.onError?.(aiError);
     }
   };
 

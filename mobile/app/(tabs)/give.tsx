@@ -31,6 +31,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useFocusKey } from '@/hooks/useFocusAnimation';
+import { useRequireAuth } from '@/hooks/useRequireAuth';
 import * as Haptics from 'expo-haptics';
 import * as Clipboard from 'expo-clipboard';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -208,6 +209,9 @@ function GiveScreen() {
   const scrollRef = useRef<Animated.ScrollView>(null);
   const otherPurposeInputRef = useRef<TextInput>(null);
 
+  // SEC-M7: Route protection - redirect to login if not authenticated
+  useRequireAuth();
+
   // Focus key - triggers child animation replay on tab focus (no container opacity flash)
   const focusKey = useFocusKey();
 
@@ -254,7 +258,7 @@ function GiveScreen() {
   const getPurposeString = useCallback(() => {
     if (!selectedType) return '';
     if (selectedType === 'other') return otherPurpose || t('give.other');
-    return t(`give.${selectedType}` as any);
+    return t(`give.${selectedType}`);
   }, [selectedType, otherPurpose, t]);
 
   // Navigate between steps
@@ -386,7 +390,15 @@ function GiveScreen() {
         },
         onError: () => {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-          Alert.alert(t('give.error'), t('give.submitError'));
+          // UX FIX: Add retry option for payment failures
+          Alert.alert(
+            t('give.error'),
+            t('give.submitError'),
+            [
+              { text: t('common.cancel'), style: 'cancel' },
+              { text: t('common.retry'), onPress: handleSubmit },
+            ]
+          );
         },
       }
     );
@@ -460,6 +472,9 @@ function GiveScreen() {
                   <Pressable
                     onPress={() => setShowHistory(true)}
                     className="flex-row items-center gap-2 bg-white/15 px-4 py-2.5 rounded-full active:scale-95 active:opacity-90 mt-1"
+                    accessible
+                    accessibilityRole="button"
+                    accessibilityLabel={t('give.viewHistory', 'View giving history')}
                   >
                     <History size={16} color={Colors.white} />
                   </Pressable>
@@ -525,7 +540,7 @@ function GiveScreen() {
             ) : (
               /* Compact header with centered title for steps 2-4 */
               <View className="flex-row items-center justify-between py-3">
-                <Pressable onPress={showHistory ? () => setShowHistory(false) : goBack} className="w-11 h-11 rounded-full bg-white/10 items-center justify-center">
+                <Pressable onPress={showHistory ? () => setShowHistory(false) : goBack} className="w-11 h-11 rounded-full bg-white/10 items-center justify-center" accessible accessibilityRole="button" accessibilityLabel={showHistory ? t('common.close', 'Close') : t('common.back', 'Go back')}>
                   <ArrowLeft size={24} color={Colors.white} />
                 </Pressable>
                 <View className="flex-1 items-center px-3">
@@ -539,6 +554,9 @@ function GiveScreen() {
                 <Pressable
                   onPress={() => setShowHistory(!showHistory)}
                   className={`w-11 h-11 rounded-full items-center justify-center ${showHistory ? 'bg-white' : 'bg-white/10'}`}
+                  accessible
+                  accessibilityRole="button"
+                  accessibilityLabel={showHistory ? t('give.backToGiving', 'Back to giving') : t('give.viewHistory', 'View giving history')}
                 >
                   <History size={20} color={showHistory ? Colors.gradient.start : Colors.white} />
                 </Pressable>
@@ -645,11 +663,11 @@ function GiveScreen() {
                 </LinearGradient>
 
                 <Text className={`text-base font-bold ${isSelected ? 'text-[#0f3460]' : 'text-neutral-800'}`}>
-                  {t(type.labelKey as any)}
+                  {t(type.labelKey)}
                 </Text>
 
                 <Text numberOfLines={2} className="text-[13px] text-neutral-500 mt-1.5 leading-[18px]">
-                  {t(type.subtitleKey as any)}
+                  {t(type.subtitleKey)}
                 </Text>
               </PremiumCard3>
             </Animated.View>
@@ -690,6 +708,9 @@ function GiveScreen() {
           onPress={handleProceedToAmount}
           disabled={!selectedType || (selectedType === 'other' && !otherPurpose.trim())}
           className={`rounded-[18px] overflow-hidden ${(!selectedType || (selectedType === 'other' && !otherPurpose.trim())) ? 'opacity-50' : ''}`}
+          accessible
+          accessibilityRole="button"
+          accessibilityLabel={t('give.continue', 'Continue to amount')}
         >
           <LinearGradient
             colors={
@@ -746,7 +767,7 @@ function GiveScreen() {
               <Icon size={16} color="#FFFFFF" />
             </LinearGradient>
             <Text className="text-sm font-semibold text-neutral-700">
-              {selectedType === 'other' ? otherPurpose : t(typeConfig.labelKey as any)}
+              {selectedType === 'other' ? otherPurpose : t(typeConfig.labelKey)}
             </Text>
           </View>
         </Animated.View>
@@ -852,6 +873,9 @@ function GiveScreen() {
           onPress={handleProceedToPayment}
           disabled={!amount}
           className={`rounded-[18px] overflow-hidden ${!amount ? 'opacity-50' : ''}`}
+          accessible
+          accessibilityRole="button"
+          accessibilityLabel={t('give.continue', 'Continue to payment method')}
         >
           <LinearGradient
             colors={amount ? [Colors.gradient.start, Colors.gradient.end] : [Colors.neutral[300], Colors.neutral[400]]}
@@ -941,8 +965,8 @@ function GiveScreen() {
 
               {paymentConfig?.manual_bank_accounts?.map((account, index) => (
                 <View key={index} className="bg-white rounded-xl p-4 mb-2.5">
-                  <Text className="text-[15px] font-semibold text-neutral-900">{account.bank_name}</Text>
-                  <Text className="text-[13px] text-neutral-500 mt-0.5 mb-2">{account.account_holder}</Text>
+                  <Text className="text-[15px] font-semibold text-neutral-900" numberOfLines={1}>{account.bank_name}</Text>
+                  <Text className="text-[13px] text-neutral-500 mt-0.5 mb-2" numberOfLines={1}>{account.account_holder}</Text>
                   <View className="flex-row items-center justify-between">
                     <Text className="text-[17px] font-bold text-neutral-800" style={{ letterSpacing: 1 }}>
                       {account.account_number}
@@ -950,6 +974,9 @@ function GiveScreen() {
                     <Pressable
                       onPress={() => handleCopyAccount(account.account_number)}
                       className="flex-row items-center gap-1.5 px-3 py-2.5 bg-neutral-100 rounded-lg"
+                      accessible
+                      accessibilityRole="button"
+                      accessibilityLabel={t('common.copy', `Copy account number ${account.account_number}`)}
                     >
                       <Copy size={16} color="#0f3460" />
                       <Text className="text-[13px] font-semibold text-[#0f3460]">{t('common.copy')}</Text>
@@ -962,6 +989,9 @@ function GiveScreen() {
               <Pressable
                 onPress={() => handleMethodSelect('bank_transfer')}
                 className="bg-[#0f3460] rounded-xl py-3 items-center mt-2.5"
+                accessible
+                accessibilityRole="button"
+                accessibilityLabel={t('give.confirmTransfer', 'Confirm manual transfer')}
               >
                 <Text className="text-[15px] font-semibold text-white">{t('give.confirmTransfer')}</Text>
               </Pressable>
@@ -1011,7 +1041,7 @@ function GiveScreen() {
                   <TypeIcon size={14} color={Colors.white} />
                 </LinearGradient>
                 <Text className="text-[15px] font-semibold text-neutral-800" numberOfLines={1}>
-                  {selectedType === 'other' ? otherPurpose : t(typeConfig.labelKey as any)}
+                  {selectedType === 'other' ? otherPurpose : t(typeConfig.labelKey)}
                 </Text>
               </View>
             </View>
@@ -1084,6 +1114,9 @@ function GiveScreen() {
               shadowRadius: 12,
               elevation: 6,
             }}
+            accessible
+            accessibilityRole="button"
+            accessibilityLabel={isSubmitting ? t('give.processing', 'Processing giving') : t('give.completeGiving', 'Complete giving')}
           >
             <LinearGradient
               colors={[Colors.accent.goldDark, Colors.accent.gold]}
@@ -1138,6 +1171,9 @@ function GiveScreen() {
                   ? 'bg-[#0f3460] border-[#0f3460]'
                   : 'bg-white border-neutral-200'
               }`}
+              accessible
+              accessibilityRole="button"
+              accessibilityLabel={t('give.filterBy', `Filter by ${f.label}`)}
             >
               <Text className={`text-sm font-semibold ${historyFilter === f.key ? 'text-white' : 'text-neutral-600'}`}>
                 {f.label}
@@ -1148,8 +1184,18 @@ function GiveScreen() {
 
         {/* History list */}
         {historyLoading ? (
-          <View className="py-[60px] items-center">
-            <Text className="text-[15px] text-neutral-500">{t('common.loading')}</Text>
+          <View className="gap-3">
+            {/* Skeleton loader for history list */}
+            {[1, 2, 3].map((i) => (
+              <View key={i} className="bg-white rounded-2xl p-4 flex-row items-center gap-3.5">
+                <View className="w-10 h-10 rounded-[10px] bg-neutral-200 animate-pulse" />
+                <View className="flex-1 gap-2">
+                  <View className="w-32 h-4 rounded bg-neutral-200 animate-pulse" />
+                  <View className="w-24 h-3 rounded bg-neutral-100 animate-pulse" />
+                </View>
+                <View className="w-20 h-5 rounded bg-neutral-200 animate-pulse" />
+              </View>
+            ))}
           </View>
         ) : !history || history.length === 0 ? (
           <View className="py-[60px] items-center">
@@ -1186,7 +1232,7 @@ function GiveScreen() {
                       </View>
 
                       <View className="flex-1">
-                        <Text className="text-[15px] font-semibold text-neutral-900">{tx.fund_name}</Text>
+                        <Text className="text-[15px] font-semibold text-neutral-900" numberOfLines={1}>{tx.fund_name}</Text>
                         <Text className="text-[13px] text-neutral-500 mt-0.5">
                           {new Date(tx.created_at).toLocaleDateString('id-ID', {
                             day: 'numeric',
@@ -1211,6 +1257,9 @@ function GiveScreen() {
         <Pressable
           onPress={() => setShowHistory(false)}
           className="flex-row items-center justify-center gap-2.5 bg-neutral-100 rounded-[14px] py-4 mt-5"
+          accessible
+          accessibilityRole="button"
+          accessibilityLabel={t('give.makeNewGift', 'Make a new gift')}
         >
           <Heart size={18} color="#0f3460" />
           <Text className="text-[15px] font-semibold text-[#0f3460]">{t('give.makeNewGift')}</Text>

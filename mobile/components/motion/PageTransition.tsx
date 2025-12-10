@@ -106,14 +106,15 @@ export function PageTransition({
   }, [duration, skipEnterAnimation, progress, handleAnimationComplete]);
 
   // Animated style using worklet for 60fps performance
-  const animatedStyle = useAnimatedStyle(() => {
+  // Note: Type assertion needed due to Reanimated's DefaultStyle not matching RN transform types
+  const animatedStyle = useAnimatedStyle((): ViewStyle => {
     // If animation is complete, return simple style
     if (progress.value >= 1) {
       return {
         flex: 1,
         opacity: 1,
         transform: [{ translateX: 0 }, { scale: 1 }],
-      };
+      } as ViewStyle;
     }
 
     // Calculate shared axis values
@@ -122,8 +123,8 @@ export function PageTransition({
     return {
       flex: 1,
       opacity: values.opacity,
-      transform: values.transform as any,
-    };
+      transform: values.transform,
+    } as ViewStyle;
   }, []);
 
   return (
@@ -182,14 +183,15 @@ export function PageTransitionControlled({
   isEntering = true,
   style,
 }: PageTransitionControlledProps) {
-  const animatedStyle = useAnimatedStyle(() => {
+  // Note: Type assertion needed due to Reanimated's DefaultStyle not matching RN transform types
+  const animatedStyle = useAnimatedStyle((): ViewStyle => {
     const values = sharedAxisXEnter(progress.value);
 
     return {
       flex: 1,
       opacity: values.opacity,
-      transform: values.transform as any,
-    };
+      transform: values.transform,
+    } as ViewStyle;
   }, []);
 
   return (

@@ -150,7 +150,7 @@ export const OptimizedImage = memo(function OptimizedImage({
     if (context !== 'custom') {
       return getResponsiveImageSize(context);
     }
-    return { width: '100%' as any, height: 200 };
+    return { width: '100%' as const, height: 200 };
   }, [width, height, aspectRatio, context]);
 
   // Determine source

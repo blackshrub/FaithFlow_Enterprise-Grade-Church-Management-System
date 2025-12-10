@@ -85,6 +85,9 @@ export function SearchBar() {
             onPress={handleClear}
             className="active:opacity-50 ml-2"
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            accessible
+            accessibilityRole="button"
+            accessibilityLabel={t('common.clearSearch')}
           >
             <View
               className="w-6 h-6 rounded-full items-center justify-center"

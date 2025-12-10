@@ -121,7 +121,14 @@ export function GrowFab({ size = 56 }: GrowFabProps) {
       />
 
       {/* Main FAB */}
-      <Pressable onPress={handlePress} style={{ zIndex: 10 }}>
+      <Pressable
+        onPress={handlePress}
+        style={{ zIndex: 10 }}
+        accessible
+        accessibilityRole="button"
+        accessibilityLabel={isOpen ? "Close menu" : "Open Grow menu"}
+        accessibilityHint="Opens Bible and Explore options"
+      >
         <Animated.View
           style={[
             {

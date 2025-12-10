@@ -24,7 +24,7 @@ function EventFilters({ filters, onFiltersChange }) {
 
   return (
     <div className="bg-white rounded-lg shadow p-4">
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-4" data-testid="filter-button">
         <div className="flex items-center gap-2">
           <Filter className="h-5 w-5 text-gray-400" />
           <h3 className="font-medium text-gray-900">{t('events.event.filterByType')}</h3>
@@ -65,6 +65,7 @@ function EventFilters({ filters, onFiltersChange }) {
         {/* Status Filters */}
         <div className="flex gap-2">
           <button
+            data-testid="filter-upcoming"
             onClick={() => handleFilterChange('is_active', true)}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
               filters.is_active === true

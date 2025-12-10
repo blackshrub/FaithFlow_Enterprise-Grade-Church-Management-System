@@ -26,6 +26,8 @@ from routes import (
     companion,  # Faith Assistant (Pendamping Iman)
     crash_logs,  # Mobile crash logging
     whatsapp_templates,  # WhatsApp message templates
+    broadcast_campaigns,  # Push notification broadcasts
+    notification_templates,  # Reusable notification templates
 )
 
 # Import Explore routes
@@ -83,14 +85,15 @@ else:
 API_PREFIX = os.environ.get('API_PREFIX', '/api')
 
 # MongoDB connection with optimized connection pooling
-# Reduced pool size: 50 max per worker (4 workers = 200 total) is sufficient for most loads
-# This reduces memory overhead while maintaining good throughput
+# Conservative pool size: 10 max per worker (4 workers = 40 total)
+# This prevents overwhelming MongoDB while maintaining good throughput
+# For high-traffic deployments, scale horizontally (more workers) rather than deeper pools
 mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(
     mongo_url,
-    maxPoolSize=50,            # Maximum connections in pool (reduced from 100)
-    minPoolSize=5,             # Minimum connections to maintain (reduced from 10)
-    maxIdleTimeMS=45000,       # Close idle connections after 45s
+    maxPoolSize=10,            # Maximum connections in pool per worker
+    minPoolSize=1,             # Minimum connections to maintain
+    maxIdleTimeMS=30000,       # Close idle connections after 30s
     waitQueueTimeoutMS=5000,   # Timeout waiting for connection
     serverSelectionTimeoutMS=5000,  # Timeout for server selection
     connectTimeoutMS=10000,    # Timeout for initial connection
@@ -177,6 +180,8 @@ api_router.include_router(rating_review.router)  # Event ratings & reviews
 api_router.include_router(prayer_requests.router)  # Prayer requests (mobile compatibility)
 api_router.include_router(member_care.router)  # Member care requests (admin CRUD)
 api_router.include_router(whatsapp_templates.router)  # WhatsApp message templates (admin)
+api_router.include_router(broadcast_campaigns.router)  # Push notification broadcast campaigns
+api_router.include_router(notification_templates.router)  # Reusable notification templates
 api_router.include_router(community_messages.mobile_router)  # Community messaging (mobile)
 api_router.include_router(community_subgroups.mobile_router)  # Community sub-groups (mobile)
 api_router.include_router(call.router)  # Voice/Video calling (LiveKit)
@@ -443,7 +448,14 @@ async def startup_event():
             await pubsub_service.start_subscriber()
             logger.info("✓ Redis pub/sub subscriber started")
         except Exception as e:
-            logger.warning(f"⚠ Redis connection failed: {e} - falling back to in-memory")
+            # In production, Redis is required for coordinated rate limiting across instances
+            is_production = os.environ.get("ENVIRONMENT", "").lower() in ("production", "prod")
+            if is_production:
+                logger.error(f"❌ CRITICAL: Redis connection failed in production: {e}")
+                logger.error("   Rate limiting will not be coordinated across instances!")
+                logger.error("   Set REDIS_URL or fix Redis connection before deploying.")
+            else:
+                logger.warning(f"⚠ Redis connection failed: {e} - falling back to in-memory (OK for development)")
 
     # Upgrade rate limiting to Redis if available (middleware already added at startup)
     if redis_client:

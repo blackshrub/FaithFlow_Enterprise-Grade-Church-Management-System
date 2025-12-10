@@ -27,6 +27,7 @@ import { colors } from '@/constants/theme';
 import type { BibleBook } from '@/types/api';
 import { useBibleStore } from '@/stores/bibleStore';
 import { getBibleLoader } from '@/lib/bibleLoaderOptimized';
+import type { BibleTranslation } from '@/types/bible';
 import { getBookNumber } from '@/lib/bibleBookLookup';
 
 type SortOrder = 'original' | 'alphabetical';
@@ -119,7 +120,7 @@ export function BookSelectorModal({
     if (selectedBook && selectedChapter) {
       const fetchVerseCount = async () => {
         try {
-          const loader = getBibleLoader(currentVersion as any);
+          const loader = getBibleLoader(currentVersion as BibleTranslation);
           if (!loader.isLoaded()) {
             await loader.load();
           }
@@ -358,7 +359,7 @@ export function BookSelectorModal({
                             {book.name_local || book.name}
                           </Text>
                           <Text className="text-gray-500 text-xs text-center mt-1">
-                            {book.chapter_count} {t('bible.chapters' as any) || 'chapters'}
+                            {book.chapter_count} {t('bible.chapters') || 'chapters'}
                           </Text>
                         </>
                       ) : (
@@ -367,7 +368,7 @@ export function BookSelectorModal({
                             {book.name_local || book.name}
                           </Text>
                           <Text className="text-gray-500 text-sm">
-                            {book.chapter_count} {t('bible.chapters' as any) || 'chapters'}
+                            {book.chapter_count} {t('bible.chapters') || 'chapters'}
                           </Text>
                         </HStack>
                       )}

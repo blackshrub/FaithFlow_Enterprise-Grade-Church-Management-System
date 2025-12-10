@@ -56,6 +56,8 @@ declare module 'expo-router' {
 
 // Also extend @react-navigation/bottom-tabs if needed
 declare module '@react-navigation/bottom-tabs' {
+  import { StyleProp, ViewStyle } from 'react-native';
+
   interface BottomTabNavigationOptions {
     headerShown?: boolean;
     animation?: string;
@@ -63,6 +65,7 @@ declare module '@react-navigation/bottom-tabs' {
     lazy?: boolean;
     freezeOnBlur?: boolean;
     unmountOnBlur?: boolean;
+    sceneStyle?: StyleProp<ViewStyle>;
   }
 }
 

@@ -1,6 +1,6 @@
 import React, { forwardRef } from 'react';
 import type { VariantProps } from '@gluestack-ui/utils/nativewind-utils';
-import { Animated, Easing, Platform, View } from 'react-native';
+import { Animated, Easing, Platform, View, ViewStyle } from 'react-native';
 import { skeletonStyle, skeletonTextStyle } from './styles';
 
 type ISkeletonProps = React.ComponentProps<typeof View> &
@@ -38,10 +38,12 @@ const Skeleton = forwardRef<
   },
   ref
 ) {
-  const customStyle = {
-    ...(typeof style === 'object' ? style : {}),
-    ...(height !== undefined ? { height } : {}),
-    ...(width !== undefined ? { width } : {}),
+  // Build custom style with height/width overrides
+  // Type assertion needed for Animated.View style compatibility
+  const customStyle: ViewStyle = {
+    ...(typeof style === 'object' ? (style as ViewStyle) : {}),
+    ...(height !== undefined ? { height: height as ViewStyle['height'] } : {}),
+    ...(width !== undefined ? { width: width as ViewStyle['width'] } : {}),
   };
   const pulseAnim = new Animated.Value(1);
   const customTimingFunction = Easing.bezier(0.4, 0, 0.6, 1);
@@ -73,7 +75,7 @@ const Skeleton = forwardRef<
     Animated.loop(pulse).start();
     return (
       <Animated.View
-        style={[{ opacity: pulseAnim }, customStyle] as any}
+        style={[{ opacity: pulseAnim }, customStyle]}
         className={`${startColor} ${skeletonStyle({
           variant,
           class: className,

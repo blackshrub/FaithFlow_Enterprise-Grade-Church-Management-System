@@ -20,6 +20,7 @@
 import React, { useCallback, useRef, useEffect, memo } from 'react';
 import { View, Pressable } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
+import { useTranslation } from 'react-i18next';
 import * as Haptics from 'expo-haptics';
 import { ChevronLeft, ChevronRight } from 'lucide-react-native';
 
@@ -57,6 +58,7 @@ export function ChapterReader({
   onScroll,
   extraPaddingTop = 0,
 }: ChapterReaderProps) {
+  const { t } = useTranslation();
   const {
     preferences,
     getHighlight,
@@ -325,7 +327,7 @@ export function ChapterReader({
                     fontSize: 14,
                   }}
                 >
-                  Previous
+                  {t('bible.navigation.previous')}
                 </Text>
               </Pressable>
 
@@ -338,7 +340,7 @@ export function ChapterReader({
                     color: colors.gray[500],
                   }}
                 >
-                  Ch {chapter}/{totalChapters}
+                  {t('bible.navigation.chapterIndicator', { current: chapter, total: totalChapters })}
                 </Text>
               </View>
 
@@ -373,7 +375,7 @@ export function ChapterReader({
                     fontSize: 14,
                   }}
                 >
-                  Next
+                  {t('bible.navigation.next')}
                 </Text>
                 <Icon
                   as={ChevronRight}
@@ -412,7 +414,7 @@ export function ChapterReader({
                     marginRight: 8,
                   }}
                 >
-                  Continue Reading
+                  {t('bible.navigation.continueReading')}
                 </Text>
                 <Icon
                   as={ChevronRight}
@@ -428,7 +430,7 @@ export function ChapterReader({
                   fontWeight: '500',
                 }}
               >
-                Next: {book} {chapter + 1}
+                {t('bible.navigation.nextChapter', { book, chapter: chapter + 1 })}
               </Text>
             </View>
           ) : (
@@ -447,7 +449,7 @@ export function ChapterReader({
                   marginBottom: 4,
                 }}
               >
-                End of {book}
+                {t('bible.navigation.endOfBook', { book })}
               </Text>
               <Text
                 style={{
@@ -455,7 +457,7 @@ export function ChapterReader({
                   color: colors.gray[500],
                 }}
               >
-                Select another book to continue
+                {t('bible.navigation.selectAnotherBook')}
               </Text>
             </View>
           )

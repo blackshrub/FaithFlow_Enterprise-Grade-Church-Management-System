@@ -56,6 +56,7 @@ import {
   DEFAULT_STT_PROVIDER,
   type STTProvider,
 } from '@/constants/voice';
+import { logError } from '@/utils/errorHelpers';
 
 export interface UseVoiceOptions {
   /** Default language hint for better accuracy */
@@ -194,7 +195,7 @@ export function useVoice(options?: UseVoiceOptions): UseVoiceReturn {
           }
           // Reset audio (properly tracked with operationPromise now)
           resetAudio().catch((err) => {
-            if (__DEV__) console.warn('[useVoice] Background audio reset failed:', err);
+            logError('Voice', 'backgroundAudioReset', err, 'warning');
           });
           // Also re-check permission in case it was revoked
           preCheckPermission();
@@ -270,6 +271,7 @@ export function useVoice(options?: UseVoiceOptions): UseVoiceReturn {
         onSpeechComplete?.();
       } catch (err) {
         setIsSpeaking(false);
+        logError('Voice', 'speak', err, 'warning');
         handleError(err instanceof Error ? err : new Error(String(err)));
       }
     },
@@ -284,6 +286,7 @@ export function useVoice(options?: UseVoiceOptions): UseVoiceReturn {
       await stopSpeaking();
       setIsSpeaking(false);
     } catch (err) {
+      logError('Voice', 'stopSpeech', err, 'warning');
       handleError(err instanceof Error ? err : new Error(String(err)));
     }
   }, [handleError]);
@@ -295,6 +298,7 @@ export function useVoice(options?: UseVoiceOptions): UseVoiceReturn {
     try {
       await pauseSpeaking();
     } catch (err) {
+      logError('Voice', 'pauseSpeech', err, 'warning');
       handleError(err instanceof Error ? err : new Error(String(err)));
     }
   }, [handleError]);
@@ -306,6 +310,7 @@ export function useVoice(options?: UseVoiceOptions): UseVoiceReturn {
     try {
       await resumeSpeaking();
     } catch (err) {
+      logError('Voice', 'resumeSpeech', err, 'warning');
       handleError(err instanceof Error ? err : new Error(String(err)));
     }
   }, [handleError]);
@@ -353,6 +358,7 @@ export function useVoice(options?: UseVoiceOptions): UseVoiceReturn {
         setRecordingDuration(elapsed);
       }, 250);
     } catch (err) {
+      logError('Voice', 'startListening', err, 'warning');
       handleError(err instanceof Error ? err : new Error(String(err)));
     }
   }, [sttApiKey, handleError, onMeteringUpdate]);
@@ -418,6 +424,7 @@ export function useVoice(options?: UseVoiceOptions): UseVoiceReturn {
       } catch (err) {
         setIsListening(false);
         setRecordingDuration(0);
+        logError('Voice', 'stopListening', err, 'warning');
         handleError(err instanceof Error ? err : new Error(String(err)));
         return null;
       }
@@ -449,6 +456,7 @@ export function useVoice(options?: UseVoiceOptions): UseVoiceReturn {
       setIsListening(false);
       setRecordingDuration(0);
     } catch (err) {
+      logError('Voice', 'cancelListening', err, 'warning');
       handleError(err instanceof Error ? err : new Error(String(err)));
     }
   }, [handleError]);

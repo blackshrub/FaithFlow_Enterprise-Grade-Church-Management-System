@@ -95,7 +95,7 @@ class EnvironmentValidator:
                     name,
                     False,
                     severity,
-                    f"'{name}' appears to use a weak/default value. Generate a strong secret with: openssl rand -hex 32"
+                    f"'{name}' appears to use a weak/default value. Generate a strong secret with: openssl rand -hex 64"
                 )
                 return False
 
@@ -105,7 +105,7 @@ class EnvironmentValidator:
                 name,
                 False,
                 severity,
-                f"'{name}' is too short ({len(value)} chars). Minimum {min_length} chars required. Generate with: openssl rand -hex 32"
+                f"'{name}' is too short ({len(value)} chars). Minimum {min_length} chars required. Generate with: openssl rand -hex 64"
             )
             return False
 
@@ -189,8 +189,8 @@ class EnvironmentValidator:
         self.validate_required("DB_NAME")
         self.validate_required("JWT_SECRET")
 
-        # Secret strength
-        self.validate_secret_strength("JWT_SECRET", min_length=32)
+        # Secret strength - HS256 requires strong secrets, 64+ bytes recommended
+        self.validate_secret_strength("JWT_SECRET", min_length=64)
 
         # URL formats
         self.validate_url("MONGO_URL")
@@ -256,7 +256,7 @@ def validate_environment(exit_on_failure: bool = True) -> bool:
     if not passed:
         print("\n❌ CRITICAL: Environment validation failed!")
         print("   Fix the issues above before starting the application.")
-        print("   Tip: Generate secure secrets with: openssl rand -hex 32\n")
+        print("   Tip: Generate secure secrets with: openssl rand -hex 64\n")
 
         if exit_on_failure:
             sys.exit(1)

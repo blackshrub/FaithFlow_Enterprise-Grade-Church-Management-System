@@ -428,7 +428,7 @@ const ButtonGroup = React.forwardRef<
           class: className,
           space,
           isAttached: isAttached as boolean,
-          flexDirection: flexDirection as any,
+          flexDirection: flexDirection as "row" | "column" | "row-reverse" | "column-reverse",
         })}
         {...props}
         ref={ref}

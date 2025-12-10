@@ -244,8 +244,8 @@ async def delete_beginning_balance(
             status_code=status.HTTP_403_FORBIDDEN
         )
     
-    await db.beginning_balances.delete_one({"id": balance_id})
-    
+    await db.beginning_balances.delete_one({"id": balance_id, "church_id": church_id})
+
     await audit_service.log_action(
         db=db, church_id=church_id, user_id=user_id,
         action_type="delete", module="beginning_balance",

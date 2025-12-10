@@ -102,6 +102,26 @@ class AuthService:
                 
                 session_church_id = login_data.church_id
                 logger.info(f"Super admin {login_data.email} logging in to church: {church['name']}")
+
+                # Audit log for super_admin church access (security monitoring)
+                try:
+                    from services.audit_service import log_action
+                    await log_action(
+                        db=db,
+                        church_id=session_church_id,
+                        user_id=user['id'],
+                        action_type="login",
+                        module="auth",
+                        description=f"Super admin '{login_data.email}' accessed church '{church['name']}'",
+                        after_data={
+                            "super_admin_id": user['id'],
+                            "super_admin_email": login_data.email,
+                            "church_id": session_church_id,
+                            "church_name": church['name']
+                        }
+                    )
+                except Exception as audit_error:
+                    logger.warning(f"Failed to create audit log for super_admin login: {audit_error}")
             else:
                 # Regular users - MUST have church_id in database
                 user_church_id = user.get('church_id')
@@ -190,12 +210,15 @@ class AuthService:
             )
             
             # Create access token (use API key ID as sub, role as 'api')
+            # Include church_id and session_church_id for consistent multi-tenant handling
             access_token = create_access_token(
                 data={
                     "sub": api_key_doc['id'],
                     "email": username,  # For compatibility
                     "role": "admin",  # API keys have admin access
-                    "type": "api_key"
+                    "type": "api_key",
+                    "church_id": api_key_doc['church_id'],  # Fixed church for API keys
+                    "session_church_id": api_key_doc['church_id']  # API keys always operate on their church
                 }
             )
             

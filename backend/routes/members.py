@@ -64,7 +64,7 @@ async def quick_add_member(
         if existing:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Member with this phone number already exists: {existing.get('full_name', 'Unknown')}"
+                detail="A member with this phone number already exists"
             )
     
     # Split full_name for first/last
@@ -598,7 +598,7 @@ async def permanent_delete_member(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
     
     # Permanently delete
-    await db.members.delete_one({"id": member_id})
+    await db.members.delete_one({"id": member_id, "church_id": member.get('church_id')})
     
     logger.warning(f"Member PERMANENTLY deleted: {member.get('full_name')} by {current_user.get('full_name')}")
     
@@ -727,8 +727,9 @@ async def upload_member_photo(
             }
         )
 
-    content = await file.read()
-    if len(content) > 5 * 1024 * 1024:  # 5MB limit
+    # Check file size BEFORE reading into memory to prevent DoS
+    MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
+    if file.size and file.size > MAX_FILE_SIZE:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail={
@@ -736,6 +737,19 @@ async def upload_member_photo(
                 "message": "Image must be less than 5MB"
             }
         )
+
+    # Read with size limit (streaming read to prevent memory exhaustion)
+    content = b''
+    async for chunk in file:
+        content += chunk
+        if len(content) > MAX_FILE_SIZE:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={
+                    "error_code": "FILE_SIZE_EXCEEDED",
+                    "message": "Image must be less than 5MB"
+                }
+            )
 
     # Upload to SeaweedFS
     try:
@@ -1022,7 +1036,9 @@ async def backfill_personal_id_codes(
         ]
     }
 
-    members_without_code = await db.members.find(query, {"id": 1}).to_list(None)
+    # Limit batch size to prevent DoS - admin can re-run for remaining members
+    MAX_BATCH_SIZE = 5000
+    members_without_code = await db.members.find(query, {"id": 1}).to_list(MAX_BATCH_SIZE)
 
     if not members_without_code:
         return {

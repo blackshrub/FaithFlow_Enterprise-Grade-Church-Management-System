@@ -103,9 +103,9 @@ async def update_seat_layout(
     update_data = layout_data.model_dump(mode='json', exclude_unset=True)
     if update_data:
         update_data['updated_at'] = datetime.now().isoformat()
-        await db.seat_layouts.update_one({"id": layout_id}, {"$set": update_data})
-    
-    updated_layout = await db.seat_layouts.find_one({"id": layout_id}, {"_id": 0})
+        await db.seat_layouts.update_one({"id": layout_id, "church_id": layout.get('church_id')}, {"$set": update_data})
+
+    updated_layout = await db.seat_layouts.find_one({"id": layout_id, "church_id": layout.get('church_id')}, {"_id": 0})
     if isinstance(updated_layout.get('created_at'), str):
         updated_layout['created_at'] = datetime.fromisoformat(updated_layout['created_at'])
     if isinstance(updated_layout.get('updated_at'), str):
@@ -129,5 +129,5 @@ async def delete_seat_layout(
     if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') != layout.get('church_id'):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
     
-    await db.seat_layouts.delete_one({"id": layout_id})
+    await db.seat_layouts.delete_one({"id": layout_id, "church_id": layout.get('church_id')})
     return None

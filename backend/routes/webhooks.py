@@ -2,12 +2,112 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from typing import List
 from datetime import datetime
+from urllib.parse import urlparse
+import ipaddress
+import socket
 
 from models.webhook_config import WebhookConfig, WebhookConfigCreate, WebhookConfigUpdate
 from utils.dependencies import get_db, require_admin, get_current_user
 from services.webhook_service import webhook_service
 
 router = APIRouter(prefix="/webhooks", tags=["Webhooks"])
+
+
+def validate_webhook_url(url: str) -> None:
+    """
+    Validate webhook URL to prevent SSRF attacks.
+    Blocks internal/private IPs, localhost, common internal domains, and dangerous ports.
+    """
+    if not url.startswith(('http://', 'https://')):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Webhook URL must start with http:// or https://"
+        )
+
+    parsed = urlparse(url)
+    hostname = parsed.hostname
+    port = parsed.port
+
+    if not hostname:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid webhook URL"
+        )
+
+    # Block dangerous ports (common internal services)
+    blocked_ports = {
+        22,     # SSH
+        23,     # Telnet
+        25,     # SMTP
+        6379,   # Redis
+        27017,  # MongoDB
+        5432,   # PostgreSQL
+        3306,   # MySQL
+        11211,  # Memcached
+        9200,   # Elasticsearch
+        2375,   # Docker
+        2376,   # Docker TLS
+        8080,   # Common internal services
+        9090,   # Prometheus
+        3000,   # Grafana
+        5672,   # RabbitMQ
+        15672,  # RabbitMQ Management
+    }
+
+    if port and port in blocked_ports:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Webhook URL cannot use port {port} (internal service port)"
+        )
+
+    # Block common internal hostnames
+    blocked_hostnames = [
+        'localhost', '127.0.0.1', '0.0.0.0', '::1',
+        'metadata.google.internal', '169.254.169.254',  # Cloud metadata
+        'kubernetes.default', 'kubernetes.default.svc',
+        'metadata', 'metadata.internal',  # AWS/GCP metadata
+        'instance-data', 'computeMetadata',  # Cloud metadata aliases
+        'redis', 'mongodb', 'postgres', 'mysql', 'memcached',  # Common container names
+    ]
+
+    hostname_lower = hostname.lower()
+    if hostname_lower in blocked_hostnames:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Webhook URL cannot point to internal services"
+        )
+
+    # Block internal domains
+    blocked_suffixes = (
+        '.local', '.internal', '.localhost', '.svc', '.cluster.local',
+        '.docker', '.container', '.kube', '.k8s',
+    )
+    if hostname_lower.endswith(blocked_suffixes):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Webhook URL cannot point to internal domains"
+        )
+
+    # Try to resolve hostname and check if it's a private IP
+    try:
+        resolved_ips = socket.getaddrinfo(hostname, None)
+        for family, _, _, _, addr in resolved_ips:
+            ip_str = addr[0]
+            try:
+                ip = ipaddress.ip_address(ip_str)
+                if ip.is_private or ip.is_loopback or ip.is_reserved or ip.is_link_local:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail="Webhook URL cannot point to private or internal IP addresses"
+                    )
+            except ValueError:
+                continue
+    except socket.gaierror:
+        # DNS resolution failed - hostname doesn't exist
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Could not resolve webhook URL hostname"
+        )
 
 
 @router.get("/", response_model=List[WebhookConfig])
@@ -48,12 +148,8 @@ async def create_webhook(
             detail="Access denied"
         )
     
-    # Validate webhook URL (basic check)
-    if not webhook_data.webhook_url.startswith('http'):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Webhook URL must start with http:// or https://"
-        )
+    # Validate webhook URL (SSRF protection)
+    validate_webhook_url(webhook_data.webhook_url)
     
     # Create webhook
     webhook = WebhookConfig(**webhook_data.model_dump())
@@ -176,8 +272,8 @@ async def delete_webhook(
         )
     
     # Delete webhook config
-    await db.webhook_configs.delete_one({"id": webhook_id})
-    
+    await db.webhook_configs.delete_one({"id": webhook_id, "church_id": webhook.get('church_id')})
+
     # Also delete associated queue items and logs
     await db.webhook_queue.delete_many({"webhook_config_id": webhook_id})
     await db.webhook_delivery_logs.delete_many({"webhook_config_id": webhook_id})

@@ -77,13 +77,14 @@ const MOCK_GIVING_HISTORY: GivingHistoryItem[] = [
 
 /**
  * Fetch active funds - INSTANT in demo mode
+ * DATA-C2 FIX: Uses church-scoped query keys
  */
 export function useFunds() {
-  const { token } = useAuthStore();
+  const { token, churchId } = useAuthStore();
   const isDemoMode = token === 'demo-jwt-token-for-testing';
 
   return useQuery({
-    queryKey: QUERY_KEYS.FUNDS,
+    queryKey: QUERY_KEYS.FUNDS(churchId || ''),
     queryFn: async () => {
       if (isDemoMode) return MOCK_FUNDS;
       const response = await api.get<Fund[]>('/api/giving/funds');
@@ -97,10 +98,13 @@ export function useFunds() {
 
 /**
  * Fetch payment configuration
+ * DATA-C2 FIX: Uses church-scoped query keys
  */
 export function usePaymentConfig() {
+  const { churchId } = useAuthStore();
+
   return useQuery({
-    queryKey: QUERY_KEYS.PAYMENT_CONFIG,
+    queryKey: QUERY_KEYS.PAYMENT_CONFIG(churchId || ''),
     queryFn: async () => {
       const response = await api.get<PaymentConfig>('/api/giving/config');
       return response.data;
@@ -115,25 +119,29 @@ export function usePaymentConfig() {
  *
  * React 19 Pattern: Combines React Query optimistic updates with
  * useOptimistic for instant UI feedback while API processes payment
+ *
+ * SECURITY FIX: Uses church-scoped query keys for cache operations
  */
 export function useCreateGiving() {
   const queryClient = useQueryClient();
+  const { churchId } = useAuthStore();
 
   return useMutation({
     mutationFn: async (data: CreateGivingRequest) => {
-      const response = await api.post<CreateGivingResponse>('/api/giving/create', data);
+      // Fixed: Backend uses /api/giving/submit not /api/giving/create
+      const response = await api.post<CreateGivingResponse>('/api/giving/submit', data);
       return response.data;
     },
 
     // Optimistic update: Add pending transaction to history cache immediately
     onMutate: async (newGiving) => {
-      // Cancel outgoing refetches
-      await queryClient.cancelQueries({ queryKey: QUERY_KEYS.GIVING_HISTORY });
-      await queryClient.cancelQueries({ queryKey: QUERY_KEYS.GIVING_SUMMARY });
+      // Cancel outgoing refetches - use church-scoped keys
+      await queryClient.cancelQueries({ queryKey: QUERY_KEYS.GIVING_HISTORY(churchId || '') });
+      await queryClient.cancelQueries({ queryKey: QUERY_KEYS.GIVING_SUMMARY(churchId || '') });
 
-      // Snapshot previous values for rollback
-      const previousHistory = queryClient.getQueryData<GivingHistoryItem[]>(QUERY_KEYS.GIVING_HISTORY);
-      const previousSummary = queryClient.getQueryData<GivingSummary>(QUERY_KEYS.GIVING_SUMMARY);
+      // Snapshot previous values for rollback - use church-scoped keys
+      const previousHistory = queryClient.getQueryData<GivingHistoryItem[]>(QUERY_KEYS.GIVING_HISTORY(churchId || ''));
+      const previousSummary = queryClient.getQueryData<GivingSummary>(QUERY_KEYS.GIVING_SUMMARY(churchId || ''));
 
       // Create optimistic transaction
       const optimisticTransaction: GivingHistoryItem = {
@@ -152,15 +160,15 @@ export function useCreateGiving() {
         updated_at: new Date().toISOString(),
       };
 
-      // Optimistically update history
+      // Optimistically update history - use church-scoped keys
       queryClient.setQueryData<GivingHistoryItem[]>(
-        QUERY_KEYS.GIVING_HISTORY,
+        QUERY_KEYS.GIVING_HISTORY(churchId || ''),
         (old) => old ? [optimisticTransaction, ...old] : [optimisticTransaction]
       );
 
-      // Optimistically update summary
+      // Optimistically update summary - use church-scoped keys
       if (previousSummary) {
-        queryClient.setQueryData<GivingSummary>(QUERY_KEYS.GIVING_SUMMARY, {
+        queryClient.setQueryData<GivingSummary>(QUERY_KEYS.GIVING_SUMMARY(churchId || ''), {
           ...previousSummary,
           total_given: previousSummary.total_given + newGiving.amount,
           total_transactions: previousSummary.total_transactions + 1,
@@ -171,20 +179,21 @@ export function useCreateGiving() {
       return { previousHistory, previousSummary };
     },
 
-    // Rollback on error
+    // Rollback on error - use church-scoped keys
     onError: (_error, _newGiving, context) => {
       if (context?.previousHistory) {
-        queryClient.setQueryData(QUERY_KEYS.GIVING_HISTORY, context.previousHistory);
+        queryClient.setQueryData(QUERY_KEYS.GIVING_HISTORY(churchId || ''), context.previousHistory);
       }
       if (context?.previousSummary) {
-        queryClient.setQueryData(QUERY_KEYS.GIVING_SUMMARY, context.previousSummary);
+        queryClient.setQueryData(QUERY_KEYS.GIVING_SUMMARY(churchId || ''), context.previousSummary);
       }
     },
 
     // Refetch after success or error to ensure consistency
+    // SECURITY: Scope invalidation to current church only
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.GIVING_HISTORY });
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.GIVING_SUMMARY });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.GIVING_HISTORY(churchId || '') });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.GIVING_SUMMARY(churchId || '') });
     },
   });
 }
@@ -205,13 +214,16 @@ function getFundNameFromId(fundId: string): string {
 
 /**
  * Fetch giving history - INSTANT in demo mode
+ *
+ * SECURITY FIX: Uses church-scoped query keys to prevent cross-tenant cache collision
  */
 export function useGivingHistory(status?: PaymentStatus) {
-  const { token } = useAuthStore();
+  const { token, churchId } = useAuthStore();
   const isDemoMode = token === 'demo-jwt-token-for-testing';
 
   return useQuery({
-    queryKey: status ? [...QUERY_KEYS.GIVING_HISTORY, status] : QUERY_KEYS.GIVING_HISTORY,
+    // SECURITY: Use church-scoped query key function
+    queryKey: status ? [...QUERY_KEYS.GIVING_HISTORY(churchId || ''), status] : QUERY_KEYS.GIVING_HISTORY(churchId || ''),
     queryFn: async () => {
       if (isDemoMode) {
         return status
@@ -230,13 +242,16 @@ export function useGivingHistory(status?: PaymentStatus) {
 
 /**
  * Fetch giving summary - INSTANT in demo mode
+ *
+ * SECURITY FIX: Uses church-scoped query keys to prevent cross-tenant cache collision
  */
 export function useGivingSummary() {
-  const { token } = useAuthStore();
+  const { token, churchId } = useAuthStore();
   const isDemoMode = token === 'demo-jwt-token-for-testing';
 
   return useQuery({
-    queryKey: QUERY_KEYS.GIVING_SUMMARY,
+    // SECURITY: Use church-scoped query key function
+    queryKey: QUERY_KEYS.GIVING_SUMMARY(churchId || ''),
     queryFn: async () => {
       if (isDemoMode) return MOCK_GIVING_SUMMARY;
       const response = await api.get<GivingSummary>('/api/giving/summary');
@@ -250,10 +265,13 @@ export function useGivingSummary() {
 
 /**
  * Fetch single transaction
+ * DATA-C2 FIX: Uses church-scoped query keys
  */
 export function useTransaction(transactionId: string) {
+  const { churchId } = useAuthStore();
+
   return useQuery({
-    queryKey: [...QUERY_KEYS.TRANSACTION_DETAIL, transactionId],
+    queryKey: QUERY_KEYS.TRANSACTION_DETAIL(churchId || '', transactionId),
     queryFn: async () => {
       const response = await api.get<GivingTransaction>(`/api/giving/transaction/${transactionId}`);
       return response.data;
@@ -265,9 +283,11 @@ export function useTransaction(transactionId: string) {
 
 /**
  * Check payment status
+ * DATA-C2 FIX: Uses church-scoped query keys
  */
 export function useCheckPaymentStatus() {
   const queryClient = useQueryClient();
+  const { churchId } = useAuthStore();
 
   return useMutation({
     mutationFn: async (transactionId: string) => {
@@ -276,12 +296,12 @@ export function useCheckPaymentStatus() {
     },
 
     onSuccess: (data) => {
-      // Update transaction in cache
-      queryClient.setQueryData([...QUERY_KEYS.TRANSACTION_DETAIL, data._id], data);
+      // Update transaction in cache - use church-scoped key
+      queryClient.setQueryData(QUERY_KEYS.TRANSACTION_DETAIL(churchId || '', data._id), data);
 
-      // Invalidate history to show updated status
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.GIVING_HISTORY });
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.GIVING_SUMMARY });
+      // Invalidate history to show updated status - use church-scoped keys
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.GIVING_HISTORY(churchId || '') });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.GIVING_SUMMARY(churchId || '') });
     },
   });
 }

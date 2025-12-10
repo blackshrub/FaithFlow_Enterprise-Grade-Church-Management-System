@@ -278,7 +278,7 @@ const CounselingDashboard = () => {
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <div className="text-center py-8 text-gray-500">Loading...</div>
+            <div className="text-center py-8 text-gray-500">{t('common.loading')}</div>
           ) : upcomingAppointments.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               No Appointments Found

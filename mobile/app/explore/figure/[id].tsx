@@ -233,10 +233,14 @@ export default function BibleFigureScreen() {
                 {figure.key_events.map((event, index) => {
                   const eventTitle = typeof event.title === 'string'
                     ? event.title
-                    : ((event.title as any)?.[contentLanguage] || (event.title as any)?.en || '');
+                    : event.title && typeof event.title === 'object'
+                    ? (event.title[contentLanguage as keyof typeof event.title] || event.title.en || '')
+                    : '';
                   const eventDescription = typeof event.description === 'string'
                     ? event.description
-                    : ((event.description as any)?.[contentLanguage] || (event.description as any)?.en || '');
+                    : event.description && typeof event.description === 'object'
+                    ? (event.description[contentLanguage as keyof typeof event.description] || event.description.en || '')
+                    : '';
                   const isLast = index === (figure.key_events?.length ?? 0) - 1;
 
                   return (

@@ -21,6 +21,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { navigateTo } from '@/utils/navigation';
 import Animated from 'react-native-reanimated';
 import { withPremiumMotionV10 } from '@/hoc';
 import { PMotionV10 } from '@/components/motion/premium-motion';
@@ -61,7 +62,16 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallbackText, AvatarImage } from '@/components/ui/avatar';
 import { ScrollView } from '@/components/ui/scroll-view';
 
-import { useCommunity, useCommunityMembers, useLeaveCommunity, useUpdateNotificationPreference } from '@/hooks/useCommunities';
+import {
+  useCommunity,
+  useCommunityMembers,
+  useLeaveCommunity,
+  useUpdateNotificationPreference,
+  usePromoteMember,
+  useDemoteMember,
+  useKickMember,
+  type MemberRole as CommunityMemberRole,
+} from '@/hooks/useCommunities';
 import { useAuthStore } from '@/stores/auth';
 import { colors, spacing, borderRadius } from '@/constants/theme';
 import type { CommunityMember } from '@/types/communities';
@@ -101,6 +111,11 @@ function CommunityInfoScreen() {
 
   // Notification preference mutation
   const notificationMutation = useUpdateNotificationPreference();
+
+  // Member management mutations
+  const promoteMutation = usePromoteMember();
+  const demoteMutation = useDemoteMember();
+  const kickMutation = useKickMember();
 
   // Initialize notifications from community data
   useEffect(() => {
@@ -195,30 +210,76 @@ function CommunityInfoScreen() {
   // Member management handlers
   const handlePromoteMember = useCallback((memberId: string, newRole: MemberRole) => {
     const memberToChange = members.find((m: CommunityMember) => m.id === memberId);
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    // TODO: Call API to promote member
-    Alert.alert('Success', `${memberToChange?.full_name} promoted to ${newRole}`);
-    setShowMemberManagement(false);
-    setSelectedMember(null);
-  }, [members]);
+
+    promoteMutation.mutate(
+      { communityId: id, memberId, newRole: newRole as CommunityMemberRole },
+      {
+        onSuccess: () => {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          Alert.alert('Success', `${memberToChange?.full_name} promoted to ${newRole}`);
+          setShowMemberManagement(false);
+          setSelectedMember(null);
+        },
+        onError: (error) => {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+          Alert.alert(t('common.error'), t('communities.info.promoteFailed', 'Failed to promote member'));
+        },
+      }
+    );
+  }, [members, promoteMutation, id, t]);
 
   const handleDemoteMember = useCallback((memberId: string, newRole: MemberRole) => {
     const memberToChange = members.find((m: CommunityMember) => m.id === memberId);
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    // TODO: Call API to demote member
-    Alert.alert('Success', `${memberToChange?.full_name} demoted to ${newRole}`);
-    setShowMemberManagement(false);
-    setSelectedMember(null);
-  }, [members]);
+
+    demoteMutation.mutate(
+      { communityId: id, memberId, newRole: newRole as CommunityMemberRole },
+      {
+        onSuccess: () => {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          Alert.alert('Success', `${memberToChange?.full_name} demoted to ${newRole}`);
+          setShowMemberManagement(false);
+          setSelectedMember(null);
+        },
+        onError: (error) => {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+          Alert.alert(t('common.error'), t('communities.info.demoteFailed', 'Failed to demote member'));
+        },
+      }
+    );
+  }, [members, demoteMutation, id, t]);
 
   const handleKickMember = useCallback((memberId: string) => {
     const memberToKick = members.find((m: CommunityMember) => m.id === memberId);
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    // TODO: Call API to kick member
-    Alert.alert('Success', `${memberToKick?.full_name} has been removed from the community.`);
-    setShowMemberManagement(false);
-    setSelectedMember(null);
-  }, [members]);
+
+    Alert.alert(
+      t('communities.info.removeMember', 'Remove Member'),
+      t('communities.info.removeConfirm', { name: memberToKick?.full_name }),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('common.confirm'),
+          style: 'destructive',
+          onPress: () => {
+            kickMutation.mutate(
+              { communityId: id, memberId },
+              {
+                onSuccess: () => {
+                  Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                  Alert.alert('Success', `${memberToKick?.full_name} has been removed from the community.`);
+                  setShowMemberManagement(false);
+                  setSelectedMember(null);
+                },
+                onError: (error) => {
+                  Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+                  Alert.alert(t('common.error'), t('communities.info.kickFailed', 'Failed to remove member'));
+                },
+              }
+            );
+          },
+        },
+      ]
+    );
+  }, [members, kickMutation, id, t]);
 
   const handleMemberPress = useCallback((memberData: MemberType) => {
     setSelectedMember(memberData);
@@ -331,6 +392,9 @@ function CommunityInfoScreen() {
                 alignItems: 'center',
                 justifyContent: 'center',
               }}
+              accessible
+              accessibilityRole="button"
+              accessibilityLabel="Go back"
             >
               <Icon as={ArrowLeft} size="lg" className="text-white" />
             </Pressable>
@@ -404,9 +468,12 @@ function CommunityInfoScreen() {
               <Pressable
                 onPress={() => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  router.push(`/community/${id}/chat` as any);
+                  navigateTo(`/community/${id}/chat`);
                 }}
                 className="px-4 py-4 active:bg-gray-50"
+                accessible
+                accessibilityRole="button"
+                accessibilityLabel="Chat"
               >
                 <HStack className="justify-between items-center">
                   <HStack space="md" className="items-center">
@@ -418,7 +485,7 @@ function CommunityInfoScreen() {
                     </View>
                     <Text className="text-gray-900 font-medium">Chat</Text>
                   </HStack>
-                  <Icon as={ChevronRight} size="md" className="text-gray-400" />
+                  <Icon as={ChevronRight} size="md" className="text-gray-500" />
                 </HStack>
               </Pressable>
 
@@ -426,9 +493,12 @@ function CommunityInfoScreen() {
               <Pressable
                 onPress={() => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  router.push(`/community/${id}/announcements` as any);
+                  navigateTo(`/community/${id}/announcements`);
                 }}
                 className="px-4 py-4 border-t border-gray-100 active:bg-gray-50"
+                accessible
+                accessibilityRole="button"
+                accessibilityLabel="Announcements"
               >
                 <HStack className="justify-between items-center">
                   <HStack space="md" className="items-center">
@@ -440,7 +510,7 @@ function CommunityInfoScreen() {
                     </View>
                     <Text className="text-gray-900 font-medium">Announcements</Text>
                   </HStack>
-                  <Icon as={ChevronRight} size="md" className="text-gray-400" />
+                  <Icon as={ChevronRight} size="md" className="text-gray-500" />
                 </HStack>
               </Pressable>
 
@@ -448,9 +518,12 @@ function CommunityInfoScreen() {
               <Pressable
                 onPress={() => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  router.push(`/community/${id}/subgroups` as any);
+                  navigateTo(`/community/${id}/subgroups`);
                 }}
                 className="px-4 py-4 border-t border-gray-100 active:bg-gray-50"
+                accessible
+                accessibilityRole="button"
+                accessibilityLabel="Sub-groups"
               >
                 <HStack className="justify-between items-center">
                   <HStack space="md" className="items-center">
@@ -462,7 +535,7 @@ function CommunityInfoScreen() {
                     </View>
                     <Text className="text-gray-900 font-medium">Sub-groups</Text>
                   </HStack>
-                  <Icon as={ChevronRight} size="md" className="text-gray-400" />
+                  <Icon as={ChevronRight} size="md" className="text-gray-500" />
                 </HStack>
               </Pressable>
 
@@ -470,9 +543,12 @@ function CommunityInfoScreen() {
               <Pressable
                 onPress={() => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  router.push(`/community/${id}/search` as any);
+                  navigateTo(`/community/${id}/search`);
                 }}
                 className="px-4 py-4 border-t border-gray-100 active:bg-gray-50"
+                accessible
+                accessibilityRole="button"
+                accessibilityLabel="Search Messages"
               >
                 <HStack className="justify-between items-center">
                   <HStack space="md" className="items-center">
@@ -484,7 +560,7 @@ function CommunityInfoScreen() {
                     </View>
                     <Text className="text-gray-900 font-medium">Search Messages</Text>
                   </HStack>
-                  <Icon as={ChevronRight} size="md" className="text-gray-400" />
+                  <Icon as={ChevronRight} size="md" className="text-gray-500" />
                 </HStack>
               </Pressable>
 
@@ -493,9 +569,12 @@ function CommunityInfoScreen() {
                 <Pressable
                   onPress={() => {
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    router.push(`/community/${id}/settings` as any);
+                    navigateTo(`/community/${id}/settings`);
                   }}
                   className="px-4 py-4 border-t border-gray-100 active:bg-gray-50"
+                  accessible
+                  accessibilityRole="button"
+                  accessibilityLabel="Community Settings"
                 >
                   <HStack className="justify-between items-center">
                     <HStack space="md" className="items-center">
@@ -507,7 +586,7 @@ function CommunityInfoScreen() {
                       </View>
                       <Text className="text-gray-900 font-medium">Community Settings</Text>
                     </HStack>
-                    <Icon as={ChevronRight} size="md" className="text-gray-400" />
+                    <Icon as={ChevronRight} size="md" className="text-gray-500" />
                   </HStack>
                 </Pressable>
               )}
@@ -641,9 +720,12 @@ function CommunityInfoScreen() {
                     <Pressable
                       onPress={() => {
                         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                        router.push(`/community/${id}/members` as any);
+                        navigateTo(`/community/${id}/members`);
                       }}
                       className="py-3 items-center active:opacity-70"
+                      accessible
+                      accessibilityRole="button"
+                      accessibilityLabel={`View all ${members.length} members`}
                     >
                       <Text className="text-primary-600 font-medium">
                         View all {members.length} members
@@ -660,6 +742,9 @@ function CommunityInfoScreen() {
                       }}
                       className="py-3 px-4 mt-2 rounded-xl items-center active:opacity-70"
                       style={{ backgroundColor: colors.primary[50] }}
+                      accessible
+                      accessibilityRole="button"
+                      accessibilityLabel="Manage Members"
                     >
                       <HStack space="sm" className="items-center">
                         <Icon as={Settings} size="sm" style={{ color: colors.primary[600] }} />
@@ -681,6 +766,9 @@ function CommunityInfoScreen() {
               <Pressable
                 onPress={handleToggleNotifications}
                 className="px-4 py-4 active:bg-gray-50"
+                accessible
+                accessibilityRole="button"
+                accessibilityLabel={`${t('communities.info.muteNotifications')} - ${notificationsEnabled ? 'enabled' : 'disabled'}`}
               >
                 <HStack className="justify-between items-center">
                   <HStack space="md" className="items-center">
@@ -710,9 +798,12 @@ function CommunityInfoScreen() {
               <Pressable
                 onPress={() => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  router.push(`/community/${id}/media` as any);
+                  navigateTo(`/community/${id}/media`);
                 }}
                 className="px-4 py-4 border-t border-gray-100 active:bg-gray-50"
+                accessible
+                accessibilityRole="button"
+                accessibilityLabel={t('communities.info.media')}
               >
                 <HStack className="justify-between items-center">
                   <HStack space="md" className="items-center">
@@ -726,7 +817,7 @@ function CommunityInfoScreen() {
                       {t('communities.info.media')}
                     </Text>
                   </HStack>
-                  <Icon as={ChevronRight} size="md" className="text-gray-400" />
+                  <Icon as={ChevronRight} size="md" className="text-gray-500" />
                 </HStack>
               </Pressable>
             </View>
@@ -740,6 +831,9 @@ function CommunityInfoScreen() {
                 onPress={handleLeaveCommunity}
                 disabled={leaveMutation.isPending}
                 className="px-4 py-4 active:bg-red-50"
+                accessible
+                accessibilityRole="button"
+                accessibilityLabel={t('communities.info.leaveGroup')}
               >
                 <HStack space="md" className="items-center">
                   <View
@@ -758,6 +852,9 @@ function CommunityInfoScreen() {
               <Pressable
                 onPress={handleReport}
                 className="px-4 py-4 border-t border-gray-100 active:bg-gray-50"
+                accessible
+                accessibilityRole="button"
+                accessibilityLabel={t('communities.info.reportGroup')}
               >
                 <HStack space="md" className="items-center">
                   <View

@@ -30,6 +30,8 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { colors } from '@/constants/theme';
+import { mqttService } from '@/services/mqtt';
+import { useAuthStore } from '@/stores/auth';
 
 // =============================================================================
 // TYPES
@@ -54,6 +56,8 @@ interface TypingDotsProps {
 interface UseTypingIndicatorOptions {
   communityId: string;
   currentUserId: string;
+  channelType?: 'general' | 'announcement' | 'subgroup';
+  subgroupId?: string;
   onTypingStart?: () => void;
   onTypingStop?: () => void;
 }
@@ -237,6 +241,8 @@ export function TypingBubble({ typingUsers }: { typingUsers: TypingUser[] }) {
 export function useTypingIndicator({
   communityId,
   currentUserId,
+  channelType = 'general',
+  subgroupId,
   onTypingStart,
   onTypingStop,
 }: UseTypingIndicatorOptions) {
@@ -244,6 +250,9 @@ export function useTypingIndicator({
   const lastTypingTime = useRef<number>(0);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const cleanupIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Get church ID from auth store for MQTT topic
+  const churchId = useAuthStore((state) => state.churchId ?? '');
 
   // Get list of currently typing users
   const typingUsers = useMemo(() => {
@@ -285,11 +294,16 @@ export function useTypingIndicator({
 
       lastTypingTime.current = now;
 
-      // TODO: Publish to MQTT
-      // mqttClient.publish(`community/${communityId}/typing`, {
-      //   user_id: currentUserId,
-      //   is_typing: isTyping,
-      // });
+      // Publish to MQTT
+      if (churchId && communityId) {
+        mqttService.publishTyping(
+          churchId,
+          communityId,
+          isTyping,
+          channelType,
+          subgroupId
+        );
+      }
 
       if (isTyping) {
         onTypingStart?.();
@@ -297,7 +311,7 @@ export function useTypingIndicator({
         onTypingStop?.();
       }
     },
-    [communityId, currentUserId, onTypingStart, onTypingStop]
+    [churchId, communityId, channelType, subgroupId, onTypingStart, onTypingStop]
   );
 
   // Start typing indicator

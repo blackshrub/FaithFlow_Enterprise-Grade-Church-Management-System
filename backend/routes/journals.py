@@ -321,8 +321,8 @@ async def delete_journal(
             status_code=status.HTTP_403_FORBIDDEN
         )
     
-    await db.journals.delete_one({"id": journal_id})
-    
+    await db.journals.delete_one({"id": journal_id, "church_id": church_id})
+
     await audit_service.log_action(
         db=db, church_id=church_id, user_id=user_id,
         action_type="delete", module="journal",

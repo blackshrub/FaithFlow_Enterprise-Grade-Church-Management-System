@@ -20,6 +20,7 @@ import {
   useBiometricAvailable,
 } from '@/stores/biometricAuth';
 import { useAuthStore } from '@/stores/auth';
+import { useRequireAuth } from '@/hooks/useRequireAuth';
 
 // Primary color for icons (NativeWind classes used for backgrounds/text)
 const PRIMARY_COLOR = '#3B82F6';
@@ -27,6 +28,9 @@ const PRIMARY_COLOR = '#3B82F6';
 export default function SecuritySettingsScreen() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
+
+  // SEC-M7: Route protection
+  useRequireAuth();
 
   const biometricName = useBiometricName();
   const biometricAvailable = useBiometricAvailable();
@@ -116,6 +120,9 @@ export default function SecuritySettingsScreen() {
           <Pressable
             onPress={() => router.back()}
             className="mr-3 p-2 -ml-2 rounded-full active:bg-gray-100 dark:active:bg-gray-800"
+            accessible
+            accessibilityRole="button"
+            accessibilityLabel={t('common.back', 'Back')}
           >
             <ChevronLeft size={24} color="#111827" />
           </Pressable>
@@ -242,7 +249,7 @@ export default function SecuritySettingsScreen() {
           entering={FadeInDown.duration(300).delay(300)}
           className="mt-4 px-2"
         >
-          <Text className="text-xs text-gray-400 dark:text-gray-500 text-center">
+          <Text className="text-xs text-gray-600 dark:text-gray-400 text-center">
             {t('settings.security.privacyNote')}
           </Text>
         </Animated.View>

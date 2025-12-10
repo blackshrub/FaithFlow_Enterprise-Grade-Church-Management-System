@@ -110,8 +110,8 @@ export default function Categories() {
               <Textarea id="category-description" name="category-description" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} rows={3} />
             </div>
             <div className="flex justify-end space-x-2">
-              <Button type="button" variant="outline" onClick={() => setShowModal(false)}>{t('common.cancel')}</Button>
-              <Button type="submit">{t('common.save')}</Button>
+              <Button type="button" variant="outline" onClick={() => setShowModal(false)} disabled={createMutation.isPending || updateMutation.isPending}>{t('common.cancel')}</Button>
+              <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending}>{t('common.save')}</Button>
             </div>
           </form>
         </DialogContent>

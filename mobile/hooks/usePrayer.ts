@@ -80,13 +80,17 @@ const MOCK_PRAYER_REQUESTS: PrayerRequestWithStatus[] = [
 
 /**
  * Fetch all prayer requests - INSTANT in demo mode
+ * IMPORTANT: Include churchId in query key for multi-tenant cache isolation
  */
 export function usePrayerRequests(status?: PrayerStatus) {
-  const { token } = useAuthStore();
+  const { token, churchId } = useAuthStore();
   const isDemoMode = token === 'demo-jwt-token-for-testing';
 
   return useQuery({
-    queryKey: status ? [...QUERY_KEYS.PRAYER_REQUESTS, status] : QUERY_KEYS.PRAYER_REQUESTS,
+    // DATA-M2 FIX: Use church-scoped query key function
+    queryKey: status
+      ? [...QUERY_KEYS.PRAYER_REQUESTS(churchId || ''), status]
+      : QUERY_KEYS.PRAYER_REQUESTS(churchId || ''),
     queryFn: async () => {
       if (isDemoMode) {
         return status
@@ -107,13 +111,15 @@ export function usePrayerRequests(status?: PrayerStatus) {
 
 /**
  * Fetch my prayer requests - INSTANT in demo mode
+ * IMPORTANT: Include churchId in query key for multi-tenant cache isolation
  */
 export function useMyPrayerRequests() {
-  const { token, member } = useAuthStore();
+  const { token, member, churchId } = useAuthStore();
   const isDemoMode = token === 'demo-jwt-token-for-testing';
 
   return useQuery({
-    queryKey: QUERY_KEYS.MY_PRAYER_REQUESTS,
+    // DATA-M2 FIX: Use church-scoped query key function
+    queryKey: QUERY_KEYS.MY_PRAYER_REQUESTS(churchId || ''),
     queryFn: async () => {
       if (isDemoMode) {
         return MOCK_PRAYER_REQUESTS.filter(r => r.member_id === member?.id);
@@ -131,13 +137,15 @@ export function useMyPrayerRequests() {
 
 /**
  * Fetch single prayer request - INSTANT in demo mode
+ * IMPORTANT: Include churchId in query key for multi-tenant cache isolation
  */
 export function usePrayerRequest(requestId: string) {
-  const { token } = useAuthStore();
+  const { token, churchId } = useAuthStore();
   const isDemoMode = token === 'demo-jwt-token-for-testing';
 
   return useQuery({
-    queryKey: [...QUERY_KEYS.PRAYER_REQUEST_DETAIL, requestId],
+    // DATA-M2 FIX: Use church-scoped query key function
+    queryKey: QUERY_KEYS.PRAYER_REQUEST_DETAIL(churchId || '', requestId),
     queryFn: async () => {
       if (isDemoMode) {
         const request = MOCK_PRAYER_REQUESTS.find(r => r._id === requestId);
@@ -160,9 +168,11 @@ export function usePrayerRequest(requestId: string) {
 
 /**
  * Create prayer request
+ * DATA-M2 FIX: Use church-scoped cache invalidation
  */
 export function useCreatePrayerRequest() {
   const queryClient = useQueryClient();
+  const { churchId } = useAuthStore();
 
   return useMutation({
     mutationFn: async (data: CreatePrayerRequest) => {
@@ -171,17 +181,19 @@ export function useCreatePrayerRequest() {
     },
 
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.PRAYER_REQUESTS });
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.MY_PRAYER_REQUESTS });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.PRAYER_REQUESTS(churchId || '') });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.MY_PRAYER_REQUESTS(churchId || '') });
     },
   });
 }
 
 /**
  * Update prayer request
+ * DATA-M2 FIX: Use church-scoped cache invalidation
  */
 export function useUpdatePrayerRequest() {
   const queryClient = useQueryClient();
+  const { churchId } = useAuthStore();
 
   return useMutation({
     mutationFn: async ({ requestId, data }: { requestId: string; data: UpdatePrayerRequest }) => {
@@ -193,18 +205,20 @@ export function useUpdatePrayerRequest() {
     },
 
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.PRAYER_REQUESTS });
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.MY_PRAYER_REQUESTS });
-      queryClient.setQueryData([...QUERY_KEYS.PRAYER_REQUEST_DETAIL, data._id], data);
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.PRAYER_REQUESTS(churchId || '') });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.MY_PRAYER_REQUESTS(churchId || '') });
+      queryClient.setQueryData(QUERY_KEYS.PRAYER_REQUEST_DETAIL(churchId || '', data._id), data);
     },
   });
 }
 
 /**
  * Pray for request with optimistic updates
+ * DATA-M2 FIX: Use church-scoped cache operations
  */
 export function usePrayForRequest() {
   const queryClient = useQueryClient();
+  const { churchId } = useAuthStore();
 
   return useMutation({
     mutationFn: async (requestId: string) => {
@@ -214,13 +228,14 @@ export function usePrayForRequest() {
 
     // Optimistic update
     onMutate: async (requestId) => {
-      await queryClient.cancelQueries({ queryKey: QUERY_KEYS.PRAYER_REQUESTS });
+      const queryKey = QUERY_KEYS.PRAYER_REQUESTS(churchId || '');
+      await queryClient.cancelQueries({ queryKey });
 
-      const previousRequests = queryClient.getQueryData(QUERY_KEYS.PRAYER_REQUESTS);
+      const previousRequests = queryClient.getQueryData(queryKey);
 
       // Optimistically update all prayer lists
       queryClient.setQueryData<PrayerRequestWithStatus[]>(
-        QUERY_KEYS.PRAYER_REQUESTS,
+        queryKey,
         (old) => {
           if (!old) return old;
           return old.map((request) =>
@@ -235,27 +250,29 @@ export function usePrayForRequest() {
         }
       );
 
-      return { previousRequests };
+      return { previousRequests, queryKey };
     },
 
     onError: (_error, _variables, context) => {
-      if (context?.previousRequests) {
-        queryClient.setQueryData(QUERY_KEYS.PRAYER_REQUESTS, context.previousRequests);
+      if (context?.previousRequests && context?.queryKey) {
+        queryClient.setQueryData(context.queryKey, context.previousRequests);
       }
     },
 
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.PRAYER_REQUESTS });
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.MY_PRAYER_REQUESTS });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.PRAYER_REQUESTS(churchId || '') });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.MY_PRAYER_REQUESTS(churchId || '') });
     },
   });
 }
 
 /**
  * Mark prayer request as answered
+ * DATA-M2 FIX: Use church-scoped cache operations
  */
 export function useMarkAsAnswered() {
   const queryClient = useQueryClient();
+  const { churchId } = useAuthStore();
 
   return useMutation({
     mutationFn: async ({
@@ -273,18 +290,20 @@ export function useMarkAsAnswered() {
     },
 
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.PRAYER_REQUESTS });
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.MY_PRAYER_REQUESTS });
-      queryClient.setQueryData([...QUERY_KEYS.PRAYER_REQUEST_DETAIL, data._id], data);
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.PRAYER_REQUESTS(churchId || '') });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.MY_PRAYER_REQUESTS(churchId || '') });
+      queryClient.setQueryData(QUERY_KEYS.PRAYER_REQUEST_DETAIL(churchId || '', data._id), data);
     },
   });
 }
 
 /**
  * Delete prayer request
+ * DATA-M2 FIX: Use church-scoped cache operations
  */
 export function useDeletePrayerRequest() {
   const queryClient = useQueryClient();
+  const { churchId } = useAuthStore();
 
   return useMutation({
     mutationFn: async (requestId: string) => {
@@ -293,8 +312,8 @@ export function useDeletePrayerRequest() {
     },
 
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.PRAYER_REQUESTS });
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.MY_PRAYER_REQUESTS });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.PRAYER_REQUESTS(churchId || '') });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.MY_PRAYER_REQUESTS(churchId || '') });
     },
   });
 }

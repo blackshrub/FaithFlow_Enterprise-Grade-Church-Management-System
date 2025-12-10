@@ -103,8 +103,16 @@ export const invalidateChurchData = async (churchId) => {
   await queryClient.invalidateQueries({
     predicate: (query) => {
       const queryKey = query.queryKey;
-      // Check if any part of the query key contains the churchId
-      return JSON.stringify(queryKey).includes(churchId);
+      // Type-safe check: iterate through query key array to find exact churchId match
+      // This prevents partial string matching (e.g., "123" matching "1234")
+      return queryKey.some((keyPart) => {
+        // Handle objects with churchId property
+        if (typeof keyPart === 'object' && keyPart !== null) {
+          return keyPart.churchId === churchId || keyPart.church_id === churchId;
+        }
+        // Handle direct string matches
+        return keyPart === churchId;
+      });
     },
   });
 };

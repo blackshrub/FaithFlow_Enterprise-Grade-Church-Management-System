@@ -275,6 +275,9 @@ export const ScrollToBottomFAB = React.memo(({
     >
       <Pressable
         onPress={handlePress}
+        accessible
+        accessibilityRole="button"
+        accessibilityLabel={`Scroll to bottom${newMessageCount > 0 ? `, ${newMessageCount} new ${newMessageCount === 1 ? 'message' : 'messages'}` : ''}`}
         className="w-12 h-12 rounded-3xl bg-white items-center justify-center"
         style={{
           shadowColor: '#000',

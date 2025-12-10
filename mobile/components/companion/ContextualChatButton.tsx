@@ -139,6 +139,9 @@ function ContextualChatButtonComponent({
     return (
       <Pressable
         onPress={handlePress}
+        accessible
+        accessibilityRole="button"
+        accessibilityLabel={buttonLabel}
         className="w-10 h-10 rounded-full items-center justify-center active:scale-95"
         style={[styles.minimalButton, styles.shadow]}
       >
@@ -159,6 +162,9 @@ function ContextualChatButtonComponent({
     return (
       <Pressable
         onPress={handlePress}
+        accessible
+        accessibilityRole="button"
+        accessibilityLabel={buttonLabel}
         className="rounded-2xl overflow-hidden active:opacity-90 active:scale-[0.98]"
       >
         <LinearGradient
@@ -196,6 +202,9 @@ function ContextualChatButtonComponent({
     >
       <Pressable
         onPress={handlePress}
+        accessible
+        accessibilityRole="button"
+        accessibilityLabel={buttonLabel}
         className="rounded-full overflow-hidden active:scale-95"
         style={styles.fabShadow}
       >

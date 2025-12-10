@@ -39,6 +39,7 @@ import {
   BarChart3,
   Wand2,
   ClipboardList,
+  Bell,
 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
@@ -94,6 +95,9 @@ export default function Layout() {
     }
     if (path.includes('/articles')) {
       setExpandedMenus(prev => ({ ...prev, articles: true }));
+    }
+    if (path.includes('/broadcasts')) {
+      setExpandedMenus(prev => ({ ...prev, broadcasts: true }));
     }
     // Content Center submenus
     if (path.includes('/content-center/devotion')) {
@@ -199,6 +203,16 @@ export default function Layout() {
         { label: 'Article Categories', path: '/articles/categories' },
         { label: 'Article Tags', path: '/articles/tags' },
         { label: 'Comment Moderation', path: '/articles/comments' },
+      ]
+    },
+    {
+      icon: Bell,
+      label: t('broadcasts.title') || 'Broadcast Center',
+      key: 'broadcasts',
+      submenu: [
+        { label: t('broadcasts.status.all') || 'All Campaigns', path: '/broadcasts' },
+        { label: t('broadcasts.newCampaign') || 'New Campaign', path: '/broadcasts/new' },
+        { label: t('notificationTemplates.title') || 'Templates', path: '/notification-templates' },
       ]
     },
 
@@ -522,6 +536,7 @@ export default function Layout() {
                   size="icon"
                   className="h-9 w-9"
                   title={t('auth.logout')}
+                  data-testid="logout-button"
                 >
                   <LogOut className="h-4 w-4" />
                 </Button>
@@ -535,6 +550,7 @@ export default function Layout() {
                   size="icon"
                   className="w-full"
                   title={t('auth.logout')}
+                  data-testid="logout-button"
                 >
                   <LogOut className="h-4 w-4" />
                 </Button>

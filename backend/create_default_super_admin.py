@@ -3,16 +3,20 @@
 This script ensures there's always a super admin account for initial access.
 Run during installation or startup.
 
-Default Credentials:
-- Email: admin@gkbj.church
-- Password: adm...23 (change after login!)
-- Role: super_admin (access all churches)
+SECURITY: Credentials are generated randomly at runtime or read from environment.
+- SUPER_ADMIN_EMAIL: Admin email (default: admin@faithflow.church)
+- SUPER_ADMIN_PASSWORD: Generated randomly if not set
+- SUPER_ADMIN_PIN: Generated randomly if not set
+
+The credentials are displayed ONCE at creation time and must be saved securely.
 """
 
 import asyncio
 from motor.motor_asyncio import AsyncIOMotorClient
 import bcrypt
 import uuid
+import secrets
+import string
 from datetime import datetime
 import os
 from dotenv import load_dotenv
@@ -21,15 +25,37 @@ from pathlib import Path
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env', override=False)
 
-# Default super admin credentials
-DEFAULT_SUPER_ADMIN = {
-    "email": "admin@gkbj.church",
-    "password": "admin123",  # Change after login!
-    "full_name": "Full Administrator",
-    "phone": "",
-    "role": "super_admin",
-    "kiosk_pin": "000000"
-}
+
+def generate_secure_password(length: int = 16) -> str:
+    """Generate a cryptographically secure random password."""
+    alphabet = string.ascii_letters + string.digits + "!@#$%^&*"
+    # Ensure at least one of each type for complexity requirements
+    password = [
+        secrets.choice(string.ascii_lowercase),
+        secrets.choice(string.ascii_uppercase),
+        secrets.choice(string.digits),
+        secrets.choice("!@#$%^&*"),
+    ]
+    password += [secrets.choice(alphabet) for _ in range(length - 4)]
+    secrets.SystemRandom().shuffle(password)
+    return ''.join(password)
+
+
+def generate_secure_pin(length: int = 6) -> str:
+    """Generate a cryptographically secure random PIN."""
+    return ''.join(secrets.choice(string.digits) for _ in range(length))
+
+
+def get_super_admin_config() -> dict:
+    """Get super admin configuration from environment or generate secure defaults."""
+    return {
+        "email": os.environ.get("SUPER_ADMIN_EMAIL", "admin@faithflow.church"),
+        "password": os.environ.get("SUPER_ADMIN_PASSWORD") or generate_secure_password(),
+        "full_name": os.environ.get("SUPER_ADMIN_NAME", "System Administrator"),
+        "phone": os.environ.get("SUPER_ADMIN_PHONE", ""),
+        "role": "super_admin",
+        "kiosk_pin": os.environ.get("SUPER_ADMIN_PIN") or generate_secure_pin()
+    }
 
 
 async def create_default_super_admin():
@@ -116,13 +142,13 @@ async def create_default_super_admin():
         
         # STEP 2: Create super admin with church_id = None
         existing_super = await db.users.find_one({"role": "super_admin"})
-        
+
         if existing_super:
             print("ℹ️  Super admin already exists:")
             print(f"   Email: {existing_super['email']}")
             print(f"   Name: {existing_super['full_name']}")
             print(f"   church_id: {existing_super.get('church_id')}")
-            
+
             # CRITICAL: Ensure super admin has church_id = None
             if existing_super.get('church_id') is not None:
                 print("⚠️  Super admin should NOT have church_id, fixing...")
@@ -131,14 +157,17 @@ async def create_default_super_admin():
                     {"$set": {"church_id": None}}
                 )
                 print("✅ Set church_id to None for super admin")
-            
+
             client.close()
             return
-        
+
+        # Get config (generates secure random credentials if not in env)
+        admin_config = get_super_admin_config()
+
         # Create default super admin WITH church_id = None
         print("\n🔑 Creating default super admin...")
-        
-        password = DEFAULT_SUPER_ADMIN["password"]
+
+        password = admin_config["password"]
         # Generate bcrypt hash properly
         salt = bcrypt.gensalt()
         hashed = bcrypt.hashpw(password.encode('utf-8'), salt)
@@ -152,30 +181,31 @@ async def create_default_super_admin():
         user = {
             "id": str(uuid.uuid4()),
             "church_id": None,  # ✅ CRITICAL: Super admin has NO church_id!
-            "email": DEFAULT_SUPER_ADMIN["email"],
-            "full_name": DEFAULT_SUPER_ADMIN["full_name"],
-            "phone": DEFAULT_SUPER_ADMIN["phone"],
+            "email": admin_config["email"],
+            "full_name": admin_config["full_name"],
+            "phone": admin_config["phone"],
             "hashed_password": password_hash_str,
-            "role": DEFAULT_SUPER_ADMIN["role"],
+            "role": admin_config["role"],
             "is_active": True,
-            "kiosk_pin": DEFAULT_SUPER_ADMIN["kiosk_pin"],
+            "kiosk_pin": admin_config["kiosk_pin"],
             "created_at": datetime.utcnow(),
             "updated_at": datetime.utcnow()
         }
-        
+
         await db.users.insert_one(user)
-        
+
         print("✅ Default super admin created successfully!\n")
-        print("=" * 60)
-        print("  DEFAULT SUPER ADMIN CREDENTIALS")
-        print("=" * 60)
-        print(f"  Email:    {DEFAULT_SUPER_ADMIN['email']}")
-        print(f"  Password: {DEFAULT_SUPER_ADMIN['password']}")
-        print(f"  Role:     {DEFAULT_SUPER_ADMIN['role']} (access all churches)")
+        print("=" * 70)
+        print("  🔐 SUPER ADMIN CREDENTIALS - SAVE THESE SECURELY!")
+        print("=" * 70)
+        print(f"  Email:    {admin_config['email']}")
+        print(f"  Password: {admin_config['password']}")
+        print(f"  Role:     {admin_config['role']} (access all churches)")
         print(f"  church_id: None (selects church at login)")
-        print(f"  PIN:      {DEFAULT_SUPER_ADMIN['kiosk_pin']}")
-        print("=" * 60)
-        print("\n⚠️  IMPORTANT: Change password after first login!\n")
+        print(f"  PIN:      {admin_config['kiosk_pin']}")
+        print("=" * 70)
+        print("\n⚠️  CRITICAL: These credentials are shown ONCE!")
+        print("⚠️  Save them securely - they cannot be recovered!\n")
         
         client.close()
         

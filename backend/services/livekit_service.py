@@ -32,10 +32,20 @@ from livekit.api import (
 
 logger = logging.getLogger(__name__)
 
-# Configuration
+# Configuration - SECURITY: No hardcoded defaults for secrets
 LIVEKIT_URL = os.environ.get("LIVEKIT_URL", "ws://localhost:7880")
-LIVEKIT_API_KEY = os.environ.get("LIVEKIT_API_KEY", "devkey")
-LIVEKIT_API_SECRET = os.environ.get("LIVEKIT_API_SECRET", "faithflow-development-secret-key-2024")
+LIVEKIT_API_KEY = os.environ.get("LIVEKIT_API_KEY")
+LIVEKIT_API_SECRET = os.environ.get("LIVEKIT_API_SECRET")
+
+# Validate required environment variables at module load
+if not LIVEKIT_API_KEY or not LIVEKIT_API_SECRET:
+    logger.warning(
+        "LIVEKIT_API_KEY and LIVEKIT_API_SECRET environment variables not set. "
+        "LiveKit features will be disabled until configured."
+    )
+    LIVEKIT_ENABLED = False
+else:
+    LIVEKIT_ENABLED = True
 
 # Token expiry
 TOKEN_TTL_SECONDS = 3600 * 4  # 4 hours max call duration
@@ -59,9 +69,9 @@ class LiveKitService:
 
     def __init__(
         self,
-        url: str = LIVEKIT_URL,
-        api_key: str = LIVEKIT_API_KEY,
-        api_secret: str = LIVEKIT_API_SECRET
+        url: Optional[str] = None,
+        api_key: Optional[str] = None,
+        api_secret: Optional[str] = None
     ):
         """
         Initialize LiveKit service.
@@ -70,11 +80,21 @@ class LiveKitService:
             url: LiveKit server URL (ws:// or wss://)
             api_key: LiveKit API key
             api_secret: LiveKit API secret
+
+        Raises:
+            LiveKitServiceError: If required credentials are not configured
         """
-        self.url = url
-        self.api_key = api_key
-        self.api_secret = api_secret
+        self.url = url or LIVEKIT_URL
+        self.api_key = api_key or LIVEKIT_API_KEY
+        self.api_secret = api_secret or LIVEKIT_API_SECRET
         self._api: Optional[LiveKitAPI] = None
+
+        # Validate credentials at initialization
+        if not self.api_key or not self.api_secret:
+            raise LiveKitServiceError(
+                "LiveKit credentials not configured. Set LIVEKIT_API_KEY and "
+                "LIVEKIT_API_SECRET environment variables."
+            )
 
     @property
     def http_url(self) -> str:
@@ -492,21 +512,27 @@ class LiveKitService:
 _livekit_service: Optional[LiveKitService] = None
 
 
-def get_livekit_service() -> LiveKitService:
+def get_livekit_service() -> Optional[LiveKitService]:
     """
     Get LiveKit service singleton.
 
     Returns:
-        LiveKitService instance
+        LiveKitService instance if configured, None otherwise
     """
     global _livekit_service
+    if not LIVEKIT_ENABLED:
+        return None
     if _livekit_service is None:
-        _livekit_service = LiveKitService()
+        try:
+            _livekit_service = LiveKitService()
+        except LiveKitServiceError as e:
+            logger.error(f"Failed to initialize LiveKit service: {e}")
+            return None
     return _livekit_service
 
 
 # FastAPI dependency
-def get_livekit() -> LiveKitService:
+def get_livekit() -> Optional[LiveKitService]:
     """
     FastAPI dependency for LiveKit service.
 
@@ -515,6 +541,8 @@ def get_livekit() -> LiveKitService:
         async def initiate_call(
             livekit: LiveKitService = Depends(get_livekit)
         ):
+            if livekit is None:
+                raise HTTPException(503, "LiveKit service not configured")
             token = livekit.generate_token(...)
     """
     return get_livekit_service()

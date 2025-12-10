@@ -45,6 +45,13 @@ export interface EventAttendance {
   check_in_time: string; // ISO 8601
 }
 
+export interface EventRating {
+  member_id: string;
+  rating: number; // 1-5 stars
+  review?: string;
+  timestamp: string; // ISO 8601
+}
+
 /**
  * Core Event structure matching backend
  */
@@ -89,9 +96,11 @@ export interface EventWithMemberStatus extends Partial<Omit<Event, 'event_type'>
   church_id: string;
   name: string;
 
-  // Member's RSVP status for this event (supports both object and boolean for backwards compatibility)
-  my_rsvp?: EventRSVP | boolean; // EventRSVP object or boolean for mock data
-  my_attendance?: EventAttendance | boolean; // EventAttendance object or boolean for mock data
+  // Member's RSVP status for this event
+  // DATA FIX: Removed boolean union - backend always returns object or undefined, never boolean
+  my_rsvp?: EventRSVP | null;
+  my_attendance?: EventAttendance | null;
+  my_rating?: EventRating | null; // Member's rating for this event (if they attended)
 
   // Calculated fields (optional for mock data)
   total_rsvps?: number; // rsvp_list.length

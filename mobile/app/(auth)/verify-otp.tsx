@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import Animated, { FadeInUp } from "react-native-reanimated";
+import { useTranslation } from "react-i18next";
 import { SafeAreaView } from "@/components/ui/safe-area-view";
 import { VStack } from "@/components/ui/vstack";
 import { HStack } from "@/components/ui/hstack";
@@ -13,11 +14,12 @@ import { useSendOTP, useVerifyOTP } from "@/hooks/useAuth";
 import { showSuccessToast } from "@/components/ui/Toast";
 import { getErrorMessage } from "@/utils/errorHelpers";
 
-// Constants
-const OTP_EXPIRY_SECONDS = 300; // 5 minutes
+// Constants - Sync with backend OTP_TTL_SECONDS (3 minutes)
+const OTP_EXPIRY_SECONDS = 180; // 3 minutes
 const OTP_LENGTH = 6;
 
 export default function VerifyOTPScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
   const params = useLocalSearchParams<{ phone: string; church_id: string }>();
   const [otp, setOtp] = useState("");
@@ -46,7 +48,13 @@ export default function VerifyOTPScreen() {
 
   const handleVerifyOTP = async () => {
     if (otp.length !== OTP_LENGTH) {
-      setError(`Kode OTP harus ${OTP_LENGTH} digit`);
+      setError(t('auth.otpLengthError', { length: OTP_LENGTH }));
+      return;
+    }
+
+    // SEC FIX: Validate OTP contains only numeric characters
+    if (!/^\d+$/.test(otp)) {
+      setError(t('auth.otpNumericError', 'OTP must contain only numbers'));
       return;
     }
 
@@ -61,7 +69,7 @@ export default function VerifyOTPScreen() {
       // User will be redirected to tabs automatically via index.tsx
       router.replace("/(tabs)");
     } catch (error: unknown) {
-      setError(getErrorMessage(error, "Kode OTP tidak valid"));
+      setError(getErrorMessage(error, t('auth.otpInvalid')));
       setOtp("");
     }
   };
@@ -76,9 +84,9 @@ export default function VerifyOTPScreen() {
       setCountdown(OTP_EXPIRY_SECONDS);
       setError("");
       setOtp("");
-      showSuccessToast("OTP Terkirim", "Kode OTP baru telah dikirim ke WhatsApp Anda");
+      showSuccessToast(t('auth.otpSent'), t('auth.otpSentDescription'));
     } catch (error: unknown) {
-      setError(getErrorMessage(error, "Gagal mengirim ulang OTP"));
+      setError(getErrorMessage(error, t('auth.otpResendFailed')));
     }
   };
 
@@ -92,10 +100,10 @@ export default function VerifyOTPScreen() {
           {/* Header */}
           <VStack space="md" className="items-center">
             <Heading size="xl" className="text-center">
-              Verifikasi OTP
+              {t('auth.verifyOtp')}
             </Heading>
             <Text size="md" className="text-center text-typography-500">
-              Masukkan kode 6 digit yang dikirim ke
+              {t('auth.enterOtpCode', { length: OTP_LENGTH })}
             </Text>
             <Text size="md" className="font-bold">
               {params.phone}
@@ -120,7 +128,7 @@ export default function VerifyOTPScreen() {
             >
               {verifyOTP.isPending && <ButtonSpinner className="mr-2" />}
               <ButtonText>
-                {verifyOTP.isPending ? "Memverifikasi..." : "Verifikasi"}
+                {verifyOTP.isPending ? t('auth.verifying') : t('auth.verify')}
               </ButtonText>
             </Button>
           </VStack>
@@ -128,25 +136,28 @@ export default function VerifyOTPScreen() {
           {/* Resend OTP */}
           <VStack space="md" className="items-center">
             <Text size="sm" className="text-typography-400">
-              Kode akan kadaluarsa dalam {formatTime(countdown)}
+              {t('auth.otpExpiresIn', { time: formatTime(countdown) })}
             </Text>
 
             {countdown > 0 ? (
               <Text size="sm" className="text-typography-400">
-                Tidak menerima kode?{" "}
+                {t('auth.didntReceiveCode')}{" "}
                 <Text className="text-typography-400">
-                  Tunggu {formatTime(countdown)}
+                  {t('auth.waitTime', { time: formatTime(countdown) })}
                 </Text>
               </Text>
             ) : (
               <Pressable
                 onPress={handleResendOTP}
                 disabled={sendOTP.isPending}
+                accessible
+                accessibilityRole="button"
+                accessibilityLabel={t('auth.resendOtp')}
               >
                 <HStack space="xs" className="items-center">
                   {sendOTP.isPending && <ButtonSpinner size="small" />}
                   <Text size="sm" className="text-primary-500 font-bold">
-                    {sendOTP.isPending ? "Mengirim..." : "Kirim Ulang OTP"}
+                    {sendOTP.isPending ? t('auth.sending') : t('auth.resendOtp')}
                   </Text>
                 </HStack>
               </Pressable>
@@ -154,9 +165,14 @@ export default function VerifyOTPScreen() {
           </VStack>
 
           {/* Back button */}
-          <Pressable onPress={() => router.back()}>
+          <Pressable
+            onPress={() => router.back()}
+            accessible
+            accessibilityRole="button"
+            accessibilityLabel={t('auth.changePhoneNumber')}
+          >
             <Text size="sm" className="text-typography-500">
-              Ubah nomor telepon
+              {t('auth.changePhoneNumber')}
             </Text>
           </Pressable>
         </VStack>

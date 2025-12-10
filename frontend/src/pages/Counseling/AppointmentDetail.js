@@ -142,7 +142,7 @@ const AppointmentDetailPage = () => {
   if (isLoading) {
     return (
       <div className="p-6">
-        <div className="text-center py-8 text-gray-500">Loading...</div>
+        <div className="text-center py-8 text-gray-500">{t('common.loading')}</div>
       </div>
     );
   }
@@ -387,7 +387,7 @@ const AppointmentDetailPage = () => {
             />
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsApproveDialogOpen(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setIsApproveDialogOpen(false)}>{t('common.cancel')}</Button>
             <Button onClick={handleApprove} disabled={approveMutation.isPending}>
               {t('counseling.approve')}
             </Button>
@@ -417,7 +417,7 @@ const AppointmentDetailPage = () => {
             />
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsRejectDialogOpen(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setIsRejectDialogOpen(false)}>{t('common.cancel')}</Button>
             <Button variant="destructive" onClick={handleReject} disabled={rejectMutation.isPending}>
               {t('counseling.reject')}
             </Button>
@@ -446,7 +446,7 @@ const AppointmentDetailPage = () => {
             />
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsCancelDialogOpen(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setIsCancelDialogOpen(false)}>{t('common.cancel')}</Button>
             <Button variant="destructive" onClick={handleCancel} disabled={cancelMutation.isPending}>
               {t('counseling.cancel')}
             </Button>
@@ -476,7 +476,7 @@ const AppointmentDetailPage = () => {
             />
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsCompleteDialogOpen(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setIsCompleteDialogOpen(false)}>{t('common.cancel')}</Button>
             <Button onClick={handleComplete} disabled={completeMutation.isPending}>
               {t('counseling.complete')}
             </Button>

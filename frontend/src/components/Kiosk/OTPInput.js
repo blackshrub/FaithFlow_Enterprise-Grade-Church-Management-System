@@ -103,7 +103,7 @@ const OTPInput = ({ length = 4, value = '', onChange, onComplete, disabled = fal
   };
 
   return (
-    <div className="flex gap-3 sm:gap-4 lg:gap-5 justify-center flex-wrap w-full max-w-full px-2 py-3">
+    <div data-testid="otp-input" className="flex gap-3 sm:gap-4 lg:gap-5 justify-center flex-wrap w-full max-w-full px-2 py-3">
       {otp.map((digit, index) => (
         <motion.input
           key={index}
@@ -112,6 +112,7 @@ const OTPInput = ({ length = 4, value = '', onChange, onComplete, disabled = fal
           inputMode="numeric"
           pattern="[0-9]*"
           data-kiosk-otp="true"
+          data-testid={`otp-digit-${index}`}
           maxLength={1}
           value={digit}
           onChange={(e) => handleChange(index, e.target.value)}

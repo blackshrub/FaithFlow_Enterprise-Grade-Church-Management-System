@@ -41,7 +41,7 @@ function UpcomingHighlightComponent({ upcomingEvents }: UpcomingHighlightProps) 
 
   const handleEventPress = useCallback(
     (eventId: string) => {
-      router.push(`/events/${eventId}` as any);
+      router.push(`/events/${eventId}` as `/events/${string}`);
     },
     [router]
   );
@@ -62,7 +62,12 @@ function UpcomingHighlightComponent({ upcomingEvents }: UpcomingHighlightProps) 
         >
           {t('today.comingUp', 'Coming Up')}
         </Text>
-        <Pressable onPress={handleSeeAll}>
+        <Pressable
+          onPress={handleSeeAll}
+          accessible
+          accessibilityRole="button"
+          accessibilityLabel="See all upcoming events"
+        >
           <Text
             className="text-sm font-semibold"
             style={{ color: Colors.accent.dark }}

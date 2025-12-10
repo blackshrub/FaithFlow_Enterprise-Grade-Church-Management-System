@@ -75,14 +75,15 @@ function enrichEventWithMemberStatus(
 /**
  * Fetch all events with filters
  * Base query that other hooks build on
+ * IMPORTANT: Include churchId in query key for multi-tenant cache isolation
  */
 export function useEvents(filters?: EventFilters) {
-  const { token, member } = useAuthStore();
+  const { token, member, churchId } = useAuthStore();
   const isDemoMode = token === 'demo-jwt-token-for-testing';
   const memberId = member?.id;
 
   return useQuery({
-    queryKey: [...QUERY_KEYS.EVENTS_LIST, filters],
+    queryKey: [...QUERY_KEYS.EVENTS_LIST, churchId, filters],
     queryFn: async () => {
       // Use mock data in demo mode - INSTANT (no artificial delay)
       if (isDemoMode && memberId) {
@@ -185,14 +186,15 @@ export function useAttendedEvents(filters?: EventFilters) {
 
 /**
  * Fetch single event details
+ * IMPORTANT: Include churchId in query key for multi-tenant cache isolation
  */
 export function useEvent(eventId: string) {
-  const { token, member } = useAuthStore();
+  const { token, member, churchId } = useAuthStore();
   const isDemoMode = token === 'demo-jwt-token-for-testing';
   const memberId = member?.id;
 
   return useQuery({
-    queryKey: [...QUERY_KEYS.EVENT_DETAIL, eventId],
+    queryKey: [...QUERY_KEYS.EVENT_DETAIL, churchId, eventId],
     queryFn: async () => {
       // Use mock data in demo mode - INSTANT
       if (isDemoMode && memberId) {
@@ -220,13 +222,14 @@ export function useEvent(eventId: string) {
 
 /**
  * Fetch event categories for filtering
+ * IMPORTANT: Include churchId in query key for multi-tenant cache isolation
  */
 export function useEventCategories() {
-  const { token } = useAuthStore();
+  const { token, churchId } = useAuthStore();
   const isDemoMode = token === 'demo-jwt-token-for-testing';
 
   return useQuery({
-    queryKey: QUERY_KEYS.EVENT_CATEGORIES,
+    queryKey: [...QUERY_KEYS.EVENT_CATEGORIES, churchId],
     queryFn: async () => {
       // Use mock data in demo mode - INSTANT
       if (isDemoMode) {

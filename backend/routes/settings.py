@@ -241,7 +241,7 @@ async def delete_member_status(
         )
 
     church_id = member_status.get('church_id')
-    await db.member_statuses.delete_one({"id": status_id})
+    await db.member_statuses.delete_one({"id": status_id, "church_id": church_id})
 
     # Invalidate cache after mutation
     await invalidate_church_cache(church_id)
@@ -417,12 +417,14 @@ async def regenerate_all_demographics(
                     detail=f"Cannot regenerate: overlapping ranges between '{preset['name']}' and '{other['name']}'. Please fix overlaps first."
                 )
 
-    # Get all active members with date_of_birth
+    # Get all active members with date_of_birth (with reasonable limit to prevent DoS)
+    # Process in batches if needed for very large churches
+    MAX_BATCH_SIZE = 10000
     members = await db.members.find({
         "church_id": church_id,
         "deleted": {"$ne": True},
         "date_of_birth": {"$ne": None}
-    }).to_list(None)
+    }).to_list(MAX_BATCH_SIZE)
 
     updated_count = 0
     skipped_count = 0
@@ -565,7 +567,7 @@ async def delete_demographic_preset(
         )
 
     church_id = preset.get('church_id')
-    await db.demographic_presets.delete_one({"id": preset_id})
+    await db.demographic_presets.delete_one({"id": preset_id, "church_id": church_id})
 
     # Invalidate cache after mutation
     await invalidate_church_cache(church_id)
@@ -918,9 +920,9 @@ async def update_event_category(
     update_data = category_data.model_dump(mode='json', exclude_unset=True)
     if update_data:
         update_data['updated_at'] = datetime.now().isoformat()
-        await db.event_categories.update_one({"id": category_id}, {"$set": update_data})
-    
-    updated = await db.event_categories.find_one({"id": category_id}, {"_id": 0})
+        await db.event_categories.update_one({"id": category_id, "church_id": category.get('church_id')}, {"$set": update_data})
+
+    updated = await db.event_categories.find_one({"id": category_id, "church_id": category.get('church_id')}, {"_id": 0})
     if isinstance(updated.get('created_at'), str):
         updated['created_at'] = datetime.fromisoformat(updated['created_at'])
     if isinstance(updated.get('updated_at'), str):
@@ -947,5 +949,5 @@ async def delete_event_category(
     if current_user.get('role') != 'super_admin' and current_user.get('session_church_id') != category.get('church_id'):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
 
-    await db.event_categories.delete_one({"id": category_id})
+    await db.event_categories.delete_one({"id": category_id, "church_id": category.get('church_id')})
     return None

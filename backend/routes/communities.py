@@ -408,9 +408,9 @@ async def update_community(
 
     update_dict["updated_at"] = datetime.utcnow()
 
-    await db.communities.update_one({"id": community_id}, {"$set": update_dict})
+    await db.communities.update_one({"id": community_id, "church_id": church_id}, {"$set": update_dict})
 
-    updated = await db.communities.find_one({"id": community_id}, {"_id": 0})
+    updated = await db.communities.find_one({"id": community_id, "church_id": church_id}, {"_id": 0})
 
     await audit_service.log_action(
         db=db,
@@ -456,7 +456,7 @@ async def delete_community(
             }
         )
 
-    await db.communities.delete_one({"id": community_id})
+    await db.communities.delete_one({"id": community_id, "church_id": church_id})
 
     await audit_service.log_action(
         db=db,

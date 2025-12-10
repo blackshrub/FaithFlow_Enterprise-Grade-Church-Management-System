@@ -217,7 +217,7 @@ async def create_giving_fund(
     fund = {
         "id": str(uuid.uuid4()),
         "church_id": church_id,
-        **fund_data.dict(),
+        **fund_data.model_dump(),
         "created_at": datetime.utcnow(),
         "updated_at": datetime.utcnow()
     }
@@ -447,9 +447,13 @@ async def get_my_giving_history(
 
     Query params:
     - status_filter: Filter by payment status (success, pending, failed)
-    - limit: Number of records (default 50)
+    - limit: Number of records (default 50, max 200)
     - offset: Pagination offset (default 0)
     """
+    # Validate pagination limits to prevent DoS
+    limit = min(limit, 200)
+    offset = max(offset, 0)
+
     church_id = get_session_church_id(current_user)
     member_id = current_user.get("id")
 
@@ -645,6 +649,15 @@ async def payment_webhook(
     Called by payment gateway when payment status changes.
     Supports multiple providers through abstraction layer.
     """
+    # Validate provider_name to prevent injection attacks
+    ALLOWED_PROVIDERS = {"ipaymu", "midtrans", "xendit", "stripe", "manual"}
+    if provider_name.lower() not in ALLOWED_PROVIDERS:
+        logger.warning(f"Invalid payment provider in webhook: {provider_name}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid payment provider"
+        )
+
     try:
         # Get callback data
         callback_data = await request.json()

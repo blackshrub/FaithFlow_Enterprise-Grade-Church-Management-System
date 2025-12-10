@@ -66,9 +66,17 @@ export default function Members() {
   }, [deferredSearch]);
 
   // Reset to page 1 when filters change
+  // Use individual filter values to prevent unnecessary re-renders from object reference changes
   React.useEffect(() => {
     setCurrentPage(1);
-  }, [filters, showIncompleteOnly]);
+  }, [
+    filters.gender,
+    filters.marital_status,
+    filters.member_status,
+    filters.demographic_category,
+    filters.has_face,
+    showIncompleteOnly
+  ]);
 
   // React Query hooks - with pagination, server-side search, and filters
   const { data: membersRaw = [], isLoading, error } = useMembers({
@@ -104,26 +112,27 @@ export default function Members() {
   });
 
   // Populate form when full member data loads
+  // CRITICAL: Use ?? (nullish coalescing) instead of || to preserve falsy values like empty strings
   useEffect(() => {
     if (fullMemberData && editingMemberId) {
       const member = fullMemberData;
       const formValues = {
-        first_name: member.first_name || '',
-        last_name: member.last_name || '',
-        phone_whatsapp: member.phone_whatsapp || '',
-        date_of_birth: member.date_of_birth || '',
+        first_name: member.first_name ?? '',
+        last_name: member.last_name ?? '',
+        phone_whatsapp: member.phone_whatsapp ?? '',
+        date_of_birth: member.date_of_birth ?? '',
         gender: member.gender ? member.gender.toLowerCase() : '',
-        address: member.address || '',
+        address: member.address ?? '',
         marital_status: member.marital_status ? member.marital_status.toLowerCase().replace(/\s+/g, '') : '',
-        member_status: member.member_status || '',
-        baptism_date: member.baptism_date || '',
-        photo_base64: member.photo_base64 || '',
-        personal_document: member.personal_document || '',
-        personal_document_base64: member.personal_document_base64 || '',
-        notes: member.notes || '',
-        face_descriptors: member.face_descriptors || [],
-        has_face_descriptors: member.has_face_descriptors || (member.face_descriptors?.length > 0) || false,
-        personal_id_code: member.personal_id_code || ''
+        member_status: member.member_status ?? '',
+        baptism_date: member.baptism_date ?? '',
+        photo_base64: member.photo_base64 ?? '',
+        personal_document: member.personal_document ?? '',
+        personal_document_base64: member.personal_document_base64 ?? '',
+        notes: member.notes ?? '',
+        face_descriptors: member.face_descriptors ?? [],
+        has_face_descriptors: member.has_face_descriptors ?? (member.face_descriptors?.length > 0) ?? false,
+        personal_id_code: member.personal_id_code ?? ''
       };
       setFormData(formValues);
       setSelectedMember(member);
@@ -330,7 +339,7 @@ export default function Members() {
           </Button>
           <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
             <DialogTrigger asChild>
-              <Button>
+              <Button data-testid="add-member-button">
                 <Plus className="h-4 w-4 mr-2" />
                 {t('members.addMember')}
               </Button>
@@ -353,7 +362,7 @@ export default function Members() {
                 >
                   {t('common.cancel')}
                 </Button>
-                <Button type="submit" disabled={createMember.isPending}>
+                <Button type="submit" disabled={createMember.isPending} data-testid="submit-member-button">
                   {createMember.isPending ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -389,6 +398,7 @@ export default function Members() {
                 <Input
                   id="member-search"
                   name="member-search"
+                  data-testid="search-input"
                   placeholder={t('members.searchPlaceholder')}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -427,11 +437,11 @@ export default function Members() {
             </Select>
 
             <Select value={filters.member_status || "all"} onValueChange={(value) => setFilters({...filters, member_status: value === "all" ? "" : value})}>
-              <SelectTrigger className="w-48">
+              <SelectTrigger className="w-48" data-testid="filter-status">
                 <SelectValue placeholder="Member Status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="all" data-testid="filter-status-all">All Statuses</SelectItem>
                 {statuses
                   .filter(status => status.name && status.name.trim() !== '')
                   .map(status => (
@@ -525,7 +535,7 @@ export default function Members() {
                   </TableHeader>
                   <TableBody>
                     {members.map((member) => (
-                      <TableRow key={member.id}>
+                      <TableRow key={member.id} data-testid="member-row">
                         <TableCell>
                           <MemberAvatar
                             member={member}
@@ -534,7 +544,7 @@ export default function Members() {
                         </TableCell>
                         <TableCell>
                           <div>
-                            <p className="font-medium">{member.full_name}</p>
+                            <p className="font-medium" data-testid="member-name">{member.full_name}</p>
                             {member.personal_id_code && (
                               <p className="text-xs text-gray-500">ID: {member.personal_id_code}</p>
                             )}
@@ -603,6 +613,7 @@ export default function Members() {
                               size="sm"
                               onClick={() => openQRModal(member)}
                               title={t('members.viewQR')}
+                              data-testid="view-qr-button"
                             >
                               <QrCode className="h-4 w-4" />
                             </Button>
@@ -610,6 +621,7 @@ export default function Members() {
                               variant="outline"
                               size="sm"
                               onClick={() => openEditDialog(member)}
+                              data-testid="edit-member-button"
                             >
                               <Edit className="h-4 w-4" />
                             </Button>
@@ -618,6 +630,7 @@ export default function Members() {
                               size="sm"
                               onClick={() => handleDeleteMember(member.id)}
                               disabled={deleteMember.isPending}
+                              data-testid="delete-member-button"
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -631,7 +644,7 @@ export default function Members() {
 
               {/* Pagination */}
               {totalPages > 1 && (
-                <div className="flex items-center justify-between mt-4">
+                <div className="flex items-center justify-between mt-4" data-testid="pagination">
                   <div className="text-sm text-gray-600">
                     {t('common.showingResults', {
                       from: (currentPage - 1) * membersPerPage + 1,
@@ -645,6 +658,7 @@ export default function Members() {
                       size="sm"
                       onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                       disabled={currentPage === 1}
+                      data-testid="previous-page-button"
                     >
                       <ChevronLeft className="h-4 w-4" />
                       {t('common.previous')}
@@ -657,6 +671,7 @@ export default function Members() {
                       size="sm"
                       onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                       disabled={currentPage === totalPages}
+                      data-testid="next-page-button"
                     >
                       {t('common.next')}
                       <ChevronRight className="h-4 w-4" />
@@ -698,7 +713,7 @@ export default function Members() {
                 >
                   {t('common.cancel')}
                 </Button>
-                <Button type="submit" disabled={updateMember.isPending}>
+                <Button type="submit" disabled={updateMember.isPending} data-testid="save-member-button">
                   {updateMember.isPending ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />

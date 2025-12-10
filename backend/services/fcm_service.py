@@ -2,14 +2,26 @@
 Firebase Cloud Messaging (FCM) Service for Push Notifications.
 
 Integrates with Expo Push Notifications for React Native mobile app.
+
+Features:
+- Exponential backoff retry for transient failures
+- Batch sending support
+- Token validation and cleanup
 """
 
 import logging
+import asyncio
 from typing import List, Dict, Optional, Any
 import httpx
 from datetime import datetime
 
 logger = logging.getLogger(__name__)
+
+# Retry configuration
+MAX_RETRIES = 3
+INITIAL_RETRY_DELAY = 1.0  # seconds
+MAX_RETRY_DELAY = 10.0  # seconds
+RETRY_MULTIPLIER = 2.0
 
 
 class FCMService:
@@ -87,38 +99,74 @@ class FCMService:
 
                 messages.append(message)
 
-            # Send to Expo Push API
-            async with httpx.AsyncClient(timeout=self.timeout) as client:
-                response = await client.post(
-                    self.expo_push_url,
-                    json=messages,
-                    headers={"Content-Type": "application/json"}
-                )
+            # Send to Expo Push API with retry logic
+            last_error = None
+            retry_delay = INITIAL_RETRY_DELAY
 
-                if response.status_code == 200:
-                    result = response.json()
+            for attempt in range(MAX_RETRIES + 1):
+                try:
+                    async with httpx.AsyncClient(timeout=self.timeout) as client:
+                        response = await client.post(
+                            self.expo_push_url,
+                            json=messages,
+                            headers={"Content-Type": "application/json"}
+                        )
 
-                    # Check for errors in response
-                    errors = []
-                    for item in result.get("data", []):
-                        if item.get("status") == "error":
-                            errors.append(item.get("message", "Unknown error"))
+                        if response.status_code == 200:
+                            result = response.json()
 
-                    if errors:
-                        logger.error(f"Expo Push errors: {errors}")
-                        return False, f"Push notification errors: {', '.join(errors)}"
+                            # Check for errors in response
+                            errors = []
+                            for item in result.get("data", []):
+                                if item.get("status") == "error":
+                                    errors.append(item.get("message", "Unknown error"))
 
-                    logger.info(f"Push notifications sent successfully to {len(expo_tokens)} devices")
-                    return True, None
+                            if errors:
+                                logger.error(f"Expo Push errors: {errors}")
+                                return False, f"Push notification errors: {', '.join(errors)}"
 
-                else:
-                    error_msg = f"Expo Push API error: {response.status_code}"
-                    logger.error(error_msg)
-                    return False, error_msg
+                            logger.info(f"Push notifications sent successfully to {len(expo_tokens)} devices")
+                            return True, None
 
-        except httpx.TimeoutException:
-            logger.error("Expo Push API timeout")
-            return False, "Push notification timeout"
+                        # Retry on 5xx errors (server issues)
+                        elif response.status_code >= 500:
+                            last_error = f"Expo Push API error: {response.status_code}"
+                            if attempt < MAX_RETRIES:
+                                logger.warning(f"Retry {attempt + 1}/{MAX_RETRIES} after {retry_delay}s: {last_error}")
+                                await asyncio.sleep(retry_delay)
+                                retry_delay = min(retry_delay * RETRY_MULTIPLIER, MAX_RETRY_DELAY)
+                                continue
+                            logger.error(last_error)
+                            return False, last_error
+
+                        # Don't retry on 4xx errors (client issues)
+                        else:
+                            error_msg = f"Expo Push API error: {response.status_code}"
+                            logger.error(error_msg)
+                            return False, error_msg
+
+                except httpx.TimeoutException:
+                    last_error = "Push notification timeout"
+                    if attempt < MAX_RETRIES:
+                        logger.warning(f"Retry {attempt + 1}/{MAX_RETRIES} after {retry_delay}s: {last_error}")
+                        await asyncio.sleep(retry_delay)
+                        retry_delay = min(retry_delay * RETRY_MULTIPLIER, MAX_RETRY_DELAY)
+                        continue
+                    logger.error(last_error)
+                    return False, last_error
+
+                except (httpx.ConnectError, httpx.ReadError) as e:
+                    last_error = f"Network error: {str(e)}"
+                    if attempt < MAX_RETRIES:
+                        logger.warning(f"Retry {attempt + 1}/{MAX_RETRIES} after {retry_delay}s: {last_error}")
+                        await asyncio.sleep(retry_delay)
+                        retry_delay = min(retry_delay * RETRY_MULTIPLIER, MAX_RETRY_DELAY)
+                        continue
+                    logger.error(last_error)
+                    return False, last_error
+
+            # Should not reach here, but just in case
+            return False, last_error or "Max retries exceeded"
 
         except Exception as e:
             logger.error(f"Push notification error: {e}")

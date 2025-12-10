@@ -18,7 +18,7 @@
  * });
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 
 const WS_BASE_URL = import.meta.env.VITE_WS_URL ||
@@ -58,6 +58,28 @@ export function useWebSocket({
   const reconnectTimeoutRef = useRef(null);
   const heartbeatIntervalRef = useRef(null);
 
+  // Store callbacks in refs to avoid re-creating connection on callback changes
+  // This prevents memory leaks from callback function identity changes
+  const onMessageRef = useRef(onMessage);
+  const onConnectRef = useRef(onConnect);
+  const onDisconnectRef = useRef(onDisconnect);
+
+  // Keep refs updated with latest callbacks
+  useEffect(() => {
+    onMessageRef.current = onMessage;
+  }, [onMessage]);
+
+  useEffect(() => {
+    onConnectRef.current = onConnect;
+  }, [onConnect]);
+
+  useEffect(() => {
+    onDisconnectRef.current = onDisconnect;
+  }, [onDisconnect]);
+
+  // Memoize subscribeEvents to prevent unnecessary reconnections
+  const subscribeEventsKey = useMemo(() => JSON.stringify(subscribeEvents), [subscribeEvents]);
+
   // Cleanup function
   const cleanup = useCallback(() => {
     if (heartbeatIntervalRef.current) {
@@ -80,6 +102,7 @@ export function useWebSocket({
   }, []);
 
   // Connect to WebSocket
+  // Using refs for callbacks to avoid dependency changes causing reconnections
   const connect = useCallback(() => {
     if (!token || !sessionChurchId) {
       return;
@@ -102,9 +125,10 @@ export function useWebSocket({
       setConnectionState('connected');
       reconnectAttemptRef.current = 0;
 
-      // Subscribe to events
-      if (subscribeEvents.length > 0) {
-        sendMessage({ type: 'subscribe', events: subscribeEvents });
+      // Subscribe to events (parse from memoized key)
+      const events = JSON.parse(subscribeEventsKey);
+      if (events.length > 0) {
+        sendMessage({ type: 'subscribe', events });
       }
 
       // Start heartbeat
@@ -112,7 +136,8 @@ export function useWebSocket({
         sendMessage({ type: 'ping' });
       }, HEARTBEAT_INTERVAL);
 
-      onConnect?.();
+      // Call callback from ref (avoids stale closure)
+      onConnectRef.current?.();
     };
 
     ws.onmessage = (event) => {
@@ -122,7 +147,8 @@ export function useWebSocket({
 
         // Ignore pong messages
         if (message.type !== 'pong') {
-          onMessage?.(message);
+          // Call callback from ref (avoids stale closure)
+          onMessageRef.current?.(message);
         }
       } catch (e) {
         console.error('WebSocket message parse error:', e);
@@ -136,7 +162,7 @@ export function useWebSocket({
       // Don't reconnect if closed normally or auth failed
       if (event.code === 1000 || event.code === 4001 || event.code === 4003) {
         setConnectionState('disconnected');
-        onDisconnect?.();
+        onDisconnectRef.current?.();
         return;
       }
 
@@ -151,13 +177,13 @@ export function useWebSocket({
         connect();
       }, delay);
 
-      onDisconnect?.();
+      onDisconnectRef.current?.();
     };
 
     ws.onerror = () => {
       // Error handling - onclose will be called after
     };
-  }, [token, sessionChurchId, subscribeEvents, onMessage, onConnect, onDisconnect, sendMessage, cleanup]);
+  }, [token, sessionChurchId, subscribeEventsKey, sendMessage, cleanup]);
 
   // Disconnect from WebSocket
   const disconnect = useCallback(() => {
@@ -176,10 +202,11 @@ export function useWebSocket({
       connect();
     }
 
+    // Cleanup on unmount - ensure all intervals/timeouts are cleared
     return () => {
       disconnect();
     };
-  }, [autoConnect, token, sessionChurchId]); // eslint-disable-line
+  }, [autoConnect, token, sessionChurchId, connect, disconnect]);
 
   return {
     isConnected,

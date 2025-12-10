@@ -105,6 +105,8 @@ export function ExploreCard({
       disabled={disabled}
       style={[cardStyle, style, animatedStyle]}
       testID={testID}
+      accessible
+      accessibilityRole="button"
       {...pressableProps}
     >
       {children}

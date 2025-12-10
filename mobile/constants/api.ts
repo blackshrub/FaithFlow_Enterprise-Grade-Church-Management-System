@@ -158,12 +158,12 @@ export const QUERY_KEYS = {
     chapter,
   ],
 
-  // Giving
-  FUNDS: ['funds'],
-  PAYMENT_CONFIG: ['payment', 'config'],
-  GIVING_HISTORY: ['giving', 'history'],
-  GIVING_SUMMARY: ['giving', 'summary'],
-  TRANSACTION_DETAIL: ['transaction', 'detail'],
+  // Giving - SECURITY: All include churchId for multi-tenant cache isolation
+  FUNDS: (churchId: string) => ['funds', churchId],
+  PAYMENT_CONFIG: (churchId: string) => ['payment', 'config', churchId],
+  GIVING_HISTORY: (churchId: string) => ['giving', 'history', churchId],
+  GIVING_SUMMARY: (churchId: string) => ['giving', 'summary', churchId],
+  TRANSACTION_DETAIL: (churchId: string, transactionId: string) => ['transaction', 'detail', churchId, transactionId],
 
   // Events
   EVENTS_LIST: ['events', 'list'], // Base query for all events
@@ -176,18 +176,18 @@ export const QUERY_KEYS = {
   GROUP_DETAIL: ['group', 'detail'],
   GROUP_MEMBERS: ['group', 'members'],
 
-  // Communities (new)
-  COMMUNITIES: ['communities'],
-  MY_COMMUNITIES: ['communities', 'my'],
-  COMMUNITY_DETAIL: (id: string) => ['community', 'detail', id],
-  COMMUNITY_MEMBERS: (communityId: string) => ['community', 'members', communityId],
-  COMMUNITY_MESSAGES: (communityId: string, channelType: string, subgroupId?: string) =>
-    ['community', 'messages', communityId, channelType, subgroupId],
+  // Communities (new) - SECURITY: All include churchId for multi-tenant cache isolation
+  COMMUNITIES: (churchId: string) => ['communities', churchId],
+  MY_COMMUNITIES: (churchId: string) => ['communities', 'my', churchId],
+  COMMUNITY_DETAIL: (churchId: string, id: string) => ['community', 'detail', churchId, id],
+  COMMUNITY_MEMBERS: (churchId: string, communityId: string) => ['community', 'members', churchId, communityId],
+  COMMUNITY_MESSAGES: (churchId: string, communityId: string, channelType: string, subgroupId?: string) =>
+    ['community', 'messages', churchId, communityId, channelType, subgroupId],
 
-  // Prayer
-  PRAYER_REQUESTS: ['prayer', 'requests'],
-  MY_PRAYER_REQUESTS: ['prayer', 'my'],
-  PRAYER_REQUEST_DETAIL: ['prayer', 'detail'],
+  // Prayer - DATA-M2 FIX: Church-scoped for multi-tenant cache isolation
+  PRAYER_REQUESTS: (churchId: string) => ['prayer', 'requests', churchId],
+  MY_PRAYER_REQUESTS: (churchId: string) => ['prayer', 'my', churchId],
+  PRAYER_REQUEST_DETAIL: (churchId: string, requestId: string) => ['prayer', 'detail', churchId, requestId],
 
   // Articles
   ARTICLES: (churchId: string) => ['articles', churchId],

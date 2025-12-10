@@ -241,6 +241,14 @@ export function AudioPlayButton({
           borderRadius: size / 2,
           backgroundColor,
         }}
+        accessible
+        accessibilityRole="button"
+        accessibilityLabel={
+          state === 'loading' ? 'Loading audio' :
+          state === 'playing' ? 'Pause audio' :
+          state === 'paused' ? 'Resume audio' :
+          'Play audio'
+        }
       >
         {renderIcon(size * 0.45)}
       </Pressable>
@@ -262,6 +270,14 @@ export function AudioPlayButton({
           state === 'paused' ? 'opacity-85' : ''
         } ${disabled ? 'opacity-50' : ''}`}
         style={{ backgroundColor }}
+        accessible
+        accessibilityRole="button"
+        accessibilityLabel={
+          state === 'loading' ? 'Loading audio' :
+          state === 'playing' ? 'Pause audio' :
+          state === 'paused' ? 'Resume audio' :
+          `${label} audio`
+        }
       >
         {state === 'loading' ? (
           <ActivityIndicator size="small" color={color} />
@@ -292,6 +308,9 @@ export function AudioPlayButton({
         state === 'paused' ? 'opacity-85' : ''
       } ${disabled ? 'opacity-50' : ''}`}
       style={{ backgroundColor }}
+      accessible
+      accessibilityRole="button"
+      accessibilityLabel={fullLabelText}
     >
       <View className="flex-row items-center justify-center gap-2">
         {state === 'loading' ? (

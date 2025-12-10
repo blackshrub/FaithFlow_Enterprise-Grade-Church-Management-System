@@ -42,6 +42,7 @@ import { colors, spacing, borderRadius } from '@/constants/theme';
 import { callApi } from '@/services/api/call';
 import { useCallStore } from '@/stores/call';
 import { CallType, CallHistoryItem, CallStatus } from '@/types/call';
+import { goBack, navigateTo } from '@/utils/navigation';
 
 // =============================================================================
 // TYPES
@@ -117,6 +118,10 @@ function FilterTabs({ selected, onSelect }: FilterTabsProps) {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             onSelect(tab.id);
           }}
+          accessible
+          accessibilityRole="button"
+          accessibilityLabel={`${tab.label} calls`}
+          accessibilityState={{ selected: selected === tab.id }}
           className="rounded-full"
           style={{
             paddingHorizontal: spacing.md,
@@ -161,6 +166,9 @@ const CallItem = memo(function CallItem({ item, onPress, onCallPress }: CallItem
     <Animated.View entering={FadeInLeft.duration(200)}>
       <Pressable
         onPress={onPress}
+        accessible
+        accessibilityRole="button"
+        accessibilityLabel={`${isMissed ? 'Missed' : isOutgoing ? 'Outgoing' : 'Incoming'} ${isVideo ? 'video' : 'voice'} call ${isOutgoing ? 'to' : 'from'} ${otherName}, ${formatCallTime(item.initiated_at)}`}
         className="border-b"
         style={{
           paddingHorizontal: spacing.md,
@@ -251,6 +259,9 @@ const CallItem = memo(function CallItem({ item, onPress, onCallPress }: CallItem
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 onCallPress();
               }}
+              accessible
+              accessibilityRole="button"
+              accessibilityLabel={`Call back ${otherName}`}
               style={{ padding: spacing.xs }}
             >
               {isVideo ? (
@@ -363,12 +374,12 @@ export default function CallHistoryScreen() {
           [calleeId],
           item.call_type
         );
-        router.push(`/call/${item.call_id}` as any);
+        navigateTo(`/call/${item.call_id}`);
       } catch (error) {
         console.error('Failed to initiate call:', error);
       }
     },
-    [initiateCall, router]
+    [initiateCall]
   );
 
   return (
@@ -387,7 +398,10 @@ export default function CallHistoryScreen() {
           style={{ paddingHorizontal: spacing.md, paddingVertical: spacing.sm }}
         >
           <Pressable
-            onPress={() => router.back()}
+            onPress={() => goBack()}
+            accessible
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
             style={{ padding: spacing.xs }}
           >
             <ArrowLeft size={24} color={colors.gray[900]} />

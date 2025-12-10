@@ -7,10 +7,12 @@
 
 import { create } from 'zustand';
 import * as Haptics from 'expo-haptics';
+import { logError } from '@/utils/errorHelpers';
 
 import {
   CallUIState,
   CallType,
+  CallStatus,
   CallDuration,
   NetworkQuality,
   LiveKitConfig,
@@ -125,7 +127,7 @@ export const useCallStore = create<CallStore>((set, get) => ({
           call_id: response.call_id,
           room_name: response.room_name,
           call_type: response.call_type,
-          status: 'ringing' as any,
+          status: CallStatus.RINGING,
           participants: response.participants,
           started_at: new Date().toISOString(),
           duration_seconds: 0,
@@ -162,8 +164,8 @@ export const useCallStore = create<CallStore>((set, get) => ({
         }
       }, CALL_RING_TIMEOUT_MS);
 
-    } catch (error: any) {
-      console.error('Failed to initiate call:', error);
+    } catch (error) {
+      logError('Call', 'initiateCall', error, 'critical');
       // Clear timeout on error
       if (ringTimeoutTimer) {
         clearTimeout(ringTimeoutTimer);
@@ -171,7 +173,7 @@ export const useCallStore = create<CallStore>((set, get) => ({
       }
       set({
         uiState: 'idle',
-        error: error.message || 'Failed to initiate call',
+        error: 'Failed to initiate call',
       });
       throw error;
     }
@@ -195,7 +197,7 @@ export const useCallStore = create<CallStore>((set, get) => ({
           call_id: response.call_id,
           room_name: response.room_name,
           call_type: response.call_type,
-          status: 'connecting' as any,
+          status: CallStatus.CONNECTING,
           participants: response.participants,
           started_at: new Date().toISOString(),
           duration_seconds: 0,
@@ -212,12 +214,12 @@ export const useCallStore = create<CallStore>((set, get) => ({
         incomingCall: null,
       });
 
-    } catch (error: any) {
-      console.error('Failed to accept call:', error);
+    } catch (error) {
+      logError('Call', 'acceptCall', error, 'critical');
       set({
         uiState: 'idle',
         incomingCall: null,
-        error: error.message || 'Failed to accept call',
+        error: 'Failed to accept call',
       });
       throw error;
     }
@@ -237,8 +239,8 @@ export const useCallStore = create<CallStore>((set, get) => ({
         incomingCall: null,
       });
 
-    } catch (error: any) {
-      console.error('Failed to reject call:', error);
+    } catch (error) {
+      logError('Call', 'rejectCall', error, 'warning');
       // Still reset state even on error
       set({
         uiState: 'idle',
@@ -262,8 +264,8 @@ export const useCallStore = create<CallStore>((set, get) => ({
       // Reset state
       get().reset();
 
-    } catch (error: any) {
-      console.error('Failed to cancel call:', error);
+    } catch (error) {
+      logError('Call', 'cancelCall', error, 'warning');
       // Still reset state even on error
       get().reset();
     }
@@ -292,8 +294,8 @@ export const useCallStore = create<CallStore>((set, get) => ({
         get().reset();
       }, 1500);
 
-    } catch (error: any) {
-      console.error('Failed to end call:', error);
+    } catch (error) {
+      logError('Call', 'endCall', error, 'warning');
       // Still reset state even on error
       get().reset();
     }
@@ -365,7 +367,7 @@ export const useCallStore = create<CallStore>((set, get) => ({
       uiState: 'connecting',
       currentCall: {
         ...currentCall,
-        status: 'connecting' as any,
+        status: CallStatus.CONNECTING,
       },
     });
   },
@@ -456,7 +458,7 @@ export const useCallStore = create<CallStore>((set, get) => ({
       remoteParticipants: newParticipants,
       currentCall: {
         ...currentCall,
-        status: newUiState === 'active' ? 'active' as any : currentCall.status,
+        status: newUiState === 'active' ? CallStatus.ACTIVE : currentCall.status,
       },
     });
 

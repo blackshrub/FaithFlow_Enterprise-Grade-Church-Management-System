@@ -124,6 +124,8 @@ const EventCheckinKiosk = () => {
   const cameraStartingRef = useRef(false);  // Prevent double starts
   const successTimeoutRef = useRef(null);   // Auto-dismiss success overlay
   const recentQrScansRef = useRef(new Map()); // Track recent QR scans for debounce
+  const isMountedRef = useRef(true);  // Track component mount state for cleanup
+  const abortControllerRef = useRef(null);  // AbortController for cancellable async operations
 
   // Get church context
   const { churchId } = useKioskChurch();
@@ -208,24 +210,69 @@ const EventCheckinKiosk = () => {
 
   // Initialize face recognition when component mounts
   useEffect(() => {
+    // Mark component as mounted
+    isMountedRef.current = true;
+
     const initFace = async () => {
       setFaceLoading(true);
       try {
         const ready = await faceRecognitionService.initialize();
-        setFaceReady(ready);
-        if (!ready) {
-          setFaceError('Face recognition initialization failed');
+        // Only update state if still mounted
+        if (isMountedRef.current) {
+          setFaceReady(ready);
+          if (!ready) {
+            setFaceError('Face recognition initialization failed');
+          }
         }
       } catch (error) {
         console.error('Face init error:', error);
-        setFaceError(error.message);
+        if (isMountedRef.current) {
+          setFaceError(error.message);
+        }
       } finally {
-        setFaceLoading(false);
+        if (isMountedRef.current) {
+          setFaceLoading(false);
+        }
       }
     };
     initFace();
 
     return () => {
+      // Mark as unmounted FIRST to prevent state updates
+      isMountedRef.current = false;
+
+      // Cancel any pending async operations
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+        abortControllerRef.current = null;
+      }
+
+      // Clear ALL intervals and timeouts to prevent zombies
+      if (faceDetectionIntervalRef.current) {
+        clearInterval(faceDetectionIntervalRef.current);
+        faceDetectionIntervalRef.current = null;
+      }
+      if (holdIntervalRef.current) {
+        clearInterval(holdIntervalRef.current);
+        holdIntervalRef.current = null;
+      }
+      if (noFaceTimeoutRef.current) {
+        clearTimeout(noFaceTimeoutRef.current);
+        noFaceTimeoutRef.current = null;
+      }
+      if (successTimeoutRef.current) {
+        clearTimeout(successTimeoutRef.current);
+        successTimeoutRef.current = null;
+      }
+      if (cancelCountdownRef.current) {
+        clearInterval(cancelCountdownRef.current);
+        cancelCountdownRef.current = null;
+      }
+      if (attendancePollRef.current) {
+        clearInterval(attendancePollRef.current);
+        attendancePollRef.current = null;
+      }
+
       faceRecognitionService.dispose();
     };
   }, []);
@@ -280,7 +327,14 @@ const EventCheckinKiosk = () => {
   useEffect(() => {
     if (step !== 'checkin' || !faceReady || !cameraActive) return;
 
+    // Store interval ID in a local variable for proper cleanup
     const healthCheckInterval = setInterval(() => {
+      // Skip if component unmounted
+      if (!isMountedRef.current) {
+        clearInterval(healthCheckInterval);
+        return;
+      }
+
       // If we're in checkin mode and detection should be running but isn't
       // Use refs for real-time values
       if (
@@ -296,7 +350,9 @@ const EventCheckinKiosk = () => {
       }
     }, 3000); // Check every 3 seconds (more responsive)
 
-    return () => clearInterval(healthCheckInterval);
+    return () => {
+      clearInterval(healthCheckInterval);
+    };
   }, [step, faceReady, cameraActive]);
 
   // Fetch and poll attendance count
@@ -575,12 +631,25 @@ const EventCheckinKiosk = () => {
       faceDetectionIntervalRef.current = null;
     }
 
+    // Don't start if component is unmounted
+    if (!isMountedRef.current) {
+      console.log('[EventCheckin] Face detection not started - component unmounted');
+      return;
+    }
+
     if (!faceReady) {
       console.log('[EventCheckin] Face detection not started - faceReady is false');
       return;
     }
 
     console.log('[EventCheckin] Starting fresh face detection loop');
+
+    // Create new AbortController for this detection session
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    abortControllerRef.current = new AbortController();
+    const signal = abortControllerRef.current.signal;
 
     let consecutiveNoFace = 0;
     let consecutiveMissedMatch = 0; // Grace period counter for holding state
@@ -602,6 +671,16 @@ const EventCheckinKiosk = () => {
 
     faceDetectionIntervalRef.current = setInterval(async () => {
       loopIteration++;
+
+      // CRITICAL: Stop immediately if unmounted or aborted
+      if (!isMountedRef.current || signal.aborted) {
+        console.log('[EventCheckin] Face detection stopping - unmounted or aborted');
+        if (faceDetectionIntervalRef.current) {
+          clearInterval(faceDetectionIntervalRef.current);
+          faceDetectionIntervalRef.current = null;
+        }
+        return;
+      }
 
       // Log every 30 iterations (~10 seconds) to confirm loop is alive
       if (loopIteration % 30 === 0) {
@@ -628,9 +707,12 @@ const EventCheckinKiosk = () => {
         // Use browser-based detection to know if a face is present (fast)
         const detection = await faceRecognitionService.detectFace(videoRef.current);
 
+        // Check again after async operation
+        if (!isMountedRef.current || signal.aborted) return;
+
         if (detection && !detection.filteredOut) {
           consecutiveNoFace = 0;
-          setShowUnrecognized(false);
+          if (isMountedRef.current) setShowUnrecognized(false);
 
           // Clear no-face timeout
           if (noFaceTimeoutRef.current) {
@@ -654,7 +736,7 @@ const EventCheckinKiosk = () => {
           isMatchingInProgress = true;
 
           // Only update status if not currently holding (to avoid flickering)
-          if (!holdingMemberIdRef.current) {
+          if (!holdingMemberIdRef.current && isMountedRef.current) {
             setFaceStatus('detecting');
           }
 
@@ -666,8 +748,21 @@ const EventCheckinKiosk = () => {
               return;
             }
 
+            // Check before async call
+            if (!isMountedRef.current || signal.aborted) {
+              isMatchingInProgress = false;
+              return;
+            }
+
             // Send to backend for DeepFace matching
             const response = await publicFaceRecognitionAPI.matchFace(frameBase64, churchId);
+
+            // Check after async call
+            if (!isMountedRef.current || signal.aborted) {
+              isMatchingInProgress = false;
+              return;
+            }
+
             const matchResult = response.data;
 
             if (matchResult.found) {
@@ -726,11 +821,16 @@ const EventCheckinKiosk = () => {
                   consecutiveMatchConfirmations = 0;
                 }
                 // Don't update status while in grace period - keeps UI stable
-              } else {
+              } else if (isMountedRef.current) {
                 setFaceStatus('unknown');
               }
             }
           } catch (backendError) {
+            // Ignore abort errors
+            if (backendError.name === 'AbortError' || signal.aborted) {
+              isMatchingInProgress = false;
+              return;
+            }
             console.error('Backend face matching error:', backendError);
             // On error during holding, use grace period too
             if (holdingMemberIdRef.current) {
@@ -761,15 +861,17 @@ const EventCheckinKiosk = () => {
               consecutiveMatchConfirmations = 0;
             }
             // Keep UI stable during grace period
-          } else {
+          } else if (isMountedRef.current) {
             setFaceStatus('detecting');
           }
 
           // Show unrecognized after threshold
-          if (consecutiveNoFace >= NO_FACE_THRESHOLD) {
+          if (consecutiveNoFace >= NO_FACE_THRESHOLD && isMountedRef.current) {
             if (!noFaceTimeoutRef.current) {
               noFaceTimeoutRef.current = setTimeout(() => {
-                setShowUnrecognized(true);
+                if (isMountedRef.current) {
+                  setShowUnrecognized(true);
+                }
               }, 0);
             }
           }
@@ -778,6 +880,9 @@ const EventCheckinKiosk = () => {
         // Reset error count on successful loop iteration
         loopErrorCount = 0;
       } catch (error) {
+        // Ignore abort errors
+        if (error.name === 'AbortError' || signal.aborted) return;
+
         console.error('Face detection error:', error);
         loopErrorCount++;
 
@@ -988,10 +1093,16 @@ const EventCheckinKiosk = () => {
     );
   };
 
-  // Check-in API call
+  // Check-in API call with race condition protection
   const performCheckin = useCallback(async (memberId, memberName, qrCode = null, descriptor = null, isFaceCheckin = false) => {
-    if (checkinInProgress) return;
+    // Use ref for atomic check-and-set to prevent race conditions
+    if (checkinInProgressRef.current) {
+      console.log('[EventCheckin] Check-in already in progress, skipping');
+      return;
+    }
 
+    // Set ref immediately (atomic) before state update
+    checkinInProgressRef.current = true;
     setCheckinInProgress(true);
     setCheckinError('');
 
@@ -1018,6 +1129,12 @@ const EventCheckinKiosk = () => {
         confidence: isFaceCheckin ? 'high' : 'manual',
         source: source
       });
+
+      // Check if component unmounted during async operation
+      if (!isMountedRef.current) {
+        console.log('[EventCheckin] Component unmounted during check-in, skipping state updates');
+        return;
+      }
 
       if (response) {
         const isAlreadyCheckedIn = response.already_checked_in === true;
@@ -1047,7 +1164,7 @@ const EventCheckinKiosk = () => {
           });
 
           // Silent photo capture for progressive learning (if face check-in and new check-in)
-          if (isFaceCheckin && videoRef.current) {
+          if (isFaceCheckin && videoRef.current && isMountedRef.current) {
             silentPhotoCapture(memberId);
           }
         }
@@ -1073,11 +1190,14 @@ const EventCheckinKiosk = () => {
         // Auto-dismiss success overlay after 3 seconds (2 seconds for already checked in)
         const dismissTime = isAlreadyCheckedIn ? 2000 : 3000;
         successTimeoutRef.current = setTimeout(() => {
+          // Check mount state before updating
+          if (!isMountedRef.current) return;
+
           setSuccessMember(null);
           successTimeoutRef.current = null;
           // Restart face detection after success - use restart to ensure clean state
           console.log('[EventCheckin] Success timeout - restarting face detection');
-          if (step === 'checkin' && faceReady && cameraActive) {
+          if (step === 'checkin' && faceReady && cameraActiveRef.current) {
             restartFaceDetection();
           }
         }, dismissTime);
@@ -1086,6 +1206,9 @@ const EventCheckinKiosk = () => {
         setStep('checkin');
       }
     } catch (error) {
+      // Check if component unmounted
+      if (!isMountedRef.current) return;
+
       console.error('Check-in error:', error);
       // Extract error message - handle Pydantic validation errors (array of {type, loc, msg, input, url})
       let errorMessage = t('errors.generic');
@@ -1108,17 +1231,24 @@ const EventCheckinKiosk = () => {
 
       // Auto-clear error after 3 seconds, then restart detection
       setTimeout(() => {
+        // Check mount state before updating
+        if (!isMountedRef.current) return;
+
         setCheckinError('');
         // Restart face detection after error is cleared
-        if (step === 'checkin' && faceReady && cameraActive) {
+        if (step === 'checkin' && faceReady && cameraActiveRef.current) {
           console.log('[EventCheckin] Error cleared - restarting face detection');
           restartFaceDetection();
         }
       }, 3000);
     } finally {
-      setCheckinInProgress(false);
+      // Always reset the ref (atomic) and state
+      checkinInProgressRef.current = false;
+      if (isMountedRef.current) {
+        setCheckinInProgress(false);
+      }
     }
-  }, [selectedEvent, churchId, checkinInProgress, t, step, faceReady, cameraActive, restartFaceDetection]);
+  }, [selectedEvent, churchId, t, step, faceReady, restartFaceDetection]);
 
   // Silent photo capture for progressive face learning
   // Note: With DeepFace backend, we capture the photo but the backend

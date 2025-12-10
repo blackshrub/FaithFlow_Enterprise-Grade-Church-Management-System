@@ -179,7 +179,15 @@
     "noResults": "Tidak ada hasil",
     "copy": "Salin",
     "members": "anggota",
-    "refresh": "Segarkan"
+    "refresh": "Segarkan",
+    "view": "Lihat",
+    "actions": "Aksi",
+    "male": "Laki-laki",
+    "female": "Perempuan",
+    "errorOccurred": "Terjadi Kesalahan",
+    "errorMessage": "Maaf, terjadi kesalahan yang tidak terduga. Silakan refresh halaman atau hubungi administrator jika masalah berlanjut.",
+    "refreshPage": "Refresh Halaman",
+    "tryAgain": "Coba Lagi"
   },
   "nav": {
     "dashboard": "Dasbor",
@@ -2950,6 +2958,257 @@
     "error": {
       "loadFailed": "Gagal memuat permohonan",
       "updateFailed": "Gagal memperbarui permohonan"
+    }
+  },
+  "broadcasts": {
+    "title": "Pusat Siaran",
+    "subtitle": "Kelola notifikasi push ke anggota gereja",
+    "newCampaign": "Kampanye Baru",
+    "editCampaign": "Edit Kampanye",
+    "createCampaign": "Buat Kampanye",
+    "searchPlaceholder": "Cari kampanye...",
+    "status": {
+      "all": "Semua",
+      "draft": "Draf",
+      "scheduled": "Terjadwal",
+      "sending": "Mengirim",
+      "sent": "Terkirim",
+      "cancelled": "Dibatalkan",
+      "failed": "Gagal"
+    },
+    "table": {
+      "title": "Judul",
+      "status": "Status",
+      "audience": "Audiens",
+      "stats": "Statistik",
+      "created": "Dibuat"
+    },
+    "empty": {
+      "title": "Belum ada kampanye",
+      "description": "Buat kampanye pertama untuk mengirim notifikasi push ke anggota"
+    },
+    "actions": {
+      "saveDraft": "Simpan Draf",
+      "send": "Kirim Sekarang",
+      "schedule": "Jadwalkan",
+      "cancel": "Batalkan",
+      "duplicate": "Duplikat",
+      "testSend": "Kirim Tes"
+    },
+    "messages": {
+      "confirmDelete": "Apakah Anda yakin ingin menghapus kampanye \"{{title}}\"?",
+      "confirmSend": "Apakah Anda yakin ingin mengirim kampanye \"{{title}}\" sekarang?",
+      "confirmSendNow": "Apakah Anda yakin ingin mengirim ke {{count}} anggota sekarang?",
+      "confirmSchedule": "Apakah Anda yakin ingin menjadwalkan kampanye ini?",
+      "confirmCancel": "Apakah Anda yakin ingin membatalkan kampanye terjadwal ini?",
+      "saveFirst": "Simpan kampanye terlebih dahulu sebelum mengirim tes"
+    },
+    "tips": {
+      "title": "Tips untuk Engagement Lebih Baik",
+      "titleLength": "Judul sebaiknya kurang dari 50 karakter untuk tampilan terbaik",
+      "bodyLength": "Teks isi terpotong di layar kunci - letakkan info penting di awal",
+      "personalize": "Gunakan nada yang ramah dan personal",
+      "testFirst": "Selalu kirim tes ke diri sendiri sebelum menyiarkan"
+    },
+    "analytics": {
+      "totalCampaigns": "Total Kampanye",
+      "totalSent": "Total Terkirim",
+      "delivered": "Tersampaikan",
+      "deliveryRate": "Tingkat Pengiriman",
+      "last30Days": "30 hari terakhir"
+    },
+    "audience": {
+      "title": "Pilih Audiens",
+      "targetType": "Jenis Target",
+      "allMembers": "Semua Anggota",
+      "byGroup": "Berdasarkan Kelompok Sel",
+      "byGroups": "Berdasarkan Kelompok Sel",
+      "byStatus": "Berdasarkan Status",
+      "byDemographics": "Berdasarkan Demografi",
+      "customList": "Daftar Kustom",
+      "selectGroups": "Pilih kelompok sel",
+      "selectStatus": "Pilih Status Anggota",
+      "selectStatuses": "Pilih status anggota",
+      "gender": "Jenis Kelamin",
+      "male": "Laki-laki",
+      "female": "Perempuan",
+      "anyGender": "Semua Jenis Kelamin",
+      "ageRange": "Rentang Usia",
+      "ageMin": "Usia Minimal",
+      "ageMax": "Usia Maksimal",
+      "searchMembers": "Cari anggota...",
+      "selectedMembers": "Anggota Terpilih",
+      "excludeMembers": "Kecualikan Anggota",
+      "excludeDescription": "Pilih anggota yang akan dikecualikan dari kampanye ini",
+      "estimatedReach": "Estimasi Jangkauan",
+      "membersWithDevices": "anggota dengan perangkat aktif",
+      "totalMatching": "total cocok",
+      "members": "anggota"
+    },
+    "content": {
+      "title": "Konten Notifikasi",
+      "notificationTitle": "Judul",
+      "titlePlaceholder": "Masukkan judul notifikasi (maks 100 karakter)",
+      "body": "Isi Pesan",
+      "bodyPlaceholder": "Masukkan isi pesan (maks 500 karakter)",
+      "image": "Gambar (Opsional)",
+      "uploadImage": "Unggah Gambar",
+      "removeImage": "Hapus Gambar",
+      "imageHelp": "Gambar akan ditampilkan di notifikasi. Direkomendasikan: 1024x512px"
+    },
+    "form": {
+      "content": "Konten Notifikasi",
+      "contentDescription": "Tulis pesan notifikasi Anda",
+      "title": "Judul",
+      "titlePlaceholder": "Masukkan judul notifikasi...",
+      "body": "Pesan",
+      "bodyPlaceholder": "Masukkan pesan untuk jemaat...",
+      "image": "Gambar Media Kaya (opsional)",
+      "uploadImage": "Klik untuk mengunggah gambar",
+      "targetAudience": "Target Audiens",
+      "targetDescription": "Pilih siapa yang akan menerima notifikasi ini",
+      "action": "Aksi Saat Diklik",
+      "actionDescription": "Apa yang terjadi saat pengguna mengetuk notifikasi",
+      "schedule": "Jadwal",
+      "audienceEstimateFailed": "Gagal memperkirakan audiens"
+    },
+    "action": {
+      "none": "Buka aplikasi saja",
+      "article": "Buka artikel tertentu",
+      "event": "Buka acara tertentu",
+      "url": "Buka URL eksternal",
+      "urlInput": "Masukkan URL"
+    },
+    "deepLink": {
+      "title": "Aksi Saat Diklik",
+      "actionType": "Jenis Aksi",
+      "none": "Tidak Ada (Buka Aplikasi)",
+      "article": "Buka Artikel",
+      "event": "Buka Acara",
+      "url": "Buka URL Eksternal",
+      "screen": "Buka Layar Aplikasi",
+      "selectArticle": "Pilih artikel",
+      "selectEvent": "Pilih acara",
+      "enterUrl": "Masukkan URL",
+      "selectScreen": "Pilih layar",
+      "screens": {
+        "home": "Beranda",
+        "events": "Acara",
+        "give": "Persembahan",
+        "profile": "Profil",
+        "prayer": "Doa"
+      }
+    },
+    "schedule": {
+      "title": "Jadwal Pengiriman",
+      "sendNow": "Kirim Sekarang",
+      "scheduleLater": "Jadwalkan untuk Nanti",
+      "scheduledAt": "Waktu Terjadwal",
+      "scheduledTime": "Tanggal & Waktu Terjadwal",
+      "selectDate": "Pilih tanggal",
+      "selectTime": "Pilih waktu",
+      "timezone": "Zona Waktu",
+      "minTime": "Harus dijadwalkan minimal 5 menit ke depan"
+    },
+    "preview": {
+      "title": "Pratinjau",
+      "phonePreview": "Pratinjau di Perangkat",
+      "notification": "Notifikasi Push",
+      "description": "Lihat tampilan notifikasi di perangkat",
+      "darkMode": "Gelap",
+      "lightMode": "Terang",
+      "lockScreen": "Layar Kunci",
+      "homeScreen": "Beranda",
+      "tips": "Tips: Judul lebih dari 50 karakter mungkin terpotong di beberapa perangkat"
+    },
+    "editor": {
+      "saveDraft": "Simpan Draf",
+      "sendTest": "Kirim Tes",
+      "sendNow": "Kirim Sekarang",
+      "schedule": "Jadwalkan",
+      "saving": "Menyimpan...",
+      "sending": "Mengirim...",
+      "testSent": "Notifikasi tes telah dikirim ke perangkat Anda",
+      "testFailed": "Gagal mengirim notifikasi tes"
+    },
+    "validation": {
+      "required": "Judul dan pesan wajib diisi",
+      "scheduledRequired": "Waktu terjadwal wajib diisi untuk pengiriman terjadwal",
+      "titleRequired": "Judul wajib diisi",
+      "titleTooLong": "Judul tidak boleh lebih dari 100 karakter",
+      "bodyRequired": "Isi pesan wajib diisi",
+      "bodyTooLong": "Isi pesan tidak boleh lebih dari 500 karakter",
+      "audienceRequired": "Harap pilih setidaknya satu target audiens",
+      "scheduleRequired": "Harap pilih waktu jadwal",
+      "urlRequired": "URL wajib diisi untuk aksi URL",
+      "articleRequired": "Harap pilih artikel",
+      "eventRequired": "Harap pilih acara"
+    }
+  },
+  "notificationTemplates": {
+    "title": "Template Notifikasi",
+    "description": "Buat template yang dapat digunakan kembali untuk notifikasi push",
+    "create": "Buat Template",
+    "edit": "Edit Template",
+    "editorDesc": "Tentukan konten notifikasi yang dapat digunakan kembali dengan variabel",
+    "list": "Template",
+    "listDesc": "Kelola template notifikasi Anda",
+    "searchPlaceholder": "Cari template...",
+    "categoryFilter": "Kategori",
+    "allCategories": "Semua Kategori",
+    "noResults": "Tidak ada template yang sesuai dengan filter",
+    "empty": "Belum ada template. Buat template pertama Anda!",
+    "preview": "Pratinjau",
+    "previewTitle": "Pratinjau Notifikasi",
+    "previewDesc": "Begini tampilan notifikasi di perangkat",
+    "livePreview": "Pratinjau Langsung",
+    "basicInfo": "Informasi Dasar",
+    "content": "Konten Notifikasi",
+    "contentDesc": "Gunakan {{nama_variabel}} untuk menyisipkan konten dinamis",
+    "variables": "Variabel",
+    "variablesDesc": "Klik untuk menyisipkan ke judul atau isi",
+    "tags": "Tag",
+    "tagsDesc": "Tambahkan tag untuk mengorganisir dan menemukan template dengan mudah",
+    "stats": {
+      "total": "Total Template",
+      "totalDesc": "Semua template di perpustakaan",
+      "active": "Template Aktif",
+      "activeDesc": "Siap digunakan",
+      "usage": "Total Penggunaan",
+      "usageDesc": "Kampanye dibuat"
+    },
+    "table": {
+      "name": "Nama",
+      "category": "Kategori",
+      "status": "Status",
+      "usage": "Penggunaan",
+      "updated": "Terakhir Diperbarui"
+    },
+    "form": {
+      "name": "Nama Template",
+      "namePlaceholder": "contoh: Pengingat Mingguan",
+      "description": "Deskripsi",
+      "descriptionPlaceholder": "Jelaskan kapan menggunakan template ini",
+      "category": "Kategori",
+      "priority": "Prioritas",
+      "active": "Template aktif",
+      "title": "Judul",
+      "titlePlaceholder": "contoh: Pengingat {{church_name}}",
+      "body": "Isi",
+      "bodyPlaceholder": "contoh: Hai {{first_name}}, jangan lupa...",
+      "imageUrl": "URL Gambar (opsional)",
+      "tagPlaceholder": "Masukkan nama tag"
+    },
+    "actions": {
+      "view": "Lihat",
+      "edit": "Edit",
+      "duplicate": "Duplikat",
+      "createCampaign": "Buat Kampanye",
+      "delete": "Hapus"
+    },
+    "deleteDialog": {
+      "title": "Hapus Template",
+      "description": "Yakin ingin menghapus template ini? Tindakan ini tidak dapat dibatalkan."
     }
   }
 }

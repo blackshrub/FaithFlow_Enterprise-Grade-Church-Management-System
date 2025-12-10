@@ -266,15 +266,27 @@ function VerseCard({ verse, contentLanguage, index }: VerseCardProps) {
 
   // Support both backend model (verse.verse, commentary, application)
   // and transformed mock data (text, reference, application_note)
-  const verseRef = (verse as any).verse || (verse as any).reference;
-  const verseText = (verse as any).text?.[lang] ||
-                    (verse as any).text?.en ||
-                    (verse as any).commentary?.[lang] ||
-                    (verse as any).commentary?.en ||
-                    '';
-  const applicationNote = (verse as any).application_note ||
-                          (verse as any).application;
-  const reference = formatBibleReference(verseRef as any, lang);
+  // Type assertion for partial verse structure
+  type VerseWithVariants = Partial<TopicalVerse> & {
+    id: string;
+    reference?: any;
+    text?: string | { en?: string; id?: string };
+    application_note?: string | { en?: string; id?: string };
+  };
+
+  const verseWithVariants = verse as VerseWithVariants;
+  const verseRef = verseWithVariants.verse || verseWithVariants.reference;
+
+  // Extract verse text from multiple possible sources
+  const getText = (field: string | { en?: string; id?: string } | undefined): string => {
+    if (!field) return '';
+    if (typeof field === 'string') return field;
+    return field[lang] || field.en || '';
+  };
+
+  const verseText = getText(verseWithVariants.text) || getText(verseWithVariants.commentary);
+  const applicationNote = verseWithVariants.application_note || verseWithVariants.application;
+  const reference = formatBibleReference(verseRef, lang);
 
   const handleBookmark = () => {
     bookmarkMutation.mutate({ verseId: verse.id, bookmarked: !isBookmarked });
@@ -385,7 +397,7 @@ function VerseCard({ verse, contentLanguage, index }: VerseCardProps) {
         </View>
 
         {/* Application Note */}
-        {applicationNote && (applicationNote[contentLanguage] || applicationNote.en || applicationNote) && (
+        {applicationNote && getText(applicationNote) && (
           <View
             className="italic"
             style={{
@@ -403,7 +415,7 @@ function VerseCard({ verse, contentLanguage, index }: VerseCardProps) {
                 fontStyle: 'italic',
               }}
             >
-              {applicationNote[contentLanguage] || applicationNote.en || applicationNote}
+              {getText(applicationNote)}
             </Text>
           </View>
         )}

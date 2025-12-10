@@ -80,6 +80,9 @@ export function OnboardingBanner({ variant = 'full' }: OnboardingBannerProps) {
             shadowRadius: 16,
             elevation: 8,
           }}
+          accessible
+          accessibilityRole="button"
+          accessibilityLabel="Personalize Your Journey. Tap to get started with onboarding."
         >
           <LinearGradient
             colors={[Colors.gradientStart, Colors.gradientMid]}
@@ -159,6 +162,9 @@ export function OnboardingBanner({ variant = 'full' }: OnboardingBannerProps) {
           <Pressable
             onPress={handleDismiss}
             className="absolute top-4 right-4 w-8 h-8 rounded-full items-center justify-center bg-white/20 active:scale-95 z-10"
+            accessible
+            accessibilityRole="button"
+            accessibilityLabel="Dismiss onboarding banner"
           >
             <X size={18} color={Colors.textWhite} />
           </Pressable>
@@ -235,7 +241,13 @@ export function OnboardingBanner({ variant = 'full' }: OnboardingBannerProps) {
             </Button>
 
             {/* Skip text */}
-            <Pressable onPress={handleDismiss} className="mt-3 py-2 active:opacity-70">
+            <Pressable
+              onPress={handleDismiss}
+              className="mt-3 py-2 active:opacity-70"
+              accessible
+              accessibilityRole="button"
+              accessibilityLabel="Skip onboarding, I'll do this later"
+            >
               <Text className="text-sm text-white/60">
                 {t('onboarding.banner.skipText', "I'll do this later")}
               </Text>

@@ -141,12 +141,13 @@ export default function DemographicsTab() {
 
   const openEditDialog = (demographic) => {
     setSelectedDemographic(demographic);
+    // CRITICAL: Use ?? (nullish coalescing) to preserve falsy values like 0 for min_age
     setFormData({
-      name: demographic.name || '',
-      min_age: demographic.min_age || 0,
-      max_age: demographic.max_age || 100,
-      description: demographic.description || '',
-      order: demographic.order || 0,
+      name: demographic.name ?? '',
+      min_age: demographic.min_age ?? 0,
+      max_age: demographic.max_age ?? 100,
+      description: demographic.description ?? '',
+      order: demographic.order ?? 0,
       is_active: demographic.is_active ?? true,
     });
     setIsEditDialogOpen(true);

@@ -3,10 +3,14 @@ Encryption Utilities
 
 For encrypting sensitive data (API keys, secrets) before storing in database.
 Uses Fernet symmetric encryption (AES-128 in CBC mode).
+
+SECURITY: Requires ENCRYPTION_KEY or JWT_SECRET environment variable.
+The encryption salt is derived from the secret to ensure unique keys per deployment.
 """
 
 import os
 import base64
+import hashlib
 from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
@@ -15,21 +19,39 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+def _derive_salt_from_secret(secret: str) -> bytes:
+    """
+    Derive a unique salt from the secret itself.
+    This ensures each deployment has a unique salt based on their secret.
+    """
+    # Use SHA256 to derive a 16-byte salt from the secret
+    return hashlib.sha256(f"faithflow_salt_{secret[:16]}".encode()).digest()[:16]
+
+
 def _get_encryption_key() -> bytes:
     """
-    Get or generate encryption key from environment variable.
+    Get encryption key from environment variable.
 
-    The key is derived from JWT_SECRET for simplicity.
-    In production, you should use a dedicated ENCRYPTION_KEY environment variable.
+    Uses ENCRYPTION_KEY if set, otherwise falls back to JWT_SECRET.
+    SECURITY: No hardcoded defaults - fails if not configured.
     """
-    # Use JWT_SECRET as the base for encryption key
-    secret = os.environ.get("JWT_SECRET", "default-insecure-secret-change-this")
+    # Prefer dedicated encryption key, fallback to JWT_SECRET
+    secret = os.environ.get("ENCRYPTION_KEY") or os.environ.get("JWT_SECRET")
+
+    if not secret:
+        raise RuntimeError(
+            "CRITICAL: ENCRYPTION_KEY or JWT_SECRET environment variable must be set. "
+            "Generate a secure 64+ character random string for production."
+        )
+
+    # Derive unique salt from the secret itself (per-deployment unique)
+    salt = _derive_salt_from_secret(secret)
 
     # Derive a proper Fernet key using PBKDF2HMAC
     kdf = PBKDF2HMAC(
         algorithm=hashes.SHA256(),
         length=32,
-        salt=b"faithflow_salt_v1",  # Static salt (OK for this use case)
+        salt=salt,
         iterations=100000,
     )
     key = base64.urlsafe_b64encode(kdf.derive(secret.encode()))
@@ -37,8 +59,16 @@ def _get_encryption_key() -> bytes:
     return key
 
 
-# Global Fernet instance
-_fernet = Fernet(_get_encryption_key())
+# Global Fernet instance - initialized lazily to allow for testing
+_fernet = None
+
+
+def _get_fernet() -> Fernet:
+    """Get or initialize the Fernet instance."""
+    global _fernet
+    if _fernet is None:
+        _fernet = Fernet(_get_encryption_key())
+    return _fernet
 
 
 def encrypt_sensitive_data(plaintext: str) -> str:
@@ -55,7 +85,8 @@ def encrypt_sensitive_data(plaintext: str) -> str:
         return plaintext
 
     try:
-        encrypted_bytes = _fernet.encrypt(plaintext.encode())
+        fernet = _get_fernet()
+        encrypted_bytes = fernet.encrypt(plaintext.encode())
         return encrypted_bytes.decode()
     except Exception as e:
         logger.error(f"Encryption failed: {e}")
@@ -78,7 +109,8 @@ def decrypt_sensitive_data(encrypted: str) -> str:
         return encrypted
 
     try:
-        decrypted_bytes = _fernet.decrypt(encrypted.encode())
+        fernet = _get_fernet()
+        decrypted_bytes = fernet.decrypt(encrypted.encode())
         return decrypted_bytes.decode()
     except Exception as e:
         logger.error(f"Decryption failed: {e}")

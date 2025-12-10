@@ -226,6 +226,9 @@ export function CreatePollModal({
             <Pressable
               onPress={handleClose}
               className="p-2 active:opacity-70"
+              accessible
+              accessibilityRole="button"
+              accessibilityLabel="Close create poll modal"
             >
               <Icon as={X} size="md" className="text-gray-500" />
             </Pressable>
@@ -290,6 +293,9 @@ export function CreatePollModal({
                   <Pressable
                     onPress={() => handleRemoveOption(option.id)}
                     className="p-2 active:opacity-70"
+                    accessible
+                    accessibilityRole="button"
+                    accessibilityLabel={`Remove option ${index + 1}`}
                   >
                     <Icon as={Trash2} size="sm" className="text-gray-400" />
                   </Pressable>
@@ -302,6 +308,9 @@ export function CreatePollModal({
                 onPress={handleAddOption}
                 className="flex-row items-center justify-center py-3 rounded-xl border border-dashed active:bg-gray-50"
                 style={{ borderColor: colors.gray[300] }}
+                accessible
+                accessibilityRole="button"
+                accessibilityLabel="Add another poll option"
               >
                 <Icon as={Plus} size="sm" className="text-gray-500 mr-2" />
                 <Text className="text-gray-500">Add option</Text>
@@ -322,6 +331,9 @@ export function CreatePollModal({
                 }}
                 className="px-4 py-3 rounded-xl flex-row items-center justify-between active:bg-gray-50"
                 style={{ backgroundColor: colors.gray[100] }}
+                accessible
+                accessibilityRole="button"
+                accessibilityLabel={`Poll duration: ${selectedDuration?.label}. Tap to change.`}
               >
                 <HStack space="md" className="items-center">
                   <Icon as={Clock} size="sm" style={{ color: colors.primary[500] }} />
@@ -343,6 +355,9 @@ export function CreatePollModal({
                         setShowDurationPicker(false);
                       }}
                       className="py-2.5 px-3 flex-row items-center justify-between rounded-lg active:bg-gray-50"
+                      accessible
+                      accessibilityRole="button"
+                      accessibilityLabel={`Set poll duration to ${option.label}${option.value === durationHours ? ', selected' : ''}`}
                     >
                       <Text
                         className={`${
@@ -370,6 +385,9 @@ export function CreatePollModal({
               }}
               className="px-4 py-3 rounded-xl flex-row items-center justify-between"
               style={{ backgroundColor: colors.gray[100] }}
+              accessible
+              accessibilityRole="button"
+              accessibilityLabel={`Allow multiple answers: ${allowMultiple ? 'enabled' : 'disabled'}. Tap to toggle.`}
             >
               <HStack space="md" className="items-center">
                 <Icon as={Users} size="sm" style={{ color: colors.info[500] }} />
@@ -394,6 +412,9 @@ export function CreatePollModal({
               }}
               className="px-4 py-3 rounded-xl flex-row items-center justify-between"
               style={{ backgroundColor: colors.gray[100] }}
+              accessible
+              accessibilityRole="button"
+              accessibilityLabel={`Anonymous voting: ${isAnonymous ? 'enabled' : 'disabled'}. Tap to toggle.`}
             >
               <HStack space="md" className="items-center">
                 <Icon

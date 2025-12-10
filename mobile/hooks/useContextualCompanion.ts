@@ -25,6 +25,7 @@ import { useMutation } from '@tanstack/react-query';
 import { contextualCompanionApi, type ContextType, type ContextualPromptRequest } from '@/services/api/explore';
 import { useCompanionStore, type CompanionContext, type CompanionContextData } from '@/stores/companionStore';
 import Toast from 'react-native-toast-message';
+import { logError, getErrorMessage } from '@/utils/errorHelpers';
 
 /**
  * Map API context types to companion store context types
@@ -132,11 +133,11 @@ export function useContextualCompanion() {
         // Navigate to companion screen
         router.push('/companion');
       } catch (error: any) {
-        console.error('Failed to launch contextual companion:', error);
+        logError('ContextualCompanion', 'launchWithContext', error, 'warning');
         Toast.show({
           type: 'error',
           text1: 'Error',
-          text2: error.message || 'Failed to start companion',
+          text2: getErrorMessage(error, 'Failed to start companion'),
         });
 
         // Fallback: open companion without context
@@ -172,7 +173,7 @@ export function useContextualCompanion() {
         const starters = await contextualCompanionApi.getStarters(contextType, language);
         return starters;
       } catch (error) {
-        console.error('Failed to fetch starters:', error);
+        logError('ContextualCompanion', 'getStarters', error, 'warning');
         return [];
       }
     },

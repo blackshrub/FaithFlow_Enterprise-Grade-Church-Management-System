@@ -30,6 +30,7 @@ import { subscribeWithSelector } from 'zustand/middleware';
 import { AppState, AppStateStatus } from 'react-native';
 import NetInfo from '@react-native-community/netinfo';
 import { useAuthStore } from './auth';
+import { logError } from '@/utils/errorHelpers';
 
 const WS_BASE_URL = process.env.EXPO_PUBLIC_WS_URL || 'wss://api.faithflow.id';
 const RECONNECT_DELAYS = [1000, 2000, 4000, 8000, 16000, 30000];
@@ -106,10 +107,19 @@ export const useWebSocketStore = create<WebSocketStore>()(
 
       set({ connectionState: 'connecting' });
 
-      const wsUrl = `${WS_BASE_URL}/ws/${authState.sessionChurchId}?token=${authState.token}`;
+      // Connect WITHOUT token in URL (security: tokens in URLs get logged)
+      // Send auth as first message after connection
+      const wsUrl = `${WS_BASE_URL}/ws/${authState.sessionChurchId}`;
       const ws = new WebSocket(wsUrl);
 
-      ws.onopen = () => get()._handleOpen();
+      ws.onopen = () => {
+        // SEC-M6: Send auth token as first message (more secure than URL query param)
+        // Note: Current approach sends main JWT. Ideally backend would issue short-lived
+        // WS-specific tokens to limit exposure window. This is a backend enhancement TODO.
+        // Current approach is acceptable as token is sent over WSS (encrypted) and not in URL.
+        ws.send(JSON.stringify({ type: 'auth', token: authState.token }));
+        get()._handleOpen();
+      };
       ws.onmessage = (event) => get()._handleMessage(event);
       ws.onclose = (event) => get()._handleClose(event);
       ws.onerror = (event) => get()._handleError(event);
@@ -176,7 +186,7 @@ export const useWebSocketStore = create<WebSocketStore>()(
           messageHistory: [message, ...state.messageHistory].slice(0, 50), // Keep last 50
         }));
       } catch (e) {
-        console.error('[WS] Message parse error:', e);
+        logError('WebSocket', 'parseMessage', e, 'warning');
       }
     },
 

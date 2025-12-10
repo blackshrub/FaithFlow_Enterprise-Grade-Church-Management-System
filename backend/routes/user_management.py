@@ -214,8 +214,12 @@ async def delete_user(
         if user.get('church_id') != session_church_id:
             raise HTTPException(status_code=403, detail="Access denied")
 
-    # Hard delete for webapp users
-    await db.users.delete_one({"id": user_id})
+    # Hard delete for webapp users with church_id filter for non-super-admins
+    delete_query = {"id": user_id}
+    if current_user.get('role') != 'super_admin':
+        delete_query["church_id"] = session_church_id
+
+    await db.users.delete_one(delete_query)
 
     logger.info(f"User deleted: {user.get('email')} (role: {user.get('role')}) by {current_user.get('email')}")
 

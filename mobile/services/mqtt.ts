@@ -11,10 +11,14 @@
  * Channel types: general, announcement, subgroup/{subgroup_id}
  */
 
+// Required polyfills for React Native - MUST be imported before mqtt
+import 'abortcontroller-polyfill/dist/abortcontroller-polyfill-only';
+
 import mqtt, { MqttClient, IClientOptions } from 'mqtt';
 import * as SecureStore from 'expo-secure-store';
-import { Platform } from 'react-native';
+import { Platform, AppState, AppStateStatus } from 'react-native';
 import Constants from 'expo-constants';
+import NetInfo, { NetInfoState, NetInfoSubscription } from '@react-native-community/netinfo';
 import { API_BASE_URL } from '@/constants/api';
 
 // Get the development host for MQTT connection
@@ -93,6 +97,9 @@ class MQTTService {
   private connectionOptions: MQTTConnectionOptions | null = null;
   private isConnecting = false;
   private hasLoggedUnavailable = false; // Prevent spam logging
+  private netInfoUnsubscribe: NetInfoSubscription | null = null;
+  private appStateSubscription: any = null;
+  private wasConnectedBeforeBackground = false;
 
   // Get MQTT broker URL based on environment
   private getBrokerUrl(): string {
@@ -138,12 +145,16 @@ class MQTTService {
     console.log('[MQTT] Connecting to:', brokerUrl);
 
     // Build client options
+    // React Native compatibility: use native timers and force native WebSocket
     const clientOptions: IClientOptions = {
       clientId: `faithflow-mobile-${options.memberId}-${Date.now()}`,
       clean: true,
       keepalive: 60,
       reconnectPeriod: 5000,
       connectTimeout: 30000,
+      // React Native specific options to avoid Reflect.construct errors
+      timerVariant: 'native', // Use native timers instead of worker timers
+      forceNativeWebSocket: true, // Force native WebSocket, avoid ws package issues
       // Will message for presence tracking
       will: {
         topic: `faithflow/${options.churchId}/presence`,
@@ -255,6 +266,9 @@ class MQTTService {
    * Disconnect from MQTT broker
    */
   disconnect(): void {
+    // Clean up network and app state listeners
+    this.cleanupListeners();
+
     if (this.client) {
       // Publish offline presence before disconnecting
       if (this.client.connected && this.connectionOptions) {
@@ -270,6 +284,78 @@ class MQTTService {
     this.reconnectAttempts = 0;
     this.connectionOptions = null;
     // Don't reset hasLoggedUnavailable - we don't want to spam on every reconnect attempt
+  }
+
+  /**
+   * Clean up network and app state listeners
+   */
+  private cleanupListeners(): void {
+    if (this.netInfoUnsubscribe) {
+      this.netInfoUnsubscribe();
+      this.netInfoUnsubscribe = null;
+    }
+    if (this.appStateSubscription) {
+      this.appStateSubscription.remove();
+      this.appStateSubscription = null;
+    }
+  }
+
+  /**
+   * Set up network change listener for automatic reconnection
+   * CRITICAL: Reconnects MQTT when network becomes available
+   */
+  setupNetworkListener(): void {
+    // Clean up existing listener
+    if (this.netInfoUnsubscribe) {
+      this.netInfoUnsubscribe();
+    }
+
+    this.netInfoUnsubscribe = NetInfo.addEventListener((state: NetInfoState) => {
+      console.log(`[MQTT] Network state changed: connected=${state.isConnected}, type=${state.type}`);
+
+      if (state.isConnected && !this.client?.connected && this.connectionOptions) {
+        // Network became available and we're not connected - reconnect
+        console.log('[MQTT] Network available, attempting reconnection...');
+        this.reconnectAttempts = 0; // Reset reconnect attempts
+        this.hasLoggedUnavailable = false; // Allow logging again
+        this.connect(this.connectionOptions);
+      }
+    });
+
+    console.log('[MQTT] Network listener set up');
+  }
+
+  /**
+   * Set up app state listener for reconnection when app comes to foreground
+   * CRITICAL: Reconnects MQTT when app returns from background
+   */
+  setupAppStateListener(): void {
+    // Clean up existing listener
+    if (this.appStateSubscription) {
+      this.appStateSubscription.remove();
+    }
+
+    this.appStateSubscription = AppState.addEventListener(
+      'change',
+      (nextAppState: AppStateStatus) => {
+        console.log(`[MQTT] App state changed: ${nextAppState}`);
+
+        if (nextAppState === 'active') {
+          // App came to foreground
+          if (this.wasConnectedBeforeBackground && this.connectionOptions && !this.client?.connected) {
+            console.log('[MQTT] App resumed, reconnecting...');
+            this.reconnectAttempts = 0;
+            this.hasLoggedUnavailable = false;
+            this.connect(this.connectionOptions);
+          }
+        } else if (nextAppState === 'background') {
+          // Going to background - remember connection state
+          this.wasConnectedBeforeBackground = this.client?.connected ?? false;
+        }
+      }
+    );
+
+    console.log('[MQTT] App state listener set up');
   }
 
   /**

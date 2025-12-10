@@ -50,6 +50,7 @@ import { useSearchMessages } from '@/hooks/useCommunities';
 import { useAuthStore } from '@/stores/auth';
 import { colors, spacing, borderRadius, shadows } from '@/constants/theme';
 import type { CommunityMessage } from '@/types/communities';
+import { goBack, navigateToWithParams } from '@/utils/navigation';
 
 // =============================================================================
 // CONSTANTS
@@ -139,6 +140,9 @@ const SearchResultItem = memo(function SearchResultItem({ message, query, onPres
       }}
       className="mx-4 mb-2 p-3 bg-white rounded-xl active:bg-gray-50"
       style={shadows.sm}
+      accessible
+      accessibilityRole="button"
+      accessibilityLabel={`Message from ${message.sender?.name || 'Unknown'}, ${formatDate(message.created_at)}`}
     >
       <HStack space="md">
         {/* Avatar */}
@@ -157,7 +161,7 @@ const SearchResultItem = memo(function SearchResultItem({ message, query, onPres
             <Text className="text-gray-900 font-medium text-sm">
               {message.sender?.name || 'Unknown'}
             </Text>
-            <Text className="text-gray-400 text-xs">
+            <Text className="text-gray-600 text-xs">
               {formatDate(message.created_at)}
             </Text>
           </HStack>
@@ -165,7 +169,7 @@ const SearchResultItem = memo(function SearchResultItem({ message, query, onPres
           {/* Message preview */}
           <HStack space="sm" className="items-center">
             {message.message_type !== 'text' && (
-              <Icon as={MessageIcon} size="xs" className="text-gray-400" />
+              <Icon as={MessageIcon} size="xs" className="text-gray-500" />
             )}
             <Text className="text-gray-600 text-sm flex-1" numberOfLines={2}>
               {message.text
@@ -186,7 +190,7 @@ const SearchResultItem = memo(function SearchResultItem({ message, query, onPres
           )}
         </VStack>
 
-        <Icon as={ChevronRight} size="sm" className="text-gray-400" />
+        <Icon as={ChevronRight} size="sm" className="text-gray-500" />
       </HStack>
     </Pressable>
   );
@@ -207,8 +211,11 @@ const RecentSearchItem = memo(function RecentSearchItem({ query, onPress, onRemo
     <Pressable
       onPress={onPress}
       className="flex-row items-center px-4 py-3 active:bg-gray-50"
+      accessible
+      accessibilityRole="button"
+      accessibilityLabel={`Recent search: ${query}`}
     >
-      <Icon as={Clock} size="sm" className="text-gray-400 mr-3" />
+      <Icon as={Clock} size="sm" className="text-gray-500 mr-3" />
       <Text className="flex-1 text-gray-700">{query}</Text>
       <Pressable
         onPress={(e) => {
@@ -217,8 +224,11 @@ const RecentSearchItem = memo(function RecentSearchItem({ query, onPress, onRemo
           onRemove();
         }}
         className="p-2 active:opacity-70"
+        accessible
+        accessibilityRole="button"
+        accessibilityLabel="Remove search"
       >
-        <Icon as={X} size="xs" className="text-gray-400" />
+        <Icon as={X} size="xs" className="text-gray-500" />
       </Pressable>
     </Pressable>
   );
@@ -301,11 +311,8 @@ export default function CommunitySearchScreen() {
   const handleResultPress = useCallback((message: CommunityMessage) => {
     saveRecentSearch(query);
     // Navigate to the message in context (would scroll to message)
-    router.push({
-      pathname: `/community/${communityId}/chat` as any,
-      params: { scrollToMessage: message.id },
-    });
-  }, [communityId, query, router, saveRecentSearch]);
+    navigateToWithParams(`/community/${communityId}/chat`, { scrollToMessage: message.id });
+  }, [communityId, query, saveRecentSearch]);
 
   const handleRecentPress = useCallback((recentQuery: string) => {
     setQuery(recentQuery);
@@ -332,16 +339,19 @@ export default function CommunitySearchScreen() {
           <Pressable
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              router.back();
+              goBack();
             }}
             className="active:opacity-70"
+            accessible
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
           >
             <Icon as={ArrowLeft} size="lg" className="text-gray-800" />
           </Pressable>
 
           {/* Search Input */}
           <View className="flex-1 flex-row items-center bg-gray-100 rounded-xl px-3 py-2">
-            <Icon as={Search} size="sm" className="text-gray-400 mr-2" />
+            <Icon as={Search} size="sm" className="text-gray-500 mr-2" />
             <TextInput
               ref={inputRef}
               value={query}
@@ -362,8 +372,14 @@ export default function CommunitySearchScreen() {
               style={{ color: colors.gray[900] }}
             />
             {query.length > 0 && (
-              <Pressable onPress={handleClearQuery} className="p-1 active:opacity-70">
-                <Icon as={X} size="sm" className="text-gray-400" />
+              <Pressable
+                onPress={handleClearQuery}
+                className="p-1 active:opacity-70"
+                accessible
+                accessibilityRole="button"
+                accessibilityLabel="Clear search"
+              >
+                <Icon as={X} size="sm" className="text-gray-500" />
               </Pressable>
             )}
           </View>
@@ -418,6 +434,9 @@ export default function CommunitySearchScreen() {
                   clearAllRecent();
                 }}
                 className="active:opacity-70"
+                accessible
+                accessibilityRole="button"
+                accessibilityLabel="Clear all recent searches"
               >
                 <Text className="text-primary-600 text-sm">Clear all</Text>
               </Pressable>
@@ -448,7 +467,7 @@ export default function CommunitySearchScreen() {
                 className="w-20 h-20 rounded-full items-center justify-center mb-4"
                 style={{ backgroundColor: colors.gray[100] }}
               >
-                <Icon as={Search} size="2xl" className="text-gray-400" />
+                <Icon as={Search} size="2xl" className="text-gray-500" />
               </View>
             </Animated.View>
             <Text className="text-gray-600 text-center text-lg font-medium">

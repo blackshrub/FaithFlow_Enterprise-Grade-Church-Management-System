@@ -73,6 +73,14 @@ const Categories = lazy(() => import("./pages/Articles/Categories"));
 const Tags = lazy(() => import("./pages/Articles/Tags"));
 const CommentsModeration = lazy(() => import("./pages/Articles/CommentsModeration"));
 
+// Broadcasts pages
+const BroadcastsList = lazy(() => import("./pages/Broadcasts/BroadcastsList"));
+const BroadcastEditor = lazy(() => import("./pages/Broadcasts/BroadcastEditor"));
+
+// Notification Templates pages
+const TemplatesList = lazy(() => import("./pages/NotificationTemplates/TemplatesList"));
+const TemplateEditor = lazy(() => import("./pages/NotificationTemplates/TemplateEditor"));
+
 // Prayer Requests pages
 const PrayerRequestsList = lazy(() => import("./pages/PrayerRequests/PrayerRequestsList"));
 const PrayerRequestForm = lazy(() => import("./pages/PrayerRequests/PrayerRequestForm"));
@@ -236,6 +244,17 @@ function App() {
               <Route path="articles/categories" element={<Categories />} />
               <Route path="articles/tags" element={<Tags />} />
               <Route path="articles/comments" element={<CommentsModeration />} />
+
+              {/* Broadcasts Routes */}
+              <Route path="broadcasts" element={<BroadcastsList />} />
+              <Route path="broadcasts/new" element={<BroadcastEditor />} />
+              <Route path="broadcasts/:id/edit" element={<BroadcastEditor />} />
+
+              {/* Notification Templates Routes */}
+              <Route path="notification-templates" element={<TemplatesList />} />
+              <Route path="notification-templates/new" element={<TemplateEditor />} />
+              <Route path="notification-templates/:id" element={<TemplateEditor />} />
+              <Route path="notification-templates/:id/edit" element={<TemplateEditor />} />
 
               {/* Prayer Requests Routes */}
               <Route path="prayer-requests" element={<PrayerRequestsList />} />

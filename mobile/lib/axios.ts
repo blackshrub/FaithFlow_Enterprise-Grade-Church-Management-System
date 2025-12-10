@@ -2,6 +2,7 @@ import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
 import * as SecureStore from "expo-secure-store";
 import { router } from "expo-router";
 import { API_BASE_URL, STORAGE_KEYS } from "./constants";
+import { useAuthStore } from "@/stores/auth";
 
 // Create axios instance
 const api = axios.create({
@@ -29,7 +30,8 @@ api.interceptors.request.use(
 
       return config;
     } catch (error) {
-      console.error("Error in request interceptor:", error);
+      // SEC-M5 FIX: Only log in development
+      if (__DEV__) console.error("[API] Error in request interceptor:", error);
       return config;
     }
   },
@@ -57,10 +59,11 @@ api.interceptors.response.use(
       }
 
       // Handle 401 Unauthorized - Token expired or invalid
+      // SEC FIX: Use auth store logout for complete state cleanup
       if (status === 401) {
-        // Clear auth data
-        await SecureStore.deleteItemAsync(STORAGE_KEYS.AUTH_TOKEN);
-        await SecureStore.deleteItemAsync(STORAGE_KEYS.AUTH_MEMBER);
+        // Clear auth data using store for complete state reset
+        const authStore = useAuthStore.getState();
+        await authStore.logout();
 
         // Navigate to login screen
         // Use setTimeout to allow the error to propagate first
@@ -73,26 +76,27 @@ api.interceptors.response.use(
         }, 100);
       }
 
+      // SEC-M5 FIX: Only log error details in development
       // Handle 403 Forbidden
-      if (status === 403) {
-        console.error("Access forbidden - insufficient permissions");
+      if (status === 403 && __DEV__) {
+        console.error("[API] Access forbidden - insufficient permissions");
       }
 
       // Handle 404 Not Found
-      if (status === 404) {
-        console.error("Resource not found:", url);
+      if (status === 404 && __DEV__) {
+        console.error("[API] Resource not found:", url);
       }
 
       // Handle 500 Server Error
-      if (status >= 500) {
-        console.error("Server error - please try again later");
+      if (status >= 500 && __DEV__) {
+        console.error("[API] Server error - please try again later");
       }
     } else if (error.request) {
       // Network error - no response received
-      console.error("Network error - no response from server");
+      if (__DEV__) console.error("[API] Network error - no response from server");
     } else {
       // Something else happened
-      console.error("Request error:", error.message);
+      if (__DEV__) console.error("[API] Request error:", error.message);
     }
 
     return Promise.reject(error);
