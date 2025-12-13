@@ -15,7 +15,9 @@
         restart-backend restart-frontend rebuild-backend rebuild-frontend \
         build-backend build-frontend build-all \
         shell-backend shell-mongo shell-redis \
-        backup restore prune
+        backup restore prune \
+        angie-install angie-setup angie-reload angie-test angie-logs \
+        ssl-init migrate-traefik
 
 # Default target
 .DEFAULT_GOAL := help
@@ -28,8 +30,15 @@ RED := \033[31m
 RESET := \033[0m
 
 # Docker Compose with env file
-COMPOSE_PROD := docker compose -f docker/compose/prod.yml --env-file .env
+# Default: Use root-level docker-compose.yml (Angie-based, no Traefik)
+# Legacy: Use docker/compose/prod.yml (Traefik-based)
+COMPOSE := docker compose --env-file .env
+COMPOSE_PROD := docker compose --env-file .env
+COMPOSE_LEGACY := docker compose -f docker/compose/prod.yml --env-file .env
 COMPOSE_DEV := docker compose -f docker/compose/dev.yml --env-file .env
+
+# Project directory (for scripts)
+PROJECT_ROOT := $(shell pwd)
 
 # =============================================================================
 # HELP
@@ -86,6 +95,15 @@ help:
 	@echo "  make rf               Restart frontend"
 	@echo "  make lb               Logs backend"
 	@echo "  make lf               Logs frontend"
+	@echo ""
+	@echo "$(GREEN)▶ ANGIE REVERSE PROXY (Host Level)$(RESET)"
+	@echo "  make angie-install    Install Angie web server"
+	@echo "  make angie-setup      Setup config symlinks to project"
+	@echo "  make ssl-init         Generate SSL certificates (Certbot)"
+	@echo "  make angie-reload     Reload Angie configuration"
+	@echo "  make angie-test       Test Angie configuration"
+	@echo "  make angie-logs       View Angie logs"
+	@echo "  make migrate-traefik  Full migration from Traefik to Angie"
 	@echo ""
 	@echo "$(YELLOW)▶ WHEN TO USE --no-cache (rebuild-*):$(RESET)"
 	@echo "  • After changing Dockerfile"
@@ -312,3 +330,79 @@ s: status
 
 ## Alias: logs
 l: logs
+
+# =============================================================================
+# ANGIE REVERSE PROXY (Host Level)
+# =============================================================================
+# Angie runs at host level (not in Docker) and proxies to Docker containers.
+# See docker/angie/README.md for detailed documentation.
+# =============================================================================
+
+## Install Angie web server
+angie-install:
+	@echo "$(CYAN)Installing Angie web server...$(RESET)"
+	@./docker/scripts/angie-install.sh
+	@echo "$(GREEN)✓ Angie installed$(RESET)"
+
+## Setup Angie configuration symlinks
+angie-setup:
+	@echo "$(CYAN)Setting up Angie configuration symlinks...$(RESET)"
+	@if [ -d /etc/angie/conf.d ] && [ ! -L /etc/angie/conf.d ]; then \
+		echo "$(YELLOW)Backing up existing conf.d...$(RESET)"; \
+		mv /etc/angie/conf.d /etc/angie/conf.d.backup.$$(date +%Y%m%d_%H%M%S); \
+	fi
+	@ln -sf $(PROJECT_ROOT)/docker/angie/angie.conf /etc/angie/angie.conf
+	@rm -rf /etc/angie/conf.d && ln -sf $(PROJECT_ROOT)/docker/angie/conf.d /etc/angie/conf.d
+	@rm -rf /etc/angie/sites-available && ln -sf $(PROJECT_ROOT)/docker/angie/sites-available /etc/angie/sites-available
+	@rm -rf /etc/angie/sites-enabled && ln -sf $(PROJECT_ROOT)/docker/angie/sites-enabled /etc/angie/sites-enabled
+	@echo "$(GREEN)✓ Angie configuration symlinks created$(RESET)"
+	@echo ""
+	@echo "Symlinks created:"
+	@echo "  /etc/angie/angie.conf -> $(PROJECT_ROOT)/docker/angie/angie.conf"
+	@echo "  /etc/angie/conf.d -> $(PROJECT_ROOT)/docker/angie/conf.d"
+	@echo "  /etc/angie/sites-available -> $(PROJECT_ROOT)/docker/angie/sites-available"
+	@echo "  /etc/angie/sites-enabled -> $(PROJECT_ROOT)/docker/angie/sites-enabled"
+
+## Generate SSL certificates with Certbot
+ssl-init:
+	@echo "$(CYAN)Generating SSL certificates...$(RESET)"
+	@./docker/scripts/certbot-init.sh
+	@echo "$(GREEN)✓ SSL certificates generated$(RESET)"
+
+## Reload Angie configuration
+angie-reload:
+	@echo "$(CYAN)Reloading Angie configuration...$(RESET)"
+	@angie -t && systemctl reload angie
+	@echo "$(GREEN)✓ Angie reloaded$(RESET)"
+
+## Test Angie configuration
+angie-test:
+	@echo "$(CYAN)Testing Angie configuration...$(RESET)"
+	@angie -t
+	@echo "$(GREEN)✓ Configuration is valid$(RESET)"
+
+## View Angie logs
+angie-logs:
+	@tail -f /var/log/angie/access.log /var/log/angie/error.log
+
+## Full migration from Traefik to Angie
+migrate-traefik:
+	@echo "$(YELLOW)WARNING: This will migrate from Traefik to Angie$(RESET)"
+	@read -p "Are you sure? [y/N] " confirm && [ "$$confirm" = "y" ] || exit 1
+	@./docker/scripts/migrate-traefik.sh
+
+# =============================================================================
+# LEGACY TRAEFIK COMMANDS (for backwards compatibility)
+# =============================================================================
+
+## Start with legacy Traefik compose (docker/compose/prod.yml)
+legacy-up:
+	@echo "$(CYAN)Starting with legacy Traefik compose...$(RESET)"
+	$(COMPOSE_LEGACY) up -d
+	@echo "$(GREEN)✓ Legacy Traefik services started$(RESET)"
+
+## Stop legacy Traefik services
+legacy-down:
+	@echo "$(YELLOW)Stopping legacy Traefik services...$(RESET)"
+	$(COMPOSE_LEGACY) down
+	@echo "$(GREEN)✓ Legacy services stopped$(RESET)"
