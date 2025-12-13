@@ -94,3 +94,10 @@ mobile/constants/secrets.ts.local
 # LiveKit config generated with server IP and domain
 docker/livekit/livekit.yaml
 docker/livekit/turnserver.conf
+
+# Data directory (bind mounts, not tracked)
+data/
+
+# Playwright test results
+frontend/playwright-report/
+frontend/test-results/
